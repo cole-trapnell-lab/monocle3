@@ -2,6 +2,7 @@
 
 export(new_cell_data_set)
 export(preprocess_cds)
+export(sparse_prcomp_irlba)
 exportClasses(cell_data_set)
 importFrom(Biobase,"fData<-")
 importFrom(Biobase,"pData<-")

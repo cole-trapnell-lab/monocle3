@@ -44,7 +44,6 @@
 #' @param norm_method Determines how to transform expression values prior to reducing dimensionality
 #' @param residualModelFormulaStr A model formula specifying the effects to subtract from the data before clustering.
 #' @param pseudo_expr amount to increase expression values before dimensionality reduction
-#' @param relative_expr When this argument is set to TRUE (default), we intend to convert the expression into a relative expression.
 #' @param scaling When this argument is set to TRUE (default), it will scale each gene before running trajectory reconstruction.
 #' @param verbose Whether to emit verbose output during dimensionality reduction
 #' @param ... additional arguments to pass to the dimensionality reduction function
@@ -52,10 +51,9 @@
 #' @export
 preprocess_cds <- function(cds, method = c('PCA', 'none'), #, 'LSI' , 'NMF'
                           num_dim=50,
-                          norm_method = c("log", "vstExprs", "none"),
+                          norm_method = c("log", "none"),
                           residualModelFormulaStr=NULL,
                           pseudo_expr=1,
-                          relative_expr=TRUE,
                           scaling = TRUE,
                           verbose=FALSE,
                           ...) {
@@ -64,7 +62,7 @@ preprocess_cds <- function(cds, method = c('PCA', 'none'), #, 'LSI' , 'NMF'
   norm_method <- match.arg(norm_method)
   set.seed(2016) #ensure results from RNG sensitive algorithms are the same on all calls
 
-  FM <- normalize_expr_data(cds, norm_method, pseudo_expr, relative_expr)
+  FM <- normalize_expr_data(cds, norm_method, pseudo_expr)
 
   if (nrow(FM) == 0) {
     stop("Error: all rows have standard deviation zero")
@@ -79,13 +77,13 @@ preprocess_cds <- function(cds, method = c('PCA', 'none'), #, 'LSI' , 'NMF'
     if (verbose)
       message("Remove noise by PCA ...")
 
-    irlba_res <- sparse_prcomp_irlba(t(FM), n = min(num_dim, min(dim(FM)) - 1),
+    irlba_res <- sparse_prcomp_irlba(Matrix::t(FM), n = min(num_dim, min(dim(FM)) - 1),
                                      center = scaling, scale. = scaling)
     irlba_pca_res <- irlba_res$x
     row.names(irlba_pca_res) <- colnames(cds)
 
   } else if(method == 'none') {
-    irlba_pca_res <- t(FM)
+    irlba_pca_res <- Matrix::t(FM)
   } else {
     stop('unknown preprocessing method, stop!')
   }
@@ -100,7 +98,7 @@ preprocess_cds <- function(cds, method = c('PCA', 'none'), #, 'LSI' , 'NMF'
     fit <- limma::lmFit(t(irlba_pca_res), X.model_mat, ...)
     beta <- fit$coefficients[, -1, drop = FALSE]
     beta[is.na(beta)] <- 0
-    irlba_pca_res <- t(as.matrix(t(irlba_pca_res)) - beta %*% t(X.model_mat[, -1]))
+    irlba_pca_res <- t(as.matrix(Matrix::t(irlba_pca_res)) - beta %*% Matrix::t(X.model_mat[, -1]))
   }else{
     X.model_mat <- NULL
   }
@@ -114,9 +112,8 @@ preprocess_cds <- function(cds, method = c('PCA', 'none'), #, 'LSI' , 'NMF'
 # Helper function to normalize the expression data prior to dimensionality
 # reduction
 normalize_expr_data <- function(cds,
-                                norm_method = c("log", "vstExprs", "none"),
-                                pseudo_expr = 1,
-                                relative_expr = TRUE){
+                                norm_method = c("log", "none"),
+                                pseudo_expr = 1) {
   FM <- exprs(cds)
   use_for_ordering <- NULL
   # If the user has selected a subset of genes for use in ordering the cells
@@ -127,7 +124,7 @@ normalize_expr_data <- function(cds,
   }
 
   norm_method <- match.arg(norm_method)
-  if (cds@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size")) {
+  if (cds@expression_family %in% c("negbinomial", "negbinomial.size")) {
 
     # If we're going to be using log, and the user hasn't given us a pseudocount
     # set it to 1 by default.
@@ -140,27 +137,9 @@ normalize_expr_data <- function(cds,
 
     checkSizeFactors(cds)
 
-    if (norm_method == "vstExprs") {
-      if (relative_expr == FALSE)
-        message("Warning: relative_expr is ignored when using norm_method == 'vstExprs'")
-
-      if (is.null(fData(cds)$use_for_ordering) == FALSE &&
-          nrow(subset(fData(cds), use_for_ordering == TRUE)) > 0) {
-        VST_FM <- vstExprs(cds[fData(cds)$use_for_ordering,], round_vals = FALSE)
-      }else{
-        VST_FM <- vstExprs(cds, round_vals = FALSE)
-      }
-
-      if (is.null(VST_FM) == FALSE) {
-        FM <- VST_FM
-      }
-      else {
-        stop("Error: set the variance-stabilized value matrix with vstExprs(cds) <- computeVarianceStabilizedValues() before calling this function with use_vst=TRUE")
-      }
-    }else if (norm_method == "log") {
+       if (norm_method == "log") {
       # If we are using log, normalize by size factor before log-transforming
 
-      if (relative_expr)
         FM <- Matrix::t(Matrix::t(FM)/sizeFactors(cds))
 
       if(is.null(pseudo_expr))
@@ -177,7 +156,7 @@ normalize_expr_data <- function(cds,
       FM <- Matrix::t(Matrix::t(FM)/sizeFactors(cds))
       FM <- FM + pseudo_expr
     }
-  }else if (cds@expressionFamily@vfamily == "binomialff") {
+  }else if (cds@expression_family == "binomialff") {
     if (norm_method == "none"){
       #If this is binomial data, transform expression values into TF-IDF scores.
       ncounts <- FM > 0
@@ -186,7 +165,7 @@ normalize_expr_data <- function(cds,
     }else{
       stop("Error: the only normalization method supported with binomial data is 'none'")
     }
-  }else if (cds@expressionFamily@vfamily == "Tobit") {
+  }else if (cds@expression_family == "Tobit") {
     FM <- FM + pseudo_expr
     if (norm_method == "none"){
 
@@ -195,7 +174,7 @@ normalize_expr_data <- function(cds,
     }else{
       stop("Error: the only normalization methods supported with Tobit-distributed (e.g. FPKM/TPM) data are 'log' (recommended) or 'none'")
     }
-  }else if (cds@expressionFamily@vfamily == "uninormal") {
+  }else if (cds@expression_family == "uninormal") {
     if (norm_method == "none"){
       FM <- FM + pseudo_expr
     }else{

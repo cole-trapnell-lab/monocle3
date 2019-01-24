@@ -5,9 +5,8 @@
 \title{Project a cell_data_set object into a lower dimensional PCA (or ISI) space after normalize the data}
 \usage{
 preprocess_cds(cds, method = c("PCA", "none"), num_dim = 50,
-  norm_method = c("log", "vstExprs", "none"),
-  residualModelFormulaStr = NULL, pseudo_expr = 1,
-  relative_expr = TRUE, scaling = TRUE, verbose = FALSE, ...)
+  norm_method = c("log", "none"), residualModelFormulaStr = NULL,
+  pseudo_expr = 1, scaling = TRUE, verbose = FALSE, ...)
 }
 \arguments{
 \item{cds}{the cell_data_set upon which to perform this operation}
@@ -25,8 +24,6 @@ SVD to decompose the gene expression / cells into certain modules / topics. This
 \item{residualModelFormulaStr}{A model formula specifying the effects to subtract from the data before clustering.}
 
 \item{pseudo_expr}{amount to increase expression values before dimensionality reduction}
-
-\item{relative_expr}{When this argument is set to TRUE (default), we intend to convert the expression into a relative expression.}
 
 \item{scaling}{When this argument is set to TRUE (default), it will scale each gene before running trajectory reconstruction.}
 
