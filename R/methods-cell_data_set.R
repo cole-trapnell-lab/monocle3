@@ -70,8 +70,8 @@ setMethod("[", "cell_data_set", function(x, i, j, ..., drop = FALSE) {
                  lapply(orig, function(obj) obj[i, j, ..., drop = drop])
              }
            })
-  x@auxOrderingData = as.environment(as.list(x@auxOrderingData, all.names=TRUE))
-  x@auxClusteringData = as.environment(as.list(x@auxClusteringData,
+  x@aux_ordering_data = as.environment(as.list(x@aux_ordering_data, all.names=TRUE))
+  x@aux_clustering_data = as.environment(as.list(x@aux_clustering_data,
                                                all.names=TRUE))
   x
 })
@@ -91,10 +91,10 @@ setMethod("sizeFactors", signature(object="cell_data_set"), function(object) {
 setReplaceMethod("sizeFactors",
                  signature(object="cell_data_set", value="numeric"),
                  setSizeFactors <- function(object, value) {
-  pData(object)$Size_Factor <- value
-  validObject( object )
-  object
-})
+                   pData(object)$Size_Factor <- value
+                   validObject( object )
+                   object
+                 })
 
 
 #' @rdname cell_data_set-methods
@@ -106,8 +106,8 @@ setMethod("estimateSizeFactors",
           function( object, locfunc=median, ... )
           {
             sizeFactors(object) <- estimate_sf_matrix(exprs(object),
-                                                                locfunc=locfunc,
-                                                                ...)
+                                                      locfunc=locfunc,
+                                                      ...)
             object
           })
 
@@ -117,7 +117,7 @@ setMethod("estimateSizeFactors",
 #'   cells together.
 #' @param relative_expr Whether to transform expression into relative values
 #' @param min_cells_detected Only include genes detected above
-#'   lowerDetectionLimit in at least this many cells in the dispersion
+#'   lower_detection_limit in at least this many cells in the dispersion
 #'   calculation
 #' @param remove_outliers Whether to remove outliers (using Cook's distance)
 #'   when estimating dispersions
@@ -132,38 +132,41 @@ setMethod("estimateDispersions",
             stopifnot( is( object, "cell_data_set" ) )
 
             if(!(identical("negbinomial.size",
-                           object@expressionFamily) ||
-                 identical("negbinomial", object@expressionFamily))) {
-              stop("Error: estimateDispersions only works, and is only needed, when you're using a cell_data_set with a negbinomial or negbinomial.size expression family")
+                           object@expression_family) ||
+                 identical("negbinomial", object@expression_family))) {
+              stop(paste("Error: estimateDispersions only works, and is only",
+                         "needed, when you're using a cell_data_set with a",
+                         "negbinomial or negbinomial.size expression family"))
             }
 
             if( any( is.na( sizeFactors(object) ) ) )
-              stop( "NAs found in size factors. Have you called 'estimateSizeFactors'?" )
+              stop(paste("NAs found in size factors. Have you called",
+                         "'estimateSizeFactors'?"))
 
             if( length(list(...)) != 0 )
-              warning( "in estimateDispersions: Ignoring extra argument(s)." )
+              warning( "in estimateDispersions: Ignoring extra argument(s).")
 
             # Remove results from previous fits
-            object@dispFitInfo = new.env( hash=TRUE )
+            object@disp_fit_info = new.env( hash=TRUE )
 
-            dfi <- estimateDispersionsForcell_data_set(object,
-                                                     modelFormulaStr,
-                                                     relative_expr,
-                                                     min_cells_detected,
-                                                     remove_outliers,
-                                                     cores)
-            object@dispFitInfo[[dispModelName]] <- dfi
+            dfi <- estimate_dispersions_cds(object,
+                                            modelFormulaStr,
+                                            relative_expr,
+                                            min_cells_detected,
+                                            remove_outliers,
+                                            cores)
+            object@disp_fit_info[[dispModelName]] <- dfi
 
             validObject( object )
             object
           })
 
-checkSizeFactors <- function(cds)
-{
-  if (cds@expressionFamily %in% c("negbinomial", "negbinomial.size"))
+checkSizeFactors <- function(cds) {
+  if (cds@expression_family %in% c("negbinomial", "negbinomial.size"))
   {
     if (is.null(sizeFactors(cds))){
-      stop("Error: you must call estimateSizeFactors() before calling this function.")
+      stop(paste("Error: you must call estimateSizeFactors() before calling",
+                 "this function."))
     }
     if (sum(is.na(sizeFactors(cds))) > 0){
       stop("Error: one or more cells has a size factor of NA.")

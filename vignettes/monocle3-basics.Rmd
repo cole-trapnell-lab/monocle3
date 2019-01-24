@@ -77,7 +77,7 @@ cds <- estimateDispersions(cds)
 ```
 
 ```{r}
-cds <- preprocessCDS(cds, num_dim = 20)
+cds <- preprocess_cds(cds, num_dim = 20)
 ```
 
 ```{r}

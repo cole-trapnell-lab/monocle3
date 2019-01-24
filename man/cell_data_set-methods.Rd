@@ -53,7 +53,7 @@ cells together.}
 \item{relative_expr}{Whether to transform expression into relative values}
 
 \item{min_cells_detected}{Only include genes detected above
-lowerDetectionLimit in at least this many cells in the dispersion
+lower_detection_limit in at least this many cells in the dispersion
 calculation}
 
 \item{remove_outliers}{Whether to remove outliers (using Cook's distance)

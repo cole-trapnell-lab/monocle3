@@ -39,7 +39,7 @@ an updated cell_data_set object
 }
 \description{
 For most analysis (including trajectory inference, clustering) in Monocle 3, it requires us to to start from a
-low dimensional PCA space. preprocessCDS will be used to first project a cell_data_set object into a lower dimensional PCA space
+low dimensional PCA space. preprocess_cds will be used to first project a cell_data_set object into a lower dimensional PCA space
 before we apply clustering with community detection algorithm or other non-linear dimension reduction method, for example
 UMAP, tSNE, DDRTree, L1-graph, etc.  While tSNE is especially suitable for visualizing clustering results, comparing
 to UMAP, the global distance in tSNE space is not meaningful. UMAP can either be used for visualizing clustering result or as a general
@@ -50,7 +50,7 @@ but the later is general and can learn any arbitrary graph structure. Both metho
 \details{
 In Monocle 3, we overhauled the code from Monocle2 so that a standard Monocle 3 workingflow works as following:
 \enumerate{
-\item run \code{preprocessCDS} to project a cell_data_set object into a lower dimensional PCA space after
+\item run \code{preprocess_cds} to project a cell_data_set object into a lower dimensional PCA space after
 normalize the data
 \item run \code{reduceDimension} to further project the PCA space into much lower dimension space with non-linear
 dimension reduction techniques, including tSNE, UMAP.
@@ -65,9 +65,9 @@ the capability to learn multiple disjointed trajectory with either tree or loop 
 Prior to reducing the dimensionality of the data, it usually helps
 to normalize it so that highly expressed or highly variable genes don't
 dominate the computation. \code{reduceDimension()} automatically transforms
-the data in one of several ways depending on the \code{expressionFamily} of
-the cell_data_set object. If the expressionFamily is \code{"negbinomial"} or \code{"negbinomial.siz"e}, the
-data are variance-stabilized. If the expressionFamily is \code{"tobit"}, the data
+the data in one of several ways depending on the \code{expression_family} of
+the cell_data_set object. If the expression_family is \code{"negbinomial"} or \code{"negbinomial.siz"e}, the
+data are variance-stabilized. If the expression_family is \code{"tobit"}, the data
 are adjusted by adding a pseudocount (of 1 by default) and then log-transformed.
 If you don't want any transformation at all, set norm_method to "none" and
 pseudo_expr to 0. This maybe useful for single-cell qPCR data, or data you've

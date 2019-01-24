@@ -28,16 +28,16 @@ operate on cell_data_set objects constitute the basic Monocle workflow.
 
 \item{\code{cellPairwiseDistances}}{A Matrix of class numeric, containing the pairwise distances between cells in the reduced dimension space.}
 
-\item{\code{expressionFamily}}{An Object of class character, specifying the expression family function used for expression responses.}
+\item{\code{expression_family}}{An Object of class character, specifying the expression family function used for expression responses.}
 
-\item{\code{lowerDetectionLimit}}{A numeric value specifying the minimum expression level considered to be true expression.}
+\item{\code{lower_detection_limit}}{A numeric value specifying the minimum expression level considered to be true expression.}
 
-\item{\code{dispFitInfo}}{An environment containing lists, one for each set of estimated dispersion values. See estimateDispersions.}
+\item{\code{disp_fit_info}}{An environment containing lists, one for each set of estimated dispersion values. See estimateDispersions.}
 
 \item{\code{dim_reduce_type}}{A string encoding how this cell_data_set has been reduced in dimensionality}
 
 \item{\code{rge_method}}{A string encoding how this cell_data_set has been fitted with a principal graph}
 
-\item{\code{auxOrderingData}}{An environment of auxilliary data structures used by various steps in Monocle. Not to be accessed by users directly.}
+\item{\code{aux_ordering_data}}{An environment of auxilliary data structures used by various steps in Monocle. Not to be accessed by users directly.}
 }}
 

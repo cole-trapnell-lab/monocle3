@@ -15,12 +15,12 @@
 #' @field reducedDimK A Matrix of class numeric, containing the pre-whitening matrix computed by Independent Components Analysis.
 #' @field minSpanningTree An Object of class igraph, containing the minimum spanning tree used by Monocle to order cells according to progress through a biological process.
 #' @field cellPairwiseDistances A Matrix of class numeric, containing the pairwise distances between cells in the reduced dimension space.
-#' @field expressionFamily An Object of class character, specifying the expression family function used for expression responses.
-#' @field lowerDetectionLimit A numeric value specifying the minimum expression level considered to be true expression.
-#' @field dispFitInfo An environment containing lists, one for each set of estimated dispersion values. See estimateDispersions.
+#' @field expression_family An Object of class character, specifying the expression family function used for expression responses.
+#' @field lower_detection_limit A numeric value specifying the minimum expression level considered to be true expression.
+#' @field disp_fit_info An environment containing lists, one for each set of estimated dispersion values. See estimateDispersions.
 #' @field dim_reduce_type A string encoding how this cell_data_set has been reduced in dimensionality
 #' @field rge_method A string encoding how this cell_data_set has been fitted with a principal graph
-#' @field auxOrderingData An environment of auxilliary data structures used by various steps in Monocle. Not to be accessed by users directly.
+#' @field aux_ordering_data An environment of auxilliary data structures used by various steps in Monocle. Not to be accessed by users directly.
 #' @name cell_data_set
 #' @rdname cell_data_set
 #' @aliases cell_data_set-class
@@ -34,13 +34,13 @@ setClass( "cell_data_set",
                     #reducedDimK = "matrix",
                     #minSpanningTree="igraph",
                     #cellPairwiseDistances="matrix",
-                    expressionFamily="character"
-                    #lowerDetectionLimit="numeric",
-                    #dispFitInfo = "environment",
+                    expression_family="character",
+                    lower_detection_limit="numeric",
+                    disp_fit_info = "environment",
                     #dim_reduce_type="character",
                     #rge_method="character",
-                    #auxOrderingData = "environment",
-                    #auxClusteringData = "environment",
+                    aux_ordering_data = "environment",
+                    aux_clustering_data = "environment"
                     #normalized_data_projection = "matrix"
           ),
           prototype = prototype( new( "VersionedBiobase",
@@ -53,8 +53,8 @@ setClass( "cell_data_set",
 #' @param cellData expression data matrix for an experiment
 #' @param phenoData data frame containing attributes of individual cells
 #' @param featureData data frame containing attributes of features (e.g. genes)
-#' @param lowerDetectionLimit the minimum expression level that consistitutes true expression
-#' @param expressionFamily character, the expression family function to be used for expression response variables
+#' @param lower_detection_limit the minimum expression level that consistitutes true expression
+#' @param expression_family character, the expression family function to be used for expression response variables
 #' @return a new cell_data_set object
 #' @export
 #' @examples
@@ -70,8 +70,8 @@ setClass( "cell_data_set",
 new_cell_data_set <- function(cellData,
                             phenoData = NULL,
                             featureData = NULL,
-                            lowerDetectionLimit = 0.1,
-                            expressionFamily="negbinomial.size")
+                            lower_detection_limit = 0.1,
+                            expression_family="negbinomial.size")
 {
 
   if(!('gene_short_name' %in% colnames(featureData))) {
@@ -104,9 +104,9 @@ new_cell_data_set <- function(cellData,
               assayData = assayDataNew( "environment", exprs=cellData ),
               phenoData=phenoData,
               featureData=featureData,
-              lowerDetectionLimit=lowerDetectionLimit,
-              expressionFamily=expressionFamily,
-              dispFitInfo = new.env( hash=TRUE ))
+              lower_detection_limit=lower_detection_limit,
+              expression_family=expression_family,
+              disp_fit_info = new.env( hash=TRUE ))
 
   validObject( cds )
   cds

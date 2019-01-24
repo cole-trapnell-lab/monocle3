@@ -1,7 +1,7 @@
 #' Project a cell_data_set object into a lower dimensional PCA (or ISI) space after normalize the data
 #'
 #' @description For most analysis (including trajectory inference, clustering) in Monocle 3, it requires us to to start from a
-#' low dimensional PCA space. preprocessCDS will be used to first project a cell_data_set object into a lower dimensional PCA space
+#' low dimensional PCA space. preprocess_cds will be used to first project a cell_data_set object into a lower dimensional PCA space
 #' before we apply clustering with community detection algorithm or other non-linear dimension reduction method, for example
 #' UMAP, tSNE, DDRTree, L1-graph, etc.  While tSNE is especially suitable for visualizing clustering results, comparing
 #' to UMAP, the global distance in tSNE space is not meaningful. UMAP can either be used for visualizing clustering result or as a general
@@ -11,7 +11,7 @@
 #'
 #' @details
 #' In Monocle 3, we overhauled the code from Monocle2 so that a standard Monocle 3 workingflow works as following:
-#' 1. run \code{preprocessCDS} to project a cell_data_set object into a lower dimensional PCA space after
+#' 1. run \code{preprocess_cds} to project a cell_data_set object into a lower dimensional PCA space after
 #' normalize the data
 #' 2. run \code{reduceDimension} to further project the PCA space into much lower dimension space with non-linear
 #' dimension reduction techniques, including tSNE, UMAP.
@@ -25,9 +25,9 @@
 #' Prior to reducing the dimensionality of the data, it usually helps
 #' to normalize it so that highly expressed or highly variable genes don't
 #' dominate the computation. \code{reduceDimension()} automatically transforms
-#' the data in one of several ways depending on the \code{expressionFamily} of
-#' the cell_data_set object. If the expressionFamily is \code{"negbinomial"} or \code{"negbinomial.siz"e}, the
-#' data are variance-stabilized. If the expressionFamily is \code{"tobit"}, the data
+#' the data in one of several ways depending on the \code{expression_family} of
+#' the cell_data_set object. If the expression_family is \code{"negbinomial"} or \code{"negbinomial.siz"e}, the
+#' data are variance-stabilized. If the expression_family is \code{"tobit"}, the data
 #' are adjusted by adding a pseudocount (of 1 by default) and then log-transformed.
 #' If you don't want any transformation at all, set norm_method to "none" and
 #' pseudo_expr to 0. This maybe useful for single-cell qPCR data, or data you've
@@ -73,7 +73,7 @@ preprocess_cds <- function(cds, method = c('PCA', 'none'), #, 'LSI' , 'NMF'
   fm_rowsums = Matrix::rowSums(FM)
   FM <- FM[is.finite(fm_rowsums) & fm_rowsums != 0, ]
 
-  cds@auxOrderingData$normalize_expr_data <- FM
+  cds@aux_ordering_data$normalize_expr_data <- FM
 
   if(method == 'PCA') {
     if (verbose)
@@ -109,3 +109,99 @@ preprocess_cds <- function(cds, method = c('PCA', 'none'), #, 'LSI' , 'NMF'
 
   cds
 }
+
+
+# Helper function to normalize the expression data prior to dimensionality
+# reduction
+normalize_expr_data <- function(cds,
+                                norm_method = c("log", "vstExprs", "none"),
+                                pseudo_expr = 1,
+                                relative_expr = TRUE){
+  FM <- exprs(cds)
+  use_for_ordering <- NULL
+  # If the user has selected a subset of genes for use in ordering the cells
+  # via setOrderingFilter(), subset the expression matrix.
+  if (is.null(fData(cds)$use_for_ordering) == FALSE &&
+      nrow(subset(fData(cds), use_for_ordering == TRUE)) > 0) {
+    FM <- FM[fData(cds)$use_for_ordering, ]
+  }
+
+  norm_method <- match.arg(norm_method)
+  if (cds@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size")) {
+
+    # If we're going to be using log, and the user hasn't given us a pseudocount
+    # set it to 1 by default.
+    if (is.null(pseudo_expr)){
+      if(norm_method == "log")
+        pseudo_expr = 1
+      else
+        pseudo_expr = 0
+    }
+
+    checkSizeFactors(cds)
+
+    if (norm_method == "vstExprs") {
+      if (relative_expr == FALSE)
+        message("Warning: relative_expr is ignored when using norm_method == 'vstExprs'")
+
+      if (is.null(fData(cds)$use_for_ordering) == FALSE &&
+          nrow(subset(fData(cds), use_for_ordering == TRUE)) > 0) {
+        VST_FM <- vstExprs(cds[fData(cds)$use_for_ordering,], round_vals = FALSE)
+      }else{
+        VST_FM <- vstExprs(cds, round_vals = FALSE)
+      }
+
+      if (is.null(VST_FM) == FALSE) {
+        FM <- VST_FM
+      }
+      else {
+        stop("Error: set the variance-stabilized value matrix with vstExprs(cds) <- computeVarianceStabilizedValues() before calling this function with use_vst=TRUE")
+      }
+    }else if (norm_method == "log") {
+      # If we are using log, normalize by size factor before log-transforming
+
+      if (relative_expr)
+        FM <- Matrix::t(Matrix::t(FM)/sizeFactors(cds))
+
+      if(is.null(pseudo_expr))
+        pseudo_expr <- 1
+      if (pseudo_expr != 1 || isSparseMatrix(exprs(cds)) == FALSE){
+        FM <- FM + pseudo_expr
+        FM <- log2(FM)
+      }else{
+        FM@x = log2(FM@x + 1)
+      }
+
+    } else if (norm_method == "none"){
+      # If we are using log, normalize by size factor before log-transforming
+      FM <- Matrix::t(Matrix::t(FM)/sizeFactors(cds))
+      FM <- FM + pseudo_expr
+    }
+  }else if (cds@expressionFamily@vfamily == "binomialff") {
+    if (norm_method == "none"){
+      #If this is binomial data, transform expression values into TF-IDF scores.
+      ncounts <- FM > 0
+      ncounts[ncounts != 0] <- 1
+      FM <- ncounts * log(1 + ncol(ncounts)/rowSums(ncounts))
+    }else{
+      stop("Error: the only normalization method supported with binomial data is 'none'")
+    }
+  }else if (cds@expressionFamily@vfamily == "Tobit") {
+    FM <- FM + pseudo_expr
+    if (norm_method == "none"){
+
+    }else if (norm_method == "log"){
+      FM <- log2(FM)
+    }else{
+      stop("Error: the only normalization methods supported with Tobit-distributed (e.g. FPKM/TPM) data are 'log' (recommended) or 'none'")
+    }
+  }else if (cds@expressionFamily@vfamily == "uninormal") {
+    if (norm_method == "none"){
+      FM <- FM + pseudo_expr
+    }else{
+      stop("Error: the only normalization method supported with gaussian data is 'none'")
+    }
+  }
+  return (FM)
+}
+

@@ -5,7 +5,7 @@
 \title{Creates a new cell_data_set object.}
 \usage{
 new_cell_data_set(cellData, phenoData = NULL, featureData = NULL,
-  lowerDetectionLimit = 0.1, expressionFamily = "negbinomial.size")
+  lower_detection_limit = 0.1, expression_family = "negbinomial.size")
 }
 \arguments{
 \item{cellData}{expression data matrix for an experiment}
@@ -14,9 +14,9 @@ new_cell_data_set(cellData, phenoData = NULL, featureData = NULL,
 
 \item{featureData}{data frame containing attributes of features (e.g. genes)}
 
-\item{lowerDetectionLimit}{the minimum expression level that consistitutes true expression}
+\item{lower_detection_limit}{the minimum expression level that consistitutes true expression}
 
-\item{expressionFamily}{character, the expression family function to be used for expression response variables}
+\item{expression_family}{character, the expression family function to be used for expression response variables}
 }
 \value{
 a new cell_data_set object
