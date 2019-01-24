@@ -40,8 +40,8 @@ setClass( "cell_data_set",
                     #dim_reduce_type="character",
                     #rge_method="character",
                     aux_ordering_data = "environment",
-                    aux_clustering_data = "environment"
-                    #normalized_data_projection = "matrix"
+                    aux_clustering_data = "environment",
+                    normalized_data_projection = "matrix"
           ),
           prototype = prototype( new( "VersionedBiobase",
                                       versions = c( Biobase::classVersion("ExpressionSet"), cell_data_set = "1.2.0" ) ))
