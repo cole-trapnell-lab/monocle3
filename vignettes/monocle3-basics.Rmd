@@ -1,0 +1,170 @@
+---
+title: "Monocle3 Basics"
+author: "Cole Trapnell"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r}
+library(monocle3)
+```
+
+```{r}
+load("~/Desktop/pd")
+load("~/Desktop/fd")
+load("~/Desktop/expr")
+
+pd <- new("AnnotatedDataFrame", data = pd)
+fd <- new("AnnotatedDataFrame", data = fd)
+cds <- new_cell_data_set(expr, phenoData = pd, featureData = fd)
+```
+
+
+```{r}
+pData(cds)$cell_type2 <- plyr::revalue(as.character(pData(cds)$cluster),
+                                        c("1" = 'Erythrocyte',
+                                        "2" = 'Erythrocyte',
+                                        "3" = 'Erythrocyte',
+                                        "4" = 'Erythrocyte',
+                                        "5" = 'Erythrocyte',
+                                        "6" = 'Erythrocyte',
+                                        "7" = 'Multipotent progenitors',
+                                        "8" = 'Megakaryocytes',
+                                        "9" = 'GMP',
+                                        "10" = 'GMP',
+                                        "11" = 'Dendritic cells',
+                                        "12" = 'Basophils',
+                                        "13" = 'Basophils',
+                                        "14" = 'Monocytes',
+                                        "15" = 'Monocytes',
+                                        "16" = 'Neutrophils',
+                                        "17" = 'Neutrophils',
+                                        "18" = 'Eosinophls',
+                                        "19" = 'lymphoid'))
+
+cell_type_color <- c("Basophils" = "#E088B8",
+                    "Dendritic cells" = "#46C7EF",
+                    "Eosinophls" = "#EFAD1E",
+                    "Erythrocyte" = "#8CB3DF",
+                    "Monocytes" = "#53C0AD",
+                    "Multipotent progenitors" = "#4EB859",
+                    "GMP" = "#D097C4",
+                    "Megakaryocytes" = "#ACC436",
+                    "Neutrophils" = "#F5918A",
+                    'NA' = '#000080')
+```
+
+```{r}
+# Pass TRUE if you want to see progress output on some of Monocle 3's operations
+DelayedArray:::set_verbose_block_processing(TRUE)
+
+# Passing a higher value will make some computations faster but use more memory. Adjust with caution!
+options(DelayedArray.block.size=1000e6)
+
+cds <- estimateSizeFactors(cds)
+cds <- estimateDispersions(cds)
+```
+
+```{r}
+cds <- preprocessCDS(cds, num_dim = 20)
+```
+
+```{r}
+cds <- reduceDimension(cds, reduction_method = 'UMAP')
+```
+
+
+```{r}
+cds <- partitionCells(cds)
+```
+
+```{r}
+cds <- learnGraph(cds,  RGE_method = 'SimplePPT')
+```
+
+```{r}
+plot_cell_trajectory(cds,
+                     color_by = "cell_type2") +
+                     scale_color_manual(values = cell_type_color)
+```
+
+
+```{r}
+# a helper function to identify the root principal points:
+get_correct_root_state <- function(cds, cell_phenotype, root_type){
+  cell_ids <- which(pData(cds)[, cell_phenotype] == root_type)
+
+  closest_vertex <-
+    cds@auxOrderingData[[cds@rge_method]]$pr_graph_cell_proj_closest_vertex
+  closest_vertex <- as.matrix(closest_vertex[colnames(cds), ])
+  root_pr_nodes <-
+    V(cds@minSpanningTree)$name[as.numeric(names
+      (which.max(table(closest_vertex[cell_ids,]))))]
+
+  root_pr_nodes
+}
+```
+
+```{r}
+MPP_node_ids = get_correct_root_state(cds,
+                                      cell_phenotype =
+                                        'cell_type2', "Multipotent progenitors")
+cds <- orderCells(cds, root_pr_nodes = MPP_node_ids)
+plot_cell_trajectory(cds)
+```
+
+
+```{r}
+cds <- reduceDimension(cds, max_components = 3,
+                       reduction_method = 'UMAP',
+                       metric="cosine",
+                       verbose = F)
+
+cds <- partitionCells(cds)
+
+cds <- learnGraph(cds,
+                  max_components = 3,
+                  RGE_method = 'SimplePPT',
+                  partition_component = T,
+                  verbose = F)
+
+cds <- orderCells(cds,
+                  root_pr_nodes =
+                    get_correct_root_state(cds,
+                                           cell_phenotype = 'cell_type2',
+                                           "Multipotent progenitors"))
+
+plot_3d_cell_trajectory(cds,
+                        color_by="cell_type2",
+                        webGL_filename=
+                          paste(getwd(), "/trajectory_3D.html", sep=""),
+                        palette=cell_type_color,
+                        show_backbone=TRUE,
+                        useNULL_GLdev=TRUE)
+```
+
+
+```{r}
+pr_graph_test <- principalGraphTest(cds, k=3, cores=1)
+```
+```{r}
+plot_3d_cell_trajectory(cds, markers = c('Hbb-b1'),
+                        webGL_filename=paste(getwd(), "/beta_globin.html", sep=""),
+                        show_backbone=TRUE,
+                        useNULL_GLdev=TRUE)
+```
+
+
+
+
