@@ -4,13 +4,13 @@
 \alias{fit_model_helper}
 \title{Helper function for model fitting}
 \usage{
-fit_model_helper(x, modelFormulaStr, expression_family, disp_func = NULL,
-  clean_model = TRUE, verbose = FALSE, ...)
+fit_model_helper(x, model_formula_str, expression_family,
+  disp_func = NULL, clean_model = TRUE, verbose = FALSE, ...)
 }
 \arguments{
 \item{x}{test}
 
-\item{modelFormulaStr}{a formula string specifying the model to fit for the genes.}
+\item{model_formula_str}{a formula string specifying the model to fit for the genes.}
 
 \item{expression_family}{specifies the family function used for expression responses}
 

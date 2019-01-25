@@ -4,13 +4,13 @@
 \alias{fit_models}
 \title{Fits a model for each gene in a CellDataSet object.}
 \usage{
-fit_models(cds, modelFormulaStr, cores = 1, clean_model = TRUE,
+fit_models(cds, model_formula_str, cores = 1, clean_model = TRUE,
   verbose = FALSE)
 }
 \arguments{
 \item{cds}{the CellDataSet upon which to perform this operation}
 
-\item{modelFormulaStr}{a formula string specifying the model to fit for the genes.}
+\item{model_formula_str}{a formula string specifying the model to fit for the genes.}
 
 \item{cores}{the number of processor cores to be used during fitting.}
 

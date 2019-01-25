@@ -17,6 +17,7 @@ LinkingTo:
 Depends:
     Biobase
 Imports: 
+    broom,
     dplyr,
     Rcpp,
     BiocGenerics,
