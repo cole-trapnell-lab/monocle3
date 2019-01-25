@@ -53,7 +53,7 @@ normalize the data
 dimension reduction techniques, including tSNE, UMAP.
 \item run \code{smoothEmbedding} (optional) to smooth noisy embedding from 2 to facilitate visualization and learning
 of the graph structure.
-\item run \code{partitionCells} to partition cells into different graphs based on a similar approach proposed by Alex Wolf and colleagues.
+\item run \code{partition_cells} to partition cells into different graphs based on a similar approach proposed by Alex Wolf and colleagues.
 We then reconstruct the trajectory in each partition with the \code{learnGraph} function.
 \item run \code{learnGraph} to reconstruct developmental trajectory with reversed graph embedding algorithms. In monocle 3, we enabled the
 the capability to learn multiple disjointed trajectory with either tree or loop structure, etc.
