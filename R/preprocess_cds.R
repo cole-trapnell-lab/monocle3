@@ -13,7 +13,7 @@
 #' In Monocle 3, we overhauled the code from Monocle2 so that a standard Monocle 3 workingflow works as following:
 #' 1. run \code{preprocess_cds} to project a cell_data_set object into a lower dimensional PCA space after
 #' normalize the data
-#' 2. run \code{reduceDimension} to further project the PCA space into much lower dimension space with non-linear
+#' 2. run \code{reduce_dimension} to further project the PCA space into much lower dimension space with non-linear
 #' dimension reduction techniques, including tSNE, UMAP.
 #' 3. run \code{smoothEmbedding} (optional) to smooth noisy embedding from 2 to facilitate visualization and learning
 #' of the graph structure.
@@ -24,7 +24,7 @@
 #'
 #' Prior to reducing the dimensionality of the data, it usually helps
 #' to normalize it so that highly expressed or highly variable genes don't
-#' dominate the computation. \code{reduceDimension()} automatically transforms
+#' dominate the computation. \code{reduce_dimension()} automatically transforms
 #' the data in one of several ways depending on the \code{expression_family} of
 #' the cell_data_set object. If the expression_family is \code{"negbinomial"} or \code{"negbinomial.siz"e}, the
 #' data are variance-stabilized. If the expression_family is \code{"tobit"}, the data

@@ -24,7 +24,7 @@ operate on cell_data_set objects constitute the basic Monocle workflow.
 
 \item{\code{reducedDimK}}{A Matrix of class numeric, containing the pre-whitening matrix computed by Independent Components Analysis.}
 
-\item{\code{minSpanningTree}}{An Object of class igraph, containing the minimum spanning tree used by Monocle to order cells according to progress through a biological process.}
+\item{\code{principal_graph}}{An Object of class igraph, containing the minimum spanning tree used by Monocle to order cells according to progress through a biological process.}
 
 \item{\code{cellPairwiseDistances}}{A Matrix of class numeric, containing the pairwise distances between cells in the reduced dimension space.}
 

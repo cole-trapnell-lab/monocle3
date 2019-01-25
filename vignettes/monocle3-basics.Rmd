@@ -81,7 +81,7 @@ cds <- preprocess_cds(cds, num_dim = 20)
 ```
 
 ```{r}
-cds <- reduceDimension(cds, reduction_method = 'UMAP')
+cds <- reduce_dimension(cds, reduction_method = 'UMAP')
 ```
 
 
@@ -106,10 +106,10 @@ get_correct_root_state <- function(cds, cell_phenotype, root_type){
   cell_ids <- which(pData(cds)[, cell_phenotype] == root_type)
 
   closest_vertex <-
-    cds@auxOrderingData[[cds@rge_method]]$pr_graph_cell_proj_closest_vertex
+    cds@aux_ordering_data[[cds@rge_method]]$pr_graph_cell_proj_closest_vertex
   closest_vertex <- as.matrix(closest_vertex[colnames(cds), ])
   root_pr_nodes <-
-    V(cds@minSpanningTree)$name[as.numeric(names
+    V(cds@principal_graph)$name[as.numeric(names
       (which.max(table(closest_vertex[cell_ids,]))))]
 
   root_pr_nodes
@@ -126,7 +126,7 @@ plot_cell_trajectory(cds)
 
 
 ```{r}
-cds <- reduceDimension(cds, max_components = 3,
+cds <- reduce_dimension(cds, max_components = 3,
                        reduction_method = 'UMAP',
                        metric="cosine",
                        verbose = F)

@@ -1,6 +1,6 @@
 #' Helper function to estimate dispersions
 #'
-#' @param cds a CellDataSet that contains all cells user wants evaluated
+#' @param cds a cell_data_set that contains all cells user wants evaluated
 #' @param modelFormulaStr a formula string specifying the model to fit for the genes.
 #' @param relative_expr Whether to transform expression into relative values
 #' @param min_cells_detected Only include genes detected above lower_detection_limit in at least this many cells in the dispersion calculation
@@ -11,7 +11,7 @@ estimate_dispersions_cds <- function(cds, modelFormulaStr,
                                      removeOutliers, verbose = FALSE) {
   if(!(('negbinomial' == cds@expression_family) ||
        ('negbinomial.size' == cds@expression_family))) {
-    stop("Error: estimateDispersions only works, and is only needed, when you're using a CellDataSet with a negbinomial or negbinomial.size expression family")
+    stop("Error: estimateDispersions only works, and is only needed, when you're using a cell_data_set with a negbinomial or negbinomial.size expression family")
   }
 
   mu <- NA

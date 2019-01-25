@@ -8,7 +8,7 @@ estimate_dispersions_cds(cds, modelFormulaStr, relative_expr,
   min_cells_detected, removeOutliers, verbose = FALSE)
 }
 \arguments{
-\item{cds}{a CellDataSet that contains all cells user wants evaluated}
+\item{cds}{a cell_data_set that contains all cells user wants evaluated}
 
 \item{modelFormulaStr}{a formula string specifying the model to fit for the genes.}
 
