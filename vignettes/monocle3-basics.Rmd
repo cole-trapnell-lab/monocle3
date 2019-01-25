@@ -86,7 +86,7 @@ cds <- reduce_dimension(cds, reduction_method = 'UMAP')
 
 
 ```{r}
-#cds <- partitionCells(cds)
+cds <- partition_cells(cds)
 ```
 
 ```{r}
@@ -131,7 +131,7 @@ cds <- reduce_dimension(cds, reduction_method = 'UMAP')
 #                       metric="cosine",
 #                       verbose = F)
 
-# cds <- partitionCells(cds)
+# cds <- partition_cells(cds)
 # 
 # cds <- learnGraph(cds,
 #                   max_components = 3,
