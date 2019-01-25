@@ -2,10 +2,10 @@ Package: monocle3
 Title: What the Package Does (One Line, Title Case)
 Version: 0.0.0.9000
 Authors@R: 
-    person(given = "First",
-           family = "Last",
+    person(given = "Cole",
+           family = "Trapnell",
            role = c("aut", "cre"),
-           email = "first.last@example.com")
+           email = "coletrap@uw.edu")
 Description: What the package does (one paragraph).
 License: MIT + file LICENSE
 Encoding: UTF-8
@@ -17,7 +17,25 @@ LinkingTo:
 Depends:
     Biobase
 Imports: 
-    Rcpp
+    dplyr,
+    Rcpp,
+    BiocGenerics,
+    DelayedArray,
+    DelayedMatrixStats,
+    MASS,
+    Matrix,
+    Rtsne,
+    igraph,
+    irlba,
+    limma,
+    methods,
+    pbapply,
+    purrr,
+    reticulate,
+    speedglm,
+    stringr,
+    tibble,
+    tidyr
 Suggests: 
     testthat,
     knitr,

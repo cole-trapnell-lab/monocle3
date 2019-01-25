@@ -4,7 +4,7 @@
 \alias{fit_model_helper}
 \title{Helper function for model fitting}
 \usage{
-fit_model_helper(x, modelFormulaStr, expressionFamily, relative_expr,
+fit_model_helper(x, modelFormulaStr, expression_family, relative_expr,
   disp_func = NULL, clean_model = TRUE, verbose = FALSE, ...)
 }
 \arguments{
@@ -12,7 +12,7 @@ fit_model_helper(x, modelFormulaStr, expressionFamily, relative_expr,
 
 \item{modelFormulaStr}{a formula string specifying the model to fit for the genes.}
 
-\item{expressionFamily}{specifies the family function used for expression responses}
+\item{expression_family}{specifies the family function used for expression responses}
 
 \item{relative_expr}{Whether to transform expression into relative values}
 

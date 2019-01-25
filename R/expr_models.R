@@ -20,10 +20,6 @@ clean_vgam_model_object = function(model) {
 #' @param verbose Whether to show VGAM errors and warnings. Only valid for cores = 1.
 #' @param ... test
 #' @name fit_model_helper
-#' @importFrom stats formula
-#' @importFrom speedglm speedglm
-#' @importFrom pscl zeroinfl
-#' @importFrom MASS glm.nb
 #' @keywords internal
 fit_model_helper <- function(x,
                              modelFormulaStr,
@@ -43,19 +39,6 @@ fit_model_helper <- function(x,
       x <- x / Size_Factor
     }
     f_expression <- round(x)
-    # if (is.null(disp_func) == FALSE) {
-    #   disp_guess <- calculate_NB_dispersion_hint(disp_func,
-    #                                              round(orig_x))
-    #   if (is.null(disp_guess) == FALSE && disp_guess >
-    #       0 && is.na(disp_guess) == FALSE) {
-    #     size_guess <- 1 / disp_guess
-    #     if (expression_family== "negbinomial")
-    #       expression_family <- negbinomial(isize = 1 / disp_guess, ...)
-    #     else
-    #       expression_family <-
-    #         negbinomial.size(size = 1 / disp_guess, ...)
-    #   }
-    # }
   }
   else if (expression_family %in% c("gaussian", "binomial")) {
     f_expression <- x
@@ -75,8 +58,6 @@ fit_model_helper <- function(x,
                     "zipoisson" = pscl::zeroinfl(model_formula, dist="poisson"),
                     "zinegbinomial" = pscl::zeroinfl(model_formula, dist="negbin")
                     )
-    # if (clean_model)
-    #   FM_fit = clean_vgam_model_object(FM_fit)
     FM_fit
   }, error = function(e) {
     print (e)
@@ -101,7 +82,6 @@ fit_model_helper <- function(x,
 #' @param relative_expr Whether to fit a model to relative or absolute expression. Only meaningful for count-based expression data. If TRUE, counts are normalized by Size_Factor prior to fitting.
 #' @param cores the number of processor cores to be used during fitting.
 #' @return a tibble containing VGAM model objects
-#' @importFrom qlcMatrix rowMax
 #' @export
 fit_models <- function(cds,
                      modelFormulaStr = "~sm.ns(Pseudotime, df=3)",
@@ -143,7 +123,7 @@ fit_models <- function(cds,
   term_labels =  unlist(head(lapply(lapply(f[which(is.na(f) == FALSE)], coef), names), n =
                                1))
 
-  M_f = as_tibble(fData(cds))
+  M_f = tibble::as_tibble(fData(cds))
   M_f$model = f
   M_f
 }
@@ -158,10 +138,11 @@ extract_coefficient_helper = function(model, term_labels, pseudo_expr =
      log_eff_over_int = log2((model$family$linkinv(coef_mat[, 1] + coef_mat[1, 1]) + pseudo_expr) /
                             rep(model$family$linkinv(coef_mat[1, 1]) + pseudo_expr, times = nrow(coef_mat)))
     log_eff_over_int[1] = 0
-    coef_mat = as_tibble(coef_mat, rownames = "term")
+    coef_mat = tibble::as_tibble(coef_mat, rownames = "term")
     coef_mat$normalized_effect = log_eff_over_int
     coef_mat$model_component = "count"
     return (coef_mat)
+
   } else if (class(model) == "zeroinfl"){
     SM = summary(model)
     count_coef_mat = SM$coefficients$count # first row is intercept
@@ -193,12 +174,7 @@ extract_coefficient_helper = function(model, term_labels, pseudo_expr =
 }
 
 #' Extracts a table of coefficients from a tibble containing model objects
-
-#' @importFrom purrr map
-#' @importFrom tidyr unnest
-#' @importFrom tibble as_tibble
 #' @importFrom dplyr %>%
-#' @importFrom dplyr mutate
 #' @export
 coefficient_table <- function(model_tbl) {
   M_f = model_tbl %>%

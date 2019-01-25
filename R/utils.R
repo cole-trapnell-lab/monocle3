@@ -122,33 +122,29 @@ sparse_apply <- function(Sp_X, MARGIN, FUN, convert_to_dense, ...){
 
 }
 
-#' @importFrom parallel splitIndices
 #' @keywords internal
 split_rows <- function (x, ncl) {
-  lapply(splitIndices(nrow(x), ncl), function(i) x[i, , drop = FALSE])
+  lapply(parallel::splitIndices(nrow(x), ncl), function(i) x[i, , drop = FALSE])
 }
 
-#' @importFrom parallel splitIndices
 #' @keywords internal
 split_cols <- function (x, ncl) {
-  lapply(splitIndices(ncol(x), ncl), function(i) x[, i, drop = FALSE])
+  lapply(parallel::splitIndices(ncol(x), ncl), function(i) x[, i, drop = FALSE])
 }
 
-#' @importFrom BiocGenerics clusterApply
 #' @keywords internal
 sparse_par_r_apply <- function (cl, x, FUN, convert_to_dense, ...)
 {
-  par_res <- do.call(c, clusterApply(cl = cl, x = split_rows(x, length(cl)),
+  par_res <- do.call(c, BiocGenerics::clusterApply(cl = cl, x = split_rows(x, length(cl)),
                                      fun = sparse_apply, MARGIN = 1L, FUN = FUN, convert_to_dense=convert_to_dense, ...), quote = TRUE)
   names(par_res) <- row.names(x)
   par_res
 }
 
-#' @importFrom BiocGenerics clusterApply
 #' @keywords internal
 sparse_par_c_apply <- function (cl = NULL, x, FUN, convert_to_dense, ...)
 {
-  par_res <- do.call(c, clusterApply(cl = cl, x = split_cols(x, length(cl)),
+  par_res <- do.call(c, BiocGenerics::clusterApply(cl = cl, x = split_cols(x, length(cl)),
                                      fun = sparse_apply, MARGIN = 2L, FUN = FUN, convert_to_dense=convert_to_dense, ...), quote = TRUE)
   names(par_res) <- colnames(x)
   par_res
@@ -169,32 +165,29 @@ sparse_par_c_apply <- function (cl = NULL, x, FUN, convert_to_dense, ...)
 #' @param cores The number of cores to use for evaluation
 #'
 #' @return The result of with(pData(X) apply(exprs(X)), MARGIN, FUN, ...))
-#' @importFrom parallel makeCluster stopCluster
-#' @importFrom BiocGenerics clusterCall parRapply parCapply
-#' @importFrom Biobase pData exprs multiassign
 #' @export
 mc_es_apply <- function(X, MARGIN, FUN, required_packages, cores=1, convert_to_dense=TRUE, ...) {
   parent <- environment(FUN)
   if (is.null(parent))
     parent <- emptyenv()
   e1 <- new.env(parent=parent)
-  multiassign(names(pData(X)), pData(X), envir=e1)
+  Biobase::multiassign(names(pData(X)), pData(X), envir=e1)
   environment(FUN) <- e1
 
   # Note: use outfile argument to makeCluster for debugging
   platform <- Sys.info()[['sysname']]
   if (platform == "Windows")
-    cl <- makeCluster(cores)
+    cl <- parallel::makeCluster(cores)
   if (platform %in% c("Linux", "Darwin"))
-    cl <- makeCluster(cores, type="FORK")
+    cl <- parallel::makeCluster(cores, type="FORK")
 
   cleanup <- function(){
-    stopCluster(cl)
+    parallel::stopCluster(cl)
   }
   on.exit(cleanup)
 
   if (is.null(required_packages) == FALSE){
-    clusterCall(cl, function(pkgs) {
+    BiocGenerics::clusterCall(cl, function(pkgs) {
       for (req in pkgs) {
         library(req, character.only=TRUE)
       }
@@ -211,20 +204,18 @@ mc_es_apply <- function(X, MARGIN, FUN, required_packages, cores=1, convert_to_d
   res
 }
 
-#' @importFrom Biobase multiassign
-#' @importFrom pbapply pbapply
 smart_es_apply <- function(X, MARGIN, FUN, convert_to_dense, ...) {
   parent <- environment(FUN)
   if (is.null(parent))
     parent <- emptyenv()
   e1 <- new.env(parent=parent)
-  multiassign(names(pData(X)), pData(X), envir=e1)
+  Biobase::multiassign(names(pData(X)), pData(X), envir=e1)
   environment(FUN) <- e1
 
-  if (isSparseMatrix(exprs(X))){
+  if (is_sparse_matrix(exprs(X))){
     res <- sparse_apply(exprs(X), MARGIN, FUN, convert_to_dense, ...)
   }else{
-    res <- pbapply(exprs(X), MARGIN, FUN, ...)
+    res <- pbapply::pbapply(exprs(X), MARGIN, FUN, ...)
   }
 
   if (MARGIN == 1)
@@ -240,7 +231,6 @@ smart_es_apply <- function(X, MARGIN, FUN, convert_to_dense, ...) {
 
 
 #' Build a CellDataSet from the data stored in inst/extdata directory.
-#' @importFrom Biobase pData pData<- exprs fData
 #' @export
 load_a549 <- function(){
 
@@ -260,6 +250,10 @@ load_a549 <- function(){
   cds <- new_cell_data_set(small_a549_exprs,
                          phenoData = pd,
                          featureData = fd,
+<<<<<<< HEAD
+=======
+                         lower_detection_limit = 1,
+>>>>>>> b4c6a5d3a7103065f4eef361d239f99cf28ce08e
                          expression_family="negbinomial")
   pData(cds)$Size_Factor = small_a549_pdata_df$Size_Factor
 
@@ -267,8 +261,7 @@ load_a549 <- function(){
 }
 
 # Test whether a matrix is one of our supported sparse matrices
-#' @import Matrix
-isSparseMatrix <- function(x){
+is_sparse_matrix <- function(x){
   class(x) %in% c("dgCMatrix", "dgTMatrix")
 }
 

@@ -1,4 +1,4 @@
-#setOldClass(c("igraph"), prototype=structure(list(), class="igraph"))
+setOldClass(c("igraph"), prototype=structure(list(), class="igraph"))
 
 #' The cell_data_set class
 #'
@@ -13,7 +13,7 @@
 #' @field reducedDimW Matrix of class numeric, containing the whitened expression values computed during Independent Components Analysis.
 #' @field reducedDimA Matrix of class numeric, containing the weight values computed by Independent Components Analysis.
 #' @field reducedDimK A Matrix of class numeric, containing the pre-whitening matrix computed by Independent Components Analysis.
-#' @field minSpanningTree An Object of class igraph, containing the minimum spanning tree used by Monocle to order cells according to progress through a biological process.
+#' @field principal_graph An Object of class igraph, containing the minimum spanning tree used by Monocle to order cells according to progress through a biological process.
 #' @field cellPairwiseDistances A Matrix of class numeric, containing the pairwise distances between cells in the reduced dimension space.
 #' @field expression_family An Object of class character, specifying the expression family function used for expression responses.
 #' @field lower_detection_limit A numeric value specifying the minimum expression level considered to be true expression.
@@ -28,16 +28,16 @@
 #' @importFrom Biobase ExpressionSet pData fData exprs pData<- fData<-
 setClass( "cell_data_set",
           contains = "ExpressionSet",
-          slots = c(#reducedDimS = "matrix",
-                    #reducedDimW = "matrix",
-                    #reducedDimA = "matrix",
-                    #reducedDimK = "matrix",
-                    #minSpanningTree="igraph",
+          slots = c(reducedDimS = "matrix",
+                    reducedDimW = "matrix",
+                    reducedDimA = "matrix",
+                    reducedDimK = "matrix",
+                    principal_graph="igraph",
                     #cellPairwiseDistances="matrix",
                     expression_family="character",
                     lower_detection_limit="numeric",
                     disp_fit_info = "environment",
-                    #dim_reduce_type="character",
+                    dim_reduce_type="character",
                     #rge_method="character",
                     aux_ordering_data = "environment",
                     aux_clustering_data = "environment",
