@@ -28,6 +28,7 @@ Imports:
     igraph,
     irlba,
     limma,
+    methods,
     pbapply,
     purrr,
     reticulate,

@@ -17,6 +17,7 @@ setValidity( "cell_data_set", function( object ) {
 #'   (see the examples). This only works for extracting elements, not for the
 #'   replacement.
 #' @docType methods
+#' @import Matrix
 #' @rdname extract-methods
 setMethod("[", "cell_data_set", function(x, i, j, ..., drop = FALSE) {
   if (missing(drop))
