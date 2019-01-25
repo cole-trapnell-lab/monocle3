@@ -260,8 +260,7 @@ load_a549 <- function(){
   cds <- new_cell_data_set(small_a549_exprs,
                          phenoData = pd,
                          featureData = fd,
-                         lowerDetectionLimit=1,
-                         expressionFamily="negbinomial")
+                         expression_family="negbinomial")
   pData(cds)$Size_Factor = small_a549_pdata_df$Size_Factor
 
   cds
