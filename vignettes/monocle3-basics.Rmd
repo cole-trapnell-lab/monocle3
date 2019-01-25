@@ -90,7 +90,7 @@ cds <- partition_cells(cds)
 ```
 
 ```{r}
-#cds <- learnGraph(cds,  RGE_method = 'SimplePPT')
+cds <- learn_graph(cds)
 ```
 
 ```{r}

@@ -38,7 +38,7 @@ setClass( "cell_data_set",
                     lower_detection_limit="numeric",
                     disp_fit_info = "environment",
                     dim_reduce_type="character",
-                    #rge_method="character",
+                    rge_method="character",
                     aux_ordering_data = "environment",
                     aux_clustering_data = "environment",
                     normalized_data_projection = "matrix"

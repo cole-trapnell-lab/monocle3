@@ -91,7 +91,7 @@ reduce_dimension <- function(cds,
     reducedDimK(cds) <- as.matrix(reducedDim)
     dp <- as.matrix(dist(reducedDim))
     cellPairwiseDistances(cds) <- dp
-    gp <- graph.adjacency(dp, mode = "undirected", weighted = TRUE)
+    gp <- igraph::graph.adjacency(dp, mode = "undirected", weighted = TRUE)
     dp_mst <- minimum.spanning.tree(gp)
     principal_graph(cds) <- dp_mst
     cds@dim_reduce_type <- "function_passed"
@@ -120,7 +120,7 @@ reduce_dimension <- function(cds,
       reducedDimA(cds) <- t(tsne_data) #this may move to the auxClusteringData environment
 
       #set the important information from densityClust to certain part of the cds object:
-      cds@auxClusteringData[["tSNE"]]$pca_components_used <- num_dim
+      cds@aux_clustering_data[["tSNE"]]$pca_components_used <- num_dim
 
       cds@dim_reduce_type <- "tSNE"
 
