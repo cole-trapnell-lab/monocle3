@@ -144,7 +144,7 @@ normalize_expr_data <- function(cds,
 
       if(is.null(pseudo_expr))
         pseudo_expr <- 1
-      if (pseudo_expr != 1 || isSparseMatrix(exprs(cds)) == FALSE){
+      if (pseudo_expr != 1 || is_sparse_matrix(exprs(cds)) == FALSE){
         FM <- FM + pseudo_expr
         FM <- log2(FM)
       }else{

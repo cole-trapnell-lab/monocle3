@@ -60,9 +60,9 @@ through \code{residualModelFormulaStr}.
 Prior to reducing the dimensionality of the data, it usually helps
 to normalize it so that highly expressed or highly variable genes don't
 dominate the computation. \code{reduce_dimension()} automatically transforms
-the data in one of several ways depending on the \code{expressionFamily} of
-the CellDataSet object. If the expressionFamily is \code{negbinomial} or \code{negbinomial.size}, the
-data are variance-stabilized. If the expressionFamily is \code{Tobit}, the data
+the data in one of several ways depending on the \code{expression_family} of
+the CellDataSet object. If the expression_family is \code{negbinomial} or \code{negbinomial.size}, the
+data are variance-stabilized. If the expression_family is \code{Tobit}, the data
 are adjusted by adding a pseudocount (of 1 by default) and then log-transformed.
 If you don't want any transformation at all, set norm_method to "none" and
 pseudo_expr to 0. This maybe useful for single-cell qPCR data, or data you've

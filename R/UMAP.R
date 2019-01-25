@@ -147,7 +147,6 @@
 #' a, fit_transform, metric, random_state, alpha, gamma, metric_kwds, set_op_mix_ratio, angular_rp_forest,
 #' get_params, min_dist, set_params, b, graph, n_components, spread, bandwidth, init, n_epochs, verbose,
 #' embedding_, initial_alpha, n_neighbors, fit, local_connectivity, negative_sample_rate
-#' @importFrom Matrix as.matrix
 #' @export
 UMAP <- function(X, python_home = system('which python', intern = TRUE),
                  log = TRUE,
@@ -191,7 +190,7 @@ UMAP <- function(X, python_home = system('which python', intern = TRUE),
   reticulate::source_python(paste(system.file(package="monocle"), "umap.py", sep="/"))
   # X <- Matrix::t(X)
   if(length(grep('Matrix', class(X))) == 0){
-    X <- as(as.matrix(X), 'TsparseMatrix')
+    X <- as(Matrix::as.matrix(X), 'TsparseMatrix')
   } else {
     X <- as(X, 'TsparseMatrix')
   }

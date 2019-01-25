@@ -73,7 +73,7 @@ disp_calc_helper_NB <- function(cds, min_cells_detected) {
 
   xim <- mean(1/ pData(cds[nzGenes,])$Size_Factor)
 
-  if (isSparseMatrix(exprs(cds))){
+  if (is_sparse_matrix(exprs(cds))){
     f_expression_mean <- as(DelayedMatrixStats::rowMeans2(x), "sparseVector")
   }else{
     f_expression_mean <- DelayedMatrixStats::rowMeans2(x)

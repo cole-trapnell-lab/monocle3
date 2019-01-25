@@ -14,20 +14,16 @@ clean_vgam_model_object = function(model) {
 #' @description test
 #' @param x test
 #' @param modelFormulaStr a formula string specifying the model to fit for the genes.
-#' @param expressionFamily specifies the family function used for expression responses
+#' @param expression_family specifies the family function used for expression responses
 #' @param relative_expr Whether to transform expression into relative values
 #' @param disp_func test
 #' @param verbose Whether to show VGAM errors and warnings. Only valid for cores = 1.
 #' @param ... test
 #' @name fit_model_helper
-#' @importFrom stats formula
-#' @importFrom speedglm speedglm
-#' @importFrom pscl zeroinfl
-#' @importFrom MASS glm.nb
 #' @keywords internal
 fit_model_helper <- function(x,
                              modelFormulaStr,
-                             expressionFamily,
+                             expression_family,
                              relative_expr,
                              disp_func = NULL,
                              clean_model = TRUE,
@@ -38,26 +34,13 @@ fit_model_helper <- function(x,
   orig_x <- x
   # FIXME: should we be using this here?
   # x <- x + pseudocount
-  if (expressionFamily %in% c("negbinomial", "poisson", "zinegbinomial", "zipoisson", "quasipoisson")) {
+  if (expression_family %in% c("negbinomial", "poisson", "zinegbinomial", "zipoisson", "quasipoisson")) {
     if (relative_expr) {
       x <- x / Size_Factor
     }
     f_expression <- round(x)
-    # if (is.null(disp_func) == FALSE) {
-    #   disp_guess <- calculate_NB_dispersion_hint(disp_func,
-    #                                              round(orig_x))
-    #   if (is.null(disp_guess) == FALSE && disp_guess >
-    #       0 && is.na(disp_guess) == FALSE) {
-    #     size_guess <- 1 / disp_guess
-    #     if (expressionFamily== "negbinomial")
-    #       expressionFamily <- negbinomial(isize = 1 / disp_guess, ...)
-    #     else
-    #       expressionFamily <-
-    #         negbinomial.size(size = 1 / disp_guess, ...)
-    #   }
-    # }
   }
-  else if (expressionFamily %in% c("gaussian", "binomial")) {
+  else if (expression_family %in% c("gaussian", "binomial")) {
     f_expression <- x
   }
   else {
@@ -68,12 +51,10 @@ fit_model_helper <- function(x,
   model_formula = as.formula(modelFormulaStr)
 
   tryCatch({
-    FM_fit = switch(expressionFamily,
+    FM_fit = switch(expression_family,
                     "negbinomial" = MASS::glm.nb(model_formula, epsilon=1e-1),
-                    "poisson" = speedglm(model_formula, family = poisson())
+                    "poisson" = speedglm::speedglm(model_formula, family = poisson())
                     )
-    # if (clean_model)
-    #   FM_fit = clean_vgam_model_object(FM_fit)
     FM_fit
   }, error = function(e) {
     print (e)
@@ -98,7 +79,6 @@ fit_model_helper <- function(x,
 #' @param relative_expr Whether to fit a model to relative or absolute expression. Only meaningful for count-based expression data. If TRUE, counts are normalized by Size_Factor prior to fitting.
 #' @param cores the number of processor cores to be used during fitting.
 #' @return a tibble containing VGAM model objects
-#' @importFrom qlcMatrix rowMax
 #' @export
 fit_models <- function(cds,
                      modelFormulaStr = "~sm.ns(Pseudotime, df=3)",
@@ -115,7 +95,7 @@ fit_models <- function(cds,
         required_packages = c("BiocGenerics", "Biobase", "pscl", "speedglm", "plyr", "Matrix"),
         cores = cores,
         modelFormulaStr = modelFormulaStr,
-        expressionFamily = cds@expressionFamily,
+        expression_family = cds@expression_family,
         relative_expr = relative_expr,
         disp_func = cds@dispFitInfo[["blind"]]$disp_func,
         clean_model = clean_model,
@@ -129,7 +109,7 @@ fit_models <- function(cds,
       fit_model_helper,
       convert_to_dense = TRUE,
       modelFormulaStr = modelFormulaStr,
-      expressionFamily = cds@expressionFamily,
+      expression_family = cds@expression_family,
       relative_expr = relative_expr,
       disp_func = cds@dispFitInfo[["blind"]]$disp_func,
       clean_model = clean_model,
@@ -140,13 +120,13 @@ fit_models <- function(cds,
   term_labels =  unlist(head(lapply(lapply(f[which(is.na(f) == FALSE)], coef), names), n =
                                1))
 
-  M_f = as_tibble(fData(cds))
+  M_f = tibble::as_tibble(fData(cds))
   M_f$model = f
   M_f
 }
 
-extract_coefficient_helper = function(model, term_labels, pseudo_expr =
-                                        0.01) {
+extract_coefficient_helper = function(model, term_labels,
+                                      pseudo_expr = 0.01) {
   if (class(model) %in% c("vglm", "vgam")) {
     SM = summary(model, HDEtest = FALSE, presid = FALSE)
     coef_mat = SM@coef3 # first row is intercept
@@ -156,7 +136,7 @@ extract_coefficient_helper = function(model, term_labels, pseudo_expr =
     )
     )
     log_eff_over_int[1] = 0
-    coef_mat = as_tibble(coef_mat, rownames = "term")
+    coef_mat = tibble::as_tibble(coef_mat, rownames = "term")
     coef_mat$normalized_effect = log_eff_over_int
     return (coef_mat)
   } else if (length(intersect(class(model), c("glm"))) >= 1) {
@@ -165,29 +145,16 @@ extract_coefficient_helper = function(model, term_labels, pseudo_expr =
     log_eff_over_int = log2((model$family$linkinv(coef_mat[, 1] + coef_mat[1, 1]) + pseudo_expr) /
                             rep(model$family$linkinv(coef_mat[1, 1]) + pseudo_expr, times = nrow(coef_mat)))
     log_eff_over_int[1] = 0
-    coef_mat = as_tibble(coef_mat, rownames = "term")
+    coef_mat = tibble::as_tibble(coef_mat, rownames = "term")
     coef_mat$normalized_effect = log_eff_over_int
     return (coef_mat)
   } else {
-    # coef_mat = matrix(NA, nrow = length(term_labels), ncol = 5)
-    # row.names(coef_mat) = term_labels
-    # colnames(coef_mat) = c('Estimate',
-    #                        'Std. Error',
-    #                        'z value',
-    #                        'Pr(>|z|)',
-    #                        'normalized_effect')
-    # coef_mat = as_tibble(coef_mat, rownames = "term")
     return(NA)
   }
 }
 
 #' Extracts a table of coefficients from a tibble containing model objects
-
-#' @importFrom purrr map
-#' @importFrom tidyr unnest
-#' @importFrom tibble as_tibble
 #' @importFrom dplyr %>%
-#' @importFrom dplyr mutate
 #' @export
 coefficient_table <- function(model_tbl) {
   M_f = model_tbl %>%

@@ -1,13 +1,10 @@
-library(HSMMSingleCell)
-library(monocle)
-library(DDRTree)
 context("fitModels")
 
 test_that("fitModels() properly validates its input",{
-  cds = load_a549()
+  cds <- load_a549()
 
   full_model_fits <- fit_models(cds, modelFormulaStr = "~log_dose")
-  coef_table = coefficient_table(full_model_fits)
+  coef_table <- coefficient_table(full_model_fits)
   expect_equal(colnames(diff_test_res), c("status", "family", "pval", "qval"))
   expect_equal(levels(diff_test_res$status),"OK")
   expect_equal(levels(diff_test_res$family), "negbinomial.size")
