@@ -4,8 +4,7 @@
 \alias{fit_models}
 \title{Fits a model for each gene in a CellDataSet object.}
 \usage{
-fit_models(cds, modelFormulaStr = "~sm.ns(Pseudotime, df=3)",
-  relative_expr = TRUE, cores = 1, clean_model = TRUE,
+fit_models(cds, modelFormulaStr, cores = 1, clean_model = TRUE,
   verbose = FALSE)
 }
 \arguments{
@@ -13,9 +12,9 @@ fit_models(cds, modelFormulaStr = "~sm.ns(Pseudotime, df=3)",
 
 \item{modelFormulaStr}{a formula string specifying the model to fit for the genes.}
 
-\item{relative_expr}{Whether to fit a model to relative or absolute expression. Only meaningful for count-based expression data. If TRUE, counts are normalized by Size_Factor prior to fitting.}
-
 \item{cores}{the number of processor cores to be used during fitting.}
+
+\item{relative_expr}{Whether to fit a model to relative or absolute expression. Only meaningful for count-based expression data. If TRUE, counts are normalized by Size_Factor prior to fitting.}
 }
 \value{
 a tibble containing VGAM model objects

@@ -4,8 +4,8 @@
 \alias{fit_model_helper}
 \title{Helper function for model fitting}
 \usage{
-fit_model_helper(x, modelFormulaStr, expression_family, relative_expr,
-  disp_func = NULL, clean_model = TRUE, verbose = FALSE, ...)
+fit_model_helper(x, modelFormulaStr, expression_family, disp_func = NULL,
+  clean_model = TRUE, verbose = FALSE, ...)
 }
 \arguments{
 \item{x}{test}
@@ -14,13 +14,13 @@ fit_model_helper(x, modelFormulaStr, expression_family, relative_expr,
 
 \item{expression_family}{specifies the family function used for expression responses}
 
-\item{relative_expr}{Whether to transform expression into relative values}
-
 \item{disp_func}{test}
 
 \item{verbose}{Whether to show VGAM errors and warnings. Only valid for cores = 1.}
 
 \item{...}{test}
+
+\item{relative_expr}{Whether to transform expression into relative values}
 }
 \description{
 test

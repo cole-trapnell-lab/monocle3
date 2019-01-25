@@ -24,7 +24,6 @@ clean_vgam_model_object = function(model) {
 fit_model_helper <- function(x,
                              modelFormulaStr,
                              expression_family,
-                             relative_expr,
                              disp_func = NULL,
                              clean_model = TRUE,
                              verbose = FALSE,
@@ -35,12 +34,10 @@ fit_model_helper <- function(x,
   # FIXME: should we be using this here?
   # x <- x + pseudocount
   if (expression_family %in% c("negbinomial", "poisson", "zinegbinomial", "zipoisson", "quasipoisson")) {
-    if (relative_expr) {
-      x <- x / Size_Factor
-    }
+    x <- x / Size_Factor
     f_expression <- round(x)
   }
-  else if (expression_family %in% c("gaussian", "binomial")) {
+  else if (expression_family %in% c("binomial", "gaussian")) {
     f_expression <- x
   }
   else {
@@ -51,16 +48,20 @@ fit_model_helper <- function(x,
   model_formula = as.formula(modelFormulaStr)
 
   tryCatch({
-    FM_fit = switch(expression_family,
+    if (verbose) messageWrapper = function(expr) { expr }
+    else messageWrapper = suppressWarnings
+
+    FM_fit = messageWrapper(switch(expression_family,
                     "negbinomial" = MASS::glm.nb(model_formula, epsilon=1e-3),
                     "poisson" = speedglm::speedglm(model_formula, family = poisson(), acc=1e-3),
                     "quasipoisson" = speedglm::speedglm(model_formula, family = quasipoisson(), acc=1e-3),
+                    "binomial" = speedglm::speedglm(model_formula, family = binomial(), acc=1e-3),
                     "zipoisson" = pscl::zeroinfl(model_formula, dist="poisson"),
                     "zinegbinomial" = pscl::zeroinfl(model_formula, dist="negbin")
-                    )
+                    ))
     FM_fit
   }, error = function(e) {
-    print (e)
+    if (verbose) { print (e) }
     NA
   })
 }
@@ -84,8 +85,7 @@ fit_model_helper <- function(x,
 #' @return a tibble containing VGAM model objects
 #' @export
 fit_models <- function(cds,
-                     modelFormulaStr = "~sm.ns(Pseudotime, df=3)",
-                     relative_expr = TRUE,
+                     modelFormulaStr,
                      cores = 1,
                      clean_model = TRUE,
                      verbose = FALSE) {
@@ -99,7 +99,6 @@ fit_models <- function(cds,
         cores = cores,
         modelFormulaStr = modelFormulaStr,
         expression_family = cds@expression_family,
-        relative_expr = relative_expr,
         disp_func = cds@dispFitInfo[["blind"]]$disp_func,
         clean_model = clean_model,
         verbose = verbose
@@ -113,7 +112,6 @@ fit_models <- function(cds,
       convert_to_dense = TRUE,
       modelFormulaStr = modelFormulaStr,
       expression_family = cds@expression_family,
-      relative_expr = relative_expr,
       disp_func = cds@dispFitInfo[["blind"]]$disp_func,
       clean_model = clean_model,
       verbose = verbose
@@ -128,7 +126,7 @@ fit_models <- function(cds,
   M_f
 }
 
-extract_coefficient_helper = function(model, term_labels, pseudo_expr =
+extract_coefficient_helper = function(model, pseudo_expr =
                                         0.01) {
   if (length(intersect(class(model), c("glm", "speedglm"))) >= 1) {
     SM = summary(model)
@@ -144,21 +142,21 @@ extract_coefficient_helper = function(model, term_labels, pseudo_expr =
     return (coef_mat)
 
   } else if (class(model) == "zeroinfl"){
-    SM = summary(model)
+    SM = pscl:::summary.zeroinfl(model)
     count_coef_mat = SM$coefficients$count # first row is intercept
     log_eff_over_int = log2((model$linkinv(count_coef_mat[, 1] + count_coef_mat[1, 1]) + pseudo_expr) /
                               rep(model$linkinv(count_coef_mat[1, 1]) + pseudo_expr, times = nrow(count_coef_mat)))
     log_eff_over_int[1] = 0
-    count_coef_mat = as_tibble(count_coef_mat, rownames = "term")
+    count_coef_mat = tibble::as_tibble(count_coef_mat, rownames = "term")
     count_coef_mat$normalized_effect = log_eff_over_int
     count_coef_mat$model_component = "count"
 
     zero_coef_mat = SM$coefficients$zero # first row is intercept
-    zero_coef_mat = as_tibble(zero_coef_mat, rownames = "term")
+    zero_coef_mat = tibble::as_tibble(zero_coef_mat, rownames = "term")
     zero_coef_mat$normalized_effect = NA
     zero_coef_mat$model_component = "zero"
     coef_mat = dplyr::bind_rows(count_coef_mat, zero_coef_mat)
-    return (count_coef_mat)
+    return (coef_mat)
   }else {
     coef_mat = matrix(NA, nrow = 1, ncol = 5)
     colnames(coef_mat) = c('Estimate',
@@ -166,7 +164,7 @@ extract_coefficient_helper = function(model, term_labels, pseudo_expr =
                            'z value',
                            'Pr(>|z|)',
                            'normalized_effect')
-    coef_mat = as_tibble(coef_mat)
+    coef_mat = tibble:as_tibble(coef_mat)
     coef_mat$term = NA
     coef_mat$model_component = NA
     return(coef_mat)
@@ -174,10 +172,22 @@ extract_coefficient_helper = function(model, term_labels, pseudo_expr =
 }
 
 #' Extracts a table of coefficients from a tibble containing model objects
-#' @importFrom dplyr %>%
+#' @importFrom dplyr %>% rename
 #' @export
 coefficient_table <- function(model_tbl) {
   M_f = model_tbl %>%
-    dplyr::mutate(terms = purrr::map(.f = purrr::possibly(extract_coefficient_helper, NA_real_), .x = model, term_labels)) %>% tidyr::unnest(terms)
+    dplyr::mutate(terms = purrr::map(.f = purrr::possibly(extract_coefficient_helper, NA_real_), .x = model)) %>%
+    tidyr::unnest(terms) %>%
+    dplyr::rename(estimate = Estimate,
+                  std_err = `Std. Error`)
+  if ("z value" %in% colnames(M_f))
+    M_f = M_f %>% dplyr::rename(test_val = `z value`)
+  if ("t value" %in% colnames(M_f))
+    M_f = M_f %>% dplyr::rename(test_val = `t value`)
+  if ("Pr(>|z|)" %in% colnames(M_f))
+    M_f = M_f %>% dplyr::rename(p_value = `Pr(>|z|)`)
+  if ("Pr(>|t|)" %in% colnames(M_f))
+    M_f = M_f %>% dplyr::rename(p_value = `Pr(>|t|)`)
+
   return(M_f)
 }
