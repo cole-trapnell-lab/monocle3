@@ -151,12 +151,12 @@ sparse_par_c_apply <- function (cl = NULL, x, FUN, convert_to_dense, ...)
 }
 
 
-#' Multicore apply-like function for CellDataSet
+#' Multicore apply-like function for cell_data_set
 #'
 #' mcesApply computes the row-wise or column-wise results of FUN, just like esApply.
 #' Variables in pData from X are available in FUN.
 #'
-#' @param X a CellDataSet object
+#' @param X a cell_data_set object
 #' @param MARGIN The margin to apply to, either 1 for rows (samples) or 2 for columns (features)
 #' @param FUN Any function
 #' @param required_packages A list of packages FUN will need. Failing to provide packages needed by FUN will generate errors in worker threads.
@@ -230,7 +230,7 @@ smart_es_apply <- function(X, MARGIN, FUN, convert_to_dense, ...) {
 
 
 
-#' Build a CellDataSet from the data stored in inst/extdata directory.
+#' Build a cell_data_set from the data stored in inst/extdata directory.
 #' @export
 load_a549 <- function(){
 
@@ -246,7 +246,7 @@ load_a549 <- function(){
   pd <- new("AnnotatedDataFrame", data = small_a549_pdata_df)
   fd <- new("AnnotatedDataFrame", data = small_a549_fdata_df)
 
-  # Now, make a new CellDataSet using the RNA counts
+  # Now, make a new cell_data_set using the RNA counts
   cds <- new_cell_data_set(small_a549_exprs,
                          phenoData = pd,
                          featureData = fd,

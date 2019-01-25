@@ -7,12 +7,12 @@
 reducedDimS(cds) <- value
 }
 \arguments{
-\item{cds}{A CellDataSet object.}
+\item{cds}{A cell_data_set object.}
 
 \item{value}{A matrix of coordinates specifying each cell's position in the reduced-dimensionality space.}
 }
 \value{
-An update CellDataSet object
+An update cell_data_set object
 }
 \description{
 This function sets the coordinates of each cell in a new

@@ -2,14 +2,14 @@
 % Please edit documentation in R/reduce_dimensions.R
 \name{reduce_dimension}
 \alias{reduce_dimension}
-\title{Compute a projection of a CellDataSet object into a lower dimensional space with non-linear dimension reduction methods}
+\title{Compute a projection of a cell_data_set object into a lower dimensional space with non-linear dimension reduction methods}
 \usage{
 reduce_dimension(cds, max_components = 2, reduction_method = c("UMAP",
   "tSNE", "none"), auto_param_selection = TRUE, scaling = TRUE,
   verbose = FALSE, ...)
 }
 \arguments{
-\item{cds}{the CellDataSet upon which to perform this operation}
+\item{cds}{the cell_data_set upon which to perform this operation}
 
 \item{max_components}{the dimensionality of the reduced space}
 
@@ -24,7 +24,7 @@ reduce_dimension(cds, max_components = 2, reduction_method = c("UMAP",
 \item{...}{additional arguments to pass to the dimensionality reduction function}
 }
 \value{
-an updated CellDataSet object
+an updated cell_data_set object
 }
 \description{
 Monocle aims to learn how cells transition through a biological program of
@@ -37,7 +37,7 @@ the harder the trajectory is to learn. Fortunately, many genes typically
 co-vary with one another, and so the dimensionality of the data can be
 reduced with a wide variety of different algorithms. Monocle provides two
 different algorithms for dimensionality reduction via \code{reduce_dimension}.
-Both take a CellDataSet object and a number of dimensions allowed for the
+Both take a cell_data_set object and a number of dimensions allowed for the
 reduced space. You can also provide a model formula indicating some variables
 (e.g. batch ID or other technical factors) to "subtract" from the data so it
 doesn't contribute to the trajectory.
@@ -45,7 +45,7 @@ doesn't contribute to the trajectory.
 \details{
 You can choose a few different reduction algorithms: Independent Component
 Analysis (ICA) and Discriminative Dimensionality Reduction with Trees (DDRTree).
-The choice impacts numerous downstream analysis steps, including \code{\link{orderCells}}.
+The choice impacts numerous downstream analysis steps, including \code{\link{order_cells}}.
 Choosing ICA will execute the ordering procedure described in Trapnell and Cacchiarelli et al.,
 which was implemented in Monocle version 1. \code{\link[DDRTree]{DDRTree}} is a more recent manifold
 learning algorithm developed by Qi Mao and colleages. It is substantially more
@@ -61,7 +61,7 @@ Prior to reducing the dimensionality of the data, it usually helps
 to normalize it so that highly expressed or highly variable genes don't
 dominate the computation. \code{reduce_dimension()} automatically transforms
 the data in one of several ways depending on the \code{expression_family} of
-the CellDataSet object. If the expression_family is \code{negbinomial} or \code{negbinomial.size}, the
+the cell_data_set object. If the expression_family is \code{negbinomial} or \code{negbinomial.size}, the
 data are variance-stabilized. If the expression_family is \code{Tobit}, the data
 are adjusted by adding a pseudocount (of 1 by default) and then log-transformed.
 If you don't want any transformation at all, set norm_method to "none" and

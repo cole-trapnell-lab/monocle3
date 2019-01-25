@@ -10,14 +10,14 @@
 #' co-vary with one another, and so the dimensionality of the data can be
 #' reduced with a wide variety of different algorithms. Monocle provides two
 #' different algorithms for dimensionality reduction via \code{reduceDimension}.
-#' Both take a CellDataSet object and a number of dimensions allowed for the
+#' Both take a cell_data_set object and a number of dimensions allowed for the
 #' reduced space. You can also provide a model formula indicating some variables
 #' (e.g. batch ID or other technical factors) to "subtract" from the data so it
 #' doesn't contribute to the trajectory.
 #'
 #' @details You can choose two different reduction algorithms: Independent Component
 #' Analysis (ICA) and Discriminative Dimensionality Reduction with Trees (DDRTree).
-#' The choice impacts numerous downstream analysis steps, including \code{\link{orderCells}}.
+#' The choice impacts numerous downstream analysis steps, including \code{\link{order_cells}}.
 #' Choosing ICA will execute the ordering procedure described in Trapnell and Cacchiarelli et al.,
 #' which was implemented in Monocle version 1. \code{\link[DDRTree]{DDRTree}} is a more recent manifold
 #' learning algorithm developed by Qi Mao and colleages. It is substantially more
@@ -30,7 +30,7 @@
 #' through \code{residualModelFormulaStr}.
 #'
 #'
-#' @param cds the CellDataSet upon which to perform this operation
+#' @param cds the cell_data_set upon which to perform this operation
 #' @param max_components the dimensionality of the reduced space
 #' @param rge_method Determines how to transform expression values prior to reducing dimensionality
 #' @param auto_param_selection when this argument is set to TRUE (default), it will automatically calculate the proper value for the ncenter (number of centroids) parameters which will be passed into DDRTree call.
@@ -48,7 +48,7 @@
 #' @param orthogonal_proj_tip Whether to perform orthogonal projection for cells corresponding to the tip principal points. Default to be FALSE
 #' @param verbose Whether to emit verbose output during dimensionality reduction
 #' @param ... additional arguments to pass to the dimensionality reduction function
-#' @return an updated CellDataSet object
+#' @return an updated cell_data_set object
 #' @references DDRTree: Qi Mao, Li Wang, Steve Goodison, and Yijun Sun. Dimensionality reduction via graph structure learning. In Proceedings of the 21th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining, pages 765–774. ACM, 2015.
 #' @references L1graph (generalized SimplePPT): Qi Mao, Li Wang, Ivor Tsang, and Yijun Sun. Principal graph and structure learning based on reversed graph embedding . IEEE Trans. Pattern Anal. Mach. Intell., 5 December 2016.
 #' @references Original SimplePPT: Qi Mao, Le Yang, Li Wang, Steve Goodison, Yijun Sun. SimplePPT: A Simple Principal Tree Algorithm https://epubs.siam.org/doi/10.1137/1.9781611974010.89
@@ -772,11 +772,10 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE, ver
   }
 
   dp_mst <- igraph::graph.data.frame(dp_mst_df, directed = FALSE)
-  cds@aux_ordering_data[[cds@rge_method]]$pr_graph_cell_proj_tree <- dp_mst # + cds@minSpanningTree
-  cds@aux_ordering_data[[cds@rge_method]]$pr_graph_cell_proj_dist <- P #dp, P projection point not output
-  cds@aux_ordering_data[[cds@rge_method]]$pr_graph_cell_proj_closest_vertex <- closest_vertex_df #as.matrix(closest_vertex)
+  cds@aux_ordering_data[[cds@rge_method]]$pr_graph_cell_proj_tree <- dp_mst
+  cds@aux_ordering_data[[cds@rge_method]]$pr_graph_cell_proj_dist <- P
+  cds@aux_ordering_data[[cds@rge_method]]$pr_graph_cell_proj_closest_vertex <- closest_vertex_df
 
-  # minSpanningTree(cds) <- gp # this may create problem
   cds
 }
 

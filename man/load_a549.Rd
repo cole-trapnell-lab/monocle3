@@ -2,10 +2,10 @@
 % Please edit documentation in R/utils.R
 \name{load_a549}
 \alias{load_a549}
-\title{Build a CellDataSet from the data stored in inst/extdata directory.}
+\title{Build a cell_data_set from the data stored in inst/extdata directory.}
 \usage{
 load_a549()
 }
 \description{
-Build a CellDataSet from the data stored in inst/extdata directory.
+Build a cell_data_set from the data stored in inst/extdata directory.
 }
