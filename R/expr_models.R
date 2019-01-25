@@ -13,7 +13,7 @@ clean_vgam_model_object = function(model) {
 #' @title Helper function for model fitting
 #' @description test
 #' @param x test
-#' @param modelFormulaStr a formula string specifying the model to fit for the genes.
+#' @param model_formula_str a formula string specifying the model to fit for the genes.
 #' @param expression_family specifies the family function used for expression responses
 #' @param relative_expr Whether to transform expression into relative values
 #' @param disp_func test
@@ -22,13 +22,13 @@ clean_vgam_model_object = function(model) {
 #' @name fit_model_helper
 #' @keywords internal
 fit_model_helper <- function(x,
-                             modelFormulaStr,
+                             model_formula_str,
                              expression_family,
                              disp_func = NULL,
                              clean_model = TRUE,
                              verbose = FALSE,
                              ...) {
-  modelFormulaStr <- paste("f_expression", modelFormulaStr,
+  model_formula_str <- paste("f_expression", model_formula_str,
                            sep = "")
   orig_x <- x
   # FIXME: should we be using this here?
@@ -45,7 +45,7 @@ fit_model_helper <- function(x,
     f_expression <- log10(x)
   }
   f_expression = as.numeric(f_expression)
-  model_formula = as.formula(modelFormulaStr)
+  model_formula = as.formula(model_formula_str)
 
   tryCatch({
     if (verbose) messageWrapper = function(expr) { expr }
@@ -79,13 +79,13 @@ fit_model_helper <- function(x,
 #' additional covariates (e.g. day collected, genotype of cells, media conditions, etc).
 #'
 #' @param cds the cell_data_set upon which to perform this operation
-#' @param modelFormulaStr a formula string specifying the model to fit for the genes.
+#' @param model_formula_str a formula string specifying the model to fit for the genes.
 #' @param relative_expr Whether to fit a model to relative or absolute expression. Only meaningful for count-based expression data. If TRUE, counts are normalized by Size_Factor prior to fitting.
 #' @param cores the number of processor cores to be used during fitting.
 #' @return a tibble containing VGAM model objects
 #' @export
 fit_models <- function(cds,
-                     modelFormulaStr,
+                     model_formula_str,
                      cores = 1,
                      clean_model = TRUE,
                      verbose = FALSE) {
@@ -97,7 +97,7 @@ fit_models <- function(cds,
         fit_model_helper,
         required_packages = c("BiocGenerics", "Biobase", "pscl", "speedglm", "plyr", "Matrix"),
         cores = cores,
-        modelFormulaStr = modelFormulaStr,
+        model_formula_str = model_formula_str,
         expression_family = cds@expression_family,
         disp_func = cds@dispFitInfo[["blind"]]$disp_func,
         clean_model = clean_model,
@@ -110,7 +110,7 @@ fit_models <- function(cds,
       1,
       fit_model_helper,
       convert_to_dense = TRUE,
-      modelFormulaStr = modelFormulaStr,
+      model_formula_str = model_formula_str,
       expression_family = cds@expression_family,
       disp_func = cds@dispFitInfo[["blind"]]$disp_func,
       clean_model = clean_model,
@@ -190,4 +190,30 @@ coefficient_table <- function(model_tbl) {
     M_f = M_f %>% dplyr::rename(p_value = `Pr(>|t|)`)
 
   return(M_f)
+}
+
+#' Compares goodness of fit for two ways of fitting a set of genes' expression
+#' @importFrom dplyr %>% mutate full_join
+#' @importFrom purrr map2
+#' @importFrom lmtest lrtest
+#' @export
+compare_models <- function(model_tbl_x, model_tbl_y){
+  joined_fits = dplyr::full_join(model_tbl_x, model_tbl_y, by=c("id", "gene_short_name", "num_cells_expressed"))
+  joined_fits = joined_fits %>% dplyr::mutate(lr_test_p_value = purrr::map2_dbl(model.x, model.y,
+                    function(x, y) {
+                      if (identical(class(x), class(y))){
+                        as.data.frame(lmtest::lrtest(x,y))[2,5]
+                      } else {
+                        NA
+                      }
+
+                      } ) )
+  return (joined_fits)
+}
+
+#' @export
+#' @importFrom broom glance
+#' @importFrom tidyr unnest
+evaluate_fits = function(model_tbl){
+  model_tbl %>% dplyr::mutate(glanced = purrr::map(model, broom::glance)) %>% tidyr::unnest(glanced, .drop=TRUE)
 }
