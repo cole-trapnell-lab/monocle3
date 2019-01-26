@@ -96,7 +96,7 @@ cds <- learn_graph(cds)
 ```{r}
 plot_cell_trajectory(cds,
                      color_by = "cell_type2") +
-                     scale_color_manual(values = cell_type_color)
+                     ggplot2::scale_color_manual(values = cell_type_color)
 ```
 
 

@@ -75,14 +75,14 @@ principal_graph_test <- function(cds,
   row.names(test_res) <- test_res[, 1] #remove the first column and set the row names to the first column
   test_res[, 1] <- NULL
   test_res$qval <- 1
-  test_res$qval[which(test_res$status == 'OK')] <- p.adjust(subset(test_res, status == 'OK')[, 'pval'], method="BH")
+  test_res$qval[which(test_res$status == 'OK')] <- stats::p.adjust(subset(test_res, status == 'OK')[, 'pval'], method="BH")
   test_res[row.names(cds), ] # make sure gene name ordering in the DEG test result is the same as the CDS
 }
 
 my.moran.test <- function (x, listw, wc, alternative = "greater", randomisation = TRUE) {
   zero.policy = TRUE
   adjust.n = TRUE
-  na.action = na.fail
+  na.action = stats::na.fail
   drop.EI2 = FALSE
   xname <- deparse(substitute(x))
   wname <- deparse(substitute(listw))
@@ -129,10 +129,10 @@ my.moran.test <- function (x, listw, wc, alternative = "greater", randomisation 
   statistic <- ZI
   names(statistic) <- "Moran I statistic standard deviate"
   if (alternative == "two.sided")
-    PrI <- 2 * pnorm(abs(ZI), lower.tail = FALSE)
+    PrI <- 2 * stats::pnorm(abs(ZI), lower.tail = FALSE)
   else if (alternative == "greater")
-    PrI <- pnorm(ZI, lower.tail = FALSE)
-  else PrI <- pnorm(ZI)
+    PrI <- stats::pnorm(ZI, lower.tail = FALSE)
+  else PrI <- stats::pnorm(ZI)
   if (!is.finite(PrI) || PrI < 0 || PrI > 1)
     warning("Out-of-range p-value: reconsider test arguments")
   vec <- c(I, EI, VI)
@@ -191,10 +191,10 @@ my.geary.test <- function (x, listw, wc, randomisation = TRUE, alternative = "gr
   PrC <- NA
   if (is.finite(ZC)) {
     if (alternative == "two.sided")
-      PrC <- 2 * pnorm(abs(ZC), lower.tail = FALSE)
+      PrC <- 2 * stats::pnorm(abs(ZC), lower.tail = FALSE)
     else if (alternative == "greater")
-      PrC <- pnorm(ZC, lower.tail = FALSE)
-    else PrC <- pnorm(ZC)
+      PrC <- stats::pnorm(ZC, lower.tail = FALSE)
+    else PrC <- stats::pnorm(ZC)
     if (!is.finite(PrC) || PrC < 0 || PrC > 1)
       warning("Out-of-range p-value: reconsider test arguments")
   }
@@ -335,7 +335,7 @@ calculateLW <- function(cds, k = 25, return_sparse_matrix = FALSE,
       message('start calculating valid kNN graph ...')
     }
 
-    pb_feasible_knn <- txtProgressBar(max = num_blocks, file = "", style = 3, min = 0)
+    pb_feasible_knn <- utils::txtProgressBar(max = num_blocks, file = "", style = 3, min = 0)
     tmp <- NULL
 
     for (j in 1:num_blocks){
@@ -354,7 +354,7 @@ calculateLW <- function(cds, k = 25, return_sparse_matrix = FALSE,
       } else {
         tmp <- rBind(tmp, cur_tmp)
       }
-      setTxtProgressBar(pb = pb_feasible_knn, value = pb_feasible_knn$getVal() + 1)
+      utils::setTxtProgressBar(pb = pb_feasible_knn, value = pb_feasible_knn$getVal() + 1)
     }
 
     close(pb_feasible_knn)

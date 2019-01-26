@@ -9,7 +9,7 @@
 #' the harder the trajectory is to learn. Fortunately, many genes typically
 #' co-vary with one another, and so the dimensionality of the data can be
 #' reduced with a wide variety of different algorithms. Monocle provides two
-#' different algorithms for dimensionality reduction via \code{reduceDimension}.
+#' different algorithms for dimensionality reduction via \code{reduce_dimension}.
 #' Both take a cell_data_set object and a number of dimensions allowed for the
 #' reduced space. You can also provide a model formula indicating some variables
 #' (e.g. batch ID or other technical factors) to "subtract" from the data so it
@@ -131,7 +131,7 @@ learn_graph <- function(cds,
       }
 
       centers <- t(X)[seq(1, ncol(X), length.out=ncenter), , drop = F]
-      centers <- centers + matrix(rnorm(length(centers), sd = 1e-10), nrow = nrow(centers)) # add random noise
+      centers <- centers + matrix(stats::rnorm(length(centers), sd = 1e-10), nrow = nrow(centers)) # add random noise
 
       kmean_res <- tryCatch({
         stats::kmeans(t(X), centers=centers, iter.max = 100)
@@ -203,7 +203,7 @@ learn_graph <- function(cds,
         dimnames(rge_res$W) <- list(colnames(rge_res$Y), colnames(rge_res$Y))
       }
 
-      stree <- as(rge_res$W, 'sparseMatrix')
+      stree <- methods::as(rge_res$W, 'sparseMatrix')
 
       if(prune_graph) {
         if(verbose) {
@@ -292,7 +292,7 @@ multi_component_RGE <- function(cds,
 
     if(rge_method %in% c('SimplePPT')) {
       centers <- t(X_subset)[seq(1, ncol(X_subset), length.out=ncenter), , drop = F]
-      centers <- centers + matrix(rnorm(length(centers), sd = 1e-10), nrow = nrow(centers)) # add random noise
+      centers <- centers + matrix(stats::rnorm(length(centers), sd = 1e-10), nrow = nrow(centers)) # add random noise
 
       kmean_res <- tryCatch({
         stats::kmeans(t(X_subset), centers=centers, iter.max = 100)

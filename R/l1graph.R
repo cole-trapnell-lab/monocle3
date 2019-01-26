@@ -55,8 +55,6 @@ calc_principal_graph <- function(X, C0, G,
     for(i in 1:K){
       # print(i)
       nn_i <- which(G[,i]==1)
-
-      # a <- as(matrix(0, nrow = 2*D, ncol = nvar), "sparseMatrix") #2D: |a| < b: -a, a
       a <- matrix(0, nrow = 2 * D, ncol = nvar)
       if (length(nn_i) >= 1){
         for(jj in 1:length(nn_i)){
@@ -74,7 +72,7 @@ calc_principal_graph <- function(X, C0, G,
       start_i <- nw + (i-1)*D + 1
       end_i <- start_i + D-1 #why do we need D - 1 here? should be just D, right?
       #those are the columns corresponding to the episilon
-      a[, start_i:end_i] = -rbind(eye(D,D), eye(D,D)) # |a| < b =>  a - b <= 0 & -b -a >= 0; eye: comes from the b (I matrix)
+      a[, start_i:end_i] = -rbind(matlab::eye(D,D), matlab::eye(D,D)) # |a| < b =>  a - b <= 0 & -b -a >= 0; eye: comes from the b (I matrix)
       A[((i - 1) * 2 * D + 1):((i) * 2 * D), ] <- a
       b[((i - 1) * 2 * D + 1):((i) * 2 * D), ] <- c(-X[, i], X[, i])
     }
@@ -106,26 +104,26 @@ calc_principal_graph <- function(X, C0, G,
       #another approach:
       # nrow a nonnegative integer value specifying the number of constaints in the linear program.
       # ncol a nonnegative integer value specifying the number of decision variables in the linear program.
-      lprec <- make.lp(length(b), length(f), verbose="important")
-      set.objfn(lprec, f)
+      lprec <- lpSolveAPI::make.lp(length(b), length(f), verbose="important")
+      lpSolveAPI::set.objfn(lprec, f)
       for(i in 1:nrow(A)) {
-        add.constraint(lprec, A[i, ], "<=", b[i, ])
+        lpSolveAPI::add.constraint(lprec, A[i, ], "<=", b[i, ])
       }
       # for(j in 1:nrow()) {
       # 	set.bounds(lprec, lower = c(rep(0, nw), -Inf*rep(1, K*D)), columns = 1:length(b))
       # }
-      set.bounds(lprec, lower = c(rep(0, nw), -Inf*rep(1, K*D))) #				set.bounds(lprec, lower = c(rep(0, nw), -Inf*rep(1, K*D)), columns = 1:length(b))
+      lpSolveAPI::set.bounds(lprec, lower = c(rep(0, nw), -Inf*rep(1, K*D))) #				set.bounds(lprec, lower = c(rep(0, nw), -Inf*rep(1, K*D)), columns = 1:length(b))
 
 
       #set objective direction
       #lp.control(lpmodel,sense='max')
 
       #solve the model, if this return 0 an optimal solution is found
-      lp.control(lprec, timeout = L1.timeout, presolve = "rows")
+      lpSolveAPI::lp.control(lprec, timeout = L1.timeout, presolve = "rows")
       solve(lprec)
 
-      obj_W <- get.objective(lprec)
-      w_eta <- get.variables(lprec)
+      obj_W <- lpSolveAPI::get.objective(lprec)
+      w_eta <- lpSolveAPI::get.variables(lprec)
 
       # %                                                           lb(w, )                      ub
       # %             % Mosek solver
@@ -242,7 +240,7 @@ generate_centers <- function(X, W, P, param.gamma){
   D <- nrow(X); N <- nrow(X)
   K <- ncol(W)
   # prevent singular
-  Q <- 2 *( diag(colSums(W)) - W ) + param.gamma * diag(colSums(P)) # + 1e-10.*eye(K,K);
+  Q <- 2 *( diag(colSums(W)) - W ) + param.gamma * diag(colSums(P))
   B <-  param.gamma * X %*% P;
   C <- B %*% solve(Q)   #equation 22
 

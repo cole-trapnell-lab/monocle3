@@ -45,7 +45,7 @@ fit_model_helper <- function(x,
     f_expression <- log10(x)
   }
   f_expression = as.numeric(f_expression)
-  model_formula = as.formula(model_formula_str)
+  model_formula = stats::as.formula(model_formula_str)
 
   tryCatch({
     if (verbose) messageWrapper = function(expr) { expr }
@@ -208,6 +208,8 @@ compare_models <- function(model_tbl_x, model_tbl_y){
   return (joined_fits)
 }
 
+#' @param model_tbl
+#'
 #' @export
 evaluate_fits = function(model_tbl){
   model_tbl %>% dplyr::mutate(glanced = purrr::map(model, broom::glance)) %>% tidyr::unnest(glanced, .drop=TRUE)

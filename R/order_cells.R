@@ -4,14 +4,14 @@
 #' Learns a "trajectory" describing the biological process the cells are
 #' going through, and calculates where each cell falls within that trajectory.
 #' Monocle learns trajectories in two steps. The first step is reducing the dimensionality
-#' of the data with \code{\link{reduceDimension}()}. The second is this function.
+#' of the data with \code{\link{reduce_dimension}()}. The second is this function.
 #' function. This function takes as input a cell_data_set and returns it with
 #' two new columns: \code{Pseudotime} and \code{State}, which together encode
 #' where each cell maps to the trajectory. \code{order_cells()} optionally takes
 #' a "root" state, which you can use to specify the start of the trajectory. If
 #' you don't provide a root state, one is selected arbitrarily.
 #'
-#' The \code{reduction_method} argument to \code{\link{reduceDimension}()}
+#' The \code{reduction_method} argument to \code{\link{reduce_dimension}()}
 #' determines which algorithm is used by \code{order_cells()} to learn the trajectory.
 #' If \code{reduction_method == "ICA"}, this function uses \emph{polygonal reconstruction}
 #' to learn the underlying trajectory. If \code{reduction_method == "DDRTree"},
@@ -47,14 +47,14 @@ order_cells <- function(cds,
   }
 
   if (is.null(cds@dim_reduce_type)){
-    stop("Error: dimensionality not yet reduced. Please call reduceDimension() and learnGraph() (for learning principal graph) before calling this function.")
+    stop("Error: dimensionality not yet reduced. Please call reduce_dimension() and learnGraph() (for learning principal graph) before calling this function.")
   }
   if (is.null(cds@rge_method)){
     stop("Error: principal graph has not learned yet. Please call learnGraph() before calling this function.")
   }
   # reducedDimA, S, and K are not NULL in the cds
   if (length(cds@reducedDimS) == 0) {
-    stop("Error: dimension reduction didn't prodvide correct results. Please check your reduceDimension() step and ensure correct dimension reduction are performed before calling this function.")
+    stop("Error: dimension reduction didn't prodvide correct results. Please check your reduce_dimension() step and ensure correct dimension reduction are performed before calling this function.")
   }
   if (length(cds@reducedDimK) == 0) {
     stop("Error: principal graph learning didn't prodvide correct results. Please check your learnGraph() step and ensure correct principal graph learning are performed before calling this function.")

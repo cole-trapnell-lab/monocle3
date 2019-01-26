@@ -260,7 +260,7 @@ compute_louvain_connected_components <- function(g, optim_res, qval_thresh=0.05,
   enrichment_mat <- num_links_ij
   num_links <- num_links_ij / total_edges
 
-  cluster_mat = matrix(p.adjust(cluster_mat), nrow=length(louvain_modules), ncol=length(louvain_modules))
+  cluster_mat = matrix(stats::p.adjust(cluster_mat), nrow=length(louvain_modules), ncol=length(louvain_modules))
 
   sig_links <- as.matrix(num_links)
   sig_links[cluster_mat > qval_thresh] = 0

@@ -16,28 +16,41 @@ operate on cell_data_set objects constitute the basic Monocle workflow.
 \section{Fields}{
 
 \describe{
-\item{\code{reducedDimS}}{Matrix of class numeric, containing the source values computed by Independent Components Analysis.}
+\item{\code{reducedDimS}}{Matrix of class numeric, containing the source values
+computed by Independent Components Analysis.}
 
-\item{\code{reducedDimW}}{Matrix of class numeric, containing the whitened expression values computed during Independent Components Analysis.}
+\item{\code{reducedDimW}}{Matrix of class numeric, containing the whitened
+expression values computed during Independent Components Analysis.}
 
-\item{\code{reducedDimA}}{Matrix of class numeric, containing the weight values computed by Independent Components Analysis.}
+\item{\code{reducedDimA}}{Matrix of class numeric, containing the weight values
+computed by Independent Components Analysis.}
 
-\item{\code{reducedDimK}}{A Matrix of class numeric, containing the pre-whitening matrix computed by Independent Components Analysis.}
+\item{\code{reducedDimK}}{A Matrix of class numeric, containing the pre-whitening
+matrix computed by Independent Components Analysis.}
 
-\item{\code{principal_graph}}{An Object of class igraph, containing the minimum spanning tree used by Monocle to order cells according to progress through a biological process.}
+\item{\code{principal_graph}}{An Object of class igraph, containing the minimum
+spanning tree used by Monocle to order cells according to progress through
+a biological process.}
 
-\item{\code{cellPairwiseDistances}}{A Matrix of class numeric, containing the pairwise distances between cells in the reduced dimension space.}
+\item{\code{cellPairwiseDistances}}{A Matrix of class numeric, containing the
+pairwise distances between cells in the reduced dimension space.}
 
-\item{\code{expression_family}}{An Object of class character, specifying the expression family function used for expression responses.}
+\item{\code{expression_family}}{An Object of class character, specifying the
+expression family function used for expression responses.}
 
-\item{\code{lower_detection_limit}}{A numeric value specifying the minimum expression level considered to be true expression.}
+\item{\code{lower_detection_limit}}{A numeric value specifying the minimum
+expression level considered to be true expression.}
 
-\item{\code{disp_fit_info}}{An environment containing lists, one for each set of estimated dispersion values. See estimateDispersions.}
+\item{\code{disp_fit_info}}{An environment containing lists, one for each set of
+estimated dispersion values. See estimateDispersions.}
 
-\item{\code{dim_reduce_type}}{A string encoding how this cell_data_set has been reduced in dimensionality}
+\item{\code{dim_reduce_type}}{A string encoding how this cell_data_set has been
+reduced in dimensionality}
 
-\item{\code{rge_method}}{A string encoding how this cell_data_set has been fitted with a principal graph}
+\item{\code{rge_method}}{A string encoding how this cell_data_set has been fitted
+with a principal graph}
 
-\item{\code{aux_ordering_data}}{An environment of auxilliary data structures used by various steps in Monocle. Not to be accessed by users directly.}
+\item{\code{aux_ordering_data}}{An environment of auxilliary data structures used
+by various steps in Monocle. Not to be accessed by users directly.}
 }}
 
