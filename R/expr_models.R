@@ -208,16 +208,17 @@ compare_models <- function(model_tbl_x, model_tbl_y){
   return (joined_fits)
 }
 
+#' @importFrom dplyr %>%
 #' @export
 evaluate_fits = function(model_tbl){
   private_glance = function(m){
     zeroinfl_glance = function(m) {
-      tibble::tibble(null.deviance = NA,
+      tibble::tibble(null.deviance = NA_real_,
              df.null = m$df.null,
              logLik = as.numeric(logLik(m)),
              AIC = AIC(m),
              BIC = AIC(m),
-             deviance = NA,
+             deviance = NA_real_,
              df.residual = m$df.residual)
     }
 
@@ -226,16 +227,27 @@ evaluate_fits = function(model_tbl){
                      df.null = m$nulldf,
                      logLik = m$logLik,
                      AIC = m$aic,
-                     BIC = NA,
+                     BIC = NA_real_,
                      deviance = m$deviance,
                      df.residual = m$df)
+    }
+    default_glance = function(m) {
+      tibble::tibble(null.deviance = NA_real_,
+                     df.null = NA_integer_,
+                     logLik = NA_real_,
+                     AIC = NA_real_,
+                     BIC = NA_real_,
+                     deviance = NA_real_,
+                     df.residual = NA_integer_)
     }
 
     tryCatch({broom::glance(m)},
              error = function(e) {
                switch(class(m)[1],
                       "zeroinfl" = zeroinfl_glance(m),
-                      "speedglm" = speedglm_glance(m))
+                      "speedglm" = speedglm_glance(m),
+                      default_glance(m)
+                      )
              })
 
   }

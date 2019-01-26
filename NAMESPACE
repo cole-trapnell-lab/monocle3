@@ -32,14 +32,4 @@ importFrom(Biobase,fData)
 importFrom(Biobase,pData)
 importFrom(Rcpp,sourceCpp)
 importFrom(dplyr,"%>%")
-<<<<<<< HEAD
-importFrom(dplyr,full_join)
-importFrom(dplyr,mutate)
-importFrom(dplyr,rename)
-importFrom(lmtest,lrtest)
-importFrom(purrr,map2)
-importFrom(tibble,tibble)
-importFrom(tidyr,unnest)
-=======
->>>>>>> 93b27f186fe407b63c8f9988d2a1da66635d0986
 useDynLib(monocle3, .registration = TRUE)
