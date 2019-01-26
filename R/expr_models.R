@@ -66,19 +66,19 @@ fit_model_helper <- function(x,
   })
 }
 
-#' Fits a model for each gene in a CellDataSet object.
+#' Fits a model for each gene in a cell_data_set object.
 #'
-#' This function fits a vector generalized additive model (VGAM) from the VGAM package for each gene in a CellDataSet.
+#' This function fits a vector generalized additive model (VGAM) from the VGAM package for each gene in a cell_data_set
 #' By default, expression levels are modeled as smooth functions of the Pseudotime value of each
 #' cell. That is, expression is a function of progress through the biological process.  More complicated formulae can be provided to account for
 #' additional covariates (e.g. day collected, genotype of cells, media conditions, etc).
 #'
-#' This function fits a vector generalized additive model (VGAM) from the VGAM package for each gene in a CellDataSet.
+#' This function fits a vector generalized additive model (VGAM) from the VGAM package for each gene in a cell_data_set
 #' By default, expression levels are modeled as smooth functions of the Pseudotime value of each
 #' cell. That is, expression is a function of progress through the biological process.  More complicated formulae can be provided to account for
 #' additional covariates (e.g. day collected, genotype of cells, media conditions, etc).
 #'
-#' @param cds the CellDataSet upon which to perform this operation
+#' @param cds the cell_data_set upon which to perform this operation
 #' @param model_formula_str a formula string specifying the model to fit for the genes.
 #' @param relative_expr Whether to fit a model to relative or absolute expression. Only meaningful for count-based expression data. If TRUE, counts are normalized by Size_Factor prior to fitting.
 #' @param cores the number of processor cores to be used during fitting.
@@ -172,7 +172,7 @@ extract_coefficient_helper = function(model, pseudo_expr =
 }
 
 #' Extracts a table of coefficients from a tibble containing model objects
-#' @importFrom dplyr %>% rename
+#' @importFrom dplyr %>%
 #' @export
 coefficient_table <- function(model_tbl) {
   M_f = model_tbl %>%
@@ -193,9 +193,6 @@ coefficient_table <- function(model_tbl) {
 }
 
 #' Compares goodness of fit for two ways of fitting a set of genes' expression
-#' @importFrom dplyr %>% mutate full_join
-#' @importFrom purrr map2
-#' @importFrom lmtest lrtest
 #' @export
 compare_models <- function(model_tbl_x, model_tbl_y){
   joined_fits = dplyr::full_join(model_tbl_x, model_tbl_y, by=c("id", "gene_short_name", "num_cells_expressed"))
@@ -212,9 +209,6 @@ compare_models <- function(model_tbl_x, model_tbl_y){
 }
 
 #' @export
-#' @importFrom broom glance
-#' @importFrom tidyr unnest
-#' @importFrom tibble tibble
 evaluate_fits = function(model_tbl){
   private_glance = function(m){
     zeroinfl_glance = function(m) {

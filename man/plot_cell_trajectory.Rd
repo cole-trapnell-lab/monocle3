@@ -13,7 +13,7 @@ plot_cell_trajectory(cds, x = 1, y = 2, color_by = "Pseudotime",
   alpha = 1, ...)
 }
 \arguments{
-\item{cds}{CellDataSet for the experiment}
+\item{cds}{cell_data_set for the experiment}
 
 \item{x}{the column of reducedDimS(cds) to plot on the horizontal axis}
 

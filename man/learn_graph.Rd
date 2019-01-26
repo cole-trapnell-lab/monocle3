@@ -12,7 +12,7 @@ learn_graph(cds, max_components = 2, rge_method = "SimplePPT",
   orthogonal_proj_tip = FALSE, verbose = FALSE, ...)
 }
 \arguments{
-\item{cds}{the CellDataSet upon which to perform this operation}
+\item{cds}{the cell_data_set upon which to perform this operation}
 
 \item{max_components}{the dimensionality of the reduced space}
 
@@ -46,7 +46,7 @@ need to be satisfied to introduce the edge for loop closure.)}
 \item{...}{additional arguments to pass to the dimensionality reduction function}
 }
 \value{
-an updated CellDataSet object
+an updated cell_data_set object
 }
 \description{
 Monocle aims to learn how cells transition through a biological program of
@@ -59,7 +59,7 @@ the harder the trajectory is to learn. Fortunately, many genes typically
 co-vary with one another, and so the dimensionality of the data can be
 reduced with a wide variety of different algorithms. Monocle provides two
 different algorithms for dimensionality reduction via \code{reduceDimension}.
-Both take a CellDataSet object and a number of dimensions allowed for the
+Both take a cell_data_set object and a number of dimensions allowed for the
 reduced space. You can also provide a model formula indicating some variables
 (e.g. batch ID or other technical factors) to "subtract" from the data so it
 doesn't contribute to the trajectory.
@@ -67,7 +67,7 @@ doesn't contribute to the trajectory.
 \details{
 You can choose two different reduction algorithms: Independent Component
 Analysis (ICA) and Discriminative Dimensionality Reduction with Trees (DDRTree).
-The choice impacts numerous downstream analysis steps, including \code{\link{orderCells}}.
+The choice impacts numerous downstream analysis steps, including \code{\link{order_cells}}.
 Choosing ICA will execute the ordering procedure described in Trapnell and Cacchiarelli et al.,
 which was implemented in Monocle version 1. \code{\link[DDRTree]{DDRTree}} is a more recent manifold
 learning algorithm developed by Qi Mao and colleages. It is substantially more

@@ -9,7 +9,7 @@ partition_cells(cds, partition_names = NULL, use_pca = FALSE, k = 20,
   louvain_qval = 0.05, return_all = FALSE, verbose = FALSE, ...)
 }
 \arguments{
-\item{cds}{the CellDataSet upon which to perform this operation}
+\item{cds}{the cell_data_set upon which to perform this operation}
 
 \item{partition_names}{Which partition groups (column in the pData) should be used to calculate the connectivity between partitions}
 
@@ -33,7 +33,7 @@ Default to not use resolution and the standard igraph louvain clustering algorit
 \item{...}{additional arguments to pass to the smoothEmbedding function}
 }
 \value{
-an updated CellDataSet object
+an updated cell_data_set object
 }
 \description{
 Recently Alex Wolf and colleague first proposed the idea to represent the data with an "abstract partition graph"

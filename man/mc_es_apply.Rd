@@ -2,13 +2,13 @@
 % Please edit documentation in R/utils.R
 \name{mc_es_apply}
 \alias{mc_es_apply}
-\title{Multicore apply-like function for CellDataSet}
+\title{Multicore apply-like function for cell_data_set}
 \usage{
 mc_es_apply(X, MARGIN, FUN, required_packages, cores = 1,
   convert_to_dense = TRUE, ...)
 }
 \arguments{
-\item{X}{a CellDataSet object}
+\item{X}{a cell_data_set object}
 
 \item{MARGIN}{The margin to apply to, either 1 for rows (samples) or 2 for columns (features)}
 

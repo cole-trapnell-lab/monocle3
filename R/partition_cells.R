@@ -21,7 +21,7 @@
 #' Supplemental Note 3.1 from (Wolf et al. 2017) to calculate the significance of the connection between each louvain clustering and
 #' consider any clusters with p-value larger than 0.05 by default as not disconnected.
 #'
-#' @param cds the CellDataSet upon which to perform this operation
+#' @param cds the cell_data_set upon which to perform this operation
 #' @param partition_names Which partition groups (column in the pData) should be used to calculate the connectivity between partitions
 #' @param use_pca Whether or not to cluster cells based on top PCA component. Default to be FALSE.
 #' @param k number of nearest neighbors used for Louvain clustering (pass to louvain_clustering function)
@@ -33,7 +33,7 @@
 #' @param return_all Whether to return all saved objects from compute_louvain_connected_components function.
 #' @param verbose Whether to emit verbose output during louvain clustering
 #' @param ... additional arguments to pass to the smoothEmbedding function
-#' @return an updated CellDataSet object
+#' @return an updated cell_data_set object
 #'
 #' @export
 partition_cells <- function(cds,

@@ -1,4 +1,4 @@
-#' Compute a projection of a CellDataSet object into a lower dimensional space with non-linear dimension reduction methods
+#' Compute a projection of a cell_data_set object into a lower dimensional space with non-linear dimension reduction methods
 #'
 #' @description Monocle aims to learn how cells transition through a biological program of
 #' gene expression changes in an experiment. Each cell can be viewed as a point
@@ -10,14 +10,14 @@
 #' co-vary with one another, and so the dimensionality of the data can be
 #' reduced with a wide variety of different algorithms. Monocle provides two
 #' different algorithms for dimensionality reduction via \code{reduce_dimension}.
-#' Both take a CellDataSet object and a number of dimensions allowed for the
+#' Both take a cell_data_set object and a number of dimensions allowed for the
 #' reduced space. You can also provide a model formula indicating some variables
 #' (e.g. batch ID or other technical factors) to "subtract" from the data so it
 #' doesn't contribute to the trajectory.
 #'
 #' @details You can choose a few different reduction algorithms: Independent Component
 #' Analysis (ICA) and Discriminative Dimensionality Reduction with Trees (DDRTree).
-#' The choice impacts numerous downstream analysis steps, including \code{\link{orderCells}}.
+#' The choice impacts numerous downstream analysis steps, including \code{\link{order_cells}}.
 #' Choosing ICA will execute the ordering procedure described in Trapnell and Cacchiarelli et al.,
 #' which was implemented in Monocle version 1. \code{\link[DDRTree]{DDRTree}} is a more recent manifold
 #' learning algorithm developed by Qi Mao and colleages. It is substantially more
@@ -33,21 +33,21 @@
 #' to normalize it so that highly expressed or highly variable genes don't
 #' dominate the computation. \code{reduce_dimension()} automatically transforms
 #' the data in one of several ways depending on the \code{expression_family} of
-#' the CellDataSet object. If the expression_family is \code{negbinomial} or \code{negbinomial.size}, the
+#' the cell_data_set object. If the expression_family is \code{negbinomial} or \code{negbinomial.size}, the
 #' data are variance-stabilized. If the expression_family is \code{Tobit}, the data
 #' are adjusted by adding a pseudocount (of 1 by default) and then log-transformed.
 #' If you don't want any transformation at all, set norm_method to "none" and
 #' pseudo_expr to 0. This maybe useful for single-cell qPCR data, or data you've
 #' already transformed yourself in some way.
 #'
-#' @param cds the CellDataSet upon which to perform this operation
+#' @param cds the cell_data_set upon which to perform this operation
 #' @param max_components the dimensionality of the reduced space
 #' @param reduction_method A character string specifying the algorithm to use for dimensionality reduction.
 #' @param auto_param_selection when this argument is set to TRUE (default), it will automatically calculate the proper value for the ncenter (number of centroids) parameters which will be passed into DDRTree call.
 #' @param scaling When this argument is set to TRUE (default), it will scale each gene before running trajectory reconstruction.
 #' @param verbose Whether to emit verbose output during dimensionality reduction
 #' @param ... additional arguments to pass to the dimensionality reduction function
-#' @return an updated CellDataSet object
+#' @return an updated cell_data_set object
 #' @references DDRTree: Qi Mao, Li Wang, Steve Goodison, and Yijun Sun. Dimensionality reduction via graph structure learning. In Proceedings of the 21th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining, pages 765–774. ACM, 2015.
 #' @references UMAP: McInnes, L, Healy, J, UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction, ArXiv e-prints 1802.03426, 2018
 #' @references tSNE: Laurens van der Maaten and Geoffrey Hinton. Visualizing data using t-SNE. J. Mach. Learn. Res., 9(Nov):2579– 2605, 2008.

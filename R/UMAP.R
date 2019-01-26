@@ -147,7 +147,6 @@
 #' a, fit_transform, metric, random_state, alpha, gamma, metric_kwds, set_op_mix_ratio, angular_rp_forest,
 #' get_params, min_dist, set_params, b, graph, n_components, spread, bandwidth, init, n_epochs, verbose,
 #' embedding_, initial_alpha, n_neighbors, fit, local_connectivity, negative_sample_rate
-#' @export
 UMAP <- function(X, python_home = system('which python', intern = TRUE),
                  log = TRUE,
                  n_neighbors = 15L,

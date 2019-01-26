@@ -13,7 +13,7 @@ principal_graph(cds)
 An igraph object representing the cell_data_set's minimum spanning tree.
 }
 \description{
-Retrieves the minimum spanning tree (MST) that Monocle constructs during orderCells().
+Retrieves the minimum spanning tree (MST) that Monocle constructs during order_cells().
 This MST is mostly used in plot_spanning_tree to help assess the accuracy
 of Monocle's ordering.
 }
