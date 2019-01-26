@@ -214,6 +214,36 @@ compare_models <- function(model_tbl_x, model_tbl_y){
 #' @export
 #' @importFrom broom glance
 #' @importFrom tidyr unnest
+#' @importFrom tibble tibble
 evaluate_fits = function(model_tbl){
-  model_tbl %>% dplyr::mutate(glanced = purrr::map(model, broom::glance)) %>% tidyr::unnest(glanced, .drop=TRUE)
+  private_glance = function(m){
+    zeroinfl_glance = function(m) {
+      tibble::tibble(null.deviance = NA,
+             df.null = m$df.null,
+             logLik = as.numeric(logLik(m)),
+             AIC = AIC(m),
+             BIC = AIC(m),
+             deviance = NA,
+             df.residual = m$df.residual)
+    }
+
+    speedglm_glance = function(m) {
+      tibble::tibble(null.deviance = m$nulldev,
+                     df.null = m$nulldf,
+                     logLik = m$logLik,
+                     AIC = m$aic,
+                     BIC = NA,
+                     deviance = m$deviance,
+                     df.residual = m$df)
+    }
+
+    tryCatch({broom::glance(m)},
+             error = function(e) {
+               switch(class(m)[1],
+                      "zeroinfl" = zeroinfl_glance(m),
+                      "speedglm" = speedglm_glance(m))
+             })
+
+  }
+  model_tbl %>% dplyr::mutate(glanced = purrr::map(model, private_glance)) %>% tidyr::unnest(glanced, .drop=TRUE)
 }
