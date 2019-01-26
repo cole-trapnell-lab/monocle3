@@ -165,7 +165,6 @@ sparse_par_c_apply <- function (cl = NULL, x, FUN, convert_to_dense, ...)
 #' @param cores The number of cores to use for evaluation
 #'
 #' @return The result of with(pData(X) apply(exprs(X)), MARGIN, FUN, ...))
-#' @export
 mc_es_apply <- function(X, MARGIN, FUN, required_packages, cores=1, convert_to_dense=TRUE, ...) {
   parent <- environment(FUN)
   if (is.null(parent))
@@ -333,7 +332,6 @@ is_sparse_matrix <- function(x){
 #'
 #'
 #' @seealso \code{\link{prcomp}}
-#' @export
 sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE, scale. = FALSE, ...)
 {
   a <- names(as.list(match.call()))

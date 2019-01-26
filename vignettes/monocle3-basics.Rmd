@@ -156,13 +156,14 @@ cds <- learn_graph(cds,
 
 
 ```{r}
-#pr_graph_test <- principalGraphTest(cds, k=3, cores=1)
+pr_graph_test <- principal_graph_test(cds, k=3, cores=1)
 ```
+
 ```{r}
-# plot_3d_cell_trajectory(cds, markers = c('Hbb-b1'),
-#                         webGL_filename=paste(getwd(), "/beta_globin.html", sep=""),
-#                         show_backbone=TRUE,
-#                         useNULL_GLdev=TRUE)
+ plot_3d_cell_trajectory(cds, markers = c('Hbb-b1'),
+                         webGL_filename=paste(getwd(), "/beta_globin.html", sep=""),
+                         show_backbone=TRUE,
+                         useNULL_GLdev=TRUE)
 ```
 
 

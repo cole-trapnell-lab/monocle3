@@ -172,7 +172,7 @@ extract_coefficient_helper = function(model, pseudo_expr =
 }
 
 #' Extracts a table of coefficients from a tibble containing model objects
-#' @importFrom dplyr %>% rename
+#' @importFrom dplyr %>%
 #' @export
 coefficient_table <- function(model_tbl) {
   M_f = model_tbl %>%
@@ -193,9 +193,6 @@ coefficient_table <- function(model_tbl) {
 }
 
 #' Compares goodness of fit for two ways of fitting a set of genes' expression
-#' @importFrom dplyr %>% mutate full_join
-#' @importFrom purrr map2
-#' @importFrom lmtest lrtest
 #' @export
 compare_models <- function(model_tbl_x, model_tbl_y){
   joined_fits = dplyr::full_join(model_tbl_x, model_tbl_y, by=c("id", "gene_short_name", "num_cells_expressed"))
@@ -212,8 +209,6 @@ compare_models <- function(model_tbl_x, model_tbl_y){
 }
 
 #' @export
-#' @importFrom broom glance
-#' @importFrom tidyr unnest
 evaluate_fits = function(model_tbl){
   model_tbl %>% dplyr::mutate(glanced = purrr::map(model, broom::glance)) %>% tidyr::unnest(glanced, .drop=TRUE)
 }
