@@ -71,7 +71,7 @@ plot_cell_trajectory <- function(cds,
   lib_info_with_pseudo <- pData(cds)
 
   if (is.null(cds@dim_reduce_type) | is.null(cds@rge_method)){
-    stop("Error: dimensionality not reduced or graph is not learned yet. Please call reduceDimension(), partitionCells() and learnGraph() before calling this function.")
+    stop("Error: dimensionality not reduced or graph is not learned yet. Please call reduce_dimension(), partition_cells() and learn_graph() before calling this function.")
   }
 
 
@@ -283,7 +283,7 @@ plot_3d_cell_trajectory <- function(cds,
   sample_state <- pData(cds)$State[cell_sampled]
 
   if (is.null(cds@dim_reduce_type)){
-    stop("Error: dimensionality not yet reduced. Please call reduceDimension() before calling this function.")
+    stop("Error: dimensionality not yet reduced. Please call reduce_dimension() before calling this function.")
   }
 
   reduced_dim_coords <- reducedDimK(cds)
@@ -350,11 +350,11 @@ plot_3d_cell_trajectory <- function(cds,
       x[x < limits[1]] = limits[1]
       x[x > limits[2]] = limits[2]
     }
-    x[inf_vals] = median(x)
+    x[inf_vals] = stats::median(x)
     ii <- cut(x, breaks = seq(min(x, na.rm=T), max(x, na.rm=T), len = 100),
               include.lowest = TRUE)
     #colors <- colorRampPalette(c("white", "#E05263"))(99)[ii]
-    colors = viridisLite::viridis(99)[ii]
+    colors = viridis::viridis(99)[ii]
     colors[inf_vals] = "darkgray"
     return(colors)
   }
@@ -432,9 +432,9 @@ plot_3d_cell_trajectory <- function(cds,
   if (is.null(point_colors_df$color_by) == FALSE){
     point_colors_df = dplyr::inner_join(point_colors_df, data_df)
 
-    medoid_df = point_colors_df %>% dplyr::group_by(color_by, point_colors) %>% dplyr::summarize(mean_d1 = median(data_dim_1),
-                                                                                                 mean_d2 = median(data_dim_2),
-                                                                                                 mean_d3 = median(data_dim_3))
+    medoid_df = point_colors_df %>% dplyr::group_by(color_by, point_colors) %>% dplyr::summarize(mean_d1 = stats::median(data_dim_1),
+                                                                                                 mean_d2 = stats::median(data_dim_2),
+                                                                                                 mean_d3 = stats::median(data_dim_3))
     if (show_group_labels && color_by %in% colnames(pData(cds)) && class(pData(cds)[,color_by]) != "numeric"){
       if(!use_plotly) {
         rgl::text3d(x=medoid_df$mean_d1, y=medoid_df$mean_d2, z=medoid_df$mean_d3, texts=as.character(medoid_df$color_by))
@@ -538,7 +538,7 @@ plot_3d_cell_trajectory <- function(cds,
   if (is.null(image_filename) == FALSE){
     if(!use_plotly) {
       rgl::rgl.snapshot(image_filename)
-      graphics.off()
+      grDevices::graphics.off()
     } else {
       plotly::orca(p, image_filename)
     }

@@ -27,7 +27,7 @@ an updated cell_data_set object, in which phenoData contains values for State an
 Learns a "trajectory" describing the biological process the cells are
 going through, and calculates where each cell falls within that trajectory.
 Monocle learns trajectories in two steps. The first step is reducing the dimensionality
-of the data with \code{\link{reduceDimension}()}. The second is this function.
+of the data with \code{\link{reduce_dimension}()}. The second is this function.
 function. This function takes as input a cell_data_set and returns it with
 two new columns: \code{Pseudotime} and \code{State}, which together encode
 where each cell maps to the trajectory. \code{order_cells()} optionally takes
@@ -35,7 +35,7 @@ a "root" state, which you can use to specify the start of the trajectory. If
 you don't provide a root state, one is selected arbitrarily.
 }
 \details{
-The \code{reduction_method} argument to \code{\link{reduceDimension}()}
+The \code{reduction_method} argument to \code{\link{reduce_dimension}()}
 determines which algorithm is used by \code{order_cells()} to learn the trajectory.
 If \code{reduction_method == "ICA"}, this function uses \emph{polygonal reconstruction}
 to learn the underlying trajectory. If \code{reduction_method == "DDRTree"},

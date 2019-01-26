@@ -38,7 +38,7 @@ estimate_dispersions_cds <- function(cds, modelFormulaStr,
     coefs <- res[[2]]
     #removeOutliers = TRUE
     if (removeOutliers){
-      CD <- cooks.distance(fit)
+      CD <- stats::cooks.distance(fit)
       cooksCutoff <- 4/nrow(disp_table)
       message (paste("Removing", length(CD[CD > cooksCutoff]), "outliers"))
       outliers <- union(names(CD[CD > cooksCutoff]), setdiff(row.names(disp_table), names(CD)))
@@ -74,7 +74,7 @@ disp_calc_helper_NB <- function(cds, min_cells_detected) {
   xim <- mean(1/ pData(cds[nzGenes,])$Size_Factor)
 
   if (is_sparse_matrix(exprs(cds))){
-    f_expression_mean <- as(DelayedMatrixStats::rowMeans2(x), "sparseVector")
+    f_expression_mean <- methods::as(DelayedMatrixStats::rowMeans2(x), "sparseVector")
   }else{
     f_expression_mean <- DelayedMatrixStats::rowMeans2(x)
   }
@@ -105,14 +105,14 @@ parametricDispersionFit <- function( disp_table, verbose = FALSE, initial_coefs=
     good <- disp_table[which(disp_table$disp > 0 & (residuals < 10000) ),]
 
     if(verbose)
-      fit <- glm( disp ~ I(1/mu), data=good,
-                  family=Gamma(link="identity"), start=coefs )
+      fit <- stats::glm( disp ~ I(1/mu), data=good,
+                  family=stats::Gamma(link="identity"), start=coefs )
     else
-      suppressWarnings(fit <- glm( disp ~ I(1/mu), data=good,
-                                   family=Gamma(link="identity"), start=coefs ))
+      suppressWarnings(fit <- stats::glm( disp ~ I(1/mu), data=good,
+                                   family=stats::Gamma(link="identity"), start=coefs ))
 
     oldcoefs <- coefs
-    coefs <- coefficients(fit)
+    coefs <- stats::coefficients(fit)
     if (coefs[1] < initial_coefs[1]){
       coefs[1] <- initial_coefs[1]
     }

@@ -242,8 +242,8 @@ load_a549 <- function(){
 
   small_a549_exprs <- small_a549_exprs[,row.names(small_a549_pdata_df)]
 
-  pd <- new("AnnotatedDataFrame", data = small_a549_pdata_df)
-  fd <- new("AnnotatedDataFrame", data = small_a549_fdata_df)
+  pd <- methods::new("AnnotatedDataFrame", data = small_a549_pdata_df)
+  fd <- methods::new("AnnotatedDataFrame", data = small_a549_fdata_df)
 
   # Now, make a new cell_data_set using the RNA counts
   cds <- new_cell_data_set(small_a549_exprs,
@@ -321,14 +321,14 @@ is_sparse_matrix <- function(x){
 #' the two functions.
 #'
 #' @examples
-#' set.seed(1)
+#' \dontrun{set.seed(1)
 #' x  <- matrix(rnorm(200), nrow=20)
 #' p1 <- prcomp_irlba(x, n=3)
 #' summary(p1)
 #'
 #' # Compare with
 #' p2 <- prcomp(x, tol=0.7)
-#' summary(p2)
+#' summary(p2)}
 #'
 #'
 #' @seealso \code{\link{prcomp}}
@@ -377,7 +377,6 @@ sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE, scale. = F
   }
   if (!missing(...)) args <- c(args, list(...))
 
-  #args$A = as(args$A, "sparseMatrix")
   s <- do.call(irlba::irlba, args=args)
   ans$sdev <- s$d / sqrt(max(1, nrow(x) - 1))
   ans$rotation <- s$v

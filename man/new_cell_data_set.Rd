@@ -14,9 +14,11 @@ new_cell_data_set(cellData, phenoData = NULL, featureData = NULL,
 
 \item{featureData}{data frame containing attributes of features (e.g. genes)}
 
-\item{lower_detection_limit}{the minimum expression level that consistitutes true expression}
+\item{lower_detection_limit}{the minimum expression level that consistitutes
+true expression}
 
-\item{expression_family}{character, the expression family function to be used for expression response variables}
+\item{expression_family}{character, the expression family function to be
+used for expression response variables}
 }
 \value{
 a new cell_data_set object
@@ -26,12 +28,15 @@ Creates a new cell_data_set object.
 }
 \examples{
 \dontrun{
-sample_sheet_small <- read.delim("../data/sample_sheet_small.txt", row.names=1)
+sample_sheet_small <- read.delim("../data/sample_sheet_small.txt",
+                                 row.names=1)
 sample_sheet_small$Time <- as.factor(sample_sheet_small$Time)
-gene_annotations_small <- read.delim("../data/gene_annotations_small.txt", row.names=1)
+gene_annotations_small <- read.delim("../data/gene_annotations_small.txt",
+                                      row.names=1)
 fpkm_matrix_small <- read.delim("../data/fpkm_matrix_small.txt")
 pd <- new("AnnotatedDataFrame", data = sample_sheet_small)
 fd <- new("AnnotatedDataFrame", data = gene_annotations_small)
-HSMM <- new("cell_data_set", exprs = as.matrix(fpkm_matrix_small), phenoData = pd, featureData = fd)
+HSMM <- new("cell_data_set", exprs = as.matrix(fpkm_matrix_small),
+            phenoData = pd, featureData = fd)
 }
 }
