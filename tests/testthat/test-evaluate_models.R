@@ -41,7 +41,7 @@ test_that("evaluate_models() returns correct output for negative binomial models
   expect_equal(evaluated_fit$df.null, 499)
   expect_equal(evaluated_fit$logLik, -735., tolerance=1e-3)
   expect_equal(evaluated_fit$AIC, 1477, tolerance=1e-3)
-  expect_equal(evaluated_fit$BIC, 1489, tolerance=1e-3)
+  expect_equal(evaluated_fit$BIC, 1477, tolerance=1e-3)
   expect_equal(evaluated_fit$deviance, 468, tolerance=1e-3)
   expect_equal(evaluated_fit$df.residual, 498)
 })

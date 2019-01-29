@@ -10,6 +10,97 @@ clean_vgam_model_object = function(model) {
   return(model)
 }
 
+clean_mass_model_object = function(cm) {
+  cm$y = c()
+  #cm$model = c()
+
+  cm$residuals = c()
+  cm$fitted.values = c()
+  cm$effects = c()
+  cm$qr$qr = c()
+  cm$linear.predictors = c()
+  cm$weights = c()
+  cm$prior.weights = c()
+  cm$data = c()
+
+
+  cm$family$variance = c()
+  cm$family$dev.resids = c()
+  cm$family$aic = c()
+  cm$family$validmu = c()
+  cm$family$simulate = c()
+  cm$family$control = c()
+  attr(cm$terms,".Environment") = c()
+  attr(cm$formula,".Environment") = c()
+  return(cm)
+}
+
+clean_speedglm_model_object = function(cm) {
+  cm$y = c()
+  #cm$model = c()
+
+  cm$residuals = c()
+  cm$fitted.values = c()
+  cm$effects = c()
+  cm$qr$qr = c()
+  cm$linear.predictors = c()
+  cm$weights = c()
+  cm$prior.weights = c()
+  cm$data = c()
+
+
+  cm$family$variance = c()
+  cm$family$dev.resids = c()
+  cm$family$aic = c()
+  cm$family$validmu = c()
+  cm$family$simulate = c()
+  cm$family$control = c()
+  attr(cm$terms,".Environment") = c()
+  attr(cm$formula,".Environment") = c()
+  return(cm)
+}
+
+
+clean_zeroinfl_model_object = function(cm) {
+  cm$y = c()
+  cm$model = c()
+
+  cm$residuals = c()
+  cm$fitted.values = c()
+  #cm$effects = c()
+  #cm$qr$qr = c()
+  #cm$linear.predictors = c()
+  cm$weights = c()
+  #cm$prior.weights = c()
+  cm$data = c()
+
+
+  # cm$family$variance = c()
+  # cm$family$dev.resids = c()
+  # cm$family$aic = c()
+  # cm$family$validmu = c()
+  # cm$family$simulate = c()
+  # cm$family$control = c()
+  attr(cm$terms$count,".Environment") = c()
+  attr(cm$terms$zero,".Environment") = c()
+  attr(cm$terms$full,".Environment") = c()
+  attr(cm$formula,".Environment") = c()
+  return(cm)
+}
+
+
+clean_model_object = function(model) {
+  if (class(model)[1] == "negbin") {
+    model = clean_mass_model_object(model)
+  } else if (length(intersect(class(model), c("speedglm"))) >= 1) {
+    model = clean_speedglm_model_object(model)
+  } else if (class(model) == "zeroinfl"){
+    model = clean_zeroinfl_model_object(model)
+  }else {
+    stop("Unrecognized model class")
+  }
+}
+
 #' @title Helper function for model fitting
 #' @description test
 #' @param x test
@@ -52,17 +143,21 @@ fit_model_helper <- function(x,
     else messageWrapper = suppressWarnings
 
     FM_fit = messageWrapper(switch(expression_family,
-                    "negbinomial" = MASS::glm.nb(model_formula, epsilon=1e-3),
-                    "poisson" = speedglm::speedglm(model_formula, family = poisson(), acc=1e-3),
-                    "quasipoisson" = speedglm::speedglm(model_formula, family = quasipoisson(), acc=1e-3),
-                    "binomial" = speedglm::speedglm(model_formula, family = binomial(), acc=1e-3),
+                    "negbinomial" = MASS::glm.nb(model_formula, epsilon=1e-3, model=FALSE, y=FALSE),
+                    "poisson" = speedglm::speedglm(model_formula, family = poisson(), acc=1e-3, model=FALSE, y=FALSE),
+                    "quasipoisson" = speedglm::speedglm(model_formula, family = quasipoisson(), acc=1e-3, model=FALSE, y=FALSE),
+                    "binomial" = speedglm::speedglm(model_formula, family = binomial(), acc=1e-3, model=FALSE, y=FALSE),
                     "zipoisson" = pscl::zeroinfl(model_formula, dist="poisson"),
                     "zinegbinomial" = pscl::zeroinfl(model_formula, dist="negbin")
                     ))
-    FM_fit
+    FM_summary = summary(FM_fit)
+    if (clean_model)
+      FM_fit = clean_model_object(FM_fit)
+    df = list(model=FM_fit, model_summary=FM_summary)
+    df
   }, error = function(e) {
     if (verbose) { print (e) }
-    NA
+    list(model=NA, model_summary=NA)
   })
 }
 
@@ -90,7 +185,7 @@ fit_models <- function(cds,
                      clean_model = TRUE,
                      verbose = FALSE) {
   if (cores > 1) {
-    f <-
+    fits <-
       mc_es_apply(
         cds,
         1,
@@ -103,9 +198,9 @@ fit_models <- function(cds,
         clean_model = clean_model,
         verbose = verbose
       )
-    f
+    fits
   } else{
-    f <- smart_es_apply(
+    fits <- smart_es_apply(
       cds,
       1,
       fit_model_helper,
@@ -116,23 +211,21 @@ fit_models <- function(cds,
       clean_model = clean_model,
       verbose = verbose
     )
-    f
+    fits
   }
-  term_labels =  unlist(head(lapply(lapply(f[which(is.na(f) == FALSE)], coef), names), n =
-                               1))
-
+  #fits_tbl = tibble::tibble(model = unlist(lapply(fits, function(x) { ifelse(is.na(x), NA, x$model), recursive=FALSE) }),
+  #                       model_summary = lapply(fits, function(x) { ifelse(is.na(x), NA, x$model_summary) }))
+  fits = tibble::as_tibble(purrr::transpose(fits))
   M_f = tibble::as_tibble(fData(cds))
-  M_f$model = f
+  M_f = dplyr::bind_cols(M_f, fits)
   M_f
 }
 
-extract_coefficient_helper = function(model, pseudo_expr =
-                                        0.01) {
-  if (length(intersect(class(model), c("glm", "speedglm"))) >= 1) {
-    SM = summary(model)
-    coef_mat = SM$coefficients # first row is intercept
+extract_coefficient_helper = function(model, model_summary, pseudo_expr = 0.01) {
+  if (class(model)[1] == "speedglm") {
+    coef_mat = model_summary$coefficients # first row is intercept
     coef_mat = apply(coef_mat, 2, function(x) {as.numeric(as.character(x)) }) # We need this because some summary methods "format" the coefficients into a factor...
-    row.names(coef_mat) = row.names(SM$coefficients)
+    row.names(coef_mat) = row.names(model_summary$coefficients)
      log_eff_over_int = log2((model$family$linkinv(coef_mat[, 1] + coef_mat[1, 1]) + pseudo_expr) /
                             rep(model$family$linkinv(coef_mat[1, 1]) + pseudo_expr, times = nrow(coef_mat)))
     log_eff_over_int[1] = 0
@@ -141,9 +234,19 @@ extract_coefficient_helper = function(model, pseudo_expr =
     coef_mat$model_component = "count"
     return (coef_mat)
 
+  } else if (class(model)[1] == "negbin"){
+    coef_mat = model_summary$coefficients # first row is intercept
+    coef_mat = apply(coef_mat, 2, function(x) {as.numeric(as.character(x)) }) # We need this because some summary methods "format" the coefficients into a factor...
+    row.names(coef_mat) = row.names(model_summary$coefficients)
+    log_eff_over_int = log2((model$family$linkinv(coef_mat[, 1] + coef_mat[1, 1]) + pseudo_expr) /
+                              rep(model$family$linkinv(coef_mat[1, 1]) + pseudo_expr, times = nrow(coef_mat)))
+    log_eff_over_int[1] = 0
+    coef_mat = tibble::as_tibble(coef_mat, rownames = "term")
+    coef_mat$normalized_effect = log_eff_over_int
+    coef_mat$model_component = "count"
+    return (coef_mat)
   } else if (class(model) == "zeroinfl"){
-    SM = pscl:::summary.zeroinfl(model)
-    count_coef_mat = SM$coefficients$count # first row is intercept
+    count_coef_mat = model_summary$coefficients$count # first row is intercept
     log_eff_over_int = log2((model$linkinv(count_coef_mat[, 1] + count_coef_mat[1, 1]) + pseudo_expr) /
                               rep(model$linkinv(count_coef_mat[1, 1]) + pseudo_expr, times = nrow(count_coef_mat)))
     log_eff_over_int[1] = 0
@@ -151,7 +254,7 @@ extract_coefficient_helper = function(model, pseudo_expr =
     count_coef_mat$normalized_effect = log_eff_over_int
     count_coef_mat$model_component = "count"
 
-    zero_coef_mat = SM$coefficients$zero # first row is intercept
+    zero_coef_mat = model_summary$coefficients$zero # first row is intercept
     zero_coef_mat = tibble::as_tibble(zero_coef_mat, rownames = "term")
     zero_coef_mat$normalized_effect = NA
     zero_coef_mat$model_component = "zero"
@@ -176,7 +279,7 @@ extract_coefficient_helper = function(model, pseudo_expr =
 #' @export
 coefficient_table <- function(model_tbl) {
   M_f = model_tbl %>%
-    dplyr::mutate(terms = purrr::map(.f = purrr::possibly(extract_coefficient_helper, NA_real_), .x = model)) %>%
+    dplyr::mutate(terms = purrr::map2(.f = purrr::possibly(extract_coefficient_helper, NA_real_), .x = model, .y = model_summary)) %>%
     tidyr::unnest(terms) %>%
     dplyr::rename(estimate = Estimate,
                   std_err = `Std. Error`)
@@ -222,7 +325,7 @@ evaluate_fits = function(model_tbl){
                      logLik = as.numeric(logLik(m)),
                      AIC = AIC(m),
                      BIC = AIC(m),
-                     deviance = NA_real_,
+                     deviance = m$deviance,
                      df.residual = m$df.residual)
     }
 
