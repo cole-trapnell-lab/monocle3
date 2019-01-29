@@ -16,7 +16,8 @@ LinkingTo:
     Rcpp
 Depends:
     Biobase
-Imports: 
+Imports:
+    assertthat,
     broom,
     dplyr,
     Rcpp,
@@ -29,7 +30,9 @@ Imports:
     irlba,
     limma,
     lmtest,
+    lpSolveAPI,
     MASS,
+    matlab,
     Matrix,
     methods,
     pbapply,

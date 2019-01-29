@@ -5,20 +5,28 @@ is_sparse_matrix <- function(x){
 
 #' Function to calculate the size factor for the single-cell RNA-seq data
 #'
-#' @param counts The matrix for the gene expression data, either read counts or FPKM values or transcript counts
+#' @param cds The cell_data_set
 #' @param locfunc The location function used to find the representive value
 #' @param round_exprs A logic flag to determine whether or not the expression value should be rounded
 #' @param method A character to specify the size factor calculation appraoches. It can be either "mean-geometric-mean-total" (default),
 #' "weighted-median", "median-geometric-mean", "median", "mode", "geometric-mean-total".
-#'
-estimate_sf_matrix <- function(counts, locfunc = stats::median, round_exprs=TRUE,  method="mean-geometric-mean-total")
+#' @export
+estimate_size_factors <- function(cds, locfunc = stats::median,
+                                  round_exprs=TRUE,
+                                  method="mean-geometric-mean-total")
 {
-  if (is_sparse_matrix(counts)){
-    estimate_sf_sparse(counts, locfunc = locfunc, round_exprs=round_exprs, method=method)
+  if (is_sparse_matrix(exprs(cds))){
+    size_factors(cds) <- estimate_sf_sparse(exprs(cds),
+                                            locfunc = locfunc,
+                                            round_exprs=round_exprs,
+                                            method=method)
   }else{
-    estimate_sf_dense(counts, locfunc = locfunc, round_exprs=round_exprs,  method=method)
+    size_factors(cds) <- estimate_sf_dense(exprs(cds),
+                                           locfunc = locfunc,
+                                           round_exprs=round_exprs,
+                                           method=method)
   }
-
+  return(cds)
 }
 
 
@@ -390,3 +398,114 @@ sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE, scale. = F
   class(ans) <- c("irlba_prcomp", "prcomp")
   ans
 }
+
+#' Build a cell_data_set from the data stored in inst/extdata directory.
+#' @importFrom Biobase pData pData<- exprs fData
+#' @export
+load_lung <- function(){
+  lung_phenotype_data <- NA
+  lung_feature_data <- NA
+  num_cells_expressed <- NA
+  baseLoc <- system.file(package="monocle3")
+  #baseLoc <- './inst'
+  extPath <- file.path(baseLoc, "extdata")
+  load(file.path(extPath, "lung_phenotype_data.RData"))
+  load(file.path(extPath, "lung_exprs_data.RData"))
+  load(file.path(extPath, "lung_feature_data.RData"))
+  lung_exprs_data <- lung_exprs_data[,row.names(lung_phenotype_data)]
+
+  pd <- new("AnnotatedDataFrame", data = lung_phenotype_data)
+  fd <- new("AnnotatedDataFrame", data = lung_feature_data)
+
+  # Now, make a new cell_data_set using the RNA counts
+  lung <- new_cell_data_set(lung_exprs_data,
+                         phenoData = pd,
+                         featureData = fd,
+                         lower_detection_limit=1,
+                         expression_family="negbinomial.size")
+
+  lung <- estimate_size_factors(lung)
+  lung <- estimate_dispersions(lung)
+
+  # pData(lung)$Total_mRNAs <- colSums(exprs(lung))
+  # lung <- detect_genes(lung, min_expr = 1)
+  # expressed_genes <- row.names(subset(fData(lung), num_cells_expressed >= 5))
+  # ordering_genes <- expressed_genes
+  # lung <- set_ordering_filter(lung, ordering_genes)
+  #
+  # lung <- preprocess_cds(lung, num_dim = 5)
+  # lung <- reduce_dimension(lung, norm_method="log", reduction_method = 'UMAP')
+  # lung <- partition_cells(lung)
+  # lung <- learn_graph(lung)
+  # lung <- order_cells(lung, root_pr_nodes = get_correct_root_state(lung,
+  #                                                                 cell_phenotype = 'Time',
+  #                                                                 "E14.5"))
+  lung
+}
+
+
+#' Detects genes above minimum threshold.
+#'
+#' @description Sets the global expression detection threshold to be used with this cell_data_set
+#' Counts how many cells each feature in a cell_data_set object that are detectably expressed
+#' above a minimum threshold. Also counts the number of genes above this threshold are
+#' detectable in each cell.
+#'
+#' @param cds the cell_data_set upon which to perform this operation
+#' @param min_expr the expression threshold
+#' @return an updated cell_data_set object
+#' @export
+#' @examples
+#' \dontrun{
+#' HSMM <- detect_genes(HSMM, min_expr=0.1)
+#' }
+detect_genes <- function(cds, min_expr=NULL){
+  if (is.null(min_expr))
+  {
+    min_expr <- cds@lower_detection_limit
+  }
+  fData(cds)$num_cells_expressed <- Matrix::rowSums(exprs(cds) > min_expr)
+  pData(cds)$num_genes_expressed <- Matrix::colSums(exprs(cds) > min_expr)
+
+  cds
+}
+
+#' Marks genes for clustering
+#' @description The function marks genes that will be used for clustering in subsequent calls to clusterCells.
+#' The list of selected genes can be altered at any time.
+#'
+#' @param cds the cell_data_set upon which to perform this operation
+#' @param ordering_genes a vector of feature ids (from the cell_data_set's featureData) used for ordering cells
+#' @return an updated cell_data_set object
+#' @export
+set_ordering_filter <- function(cds, ordering_genes){
+  fData(cds)$use_for_ordering <- row.names(fData(cds)) %in% ordering_genes
+  cds
+}
+
+#' Retrieve a table of values specifying the mean-variance relationship
+#'
+#' Calling estimate_dispersions computes a smooth function describing how variance
+#' in each gene's expression across cells varies according to the mean. This
+#' function only works for cell_data_set objects containing count-based expression
+#' data, either transcripts or reads.
+#'
+#' @param cds The cell_data_set from which to extract a dispersion table.
+#' @return A data frame containing the empirical mean expression,
+#' empirical dispersion, and the value estimated by the dispersion model.
+#'
+#' @export
+dispersion_table <- function(cds){
+
+  if (is.null(cds@disp_fit_info[["blind"]])){
+    warning("Warning: estimate_dispersions only works, and is only needed, when you're using a cell_data_set with a negbinomial or negbinomial.size expression family")
+    stop("Error: no dispersion model found. Please call estimate_dispersions() before calling this function")
+  }
+
+  disp_df<-data.frame(gene_id=cds@disp_fit_info[["blind"]]$disp_table$gene_id,
+                      mean_expression=cds@disp_fit_info[["blind"]]$disp_table$mu,
+                      dispersion_fit=cds@disp_fit_info[["blind"]]$disp_func(cds@disp_fit_info[["blind"]]$disp_table$mu),
+                      dispersion_empirical=cds@disp_fit_info[["blind"]]$disp_table$disp)
+  return(disp_df)
+}
+

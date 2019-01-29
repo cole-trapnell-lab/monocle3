@@ -42,7 +42,7 @@ expression family function used for expression responses.}
 expression level considered to be true expression.}
 
 \item{\code{disp_fit_info}}{An environment containing lists, one for each set of
-estimated dispersion values. See estimateDispersions.}
+estimated dispersion values. See estimate_dispersions.}
 
 \item{\code{dim_reduce_type}}{A string encoding how this cell_data_set has been
 reduced in dimensionality}

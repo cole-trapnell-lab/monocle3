@@ -35,7 +35,7 @@ principal_graph_test <- function(cds,
     message("Performing Moran's I test: ...")
   }
   exprs_mat <- exprs(cds)[, attr(lw, "region.id")]
-  sz <- sizeFactors(cds)[attr(lw, "region.id")]
+  sz <- size_factors(cds)[attr(lw, "region.id")]
 
   wc <- spdep::spweights.constants(lw, zero.policy = TRUE, adjust.n = TRUE)
   test_res <- pbmcapply::pbmclapply(row.names(exprs_mat), FUN = function(x, sz, alternative, method) {

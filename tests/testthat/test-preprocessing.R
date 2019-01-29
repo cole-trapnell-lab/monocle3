@@ -1,8 +1,8 @@
 context("test-preprocessing")
 
 cds <- load_a549()
-cds <- estimateSizeFactors(cds)
-cds <- estimateDispersions(cds)
+cds <- estimate_size_factors(cds)
+cds <- estimate_dispersions(cds)
 
 test_that("preprocessing stays the same", {
   cds <- preprocess_cds(cds, method = "PCA", num_dim = 20)
