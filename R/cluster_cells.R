@@ -68,14 +68,14 @@ cluster_cells <- function(cds,
       }
     }
     cluster_graph_res <- compute_louvain_connected_components(louvain_res$g, louvain_res$optim_res, verbose = verbose)
-    louvain_component <-  components(cluster_graph_res$cluster_g)$membership[louvain_res$optim_res$membership]
-    names(louvain_component) <- V(louvain_res$g)$name
+    louvain_component <-  igraph::components(cluster_graph_res$cluster_g)$membership[louvain_res$optim_res$membership]
+    names(louvain_component) <- igraph::V(louvain_res$g)$name
     louvain_component <- as.factor(louvain_component)
     pData(cds)$louvain_component <- louvain_component
 
     pData(cds)$Cluster <- factor(igraph::membership(louvain_res$optim_res))
 
-    cds@auxClusteringData[["louvian"]] <- list(louvain_res = louvain_res)
+    cds@aux_clustering_data[["louvian"]] <- list(louvain_res = louvain_res)
 
     return(cds)
   }
@@ -209,7 +209,7 @@ louvain_clustering <- function(data, pd, k = 20, weight = F, louvain_iter = 1, r
     edge_links <- NULL
   }
 
-  V(g)$names <- as.character(V(g))
+  igraph::V(g)$names <- as.character(igraph::V(g))
   return(list(g = g, relations = relations, distMatrix = distMatrix, coord = coord, edge_links = edge_links, optim_res = optim_res))
 }
 

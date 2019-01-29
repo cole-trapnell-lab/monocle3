@@ -561,3 +561,170 @@ plot_3d_cell_trajectory <- function(cds,
   return(widget)
 }
 
+#' Plots clusters of cells .
+#'
+#' @param cds CellDataSet for the experiment
+#' @param x the column of reducedDimS(cds) to plot on the horizontal axis
+#' @param y the column of reducedDimS(cds) to plot on the vertical axis
+#' @param color_by the cell attribute (e.g. the column of pData(cds)) to map to each cell's color
+#' @param markers a gene name or gene id to use for setting the size of each cell in the plot
+#' @param show_cell_names draw the name of each cell in the plot
+#' @param cell_size The size of the point for each cell
+#' @param cell_name_size the size of cell name labels
+#' @param min_expr the minimum (untransformed) expression level to use in plotted the genes.
+#' @param show_group_id A logic flag signifying whether or not you'd like the plot to display the id of each group
+#' @param nrow the number of rows used when laying out the panels for each gene's expression
+#' @param ncol the number of columns used when laying out the panels for each gene's expression
+#' @param ... additional arguments passed into the scale_color_viridis function
+#' @return a ggplot2 plot object
+#' @import ggplot2
+#' @export
+#' @examples
+#' \dontrun{
+#' library(HSMMSingleCell)
+#' HSMM <- load_HSMM()
+#' HSMM <- reduceDimension(HSMM, reduction_method = 'tSNE')
+#' HSMM <- clusterCells(HSMM)
+#' plot_cell_clusters(HSMM)
+#' plot_cell_clusters(HSMM, color_by="Pseudotime")
+#' plot_cell_clusters(HSMM, markers="MYH3")
+#' }
+plot_cell_clusters <- function(cds,
+                               x=1,
+                               y=2,
+                               color_by="Cluster",
+                               markers=NULL,
+                               show_cell_names=FALSE,
+                               cell_size=1.5,
+                               cell_name_size=2,
+                               min_expr=0.1,
+                               show_group_id = FALSE,
+                               nrow = NULL,
+                               ncol = NULL,
+                               ...){
+  if (require("ggrastr",character.only = TRUE)){
+    plotting_func = ggrastr::geom_point_rast
+  }else{
+    plotting_func = ggplot2::geom_point
+  }
+
+  if (length(pData(cds)$Cluster) == 0){
+    stop("Error: Clustering is not performed yet. Please call clusterCells() before calling this function.")
+  }
+
+  if(cds@dim_reduce_type == 'tSNE') {
+    low_dim_coords <- cds@reducedDimA
+  } else {
+    low_dim_coords <- cds@reducedDimS
+  }
+
+  if (nrow(low_dim_coords) == 0){
+    message("reduceDimension is not performed yet. We are plotting the normalized reduced space obtained from preprocessCDS function.")
+    low_dim_coords <- t(cds@normalized_data_projection)
+  }
+
+  gene_short_name <- NULL
+  sample_name <- NULL
+  data_dim_1 <- NULL
+  data_dim_2 <- NULL
+
+  #TODO: need to validate cds as ready for this plot (need mst, pseudotime, etc)
+  lib_info <- pData(cds)
+
+  data_df <- data.frame(t(low_dim_coords[c(x,y),]))
+  colnames(data_df) <- c("data_dim_1", "data_dim_2")
+  data_df$sample_name <- colnames(cds)
+  data_df <- merge(data_df, lib_info, by.x="sample_name", by.y="row.names")
+
+  markers_exprs <- NULL
+  if (is.null(markers) == FALSE){
+    markers_fData <- subset(fData(cds), gene_short_name %in% markers)
+    if (nrow(markers_fData) >= 1){
+      cds_subset <- cds[row.names(markers_fData),]
+      if (cds_subset@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size")) {
+        integer_expression <- TRUE
+      }
+      else {
+        integer_expression <- FALSE
+
+      }
+      if (integer_expression) {
+        cds_exprs <- exprs(cds_subset)
+
+        if (is.null(sizeFactors(cds_subset))) {
+          stop("Error: to call this function with relative_expr=TRUE, you must call estimateSizeFactors() first")
+        }
+        cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/sizeFactors(cds_subset))
+
+        cds_exprs <- reshape2::melt(round(as.matrix(cds_exprs)))
+      }
+      else {
+        cds_exprs <- reshape2::melt(as.matrix(exprs(cds_subset)))
+      }
+      markers_exprs <- cds_exprs
+      #markers_exprs <- reshape2::melt(as.matrix(cds_exprs))
+      colnames(markers_exprs)[1:2] <- c('feature_id','cell_id')
+      markers_exprs <- merge(markers_exprs, markers_fData, by.x = "feature_id", by.y="row.names")
+      #print (head( markers_exprs[is.na(markers_exprs$gene_short_name) == FALSE,]))
+      markers_exprs$feature_label <- as.character(markers_exprs$gene_short_name)
+      markers_exprs$feature_label[is.na(markers_exprs$feature_label)] <- markers_exprs$Var1
+      markers_exprs$feature_label <- factor(markers_exprs$feature_label,
+                                            levels = markers[which(markers_exprs$feature_label %in% markers)])
+
+    }
+  }
+
+  if (is.null(markers_exprs) == FALSE && nrow(markers_exprs) > 0){
+    data_df <- merge(data_df, markers_exprs, by.x="sample_name", by.y="cell_id")
+    data_df$value <- with(data_df, ifelse(value >= 0.01, value, NA))
+    g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2)) + facet_wrap(~feature_label)
+  }else{
+    text_df <- data_df %>% dplyr::group_by_(color_by) %>% summarize(text_x = median(x = data_dim_1),
+                                                                    text_y = median(x = data_dim_2))
+    if(color_by != "Cluster" & !is.numeric(data_df[, color_by])) {
+      text_df$label <- paste0(1:nrow(text_df))
+      text_df$process_label <- paste0(1:nrow(text_df), '_', as.character(as.matrix(text_df[, 1])))
+      process_label <- text_df$process_label
+      names(process_label) <- as.character(as.matrix(text_df[, 1]))
+      data_df[, color_by] <- process_label[as.character(data_df[, color_by])]
+    } else {
+      text_df$label <- as.character(as.matrix(text_df[, 1]))
+    }
+
+    g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2))
+  }
+
+  # FIXME: setting size here overrides the marker expression funtionality.
+  # Don't do it!
+  if (is.null(markers_exprs) == FALSE && nrow(markers_exprs) > 0){
+    if (cds_subset@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size")){
+      g <- g + plotting_func(aes(color=log10(value + min_expr), alpha = ifelse(!is.na(value), "2", "1")), size=I(cell_size), stroke = I(cell_size / 2), na.rm = TRUE) +
+        viridis::scale_color_viridis(option = "viridis", name = "log10(values + 0.1)", na.value = "grey80", end = 0.8) +
+        guides(alpha = FALSE) + facet_wrap(~feature_label, nrow = nrow, ncol = ncol)
+    }else{
+      g <- g + plotting_func(aes(color=value, alpha = ifelse(!is.na(value), "2", "1")), size=I(cell_size), stroke = I(cell_size / 2), na.rm = TRUE) +
+        viridis::scale_color_viridis(option = "viridis", name = "log10(values + 0.1)", na.value = "grey80", end = 0.8) +
+        guides(alpha = FALSE) + facet_wrap(~feature_label, nrow = nrow, ncol = ncol)
+    }
+  }else {
+    # g <- g + geom_point(aes_string(color = color_by), size=I(cell_size), stroke = I(cell_size / 2), na.rm = TRUE, ...)
+    g <- g + plotting_func(aes_string(color = color_by), size=I(cell_size), stroke = I(cell_size / 2), na.rm = TRUE, ...)
+
+    if(show_group_id) {
+      g <- g + geom_text(data = text_df, mapping = aes_string(x = "text_x", y = "text_y", label = "label"), size = 4)
+    }
+  }
+
+  g <- g +
+    #scale_color_brewer(palette="Set1") +
+    monocle_theme_opts() +
+    xlab(paste("Component", x)) +
+    ylab(paste("Component", y)) +
+    theme(legend.position="top", legend.key.height=grid::unit(0.35, "in")) +
+    #guides(color = guide_legend(label.position = "top")) +
+    theme(legend.key = element_blank()) +
+    theme(panel.background = element_rect(fill='white')) +
+    theme(text = element_text(size = 15))
+  g
+}
+
