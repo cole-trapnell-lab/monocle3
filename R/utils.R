@@ -406,7 +406,7 @@ load_lung <- function(){
   lung_phenotype_data <- NA
   lung_feature_data <- NA
   num_cells_expressed <- NA
-  baseLoc <- system.file(package="monocle")
+  baseLoc <- system.file(package="monocle3")
   #baseLoc <- './inst'
   extPath <- file.path(baseLoc, "extdata")
   load(file.path(extPath, "lung_phenotype_data.RData"))
@@ -482,3 +482,30 @@ set_ordering_filter <- function(cds, ordering_genes){
   fData(cds)$use_for_ordering <- row.names(fData(cds)) %in% ordering_genes
   cds
 }
+
+#' Retrieve a table of values specifying the mean-variance relationship
+#'
+#' Calling estimate_dispersions computes a smooth function describing how variance
+#' in each gene's expression across cells varies according to the mean. This
+#' function only works for cell_data_set objects containing count-based expression
+#' data, either transcripts or reads.
+#'
+#' @param cds The cell_data_set from which to extract a dispersion table.
+#' @return A data frame containing the empirical mean expression,
+#' empirical dispersion, and the value estimated by the dispersion model.
+#'
+#' @export
+dispersion_table <- function(cds){
+
+  if (is.null(cds@disp_fit_info[["blind"]])){
+    warning("Warning: estimate_dispersions only works, and is only needed, when you're using a cell_data_set with a negbinomial or negbinomial.size expression family")
+    stop("Error: no dispersion model found. Please call estimate_dispersions() before calling this function")
+  }
+
+  disp_df<-data.frame(gene_id=cds@disp_fit_info[["blind"]]$disp_table$gene_id,
+                      mean_expression=cds@disp_fit_info[["blind"]]$disp_table$mu,
+                      dispersion_fit=cds@disp_fit_info[["blind"]]$disp_func(cds@disp_fit_info[["blind"]]$disp_table$mu),
+                      dispersion_empirical=cds@disp_fit_info[["blind"]]$disp_table$disp)
+  return(disp_df)
+}
+
