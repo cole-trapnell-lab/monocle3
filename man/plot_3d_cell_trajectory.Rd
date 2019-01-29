@@ -16,7 +16,7 @@ plot_3d_cell_trajectory(cds, downsample_size = NULL, dim = c(1, 2, 3),
   selfcontained = FALSE, ...)
 }
 \arguments{
-\item{cds}{CellDataSet for the experiment}
+\item{cds}{cell_data_set for the experiment}
 
 \item{dim}{the dimensions used to create the 3D plot, by default it is the first three dimensions}
 

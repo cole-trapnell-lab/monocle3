@@ -139,7 +139,7 @@ normalize_expr_data <- function(cds,
   FM <- exprs(cds)
   use_for_ordering <- NULL
   # If the user has selected a subset of genes for use in ordering the cells
-  # via setOrderingFilter(), subset the expression matrix.
+  # via set_ordering_filter(), subset the expression matrix.
   if (is.null(fData(cds)$use_for_ordering) == FALSE &&
       nrow(subset(fData(cds), use_for_ordering == TRUE)) > 0) {
     FM <- FM[fData(cds)$use_for_ordering, ]
@@ -157,12 +157,12 @@ normalize_expr_data <- function(cds,
         pseudo_expr = 0
     }
 
-    checkSizeFactors(cds)
+    check_size_factors(cds)
 
     if (norm_method == "log") {
       # If we are using log, normalize by size factor before log-transforming
 
-      FM <- Matrix::t(Matrix::t(FM)/BiocGenerics::sizeFactors(cds))
+      FM <- Matrix::t(Matrix::t(FM)/size_factors(cds))
 
       if(is.null(pseudo_expr))
         pseudo_expr <- 1
@@ -175,7 +175,7 @@ normalize_expr_data <- function(cds,
 
     } else if (norm_method == "none"){
       # If we are using log, normalize by size factor before log-transforming
-      FM <- Matrix::t(Matrix::t(FM)/sizeFactors(cds))
+      FM <- Matrix::t(Matrix::t(FM)/size_factors(cds))
       FM <- FM + pseudo_expr
     }
   }else if (cds@expression_family == "binomialff") {

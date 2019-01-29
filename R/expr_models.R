@@ -99,7 +99,7 @@ fit_models <- function(cds,
         cores = cores,
         model_formula_str = model_formula_str,
         expression_family = cds@expression_family,
-        disp_func = cds@dispFitInfo[["blind"]]$disp_func,
+        disp_func = cds@disp_fit_info[["blind"]]$disp_func,
         clean_model = clean_model,
         verbose = verbose
       )
@@ -112,7 +112,7 @@ fit_models <- function(cds,
       convert_to_dense = TRUE,
       model_formula_str = model_formula_str,
       expression_family = cds@expression_family,
-      disp_func = cds@dispFitInfo[["blind"]]$disp_func,
+      disp_func = cds@disp_fit_info[["blind"]]$disp_func,
       clean_model = clean_model,
       verbose = verbose
     )

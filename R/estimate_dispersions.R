@@ -1,21 +1,38 @@
-#' Helper function to estimate dispersions
-#'
-#' @param cds a cell_data_set that contains all cells user wants evaluated
-#' @param modelFormulaStr a formula string specifying the model to fit for the genes.
+
+
+#' @param modelFormulaStr A model formula, passed as a string, specifying how to group the cells prior to estimated dispersion.
+#' The default groups all cells together.
 #' @param relative_expr Whether to transform expression into relative values
-#' @param min_cells_detected Only include genes detected above lower_detection_limit in at least this many cells in the dispersion calculation
-#' @param removeOutliers a boolean it determines whether or not outliers from the data should be removed
-#' @param verbose Whether to show detailed running information.
-estimate_dispersions_cds <- function(cds, modelFormulaStr,
-                                     relative_expr, min_cells_detected,
-                                     removeOutliers, verbose = FALSE) {
+#' @param min_cells_detected Only include genes detected above lowerDetectionLimit in at least this many cells in the dispersion calculation
+#' @param remove_outliers Whether to remove outliers (using Cook's distance) when estimating dispersions
+#' @param cores The number of cores to use for computing dispersions
+#' @export
+estimate_dispersions <- function(cds, modelFormulaStr="~ 1",
+                                 relative_expr=TRUE, min_cells_detected=1,
+                                 remove_outliers=TRUE, cores=1,...) {
+  dispModelName="blind"
+  stopifnot( is( cds, "cell_data_set" ) )
+
+  if(!(identical("negbinomial.size", cds@expression_family) || identical("negbinomial", cds@expression_family))){
+    stop("Error: estimate_dispersions only works, and is only needed, when you're using a cell_data_set with a negbinomial or negbinomial.size expression family")
+  }
+
+  if( any( is.na( size_factors(cds) ) ) )
+    stop( "NAs found in size factors. Have you called 'estimate_size_factors'?" )
+
+  if( length(list(...)) != 0 )
+    warning( "in estimate_dispersions: Ignoring extra argument(s)." )
+
+  # Remove results from previous fits
+  cds@disp_fit_info = new.env( hash=TRUE )
   if(!(('negbinomial' == cds@expression_family) ||
        ('negbinomial.size' == cds@expression_family))) {
-    stop("Error: estimateDispersions only works, and is only needed, when you're using a cell_data_set with a negbinomial or negbinomial.size expression family")
+    stop("Error: estimate_dispersions only works, and is only needed, when you're using a cell_data_set with a negbinomial or negbinomial.size expression family")
   }
 
   mu <- NA
-  model_terms <- unlist(lapply(stringr::str_split(modelFormulaStr, "~|\\+|\\*"), stringr::str_trim))
+  model_terms <- unlist(lapply(stringr::str_split(modelFormulaStr, "~|\\+|\\*"),
+                               stringr::str_trim))
   model_terms <- model_terms[model_terms != ""]
   progress_opts <- options()$dplyr.show_progress
   options(dplyr.show_progress = T)
@@ -28,21 +45,24 @@ estimate_dispersions_cds <- function(cds, modelFormulaStr,
     }else{
       cds_pdata <- dplyr::group_by_(dplyr::select_(tibble::rownames_to_column(pData(cds)), "rowname"))
       disp_table <- as.data.frame(disp_calc_helper_NB(cds, min_cells_detected))
+      #disp_table <- data.frame(rowname = row.names(type_res), CellType = type_res)
     }
 
+    #message("fitting disersion curves")
+    #print (disp_table)
     if(!is.list(disp_table))
-      stop("Parametric dispersion fitting failed, please set a different lower_detection_limit")
+      stop("Parametric dispersion fitting failed, please set a different lowerDetectionLimit")
+    #disp_table <- do.call(rbind.data.frame, disp_table)
     disp_table <- subset(disp_table, is.na(mu) == FALSE)
-    res <- parametricDispersionFit(disp_table, verbose)
+    res <- parametricDispersionFit(disp_table, verbose = FALSE)
     fit <- res[[1]]
     coefs <- res[[2]]
-    #removeOutliers = TRUE
-    if (removeOutliers){
-      CD <- stats::cooks.distance(fit)
+    if (remove_outliers){
+      CD <- cooks.distance(fit)
       cooksCutoff <- 4/nrow(disp_table)
       message (paste("Removing", length(CD[CD > cooksCutoff]), "outliers"))
       outliers <- union(names(CD[CD > cooksCutoff]), setdiff(row.names(disp_table), names(CD)))
-      res <- parametricDispersionFit(disp_table[row.names(disp_table) %in% outliers == FALSE,], verbose)
+      res <- parametricDispersionFit(disp_table[row.names(disp_table) %in% outliers == FALSE,], verbose = FALSE)
       fit <- res[[1]]
       coefs <- res[[2]]
     }
@@ -53,9 +73,12 @@ estimate_dispersions_cds <- function(cds, modelFormulaStr,
 
   }
 
-  res <- list(disp_table = disp_table, disp_func = ans)
-  return(res)
+  cds@disp_fit_info[[dispModelName]] <- list(disp_table = disp_table, disp_func = ans)
+
+  validObject( cds )
+  cds
 }
+
 
 disp_calc_helper_NB <- function(cds, min_cells_detected) {
   rounded <- round(exprs(cds))
@@ -117,7 +140,7 @@ parametricDispersionFit <- function( disp_table, verbose = FALSE, initial_coefs=
       coefs[1] <- initial_coefs[1]
     }
     if (coefs[2] < 0){
-      stop( "Parametric dispersion fit failed. Try a local fit and/or a pooled estimation. (See '?estimateDispersions')" )
+      stop( "Parametric dispersion fit failed. Try a local fit and/or a pooled estimation. (See '?estimate_dispersions')" )
     }
     if( sum( log( coefs / oldcoefs )^2 ) < coefs[1] )
       break
@@ -130,7 +153,7 @@ parametricDispersionFit <- function( disp_table, verbose = FALSE, initial_coefs=
   }
 
   if( !all( coefs > 0 ) ){
-    stop( "Parametric dispersion fit failed. Try a local fit and/or a pooled estimation. (See '?estimateDispersions')" )
+    stop( "Parametric dispersion fit failed. Try a local fit and/or a pooled estimation. (See '?estimate_dispersions')" )
   }
 
   rm(disp_table)

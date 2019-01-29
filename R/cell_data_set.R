@@ -27,7 +27,7 @@ setOldClass(c("igraph"), prototype=structure(list(), class="igraph"))
 #' @field lower_detection_limit A numeric value specifying the minimum
 #'   expression level considered to be true expression.
 #' @field disp_fit_info An environment containing lists, one for each set of
-#'   estimated dispersion values. See estimateDispersions.
+#'   estimated dispersion values. See estimate_dispersions.
 #' @field dim_reduce_type A string encoding how this cell_data_set has been
 #'   reduced in dimensionality
 #' @field rge_method A string encoding how this cell_data_set has been fitted
@@ -108,7 +108,7 @@ new_cell_data_set <- function(cellData,
                   "'gene_short_name' for certain functions"))
   }
 
-  sizeFactors <- rep( NA_real_, ncol(cellData) )
+  size_factors <- rep( NA_real_, ncol(cellData) )
 
 
   if( is.null( phenoData ) )
@@ -121,7 +121,7 @@ new_cell_data_set <- function(cellData,
             "'gene_short_name' for certain functions"))
   }
 
-  phenoData$`Size_Factor` <- sizeFactors
+  phenoData$`Size_Factor` <- size_factors
 
   cds <- new( "cell_data_set",
               assayData = assayDataNew( "environment", exprs=cellData ),

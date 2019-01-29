@@ -1,8 +1,8 @@
 context("test-reduce_dimension")
 
 cds <- load_a549()
-cds <- estimateSizeFactors(cds)
-cds <- estimateDispersions(cds)
+cds <- estimate_size_factors(cds)
+cds <- estimate_dispersions(cds)
 cds <- preprocess_cds(cds, num_dim = 20)
 
 

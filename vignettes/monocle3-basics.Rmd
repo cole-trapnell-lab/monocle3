@@ -72,8 +72,8 @@ DelayedArray:::set_verbose_block_processing(TRUE)
 # Passing a higher value will make some computations faster but use more memory. Adjust with caution!
 options(DelayedArray.block.size=1000e6)
 
-cds <- estimateSizeFactors(cds)
-cds <- estimateDispersions(cds)
+cds <- estimate_size_factors(cds)
+cds <- estimate_dispersions(cds)
 ```
 
 ```{r}

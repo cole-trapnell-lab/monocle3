@@ -5,25 +5,9 @@
 \alias{cell_data_set-methods}
 \alias{[,cell_data_set,ANY,ANY,ANY-method}
 \alias{cell_data_set,ANY,ANY,ANY-method}
-\alias{sizeFactors,cell_data_set-method}
-\alias{cell_data_set,ANY,ANY-method}
-\alias{sizeFactors<-,cell_data_set,numeric-method}
-\alias{estimateSizeFactors,cell_data_set-method}
-\alias{estimateDispersions,cell_data_set-method}
 \title{Methods for the cell_data_set class}
 \usage{
 \S4method{[}{cell_data_set,ANY,ANY,ANY}(x, i, j, ..., drop = FALSE)
-
-\S4method{sizeFactors}{cell_data_set}(object)
-
-\S4method{sizeFactors}{cell_data_set,numeric}(object) <- value
-
-\S4method{estimateSizeFactors}{cell_data_set}(object, locfunc = median,
-  ...)
-
-\S4method{estimateDispersions}{cell_data_set}(object,
-  modelFormulaStr = "~ 1", relative_expr = TRUE,
-  min_cells_detected = 1, remove_outliers = TRUE, cores = 1, ...)
 }
 \arguments{
 \item{x}{the cell_data_set object}
@@ -39,27 +23,6 @@
 replacement.}
 
 \item{object}{The cell_data_set object}
-
-\item{value}{A vector of size factors, with length equal to the cells in
-object}
-
-\item{locfunc}{A function applied to the geometric-mean-scaled expression
-values to derive the size factor.}
-
-\item{modelFormulaStr}{A model formula, passed as a string, specifying how
-to group the cells prior to estimated dispersion. The default groups all
-cells together.}
-
-\item{relative_expr}{Whether to transform expression into relative values}
-
-\item{min_cells_detected}{Only include genes detected above
-lower_detection_limit in at least this many cells in the dispersion
-calculation}
-
-\item{remove_outliers}{Whether to remove outliers (using Cook's distance)
-when estimating dispersions}
-
-\item{cores}{The number of cores to use for computing dispersions}
 }
 \description{
 Methods for the cell_data_set class

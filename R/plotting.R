@@ -208,7 +208,7 @@ plot_cell_trajectory <- function(cds,
 
 #' Plot a dataset and trajectory in 3 dimensions
 #'
-#' @param cds CellDataSet for the experiment
+#' @param cds cell_data_set for the experiment
 #' @param dim the dimensions used to create the 3D plot, by default it is the first three dimensions
 #' @param color_by the cell attribute (e.g. the column of pData(cds)) to map to each cell's color
 #' @param markers a gene name or gene id to use for setting the size of each cell in the plot
