@@ -164,7 +164,7 @@ extract_coefficient_helper = function(model, pseudo_expr =
                            'z value',
                            'Pr(>|z|)',
                            'normalized_effect')
-    coef_mat = tibble:as_tibble(coef_mat)
+    coef_mat = tibble::as_tibble(coef_mat)
     coef_mat$term = NA
     coef_mat$model_component = NA
     return(coef_mat)
@@ -214,6 +214,18 @@ compare_models <- function(model_tbl_x, model_tbl_y){
 #' @export
 evaluate_fits = function(model_tbl){
   private_glance = function(m){
+
+
+    mass_glance = function(m) {
+      tibble::tibble(null.deviance = m$null.deviance,
+                     df.null = m$df.null,
+                     logLik = as.numeric(logLik(m)),
+                     AIC = AIC(m),
+                     BIC = AIC(m),
+                     deviance = NA_real_,
+                     df.residual = m$df.residual)
+    }
+
     zeroinfl_glance = function(m) {
       tibble::tibble(null.deviance = NA_real_,
              df.null = m$df.null,
@@ -223,7 +235,6 @@ evaluate_fits = function(model_tbl){
              deviance = NA_real_,
              df.residual = m$df.residual)
     }
-
     speedglm_glance = function(m) {
       tibble::tibble(null.deviance = m$nulldev,
                      df.null = m$nulldf,
@@ -243,9 +254,8 @@ evaluate_fits = function(model_tbl){
                      df.residual = NA_integer_)
     }
 
-    tryCatch({broom::glance(m)},
-             error = function(e) {
-               switch(class(m)[1],
+    tryCatch({switch(class(m)[1],
+                      "negbin" = mass_glance(m),
                       "zeroinfl" = zeroinfl_glance(m),
                       "speedglm" = speedglm_glance(m),
                       default_glance(m)
