@@ -298,16 +298,27 @@ coefficient_table <- function(model_tbl) {
 #' Compares goodness of fit for two ways of fitting a set of genes' expression
 #' @export
 compare_models <- function(model_tbl_x, model_tbl_y){
-  joined_fits = dplyr::full_join(model_tbl_x, model_tbl_y, by=c("id", "gene_short_name", "num_cells_expressed"))
-  joined_fits = joined_fits %>% dplyr::mutate(lr_test_p_value = purrr::map2_dbl(model.x, model.y,
-                    function(x, y) {
-                      if (identical(class(x), class(y))){
-                        as.data.frame(lmtest::lrtest(x,y))[2,5]
-                      } else {
-                        NA
-                      }
+  model_x_eval = evaluate_fits(model_tbl_x)
+  model_y_eval = evaluate_fits(model_tbl_y)
+  joined_fits = dplyr::full_join(model_x_eval, model_y_eval, by=c("id", "gene_short_name", "num_cells_expressed"))
 
-                      } ) )
+  joined_fits = joined_fits %>% dplyr::mutate(
+    dfs = round(abs(df.residual.x  - df.residual.y)),
+    LLR = 2 * abs(logLik.x  - logLik.y),
+    p_value = pchisq(LLR, dfs, lower.tail = FALSE)
+  )
+
+  joined_fits = joined_fits %>% dplyr::select(id, gene_short_name, num_cells_expressed, p_value)
+  joined_fits$q_value = p.adjust(joined_fits$p_value)
+  # joined_fits = joined_fits %>% dplyr::mutate(lr_test_p_value = purrr::map2_dbl(model_summary.x, model_summary.x,
+  #                   function(x, y) {
+  #                     if (identical(class(x), class(y))){
+  #                       likelihood_ratio_test_pval(x,y)
+  #                     } else {
+  #                       NA
+  #                     }
+  #
+  #                     } ) )
   return (joined_fits)
 }
 
@@ -367,4 +378,10 @@ evaluate_fits = function(model_tbl){
 
   }
   model_tbl %>% dplyr::mutate(glanced = purrr::map(model, private_glance)) %>% tidyr::unnest(glanced, .drop=TRUE)
+}
+
+likelihood_ratio_test_pval = function(model_summary_x, model_summary_y){
+  dfs = round(abs(model_summary_x$df.residual  - model_summary_y$df.residual))
+  LLR = 2 * abs(model_summary_x$logLik  - model_summary_y$logLik)
+  p_val = pchisq(LLR, dfs, lower.tail = FALSE)
 }
