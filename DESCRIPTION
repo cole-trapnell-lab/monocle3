@@ -29,7 +29,6 @@ Imports:
     igraph,
     irlba,
     limma,
-    #lmtest,
     lpSolveAPI,
     MASS,
     matlab,
