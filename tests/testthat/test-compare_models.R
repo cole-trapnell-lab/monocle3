@@ -20,6 +20,7 @@ test_that("compare_models() correctly deems NB better than Poisson",{
 
   nb_fit = fit_models(nb_cds, model_formula_str = "~log_dose", clean_model = FALSE)
   nb_reduced_fit = fit_models(nb_cds, model_formula_str = "~1", clean_model = FALSE)
+  require("lmtest") # TODO: skip the test below if lmtest isn't available
   lmtest_lrt_pval = lmtest::lrtest(nb_fit$model[[1]], nb_reduced_fit$model[[1]])[2,5]
   expect_equal(nb_comparison$p_value[1], lmtest_lrt_pval)
 
