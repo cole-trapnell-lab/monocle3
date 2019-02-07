@@ -5,7 +5,7 @@
 \title{Fits a model for each gene in a cell_data_set object.}
 \usage{
 fit_models(cds, model_formula_str, cores = 1, clean_model = TRUE,
-  verbose = FALSE)
+  verbose = FALSE, ...)
 }
 \arguments{
 \item{cds}{the cell_data_set upon which to perform this operation}

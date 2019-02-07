@@ -479,6 +479,12 @@ plot_cell_clusters(MCA_cds,
 ```
 
 
+```{r}
+my_genes <- row.names(subset(fData(cds),
+          gene_short_name %in% c("Cdk1", "Zwint", "Znhit1")))
+cds_subset <- cds[my_genes,]
+plot_genes_in_pseudotime(cds_subset, color_by = "cell_type")
+```
 
 
 

@@ -651,10 +651,10 @@ plot_cell_clusters <- function(cds,
       if (integer_expression) {
         cds_exprs <- exprs(cds_subset)
 
-        if (is.null(sizeFactors(cds_subset))) {
-          stop("Error: to call this function with relative_expr=TRUE, you must call estimateSizeFactors() first")
+        if (is.null(size_factors(cds_subset))) {
+          stop("Error: to call this function with relative_expr=TRUE, you must call estimate_size_factors() first")
         }
-        cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/sizeFactors(cds_subset))
+        cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds_subset))
 
         cds_exprs <- reshape2::melt(round(as.matrix(cds_exprs)))
       }
@@ -728,3 +728,212 @@ plot_cell_clusters <- function(cds,
   g
 }
 
+#' Plots expression for one or more genes as a function of pseudotime
+#'
+#' @description Plots expression for one or more genes as a function of pseudotime.
+#' Plotting allows you determine if the ordering produced by orderCells() is correct
+#' and it does not need to be flipped using the "reverse" flag in orderCells
+#'
+#' @param cds_subset cell_data_set for the experiment
+#' @param min_expr the minimum (untransformed) expression level to use in plotted the genes.
+#' @param cell_size the size (in points) of each cell used in the plot
+#' @param nrow the number of rows used when laying out the panels for each gene's expression
+#' @param ncol the number of columns used when laying out the panels for each gene's expression
+#' @param panel_order the order in which genes should be layed out (left-to-right, top-to-bottom)
+#' @param color_by the cell attribute (e.g. the column of pData(cds)) to be used to color each cell
+#' @param trend_formula the model formula to be used for fitting the expression trend over pseudotime
+#' @param label_by_short_name label figure panels by gene_short_name (TRUE) or feature id (FALSE)
+#' @param relative_expr Whether to transform expression into relative values
+#' @param vertical_jitter A value passed to ggplot to jitter the points in the vertical dimension. Prevents overplotting, and is particularly helpful for rounded transcript count data.
+#' @param horizontal_jitter A value passed to ggplot to jitter the points in the horizontal dimension. Prevents overplotting, and is particularly helpful for rounded transcript count data.
+#' @return a ggplot2 plot object
+#' @import ggplot2
+#' @importFrom plyr ddply .
+#' @importFrom reshape2 melt
+#' @export
+#' @examples
+#' \dontrun{
+#' library(HSMMSingleCell)
+#' HSMM <- load_HSMM()
+#' my_genes <- row.names(subset(fData(HSMM), gene_short_name %in% c("CDK1", "MEF2C", "MYH3")))
+#' cds_subset <- HSMM[my_genes,]
+#' plot_genes_in_pseudotime(cds_subset, color_by="Time")
+#' }
+plot_genes_in_pseudotime <-function(cds_subset,
+                                    min_expr=NULL,
+                                    cell_size=0.75,
+                                    nrow=NULL,
+                                    ncol=1,
+                                    panel_order=NULL,
+                                    color_by="Pseudotime",
+                                    trend_formula="~ sm.ns(Pseudotime, df=3)",
+                                    label_by_short_name=TRUE,
+                                    relative_expr=TRUE,
+                                    vertical_jitter=NULL,
+                                    horizontal_jitter=NULL){
+
+  f_id <- NA
+  Cell <- NA
+  cds_subset = cds_subset[,is.finite(pData(cds_subset)$Pseudotime)]
+
+  if (cds_subset@expression_family %in% c("negbinomial", "negbinomial.size")) {
+    integer_expression <- TRUE
+  }
+  else {
+    integer_expression <- FALSE
+    relative_expr <- TRUE
+  }
+  if (integer_expression) {
+    cds_exprs <- exprs(cds_subset)
+    if (relative_expr) {
+      if (is.null(size_factors(cds_subset))) {
+        stop("Error: to call this function with relative_expr=TRUE, you must call estimate_size_factors() first")
+      }
+      cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds_subset))
+    }
+    cds_exprs <- reshape2::melt(round(as.matrix(cds_exprs)))
+  }
+  else {
+    cds_exprs <- reshape2::melt(as.matrix(exprs(cds_subset)))
+  }
+  if (is.null(min_expr)) {
+    min_expr <- cds_subset@lower_detection_limit
+  }
+  colnames(cds_exprs) <- c("f_id", "Cell", "expression")
+  cds_pData <- pData(cds_subset)
+  cds_fData <- fData(cds_subset)
+  cds_exprs <- merge(cds_exprs, cds_fData, by.x = "f_id", by.y = "row.names")
+  cds_exprs <- merge(cds_exprs, cds_pData, by.x = "Cell", by.y = "row.names")
+  #cds_exprs$f_id <- as.character(cds_exprs$f_id)
+  #cds_exprs$Cell <- as.character(cds_exprs$Cell)
+
+  if (integer_expression) {
+    cds_exprs$adjusted_expression <- cds_exprs$expression
+  }
+  else {
+    cds_exprs$adjusted_expression <- log10(cds_exprs$expression)
+  }
+  # trend_formula <- paste("adjusted_expression", trend_formula,
+  #     sep = "")
+  if (label_by_short_name == TRUE) {
+    if (is.null(cds_exprs$gene_short_name) == FALSE) {
+      cds_exprs$feature_label <- as.character(cds_exprs$gene_short_name)
+      cds_exprs$feature_label[is.na(cds_exprs$feature_label)] <- cds_exprs$f_id
+    }
+    else {
+      cds_exprs$feature_label <- cds_exprs$f_id
+    }
+  }
+  else {
+    cds_exprs$feature_label <- cds_exprs$f_id
+  }
+  cds_exprs$f_id <- as.character(cds_exprs$f_id)
+  cds_exprs$feature_label <- factor(cds_exprs$feature_label)
+
+  new_data <- data.frame(Pseudotime = pData(cds_subset)$Pseudotime)
+  model_expectation <- genSmoothCurves(cds_subset, cores=1, trend_formula = trend_formula,
+                                       relative_expr = T, new_data = new_data)
+  colnames(model_expectation) <- colnames(cds_subset)
+  expectation <- ddply(cds_exprs, .(f_id, Cell), function(x) data.frame("expectation"=model_expectation[x$f_id, x$Cell]))
+  cds_exprs <- merge(cds_exprs, expectation)
+  #cds_exprs$expectation <- expectation#apply(cds_exprs,1, function(x) model_expectation[x$f_id, x$Cell])
+
+  cds_exprs$expression[cds_exprs$expression < min_expr] <- min_expr
+  cds_exprs$expectation[cds_exprs$expectation < min_expr] <- min_expr
+  if (is.null(panel_order) == FALSE) {
+    cds_exprs$feature_label <- factor(cds_exprs$feature_label,
+                                      levels = panel_order)
+  }
+  q <- ggplot(aes(Pseudotime, expression), data = cds_exprs)
+  if (is.null(color_by) == FALSE) {
+    q <- q + geom_point(aes_string(color = color_by), size = I(cell_size), position=position_jitter(horizontal_jitter, vertical_jitter))
+    if (class(pData(cds_subset)[,color_by]) == "numeric"){
+      q <- q + scale_color_viridis(option="C")
+    }
+  }
+  else {
+    q <- q + geom_point(size = I(cell_size), position=position_jitter(horizontal_jitter, vertical_jitter))
+  }
+
+  q <- q + geom_line(aes(x = Pseudotime, y = expectation), data = cds_exprs)
+
+  q <- q + scale_y_log10() + facet_wrap(~feature_label, nrow = nrow,
+                                        ncol = ncol, scales = "free_y")
+  if (min_expr < 1) {
+    q <- q + expand_limits(y = c(min_expr, 1))
+  }
+  if (relative_expr) {
+    q <- q + ylab("Relative Expression")
+  }
+  else {
+    q <- q + ylab("Absolute Expression")
+  }
+  q <- q + xlab("Pseudo-time")
+  q <- q + monocle_theme_opts()
+  q
+}
+
+#' Fit smooth spline curves and return the response matrix
+#'
+#' This function will fit smooth spline curves for the gene expression dynamics along pseudotime in a gene-wise manner and return
+#' the corresponding response matrix. This function is build on other functions (fit_models and responseMatrix) and used in calILRs and calABCs functions
+#'
+#' @param cds a CellDataSet object upon which to perform this operation
+#' @param new_data a data.frame object including columns (for example, Pseudotime) with names specified in the model formula. The values in the data.frame should be consist with the corresponding values from cds object.
+#' @param trend_formula a formula string specifying the model formula used in fitting the spline curve for each gene/feature.
+#' @param relative_expr a logic flag to determine whether or not the relative gene expression should be used
+#' @param response_type the response desired, as accepted by VGAM's predict function
+#' @param cores the number of cores to be used while testing each gene for differential expression
+#' @importFrom Biobase fData
+#' @return a data frame containing the data for the fitted spline curves.
+#' @export
+#'
+gen_smooth_curves <- function(cds, new_data, trend_formula = "~sm.ns(Pseudotime, df = 3)",
+                            relative_expr = T, response_type="response", cores = 1) {
+
+  expression_family <- cds@expression_family
+
+  if(cores > 1) {
+    expression_curve_matrix <- mcesApply(cds, 1, function(x, trend_formula, expression_family, relative_expr, new_data, fit_model_helper, responseMatrix,
+                                                          calculate_NB_dispersion_hint, calculate_QP_dispersion_hint){
+      environment(fit_model_helper) <- environment()
+      environment(responseMatrix) <- environment()
+      model_fits <- fit_model_helper(x, modelFormulaStr = trend_formula, expression_family = expression_family,
+                                     relative_expr = relative_expr, disp_func = cds@dispFitInfo[['blind']]$disp_func)
+      if(is.null(model_fits))
+        expression_curve <- as.data.frame(matrix(rep(NA, nrow(new_data)), nrow = 1))
+      else
+        expression_curve <- as.data.frame(responseMatrix(list(model_fits), newdata = new_data, response_type=response_type))
+      colnames(expression_curve) <- row.names(new_data)
+      expression_curve
+      #return(expression_curve)
+    }, required_packages=c("BiocGenerics", "Biobase", "VGAM", "plyr"), cores=cores,
+    trend_formula = trend_formula, expression_family = expression_family, relative_expr = relative_expr, new_data = new_data,
+    fit_model_helper = fit_model_helper, responseMatrix = responseMatrix, calculate_NB_dispersion_hint = calculate_NB_dispersion_hint,
+    calculate_QP_dispersion_hint = calculate_QP_dispersion_hint
+    )
+    expression_curve_matrix <- as.matrix(do.call(rbind, expression_curve_matrix))
+    return(expression_curve_matrix)
+  }
+  else {
+    expression_curve_matrix <- smartEsApply(cds, 1, function(x, trend_formula, expression_family, relative_expr, new_data){
+      environment(fit_model_helper) <- environment()
+      environment(responseMatrix) <- environment()
+      model_fits <- fit_model_helper(x, modelFormulaStr = trend_formula, expression_family = expression_family,
+                                     relative_expr = relative_expr, disp_func = cds@dispFitInfo[['blind']]$disp_func)
+      if(is.null(model_fits))
+        expression_curve <- as.data.frame(matrix(rep(NA, nrow(new_data)), nrow = 1))
+      else
+        expression_curve <- as.data.frame(responseMatrix(list(model_fits), new_data, response_type=response_type))
+      colnames(expression_curve) <- row.names(new_data)
+      expression_curve
+    },
+    convert_to_dense=TRUE,
+    trend_formula = trend_formula, expression_family = expression_family, relative_expr = relative_expr, new_data = new_data
+    )
+    expression_curve_matrix <- as.matrix(do.call(rbind, expression_curve_matrix))
+    row.names(expression_curve_matrix) <- row.names(fData(cds))
+    return(expression_curve_matrix)
+  }
+
+}
