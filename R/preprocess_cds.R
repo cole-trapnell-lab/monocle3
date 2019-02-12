@@ -70,7 +70,7 @@
 #'   function
 #' @return an updated cell_data_set object
 #' @export
-preprocess_cds <- function(cds, method = c('PCA', 'none'),
+preprocess_cds <- function(cds, method = c('PCA', "tfidf", 'none'),
                            num_dim=50,
                            norm_method = c("log", "none"),
                            residualModelFormulaStr=NULL,
@@ -105,6 +105,8 @@ preprocess_cds <- function(cds, method = c('PCA', 'none'),
 
   } else if(method == 'none') {
     irlba_pca_res <- Matrix::t(FM)
+  } else if(method == "tfidf") {
+    irlba_pca_res <- tfidf(Matrix::t(FM))
   } else {
     stop('unknown preprocessing method, stop!')
   }
@@ -210,3 +212,50 @@ normalize_expr_data <- function(cds,
   return (FM)
 }
 
+# Andrew's tfidf
+tfidf <- function(count_matrix, frequencies=TRUE, log_scale_tf=TRUE,
+                  scale_factor=100000, block_size=2000e6) {
+  # Use either raw counts or divide by total counts in each cell
+  if (frequencies) {
+    # "term frequency" method
+    tf = t(t(count_matrix) / Matrix::colSums(count_matrix))
+  } else {
+    # "raw count" method
+    tf = count_matrix
+  }
+
+  # Either TF method can optionally be log scaled
+  if (log_scale_tf) {
+    if (frequencies) {
+      tf@x = log1p(tf@x * scale_factor)
+    } else {
+      tf@x = log1p(tf@x * 1)
+    }
+  }
+
+  # IDF w/ "inverse document frequency smooth" method
+  idf = log(1 + ncol(count_matrix) / Matrix::rowSums(count_matrix))
+
+  # Try to just to the multiplication and fall back on delayed array
+  # TODO hopefully this actually falls back and not get jobs killed in SGE
+  tf_idf_counts = tryCatch({
+    print('TF*IDF multiplication, attempting in-memory computation')
+    tf_idf_counts = tf * idf
+    tf_idf_counts
+  }, error = function(e) {
+    print("TF*IDF multiplication too large for in-memory, falling back on DelayedArray.")
+    options(DelayedArray.block.size=block_size)
+    DelayedArray:::set_verbose_block_processing(TRUE)
+
+    tf = DelayedArray(tf)
+    idf = as.matrix(idf)
+
+    tf_idf_counts = tf * idf
+    tf_idf_counts
+  })
+
+  rownames(tf_idf_counts) = rownames(count_matrix)
+  colnames(tf_idf_counts) = colnames(count_matrix)
+  tf_idf_counts = as(tf_idf_counts, "sparseMatrix")
+  return(tf_idf_counts)
+}
