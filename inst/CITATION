@@ -1,0 +1,19 @@
+citEntry(entry="article",
+         title = "The dynamics and regulators of cell fate decisions are revealed by pseudo-temporal ordering of single cells",
+         author = personList( as.person("Cole Trapnell"), 
+                              as.person("Davide Cacchiarelli"),
+                              as.person("Jonna Grimsby"),
+                              as.person("Prapti Pokharel"),
+                              as.person("Shuqiang Li"),
+                              as.person("Michael Morse"),
+                              as.person("Niall J. Lennon"),
+                              as.person("Kenneth J. Livak"),
+                              as.person("Tarjei S. Mikkelsen"),
+                              as.person("John L. Rinn")),
+         year = 2014,
+         journal = "Nature Biotechnology",
+         textVersion = 
+         paste("Cole Trapnell and Davide Cacchiarelli et al (2014):", 
+               "The dynamics and regulators of cell fate decisions are revealed by pseudo-temporal ordering of single cells.",
+                "Nature Biotechnology" ) )
+
