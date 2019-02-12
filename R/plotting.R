@@ -941,7 +941,7 @@ gen_smooth_curves <- function(cds, new_data, trend_formula = "~sm.ns(Pseudotime,
 #' @param max_components Maximum number of components shown in the scree plot (variance explained by each component)
 #' @param norm_method Determines how to transform expression values prior to reducing dimensionality
 #' @param residual_model_formula_str A model formula specifying the effects to subtract from the data before clustering.
-#' @param pseudo_expr amount to increase expression values before dimensionality reduction
+#' @param pseudo_count amount to increase expression values before dimensionality reduction
 #' @param return_all A logical argument to determine whether or not the variance of each component is returned
 #' @param use_existing_pc_variance Whether to plot existing results for variance explained by each PC
 #' @param verbose Whether to emit verbose output during dimensionality reduction
@@ -957,7 +957,7 @@ plot_pc_variance_explained <- function(cds,
                                        max_components=100,
                                        norm_method = c("log", "vstExprs", "none"),
                                        residual_model_formula_str=NULL,
-                                       pseudo_expr=NULL,
+                                       pseudo_count=NULL,
                                        return_all = F,
                                        use_existing_pc_variance=FALSE,
                                        verbose=FALSE,
@@ -968,7 +968,7 @@ plot_pc_variance_explained <- function(cds,
     prop_varex <- cds@aux_clustering_data[["tSNE"]]$variance_explained
   }
   else{
-    FM <- normalize_expr_data(cds, norm_method, pseudo_expr)
+    FM <- normalize_expr_data(cds, norm_method, pseudo_count)
 
     xm <- Matrix::rowMeans(FM)
     xsd <- sqrt(Matrix::rowMeans((FM - xm)^2))

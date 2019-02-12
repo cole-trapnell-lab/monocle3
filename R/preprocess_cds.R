@@ -1,6 +1,8 @@
 #' Project a cell_data_set object into a lower dimensional PCA (or ISI) space
 #' after normalize the data
 #'
+#'
+#'### Data will still be size_factor_normalized! ###
 #' @description For most analysis (including trajectory inference, clustering)
 #' in Monocle 3, it requires us to to start from a low dimensional PCA space.
 #' \code{preprocess_cds} will be used to first project a cell_data_set object
@@ -41,7 +43,7 @@
 #' expression_family is \code{"Tobit"}, the data are adjusted by adding a
 #' pseudocount (of 1 by default) and then log-transformed. If you don't want
 #' any transformation at all, set \code{norm_method} to "none" and
-#' \code{pseudo_expr} to 0. This maybe useful for single-cell qPCR data, or
+#' \code{pseudo_count} to 0. This maybe useful for single-cell qPCR data, or
 #' data you've already transformed yourself in some way.
 #'
 #' @param cds the cell_data_set upon which to perform this operation
@@ -55,15 +57,18 @@
 #'   gene expression / cells into certain modules / topics. This method can be
 #'   used to find associated gene modules and cell clusters at the same time.
 #'   It removes noise in the data and thus makes the UMAP result even better.
-#' @param num_dim the dimensionality of the reduced space
+#' @param num_dim the dimensionality of the reduced space. Ignored if
+#'   method = "none".
 #' @param norm_method Determines how to transform expression values prior to
 #'   reducing dimensionality
 #' @param residual_model_formula_str A model formula specifying the effects to
 #'   subtract from the data before clustering.
-#' @param pseudo_expr amount to increase expression values before
-#'   dimensionality reduction
+#' @param pseudo_count amount to increase expression values before
+#'   dimensionality reduction. If NULL (default), pseudo_count of 1 is added
+#'   for log normalization and 0 is added for no normalization.
 #' @param scaling When this argument is set to TRUE (default), it will scale
-#'   each gene before running trajectory reconstruction.
+#'   each gene before running trajectory reconstruction. Relevant for
+#'   method = PCA only.
 #' @param verbose Whether to emit verbose output during dimensionality
 #'   reduction
 #' @param ... additional arguments to pass to the dimensionality reduction
@@ -74,7 +79,7 @@ preprocess_cds <- function(cds, method = c('PCA', "tfidf", 'none'),
                            num_dim=50,
                            norm_method = c("log", "none"),
                            residual_model_formula_str=NULL,
-                           pseudo_expr=NULL,
+                           pseudo_count=NULL,
                            scaling = TRUE,
                            verbose=FALSE,
                            ...) {
@@ -83,7 +88,7 @@ preprocess_cds <- function(cds, method = c('PCA', "tfidf", 'none'),
   norm_method <- match.arg(norm_method)
   #ensure results from RNG sensitive algorithms are the same on all calls
   set.seed(2016)
-  FM <- normalize_expr_data(cds, norm_method, pseudo_expr)
+  FM <- normalize_expr_data(cds, norm_method, pseudo_count)
 
   if (nrow(FM) == 0) {
     stop("Error: all rows have standard deviation zero")
@@ -120,7 +125,7 @@ preprocess_cds <- function(cds, method = c('PCA', "tfidf", 'none'),
   }
   row.names(irlba_pca_res) <- colnames(cds)
 
-  if (is.null(residual_model_formula_str) == FALSE) {
+  if (!is.null(residual_model_formula_str)) {
     if (verbose) message("Removing batch effects")
     X.model_mat <- sparse.model.matrix(stats::as.formula(residual_model_formula_str),
                                        data = pData(cds),
@@ -145,46 +150,43 @@ preprocess_cds <- function(cds, method = c('PCA', "tfidf", 'none'),
 # reduction
 normalize_expr_data <- function(cds,
                                 norm_method = c("log", "none"),
-                                pseudo_expr = NULL) {
+                                pseudo_count = NULL) {
+  norm_method <- match.arg(norm_method)
+  check_size_factors(cds)
+
   FM <- exprs(cds)
-  use_for_ordering <- NULL
+
   # If the user has selected a subset of genes for use in ordering the cells
   # via set_ordering_filter(), subset the expression matrix.
-  if (is.null(fData(cds)$use_for_ordering) == FALSE &&
+  if (!is.null(fData(cds)$use_for_ordering) &&
       nrow(subset(fData(cds), use_for_ordering == TRUE)) > 0) {
     FM <- FM[fData(cds)$use_for_ordering, ]
   }
 
   # If we're going to be using log, and the user hasn't given us a
   # pseudocount set it to 1 by default.
-  if (is.null(pseudo_expr)){
+  if (is.null(pseudo_count)){
     if(norm_method == "log")
-      pseudo_expr = 1
+      pseudo_count = 1
     else
-      pseudo_expr = 0
+      pseudo_count = 0
   }
-
-  norm_method <- match.arg(norm_method)
-  check_size_factors(cds)
 
   if (norm_method == "log") {
     # If we are using log, normalize by size factor before log-transforming
 
     FM <- Matrix::t(Matrix::t(FM)/size_factors(cds))
 
-    if(is.null(pseudo_expr))
-      pseudo_expr <- 1
-    if (pseudo_expr != 1 || is_sparse_matrix(exprs(cds)) == FALSE){
-      FM <- FM + pseudo_expr
+    if (pseudo_count != 1 || is_sparse_matrix(exprs(cds)) == FALSE){
+      FM <- FM + pseudo_count
       FM <- log2(FM)
     } else {
       FM@x = log2(FM@x + 1)
     }
 
   } else if (norm_method == "none"){
-    # If we are using log, normalize by size factor before log-transforming
     FM <- Matrix::t(Matrix::t(FM)/size_factors(cds))
-    FM <- FM + pseudo_expr
+    FM <- FM + pseudo_count
   }
   return (FM)
 }

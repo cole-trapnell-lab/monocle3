@@ -7,7 +7,7 @@ after normalize the data}
 \usage{
 preprocess_cds(cds, method = c("PCA", "tfidf", "none"), num_dim = 50,
   norm_method = c("log", "none"), residual_model_formula_str = NULL,
-  pseudo_expr = NULL, scaling = TRUE, verbose = FALSE, ...)
+  pseudo_count = NULL, scaling = TRUE, verbose = FALSE, ...)
 }
 \arguments{
 \item{cds}{the cell_data_set upon which to perform this operation}
@@ -23,7 +23,8 @@ gene expression / cells into certain modules / topics. This method can be
 used to find associated gene modules and cell clusters at the same time.
 It removes noise in the data and thus makes the UMAP result even better.}
 
-\item{num_dim}{the dimensionality of the reduced space}
+\item{num_dim}{the dimensionality of the reduced space. Ignored if
+method = "none".}
 
 \item{norm_method}{Determines how to transform expression values prior to
 reducing dimensionality}
@@ -31,11 +32,13 @@ reducing dimensionality}
 \item{residual_model_formula_str}{A model formula specifying the effects to
 subtract from the data before clustering.}
 
-\item{pseudo_expr}{amount to increase expression values before
-dimensionality reduction}
+\item{pseudo_count}{amount to increase expression values before
+dimensionality reduction. If NULL (default), pseudo_count of 1 is added
+for log normalization and 0 is added for no normalization.}
 
 \item{scaling}{When this argument is set to TRUE (default), it will scale
-each gene before running trajectory reconstruction.}
+each gene before running trajectory reconstruction. Relevant for
+method = PCA only.}
 
 \item{verbose}{Whether to emit verbose output during dimensionality
 reduction}
@@ -62,6 +65,8 @@ can learn any arbitrary graph structure. Both methods can be applied to the
 UMAP space.
 }
 \details{
+Data will still be size_factor_normalized!
+
 In Monocle3, we overhauled the code from Monocle2 so that a standard
 Monocle3 workflow works as following:
 \enumerate{
@@ -89,6 +94,6 @@ or \code{"negbinomial.size"}, the data are variance-stabilized. If the
 expression_family is \code{"Tobit"}, the data are adjusted by adding a
 pseudocount (of 1 by default) and then log-transformed. If you don't want
 any transformation at all, set \code{norm_method} to "none" and
-\code{pseudo_expr} to 0. This maybe useful for single-cell qPCR data, or
+\code{pseudo_count} to 0. This maybe useful for single-cell qPCR data, or
 data you've already transformed yourself in some way.
 }

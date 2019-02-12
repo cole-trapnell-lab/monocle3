@@ -7,7 +7,7 @@ data using the same procedure used in reduceDimension function.}
 \usage{
 plot_pc_variance_explained(cds, max_components = 100,
   norm_method = c("log", "vstExprs", "none"),
-  residual_model_formula_str = NULL, pseudo_expr = NULL,
+  residual_model_formula_str = NULL, pseudo_count = NULL,
   return_all = F, use_existing_pc_variance = FALSE, verbose = FALSE,
   ...)
 }
@@ -20,7 +20,7 @@ plot_pc_variance_explained(cds, max_components = 100,
 
 \item{residual_model_formula_str}{A model formula specifying the effects to subtract from the data before clustering.}
 
-\item{pseudo_expr}{amount to increase expression values before dimensionality reduction}
+\item{pseudo_count}{amount to increase expression values before dimensionality reduction}
 
 \item{return_all}{A logical argument to determine whether or not the variance of each component is returned}
 

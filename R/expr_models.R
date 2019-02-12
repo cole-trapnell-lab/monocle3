@@ -243,7 +243,7 @@ extract_model_status_helper = function(model){
   }
 }
 
-extract_coefficient_helper = function(model, model_summary, pseudo_expr = 0.01) {
+extract_coefficient_helper = function(model, model_summary, pseudo_count = 0.01) {
   if (class(model)[1] == "speedglm") {
     coef_mat = model_summary$coefficients # first row is intercept
     coef_mat = apply(coef_mat, 2, function(x) {as.numeric(as.character(x)) }) # We need this because some summary methods "format" the coefficients into a factor...
@@ -252,8 +252,8 @@ extract_coefficient_helper = function(model, model_summary, pseudo_expr = 0.01) 
                            'std_err',
                            'test_val',
                            'p_value')
-    log_eff_over_int = log2((model$family$linkinv(coef_mat[, 1] + coef_mat[1, 1]) + pseudo_expr) /
-                            rep(model$family$linkinv(coef_mat[1, 1]) + pseudo_expr, times = nrow(coef_mat)))
+    log_eff_over_int = log2((model$family$linkinv(coef_mat[, 1] + coef_mat[1, 1]) + pseudo_count) /
+                            rep(model$family$linkinv(coef_mat[1, 1]) + pseudo_count, times = nrow(coef_mat)))
     log_eff_over_int[1] = 0
     coef_mat = tibble::as_tibble(coef_mat, rownames = "term")
     coef_mat$normalized_effect = log_eff_over_int
@@ -268,8 +268,8 @@ extract_coefficient_helper = function(model, model_summary, pseudo_expr = 0.01) 
                            'std_err',
                            'test_val',
                            'p_value')
-    log_eff_over_int = log2((model$family$linkinv(coef_mat[, 1] + coef_mat[1, 1]) + pseudo_expr) /
-                              rep(model$family$linkinv(coef_mat[1, 1]) + pseudo_expr, times = nrow(coef_mat)))
+    log_eff_over_int = log2((model$family$linkinv(coef_mat[, 1] + coef_mat[1, 1]) + pseudo_count) /
+                              rep(model$family$linkinv(coef_mat[1, 1]) + pseudo_count, times = nrow(coef_mat)))
     log_eff_over_int[1] = 0
     coef_mat = tibble::as_tibble(coef_mat, rownames = "term")
     coef_mat$normalized_effect = log_eff_over_int
@@ -282,8 +282,8 @@ extract_coefficient_helper = function(model, model_summary, pseudo_expr = 0.01) 
                            'std_err',
                            'test_val',
                            'p_value')
-    log_eff_over_int = log2((model$linkinv(count_coef_mat[, 1] + count_coef_mat[1, 1]) + pseudo_expr) /
-                              rep(model$linkinv(count_coef_mat[1, 1]) + pseudo_expr, times = nrow(count_coef_mat)))
+    log_eff_over_int = log2((model$linkinv(count_coef_mat[, 1] + count_coef_mat[1, 1]) + pseudo_count) /
+                              rep(model$linkinv(count_coef_mat[1, 1]) + pseudo_count, times = nrow(count_coef_mat)))
     log_eff_over_int[1] = 0
     count_coef_mat = tibble::as_tibble(count_coef_mat, rownames = "term")
     count_coef_mat$normalized_effect = log_eff_over_int
