@@ -366,7 +366,7 @@ UMAP <- function(X, python_home = system('which python', intern = TRUE),
   }, finally = {
   })
 
-  reticulate::source_python(paste(system.file(package="monocle"), "umap.py",
+  reticulate::source_python(paste(system.file(package="monocle3"), "umap.py",
                                   sep="/"))
   if(length(grep('Matrix', class(X))) == 0){
     X <- methods::as(Matrix::as.matrix(X), 'TsparseMatrix')

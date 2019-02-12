@@ -74,7 +74,7 @@ preprocess_cds <- function(cds, method = c('PCA', "tfidf", 'none'),
                            num_dim=50,
                            norm_method = c("log", "none"),
                            residualModelFormulaStr=NULL,
-                           pseudo_expr=1,
+                           pseudo_expr=NULL,
                            scaling = TRUE,
                            verbose=FALSE,
                            ...) {
@@ -106,7 +106,15 @@ preprocess_cds <- function(cds, method = c('PCA', "tfidf", 'none'),
   } else if(method == 'none') {
     irlba_pca_res <- Matrix::t(FM)
   } else if(method == "tfidf") {
-    irlba_pca_res <- tfidf(Matrix::t(FM))
+    irlba_pca_res <- tfidf(FM)
+    do_svd = function(tf_idf_counts, dims=50) {
+      pca.results = irlba::irlba(t(tf_idf_counts), nv=dims)
+      final_result = pca.results$u %*% diag(pca.results$d)
+      rownames(final_result) = colnames(tf_idf_counts)
+      colnames(final_result) = paste0('PC_', 1:dims)
+      return(final_result)
+    }
+    irlba_pca_res = do_svd(irlba_pca_res, num_dim)
   } else {
     stop('unknown preprocessing method, stop!')
   }
@@ -137,7 +145,7 @@ preprocess_cds <- function(cds, method = c('PCA', "tfidf", 'none'),
 # reduction
 normalize_expr_data <- function(cds,
                                 norm_method = c("log", "none"),
-                                pseudo_expr = 1) {
+                                pseudo_expr = NULL) {
   FM <- exprs(cds)
   use_for_ordering <- NULL
   # If the user has selected a subset of genes for use in ordering the cells
@@ -147,67 +155,36 @@ normalize_expr_data <- function(cds,
     FM <- FM[fData(cds)$use_for_ordering, ]
   }
 
+  # If we're going to be using log, and the user hasn't given us a
+  # pseudocount set it to 1 by default.
+  if (is.null(pseudo_expr)){
+    if(norm_method == "log")
+      pseudo_expr = 1
+    else
+      pseudo_expr = 0
+  }
+
   norm_method <- match.arg(norm_method)
-  if (cds@expression_family %in% c("negbinomial", "negbinomial.size")) {
+  check_size_factors(cds)
 
-    # If we're going to be using log, and the user hasn't given us a
-    # pseudocount set it to 1 by default.
-    if (is.null(pseudo_expr)){
-      if(norm_method == "log")
-        pseudo_expr = 1
-      else
-        pseudo_expr = 0
-    }
+  if (norm_method == "log") {
+    # If we are using log, normalize by size factor before log-transforming
 
-    check_size_factors(cds)
+    FM <- Matrix::t(Matrix::t(FM)/size_factors(cds))
 
-    if (norm_method == "log") {
-      # If we are using log, normalize by size factor before log-transforming
-
-      FM <- Matrix::t(Matrix::t(FM)/size_factors(cds))
-
-      if(is.null(pseudo_expr))
-        pseudo_expr <- 1
-      if (pseudo_expr != 1 || is_sparse_matrix(exprs(cds)) == FALSE){
-        FM <- FM + pseudo_expr
-        FM <- log2(FM)
-      } else {
-        FM@x = log2(FM@x + 1)
-      }
-
-    } else if (norm_method == "none"){
-      # If we are using log, normalize by size factor before log-transforming
-      FM <- Matrix::t(Matrix::t(FM)/size_factors(cds))
+    if(is.null(pseudo_expr))
+      pseudo_expr <- 1
+    if (pseudo_expr != 1 || is_sparse_matrix(exprs(cds)) == FALSE){
       FM <- FM + pseudo_expr
-    }
-  }else if (cds@expression_family == "binomialff") {
-    if (norm_method == "none"){
-      #If this is binomial data, transform expression values into TF-IDF scores.
-      ncounts <- FM > 0
-      ncounts[ncounts != 0] <- 1
-      FM <- ncounts * log(1 + ncol(ncounts)/rowSums(ncounts))
-    } else {
-      stop(paste("Error: the only normalization method supported with",
-                 "binomial data is 'none'"))
-    }
-  } else if (cds@expression_family == "Tobit") {
-    FM <- FM + pseudo_expr
-    if (norm_method == "none"){
-
-    } else if (norm_method == "log"){
       FM <- log2(FM)
     } else {
-      stop(paste("Error: the only normalization methods supported with",
-                 "Tobit-distributed (e.g. FPKM/TPM) data are 'log'",
-                 "(recommended) or 'none'"))
+      FM@x = log2(FM@x + 1)
     }
-  } else if (cds@expression_family == "uninormal") {
-    if (norm_method == "none"){
-      FM <- FM + pseudo_expr
-    } else {
-      stop(paste("Error: the only normalization method supported with",
-                 "gaussian data is 'none'"))
-    }
+
+  } else if (norm_method == "none"){
+    # If we are using log, normalize by size factor before log-transforming
+    FM <- Matrix::t(Matrix::t(FM)/size_factors(cds))
+    FM <- FM + pseudo_expr
   }
   return (FM)
 }
