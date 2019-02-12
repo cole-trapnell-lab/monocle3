@@ -58,7 +58,7 @@
 #' @param num_dim the dimensionality of the reduced space
 #' @param norm_method Determines how to transform expression values prior to
 #'   reducing dimensionality
-#' @param residualModelFormulaStr A model formula specifying the effects to
+#' @param residual_model_formula_str A model formula specifying the effects to
 #'   subtract from the data before clustering.
 #' @param pseudo_expr amount to increase expression values before
 #'   dimensionality reduction
@@ -73,7 +73,7 @@
 preprocess_cds <- function(cds, method = c('PCA', "tfidf", 'none'),
                            num_dim=50,
                            norm_method = c("log", "none"),
-                           residualModelFormulaStr=NULL,
+                           residual_model_formula_str=NULL,
                            pseudo_expr=NULL,
                            scaling = TRUE,
                            verbose=FALSE,
@@ -120,9 +120,9 @@ preprocess_cds <- function(cds, method = c('PCA', "tfidf", 'none'),
   }
   row.names(irlba_pca_res) <- colnames(cds)
 
-  if (is.null(residualModelFormulaStr) == FALSE) {
+  if (is.null(residual_model_formula_str) == FALSE) {
     if (verbose) message("Removing batch effects")
-    X.model_mat <- sparse.model.matrix(stats::as.formula(residualModelFormulaStr),
+    X.model_mat <- sparse.model.matrix(stats::as.formula(residual_model_formula_str),
                                        data = pData(cds),
                                        drop.unused.levels = TRUE)
 

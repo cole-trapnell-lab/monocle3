@@ -87,9 +87,6 @@ plot_percent_cells_positive(cds_subset, grouping="cell_type2")
 ```
 
 
-
-
-
 ```{r}
 cds <- preprocess_cds(cds, num_dim = 20)
 ```

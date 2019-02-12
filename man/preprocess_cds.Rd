@@ -6,7 +6,7 @@
 after normalize the data}
 \usage{
 preprocess_cds(cds, method = c("PCA", "tfidf", "none"), num_dim = 50,
-  norm_method = c("log", "none"), residualModelFormulaStr = NULL,
+  norm_method = c("log", "none"), residual_model_formula_str = NULL,
   pseudo_expr = NULL, scaling = TRUE, verbose = FALSE, ...)
 }
 \arguments{
@@ -28,7 +28,7 @@ It removes noise in the data and thus makes the UMAP result even better.}
 \item{norm_method}{Determines how to transform expression values prior to
 reducing dimensionality}
 
-\item{residualModelFormulaStr}{A model formula specifying the effects to
+\item{residual_model_formula_str}{A model formula specifying the effects to
 subtract from the data before clustering.}
 
 \item{pseudo_expr}{amount to increase expression values before

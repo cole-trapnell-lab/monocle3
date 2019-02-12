@@ -7,8 +7,9 @@ data using the same procedure used in reduceDimension function.}
 \usage{
 plot_pc_variance_explained(cds, max_components = 100,
   norm_method = c("log", "vstExprs", "none"),
-  residualModelFormulaStr = NULL, pseudo_expr = NULL, return_all = F,
-  use_existing_pc_variance = FALSE, verbose = FALSE, ...)
+  residual_model_formula_str = NULL, pseudo_expr = NULL,
+  return_all = F, use_existing_pc_variance = FALSE, verbose = FALSE,
+  ...)
 }
 \arguments{
 \item{cds}{CellDataSet for the experiment after running reduceDimension with reduction_method as tSNE}
@@ -17,7 +18,7 @@ plot_pc_variance_explained(cds, max_components = 100,
 
 \item{norm_method}{Determines how to transform expression values prior to reducing dimensionality}
 
-\item{residualModelFormulaStr}{A model formula specifying the effects to subtract from the data before clustering.}
+\item{residual_model_formula_str}{A model formula specifying the effects to subtract from the data before clustering.}
 
 \item{pseudo_expr}{amount to increase expression values before dimensionality reduction}
 

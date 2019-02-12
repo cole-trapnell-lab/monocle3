@@ -29,7 +29,7 @@
 #' Often, experiments include cells from different batches or treatments. You
 #' can reduce the effects of these treatments by transforming the data with a
 #' linear model prior to dimensionality reduction. To do so, provide a model
-#' formula through \code{residualModelFormulaStr}.
+#' formula through \code{residual_model_formula_str}.
 #'
 #' Prior to reducing the dimensionality of the data, it usually helps to
 #' normalize it so that highly expressed or highly variable genes don't

@@ -32,7 +32,6 @@ monocle_theme_opts <- function()
 #' @param alpha The alpha aesthetics for the original cell points, useful to highlight the learned principal graph
 #' @param ... Additional arguments passed into scale_color_viridis function
 #' @return a ggplot2 plot object
-#' @import ggplot2
 #' @export
 #' @examples
 #' \dontrun{
@@ -747,9 +746,6 @@ plot_cell_clusters <- function(cds,
 #' @param vertical_jitter A value passed to ggplot to jitter the points in the vertical dimension. Prevents overplotting, and is particularly helpful for rounded transcript count data.
 #' @param horizontal_jitter A value passed to ggplot to jitter the points in the horizontal dimension. Prevents overplotting, and is particularly helpful for rounded transcript count data.
 #' @return a ggplot2 plot object
-#' @import ggplot2
-#' @importFrom plyr ddply .
-#' @importFrom reshape2 melt
 #' @export
 #' @examples
 #' \dontrun{
@@ -831,10 +827,10 @@ plot_genes_in_pseudotime <-function(cds_subset,
   cds_exprs$feature_label <- factor(cds_exprs$feature_label)
 
   new_data <- data.frame(Pseudotime = pData(cds_subset)$Pseudotime)
-  model_expectation <- genSmoothCurves(cds_subset, cores=1, trend_formula = trend_formula,
+  model_expectation <- gen_smooth_curves(cds_subset, cores=1, trend_formula = trend_formula,
                                        relative_expr = T, new_data = new_data)
   colnames(model_expectation) <- colnames(cds_subset)
-  expectation <- ddply(cds_exprs, .(f_id, Cell), function(x) data.frame("expectation"=model_expectation[x$f_id, x$Cell]))
+  expectation <- plyr::ddply(cds_exprs, plyr::.(f_id, Cell), function(x) data.frame("expectation"=model_expectation[x$f_id, x$Cell]))
   cds_exprs <- merge(cds_exprs, expectation)
   #cds_exprs$expectation <- expectation#apply(cds_exprs,1, function(x) model_expectation[x$f_id, x$Cell])
 
@@ -876,7 +872,7 @@ plot_genes_in_pseudotime <-function(cds_subset,
 #' Fit smooth spline curves and return the response matrix
 #'
 #' This function will fit smooth spline curves for the gene expression dynamics along pseudotime in a gene-wise manner and return
-#' the corresponding response matrix. This function is build on other functions (fit_models and responseMatrix) and used in calILRs and calABCs functions
+#' the corresponding response matrix. This function is build on other functions (fit_models and response_matrix) and used in calILRs and calABCs functions
 #'
 #' @param cds a CellDataSet object upon which to perform this operation
 #' @param new_data a data.frame object including columns (for example, Pseudotime) with names specified in the model formula. The values in the data.frame should be consist with the corresponding values from cds object.
@@ -886,7 +882,6 @@ plot_genes_in_pseudotime <-function(cds_subset,
 #' @param cores the number of cores to be used while testing each gene for differential expression
 #' @importFrom Biobase fData
 #' @return a data frame containing the data for the fitted spline curves.
-#' @export
 #'
 gen_smooth_curves <- function(cds, new_data, trend_formula = "~sm.ns(Pseudotime, df = 3)",
                             relative_expr = T, response_type="response", cores = 1) {
@@ -894,37 +889,37 @@ gen_smooth_curves <- function(cds, new_data, trend_formula = "~sm.ns(Pseudotime,
   expression_family <- cds@expression_family
 
   if(cores > 1) {
-    expression_curve_matrix <- mcesApply(cds, 1, function(x, trend_formula, expression_family, relative_expr, new_data, fit_model_helper, responseMatrix,
+    expression_curve_matrix <- mcesApply(cds, 1, function(x, trend_formula, expression_family, relative_expr, new_data, fit_model_helper, response_matrix,
                                                           calculate_NB_dispersion_hint, calculate_QP_dispersion_hint){
       environment(fit_model_helper) <- environment()
-      environment(responseMatrix) <- environment()
+      environment(response_matrix) <- environment()
       model_fits <- fit_model_helper(x, modelFormulaStr = trend_formula, expression_family = expression_family,
                                      relative_expr = relative_expr, disp_func = cds@dispFitInfo[['blind']]$disp_func)
       if(is.null(model_fits))
         expression_curve <- as.data.frame(matrix(rep(NA, nrow(new_data)), nrow = 1))
       else
-        expression_curve <- as.data.frame(responseMatrix(list(model_fits), newdata = new_data, response_type=response_type))
+        expression_curve <- as.data.frame(response_matrix(list(model_fits), newdata = new_data, response_type=response_type))
       colnames(expression_curve) <- row.names(new_data)
       expression_curve
       #return(expression_curve)
     }, required_packages=c("BiocGenerics", "Biobase", "VGAM", "plyr"), cores=cores,
     trend_formula = trend_formula, expression_family = expression_family, relative_expr = relative_expr, new_data = new_data,
-    fit_model_helper = fit_model_helper, responseMatrix = responseMatrix, calculate_NB_dispersion_hint = calculate_NB_dispersion_hint,
+    fit_model_helper = fit_model_helper, response_matrix = response_matrix, calculate_NB_dispersion_hint = calculate_NB_dispersion_hint,
     calculate_QP_dispersion_hint = calculate_QP_dispersion_hint
     )
     expression_curve_matrix <- as.matrix(do.call(rbind, expression_curve_matrix))
     return(expression_curve_matrix)
   }
   else {
-    expression_curve_matrix <- smartEsApply(cds, 1, function(x, trend_formula, expression_family, relative_expr, new_data){
+    expression_curve_matrix <- smart_es_apply(cds, 1, function(x, trend_formula, expression_family, relative_expr, new_data){
       environment(fit_model_helper) <- environment()
-      environment(responseMatrix) <- environment()
-      model_fits <- fit_model_helper(x, modelFormulaStr = trend_formula, expression_family = expression_family,
+      environment(response_matrix) <- environment()
+      model_fits <- fit_model_helper(x, model_formula_str = trend_formula, expression_family = expression_family,
                                      relative_expr = relative_expr, disp_func = cds@dispFitInfo[['blind']]$disp_func)
       if(is.null(model_fits))
         expression_curve <- as.data.frame(matrix(rep(NA, nrow(new_data)), nrow = 1))
       else
-        expression_curve <- as.data.frame(responseMatrix(list(model_fits), new_data, response_type=response_type))
+        expression_curve <- as.data.frame(response_matrix(list(model_fits), new_data, response_type=response_type))
       colnames(expression_curve) <- row.names(new_data)
       expression_curve
     },
@@ -945,14 +940,13 @@ gen_smooth_curves <- function(cds, new_data, trend_formula = "~sm.ns(Pseudotime,
 #' @param cds CellDataSet for the experiment after running reduceDimension with reduction_method as tSNE
 #' @param max_components Maximum number of components shown in the scree plot (variance explained by each component)
 #' @param norm_method Determines how to transform expression values prior to reducing dimensionality
-#' @param residualModelFormulaStr A model formula specifying the effects to subtract from the data before clustering.
+#' @param residual_model_formula_str A model formula specifying the effects to subtract from the data before clustering.
 #' @param pseudo_expr amount to increase expression values before dimensionality reduction
 #' @param return_all A logical argument to determine whether or not the variance of each component is returned
 #' @param use_existing_pc_variance Whether to plot existing results for variance explained by each PC
 #' @param verbose Whether to emit verbose output during dimensionality reduction
 #' @param ... additional arguments to pass to the dimensionality reduction function
 #' @export
-#' @importFrom stats formula
 #' @examples
 #' \dontrun{
 #' library(HSMMSingleCell)
@@ -962,7 +956,7 @@ gen_smooth_curves <- function(cds, new_data, trend_formula = "~sm.ns(Pseudotime,
 plot_pc_variance_explained <- function(cds,
                                        max_components=100,
                                        norm_method = c("log", "vstExprs", "none"),
-                                       residualModelFormulaStr=NULL,
+                                       residual_model_formula_str=NULL,
                                        pseudo_expr=NULL,
                                        return_all = F,
                                        use_existing_pc_variance=FALSE,
@@ -980,10 +974,10 @@ plot_pc_variance_explained <- function(cds,
     xsd <- sqrt(Matrix::rowMeans((FM - xm)^2))
     FM <- FM[xsd > 0,]
 
-    if (is.null(residualModelFormulaStr) == FALSE) {
+    if (is.null(residual_model_formula_str) == FALSE) {
       if (verbose)
         message("Removing batch effects")
-      X.model_mat <- sparse.model.matrix(as.formula(residualModelFormulaStr),
+      X.model_mat <- sparse.model.matrix(stats::as.formula(residual_model_formula_str),
                                          data = pData(cds), drop.unused.levels = TRUE)
 
       fit <- limma::lmFit(FM, X.model_mat, ...)
@@ -1038,8 +1032,6 @@ plot_pc_variance_explained <- function(cds,
 #' @param log_scale a boolean that determines whether or not to scale data logarithmically
 #' @return a ggplot2 plot object
 #' @import ggplot2
-#' @importFrom reshape2 melt
-#' @importFrom BiocGenerics sizeFactors
 #' @export
 #' @examples
 #' \dontrun{
@@ -1159,9 +1151,6 @@ plot_genes_violin <- function (cds_subset, grouping = "State", min_expr = NULL, 
 #' @param plot_limits A pair of number specifying the limits of the y axis. If NULL, scale to the range of the data.
 #' @return a ggplot2 plot object
 #' @import ggplot2
-#' @importFrom plyr ddply
-#' @importFrom reshape2 melt
-#' @importFrom BiocGenerics sizeFactors
 #' @export
 #' @examples
 #' \dontrun{
@@ -1246,6 +1235,53 @@ plot_percent_cells_positive <- function(cds_subset,
   qp <-  qp + geom_bar(stat="identity") + monocle_theme_opts()
 
   return(qp)
+}
+
+
+#' Calculates response values.
+#'
+#' Generates a matrix of response values for a set of fitted models
+#' @param models a list of models, e.g. as returned by fitModels()
+#' @param newdata a dataframe used to generate new data for interpolation of time points
+#' @param response_type the response desired, as accepted by VGAM's predict function
+#' @param cores number of cores used for calculation
+#' @return a matrix where each row is a vector of response values for a particular feature's model, and columns are cells.
+response_matrix <- function(models, newdata = NULL, response_type="response", cores = 1) {
+  res_list <- parallel::mclapply(models, function(x) {
+    if (is.na(x$model)) { NA } else {
+      print(x)
+      if (x@expression_family %in% c("negbinomial", "negbinomial.size")) {
+        predict(x, newdata = newdata, type = response_type)
+      } else if (x@expression_family %in% c("uninormal")) {
+        predict(x, newdata = newdata, type = response_type)
+      }
+      else {
+        10^predict(x, newdata = newdata, type = response_type)
+      }
+    }
+  }, mc.cores = cores)
+
+  res_list_lengths <- lapply(res_list[is.na(res_list) == FALSE],
+                             length)
+  stopifnot(length(unique(res_list_lengths)) == 1)
+  num_na_fits <- length(res_list[is.na(res_list)])
+  if (num_na_fits > 0) {
+    na_matrix <- matrix(rep(rep(NA, res_list_lengths[[1]]),
+                            num_na_fits), nrow = num_na_fits)
+    row.names(na_matrix) <- names(res_list[is.na(res_list)])
+    non_na_matrix <- Matrix::t(do.call(cbind, lapply(res_list[is.na(res_list) ==
+                                                                FALSE], unlist)))
+    row.names(non_na_matrix) <- names(res_list[is.na(res_list) ==
+                                                 FALSE])
+    res_matrix <- rbind(non_na_matrix, na_matrix)
+    res_matrix <- res_matrix[names(res_list), ]
+  }
+  else {
+    res_matrix <- Matrix::t(do.call(cbind, lapply(res_list, unlist)))
+    row.names(res_matrix) <- names(res_list[is.na(res_list) ==
+                                              FALSE])
+  }
+  res_matrix
 }
 
 
