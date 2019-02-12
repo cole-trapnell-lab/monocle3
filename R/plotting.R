@@ -937,3 +937,84 @@ gen_smooth_curves <- function(cds, new_data, trend_formula = "~sm.ns(Pseudotime,
   }
 
 }
+
+
+#' Plots the percentage of variance explained by the each component based on PCA from the normalized expression
+#' data using the same procedure used in reduceDimension function.
+#'
+#' @param cds CellDataSet for the experiment after running reduceDimension with reduction_method as tSNE
+#' @param max_components Maximum number of components shown in the scree plot (variance explained by each component)
+#' @param norm_method Determines how to transform expression values prior to reducing dimensionality
+#' @param residualModelFormulaStr A model formula specifying the effects to subtract from the data before clustering.
+#' @param pseudo_expr amount to increase expression values before dimensionality reduction
+#' @param return_all A logical argument to determine whether or not the variance of each component is returned
+#' @param use_existing_pc_variance Whether to plot existing results for variance explained by each PC
+#' @param verbose Whether to emit verbose output during dimensionality reduction
+#' @param ... additional arguments to pass to the dimensionality reduction function
+#' @export
+#' @importFrom stats formula
+#' @examples
+#' \dontrun{
+#' library(HSMMSingleCell)
+#' HSMM <- load_HSMM()
+#' plot_pc_variance_explained(HSMM)
+#' }
+plot_pc_variance_explained <- function(cds,
+                                       max_components=100,
+                                       norm_method = c("log", "vstExprs", "none"),
+                                       residualModelFormulaStr=NULL,
+                                       pseudo_expr=NULL,
+                                       return_all = F,
+                                       use_existing_pc_variance=FALSE,
+                                       verbose=FALSE,
+                                       ...){
+  norm_method <- match.arg(norm_method)
+  set.seed(2016)
+  if(!is.null(cds@aux_clustering_data[["tSNE"]]$variance_explained) & use_existing_pc_variance == T){
+    prop_varex <- cds@aux_clustering_data[["tSNE"]]$variance_explained
+  }
+  else{
+    FM <- normalize_expr_data(cds, norm_method, pseudo_expr)
+
+    xm <- Matrix::rowMeans(FM)
+    xsd <- sqrt(Matrix::rowMeans((FM - xm)^2))
+    FM <- FM[xsd > 0,]
+
+    if (is.null(residualModelFormulaStr) == FALSE) {
+      if (verbose)
+        message("Removing batch effects")
+      X.model_mat <- sparse.model.matrix(as.formula(residualModelFormulaStr),
+                                         data = pData(cds), drop.unused.levels = TRUE)
+
+      fit <- limma::lmFit(FM, X.model_mat, ...)
+      beta <- fit$coefficients[, -1, drop = FALSE]
+      beta[is.na(beta)] <- 0
+      FM <- as.matrix(FM) - beta %*% t(X.model_mat[, -1])
+    }else{
+      X.model_mat <- NULL
+    }
+
+    if (nrow(FM) == 0) {
+      stop("Error: all rows have standard deviation zero")
+    }
+
+    irlba_res <- sparse_prcomp_irlba(t(FM), n = min(max_components, min(dim(FM)) - 1),
+                                     center = TRUE, scale. = TRUE)
+    prop_varex <- irlba_res$sdev^2 / sum(irlba_res$sdev^2)
+
+  }
+
+  p <- qplot(1:length(prop_varex), prop_varex, alpha = I(0.5)) +  monocle_theme_opts() +
+    theme(legend.position="top", legend.key.height=grid::unit(0.35, "in")) +
+    theme(panel.background = element_rect(fill='white')) + xlab('components') +
+    ylab('Variance explained \n by each component')
+
+  cds@aux_clustering_data[["tSNE"]]$variance_explained <- prop_varex # update CDS slot for variance_explained
+
+  if(return_all) {
+    return(list(variance_explained = prop_varex, p = p))
+  }
+  else
+    return(p)
+}
+

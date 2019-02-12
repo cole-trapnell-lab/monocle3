@@ -82,6 +82,12 @@ cds <- preprocess_cds(cds, num_dim = 20)
 ```
 
 ```{r}
+plot_pc_variance_explained(cds)
+
+```
+
+
+```{r}
 cds <- reduce_dimension(cds, reduction_method = 'UMAP')
 ```
 

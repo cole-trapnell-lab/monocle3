@@ -5,9 +5,9 @@
 \title{Project a cell_data_set object into a lower dimensional PCA (or ISI) space
 after normalize the data}
 \usage{
-preprocess_cds(cds, method = c("PCA", "none"), num_dim = 50,
+preprocess_cds(cds, method = c("PCA", "tfidf", "none"), num_dim = 50,
   norm_method = c("log", "none"), residualModelFormulaStr = NULL,
-  pseudo_expr = 1, scaling = TRUE, verbose = FALSE, ...)
+  pseudo_expr = NULL, scaling = TRUE, verbose = FALSE, ...)
 }
 \arguments{
 \item{cds}{the cell_data_set upon which to perform this operation}
