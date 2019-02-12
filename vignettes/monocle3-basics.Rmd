@@ -77,6 +77,16 @@ cds <- estimate_size_factors(cds)
 cds <- estimate_dispersions(cds)
 ```
 
+
+```{r}
+cds_subset <- cds[c("Cdk1", "Zwint", "Znhit1"),]
+plot_genes_violin(cds_subset, grouping="cell_type2")
+```
+
+
+
+
+
 ```{r}
 cds <- preprocess_cds(cds, num_dim = 20)
 ```
@@ -130,6 +140,13 @@ MPP_node_ids = get_correct_root_state(cds,
 cds <- order_cells(cds, root_pr_nodes = MPP_node_ids)
 plot_cell_trajectory(cds)
 ```
+
+
+
+
+
+
+
 
 
 ```{r}
