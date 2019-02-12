@@ -1134,3 +1134,118 @@ plot_genes_violin <- function (cds_subset, grouping = "State", min_expr = NULL, 
   q
 }
 
+
+#' Plots the number of cells expressing one or more genes as a barplot
+#'
+#'  @description Accetps a CellDataSet and a parameter,"grouping", used for dividing cells into groups.
+#'  Returns one or more bar graphs (one graph for each gene in the CellDataSet).
+#'  Each graph shows the percentage of cells that express a gene in the in the CellDataSet for
+#'  each sub-group of cells created by "grouping".
+#'
+#'  Let's say the CellDataSet passed in included genes A, B, and C and the "grouping parameter divided
+#'  all of the cells into three groups called X, Y, and Z. Then three graphs would be produced called A,
+#'  B, and C. In the A graph there would be three bars one for X, one for Y, and one for Z. So X bar in the
+#'  A graph would show the percentage of cells in the X group that express gene A.
+#'
+#' @param cds_subset CellDataSet for the experiment
+#' @param grouping the cell attribute (e.g. the column of pData(cds)) to group cells by on the horizontal axis
+#' @param min_expr the minimum (untransformed) expression level to use in plotted the genes.
+#' @param nrow the number of rows used when laying out the panels for each gene's expression
+#' @param ncol the number of columns used when laying out the panels for each gene's expression
+#' @param panel_order the order in which genes should be layed out (left-to-right, top-to-bottom)
+#' @param plot_as_fraction whether to show the percent instead of the number of cells expressing each gene
+#' @param label_by_short_name label figure panels by gene_short_name (TRUE) or feature id (FALSE)
+#' @param relative_expr Whether to transform expression into relative values
+#' @param plot_limits A pair of number specifying the limits of the y axis. If NULL, scale to the range of the data.
+#' @return a ggplot2 plot object
+#' @import ggplot2
+#' @importFrom plyr ddply
+#' @importFrom reshape2 melt
+#' @importFrom BiocGenerics sizeFactors
+#' @export
+#' @examples
+#' \dontrun{
+#' library(HSMMSingleCell)
+#' HSMM <- load_HSMM()
+#' MYOG_ID1 <- HSMM[row.names(subset(fData(HSMM), gene_short_name %in% c("MYOG", "ID1"))),]
+#' plot_percent_cells_positive(MYOG_ID1, grouping="Media", ncol=2)
+#' }
+plot_percent_cells_positive <- function(cds_subset,
+                                      grouping = "State",
+                                      min_expr=0.1,
+                                      nrow=NULL,
+                                      ncol=1,
+                                      panel_order=NULL,
+                                      plot_as_fraction=TRUE,
+                                      label_by_short_name=TRUE,
+                                      relative_expr=TRUE,
+                                      plot_limits=c(0,100)){
+
+  percent <- NULL
+
+  if (cds_subset@expression_family %in% c("negbinomial", "negbinomial.size")){
+    integer_expression <- TRUE
+  }else{
+    integer_expression <- FALSE
+    relative_expr <- TRUE
+  }
+
+  if (integer_expression)
+  {
+    marker_exprs <- exprs(cds_subset)
+    if (relative_expr){
+      if (is.null(size_factors(cds_subset)))
+      {
+        stop("Error: to call this function with relative_expr=TRUE, you must call estimateSizeFactors() first")
+      }
+      marker_exprs <- Matrix::t(Matrix::t(marker_exprs) / size_factors(cds_subset))
+    }
+    marker_exprs_melted <- reshape2::melt(round(as.matrix(marker_exprs)))
+  }else{
+    marker_exprs_melted <- reshape2::melt(exprs(marker_exprs))
+  }
+
+  colnames(marker_exprs_melted) <- c("f_id", "Cell", "expression")
+
+  marker_exprs_melted <- merge(marker_exprs_melted, pData(cds_subset), by.x="Cell", by.y="row.names")
+  marker_exprs_melted <- merge(marker_exprs_melted, fData(cds_subset), by.x="f_id", by.y="row.names")
+
+  if (label_by_short_name == TRUE){
+    if (is.null(marker_exprs_melted$gene_short_name) == FALSE){
+      marker_exprs_melted$feature_label <- marker_exprs_melted$gene_short_name
+      marker_exprs_melted$feature_label[is.na(marker_exprs_melted$feature_label)]  <- marker_exprs_melted$f_id
+    }else{
+      marker_exprs_melted$feature_label <- marker_exprs_melted$f_id
+    }
+  }else{
+    marker_exprs_melted$feature_label <- marker_exprs_melted$f_id
+  }
+
+  if (is.null(panel_order) == FALSE)
+  {
+    marker_exprs_melted$feature_label <- factor(marker_exprs_melted$feature_label, levels=panel_order)
+  }
+
+  marker_counts <- plyr::ddply(marker_exprs_melted, c("feature_label", grouping), function(x) {
+    data.frame(target=sum(x$expression > min_expr),
+               target_fraction=sum(x$expression > min_expr)/nrow(x)) } )
+
+  #print (head(marker_counts))
+  if (plot_as_fraction){
+    marker_counts$target_fraction <- marker_counts$target_fraction * 100
+    qp <- ggplot(aes_string(x=grouping, y="target_fraction", fill=grouping), data=marker_counts) +
+      ylab("Cells (percent)")
+    if (is.null(plot_limits) == FALSE)
+      qp <- qp + scale_y_continuous(limits=plot_limits)
+  }else{
+    qp <- ggplot(aes_string(x=grouping, y="target", fill=grouping), data=marker_counts) +
+      ylab("Cells")
+  }
+
+  qp <- qp + facet_wrap(~feature_label, nrow=nrow, ncol=ncol, scales="free_y")
+  qp <-  qp + geom_bar(stat="identity") + monocle_theme_opts()
+
+  return(qp)
+}
+
+

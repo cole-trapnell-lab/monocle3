@@ -81,6 +81,9 @@ cds <- estimate_dispersions(cds)
 ```{r}
 cds_subset <- cds[c("Cdk1", "Zwint", "Znhit1"),]
 plot_genes_violin(cds_subset, grouping="cell_type2")
+
+plot_percent_cells_positive(cds_subset, grouping="cell_type2")
+
 ```
 
 
