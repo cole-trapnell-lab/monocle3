@@ -32,7 +32,6 @@ monocle_theme_opts <- function()
 #' @param alpha The alpha aesthetics for the original cell points, useful to highlight the learned principal graph
 #' @param ... Additional arguments passed into scale_color_viridis function
 #' @return a ggplot2 plot object
-#' @import ggplot2
 #' @export
 #' @examples
 #' \dontrun{
@@ -747,9 +746,6 @@ plot_cell_clusters <- function(cds,
 #' @param vertical_jitter A value passed to ggplot to jitter the points in the vertical dimension. Prevents overplotting, and is particularly helpful for rounded transcript count data.
 #' @param horizontal_jitter A value passed to ggplot to jitter the points in the horizontal dimension. Prevents overplotting, and is particularly helpful for rounded transcript count data.
 #' @return a ggplot2 plot object
-#' @import ggplot2
-#' @importFrom plyr ddply .
-#' @importFrom reshape2 melt
 #' @export
 #' @examples
 #' \dontrun{
@@ -831,10 +827,10 @@ plot_genes_in_pseudotime <-function(cds_subset,
   cds_exprs$feature_label <- factor(cds_exprs$feature_label)
 
   new_data <- data.frame(Pseudotime = pData(cds_subset)$Pseudotime)
-  model_expectation <- genSmoothCurves(cds_subset, cores=1, trend_formula = trend_formula,
+  model_expectation <- gen_smooth_curves(cds_subset, cores=1, trend_formula = trend_formula,
                                        relative_expr = T, new_data = new_data)
   colnames(model_expectation) <- colnames(cds_subset)
-  expectation <- ddply(cds_exprs, .(f_id, Cell), function(x) data.frame("expectation"=model_expectation[x$f_id, x$Cell]))
+  expectation <- plyr::ddply(cds_exprs, plyr::.(f_id, Cell), function(x) data.frame("expectation"=model_expectation[x$f_id, x$Cell]))
   cds_exprs <- merge(cds_exprs, expectation)
   #cds_exprs$expectation <- expectation#apply(cds_exprs,1, function(x) model_expectation[x$f_id, x$Cell])
 
@@ -876,7 +872,7 @@ plot_genes_in_pseudotime <-function(cds_subset,
 #' Fit smooth spline curves and return the response matrix
 #'
 #' This function will fit smooth spline curves for the gene expression dynamics along pseudotime in a gene-wise manner and return
-#' the corresponding response matrix. This function is build on other functions (fit_models and responseMatrix) and used in calILRs and calABCs functions
+#' the corresponding response matrix. This function is build on other functions (fit_models and response_matrix) and used in calILRs and calABCs functions
 #'
 #' @param cds a CellDataSet object upon which to perform this operation
 #' @param new_data a data.frame object including columns (for example, Pseudotime) with names specified in the model formula. The values in the data.frame should be consist with the corresponding values from cds object.
@@ -886,7 +882,6 @@ plot_genes_in_pseudotime <-function(cds_subset,
 #' @param cores the number of cores to be used while testing each gene for differential expression
 #' @importFrom Biobase fData
 #' @return a data frame containing the data for the fitted spline curves.
-#' @export
 #'
 gen_smooth_curves <- function(cds, new_data, trend_formula = "~sm.ns(Pseudotime, df = 3)",
                             relative_expr = T, response_type="response", cores = 1) {
@@ -894,37 +889,37 @@ gen_smooth_curves <- function(cds, new_data, trend_formula = "~sm.ns(Pseudotime,
   expression_family <- cds@expression_family
 
   if(cores > 1) {
-    expression_curve_matrix <- mcesApply(cds, 1, function(x, trend_formula, expression_family, relative_expr, new_data, fit_model_helper, responseMatrix,
+    expression_curve_matrix <- mcesApply(cds, 1, function(x, trend_formula, expression_family, relative_expr, new_data, fit_model_helper, response_matrix,
                                                           calculate_NB_dispersion_hint, calculate_QP_dispersion_hint){
       environment(fit_model_helper) <- environment()
-      environment(responseMatrix) <- environment()
+      environment(response_matrix) <- environment()
       model_fits <- fit_model_helper(x, modelFormulaStr = trend_formula, expression_family = expression_family,
                                      relative_expr = relative_expr, disp_func = cds@dispFitInfo[['blind']]$disp_func)
       if(is.null(model_fits))
         expression_curve <- as.data.frame(matrix(rep(NA, nrow(new_data)), nrow = 1))
       else
-        expression_curve <- as.data.frame(responseMatrix(list(model_fits), newdata = new_data, response_type=response_type))
+        expression_curve <- as.data.frame(response_matrix(list(model_fits), newdata = new_data, response_type=response_type))
       colnames(expression_curve) <- row.names(new_data)
       expression_curve
       #return(expression_curve)
     }, required_packages=c("BiocGenerics", "Biobase", "VGAM", "plyr"), cores=cores,
     trend_formula = trend_formula, expression_family = expression_family, relative_expr = relative_expr, new_data = new_data,
-    fit_model_helper = fit_model_helper, responseMatrix = responseMatrix, calculate_NB_dispersion_hint = calculate_NB_dispersion_hint,
+    fit_model_helper = fit_model_helper, response_matrix = response_matrix, calculate_NB_dispersion_hint = calculate_NB_dispersion_hint,
     calculate_QP_dispersion_hint = calculate_QP_dispersion_hint
     )
     expression_curve_matrix <- as.matrix(do.call(rbind, expression_curve_matrix))
     return(expression_curve_matrix)
   }
   else {
-    expression_curve_matrix <- smartEsApply(cds, 1, function(x, trend_formula, expression_family, relative_expr, new_data){
+    expression_curve_matrix <- smart_es_apply(cds, 1, function(x, trend_formula, expression_family, relative_expr, new_data){
       environment(fit_model_helper) <- environment()
-      environment(responseMatrix) <- environment()
-      model_fits <- fit_model_helper(x, modelFormulaStr = trend_formula, expression_family = expression_family,
+      environment(response_matrix) <- environment()
+      model_fits <- fit_model_helper(x, model_formula_str = trend_formula, expression_family = expression_family,
                                      relative_expr = relative_expr, disp_func = cds@dispFitInfo[['blind']]$disp_func)
       if(is.null(model_fits))
         expression_curve <- as.data.frame(matrix(rep(NA, nrow(new_data)), nrow = 1))
       else
-        expression_curve <- as.data.frame(responseMatrix(list(model_fits), new_data, response_type=response_type))
+        expression_curve <- as.data.frame(response_matrix(list(model_fits), new_data, response_type=response_type))
       colnames(expression_curve) <- row.names(new_data)
       expression_curve
     },
@@ -937,3 +932,356 @@ gen_smooth_curves <- function(cds, new_data, trend_formula = "~sm.ns(Pseudotime,
   }
 
 }
+
+
+#' Plots the percentage of variance explained by the each component based on PCA from the normalized expression
+#' data using the same procedure used in reduceDimension function.
+#'
+#' @param cds CellDataSet for the experiment after running reduceDimension with reduction_method as tSNE
+#' @param max_components Maximum number of components shown in the scree plot (variance explained by each component)
+#' @param norm_method Determines how to transform expression values prior to reducing dimensionality
+#' @param residual_model_formula_str A model formula specifying the effects to subtract from the data before clustering.
+#' @param pseudo_count amount to increase expression values before dimensionality reduction
+#' @param return_all A logical argument to determine whether or not the variance of each component is returned
+#' @param use_existing_pc_variance Whether to plot existing results for variance explained by each PC
+#' @param verbose Whether to emit verbose output during dimensionality reduction
+#' @param ... additional arguments to pass to the dimensionality reduction function
+#' @export
+#' @examples
+#' \dontrun{
+#' library(HSMMSingleCell)
+#' HSMM <- load_HSMM()
+#' plot_pc_variance_explained(HSMM)
+#' }
+plot_pc_variance_explained <- function(cds,
+                                       max_components=100,
+                                       norm_method = c("log", "vstExprs", "none"),
+                                       residual_model_formula_str=NULL,
+                                       pseudo_count=NULL,
+                                       return_all = F,
+                                       use_existing_pc_variance=FALSE,
+                                       verbose=FALSE,
+                                       ...){
+  norm_method <- match.arg(norm_method)
+  set.seed(2016)
+  if(!is.null(cds@aux_clustering_data[["tSNE"]]$variance_explained) & use_existing_pc_variance == T){
+    prop_varex <- cds@aux_clustering_data[["tSNE"]]$variance_explained
+  }
+  else{
+    FM <- normalize_expr_data(cds, norm_method, pseudo_count)
+
+    xm <- Matrix::rowMeans(FM)
+    xsd <- sqrt(Matrix::rowMeans((FM - xm)^2))
+    FM <- FM[xsd > 0,]
+
+    if (is.null(residual_model_formula_str) == FALSE) {
+      if (verbose)
+        message("Removing batch effects")
+      X.model_mat <- sparse.model.matrix(stats::as.formula(residual_model_formula_str),
+                                         data = pData(cds), drop.unused.levels = TRUE)
+
+      fit <- limma::lmFit(FM, X.model_mat, ...)
+      beta <- fit$coefficients[, -1, drop = FALSE]
+      beta[is.na(beta)] <- 0
+      FM <- as.matrix(FM) - beta %*% t(X.model_mat[, -1])
+    }else{
+      X.model_mat <- NULL
+    }
+
+    if (nrow(FM) == 0) {
+      stop("Error: all rows have standard deviation zero")
+    }
+
+    irlba_res <- sparse_prcomp_irlba(t(FM), n = min(max_components, min(dim(FM)) - 1),
+                                     center = TRUE, scale. = TRUE)
+    prop_varex <- irlba_res$sdev^2 / sum(irlba_res$sdev^2)
+
+  }
+
+  p <- qplot(1:length(prop_varex), prop_varex, alpha = I(0.5)) +  monocle_theme_opts() +
+    theme(legend.position="top", legend.key.height=grid::unit(0.35, "in")) +
+    theme(panel.background = element_rect(fill='white')) + xlab('components') +
+    ylab('Variance explained \n by each component')
+
+  cds@aux_clustering_data[["tSNE"]]$variance_explained <- prop_varex # update CDS slot for variance_explained
+
+  if(return_all) {
+    return(list(variance_explained = prop_varex, p = p))
+  }
+  else
+    return(p)
+}
+
+#' @title Plots expression for one or more genes as a violin plot
+#'
+#' @description Accepts a subset of a CellDataSet and an attribute to group cells by,
+#' and produces one or more ggplot2 objects that plots the level of expression for
+#' each group of cells.
+#'
+#' @param cds_subset CellDataSet for the experiment
+#' @param grouping the cell attribute (e.g. the column of pData(cds)) to group cells by on the horizontal axis
+#' @param min_expr the minimum (untransformed) expression level to use in plotted the genes.
+#' @param cell_size the size (in points) of each cell used in the plot
+#' @param nrow the number of rows used when laying out the panels for each gene's expression
+#' @param ncol the number of columns used when laying out the panels for each gene's expression
+#' @param panel_order the order in which genes should be layed out (left-to-right, top-to-bottom)
+#' @param color_by the cell attribute (e.g. the column of pData(cds)) to be used to color each cell
+#' @param plot_trend whether to plot a trendline tracking the average expression across the horizontal axis.
+#' @param label_by_short_name label figure panels by gene_short_name (TRUE) or feature id (FALSE)
+#' @param relative_expr Whether to transform expression into relative values
+#' @param log_scale a boolean that determines whether or not to scale data logarithmically
+#' @return a ggplot2 plot object
+#' @import ggplot2
+#' @export
+#' @examples
+#' \dontrun{
+#' library(HSMMSingleCell)
+#' HSMM <- load_HSMM()
+#' my_genes <- HSMM[row.names(subset(fData(HSMM), gene_short_name %in% c("ACTA1", "ID1", "CCNB2"))),]
+#' plot_genes_violin(my_genes, grouping="Hours", ncol=2, min_expr=0.1)
+#' }
+plot_genes_violin <- function (cds_subset, grouping = "State", min_expr = NULL, cell_size = 0.75,
+                               nrow = NULL, ncol = 1, panel_order = NULL, color_by = NULL,
+                               plot_trend = FALSE, label_by_short_name = TRUE, relative_expr = TRUE,
+                               log_scale = TRUE)
+{
+  if (cds_subset@expression_family %in% c("negbinomial",
+                                                 "negbinomial.size")) {
+    integer_expression = TRUE
+  }
+  else {
+    integer_expression = FALSE
+    relative_expr = TRUE
+  }
+  if (integer_expression) {
+    cds_exprs = exprs(cds_subset)
+    if (relative_expr) {
+      if (is.null(size_factors(cds_subset))) {
+        stop("Error: to call this function with relative_expr=TRUE, you must call estimate_size_factors() first")
+      }
+      cds_exprs = Matrix::t(Matrix::t(cds_exprs)/size_factors(cds_subset))
+    }
+    #cds_exprs = reshape2::melt(round(as.matrix(cds_exprs)))
+    cds_exprs = reshape2::melt(as.matrix(cds_exprs))
+  }
+  else {
+    cds_exprs = exprs(cds_subset)
+    cds_exprs = reshape2::melt(as.matrix(cds_exprs))
+  }
+  if (is.null(min_expr)) {
+    min_expr = cds_subset@lower_detection_limit
+  }
+  colnames(cds_exprs) = c("f_id", "Cell", "expression")
+  cds_exprs$expression[cds_exprs$expression < min_expr] = min_expr
+  cds_pData = pData(cds_subset)
+
+  cds_fData = fData(cds_subset)
+  cds_exprs = merge(cds_exprs, cds_fData, by.x = "f_id", by.y = "row.names")
+  cds_exprs = merge(cds_exprs, cds_pData, by.x = "Cell", by.y = "row.names")
+  cds_exprs$adjusted_expression = log10(cds_exprs$expression)
+
+  if (label_by_short_name == TRUE) {
+    if (is.null(cds_exprs$gene_short_name) == FALSE) {
+      cds_exprs$feature_label = cds_exprs$gene_short_name
+      cds_exprs$feature_label[is.na(cds_exprs$feature_label)] = cds_exprs$f_id
+    }
+    else {
+      cds_exprs$feature_label = cds_exprs$f_id
+    }
+  }
+  else {
+    cds_exprs$feature_label = cds_exprs$f_id
+  }
+  if (is.null(panel_order) == FALSE) {
+    cds_exprs$feature_label = factor(cds_exprs$feature_label,
+                                     levels = panel_order)
+  }
+  q = ggplot(aes_string(x = grouping, y = "expression"), data = cds_exprs) + monocle_theme_opts()
+  if (is.null(color_by) == FALSE) {
+    q = q + geom_violin(aes_string(fill = color_by))
+  }
+  else {
+    q = q + geom_violin()
+  }
+  if (plot_trend == TRUE) {
+    q = q + stat_summary(fun.data = "mean_cl_boot",
+                         size = 0.2)
+    q = q + stat_summary(aes_string(x = grouping, y = "expression",
+                                    group = color_by), fun.data = "mean_cl_boot",
+                         size = 0.2, geom = "line")
+  }
+  q = q + facet_wrap(~feature_label, nrow = nrow,
+                     ncol = ncol, scales = "free_y")
+  if (min_expr < 1) {
+    q = q + expand_limits(y = c(min_expr, 1))
+  }
+
+
+  q = q + ylab("Expression") + xlab(grouping)
+
+  if (log_scale == TRUE){
+
+    q = q + scale_y_log10()
+  }
+  q
+}
+
+
+#' Plots the number of cells expressing one or more genes as a barplot
+#'
+#'  @description Accetps a CellDataSet and a parameter,"grouping", used for dividing cells into groups.
+#'  Returns one or more bar graphs (one graph for each gene in the CellDataSet).
+#'  Each graph shows the percentage of cells that express a gene in the in the CellDataSet for
+#'  each sub-group of cells created by "grouping".
+#'
+#'  Let's say the CellDataSet passed in included genes A, B, and C and the "grouping parameter divided
+#'  all of the cells into three groups called X, Y, and Z. Then three graphs would be produced called A,
+#'  B, and C. In the A graph there would be three bars one for X, one for Y, and one for Z. So X bar in the
+#'  A graph would show the percentage of cells in the X group that express gene A.
+#'
+#' @param cds_subset CellDataSet for the experiment
+#' @param grouping the cell attribute (e.g. the column of pData(cds)) to group cells by on the horizontal axis
+#' @param min_expr the minimum (untransformed) expression level to use in plotted the genes.
+#' @param nrow the number of rows used when laying out the panels for each gene's expression
+#' @param ncol the number of columns used when laying out the panels for each gene's expression
+#' @param panel_order the order in which genes should be layed out (left-to-right, top-to-bottom)
+#' @param plot_as_fraction whether to show the percent instead of the number of cells expressing each gene
+#' @param label_by_short_name label figure panels by gene_short_name (TRUE) or feature id (FALSE)
+#' @param relative_expr Whether to transform expression into relative values
+#' @param plot_limits A pair of number specifying the limits of the y axis. If NULL, scale to the range of the data.
+#' @return a ggplot2 plot object
+#' @import ggplot2
+#' @export
+#' @examples
+#' \dontrun{
+#' library(HSMMSingleCell)
+#' HSMM <- load_HSMM()
+#' MYOG_ID1 <- HSMM[row.names(subset(fData(HSMM), gene_short_name %in% c("MYOG", "ID1"))),]
+#' plot_percent_cells_positive(MYOG_ID1, grouping="Media", ncol=2)
+#' }
+plot_percent_cells_positive <- function(cds_subset,
+                                      grouping = "State",
+                                      min_expr=0.1,
+                                      nrow=NULL,
+                                      ncol=1,
+                                      panel_order=NULL,
+                                      plot_as_fraction=TRUE,
+                                      label_by_short_name=TRUE,
+                                      relative_expr=TRUE,
+                                      plot_limits=c(0,100)){
+
+  percent <- NULL
+
+  if (cds_subset@expression_family %in% c("negbinomial", "negbinomial.size")){
+    integer_expression <- TRUE
+  }else{
+    integer_expression <- FALSE
+    relative_expr <- TRUE
+  }
+
+  if (integer_expression)
+  {
+    marker_exprs <- exprs(cds_subset)
+    if (relative_expr){
+      if (is.null(size_factors(cds_subset)))
+      {
+        stop("Error: to call this function with relative_expr=TRUE, you must call estimateSizeFactors() first")
+      }
+      marker_exprs <- Matrix::t(Matrix::t(marker_exprs) / size_factors(cds_subset))
+    }
+    marker_exprs_melted <- reshape2::melt(round(as.matrix(marker_exprs)))
+  }else{
+    marker_exprs_melted <- reshape2::melt(exprs(marker_exprs))
+  }
+
+  colnames(marker_exprs_melted) <- c("f_id", "Cell", "expression")
+
+  marker_exprs_melted <- merge(marker_exprs_melted, pData(cds_subset), by.x="Cell", by.y="row.names")
+  marker_exprs_melted <- merge(marker_exprs_melted, fData(cds_subset), by.x="f_id", by.y="row.names")
+
+  if (label_by_short_name == TRUE){
+    if (is.null(marker_exprs_melted$gene_short_name) == FALSE){
+      marker_exprs_melted$feature_label <- marker_exprs_melted$gene_short_name
+      marker_exprs_melted$feature_label[is.na(marker_exprs_melted$feature_label)]  <- marker_exprs_melted$f_id
+    }else{
+      marker_exprs_melted$feature_label <- marker_exprs_melted$f_id
+    }
+  }else{
+    marker_exprs_melted$feature_label <- marker_exprs_melted$f_id
+  }
+
+  if (is.null(panel_order) == FALSE)
+  {
+    marker_exprs_melted$feature_label <- factor(marker_exprs_melted$feature_label, levels=panel_order)
+  }
+
+  marker_counts <- plyr::ddply(marker_exprs_melted, c("feature_label", grouping), function(x) {
+    data.frame(target=sum(x$expression > min_expr),
+               target_fraction=sum(x$expression > min_expr)/nrow(x)) } )
+
+  #print (head(marker_counts))
+  if (plot_as_fraction){
+    marker_counts$target_fraction <- marker_counts$target_fraction * 100
+    qp <- ggplot(aes_string(x=grouping, y="target_fraction", fill=grouping), data=marker_counts) +
+      ylab("Cells (percent)")
+    if (is.null(plot_limits) == FALSE)
+      qp <- qp + scale_y_continuous(limits=plot_limits)
+  }else{
+    qp <- ggplot(aes_string(x=grouping, y="target", fill=grouping), data=marker_counts) +
+      ylab("Cells")
+  }
+
+  qp <- qp + facet_wrap(~feature_label, nrow=nrow, ncol=ncol, scales="free_y")
+  qp <-  qp + geom_bar(stat="identity") + monocle_theme_opts()
+
+  return(qp)
+}
+
+
+#' Calculates response values.
+#'
+#' Generates a matrix of response values for a set of fitted models
+#' @param models a list of models, e.g. as returned by fitModels()
+#' @param newdata a dataframe used to generate new data for interpolation of time points
+#' @param response_type the response desired, as accepted by VGAM's predict function
+#' @param cores number of cores used for calculation
+#' @return a matrix where each row is a vector of response values for a particular feature's model, and columns are cells.
+response_matrix <- function(models, newdata = NULL, response_type="response", cores = 1) {
+  res_list <- parallel::mclapply(models, function(x) {
+    if (is.na(x$model)) { NA } else {
+      print(x)
+      if (x@expression_family %in% c("negbinomial", "negbinomial.size")) {
+        predict(x, newdata = newdata, type = response_type)
+      } else if (x@expression_family %in% c("uninormal")) {
+        predict(x, newdata = newdata, type = response_type)
+      }
+      else {
+        10^predict(x, newdata = newdata, type = response_type)
+      }
+    }
+  }, mc.cores = cores)
+
+  res_list_lengths <- lapply(res_list[is.na(res_list) == FALSE],
+                             length)
+  stopifnot(length(unique(res_list_lengths)) == 1)
+  num_na_fits <- length(res_list[is.na(res_list)])
+  if (num_na_fits > 0) {
+    na_matrix <- matrix(rep(rep(NA, res_list_lengths[[1]]),
+                            num_na_fits), nrow = num_na_fits)
+    row.names(na_matrix) <- names(res_list[is.na(res_list)])
+    non_na_matrix <- Matrix::t(do.call(cbind, lapply(res_list[is.na(res_list) ==
+                                                                FALSE], unlist)))
+    row.names(non_na_matrix) <- names(res_list[is.na(res_list) ==
+                                                 FALSE])
+    res_matrix <- rbind(non_na_matrix, na_matrix)
+    res_matrix <- res_matrix[names(res_list), ]
+  }
+  else {
+    res_matrix <- Matrix::t(do.call(cbind, lapply(res_list, unlist)))
+    row.names(res_matrix) <- names(res_list[is.na(res_list) ==
+                                              FALSE])
+  }
+  res_matrix
+}
+
+

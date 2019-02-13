@@ -55,7 +55,7 @@ analysis than ICA, and is now the default method.
 Often, experiments include cells from different batches or treatments. You
 can reduce the effects of these treatments by transforming the data with a
 linear model prior to dimensionality reduction. To do so, provide a model
-formula through \code{residualModelFormulaStr}.
+formula through \code{residual_model_formula_str}.
 
 Prior to reducing the dimensionality of the data, it usually helps to
 normalize it so that highly expressed or highly variable genes don't
@@ -65,7 +65,7 @@ the cell_data_set object. If the expression_family is \code{negbinomial} or
 \code{negbinomial.size}, the data are variance-stabilized. If the
 expression_family is \code{Tobit}, the data are adjusted by adding a
 pseudocount (of 1 by default) and then log-transformed. If you don't want
-any transformation at all, set norm_method to "none" and pseudo_expr to 0.
+any transformation at all, set norm_method to "none" and pseudo_count to 0.
 This maybe useful for single-cell qPCR data, or data you've already
 transformed yourself in some way.
 }

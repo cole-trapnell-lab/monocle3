@@ -77,7 +77,7 @@ and is now the default method.
 Often, experiments include cells from different batches or treatments. You can
 reduce the effects of these treatments by transforming the data with a linear
 model prior to dimensionality reduction. To do so, provide a model formula
-through \code{residualModelFormulaStr}.
+through \code{residual_model_formula_str}.
 }
 \references{
 DDRTree: Qi Mao, Li Wang, Steve Goodison, and Yijun Sun. Dimensionality reduction via graph structure learning. In Proceedings of the 21th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining, pages 765–774. ACM, 2015.
