@@ -7,76 +7,76 @@ setValidity( "cell_data_set", function( object ) {
   TRUE
 } )
 
-#' @rdname cell_data_set-methods
-#' @aliases cell_data_set,ANY,ANY,ANY-method
-#' @param x the cell_data_set object
-#' @param i index (or name) to extract or replace
-#' @param j index (or name) to extract or replace
-#' @param ... extra arguments passed to method
-#' @param drop If TRUE the result is coerced to the lowest possible dimension
-#'   (see the examples). This only works for extracting elements, not for the
-#'   replacement.
-#' @docType methods
-#' @import Matrix
-#' @rdname extract-methods
-setMethod("[", "cell_data_set", function(x, i, j, ..., drop = FALSE) {
-  if (missing(drop))
-    drop <- FALSE
-  if (missing(i) && missing(j)) {
-    if (!missing(...))
-      stop("specify genes or samples to subset; use '",
-           substitute(x), "$", names(list(...))[[1]],
-           "' to access phenoData variables")
-    return(x)
-  }
-  if (!isVersioned(x) || !isCurrent(x)["eSet"])
-    x <- updateObject(x)
-  if (!missing(j)) {
-    phenoData(x) <- phenoData(x)[j,, ..., drop = drop]
-    protocolData(x) <- protocolData(x)[j,, ..., drop = drop]
-  }
-  if (!missing(i))
-    featureData(x) <- featureData(x)[i,,..., drop=drop]
-  ## assayData; implemented here to avoid function call
-  orig <- assayData(x)
-  storage.mode <-  Biobase:::assayDataStorageMode(orig)
-  assayData(x) <-
-    switch(storage.mode,
-           environment =,
-           lockedEnvironment = {
-             aData <- new.env(parent=emptyenv())
-             if (missing(i))  {                   # j must be present
-               for(nm in ls(orig)) {
-                 aData[[nm]] <- orig[[nm]][, j, ..., drop = drop]
-               }
-             } else if (missing(j)) { # j may or may not be present
-               for(nm in ls(orig)) {
-                 aData[[nm]] <- orig[[nm]][i,, ..., drop = drop]
-               }
-             }  else {
-               for(nm in ls(orig)) {
-                 aData[[nm]] <- orig[[nm]][i, j, ..., drop = drop]
-               }
-             }
-             if ("lockedEnvironment" == storage.mode) assayDataEnvLock(aData)
-             aData
-           },
-           list = {
-             if (missing(i))                     # j must be present
-               lapply(orig, function(obj) obj[, j, ..., drop = drop])
-             else {                              # j may or may not be present
-               if (missing(j))
-                 lapply(orig, function(obj) obj[i,, ..., drop = drop])
-               else
-                 lapply(orig, function(obj) obj[i, j, ..., drop = drop])
-             }
-           })
-  x@aux_ordering_data = as.environment(as.list(x@aux_ordering_data, all.names=TRUE))
-  x@aux_clustering_data = as.environment(as.list(x@aux_clustering_data,
-                                               all.names=TRUE))
-  x
-})
-
+#' #' @rdname cell_data_set-methods
+#' #' @aliases cell_data_set,ANY,ANY,ANY-method
+#' #' @param x the cell_data_set object
+#' #' @param i index (or name) to extract or replace
+#' #' @param j index (or name) to extract or replace
+#' #' @param ... extra arguments passed to method
+#' #' @param drop If TRUE the result is coerced to the lowest possible dimension
+#' #'   (see the examples). This only works for extracting elements, not for the
+#' #'   replacement.
+#' #' @docType methods
+#' #' @import Matrix
+#' #' @rdname extract-methods
+#' setMethod("[", "cell_data_set", function(x, i, j, ..., drop = FALSE) {
+#'   if (missing(drop))
+#'     drop <- FALSE
+#'   if (missing(i) && missing(j)) {
+#'     if (!missing(...))
+#'       stop("specify genes or samples to subset; use '",
+#'            substitute(x), "$", names(list(...))[[1]],
+#'            "' to access phenoData variables")
+#'     return(x)
+#'   }
+#'   if (!isVersioned(x) || !isCurrent(x)["eSet"])
+#'     x <- updateObject(x)
+#'   if (!missing(j)) {
+#'     phenoData(x) <- phenoData(x)[j,, ..., drop = drop]
+#'     protocolData(x) <- protocolData(x)[j,, ..., drop = drop]
+#'   }
+#'   if (!missing(i))
+#'     featureData(x) <- featureData(x)[i,,..., drop=drop]
+#'   ## assayData; implemented here to avoid function call
+#'   orig <- assayData(x)
+#'   storage.mode <-  Biobase:::assayDataStorageMode(orig)
+#'   assayData(x) <-
+#'     switch(storage.mode,
+#'            environment =,
+#'            lockedEnvironment = {
+#'              aData <- new.env(parent=emptyenv())
+#'              if (missing(i))  {                   # j must be present
+#'                for(nm in ls(orig)) {
+#'                  aData[[nm]] <- orig[[nm]][, j, ..., drop = drop]
+#'                }
+#'              } else if (missing(j)) { # j may or may not be present
+#'                for(nm in ls(orig)) {
+#'                  aData[[nm]] <- orig[[nm]][i,, ..., drop = drop]
+#'                }
+#'              }  else {
+#'                for(nm in ls(orig)) {
+#'                  aData[[nm]] <- orig[[nm]][i, j, ..., drop = drop]
+#'                }
+#'              }
+#'              if ("lockedEnvironment" == storage.mode) assayDataEnvLock(aData)
+#'              aData
+#'            },
+#'            list = {
+#'              if (missing(i))                     # j must be present
+#'                lapply(orig, function(obj) obj[, j, ..., drop = drop])
+#'              else {                              # j may or may not be present
+#'                if (missing(j))
+#'                  lapply(orig, function(obj) obj[i,, ..., drop = drop])
+#'                else
+#'                  lapply(orig, function(obj) obj[i, j, ..., drop = drop])
+#'              }
+#'            })
+#'   x@aux_ordering_data = as.environment(as.list(x@aux_ordering_data, all.names=TRUE))
+#'   x@aux_clustering_data = as.environment(as.list(x@aux_clustering_data,
+#'                                                all.names=TRUE))
+#'   x
+#' })
+#'
 
 #' Set the minimum spanning tree generated by Monocle during cell ordering.
 #'
@@ -127,150 +127,6 @@ check_size_factors <- function(cds) {
       stop("Error: one or more cells has a size factor of NA.")
     }
   }
-}
-
-
-#' Retrieves the coordinates of each cell in the reduced-dimensionality space generated by calls to
-#' reduce_dimension
-#'
-#' Reducing the dimensionality of the expression data is a core step in the Monocle
-#' workflow. After you call reduce_dimension(), this function will return the new
-#' coordinates of your cells in the reduced space.
-#' @param cds A cell_data_set object.
-#' @return A matrix, where rows are cell coordinates and columns correspond to dimensions of the
-#' reduced space.
-#' @export
-#' @examples
-#' \dontrun{
-#' S <- reducedDimS(HSMM)
-#' }
-reducedDimS <- function( cds ) {
-  stopifnot( methods::is( cds, "cell_data_set" ) )
-  cds@reducedDimS
-}
-
-#' Set embedding coordinates of each cell in a cell_data_set
-#'
-#' This function sets the coordinates of each cell in a new
-#' (reduced-dimensionality) space. Not intended to be called directly.
-#'
-#' @param cds A cell_data_set object.
-#' @param value A matrix of coordinates specifying each cell's position in the reduced-dimensionality space.
-#' @return An update cell_data_set object
-#' @examples
-#' \dontrun{
-#' cds <- reducedDimS(S)
-#' }
-`reducedDimS<-` <- function( cds, value ) {
-  stopifnot( methods::is( cds, "cell_data_set" ) )
-  cds@reducedDimS <- value
-  methods::validObject( cds )
-  cds
-}
-
-#' Get the whitened expression values for a cell_data_set
-#'
-#' Retrieves the expression values for each cell (as a matrix) after whitening
-#' during dimensionality reduction.
-#'
-#' @param cds A cell_data_set object.
-#' @return A matrix, where each row is a set of whitened expression values for a feature and columns are cells.
-#' @export
-#' @examples
-#' \dontrun{
-#' W <- reducedDimW(HSMM)
-#' }
-reducedDimW <- function( cds ) {
-  stopifnot( methods::is( cds, "cell_data_set" ) )
-  cds@reducedDimW
-}
-
-#' @title Sets the the whitening matrix during independent component analysis.
-#'
-#' @description Sets the the whitening matrix during independent component analysis.
-#'
-#' @param cds A cell_data_set object.
-#' @param value a numeric matrix
-#' @return A matrix, where each row is a set of whitened expression values for a feature and columns are cells.
-#' @docType methods
-#' @examples
-#' \dontrun{
-#' cds <- reducedDimK(K)
-#' }
-`reducedDimK<-` <- function( cds, value ) {
-  stopifnot( methods::is( cds, "cell_data_set" ) )
-  cds@reducedDimK <- value
-  methods::validObject( cds )
-  cds
-}
-
-#' Retrieves the the whitening matrix during independent component analysis.
-#'
-#' @param cds A cell_data_set object.
-#' @return A matrix, where each row is a set of whitened expression values for a feature and columns are cells.
-#' @docType methods
-#' @export
-#' @examples
-#' \dontrun{
-#' K <- reducedDimW(HSMM)
-#' }
-reducedDimK <- function( cds ) {
-  stopifnot( methods::is( cds, "cell_data_set" ) )
-  cds@reducedDimK
-}
-
-#' Sets the whitened expression values for each cell prior to independent component analysis. Not intended to be called directly.
-#'
-#' @param cds A cell_data_set object.
-#' @param value A whitened expression data matrix
-#' @return An updated cell_data_set object
-#' @examples
-#' \dontrun{
-#' #' cds <- reducedDimA(A)
-#' }
-`reducedDimW<-` <- function( cds, value ) {
-  stopifnot( methods::is( cds, "cell_data_set" ) )
-  cds@reducedDimW <- value
-  methods::validObject( cds )
-  cds
-}
-
-#' Get the weights needed to lift cells back to high dimensional expression space.
-#'
-#' Retrieves the weights that transform the cells' coordinates in the reduced
-#' dimension space back to the full (whitened) space.
-#'
-#' @param cds A cell_data_set object.
-#' @return A matrix that when multiplied by a reduced-dimension set of coordinates for the cell_data_set,
-#' recovers a matrix in the full (whitened) space
-#' @export
-#' @examples
-#' \dontrun{
-#' A <- reducedDimA(HSMM)
-#' }
-reducedDimA <- function( cds ) {
-  stopifnot( methods::is( cds, "cell_data_set" ) )
-  cds@reducedDimA
-}
-
-#' Get the weights needed to lift cells back to high dimensional expression space.
-#'
-#' Sets the weights transform the cells' coordinates in the reduced dimension
-#' space back to the full (whitened) space.
-#'
-#' @param cds A cell_data_set object.
-#' @param value A whitened expression data matrix
-#' @return An updated cell_data_set object
-#' @export
-#' @examples
-#' \dontrun{
-#' cds <- reducedDimA(A)
-#' }
-`reducedDimA<-` <- function( cds, value ) {
-  stopifnot( methods::is( cds, "cell_data_set" ) )
-  cds@reducedDimA <- value
-  methods::validObject( cds )
-  cds
 }
 
 #' Retrieves the minimum spanning tree generated by Monocle during cell ordering.

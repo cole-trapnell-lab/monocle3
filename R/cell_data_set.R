@@ -38,35 +38,33 @@ setOldClass(c("igraph"), prototype=structure(list(), class="igraph"))
 #' @rdname cell_data_set
 #' @aliases cell_data_set-class
 #' @exportClass cell_data_set
-#' @importFrom Biobase ExpressionSet pData fData exprs pData<- fData<-
+#' @importFrom SingleCellExperiment SingleCellExperiment
 setClass( "cell_data_set",
-          contains = "ExpressionSet",
-          slots = c(reducedDimS = "matrix",
-                    reducedDimW = "matrix",
-                    reducedDimA = "matrix",
-                    reducedDimK = "matrix",
+          contains = c("SingleCellExperiment"),
+          slots = c(cds_version = "character",
+                    #reducedDimS = "matrix",
+                    #reducedDimW = "matrix",
+                    #reducedDimA = "matrix",
+                    #reducedDimK = "matrix",
                     principal_graph="igraph",
                     #cellPairwiseDistances="matrix",
                     expression_family="character",
                     lower_detection_limit="numeric",
-                    disp_fit_info = "environment",
-                    dim_reduce_type="character",
-                    rge_method="character",
-                    aux_ordering_data = "environment",
-                    aux_clustering_data = "environment",
-                    normalized_data_projection = "matrix"
-          ),
-          prototype = prototype(new("VersionedBiobase",
-                                    versions = c(Biobase::classVersion("ExpressionSet"),
-                                                 cell_data_set = "1.2.0")))
+                    disp_fit_info = "environment"
+                    #dim_reduce_type="character",
+                    #rge_method="character",
+                    #aux_ordering_data = "environment",
+                    #aux_clustering_data = "environment",
+                    #normalized_data_projection = "matrix"
+          )
 )
 
 
 #' Creates a new cell_data_set object.
 #'
-#' @param cellData expression data matrix for an experiment
-#' @param phenoData data frame containing attributes of individual cells
-#' @param featureData data frame containing attributes of features (e.g. genes)
+#' @param expression_data expression data matrix for an experiment
+#' @param cell_metadata data frame containing attributes of individual cells
+#' @param gene_metadata data frame containing attributes of features (e.g. genes)
 #' @param lower_detection_limit the minimum expression level that consistitutes
 #'   true expression
 #' @param expression_family character, the expression family function to be
@@ -86,51 +84,45 @@ setClass( "cell_data_set",
 #' HSMM <- new("cell_data_set", exprs = as.matrix(fpkm_matrix_small),
 #'             phenoData = pd, featureData = fd)
 #' }
-new_cell_data_set <- function(cellData,
-                              phenoData = NULL,
-                              featureData = NULL,
+new_cell_data_set <- function(expression_data,
+                              cell_metadata = NULL,
+                              gene_metadata = NULL,
                               lower_detection_limit = 0.1,
-                              expression_family="negbinomial.size")
-{
+                              expression_family="negbinomial.size") {
 
-  if(!('gene_short_name' %in% colnames(featureData))) {
-    warning(paste("Warning: featureData must contain a column verbatim named",
+  if(!('gene_short_name' %in% colnames(gene_metadata))) {
+    warning(paste("Warning: gene_metadata must contain a column verbatim named",
                   "'gene_short_name' for certain functions"))
   }
 
-  if (class(cellData) != "matrix" && is_sparse_matrix(cellData) == FALSE){
-    stop(paste("Error: argument cellData must be a matrix (either sparse from",
+  if (class(expression_data) != "matrix" && is_sparse_matrix(expression_data) == FALSE){
+    stop(paste("Error: argument expression_data must be a matrix (either sparse from",
                "the Matrix package or dense)"))
   }
 
-  if(!('gene_short_name' %in% colnames(featureData))) {
-    warning(paste("Warning: featureData must contain a column verbatim named",
-                  "'gene_short_name' for certain functions"))
-  }
+  size_factors <- rep( NA_real_, ncol(cell_metadata) )
 
-  size_factors <- rep( NA_real_, ncol(cellData) )
+  cell_metadata$`size_factor` <- size_factors
+
+  sce <- SingleCellExperiment(list(exprs=expression_data),
+                              rowData = gene_metadata, colData = cell_metadata)
+
+  cds <- new("cell_data_set",
+             assays = Assays(list(exprs=expression_data)),
+             colData = colData(sce),
+             int_elementMetadata =sce@int_elementMetadata,
+             int_colData = sce@int_colData,
+             int_metadata = sce@int_metadata,
+             metadata = sce@metadata,
+             NAMES = sce@NAMES,
+             elementMetadata = sce@elementMetadata,
+             rowRanges = sce@rowRanges,
+             lower_detection_limit=lower_detection_limit,
+             expression_family=expression_family,
+             disp_fit_info = new.env( hash=TRUE ),
+             cds_version = Biobase::package.version("monocle3"))
 
 
-  if( is.null( phenoData ) )
-    phenoData <- annotatedDataFrameFrom( cellData, byrow=FALSE )
-  if( is.null( featureData ) )
-    featureData <- annotatedDataFrameFrom(cellData, byrow=TRUE)
-
-  if(!('gene_short_name' %in% colnames(featureData))) {
-    warning(paste("Warning: featureData must contain a column verbatim named",
-            "'gene_short_name' for certain functions"))
-  }
-
-  phenoData$`Size_Factor` <- size_factors
-
-  cds <- new( "cell_data_set",
-              assayData = assayDataNew( "environment", exprs=cellData ),
-              phenoData=phenoData,
-              featureData=featureData,
-              lower_detection_limit=lower_detection_limit,
-              expression_family=expression_family,
-              disp_fit_info = new.env( hash=TRUE ))
-
-  methods::validObject( cds )
+  #methods::validObject( cds )
   cds
 }

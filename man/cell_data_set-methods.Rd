@@ -3,25 +3,8 @@
 \docType{methods}
 \name{cell_data_set-methods}
 \alias{cell_data_set-methods}
-\alias{[,cell_data_set,ANY,ANY,ANY-method}
-\alias{cell_data_set,ANY,ANY,ANY-method}
 \title{Methods for the cell_data_set class}
-\usage{
-\S4method{[}{cell_data_set,ANY,ANY,ANY}(x, i, j, ..., drop = FALSE)
-}
 \arguments{
-\item{x}{the cell_data_set object}
-
-\item{i}{index (or name) to extract or replace}
-
-\item{j}{index (or name) to extract or replace}
-
-\item{...}{extra arguments passed to method}
-
-\item{drop}{If TRUE the result is coerced to the lowest possible dimension
-(see the examples). This only works for extracting elements, not for the
-replacement.}
-
 \item{object}{The cell_data_set object}
 }
 \description{

@@ -4,15 +4,16 @@
 \alias{new_cell_data_set}
 \title{Creates a new cell_data_set object.}
 \usage{
-new_cell_data_set(cellData, phenoData = NULL, featureData = NULL,
-  lower_detection_limit = 0.1, expression_family = "negbinomial.size")
+new_cell_data_set(expression_data, cell_metadata = NULL,
+  gene_metadata = NULL, lower_detection_limit = 0.1,
+  expression_family = "negbinomial.size")
 }
 \arguments{
-\item{cellData}{expression data matrix for an experiment}
+\item{expression_data}{expression data matrix for an experiment}
 
-\item{phenoData}{data frame containing attributes of individual cells}
+\item{cell_metadata}{data frame containing attributes of individual cells}
 
-\item{featureData}{data frame containing attributes of features (e.g. genes)}
+\item{gene_metadata}{data frame containing attributes of features (e.g. genes)}
 
 \item{lower_detection_limit}{the minimum expression level that consistitutes
 true expression}
