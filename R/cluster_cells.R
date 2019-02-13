@@ -320,7 +320,7 @@ louvain_R <- function(X, python_home = system('which python', intern = TRUE),
   }, finally = {
   })
 
-  reticulate::source_python(paste(system.file(package="monocle"), "louvain.py", sep="/"))
+  reticulate::source_python(paste(system.file(package="monocle3"), "louvain.py", sep="/"))
   # X <- Matrix::t(X)
   if(length(grep('Matrix', class(X))) == 0){
     X <- as(as.matrix(X), 'TsparseMatrix')
