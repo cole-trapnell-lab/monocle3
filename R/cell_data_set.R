@@ -100,9 +100,8 @@ new_cell_data_set <- function(expression_data,
                "the Matrix package or dense)"))
   }
 
-  size_factors <- rep( NA_real_, ncol(cell_metadata) )
 
-  cell_metadata$`size_factor` <- size_factors
+  #cell_metadata$`size_factor` <- rep( NA_real_, nrow(cell_metadata))
 
   sce <- SingleCellExperiment(list(exprs=expression_data),
                               rowData = gene_metadata, colData = cell_metadata)

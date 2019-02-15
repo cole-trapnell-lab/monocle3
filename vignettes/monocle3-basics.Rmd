@@ -22,21 +22,16 @@ library(ggplot2)
 ```
 
 ```{r}
-load("~/Desktop/pd")
-load("~/Desktop/fd")
-load("~/Desktop/expr")
+load("~/Desktop/pd2")
+load("~/Desktop/fd2")
+load("~/Desktop/exprs2")
 
-pd <- new("AnnotatedDataFrame", data = pd)
-fd <- new("AnnotatedDataFrame", data = fd)
-
-
-
-cds <- new_cell_data_set(expr, phenoData = pd, featureData = fd)
+cds <- new_cell_data_set(exprs, cell_metadata = pd, gene_metadata = fd)
 ```
 
 
 ```{r}
-pData(cds)$cell_type2 <- plyr::revalue(as.character(pData(cds)$cluster),
+colData(cds)$cell_type2 <- plyr::revalue(as.character(colData(cds)$cluster),
                                         c("1" = 'Erythrocyte',
                                         "2" = 'Erythrocyte',
                                         "3" = 'Erythrocyte',

@@ -154,7 +154,7 @@ normalize_expr_data <- function(cds,
   norm_method <- match.arg(norm_method)
   check_size_factors(cds)
 
-  FM <- exprs(cds)
+  FM <- assays(cds)$exprs
 
   # If the user has selected a subset of genes for use in ordering the cells
   # via set_ordering_filter(), subset the expression matrix.
@@ -177,7 +177,7 @@ normalize_expr_data <- function(cds,
 
     FM <- Matrix::t(Matrix::t(FM)/size_factors(cds))
 
-    if (pseudo_count != 1 || is_sparse_matrix(exprs(cds)) == FALSE){
+    if (pseudo_count != 1 || is_sparse_matrix(assays(cds)$exprs) == FALSE){
       FM <- FM + pseudo_count
       FM <- log2(FM)
     } else {

@@ -15,13 +15,13 @@ estimate_size_factors <- function(cds, locfunc = stats::median,
                                   round_exprs=TRUE,
                                   method="mean-geometric-mean-total")
 {
-  if (is_sparse_matrix(exprs(cds))){
-    size_factors(cds) <- estimate_sf_sparse(exprs(cds),
+  if (is_sparse_matrix(assays(cds)$exprs)){
+    size_factors(cds) <- estimate_sf_sparse(assays(cds)$exprs,
                                             locfunc = locfunc,
                                             round_exprs=round_exprs,
                                             method=method)
   }else{
-    size_factors(cds) <- estimate_sf_dense(exprs(cds),
+    size_factors(cds) <- estimate_sf_dense(assays(cds)$exprs,
                                            locfunc = locfunc,
                                            round_exprs=round_exprs,
                                            method=method)
@@ -172,13 +172,13 @@ sparse_par_c_apply <- function (cl = NULL, x, FUN, convert_to_dense, ...)
 #' @param ... Additional parameters for FUN
 #' @param cores The number of cores to use for evaluation
 #'
-#' @return The result of with(pData(X) apply(exprs(X)), MARGIN, FUN, ...))
+#' @return The result of with(colData(X) apply(exprs(X)), MARGIN, FUN, ...))
 mc_es_apply <- function(X, MARGIN, FUN, required_packages, cores=1, convert_to_dense=TRUE, ...) {
   parent <- environment(FUN)
   if (is.null(parent))
     parent <- emptyenv()
   e1 <- new.env(parent=parent)
-  Biobase::multiassign(names(pData(X)), pData(X), envir=e1)
+  Biobase::multiassign(names(colData(X)), colData(X), envir=e1)
   environment(FUN) <- e1
 
   # Note: use outfile argument to makeCluster for debugging
@@ -203,9 +203,9 @@ mc_es_apply <- function(X, MARGIN, FUN, required_packages, cores=1, convert_to_d
   #clusterExport(cl, ls(e1), e1)
   #force(exprs(X))
   if (MARGIN == 1){
-    suppressWarnings(res <- sparse_par_r_apply(cl, exprs(X), FUN, convert_to_dense, ...))
+    suppressWarnings(res <- sparse_par_r_apply(cl, assays(X)$exprs, FUN, convert_to_dense, ...))
   }else{
-    suppressWarnings(res <- sparse_par_c_apply(cl, exprs(X), FUN, convert_to_dense, ...))
+    suppressWarnings(res <- sparse_par_c_apply(cl, assays(X)$exprs, FUN, convert_to_dense, ...))
   }
 
   res
@@ -219,10 +219,10 @@ smart_es_apply <- function(X, MARGIN, FUN, convert_to_dense, ...) {
   Biobase::multiassign(names(pData(X)), pData(X), envir=e1)
   environment(FUN) <- e1
 
-  if (is_sparse_matrix(exprs(X))){
-    res <- sparse_apply(exprs(X), MARGIN, FUN, convert_to_dense, ...)
+  if (is_sparse_matrix(assays(X)$exprs)){
+    res <- sparse_apply(assays(X)$exprs, MARGIN, FUN, convert_to_dense, ...)
   }else{
-    res <- pbapply::pbapply(exprs(X), MARGIN, FUN, ...)
+    res <- pbapply::pbapply(assays(X)$exprs, MARGIN, FUN, ...)
   }
 
   if (MARGIN == 1)
@@ -259,7 +259,7 @@ load_a549 <- function(){
                          featureData = fd,
                          lower_detection_limit = 1,
                          expression_family="negbinomial")
-  pData(cds)$Size_Factor = small_a549_pdata_df$Size_Factor
+  colData(cds)$Size_Factor = small_a549_pdata_df$Size_Factor
 
   cds
 }
@@ -464,8 +464,8 @@ detect_genes <- function(cds, min_expr=NULL){
   {
     min_expr <- cds@lower_detection_limit
   }
-  fData(cds)$num_cells_expressed <- Matrix::rowSums(exprs(cds) > min_expr)
-  pData(cds)$num_genes_expressed <- Matrix::colSums(exprs(cds) > min_expr)
+  fData(cds)$num_cells_expressed <- Matrix::rowSums(assays(cds)$exprs > min_expr)
+  colData(cds)$num_genes_expressed <- Matrix::colSums(assays(cds)$exprs > min_expr)
 
   cds
 }

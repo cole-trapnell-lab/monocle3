@@ -92,7 +92,7 @@ setValidity( "cell_data_set", function( object ) {
 #' }
 `size_factors<-` <- function( cds, value ) {
   stopifnot( methods::is( cds, "cell_data_set" ) )
-  pData(cds)$Size_Factor <- value
+  sizeFactors(cds) <- value
   methods::validObject( cds )
   cds
 }
@@ -111,8 +111,8 @@ setValidity( "cell_data_set", function( object ) {
 #' }
 size_factors <- function( cds, value ) {
   stopifnot( methods::is( cds, "cell_data_set" ) )
-  sf <- pData(cds)$Size_Factor
-  names( sf ) <- colnames( exprs(cds) )
+  sf <- sizeFactors(cds)
+  names( sf ) <- colnames( assays(cds)$exprs )
   sf
 }
 

@@ -66,7 +66,7 @@ partition_cells <- function(cds,
   }
 
   if(is.null(partition_names)) {
-    louvain_clustering_args <- c(list(data = t(reduced_dim_res), pd = pData(cds)[row.names(irlba_pca_res), ], k = k,
+    louvain_clustering_args <- c(list(data = t(reduced_dim_res), pd = colData(cds)[row.names(irlba_pca_res), ], k = k,
                                       resolution = resolution, weight = weight, louvain_iter = louvain_iter, verbose = verbose)) # , extra_arguments[names(extra_arguments) %in% c("k", "weight", "louvain_iter")]
     louvain_res <- do.call(louvain_clustering, louvain_clustering_args)
 

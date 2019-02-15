@@ -118,7 +118,7 @@ plot_cell_trajectory <- function(cds,
   if (is.null(markers) == FALSE) {
     markers_fData <- subset(fData(cds), gene_short_name %in% markers)
     if (nrow(markers_fData) >= 1) {
-      markers_exprs <- reshape2::melt(as.matrix(exprs(cds[row.names(markers_fData),])))
+      markers_exprs <- reshape2::melt(as.matrix(assays(cds)$exprs[row.names(markers_fData),]))
       colnames(markers_exprs)[1:2] <- c('feature_id','cell_id')
       markers_exprs <- merge(markers_exprs, markers_fData, by.x = "feature_id", by.y="row.names")
       #print (head( markers_exprs[is.na(markers_exprs$gene_short_name) == FALSE,]))
@@ -323,7 +323,7 @@ plot_3d_cell_trajectory <- function(cds,
     markers_fData <- subset(fData(cds), gene_short_name %in% markers)
     if (nrow(markers_fData) >= 1){
 
-      markers_expr_val <- exprs(cds[row.names(markers_fData), cell_sampled])
+      markers_expr_val <- assays(cds)$exprs[row.names(markers_fData), cell_sampled]
       markers_expr_val <- Matrix::colSums(markers_expr_val)
       markers_expr_val <- markers_expr_val / pData(cds)$Size_Factor
       nz_points = markers_expr_val != 0
@@ -648,7 +648,7 @@ plot_cell_clusters <- function(cds,
 
       }
       if (integer_expression) {
-        cds_exprs <- exprs(cds_subset)
+        cds_exprs <- assays(cds_subset)$exprs
 
         if (is.null(size_factors(cds_subset))) {
           stop("Error: to call this function with relative_expr=TRUE, you must call estimate_size_factors() first")
@@ -658,7 +658,7 @@ plot_cell_clusters <- function(cds,
         cds_exprs <- reshape2::melt(round(as.matrix(cds_exprs)))
       }
       else {
-        cds_exprs <- reshape2::melt(as.matrix(exprs(cds_subset)))
+        cds_exprs <- reshape2::melt(as.matrix(assays(cds_subset)$exprs))
       }
       markers_exprs <- cds_exprs
       #markers_exprs <- reshape2::melt(as.matrix(cds_exprs))
@@ -780,7 +780,7 @@ plot_genes_in_pseudotime <-function(cds_subset,
     relative_expr <- TRUE
   }
   if (integer_expression) {
-    cds_exprs <- exprs(cds_subset)
+    cds_exprs <- assays(cds_subset)$exprs
     if (relative_expr) {
       if (is.null(size_factors(cds_subset))) {
         stop("Error: to call this function with relative_expr=TRUE, you must call estimate_size_factors() first")
@@ -790,7 +790,7 @@ plot_genes_in_pseudotime <-function(cds_subset,
     cds_exprs <- reshape2::melt(round(as.matrix(cds_exprs)))
   }
   else {
-    cds_exprs <- reshape2::melt(as.matrix(exprs(cds_subset)))
+    cds_exprs <- reshape2::melt(as.matrix(assays(cds_subset)$exprs))
   }
   if (is.null(min_expr)) {
     min_expr <- cds_subset@lower_detection_limit
@@ -1054,7 +1054,7 @@ plot_genes_violin <- function (cds_subset, grouping = "State", min_expr = NULL, 
     relative_expr = TRUE
   }
   if (integer_expression) {
-    cds_exprs = exprs(cds_subset)
+    cds_exprs = assays(cds_subset)$exprs
     if (relative_expr) {
       if (is.null(size_factors(cds_subset))) {
         stop("Error: to call this function with relative_expr=TRUE, you must call estimate_size_factors() first")
@@ -1065,7 +1065,7 @@ plot_genes_violin <- function (cds_subset, grouping = "State", min_expr = NULL, 
     cds_exprs = reshape2::melt(as.matrix(cds_exprs))
   }
   else {
-    cds_exprs = exprs(cds_subset)
+    cds_exprs = assays(cds_subset)$exprs
     cds_exprs = reshape2::melt(as.matrix(cds_exprs))
   }
   if (is.null(min_expr)) {
@@ -1181,17 +1181,17 @@ plot_percent_cells_positive <- function(cds_subset,
 
   if (integer_expression)
   {
-    marker_exprs <- exprs(cds_subset)
+    marker_exprs <- assays(cds_subset)$exprs
     if (relative_expr){
       if (is.null(size_factors(cds_subset)))
       {
-        stop("Error: to call this function with relative_expr=TRUE, you must call estimateSizeFactors() first")
+        stop("Error: to call this function with relative_expr=TRUE, you must call estimate_size_factors() first")
       }
       marker_exprs <- Matrix::t(Matrix::t(marker_exprs) / size_factors(cds_subset))
     }
     marker_exprs_melted <- reshape2::melt(round(as.matrix(marker_exprs)))
   }else{
-    marker_exprs_melted <- reshape2::melt(exprs(marker_exprs))
+    marker_exprs_melted <- reshape2::melt(assays(marker_exprs)$exprs)
   }
 
   colnames(marker_exprs_melted) <- c("f_id", "Cell", "expression")

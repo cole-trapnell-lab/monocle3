@@ -5,7 +5,7 @@ test_that("estimate_dispersions() properly validates its input",{
   lung <- detect_genes(lung)
   lung <- estimate_size_factors(lung)
   lung <- estimate_dispersions(lung)
-  lung_pData <- pData(lung)
+  lung_pData <- colData(lung)
   expect_equal(colnames(lung_pData), c("file", "total_mass", "internal_scale",
                                        "external_scale",
                                        "median_transcript_frags", "BioSample",

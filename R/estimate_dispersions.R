@@ -40,10 +40,10 @@ estimate_dispersions <- function(cds, modelFormulaStr="~ 1",
   # FIXME: this needs refactoring, badly.
   if (cds@expression_family %in% c("negbinomial", "negbinomial.size")){
     if (length(model_terms) > 1 || (length(model_terms) == 1 && model_terms[1] != "1")){
-      cds_pdata <- dplyr::group_by_(dplyr::select_(tibble::rownames_to_column(pData(cds)), "rowname", .dots=model_terms), .dots=model_terms)
-      disp_table <- as.data.frame(cds_pdata %>% do(disp_calc_helper_NB(cds[,.$rowname], min_cells_detected)))
+      cds_colData <- dplyr::group_by_(dplyr::select_(tibble::rownames_to_column(colData(cds)), "rowname", .dots=model_terms), .dots=model_terms)
+      disp_table <- as.data.frame(cds_colData %>% do(disp_calc_helper_NB(cds[,.$rowname], min_cells_detected)))
     }else{
-      cds_pdata <- dplyr::group_by_(dplyr::select_(tibble::rownames_to_column(pData(cds)), "rowname"))
+      cds_colData <- dplyr::group_by_(dplyr::select_(tibble::rownames_to_column(as.data.frame(colData(cds))), "rowname"))
       disp_table <- as.data.frame(disp_calc_helper_NB(cds, min_cells_detected))
       #disp_table <- data.frame(rowname = row.names(type_res), CellType = type_res)
     }
@@ -81,7 +81,7 @@ estimate_dispersions <- function(cds, modelFormulaStr="~ 1",
 
 
 disp_calc_helper_NB <- function(cds, min_cells_detected) {
-  rounded <- round(exprs(cds))
+  rounded <- round(assays(cds)$exprs)
   nzGenes <- Matrix::rowSums(rounded > cds@lower_detection_limit)
   nzGenes <- names(nzGenes[nzGenes > min_cells_detected])
 
@@ -92,11 +92,11 @@ disp_calc_helper_NB <- function(cds, min_cells_detected) {
   # emit a message to users on calling this (and possibly other) functions.
 
   #Progress Bar here
-  x <- DelayedArray::DelayedArray(Matrix::t(Matrix::t(rounded[nzGenes,]) / pData(cds[nzGenes,])$Size_Factor))
+  x <- DelayedArray::DelayedArray(Matrix::t(Matrix::t(rounded[nzGenes,]) / colData(cds[nzGenes,])$Size_Factor))
 
-  xim <- mean(1/ pData(cds[nzGenes,])$Size_Factor)
+  xim <- mean(1/ colData(cds[nzGenes,])$Size_Factor)
 
-  if (is_sparse_matrix(exprs(cds))){
+  if (is_sparse_matrix(assays(cds)$exprs)){
     f_expression_mean <- methods::as(DelayedMatrixStats::rowMeans2(x), "sparseVector")
   }else{
     f_expression_mean <- DelayedMatrixStats::rowMeans2(x)
@@ -115,7 +115,7 @@ disp_calc_helper_NB <- function(cds, min_cells_detected) {
   res[res$mu == 0]$disp = NA
   res$disp[res$disp < 0] <- 0
 
-  res <- cbind(gene_id=row.names(fData(cds[nzGenes,])), res)
+  res <- cbind(gene_id=row.names(rowData(cds[nzGenes,])), res)
   res
 }
 
