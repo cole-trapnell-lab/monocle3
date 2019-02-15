@@ -827,8 +827,11 @@ plot_genes_in_pseudotime <-function(cds_subset,
   cds_exprs$feature_label <- factor(cds_exprs$feature_label)
 
   new_data <- data.frame(Pseudotime = pData(cds_subset)$Pseudotime)
-  model_expectation <- gen_smooth_curves(cds_subset, cores=1, trend_formula = trend_formula,
-                                       relative_expr = T, new_data = new_data)
+  model_tbl = fit_models(cds_subset, model_formula_str = trend_formula)
+
+  model_expectation <- model_predictions(model_tbl,
+                                         new_data = pData(cds_subset))
+
   colnames(model_expectation) <- colnames(cds_subset)
   expectation <- plyr::ddply(cds_exprs, plyr::.(f_id, Cell), function(x) data.frame("expectation"=model_expectation[x$f_id, x$Cell]))
   cds_exprs <- merge(cds_exprs, expectation)
@@ -868,71 +871,6 @@ plot_genes_in_pseudotime <-function(cds_subset,
   q <- q + monocle_theme_opts()
   q
 }
-
-#' Fit smooth spline curves and return the response matrix
-#'
-#' This function will fit smooth spline curves for the gene expression dynamics along pseudotime in a gene-wise manner and return
-#' the corresponding response matrix. This function is build on other functions (fit_models and response_matrix) and used in calILRs and calABCs functions
-#'
-#' @param cds a CellDataSet object upon which to perform this operation
-#' @param new_data a data.frame object including columns (for example, Pseudotime) with names specified in the model formula. The values in the data.frame should be consist with the corresponding values from cds object.
-#' @param trend_formula a formula string specifying the model formula used in fitting the spline curve for each gene/feature.
-#' @param relative_expr a logic flag to determine whether or not the relative gene expression should be used
-#' @param response_type the response desired, as accepted by VGAM's predict function
-#' @param cores the number of cores to be used while testing each gene for differential expression
-#' @importFrom Biobase fData
-#' @return a data frame containing the data for the fitted spline curves.
-#'
-gen_smooth_curves <- function(cds, new_data, trend_formula = "~sm.ns(Pseudotime, df = 3)",
-                            relative_expr = T, response_type="response", cores = 1) {
-
-  expression_family <- cds@expression_family
-
-  if(cores > 1) {
-    expression_curve_matrix <- mcesApply(cds, 1, function(x, trend_formula, expression_family, relative_expr, new_data, fit_model_helper, response_matrix,
-                                                          calculate_NB_dispersion_hint, calculate_QP_dispersion_hint){
-      environment(fit_model_helper) <- environment()
-      environment(response_matrix) <- environment()
-      model_fits <- fit_model_helper(x, modelFormulaStr = trend_formula, expression_family = expression_family,
-                                     relative_expr = relative_expr, disp_func = cds@dispFitInfo[['blind']]$disp_func)
-      if(is.null(model_fits))
-        expression_curve <- as.data.frame(matrix(rep(NA, nrow(new_data)), nrow = 1))
-      else
-        expression_curve <- as.data.frame(response_matrix(list(model_fits), newdata = new_data, response_type=response_type))
-      colnames(expression_curve) <- row.names(new_data)
-      expression_curve
-      #return(expression_curve)
-    }, required_packages=c("BiocGenerics", "Biobase", "VGAM", "plyr"), cores=cores,
-    trend_formula = trend_formula, expression_family = expression_family, relative_expr = relative_expr, new_data = new_data,
-    fit_model_helper = fit_model_helper, response_matrix = response_matrix, calculate_NB_dispersion_hint = calculate_NB_dispersion_hint,
-    calculate_QP_dispersion_hint = calculate_QP_dispersion_hint
-    )
-    expression_curve_matrix <- as.matrix(do.call(rbind, expression_curve_matrix))
-    return(expression_curve_matrix)
-  }
-  else {
-    expression_curve_matrix <- smart_es_apply(cds, 1, function(x, trend_formula, expression_family, relative_expr, new_data){
-      environment(fit_model_helper) <- environment()
-      environment(response_matrix) <- environment()
-      model_fits <- fit_model_helper(x, model_formula_str = trend_formula, expression_family = expression_family,
-                                     relative_expr = relative_expr, disp_func = cds@dispFitInfo[['blind']]$disp_func)
-      if(is.null(model_fits))
-        expression_curve <- as.data.frame(matrix(rep(NA, nrow(new_data)), nrow = 1))
-      else
-        expression_curve <- as.data.frame(response_matrix(list(model_fits), new_data, response_type=response_type))
-      colnames(expression_curve) <- row.names(new_data)
-      expression_curve
-    },
-    convert_to_dense=TRUE,
-    trend_formula = trend_formula, expression_family = expression_family, relative_expr = relative_expr, new_data = new_data
-    )
-    expression_curve_matrix <- as.matrix(do.call(rbind, expression_curve_matrix))
-    row.names(expression_curve_matrix) <- row.names(fData(cds))
-    return(expression_curve_matrix)
-  }
-
-}
-
 
 #' Plots the percentage of variance explained by the each component based on PCA from the normalized expression
 #' data using the same procedure used in reduceDimension function.
