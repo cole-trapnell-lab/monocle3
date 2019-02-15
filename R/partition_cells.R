@@ -84,7 +84,7 @@ partition_cells <- function(cds,
 
 
   if(!is.null(partition_names)) {
-    if(!(partition_names %in% colnames(pData(cds)))) {
+    if(!(partition_names %in% colnames(colData(cds)))) {
       stop(paste0('Error: please make sure pData has a column with the name ', partition_names))
     }
     if(partition_names %in% colnames(pData(cds))) {
