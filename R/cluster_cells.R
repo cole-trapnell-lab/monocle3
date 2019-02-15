@@ -34,7 +34,6 @@
 #' @references Vincent D. Blondel, Jean-Loup Guillaume, Renaud Lambiotte, Etienne Lefebvre: Fast unfolding of communities in large networks. J. Stat. Mech. (2008) P10008
 #' @references Jacob H. Levine and et.al. Data-Driven Phenotypic Dissection of AML Reveals Progenitor-like Cells that Correlate with Prognosis. Cell, 2015.
 #'
-#' @useDynLib monocle
 #'
 #' @export
 
@@ -320,7 +319,7 @@ louvain_R <- function(X, python_home = system('which python', intern = TRUE),
   }, finally = {
   })
 
-  reticulate::source_python(paste(system.file(package="monocle"), "louvain.py", sep="/"))
+  reticulate::source_python(paste(system.file(package="monocle3"), "louvain.py", sep="/"))
   # X <- Matrix::t(X)
   if(length(grep('Matrix', class(X))) == 0){
     X <- as(as.matrix(X), 'TsparseMatrix')
