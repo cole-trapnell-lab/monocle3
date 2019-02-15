@@ -5,7 +5,7 @@
 #' correspond to a different cell type. This method takes a cell_data_set as input
 #' along with a requested number of clusters, clusters them with an unsupervised
 #' algorithm (by default, density peak clustering), and then returns the cell_data_set with the
-#' cluster assignments stored in the pData table. When number of clusters is set
+#' cluster assignments stored in the colData table. When number of clusters is set
 #' to NULL (num_clusters = NULL), the decision plot as introduced in the reference
 #' will be plotted and the users are required to check the decision plot to select
 #' the rho and delta to determine the number of clusters to cluster. When the dataset
@@ -34,7 +34,6 @@
 #' @references Vincent D. Blondel, Jean-Loup Guillaume, Renaud Lambiotte, Etienne Lefebvre: Fast unfolding of communities in large networks. J. Stat. Mech. (2008) P10008
 #' @references Jacob H. Levine and et.al. Data-Driven Phenotypic Dissection of AML Reveals Progenitor-like Cells that Correlate with Prognosis. Cell, 2015.
 #'
-#' @useDynLib monocle
 #'
 #' @export
 
@@ -59,10 +58,10 @@ cluster_cells <- function(cds,
     if(nrow(data) == 0) {
       message('ReduceDimension is not applied to this dataset. We are using the normalized reduced space obtained from preprocessCDS to cluster cells...')
       data <- cds@normalized_data_projection
-      louvain_res <- louvain_clustering(data = data, pd = pData(cds), k = k, weight = weight, louvain_iter = louvain_iter, resolution = res, random_seed = random_seed, verbose = verbose, ...)
+      louvain_res <- louvain_clustering(data = data, pd = colData(cds), k = k, weight = weight, louvain_iter = louvain_iter, resolution = res, random_seed = random_seed, verbose = verbose, ...)
     } else {
       if(!('louvain_res' %in% names(cds@aux_ordering_data[[cds@dim_reduce_type]]))) {
-        louvain_res <- louvain_clustering(data = data, pd = pData(cds), k = k, weight = weight, louvain_iter = louvain_iter, resolution = res, random_seed = random_seed, verbose = verbose, ...)
+        louvain_res <- louvain_clustering(data = data, pd = colData(cds), k = k, weight = weight, louvain_iter = louvain_iter, resolution = res, random_seed = random_seed, verbose = verbose, ...)
       } else {
         louvain_res <- cds@aux_ordering_data[[cds@dim_reduce_type]]$louvain_res
       }
@@ -71,9 +70,9 @@ cluster_cells <- function(cds,
     louvain_component <-  igraph::components(cluster_graph_res$cluster_g)$membership[louvain_res$optim_res$membership]
     names(louvain_component) <- igraph::V(louvain_res$g)$name
     louvain_component <- as.factor(louvain_component)
-    pData(cds)$louvain_component <- louvain_component
+    colData(cds)$louvain_component <- louvain_component
 
-    pData(cds)$Cluster <- factor(igraph::membership(louvain_res$optim_res))
+    colData(cds)$Cluster <- factor(igraph::membership(louvain_res$optim_res))
 
     cds@aux_clustering_data[["louvian"]] <- list(louvain_res = louvain_res)
 
@@ -88,7 +87,7 @@ cluster_cells <- function(cds,
 #' function to run louvain clustering algorithm
 #'
 #' @param data low dimensional space used to perform graph clustering
-#' @param pd the dataframe of the phenotype from the cell dataset (pData(cds))
+#' @param pd the dataframe of the phenotype from the cell dataset (colData(cds))
 #' @param k number of nearest neighbors used for Louvain clustering
 #' @param weight whether or not to calculate the weight for each edge in the kNN graph
 #' @param louvain_iter the number of iteraction for louvain clustering
@@ -320,7 +319,7 @@ louvain_R <- function(X, python_home = system('which python', intern = TRUE),
   }, finally = {
   })
 
-  reticulate::source_python(paste(system.file(package="monocle"), "louvain.py", sep="/"))
+  reticulate::source_python(paste(system.file(package="monocle3"), "louvain.py", sep="/"))
   # X <- Matrix::t(X)
   if(length(grep('Matrix', class(X))) == 0){
     X <- as(as.matrix(X), 'TsparseMatrix')

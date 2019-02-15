@@ -12,7 +12,7 @@ plot_genes_violin(cds_subset, grouping = "State", min_expr = NULL,
 \arguments{
 \item{cds_subset}{CellDataSet for the experiment}
 
-\item{grouping}{the cell attribute (e.g. the column of pData(cds)) to group cells by on the horizontal axis}
+\item{grouping}{the cell attribute (e.g. the column of colData(cds)) to group cells by on the horizontal axis}
 
 \item{min_expr}{the minimum (untransformed) expression level to use in plotted the genes.}
 
@@ -24,7 +24,7 @@ plot_genes_violin(cds_subset, grouping = "State", min_expr = NULL,
 
 \item{panel_order}{the order in which genes should be layed out (left-to-right, top-to-bottom)}
 
-\item{color_by}{the cell attribute (e.g. the column of pData(cds)) to be used to color each cell}
+\item{color_by}{the cell attribute (e.g. the column of colData(cds)) to be used to color each cell}
 
 \item{plot_trend}{whether to plot a trendline tracking the average expression across the horizontal axis.}
 
@@ -46,7 +46,7 @@ each group of cells.
 \dontrun{
 library(HSMMSingleCell)
 HSMM <- load_HSMM()
-my_genes <- HSMM[row.names(subset(fData(HSMM), gene_short_name \%in\% c("ACTA1", "ID1", "CCNB2"))),]
+my_genes <- HSMM[row.names(subset(rowData(HSMM), gene_short_name \%in\% c("ACTA1", "ID1", "CCNB2"))),]
 plot_genes_violin(my_genes, grouping="Hours", ncol=2, min_expr=0.1)
 }
 }

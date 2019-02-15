@@ -3,7 +3,7 @@ context("evaluate_models")
 cds <- load_a549()
 
 test_that("evaluate_models() returns correct output for poisson models",{
-  test_cds = cds[fData(cds)$gene_short_name == "ANGPTL4",]
+  test_cds = cds[rowData(cds)$gene_short_name == "ANGPTL4",]
   test_cds@expression_family = "poisson"
   fit_m = fit_models(test_cds, model_formula_str = "~log_dose")
   evaluated_fit = evaluate_fits(fit_m)
@@ -17,7 +17,7 @@ test_that("evaluate_models() returns correct output for poisson models",{
 })
 
 test_that("evaluate_models() returns correct output for quasipoisson models",{
-  test_cds = cds[fData(cds)$gene_short_name == "ANGPTL4",]
+  test_cds = cds[rowData(cds)$gene_short_name == "ANGPTL4",]
   test_cds@expression_family = "quasipoisson"
   fit_m = fit_models(test_cds, model_formula_str = "~log_dose")
   evaluated_fit = evaluate_fits(fit_m)
@@ -33,7 +33,7 @@ test_that("evaluate_models() returns correct output for quasipoisson models",{
 ### FIXME: Need cases for binomial (binary) data
 
 test_that("evaluate_models() returns correct output for negative binomial models",{
-  test_cds = cds[fData(cds)$gene_short_name == "ANGPTL4",]
+  test_cds = cds[rowData(cds)$gene_short_name == "ANGPTL4",]
   test_cds@expression_family = "negbinomial"
   fit = fit_models(test_cds, model_formula_str = "~log_dose")
   evaluated_fit = evaluate_fits(fit)
@@ -47,7 +47,7 @@ test_that("evaluate_models() returns correct output for negative binomial models
 })
 
 test_that("evaluate_models() returns correct output for zero-inflated poisson models",{
-  test_cds = cds[fData(cds)$gene_short_name == "ANGPTL4",]
+  test_cds = cds[rowData(cds)$gene_short_name == "ANGPTL4",]
   test_cds@expression_family = "zipoisson"
   fit = fit_models(test_cds, model_formula_str = "~log_dose")
   evaluated_fit = evaluate_fits(fit)
@@ -62,7 +62,7 @@ test_that("evaluate_models() returns correct output for zero-inflated poisson mo
 
 
 test_that("evaluate_models() returns correct output for zero-inflated negative binomial models",{
-  test_cds = cds[fData(cds)$gene_short_name == "ANGPTL4",]
+  test_cds = cds[rowData(cds)$gene_short_name == "ANGPTL4",]
   test_cds@expression_family = "zinegbinomial"
   fit = fit_models(test_cds, model_formula_str = "~log_dose")
   evaluated_fit = evaluate_fits(fit)

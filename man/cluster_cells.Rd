@@ -40,7 +40,7 @@ workflows. In an experiment containing a mixture of cell types, each cluster mig
 correspond to a different cell type. This method takes a cell_data_set as input
 along with a requested number of clusters, clusters them with an unsupervised
 algorithm (by default, density peak clustering), and then returns the cell_data_set with the
-cluster assignments stored in the pData table. When number of clusters is set
+cluster assignments stored in the colData table. When number of clusters is set
 to NULL (num_clusters = NULL), the decision plot as introduced in the reference
 will be plotted and the users are required to check the decision plot to select
 the rho and delta to determine the number of clusters to cluster. When the dataset

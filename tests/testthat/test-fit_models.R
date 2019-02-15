@@ -28,7 +28,7 @@ test_that("fit_models() returns correct output for negative binomial regression"
   test_cds = cds
   test_cds@expression_family = "negbinomial"
 
-  pos_ctrl_gene = test_cds[fData(cds)$gene_short_name == "ANGPTL4",]
+  pos_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "ANGPTL4",]
   pos_ctrl_gene_fit = fit_models(pos_ctrl_gene, model_formula_str = "~log_dose")
   expect_equal(pos_ctrl_gene_fit$status[[1]], "OK")
   pos_ctrl_coefs = coefficient_table(pos_ctrl_gene_fit)
@@ -43,7 +43,7 @@ test_that("fit_models() returns correct output for negative binomial regression"
   expect_equal(sum(is.na(fitted_vals)), 0)
   expect_equal(unname(fitted_vals[1]), 0.25752373)
 
-  neg_ctrl_gene = test_cds[fData(cds)$gene_short_name == "CCNE2",]
+  neg_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "CCNE2",]
   neg_ctrl_gene_fit = fit_models(neg_ctrl_gene, model_formula_str = "~log_dose")
   expect_equal(neg_ctrl_gene_fit$status[[1]], "OK")
   neg_ctrl_coefs = coefficient_table(neg_ctrl_gene_fit)
@@ -59,7 +59,7 @@ test_that("fit_models() returns correct output for Poisson regression",{
   test_cds = cds
   test_cds@expression_family = "poisson"
 
-  pos_ctrl_gene = test_cds[fData(cds)$gene_short_name == "ANGPTL4",]
+  pos_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "ANGPTL4",]
   pos_ctrl_gene_fit = fit_models(pos_ctrl_gene, model_formula_str = "~log_dose")
   expect_equal(pos_ctrl_gene_fit$status[[1]], "OK")
   pos_ctrl_coefs = coefficient_table(pos_ctrl_gene_fit)
@@ -74,7 +74,7 @@ test_that("fit_models() returns correct output for Poisson regression",{
   expect_equal(sum(is.na(fitted_vals)), 0)
   expect_equal(unname(fitted_vals[1]), 0.25752373, tolerance=1e-1)
 
-  neg_ctrl_gene = test_cds[fData(cds)$gene_short_name == "CCNE2",]
+  neg_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "CCNE2",]
   neg_ctrl_gene_fit = fit_models(neg_ctrl_gene, model_formula_str = "~log_dose")
   expect_equal(neg_ctrl_gene_fit$status[[1]], "OK")
   neg_ctrl_coefs = coefficient_table(neg_ctrl_gene_fit)
@@ -89,7 +89,7 @@ test_that("fit_models() returns correct output for quasipoisson regression",{
   test_cds = cds
   test_cds@expression_family = "quasipoisson"
 
-  pos_ctrl_gene = test_cds[fData(cds)$gene_short_name == "ANGPTL4",]
+  pos_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "ANGPTL4",]
   pos_ctrl_gene_fit = fit_models(pos_ctrl_gene, model_formula_str = "~log_dose")
   expect_equal(pos_ctrl_gene_fit$status[[1]], "OK")
   pos_ctrl_coefs = coefficient_table(pos_ctrl_gene_fit)
@@ -104,7 +104,7 @@ test_that("fit_models() returns correct output for quasipoisson regression",{
   expect_equal(sum(is.na(fitted_vals)), 0)
   expect_equal(unname(fitted_vals[1]), 0.25752373, tolerance=1e-1)
 
-  neg_ctrl_gene = test_cds[fData(cds)$gene_short_name == "CCNE2",]
+  neg_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "CCNE2",]
   neg_ctrl_gene_fit = fit_models(neg_ctrl_gene, model_formula_str = "~log_dose")
   expect_equal(neg_ctrl_gene_fit$status[[1]], "OK")
   neg_ctrl_coefs = coefficient_table(neg_ctrl_gene_fit)
@@ -120,14 +120,14 @@ test_that("fit_models() returns correct output for quasipoisson regression",{
 #   test_cds = cds
 #   test_cds@expression_family = "binomial"
 #
-#   pos_ctrl_gene = test_cds[fData(cds)$gene_short_name == "ANGPTL4",]
+#   pos_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "ANGPTL4",]
 #   pos_ctrl_gene_fit = fit_models(pos_ctrl_gene, model_formula_str = "~log_dose")
 #   pos_ctrl_coefs = coefficient_table(pos_ctrl_gene_fit)
 #   expect_equal(pos_ctrl_coefs$estimate, c(0.01078543, 0.24663124), tolerance=1e-1)
 #   expect_equal(pos_ctrl_coefs$normalized_effect, c(0, 0.353), tolerance=1e-1)
 #   expect_lt(pos_ctrl_coefs$p_value[2], 0.05)
 #
-#   neg_ctrl_gene = test_cds[fData(cds)$gene_short_name == "CCNE2",]
+#   neg_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "CCNE2",]
 #   neg_ctrl_gene_fit = fit_models(neg_ctrl_gene, model_formula_str = "~log_dose")
 #   neg_ctrl_coefs = coefficient_table(neg_ctrl_gene_fit)
 #   expect_equal(neg_ctrl_coefs$estimate, c(-3.553921,  0.179926), tolerance=1e-1)
@@ -139,7 +139,7 @@ test_that("fit_models() returns correct output for zero-inflated Poisson regress
   test_cds = cds
   test_cds@expression_family = "zipoisson"
 
-  pos_ctrl_gene = test_cds[fData(cds)$gene_short_name == "ANGPTL4",]
+  pos_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "ANGPTL4",]
   pos_ctrl_gene_fit = fit_models(pos_ctrl_gene, model_formula_str = "~log_dose | Size_Factor")
   expect_equal(pos_ctrl_gene_fit$status[[1]], "OK")
   pos_ctrl_coefs = coefficient_table(pos_ctrl_gene_fit)
@@ -154,7 +154,7 @@ test_that("fit_models() returns correct output for zero-inflated Poisson regress
   expect_equal(sum(is.na(fitted_vals)), 0)
   expect_equal(unname(fitted_vals[1]), 1.3, tolerance=1e-1)
 
-  neg_ctrl_gene = test_cds[fData(cds)$gene_short_name == "CCNE2",]
+  neg_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "CCNE2",]
   neg_ctrl_gene_fit = fit_models(neg_ctrl_gene, model_formula_str = "~log_dose | Size_Factor")
   expect_equal(neg_ctrl_gene_fit$status[[1]], "OK")
   neg_ctrl_coefs = coefficient_table(neg_ctrl_gene_fit)
@@ -169,7 +169,7 @@ test_that("fit_models() returns correct output for zero-inflated negative binomi
   test_cds = cds
   test_cds@expression_family = "zinegbinomial"
 
-  pos_ctrl_gene = test_cds[fData(cds)$gene_short_name == "ANGPTL4",]
+  pos_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "ANGPTL4",]
   pos_ctrl_gene_fit = fit_models(pos_ctrl_gene, model_formula_str = "~log_dose | Size_Factor")
   expect_equal(pos_ctrl_gene_fit$status[[1]], "OK")
   pos_ctrl_coefs = coefficient_table(pos_ctrl_gene_fit)
@@ -184,7 +184,7 @@ test_that("fit_models() returns correct output for zero-inflated negative binomi
   expect_equal(sum(is.na(fitted_vals)), 0)
   expect_equal(unname(fitted_vals[1]), 1.48, tolerance=1e-1)
 
-  neg_ctrl_gene = test_cds[fData(cds)$gene_short_name == "CCNE2",]
+  neg_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "CCNE2",]
   neg_ctrl_gene_fit = fit_models(neg_ctrl_gene, model_formula_str = "~log_dose | Size_Factor")
   expect_equal(neg_ctrl_gene_fit$status[[1]], "OK")
   neg_ctrl_coefs = coefficient_table(neg_ctrl_gene_fit)
@@ -199,7 +199,7 @@ test_that("fit_models() returns correct output for zero-inflated negative binomi
 test_that("fit_models() flags non-convergence for negative binomial regression",{
   test_cds = cds
   test_cds@expression_family = "negbinomial"
-  pos_ctrl_gene = test_cds[fData(cds)$gene_short_name == "ANGPTL4",]
+  pos_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "ANGPTL4",]
   pos_ctrl_gene_fit = fit_models(pos_ctrl_gene, model_formula_str = "~log_dose", maxit=1)
   expect_equal(pos_ctrl_gene_fit$status[[1]], "FAIL")
 })
@@ -207,7 +207,7 @@ test_that("fit_models() flags non-convergence for negative binomial regression",
 test_that("fit_models() flags non-convergence for Poisson regression",{
   test_cds = cds
   test_cds@expression_family = "poisson"
-  pos_ctrl_gene = test_cds[fData(cds)$gene_short_name == "ANGPTL4",]
+  pos_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "ANGPTL4",]
   pos_ctrl_gene_fit = fit_models(pos_ctrl_gene, model_formula_str = "~log_dose", maxit=5)
   expect_equal(pos_ctrl_gene_fit$status[[1]], "FAIL")
 })
@@ -215,7 +215,7 @@ test_that("fit_models() flags non-convergence for Poisson regression",{
 test_that("fit_models() returns correct output for quasipoisson regression",{
   test_cds = cds
   test_cds@expression_family = "quasipoisson"
-  pos_ctrl_gene = test_cds[fData(cds)$gene_short_name == "ANGPTL4",]
+  pos_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "ANGPTL4",]
   pos_ctrl_gene_fit = fit_models(pos_ctrl_gene, model_formula_str = "~log_dose", maxit=5)
   expect_equal(pos_ctrl_gene_fit$status[[1]], "FAIL")
 })
@@ -227,7 +227,7 @@ test_that("fit_models() returns correct output for quasipoisson regression",{
 test_that("fit_models() flags non-convergence for zero-inflated Poisson regression",{
   test_cds = cds
   test_cds@expression_family = "zipoisson"
-  pos_ctrl_gene = test_cds[fData(cds)$gene_short_name == "ANGPTL4",]
+  pos_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "ANGPTL4",]
   pos_ctrl_gene_fit = fit_models(pos_ctrl_gene, model_formula_str = "~log_dose | Size_Factor", maxit=5)
   expect_equal(pos_ctrl_gene_fit$status[[1]], "FAIL")
 })
@@ -235,7 +235,7 @@ test_that("fit_models() flags non-convergence for zero-inflated Poisson regressi
 test_that("fit_models() flags non-convergence for zero-inflated negative binomial regression",{
   test_cds = cds
   test_cds@expression_family = "zinegbinomial"
-  pos_ctrl_gene = test_cds[fData(cds)$gene_short_name == "ANGPTL4",]
+  pos_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "ANGPTL4",]
   pos_ctrl_gene_fit = fit_models(pos_ctrl_gene, model_formula_str = "~log_dose | Size_Factor", maxit=5)
   expect_equal(pos_ctrl_gene_fit$status[[1]], "FAIL")
 })

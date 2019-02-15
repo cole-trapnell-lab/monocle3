@@ -118,7 +118,7 @@ plot_cell_trajectory(cds,
 ```{r}
 # a helper function to identify the root principal points:
 get_correct_root_state <- function(cds, cell_phenotype, root_type){
-  cell_ids <- which(pData(cds)[, cell_phenotype] == root_type)
+  cell_ids <- which(colData(cds)[, cell_phenotype] == root_type)
 
   closest_vertex <-
     cds@aux_ordering_data[[cds@rge_method]]$pr_graph_cell_proj_closest_vertex
@@ -286,8 +286,8 @@ col_vector_origin <- c("#db83da",
               "#17becf",
               "#9edae5")
 col_vector <-
-  col_vector_origin[1:length(unique(as.character(pData(MCA_cds)$Tissue)))]
-names(col_vector) <- unique(as.character(pData(MCA_cds)$Tissue))
+  col_vector_origin[1:length(unique(as.character(colData(MCA_cds)$Tissue)))]
+names(col_vector) <- unique(as.character(colData(MCA_cds)$Tissue))
 options(repr.plot.width = 11)
 options(repr.plot.height = 8)
 plot_cell_clusters(MCA_cds,
@@ -304,8 +304,8 @@ plot_cell_clusters(MCA_cds,
 options(repr.plot.width = 11)
 options(repr.plot.height = 8)
 cluster_col_vector <-
-  col_vector_origin[1:length(unique(as.character(pData(MCA_cds)$Cluster)))]
-names(cluster_col_vector) <- unique(as.character(pData(MCA_cds)$Cluster))
+  col_vector_origin[1:length(unique(as.character(colData(MCA_cds)$Cluster)))]
+names(cluster_col_vector) <- unique(as.character(colData(MCA_cds)$Cluster))
 plot_cell_clusters(MCA_cds,
                    color_by = 'Cluster',
                    cell_size = 0.1,
@@ -318,7 +318,7 @@ plot_cell_clusters(MCA_cds,
 
 
 ```{r}
-Cluster_tissue_stat <- table(pData(MCA_cds)[, c('Cluster', 'Tissue')])
+Cluster_tissue_stat <- table(colData(MCA_cds)[, c('Cluster', 'Tissue')])
 
 Cluster_tissue_stat <- apply(Cluster_tissue_stat, 1, function(x) x / sum(x))
 
@@ -351,7 +351,7 @@ pheatmap::pheatmap(Cluster_tissue_stat_ordered,
 
 
 ```{r}
-Cluster_tissue_stat <- table(pData(MCA_cds)[, c('Cluster', 'Tissue')])
+Cluster_tissue_stat <- table(colData(MCA_cds)[, c('Cluster', 'Tissue')])
 
 Cluster_tissue_stat <- apply(Cluster_tissue_stat, 2, function(x) x / sum(x))
 
@@ -391,9 +391,9 @@ MCA_cds_res_resolution <- cluster_cells(MCA_cds,
                                        verbose = T)
 cluster_col_vector <-
   col_vector_origin[1:length(
-    unique(as.character(pData(MCA_cds_res_resolution)$Cluster)))]
+    unique(as.character(colData(MCA_cds_res_resolution)$Cluster)))]
 names(cluster_col_vector) <-
-  unique(as.character(pData(MCA_cds_res_resolution)$Cluster))
+  unique(as.character(colData(MCA_cds_res_resolution)$Cluster))
 
 plot_cell_clusters(MCA_cds_res_resolution,
                    color_by = 'Cluster',
@@ -414,9 +414,9 @@ MCA_cds_res_resolution <- cluster_cells(MCA_cds,
                                        verbose = T)
 cluster_col_vector <-
   col_vector_origin[1:length(
-    unique(as.character(pData(MCA_cds_res_resolution)$Cluster)))]
+    unique(as.character(colData(MCA_cds_res_resolution)$Cluster)))]
 names(cluster_col_vector) <-
-  unique(as.character(pData(MCA_cds_res_resolution)$Cluster))
+  unique(as.character(colData(MCA_cds_res_resolution)$Cluster))
 
 plot_cell_clusters(MCA_cds_res_resolution,
                    color_by = 'Cluster',
@@ -501,7 +501,7 @@ plot_cell_clusters(MCA_cds,
 
 
 ```{r}
-my_genes <- row.names(subset(fData(cds),
+my_genes <- row.names(subset(rowData(cds),
           gene_short_name %in% c("Cdk1", "Zwint", "Znhit1")))
 cds_subset <- cds[my_genes,]
 plot_genes_in_pseudotime(cds_subset, color_by = "cell_type")

@@ -71,7 +71,7 @@ principal_graph_test <- function(cds,
 
   test_res <- do.call(rbind.data.frame, test_res)
   row.names(test_res) <- row.names(cds)
-  test_res <- merge(test_res, fData(cds), by="row.names")
+  test_res <- merge(test_res, rowData(cds), by="row.names")
   row.names(test_res) <- test_res[, 1] #remove the first column and set the row names to the first column
   test_res[, 1] <- NULL
   test_res$qval <- 1
@@ -233,7 +233,7 @@ my.geary.test <- function (x, listw, wc, randomisation = TRUE, alternative = "gr
 #'
 calculateLW <- function(cds, k = 25, return_sparse_matrix = FALSE,
                         interactive = FALSE, verbose = FALSE) {
-  # interactive <- ifelse('Marked' %in% names(pData(cds)), T, F)
+  # interactive <- ifelse('Marked' %in% names(colData(cds)), T, F)
   if(verbose) {
     message("retrieve the matrices for Moran's I test...")
   }
@@ -262,8 +262,8 @@ calculateLW <- function(cds, k = 25, return_sparse_matrix = FALSE,
     knn_res_graph <- igraph::graph.data.frame(relations, directed = T)
 
     if(interactive) {
-      if('Marked' %in% names(pData(cds))) {
-        points_selected <- which(pData(cds)$Marked)
+      if('Marked' %in% names(colData(cds))) {
+        points_selected <- which(colData(cds)$Marked)
       } else {
         cat("Left click or drag multiple points to select a group of cells\n")
         cat("Press <Esc> in the rgl screen to exit \n")
@@ -301,7 +301,7 @@ calculateLW <- function(cds, k = 25, return_sparse_matrix = FALSE,
 
     # This cds object might be a subset of the one on which ordering was performed,
     # so we may need to subset the nearest vertex and low-dim coordinate matrices:
-    cell2pp_map <-  cell2pp_map[row.names(cell2pp_map) %in% row.names(pData(cds)),, drop=FALSE]
+    cell2pp_map <-  cell2pp_map[row.names(cell2pp_map) %in% row.names(colData(cds)),, drop=FALSE]
     cell2pp_map <- cell2pp_map[colnames(cds), ]
 
     if(verbose) {
@@ -363,8 +363,8 @@ calculateLW <- function(cds, k = 25, return_sparse_matrix = FALSE,
     }
 
     if(interactive) {
-      if('Marked' %in% names(pData(cds))) {
-        points_selected <- which(pData(cds)$Marked)
+      if('Marked' %in% names(colData(cds))) {
+        points_selected <- which(colData(cds)$Marked)
       } else {
         cat("Left click or drog multiple points to select a group of cells\n")
         cat("Press <Esc> in the rgl screen to exit \n")

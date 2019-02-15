@@ -19,7 +19,7 @@ plot_cell_trajectory(cds, x = 1, y = 2, color_by = "Pseudotime",
 
 \item{y}{the column of reducedDimS(cds) to plot on the vertical axis}
 
-\item{color_by}{the cell attribute (e.g. the column of pData(cds)) to map to each cell's color}
+\item{color_by}{the cell attribute (e.g. the column of colData(cds)) to map to each cell's color}
 
 \item{show_backbone}{whether to show the diameter path of the MST used to order the cells}
 

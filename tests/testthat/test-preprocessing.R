@@ -31,7 +31,7 @@ test_that("preprocessing stays the same", {
   expect_equal(ncol(cds@normalized_data_projection), 179)
   expect_equal(nrow(cds@normalized_data_projection), nrow(colData(cds)))
   expect_equal(cds@normalized_data_projection[1,"ENSG00000228253.1"],
-               exprs(cds)["ENSG00000228253.1",1]/colData(cds)$Size_Factor[1])
+               assays(cds)$exprs["ENSG00000228253.1",1]/colData(cds)$Size_Factor[1])
 
   cds <- preprocess_cds(cds, method = "tfidf", norm_method = "none", num_dim = 20)
   expect_equal(ncol(cds@normalized_data_projection), 20)

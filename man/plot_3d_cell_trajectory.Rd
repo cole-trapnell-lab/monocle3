@@ -20,7 +20,7 @@ plot_3d_cell_trajectory(cds, downsample_size = NULL, dim = c(1, 2, 3),
 
 \item{dim}{the dimensions used to create the 3D plot, by default it is the first three dimensions}
 
-\item{color_by}{the cell attribute (e.g. the column of pData(cds)) to map to each cell's color}
+\item{color_by}{the cell attribute (e.g. the column of colData(cds)) to map to each cell's color}
 
 \item{palette}{the color palette used for plotting}
 

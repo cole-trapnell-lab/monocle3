@@ -2,7 +2,7 @@ context("compare_models")
 cds <- load_a549()
 
 test_that("compare_models() correctly deems NB better than Poisson",{
-  test_cds = cds[fData(cds)$gene_short_name == "ANGPTL4",]
+  test_cds = cds[rowData(cds)$gene_short_name == "ANGPTL4",]
   zinb_cds = test_cds
   zinb_cds@expression_family = "zinegbinomial"
   zinb_fit = fit_models(zinb_cds, model_formula_str = "~log_dose")

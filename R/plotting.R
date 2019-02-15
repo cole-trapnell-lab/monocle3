@@ -15,7 +15,7 @@ monocle_theme_opts <- function()
 #' @param cds cell_data_set for the experiment
 #' @param x the column of reducedDimS(cds) to plot on the horizontal axis
 #' @param y the column of reducedDimS(cds) to plot on the vertical axis
-#' @param color_by the cell attribute (e.g. the column of pData(cds)) to map to each cell's color
+#' @param color_by the cell attribute (e.g. the column of colData(cds)) to map to each cell's color
 #' @param show_backbone whether to show the diameter path of the MST used to order the cells
 #' @param backbone_color the color used to render the backbone.
 #' @param markers a gene name or gene id to use for setting the size of each cell in the plot
@@ -62,12 +62,12 @@ plot_cell_trajectory <- function(cds,
   requireNamespace("igraph")
   gene_short_name <- NA
   sample_name <- NA
-  sample_state <- pData(cds)$State
+  sample_state <- colData(cds)$State
   data_dim_1 <- NA
   data_dim_2 <- NA
 
   #TODO: need to validate cds as ready for this plot (need mst, pseudotime, etc)
-  lib_info_with_pseudo <- pData(cds)
+  lib_info_with_pseudo <- colData(cds)
 
   if (is.null(cds@dim_reduce_type) | is.null(cds@rge_method)){
     stop("Error: dimensionality not reduced or graph is not learned yet. Please call reduce_dimension(), partition_cells() and learn_graph() before calling this function.")
@@ -116,11 +116,11 @@ plot_cell_trajectory <- function(cds,
 
   markers_exprs <- NULL
   if (is.null(markers) == FALSE) {
-    markers_fData <- subset(fData(cds), gene_short_name %in% markers)
-    if (nrow(markers_fData) >= 1) {
-      markers_exprs <- reshape2::melt(as.matrix(assays(cds)$exprs[row.names(markers_fData),]))
+    markers_rowData <- subset(rowData(cds), gene_short_name %in% markers)
+    if (nrow(markers_rowData) >= 1) {
+      markers_exprs <- reshape2::melt(as.matrix(assays(cds)$exprs[row.names(markers_rowData),]))
       colnames(markers_exprs)[1:2] <- c('feature_id','cell_id')
-      markers_exprs <- merge(markers_exprs, markers_fData, by.x = "feature_id", by.y="row.names")
+      markers_exprs <- merge(markers_exprs, markers_rowData, by.x = "feature_id", by.y="row.names")
       #print (head( markers_exprs[is.na(markers_exprs$gene_short_name) == FALSE,]))
       markers_exprs$feature_label <- as.character(markers_exprs$gene_short_name)
       markers_exprs$feature_label[is.na(markers_exprs$feature_label)] <- markers_exprs$Var1
@@ -163,7 +163,7 @@ plot_cell_trajectory <- function(cds,
       # g <- g + geom_point(aes_string(color = color_by), na.rm = TRUE)
     } else {
       g <- g + geom_point(aes_string(color = color_by), size=I(cell_size), na.rm = TRUE, alpha = alpha)
-      if (class(pData(cds)[,color_by]) == "numeric"){
+      if (class(colData(cds)[,color_by]) == "numeric"){
         g <- g + viridis::scale_color_viridis(option="C")
       }
     }
@@ -209,7 +209,7 @@ plot_cell_trajectory <- function(cds,
 #'
 #' @param cds cell_data_set for the experiment
 #' @param dim the dimensions used to create the 3D plot, by default it is the first three dimensions
-#' @param color_by the cell attribute (e.g. the column of pData(cds)) to map to each cell's color
+#' @param color_by the cell attribute (e.g. the column of colData(cds)) to map to each cell's color
 #' @param markers a gene name or gene id to use for setting the size of each cell in the plot
 #' @param markers_linear a boolean used to indicate whether you want to scale the markers logarithimically or linearly
 #' @param webGL_filename the name of a file to which you'd to write a webGL file containing the plot
@@ -278,8 +278,8 @@ plot_3d_cell_trajectory <- function(cds,
     }
   }
 
-  lib_info_with_pseudo <- pData(cds)[cell_sampled, ]
-  sample_state <- pData(cds)$State[cell_sampled]
+  lib_info_with_pseudo <- colData(cds)[cell_sampled, ]
+  sample_state <- colData(cds)$State[cell_sampled]
 
   if (is.null(cds@dim_reduce_type)){
     stop("Error: dimensionality not yet reduced. Please call reduce_dimension() before calling this function.")
@@ -320,12 +320,12 @@ plot_3d_cell_trajectory <- function(cds,
 
   markers_exprs = NULL
   if (is.null(markers) == FALSE){
-    markers_fData <- subset(fData(cds), gene_short_name %in% markers)
-    if (nrow(markers_fData) >= 1){
+    markers_rowData <- subset(rowData(cds), gene_short_name %in% markers)
+    if (nrow(markers_rowData) >= 1){
 
-      markers_expr_val <- assays(cds)$exprs[row.names(markers_fData), cell_sampled]
+      markers_expr_val <- assays(cds)$exprs[row.names(markers_rowData), cell_sampled]
       markers_expr_val <- Matrix::colSums(markers_expr_val)
-      markers_expr_val <- markers_expr_val / pData(cds)$Size_Factor
+      markers_expr_val <- markers_expr_val / colData(cds)$Size_Factor
       nz_points = markers_expr_val != 0
       if (scale_expr){
         markers_expr_val[nz_points] <- scale(log10(markers_expr_val[nz_points]))
@@ -366,12 +366,12 @@ plot_3d_cell_trajectory <- function(cds,
     } else {
       point_colors_df$point_colors = map2color(log10(data_df$value+0.1))
     }
-  }else if (is.null(color_by) == FALSE && color_by %in% colnames(pData(cds))){
+  }else if (is.null(color_by) == FALSE && color_by %in% colnames(colData(cds))){
     point_colors_df = dplyr::data_frame(sample_name=data_df$sample_name,
-                                        color_by=as.character(pData(cds)[data_df$sample_name,color_by]))
+                                        color_by=as.character(colData(cds)[data_df$sample_name,color_by]))
 
-    if (class(pData(cds)[,color_by]) == "numeric"){
-      point_colors_df$point_colors = map2color(pData(cds)[data_df$sample_name,color_by])
+    if (class(colData(cds)[,color_by]) == "numeric"){
+      point_colors_df$point_colors = map2color(colData(cds)[data_df$sample_name,color_by])
       point_colors_df$point_colors[is.na(point_colors_df$point_colors)] = "darkgray"
     }else{
       gg_color_hue <- function(n) {
@@ -381,21 +381,21 @@ plot_3d_cell_trajectory <- function(cds,
 
       if (is.null(palette)){
 
-        if(is.factor(pData(cds)[,color_by])) {
-          num_colors = length(levels(pData(cds)[,color_by]))
+        if(is.factor(colData(cds)[,color_by])) {
+          num_colors = length(levels(colData(cds)[,color_by]))
           point_colors = gg_color_hue(num_colors)
-          names(point_colors) = levels(pData(cds)[,color_by])
+          names(point_colors) = levels(colData(cds)[,color_by])
         } else {
-          num_colors = length(unique(pData(cds)[,color_by]))
+          num_colors = length(unique(colData(cds)[,color_by]))
           point_colors = gg_color_hue(num_colors)
-          names(point_colors) = unique(pData(cds)[,color_by])
+          names(point_colors) = unique(colData(cds)[,color_by])
         }
       }else{
         point_colors = palette
       }
 
       point_colors_df$point_colors = point_colors[point_colors_df$color_by]
-      #point_colors = colors[as.character(pData(cds)[data_df$sample_name,color_by])]
+      #point_colors = colors[as.character(colData(cds)[data_df$sample_name,color_by])]
       point_colors_df$point_colors[is.na(point_colors_df$point_colors)] = "darkgray"
     }
   }
@@ -434,7 +434,7 @@ plot_3d_cell_trajectory <- function(cds,
     medoid_df = point_colors_df %>% dplyr::group_by(color_by, point_colors) %>% dplyr::summarize(mean_d1 = stats::median(data_dim_1),
                                                                                                  mean_d2 = stats::median(data_dim_2),
                                                                                                  mean_d3 = stats::median(data_dim_3))
-    if (show_group_labels && color_by %in% colnames(pData(cds)) && class(pData(cds)[,color_by]) != "numeric"){
+    if (show_group_labels && color_by %in% colnames(colData(cds)) && class(colData(cds)[,color_by]) != "numeric"){
       if(!use_plotly) {
         rgl::text3d(x=medoid_df$mean_d1, y=medoid_df$mean_d2, z=medoid_df$mean_d3, texts=as.character(medoid_df$color_by))
       }
@@ -565,7 +565,7 @@ plot_3d_cell_trajectory <- function(cds,
 #' @param cds CellDataSet for the experiment
 #' @param x the column of reducedDimS(cds) to plot on the horizontal axis
 #' @param y the column of reducedDimS(cds) to plot on the vertical axis
-#' @param color_by the cell attribute (e.g. the column of pData(cds)) to map to each cell's color
+#' @param color_by the cell attribute (e.g. the column of colData(cds)) to map to each cell's color
 #' @param markers a gene name or gene id to use for setting the size of each cell in the plot
 #' @param show_cell_names draw the name of each cell in the plot
 #' @param cell_size The size of the point for each cell
@@ -607,7 +607,7 @@ plot_cell_clusters <- function(cds,
     plotting_func = ggplot2::geom_point
   }
 
-  if (length(pData(cds)$Cluster) == 0){
+  if (length(colData(cds)$Cluster) == 0){
     stop("Error: Clustering is not performed yet. Please call clusterCells() before calling this function.")
   }
 
@@ -628,7 +628,7 @@ plot_cell_clusters <- function(cds,
   data_dim_2 <- NULL
 
   #TODO: need to validate cds as ready for this plot (need mst, pseudotime, etc)
-  lib_info <- pData(cds)
+  lib_info <- colData(cds)
 
   data_df <- data.frame(t(low_dim_coords[c(x,y),]))
   colnames(data_df) <- c("data_dim_1", "data_dim_2")
@@ -637,9 +637,9 @@ plot_cell_clusters <- function(cds,
 
   markers_exprs <- NULL
   if (is.null(markers) == FALSE){
-    markers_fData <- subset(fData(cds), gene_short_name %in% markers)
-    if (nrow(markers_fData) >= 1){
-      cds_subset <- cds[row.names(markers_fData),]
+    markers_rowData <- subset(rowData(cds), gene_short_name %in% markers)
+    if (nrow(markers_rowData) >= 1){
+      cds_subset <- cds[row.names(markers_rowData),]
       if (cds_subset@expressionFamily@vfamily %in% c("negbinomial", "negbinomial.size")) {
         integer_expression <- TRUE
       }
@@ -663,7 +663,7 @@ plot_cell_clusters <- function(cds,
       markers_exprs <- cds_exprs
       #markers_exprs <- reshape2::melt(as.matrix(cds_exprs))
       colnames(markers_exprs)[1:2] <- c('feature_id','cell_id')
-      markers_exprs <- merge(markers_exprs, markers_fData, by.x = "feature_id", by.y="row.names")
+      markers_exprs <- merge(markers_exprs, markers_rowData, by.x = "feature_id", by.y="row.names")
       #print (head( markers_exprs[is.na(markers_exprs$gene_short_name) == FALSE,]))
       markers_exprs$feature_label <- as.character(markers_exprs$gene_short_name)
       markers_exprs$feature_label[is.na(markers_exprs$feature_label)] <- markers_exprs$Var1
@@ -739,7 +739,7 @@ plot_cell_clusters <- function(cds,
 #' @param nrow the number of rows used when laying out the panels for each gene's expression
 #' @param ncol the number of columns used when laying out the panels for each gene's expression
 #' @param panel_order the order in which genes should be layed out (left-to-right, top-to-bottom)
-#' @param color_by the cell attribute (e.g. the column of pData(cds)) to be used to color each cell
+#' @param color_by the cell attribute (e.g. the column of colData(cds)) to be used to color each cell
 #' @param trend_formula the model formula to be used for fitting the expression trend over pseudotime
 #' @param label_by_short_name label figure panels by gene_short_name (TRUE) or feature id (FALSE)
 #' @param relative_expr Whether to transform expression into relative values
@@ -751,7 +751,7 @@ plot_cell_clusters <- function(cds,
 #' \dontrun{
 #' library(HSMMSingleCell)
 #' HSMM <- load_HSMM()
-#' my_genes <- row.names(subset(fData(HSMM), gene_short_name %in% c("CDK1", "MEF2C", "MYH3")))
+#' my_genes <- row.names(subset(rowData(HSMM), gene_short_name %in% c("CDK1", "MEF2C", "MYH3")))
 #' cds_subset <- HSMM[my_genes,]
 #' plot_genes_in_pseudotime(cds_subset, color_by="Time")
 #' }
@@ -770,7 +770,7 @@ plot_genes_in_pseudotime <-function(cds_subset,
 
   f_id <- NA
   Cell <- NA
-  cds_subset = cds_subset[,is.finite(pData(cds_subset)$Pseudotime)]
+  cds_subset = cds_subset[,is.finite(colData(cds_subset)$Pseudotime)]
 
   if (cds_subset@expression_family %in% c("negbinomial", "negbinomial.size")) {
     integer_expression <- TRUE
@@ -796,10 +796,10 @@ plot_genes_in_pseudotime <-function(cds_subset,
     min_expr <- cds_subset@lower_detection_limit
   }
   colnames(cds_exprs) <- c("f_id", "Cell", "expression")
-  cds_pData <- pData(cds_subset)
-  cds_fData <- fData(cds_subset)
-  cds_exprs <- merge(cds_exprs, cds_fData, by.x = "f_id", by.y = "row.names")
-  cds_exprs <- merge(cds_exprs, cds_pData, by.x = "Cell", by.y = "row.names")
+  cds_colData <- colData(cds_subset)
+  cds_rowData <- rowData(cds_subset)
+  cds_exprs <- merge(cds_exprs, cds_rowData, by.x = "f_id", by.y = "row.names")
+  cds_exprs <- merge(cds_exprs, cds_colData, by.x = "Cell", by.y = "row.names")
   #cds_exprs$f_id <- as.character(cds_exprs$f_id)
   #cds_exprs$Cell <- as.character(cds_exprs$Cell)
 
@@ -826,7 +826,7 @@ plot_genes_in_pseudotime <-function(cds_subset,
   cds_exprs$f_id <- as.character(cds_exprs$f_id)
   cds_exprs$feature_label <- factor(cds_exprs$feature_label)
 
-  new_data <- data.frame(Pseudotime = pData(cds_subset)$Pseudotime)
+  new_data <- data.frame(Pseudotime = colData(cds_subset)$Pseudotime)
   model_expectation <- gen_smooth_curves(cds_subset, cores=1, trend_formula = trend_formula,
                                        relative_expr = T, new_data = new_data)
   colnames(model_expectation) <- colnames(cds_subset)
@@ -843,7 +843,7 @@ plot_genes_in_pseudotime <-function(cds_subset,
   q <- ggplot(aes(Pseudotime, expression), data = cds_exprs)
   if (is.null(color_by) == FALSE) {
     q <- q + geom_point(aes_string(color = color_by), size = I(cell_size), position=position_jitter(horizontal_jitter, vertical_jitter))
-    if (class(pData(cds_subset)[,color_by]) == "numeric"){
+    if (class(colData(cds_subset)[,color_by]) == "numeric"){
       q <- q + scale_color_viridis(option="C")
     }
   }
@@ -880,7 +880,6 @@ plot_genes_in_pseudotime <-function(cds_subset,
 #' @param relative_expr a logic flag to determine whether or not the relative gene expression should be used
 #' @param response_type the response desired, as accepted by VGAM's predict function
 #' @param cores the number of cores to be used while testing each gene for differential expression
-#' @importFrom Biobase fData
 #' @return a data frame containing the data for the fitted spline curves.
 #'
 gen_smooth_curves <- function(cds, new_data, trend_formula = "~sm.ns(Pseudotime, df = 3)",
@@ -927,7 +926,7 @@ gen_smooth_curves <- function(cds, new_data, trend_formula = "~sm.ns(Pseudotime,
     trend_formula = trend_formula, expression_family = expression_family, relative_expr = relative_expr, new_data = new_data
     )
     expression_curve_matrix <- as.matrix(do.call(rbind, expression_curve_matrix))
-    row.names(expression_curve_matrix) <- row.names(fData(cds))
+    row.names(expression_curve_matrix) <- row.names(rowData(cds))
     return(expression_curve_matrix)
   }
 
@@ -978,7 +977,7 @@ plot_pc_variance_explained <- function(cds,
       if (verbose)
         message("Removing batch effects")
       X.model_mat <- sparse.model.matrix(stats::as.formula(residual_model_formula_str),
-                                         data = pData(cds), drop.unused.levels = TRUE)
+                                         data = colData(cds), drop.unused.levels = TRUE)
 
       fit <- limma::lmFit(FM, X.model_mat, ...)
       beta <- fit$coefficients[, -1, drop = FALSE]
@@ -1019,13 +1018,13 @@ plot_pc_variance_explained <- function(cds,
 #' each group of cells.
 #'
 #' @param cds_subset CellDataSet for the experiment
-#' @param grouping the cell attribute (e.g. the column of pData(cds)) to group cells by on the horizontal axis
+#' @param grouping the cell attribute (e.g. the column of colData(cds)) to group cells by on the horizontal axis
 #' @param min_expr the minimum (untransformed) expression level to use in plotted the genes.
 #' @param cell_size the size (in points) of each cell used in the plot
 #' @param nrow the number of rows used when laying out the panels for each gene's expression
 #' @param ncol the number of columns used when laying out the panels for each gene's expression
 #' @param panel_order the order in which genes should be layed out (left-to-right, top-to-bottom)
-#' @param color_by the cell attribute (e.g. the column of pData(cds)) to be used to color each cell
+#' @param color_by the cell attribute (e.g. the column of colData(cds)) to be used to color each cell
 #' @param plot_trend whether to plot a trendline tracking the average expression across the horizontal axis.
 #' @param label_by_short_name label figure panels by gene_short_name (TRUE) or feature id (FALSE)
 #' @param relative_expr Whether to transform expression into relative values
@@ -1037,7 +1036,7 @@ plot_pc_variance_explained <- function(cds,
 #' \dontrun{
 #' library(HSMMSingleCell)
 #' HSMM <- load_HSMM()
-#' my_genes <- HSMM[row.names(subset(fData(HSMM), gene_short_name %in% c("ACTA1", "ID1", "CCNB2"))),]
+#' my_genes <- HSMM[row.names(subset(rowData(HSMM), gene_short_name %in% c("ACTA1", "ID1", "CCNB2"))),]
 #' plot_genes_violin(my_genes, grouping="Hours", ncol=2, min_expr=0.1)
 #' }
 plot_genes_violin <- function (cds_subset, grouping = "State", min_expr = NULL, cell_size = 0.75,
@@ -1073,11 +1072,11 @@ plot_genes_violin <- function (cds_subset, grouping = "State", min_expr = NULL, 
   }
   colnames(cds_exprs) = c("f_id", "Cell", "expression")
   cds_exprs$expression[cds_exprs$expression < min_expr] = min_expr
-  cds_pData = pData(cds_subset)
+  cds_colData = colData(cds_subset)
 
-  cds_fData = fData(cds_subset)
-  cds_exprs = merge(cds_exprs, cds_fData, by.x = "f_id", by.y = "row.names")
-  cds_exprs = merge(cds_exprs, cds_pData, by.x = "Cell", by.y = "row.names")
+  cds_rowData = rowData(cds_subset)
+  cds_exprs = merge(cds_exprs, cds_rowData, by.x = "f_id", by.y = "row.names")
+  cds_exprs = merge(cds_exprs, cds_colData, by.x = "Cell", by.y = "row.names")
   cds_exprs$adjusted_expression = log10(cds_exprs$expression)
 
   if (label_by_short_name == TRUE) {
@@ -1140,7 +1139,7 @@ plot_genes_violin <- function (cds_subset, grouping = "State", min_expr = NULL, 
 #'  A graph would show the percentage of cells in the X group that express gene A.
 #'
 #' @param cds_subset CellDataSet for the experiment
-#' @param grouping the cell attribute (e.g. the column of pData(cds)) to group cells by on the horizontal axis
+#' @param grouping the cell attribute (e.g. the column of colData(cds)) to group cells by on the horizontal axis
 #' @param min_expr the minimum (untransformed) expression level to use in plotted the genes.
 #' @param nrow the number of rows used when laying out the panels for each gene's expression
 #' @param ncol the number of columns used when laying out the panels for each gene's expression
@@ -1156,7 +1155,7 @@ plot_genes_violin <- function (cds_subset, grouping = "State", min_expr = NULL, 
 #' \dontrun{
 #' library(HSMMSingleCell)
 #' HSMM <- load_HSMM()
-#' MYOG_ID1 <- HSMM[row.names(subset(fData(HSMM), gene_short_name %in% c("MYOG", "ID1"))),]
+#' MYOG_ID1 <- HSMM[row.names(subset(rowData(HSMM), gene_short_name %in% c("MYOG", "ID1"))),]
 #' plot_percent_cells_positive(MYOG_ID1, grouping="Media", ncol=2)
 #' }
 plot_percent_cells_positive <- function(cds_subset,
@@ -1196,8 +1195,8 @@ plot_percent_cells_positive <- function(cds_subset,
 
   colnames(marker_exprs_melted) <- c("f_id", "Cell", "expression")
 
-  marker_exprs_melted <- merge(marker_exprs_melted, pData(cds_subset), by.x="Cell", by.y="row.names")
-  marker_exprs_melted <- merge(marker_exprs_melted, fData(cds_subset), by.x="f_id", by.y="row.names")
+  marker_exprs_melted <- merge(marker_exprs_melted, colData(cds_subset), by.x="Cell", by.y="row.names")
+  marker_exprs_melted <- merge(marker_exprs_melted, rowData(cds_subset), by.x="f_id", by.y="row.names")
 
   if (label_by_short_name == TRUE){
     if (is.null(marker_exprs_melted$gene_short_name) == FALSE){

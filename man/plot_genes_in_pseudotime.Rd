@@ -23,7 +23,7 @@ plot_genes_in_pseudotime(cds_subset, min_expr = NULL, cell_size = 0.75,
 
 \item{panel_order}{the order in which genes should be layed out (left-to-right, top-to-bottom)}
 
-\item{color_by}{the cell attribute (e.g. the column of pData(cds)) to be used to color each cell}
+\item{color_by}{the cell attribute (e.g. the column of colData(cds)) to be used to color each cell}
 
 \item{trend_formula}{the model formula to be used for fitting the expression trend over pseudotime}
 
@@ -47,7 +47,7 @@ and it does not need to be flipped using the "reverse" flag in orderCells
 \dontrun{
 library(HSMMSingleCell)
 HSMM <- load_HSMM()
-my_genes <- row.names(subset(fData(HSMM), gene_short_name \%in\% c("CDK1", "MEF2C", "MYH3")))
+my_genes <- row.names(subset(rowData(HSMM), gene_short_name \%in\% c("CDK1", "MEF2C", "MYH3")))
 cds_subset <- HSMM[my_genes,]
 plot_genes_in_pseudotime(cds_subset, color_by="Time")
 }

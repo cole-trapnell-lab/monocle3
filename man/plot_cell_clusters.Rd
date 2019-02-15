@@ -16,7 +16,7 @@ plot_cell_clusters(cds, x = 1, y = 2, color_by = "Cluster",
 
 \item{y}{the column of reducedDimS(cds) to plot on the vertical axis}
 
-\item{color_by}{the cell attribute (e.g. the column of pData(cds)) to map to each cell's color}
+\item{color_by}{the cell attribute (e.g. the column of colData(cds)) to map to each cell's color}
 
 \item{markers}{a gene name or gene id to use for setting the size of each cell in the plot}
 

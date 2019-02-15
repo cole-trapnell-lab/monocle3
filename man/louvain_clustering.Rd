@@ -13,7 +13,7 @@ louvain_clustering(data, pd, k = 20, weight = F, louvain_iter = 1,
 \arguments{
 \item{data}{low dimensional space used to perform graph clustering}
 
-\item{pd}{the dataframe of the phenotype from the cell dataset (pData(cds))}
+\item{pd}{the dataframe of the phenotype from the cell dataset (colData(cds))}
 
 \item{k}{number of nearest neighbors used for Louvain clustering}
 
@@ -32,7 +32,7 @@ Default to not use resolution and the standard igraph louvain clustering algorit
 
 \item{data}{low dimensional space used to perform graph clustering}
 
-\item{pd}{the dataframe of the phenotype from the cell dataset (pData(cds))}
+\item{pd}{the dataframe of the phenotype from the cell dataset (colData(cds))}
 
 \item{k}{number of nearest neighbors used for Louvain clustering}
 

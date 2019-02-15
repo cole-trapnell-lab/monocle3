@@ -75,10 +75,10 @@ learn_graph <- function(cds,
   Y <- reducedDimS(cds)
   reduced_dim_res = Y
 
-  if(do_partition && !(partition_group %in% colnames(pData(cds))))
-    stop('Please make sure the partition_group you want to partition the dataset based on is included in the pData of the cds!')
+  if(do_partition && !(partition_group %in% colnames(colData(cds))))
+    stop('Please make sure the partition_group you want to partition the dataset based on is included in the colData of the cds!')
 
-  if(length(unique(pData(cds)[, partition_group])) <= 1) {
+  if(length(unique(colData(cds)[, partition_group])) <= 1) {
     do_partition <- FALSE
   }
   louvain_res <- cds@aux_clustering_data$partition_cells
@@ -87,7 +87,7 @@ learn_graph <- function(cds,
     stop('Please run partition_cells function before running learn_graph!')
 
   louvain_module_length = length(unique(sort(louvain_res$optim_res$membership)))
-  louvain_component <- pData(cds)$louvain_component
+  louvain_component <- colData(cds)$louvain_component
   names(louvain_component) <- colnames(cds)
 
   if(rge_method %in% c('SimplePPT') ) {
@@ -178,7 +178,7 @@ learn_graph <- function(cds,
       stree_ori <- stree
 
       if(close_loop) {
-        connectTips_res <- connectTips(pData(cds),
+        connectTips_res <- connectTips(colData(cds),
                                        R = rge_res$R,
                                        stree = stree_ori,
                                        reducedDimK_old = rge_res$C,
@@ -254,7 +254,7 @@ multi_component_RGE <- function(cds,
                                 prune_graph = TRUE,
                                 minimal_branch_len = minimal_branch_len,
                                 verbose = FALSE) {
-  louvain_component <- pData(cds)[, partition_group]
+  louvain_component <- colData(cds)[, partition_group]
 
   X <- t(irlba_pca_res)
 
@@ -378,7 +378,7 @@ multi_component_RGE <- function(cds,
 
     if(close_loop) {
       stree_ori <- stree
-      connectTips_res <- connectTips(pData(cds)[louvain_component == cur_comp, ],
+      connectTips_res <- connectTips(colData(cds)[louvain_component == cur_comp, ],
                                      R = rge_res$R,
                                      stree = stree,
                                      reducedDimK_old = rge_res$Y,
@@ -689,7 +689,7 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE, ver
 
   dp_mst_list <- igraph::decompose.graph(dp_mst)
   dp_mst_df <- NULL
-  louvain_component <- pData(cds)$louvain_component
+  louvain_component <- colData(cds)$louvain_component
 
   if(length(dp_mst_list) == 1 & length(unique(louvain_component)) > 1) {
     louvain_component <- 1
@@ -703,7 +703,7 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE, ver
         message('\nProjecting cells to principal points for louvain component: ', cur_louvain_comp)
       }
 
-      subset_cds_col_names <- colnames(cds)[pData(cds)$louvain_component == cur_louvain_comp]
+      subset_cds_col_names <- colnames(cds)[colData(cds)$louvain_component == cur_louvain_comp]
       cur_z <- Z[, subset_cds_col_names]
       cur_p <- P[, subset_cds_col_names]
 
@@ -781,14 +781,14 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE, ver
 
 # Project each point to the nearest on the MST:
 findNearestPointOnMST <- function(cds){
-  if(is.null(pData(cds)$louvain_component)) {
+  if(is.null(colData(cds)$louvain_component)) {
     stop('Error: please run partitionCells before running findNearestPointOnMST!')
   }
 
   dp_mst <- principal_graph(cds)
   dp_mst_list <- igraph::decompose.graph(dp_mst)
 
-  if(length(unique(pData(cds)$louvain_component)) != length(dp_mst_list)) {
+  if(length(unique(colData(cds)$louvain_component)) != length(dp_mst_list)) {
     dp_mst_list <- list(dp_mst)
   }
 
@@ -801,7 +801,7 @@ findNearestPointOnMST <- function(cds){
     if(length(dp_mst_list) == 1) {
       Z <- reducedDimS(cds)
     } else {
-      Z <- reducedDimS(cds)[, pData(cds)$louvain_component == i]
+      Z <- reducedDimS(cds)[, colData(cds)$louvain_component == i]
     }
     Y <- reducedDimK(cds)[, igraph::V(cur_dp_mst)$name]
 

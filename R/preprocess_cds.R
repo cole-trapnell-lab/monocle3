@@ -128,7 +128,7 @@ preprocess_cds <- function(cds, method = c('PCA', "tfidf", 'none'),
   if (!is.null(residual_model_formula_str)) {
     if (verbose) message("Removing batch effects")
     X.model_mat <- sparse.model.matrix(stats::as.formula(residual_model_formula_str),
-                                       data = pData(cds),
+                                       data = colData(cds),
                                        drop.unused.levels = TRUE)
 
     fit <- limma::lmFit(t(irlba_pca_res), X.model_mat, ...)
@@ -158,9 +158,9 @@ normalize_expr_data <- function(cds,
 
   # If the user has selected a subset of genes for use in ordering the cells
   # via set_ordering_filter(), subset the expression matrix.
-  if (!is.null(fData(cds)$use_for_ordering) &&
-      nrow(subset(fData(cds), use_for_ordering == TRUE)) > 0) {
-    FM <- FM[fData(cds)$use_for_ordering, ]
+  if (!is.null(rowData(cds)$use_for_ordering) &&
+      nrow(subset(rowData(cds), use_for_ordering == TRUE)) > 0) {
+    FM <- FM[rowData(cds)$use_for_ordering, ]
   }
 
   # If we're going to be using log, and the user hasn't given us a

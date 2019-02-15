@@ -11,7 +11,7 @@ partition_cells(cds, partition_names = NULL, use_pca = FALSE, k = 20,
 \arguments{
 \item{cds}{the cell_data_set upon which to perform this operation}
 
-\item{partition_names}{Which partition groups (column in the pData) should be used to calculate the connectivity between partitions}
+\item{partition_names}{Which partition groups (column in the colData) should be used to calculate the connectivity between partitions}
 
 \item{use_pca}{Whether or not to cluster cells based on top PCA component. Default to be FALSE.}
 

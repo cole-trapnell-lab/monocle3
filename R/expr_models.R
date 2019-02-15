@@ -219,7 +219,7 @@ fit_models <- function(cds,
   #fits_tbl = tibble::tibble(model = unlist(lapply(fits, function(x) { ifelse(is.na(x), NA, x$model), recursive=FALSE) }),
   #                       model_summary = lapply(fits, function(x) { ifelse(is.na(x), NA, x$model_summary) }))
   fits = tibble::as_tibble(purrr::transpose(fits))
-  M_f = tibble::as_tibble(fData(cds))
+  M_f = tibble::as_tibble(rowData(cds))
   M_f = dplyr::bind_cols(M_f, fits)
   M_f = M_f %>%
     dplyr::mutate(status = purrr::map(.f = purrr::possibly(extract_model_status_helper, NA_real_), .x = model)) %>%

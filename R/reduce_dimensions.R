@@ -118,8 +118,8 @@ reduce_dimension <- function(cds,
 
     cds@dim_reduce_type <- "tSNE"
 
-    pData(cds)$tsne_1 = reducedDimA(cds)[1,]
-    pData(cds)$tsne_2 = reducedDimA(cds)[2,]
+    colData(cds)$tsne_1 = reducedDimA(cds)[1,]
+    colData(cds)$tsne_2 = reducedDimA(cds)[2,]
 
   } else if (reduction_method == c("UMAP")) {
     if (verbose)

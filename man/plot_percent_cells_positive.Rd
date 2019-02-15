@@ -12,7 +12,7 @@ plot_percent_cells_positive(cds_subset, grouping = "State",
 \arguments{
 \item{cds_subset}{CellDataSet for the experiment}
 
-\item{grouping}{the cell attribute (e.g. the column of pData(cds)) to group cells by on the horizontal axis}
+\item{grouping}{the cell attribute (e.g. the column of colData(cds)) to group cells by on the horizontal axis}
 
 \item{min_expr}{the minimum (untransformed) expression level to use in plotted the genes.}
 
@@ -49,7 +49,7 @@ A graph would show the percentage of cells in the X group that express gene A.
 \dontrun{
 library(HSMMSingleCell)
 HSMM <- load_HSMM()
-MYOG_ID1 <- HSMM[row.names(subset(fData(HSMM), gene_short_name \%in\% c("MYOG", "ID1"))),]
+MYOG_ID1 <- HSMM[row.names(subset(rowData(HSMM), gene_short_name \%in\% c("MYOG", "ID1"))),]
 plot_percent_cells_positive(MYOG_ID1, grouping="Media", ncol=2)
 }
 }

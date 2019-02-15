@@ -22,7 +22,7 @@
 #' consider any clusters with p-value larger than 0.05 by default as not disconnected.
 #'
 #' @param cds the cell_data_set upon which to perform this operation
-#' @param partition_names Which partition groups (column in the pData) should be used to calculate the connectivity between partitions
+#' @param partition_names Which partition groups (column in the colData) should be used to calculate the connectivity between partitions
 #' @param use_pca Whether or not to cluster cells based on top PCA component. Default to be FALSE.
 #' @param k number of nearest neighbors used for Louvain clustering (pass to louvain_clustering function)
 #' @param weight whether or not to calculate the weight for each edge in the kNN graph (pass to louvain_clustering function)
@@ -71,7 +71,7 @@ partition_cells <- function(cds,
     louvain_res <- do.call(louvain_clustering, louvain_clustering_args)
 
     if(length(unique(louvain_res$optim_res$membership)) == 1) {
-      pData(cds)$louvain_component <- 1
+      colData(cds)$louvain_component <- 1
 
       return(cds)
     }
@@ -85,10 +85,10 @@ partition_cells <- function(cds,
 
   if(!is.null(partition_names)) {
     if(!(partition_names %in% colnames(colData(cds)))) {
-      stop(paste0('Error: please make sure pData has a column with the name ', partition_names))
+      stop(paste0('Error: please make sure colData has a column with the name ', partition_names))
     }
-    if(partition_names %in% colnames(pData(cds))) {
-      louvain_res$optim_res$membership <- pData(cds)[, partition_names]
+    if(partition_names %in% colnames(colData(cds))) {
+      louvain_res$optim_res$membership <- colData(cds)[, partition_names]
     }
   }
 
@@ -96,7 +96,7 @@ partition_cells <- function(cds,
   louvain_component = igraph::components(cluster_graph_res$cluster_g)$membership[louvain_res$optim_res$membership]
   names(louvain_component) = row.names(irlba_pca_res)
   louvain_component = as.factor(louvain_component)
-  pData(cds)$louvain_component <- louvain_component
+  colData(cds)$louvain_component <- louvain_component
 
   cds@aux_clustering_data$partition_cells <- list(cluster_graph_res = cluster_graph_res, louvain_res = louvain_res)
 
@@ -110,7 +110,7 @@ partition_cells <- function(cds,
 #' Function to run louvain clustering algorithm
 #'
 #' @param data low dimensional space used to perform graph clustering
-#' @param pd the dataframe of the phenotype from the cell dataset (pData(cds))
+#' @param pd the dataframe of the phenotype from the cell dataset (colData(cds))
 #' @param k number of nearest neighbors used for Louvain clustering
 #' @param weight whether or not to calculate the weight for each edge in the kNN graph
 #' @param louvain_iter the number of iteraction for louvain clustering

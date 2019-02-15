@@ -72,7 +72,7 @@ order_cells <- function(cds,
       stop("Error: You must provide one or more root cells (or principal graph nodes) in non-interactive mode")
     }
   }else if(is.null(root_pr_nodes)){
-    valid_root_cells <- intersect(root_cells, row.names(pData(cds)))
+    valid_root_cells <- intersect(root_cells, row.names(colData(cds)))
     if (length(valid_root_cells) == 0){
       stop("Error: no such cell")
     }
@@ -92,10 +92,10 @@ order_cells <- function(cds,
   cds@aux_ordering_data[[cds@rge_method]]$root_pr_nodes <- root_pr_nodes
 
   cc_ordering <- extract_general_graph_ordering(cds, root_pr_nodes, orthogonal_proj_tip, verbose)
-  pData(cds)$Pseudotime = cc_ordering[row.names(pData(cds)), ]$pseudo_time
+  colData(cds)$Pseudotime = cc_ordering[row.names(colData(cds)), ]$pseudo_time
   if(reverse) {
-    finite_cells <- is.finite(pData(cds)$Pseudotime)
-    pData(cds)$Pseudotime[finite_cells] <- max(pData(cds)$Pseudotime[finite_cells]) - pData(cds)$Pseudotime[finite_cells]
+    finite_cells <- is.finite(colData(cds)$Pseudotime)
+    colData(cds)$Pseudotime[finite_cells] <- max(colData(cds)$Pseudotime[finite_cells]) - colData(cds)$Pseudotime[finite_cells]
   }
 
   cds

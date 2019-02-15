@@ -162,7 +162,7 @@ sparse_par_c_apply <- function (cl = NULL, x, FUN, convert_to_dense, ...)
 #' Multicore apply-like function for cell_data_set
 #'
 #' mcesApply computes the row-wise or column-wise results of FUN, just like esApply.
-#' Variables in pData from X are available in FUN.
+#' Variables in colData from X are available in FUN.
 #'
 #' @param X a cell_data_set object
 #' @param MARGIN The margin to apply to, either 1 for rows (samples) or 2 for columns (features)
@@ -172,7 +172,7 @@ sparse_par_c_apply <- function (cl = NULL, x, FUN, convert_to_dense, ...)
 #' @param ... Additional parameters for FUN
 #' @param cores The number of cores to use for evaluation
 #'
-#' @return The result of with(colData(X) apply(exprs(X)), MARGIN, FUN, ...))
+#' @return The result of with(colData(X) apply(assays(X)$exprs), MARGIN, FUN, ...))
 mc_es_apply <- function(X, MARGIN, FUN, required_packages, cores=1, convert_to_dense=TRUE, ...) {
   parent <- environment(FUN)
   if (is.null(parent))
@@ -200,8 +200,7 @@ mc_es_apply <- function(X, MARGIN, FUN, required_packages, cores=1, convert_to_d
       }
     }, required_packages)
   }
-  #clusterExport(cl, ls(e1), e1)
-  #force(exprs(X))
+
   if (MARGIN == 1){
     suppressWarnings(res <- sparse_par_r_apply(cl, assays(X)$exprs, FUN, convert_to_dense, ...))
   }else{
@@ -216,7 +215,7 @@ smart_es_apply <- function(X, MARGIN, FUN, convert_to_dense, ...) {
   if (is.null(parent))
     parent <- emptyenv()
   e1 <- new.env(parent=parent)
-  Biobase::multiassign(names(pData(X)), pData(X), envir=e1)
+  Biobase::multiassign(names(colData(X)), colData(X), envir=e1)
   environment(FUN) <- e1
 
   if (is_sparse_matrix(assays(X)$exprs)){
@@ -244,14 +243,14 @@ load_a549 <- function(){
   baseLoc <- system.file(package="monocle3")
   #baseLoc <- './inst'
   extPath <- file.path(baseLoc, "extdata")
-  small_a549_pdata_df = readRDS(file.path(extPath, "small_a549_dex_pdata.rda"))
-  small_a549_fdata_df = readRDS(file.path(extPath, "small_a549_dex_fdata.rda"))
+  small_a549_colData_df = readRDS(file.path(extPath, "small_a549_dex_colData.rda"))
+  small_a549_rowData_df = readRDS(file.path(extPath, "small_a549_dex_rowData.rda"))
   small_a549_exprs = readRDS(file.path(extPath, "small_a549_dex_exprs.rda"))
 
-  small_a549_exprs <- small_a549_exprs[,row.names(small_a549_pdata_df)]
+  small_a549_exprs <- small_a549_exprs[,row.names(small_a549_colData_df)]
 
-  pd <- methods::new("AnnotatedDataFrame", data = small_a549_pdata_df)
-  fd <- methods::new("AnnotatedDataFrame", data = small_a549_fdata_df)
+  pd <- methods::new("AnnotatedDataFrame", data = small_a549_colData_df)
+  fd <- methods::new("AnnotatedDataFrame", data = small_a549_rowData_df)
 
   # Now, make a new cell_data_set using the RNA counts
   cds <- new_cell_data_set(small_a549_exprs,
@@ -259,7 +258,7 @@ load_a549 <- function(){
                          featureData = fd,
                          lower_detection_limit = 1,
                          expression_family="negbinomial")
-  colData(cds)$Size_Factor = small_a549_pdata_df$Size_Factor
+  colData(cds)$Size_Factor = small_a549_colData_df$Size_Factor
 
   cds
 }
@@ -400,7 +399,6 @@ sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE, scale. = F
 }
 
 #' Build a cell_data_set from the data stored in inst/extdata directory.
-#' @importFrom Biobase pData pData<- exprs fData
 #' @export
 load_lung <- function(){
   lung_phenotype_data <- NA
@@ -427,19 +425,6 @@ load_lung <- function(){
   lung <- estimate_size_factors(lung)
   lung <- estimate_dispersions(lung)
 
-  # pData(lung)$Total_mRNAs <- colSums(exprs(lung))
-  # lung <- detect_genes(lung, min_expr = 1)
-  # expressed_genes <- row.names(subset(fData(lung), num_cells_expressed >= 5))
-  # ordering_genes <- expressed_genes
-  # lung <- set_ordering_filter(lung, ordering_genes)
-  #
-  # lung <- preprocess_cds(lung, num_dim = 5)
-  # lung <- reduce_dimension(lung, norm_method="log", reduction_method = 'UMAP')
-  # lung <- partition_cells(lung)
-  # lung <- learn_graph(lung)
-  # lung <- order_cells(lung, root_pr_nodes = get_correct_root_state(lung,
-  #                                                                 cell_phenotype = 'Time',
-  #                                                                 "E14.5"))
   lung
 }
 
@@ -464,7 +449,7 @@ detect_genes <- function(cds, min_expr=NULL){
   {
     min_expr <- cds@lower_detection_limit
   }
-  fData(cds)$num_cells_expressed <- Matrix::rowSums(assays(cds)$exprs > min_expr)
+  rowData(cds)$num_cells_expressed <- Matrix::rowSums(assays(cds)$exprs > min_expr)
   colData(cds)$num_genes_expressed <- Matrix::colSums(assays(cds)$exprs > min_expr)
 
   cds
@@ -479,7 +464,7 @@ detect_genes <- function(cds, min_expr=NULL){
 #' @return an updated cell_data_set object
 #' @export
 set_ordering_filter <- function(cds, ordering_genes){
-  fData(cds)$use_for_ordering <- row.names(fData(cds)) %in% ordering_genes
+  rowData(cds)$use_for_ordering <- row.names(rowData(cds)) %in% ordering_genes
   cds
 }
 

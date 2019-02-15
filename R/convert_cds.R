@@ -24,8 +24,8 @@ seurat_to_cds <- function(seurat_cds, import_all = FALSE) {
     pd
   },
   error = function(e) {
-    pData <- data.frame(cell_id = colnames(data), row.names = colnames(data))
-    pd <- new("AnnotatedDataFrame", data = pData)
+    coldata <- data.frame(cell_id = colnames(data), row.names = colnames(data))
+    pd <- new("AnnotatedDataFrame", data = coldata)
 
     message("This Seurat object doesn't provide any meta data");
     pd
@@ -36,9 +36,9 @@ seurat_to_cds <- function(seurat_cds, import_all = FALSE) {
     data <- data[, rownames(pd)]
   }
 
-  fData <- data.frame(gene_short_name = row.names(data),
+  rowdata <- data.frame(gene_short_name = row.names(data),
                       row.names = row.names(data))
-  fd <- new("AnnotatedDataFrame", data = fData)
+  fd <- new("AnnotatedDataFrame", data = rowdata)
   lowerDetectionLimit <- otherCDS@is.expr
 
   if(all(data == floor(data))) {
