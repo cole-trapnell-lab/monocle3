@@ -680,7 +680,7 @@ plot_cell_clusters <- function(cds,
   }else{
     text_df <- data_df %>% dplyr::group_by_(color_by) %>% summarize(text_x = median(x = data_dim_1),
                                                                     text_y = median(x = data_dim_2))
-    if(color_by != "Cluster" & !is.numeric(data_df[, color_by])) {
+    if(color_by != "Cluster" & !is.numeric(data_df[, color_by]) & !is.factor(data_df[, color_by])) {
       text_df$label <- paste0(1:nrow(text_df))
       text_df$process_label <- paste0(1:nrow(text_df), '_', as.character(as.matrix(text_df[, 1])))
       process_label <- text_df$process_label
