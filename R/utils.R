@@ -447,7 +447,7 @@ load_lung <- function(){
 detect_genes <- function(cds, min_expr=NULL){
   if (is.null(min_expr))
   {
-    min_expr <- cds@lower_detection_limit
+    min_expr <- metadata(cds)$lower_detection_limit
   }
   rowData(cds)$num_cells_expressed <- Matrix::rowSums(assays(cds)$exprs > min_expr)
   colData(cds)$num_genes_expressed <- Matrix::colSums(assays(cds)$exprs > min_expr)

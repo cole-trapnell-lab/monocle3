@@ -117,7 +117,7 @@ size_factors <- function( cds, value ) {
 }
 
 check_size_factors <- function(cds) {
-  if (cds@expression_family %in% c("negbinomial", "negbinomial.size"))
+  if (metadata(cds)$expression_family %in% c("negbinomial", "negbinomial.size"))
   {
     if (is.null(size_factors(cds))){
       stop(paste("Error: you must call estimate_size_factors() before calling",

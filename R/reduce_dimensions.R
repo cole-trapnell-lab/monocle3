@@ -63,7 +63,7 @@
 #' @export
 reduce_dimension <- function(cds,
                              max_components=2,
-                             reduction_method=c("UMAP", 'tSNE', 'none'),
+                             reduction_method=c("UMAP", 'tSNE'),
                              verbose=FALSE,
                              ...){
   extra_arguments <- list(...)
@@ -71,7 +71,7 @@ reduce_dimension <- function(cds,
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
-    msg = "reduction_method must be one of 'UMAP', 'tSNE' or 'none'")
+    msg = "reduction_method must be one of 'UMAP' or 'tSNE'")
 
 
   reduction_method <- match.arg(reduction_method)
@@ -80,8 +80,8 @@ reduce_dimension <- function(cds,
 
   if (verbose) message("Retrieving normalized data ...")
 
-  FM <- cds@aux_ordering_data$normalize_expr_data
-  irlba_pca_res <- cds@normalized_data_projection
+  FM <- assays(cds)$normalized_exprs
+  irlba_pca_res <- reducedDims(cds)$normalized_data_projection
 
   if(is.null(FM)) {
     stop(paste('The cds has not been pre-processed yet. Please run",
@@ -110,16 +110,14 @@ reduce_dimension <- function(cds,
     tsne_data <- tsne_res$Y[, 1:max_components]
     row.names(tsne_data) <- colnames(tsne_data)
 
-    reducedDimA(cds) <- t(tsne_data)
+    reducedDims(cds)$tSNE <- tsne_data
 
     # set the important information from densityClust to certain part of the
     # cds object:
-    cds@aux_clustering_data[["tSNE"]]$pca_components_used <- num_dim
+    # not actually used... int_metadata(cds)$tsne_pca_components_used <- num_dim
 
-    cds@dim_reduce_type <- "tSNE"
-
-    colData(cds)$tsne_1 = reducedDimA(cds)[1,]
-    colData(cds)$tsne_2 = reducedDimA(cds)[2,]
+    colData(cds)$tsne_1 = reducedDims(cds)$tSNE[,1]
+    colData(cds)$tsne_2 = reducedDims(cds)$tSNE[,2]
 
   } else if (reduction_method == c("UMAP")) {
     if (verbose)
@@ -141,8 +139,9 @@ reduce_dimension <- function(cds,
                                        'angular_rp_forest', 'verbose')])
     tmp <- do.call(UMAP, umap_args)
     # normalize UMAP space
-    tmp$embedding_ <- (tmp$embedding_-min(tmp$embedding_))/max(tmp$embedding_)
-    umap_res <- tmp$embedding_
+    umap_res <- (tmp$embedding_-min(tmp$embedding_))/max(tmp$embedding_)
+    row.names(umap_res) <- colnames(FM)
+    reducedDims(cds)$UMAP <- umap_res
 
     adj_mat <- Matrix::sparseMatrix(i = tmp$graph_$indices,
                                     p = tmp$graph_$indptr,
@@ -151,31 +150,9 @@ reduce_dimension <- function(cds,
                                     dimnames = list(colnames(cds),
                                                     colnames(cds)))
 
-    S <- t(umap_res)
-
-    Y <- S
-    W <- t(irlba_pca_res)
-
     principal_graph(cds) <- igraph::graph_from_adjacency_matrix(adj_mat,
                                                                 weighted=TRUE)
 
-    A <- S
-    colnames(A) <- colnames(FM)
-    reducedDimA(cds) <- A
-
-    colnames(S) <- colnames(FM)
-    colnames(Y) <- colnames(FM)
-    reducedDimW(cds) <- W
-    reducedDimS(cds) <- as.matrix(Y)
-    reducedDimK(cds) <- S
-
-    cds@dim_reduce_type <- reduction_method
-  } else if(reduction_method == 'none') {
-    irlba_pca_res <- t(irlba_pca_res)
-    colnames(irlba_pca_res) <- colnames(FM)
-    reducedDimS(cds) <- irlba_pca_res
-    reducedDimK(cds) <- irlba_pca_res
-    cds@dim_reduce_type <- "none"
   } else {
     stop("Error: unrecognized dimensionality reduction method")
   }

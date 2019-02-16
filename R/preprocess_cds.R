@@ -97,7 +97,7 @@ preprocess_cds <- function(cds, method = c('PCA', "tfidf", 'none'),
   fm_rowsums = Matrix::rowSums(FM)
   FM <- FM[is.finite(fm_rowsums) & fm_rowsums != 0, ]
 
-  cds@aux_ordering_data$normalize_expr_data <- FM
+  assays(cds)$normalized_exprs <- FM
 
   if(method == 'PCA') {
     if (verbose) message("Remove noise by PCA ...")
@@ -140,7 +140,7 @@ preprocess_cds <- function(cds, method = c('PCA', "tfidf", 'none'),
     X.model_mat <- NULL
   }
 
-  cds@normalized_data_projection <- as.matrix(irlba_pca_res)
+  reducedDims(cds)$normalized_data_projection <- as.matrix(irlba_pca_res)
 
   cds
 }

@@ -41,7 +41,7 @@ principal_graph_test <- function(cds,
   test_res <- pbmcapply::pbmclapply(row.names(exprs_mat), FUN = function(x, sz, alternative, method) {
     exprs_val <- exprs_mat[x, ]
 
-    if (cds@expression_family %in% c("uninormal", "binomialff")){
+    if (metadata(cds)$expression_family %in% c("uninormal", "binomialff")){
       exprs_val <- exprs_val
     }else{
       if(relative_expr) {
@@ -240,19 +240,19 @@ calculateLW <- function(cds, k = 25, return_sparse_matrix = FALSE,
   knn_res <- NULL
   principal_g <- NULL
 
-  if(length(cds@rge_method) == 0 & cds@dim_reduce_type %in% c('UMAP')) {
+  if(length(cds@rge_method) == 0 &  'UMAP' %in% reducedDimNames(cds)) {
     cds@rge_method <- 'UMAP'
-    cell_coords <- t(reducedDimS(cds))
+    cell_coords <- reducedDims(cds)$UMAP
     knn_res <- RANN::nn2(cell_coords, cell_coords, min(k + 1, nrow(cell_coords)), searchtype = "standard")[[1]]
   } else if(cds@rge_method %in% c('SimplePPT')) {
-    cell_coords <- t(reducedDimS(cds))
-    principal_g <-  igraph::get.adjacency(cds@principal_graph)[1:ncol(reducedDimK(cds)), 1:ncol(reducedDimK(cds))]
+    cell_coords <- reducedDims(cds)$UMAP
+    principal_g <-  igraph::get.adjacency(cds@principal_graph)[1:row(reducedDims(cds)$UMAP), 1:nrow(reducedDims(cds)$UMAP)]
   }
 
   exprs_mat <- assays(cds)$exprs
   if(cds@rge_method  == 'UMAP') {
     if(is.null(knn_res)) {
-      cell_coords <- t(reducedDimS(cds))
+      cell_coords <- reducedDims(cds)$UMAP
       knn_res <- RANN::nn2(cell_coords, cell_coords, min(k + 1, nrow(cell_coords)), searchtype = "standard")[[1]]
     }
     links <- jaccard_coeff(knn_res[, -1], F)

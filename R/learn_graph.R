@@ -69,10 +69,10 @@ learn_graph <- function(cds,
                        verbose = FALSE,
                        ...){
   extra_arguments <- list(...)
-  FM <- cds@aux_ordering_data$normalize_expr_data
-  irlba_pca_res <- cds@normalized_data_projection
+  FM <- assays(cds)$normalized_exprs
+  irlba_pca_res <- reducedDims(cds)$normalized_data_projection
 
-  Y <- reducedDimS(cds)
+  Y <- reducedDims(cds)$UMAP
   reduced_dim_res = Y
 
   if(do_partition && !(partition_group %in% colnames(colData(cds))))
@@ -91,8 +91,8 @@ learn_graph <- function(cds,
   names(louvain_component) <- colnames(cds)
 
   if(rge_method %in% c('SimplePPT') ) {
-    if(ncol(cds@reducedDimS) > 1) {
-      irlba_pca_res <- t(cds@reducedDimS)
+    if(nrow(reducedDims(cds)$UMAP) > 1) {
+      irlba_pca_res <- reducedDims(cds)$UMAP
     }
 
     if(do_partition && length(louvain_component) == ncol(cds)) {
@@ -182,7 +182,7 @@ learn_graph <- function(cds,
                                        R = rge_res$R,
                                        stree = stree_ori,
                                        reducedDimK_old = rge_res$C,
-                                       reducedDimS_old = cds@reducedDimS,
+                                       reducedDimS_old = t(reducedDims(cds)$UMAP),
                                        kmean_res = kmean_res,
                                        euclidean_distance_ratio = euclidean_distance_ratio,
                                        geodestic_distance_ratio = geodestic_distance_ratio,
@@ -227,7 +227,6 @@ learn_graph <- function(cds,
       cds@aux_ordering_data[[rge_method]] <- rge_res[c('stree', 'Q', 'R', 'objective_vals', 'history')]
     }
 
-    reducedDimW(cds) <- as.matrix(rge_res_W)
     reducedDimS(cds) <- as.matrix(rge_res_Z)
     reducedDimK(cds) <- as.matrix(rge_res_Y)
 
@@ -334,11 +333,6 @@ multi_component_RGE <- function(cds,
 
       names(rge_res)[c(2, 4, 5)] <- c('Y', 'R','objective_vals')
       stree <- rge_res$W
-      if(cds@dim_reduce_type == 'psl') {
-        dm_names <- dimnames(rge_res$Y)
-        rge_res$Y <- medioids
-        dimnames(rge_res$Y) <- dm_names
-      }
 
       if(!close_loop) {
         stree_ori <- stree
@@ -382,7 +376,7 @@ multi_component_RGE <- function(cds,
                                      R = rge_res$R,
                                      stree = stree,
                                      reducedDimK_old = rge_res$Y,
-                                     reducedDimS_old = cds@reducedDimS[, louvain_component == cur_comp],
+                                     reducedDimS_old = reducedDims(cds)$UMAP[, louvain_component == cur_comp],
                                      kmean_res = kmean_res,
                                      euclidean_distance_ratio = euclidean_distance_ratio,
                                      geodestic_distance_ratio = geodestic_distance_ratio,
@@ -399,12 +393,6 @@ multi_component_RGE <- function(cds,
         rge_res$Y <- rge_res$Y[, match(row.names(stree), row.names(stree_ori))]
         rge_res$R <- rge_res$R[, match(row.names(stree), row.names(stree_ori))]
         medioids <- medioids[, row.names(stree)]
-      }
-
-      if(cds@dim_reduce_type == 'psl') {
-        dm_names <- dimnames(rge_res$Y)
-        rge_res$Y <- medioids
-        dimnames(rge_res$Y) <- dm_names
       }
 
       if(is.null(merge_rge_res)) {
@@ -447,7 +435,7 @@ multi_component_RGE <- function(cds,
   row.names(pr_graph_cell_proj_closest_vertex) <- cell_name_vec
 
   ddrtree_res_W <- as.matrix(rge_res$W)
-  ddrtree_res_Z <- cds@reducedDimS
+  ddrtree_res_Z <- reducedDims(cds)$UMAP
   ddrtree_res_Y <- reducedDimK_coord # ensure the order of column names matches that of the original name ids
   # correctly set up R, stree -- the mapping from each cell to the principal graph points
   R <- sparseMatrix(i = 1, j = 1, x = 0, dims = c(ncol(cds), ncol(merge_rge_res$Y))) # use sparse matrix for large datasets
@@ -627,8 +615,8 @@ pruneTree_in_learnGraph <- function(stree_ori, stree_loop_clousre, minimal_branc
 
 project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE, verbose){
   dp_mst <- principal_graph(cds)
-  Z <- reducedDimS(cds)
-  Y <- reducedDimK(cds)
+  Z <- reducedDims(cds)$UMAP
+  Y <- reducedDims(cds)$UMAP
 
   cds <- findNearestPointOnMST(cds)
   closest_vertex <- cds@aux_ordering_data[[cds@rge_method]]$pr_graph_cell_proj_closest_vertex
@@ -717,7 +705,7 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE, ver
         # colnames(data_df)[(ncol(data_df) - (nrow(cur_p) - 1)):ncol(data_df)] <- paste0('S_', 1:nrow(cur_p))
 
         # sort each cell's distance to the source in each principal edge group
-        data_df$distance_2_source <-  sqrt(colSums((cur_p - cds@reducedDimK[, data_df[, 'source']])^2))
+        data_df$distance_2_source <-  sqrt(colSums((cur_p - reducedDims(cds)$UMAP[data_df[, 'source'],])^2))
         data_df <- data_df %>% tibble::rownames_to_column() %>% dplyr::mutate(group = paste(source, target, sep = '_')) %>%
           dplyr::arrange(group, desc(-distance_2_source))
 
@@ -734,7 +722,7 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE, ver
 
         # calculate distance between each pair
         #cur_p <- cbind(cur_p, cds@reducedDimK[, cur_centroid_name]) # append the coordinates of principal graph points
-        aug_P = cbind(cur_p, cds@reducedDimK)
+        aug_P = cbind(cur_p, reducedDims(cds)$UMAP)
         data_df$weight <-  sqrt(colSums((aug_P[, data_df$new_source] - aug_P[, data_df$new_target]))^2)
         # add the minimal positive distance between any points to the distance matrix
         data_df$weight <- data_df$weight + min(data_df$weight[data_df$weight > 0])
@@ -757,7 +745,7 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE, ver
 
         # Calculate distance between two connected nodes directly from the original graph
         edge_list <- as.data.frame(igraph::get.edgelist(dp_mst_list[[as.numeric(cur_louvain_comp)]]), stringsAsFactors=FALSE)
-        dp <- as.matrix(dist(t(reducedDimK(cds)[, cur_centroid_name])))
+        dp <- as.matrix(dist(reducedDims(cds)$UMAP[cur_centroid_name,]))
         edge_list$weight <- dp[cbind(edge_list[, 1], edge_list[, 2])]
         colnames(edge_list) <- c("new_source", "new_target", 'weight')
 
@@ -801,9 +789,9 @@ findNearestPointOnMST <- function(cds){
     if(length(dp_mst_list) == 1) {
       Z <- reducedDimS(cds)
     } else {
-      Z <- reducedDimS(cds)[, colData(cds)$louvain_component == i]
+      Z <- reducedDims(cds)$UMAP[, colData(cds)$louvain_component == i]
     }
-    Y <- reducedDimK(cds)[, igraph::V(cur_dp_mst)$name]
+    Y <- reducedDims(cds)$UMAP[, igraph::V(cur_dp_mst)$name]
 
     tip_leaves <- names(which(igraph::degree(cur_dp_mst) == 1))
 

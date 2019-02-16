@@ -51,13 +51,13 @@ cluster_cells <- function(cds,
   method <- match.arg(method)
   if(method == 'louvain'){
     if(use_pca) {
-      data <- cds@normalized_data_projection
+      data <- reducedDims(cds)$normalized_data_projection
     } else {
-      data <- t(reducedDimA(cds))
+      data <- reducedDims(cds)$tSNE
     }
     if(nrow(data) == 0) {
       message('ReduceDimension is not applied to this dataset. We are using the normalized reduced space obtained from preprocessCDS to cluster cells...')
-      data <- cds@normalized_data_projection
+      data <- reducedDims(cds)$normalized_data_projection
       louvain_res <- louvain_clustering(data = data, pd = colData(cds), k = k, weight = weight, louvain_iter = louvain_iter, resolution = res, random_seed = random_seed, verbose = verbose, ...)
     } else {
       if(!('louvain_res' %in% names(cds@aux_ordering_data[[cds@dim_reduce_type]]))) {
@@ -74,7 +74,7 @@ cluster_cells <- function(cds,
 
     colData(cds)$Cluster <- factor(igraph::membership(louvain_res$optim_res))
 
-    cds@aux_clustering_data[["louvian"]] <- list(louvain_res = louvain_res)
+    #cds@aux_clustering_data[["louvian"]] <- list(louvain_res = louvain_res)
 
     return(cds)
   }

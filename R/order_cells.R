@@ -42,29 +42,26 @@ order_cells <- function(cds,
                        orthogonal_proj_tip = FALSE,
                        verbose = FALSE){
 
-  if(class(cds)[1] != "cell_data_set") {
-    stop("Error: cds is not of type 'cell_data_set'")
-  }
-
-  if (is.null(cds@dim_reduce_type)){
-    stop("Error: dimensionality not yet reduced. Please call reduce_dimension() and learnGraph() (for learning principal graph) before calling this function.")
-  }
-  if (is.null(cds@rge_method)){
-    stop("Error: principal graph has not learned yet. Please call learnGraph() before calling this function.")
-  }
+  assertthat::assert_that(is(cds, "cell_data_sett"))
+  # if (is.null(cds@dim_reduce_type)){
+  #  stop("Error: dimensionality not yet reduced. Please call reduce_dimension() and learnGraph() (for learning principal graph) before calling this function.")
+  #}
+  #if (is.null(cds@rge_method)){
+  #  stop("Error: principal graph has not learned yet. Please call learnGraph() before calling this function.")
+  #}
   # reducedDimA, S, and K are not NULL in the cds
-  if (length(cds@reducedDimS) == 0) {
-    stop("Error: dimension reduction didn't prodvide correct results. Please check your reduce_dimension() step and ensure correct dimension reduction are performed before calling this function.")
-  }
-  if (length(cds@reducedDimK) == 0) {
-    stop("Error: principal graph learning didn't prodvide correct results. Please check your learnGraph() step and ensure correct principal graph learning are performed before calling this function.")
-  }
-  if(igraph::vcount(principal_graph(cds)) > 10000) {
-    stop("order_cells doesn't support more than 10k centroids (cells)")
-  }
-  if (is.null(root_pr_nodes) == FALSE & is.null(root_cells) == FALSE){
-    stop("Error: please specify either root_pr_nodes or root_cells, not both")
-  }
+  #if (length(cds@reducedDimS) == 0) {
+  #  stop("Error: dimension reduction didn't prodvide correct results. Please check your reduce_dimension() step and ensure correct dimension reduction are performed before calling this function.")
+  #}
+  #if (length(cds@reducedDimK) == 0) {
+  #  stop("Error: principal graph learning didn't prodvide correct results. Please check your learnGraph() step and ensure correct principal graph learning are performed before calling this function.")
+  #}
+  #if(igraph::vcount(principal_graph(cds)) > 10000) {
+  #  stop("order_cells doesn't support more than 10k centroids (cells)")
+  #}
+  #if (is.null(root_pr_nodes) == FALSE & is.null(root_cells) == FALSE){
+  #  stop("Error: please specify either root_pr_nodes or root_cells, not both")
+  #}
   if (is.null(root_pr_nodes) & is.null(root_cells)){
     if (interactive()){
       root_pr_nodes <- selectTrajectoryRoots(cds)
@@ -103,8 +100,7 @@ order_cells <- function(cds,
 
 extract_general_graph_ordering <- function(cds, root_cell, orthogonal_proj_tip = FALSE, verbose=T)
 {
-  Z <- reducedDimS(cds)
-  Y <- reducedDimK(cds)
+  Z <- t(reducedDim(cds)$UMAP)
   pr_graph <- principal_graph(cds)
 
   res <- list(subtree = pr_graph, root = root_cell)
@@ -120,7 +116,7 @@ extract_general_graph_ordering <- function(cds, root_cell, orthogonal_proj_tip =
   # 1. identify nearest cells to the selected principal node
   # 2. build a cell-wise graph for each louvain group
   # 3. run the distance function to assign pseudotime for each cell
-  closest_vertex <- findNearestVertex(Y[, root_cell, drop = F], Z)
+  closest_vertex <- findNearestVertex(Z[, root_cell, drop = F], Z)
   closest_vertex_id <- colnames(cds)[closest_vertex]
 
   cell_wise_graph <- cds@aux_ordering_data[[cds@rge_method]]$pr_graph_cell_proj_tree

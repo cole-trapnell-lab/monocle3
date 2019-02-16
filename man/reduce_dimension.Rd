@@ -6,7 +6,7 @@
 space with non-linear dimension reduction methods}
 \usage{
 reduce_dimension(cds, max_components = 2, reduction_method = c("UMAP",
-  "tSNE", "none"), verbose = FALSE, ...)
+  "tSNE"), verbose = FALSE, ...)
 }
 \arguments{
 \item{cds}{the cell_data_set upon which to perform this operation}

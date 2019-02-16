@@ -23,6 +23,7 @@
 #'
 #' @param cds the cell_data_set upon which to perform this operation
 #' @param partition_names Which partition groups (column in the colData) should be used to calculate the connectivity between partitions
+#' @param reduced_dimension Which reduced dimension space should be partitioned?
 #' @param use_pca Whether or not to cluster cells based on top PCA component. Default to be FALSE.
 #' @param k number of nearest neighbors used for Louvain clustering (pass to louvain_clustering function)
 #' @param weight whether or not to calculate the weight for each edge in the kNN graph (pass to louvain_clustering function)
@@ -38,6 +39,7 @@
 #' @export
 partition_cells <- function(cds,
                            partition_names = NULL,
+                           reduced_dimension = c('UMAP', 'tSNE'),
                            use_pca = FALSE,
                            k = 20,
                            weight = F,
@@ -47,26 +49,26 @@ partition_cells <- function(cds,
                            return_all = FALSE,
                            verbose = FALSE, ...){
   extra_arguments <- list(...)
-  irlba_pca_res <- cds@normalized_data_projection
+  reduced_dimension <- match.arg(reduced_dimension)
+  irlba_pca_res <- reducedDims(cds)$normalized_data_projection
   if(nrow(irlba_pca_res) == 0)
     stop("No normalized data projection. Please run preprocess_cds before running partition_cells")
 
-  Y <- reducedDimS(cds)
-  reduced_dim_res = Y
+  reduced_dim_res <- reducedDims(cds)[[reduced_dimension]]
 
   if(verbose)
     message("Running louvain clustering algorithm ...")
   #row.names(umap_res) <- colnames(FM)
-  if(nrow(Y) == 0) {
-    reduced_dim_res <- t(irlba_pca_res)
+  if(nrow(reduced_dim_res) == 0) {
+    reduced_dim_res <- irlba_pca_res
   }
 
   if(use_pca) {
-    reduced_dim_res <- t(cds@normalized_data_projection)
+    reduced_dim_res <- reducedDims(cds)$normalized_data_projection
   }
 
   if(is.null(partition_names)) {
-    louvain_clustering_args <- c(list(data = t(reduced_dim_res), pd = colData(cds)[row.names(irlba_pca_res), ], k = k,
+    louvain_clustering_args <- c(list(data = reduced_dim_res, pd = colData(cds)[row.names(irlba_pca_res), ], k = k,
                                       resolution = resolution, weight = weight, louvain_iter = louvain_iter, verbose = verbose)) # , extra_arguments[names(extra_arguments) %in% c("k", "weight", "louvain_iter")]
     louvain_res <- do.call(louvain_clustering, louvain_clustering_args)
 
@@ -77,7 +79,7 @@ partition_cells <- function(cds,
     }
 
   } else {
-    build_asym_kNN_graph_args <- c(list(data = t(reduced_dim_res), k = k, return_graph = T),
+    build_asym_kNN_graph_args <- c(list(data = reduced_dim_res, k = k, return_graph = T),
                                    extra_arguments[names(extra_arguments) %in% c('dist_type', 'return_graph')])
     louvain_res <- list(g = do.call(build_asym_kNN_graph, build_asym_kNN_graph_args), optim_res = list(membership = NULL))
   }

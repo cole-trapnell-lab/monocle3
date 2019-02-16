@@ -97,6 +97,7 @@ plot_pc_variance_explained(cds)
 
 ```{r}
 cds <- reduce_dimension(cds, reduction_method = 'UMAP')
+cds <- reduce_dimension(cds, reduction_method = 'tSNE')
 ```
 
 

@@ -41,20 +41,20 @@ setOldClass(c("igraph"), prototype=structure(list(), class="igraph"))
 #' @importFrom SingleCellExperiment SingleCellExperiment
 setClass( "cell_data_set",
           contains = c("SingleCellExperiment"),
-          slots = c(cds_version = "character",
+          slots = c(#cds_version = "character",
                     #reducedDimS = "matrix",
                     #reducedDimW = "matrix",
                     #reducedDimA = "matrix",
                     #reducedDimK = "matrix",
                     principal_graph="igraph",
                     #cellPairwiseDistances="matrix",
-                    expression_family="character",
-                    lower_detection_limit="numeric",
+                    #expression_family="character",
+                    #lower_detection_limit="numeric",
                     disp_fit_info = "environment"
                     #dim_reduce_type="character",
                     #rge_method="character",
-                    #aux_ordering_data = "environment",
-                    #aux_clustering_data = "environment",
+                    #aux_ordering_data = "environment"
+                    #aux_clustering_data = "environment"
                     #normalized_data_projection = "matrix"
           )
 )
@@ -104,7 +104,8 @@ new_cell_data_set <- function(expression_data,
   #cell_metadata$`size_factor` <- rep( NA_real_, nrow(cell_metadata))
 
   sce <- SingleCellExperiment(list(exprs=expression_data),
-                              rowData = gene_metadata, colData = cell_metadata)
+                              rowData = gene_metadata,
+                              colData = cell_metadata)
 
   cds <- new("cell_data_set",
              assays = Assays(list(exprs=expression_data)),
@@ -116,11 +117,11 @@ new_cell_data_set <- function(expression_data,
              NAMES = sce@NAMES,
              elementMetadata = sce@elementMetadata,
              rowRanges = sce@rowRanges,
-             lower_detection_limit=lower_detection_limit,
-             expression_family=expression_family,
-             disp_fit_info = new.env( hash=TRUE ),
-             cds_version = Biobase::package.version("monocle3"))
+             disp_fit_info = new.env( hash=TRUE ))
 
+  metadata(cds)$lower_detection_limit <- lower_detection_limit
+  metadata(cds)$expression_family <- expression_family
+  metadata(cds)$cds_version <- Biobase::package.version("monocle3")
 
   #methods::validObject( cds )
   cds

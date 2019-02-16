@@ -74,7 +74,7 @@ plot_cell_trajectory <- function(cds,
   }
 
 
-  reduced_dim_coords <- reducedDimK(cds)
+  reduced_dim_coords <- reducedDims(cds)$UMAP
 
   ica_space_df <- Matrix::t(reduced_dim_coords) %>%
     as.data.frame() %>%
@@ -94,7 +94,7 @@ plot_cell_trajectory <- function(cds,
     dplyr::left_join(ica_space_df %>% dplyr::select_(target="sample_name", target_prin_graph_dim_1="prin_graph_dim_1", target_prin_graph_dim_2="prin_graph_dim_2"), by = "target")
 
   S_matrix <-
-    reducedDimS(cds)
+    reducedDims(cds)$UMAP
   data_df <- data.frame(t(S_matrix[c(x,y),]))
   #data_df <- cbind(data_df, sample_state)
   colnames(data_df) <- c("data_dim_1", "data_dim_2")
@@ -285,7 +285,7 @@ plot_3d_cell_trajectory <- function(cds,
     stop("Error: dimensionality not yet reduced. Please call reduce_dimension() before calling this function.")
   }
 
-  reduced_dim_coords <- reducedDimK(cds)
+  reduced_dim_coords <- reducedDims(cds)$UMAP
 
   if(length(dim) != 3)
     dim <- 1:3
@@ -311,7 +311,7 @@ plot_3d_cell_trajectory <- function(cds,
   edge_df <- merge(edge_df, ica_space_df[,c("sample_name", "prin_graph_dim_1", "prin_graph_dim_2", "prin_graph_dim_3")], by.x="target", by.y="sample_name", all=F)
   edge_df <- plyr::rename(edge_df, c("prin_graph_dim_1"="target_prin_graph_dim_1", "prin_graph_dim_2"="target_prin_graph_dim_2", "prin_graph_dim_3"="target_prin_graph_dim_3"))
 
-  S_matrix <- reducedDimS(cds)[, cell_sampled]
+  S_matrix <- reducedDims(cds)$UMAP[, cell_sampled]
   data_df <- data.frame(t(S_matrix[dim,]))
   #data_df <- cbind(data_df, sample_state)
   colnames(data_df) <- c("data_dim_1", "data_dim_2", "data_dim_3")
@@ -612,14 +612,14 @@ plot_cell_clusters <- function(cds,
   }
 
   if(cds@dim_reduce_type == 'tSNE') {
-    low_dim_coords <- cds@reducedDimA
+    low_dim_coords <- reducedDims(cds)$tSNE
   } else {
-    low_dim_coords <- cds@reducedDimS
+    low_dim_coords <- reducedDims(cds)$UMAP
   }
 
   if (nrow(low_dim_coords) == 0){
     message("reduceDimension is not performed yet. We are plotting the normalized reduced space obtained from preprocessCDS function.")
-    low_dim_coords <- t(cds@normalized_data_projection)
+    low_dim_coords <- t(reducedDims(cds)$normalized_data_projection)
   }
 
   gene_short_name <- NULL
@@ -772,7 +772,7 @@ plot_genes_in_pseudotime <-function(cds_subset,
   Cell <- NA
   cds_subset = cds_subset[,is.finite(colData(cds_subset)$Pseudotime)]
 
-  if (cds_subset@expression_family %in% c("negbinomial", "negbinomial.size")) {
+  if (metadata(cds)$expression_family %in% c("negbinomial", "negbinomial.size")) {
     integer_expression <- TRUE
   }
   else {
@@ -793,7 +793,7 @@ plot_genes_in_pseudotime <-function(cds_subset,
     cds_exprs <- reshape2::melt(as.matrix(assays(cds_subset)$exprs))
   }
   if (is.null(min_expr)) {
-    min_expr <- cds_subset@lower_detection_limit
+    min_expr <- metadata(cds_subset)$lower_detection_limit
   }
   colnames(cds_exprs) <- c("f_id", "Cell", "expression")
   cds_colData <- colData(cds_subset)
@@ -885,7 +885,7 @@ plot_genes_in_pseudotime <-function(cds_subset,
 gen_smooth_curves <- function(cds, new_data, trend_formula = "~sm.ns(Pseudotime, df = 3)",
                             relative_expr = T, response_type="response", cores = 1) {
 
-  expression_family <- cds@expression_family
+  expression_family <- metadata(cds)$expression_family
 
   if(cores > 1) {
     expression_curve_matrix <- mcesApply(cds, 1, function(x, trend_formula, expression_family, relative_expr, new_data, fit_model_helper, response_matrix,
@@ -963,11 +963,13 @@ plot_pc_variance_explained <- function(cds,
                                        ...){
   norm_method <- match.arg(norm_method)
   set.seed(2016)
-  if(!is.null(cds@aux_clustering_data[["tSNE"]]$variance_explained) & use_existing_pc_variance == T){
-    prop_varex <- cds@aux_clustering_data[["tSNE"]]$variance_explained
+  if(!is.null(int_metadata(cds)$tsne_variance_explained) & use_existing_pc_variance == T){
+    prop_varex <-int_metadata(cds)$tsne_variance_explained
   }
-  else{
-    FM <- normalize_expr_data(cds, norm_method, pseudo_count)
+  else if(is.null(assays(cds)$normalized_exprs)) {
+    stop(paste("You must call preprocess(cds) before running this function"))
+  } else {
+    FM <- assays(cds)$normalized_exprs
 
     xm <- Matrix::rowMeans(FM)
     xsd <- sqrt(Matrix::rowMeans((FM - xm)^2))
@@ -991,7 +993,7 @@ plot_pc_variance_explained <- function(cds,
       stop("Error: all rows have standard deviation zero")
     }
 
-    irlba_res <- sparse_prcomp_irlba(t(FM), n = min(max_components, min(dim(FM)) - 1),
+    irlba_res <- sparse_prcomp_irlba(Matrix::t(FM), n = min(max_components, min(dim(FM)) - 1),
                                      center = TRUE, scale. = TRUE)
     prop_varex <- irlba_res$sdev^2 / sum(irlba_res$sdev^2)
 
@@ -1002,7 +1004,7 @@ plot_pc_variance_explained <- function(cds,
     theme(panel.background = element_rect(fill='white')) + xlab('components') +
     ylab('Variance explained \n by each component')
 
-  cds@aux_clustering_data[["tSNE"]]$variance_explained <- prop_varex # update CDS slot for variance_explained
+  int_metadata(cds)$tsne_variance_explained <- prop_varex # update CDS slot for variance_explained
 
   if(return_all) {
     return(list(variance_explained = prop_varex, p = p))
@@ -1044,7 +1046,7 @@ plot_genes_violin <- function (cds_subset, grouping = "State", min_expr = NULL, 
                                plot_trend = FALSE, label_by_short_name = TRUE, relative_expr = TRUE,
                                log_scale = TRUE)
 {
-  if (cds_subset@expression_family %in% c("negbinomial",
+  if (metadata(cds_subset)$expression_family %in% c("negbinomial",
                                                  "negbinomial.size")) {
     integer_expression = TRUE
   }
@@ -1068,7 +1070,7 @@ plot_genes_violin <- function (cds_subset, grouping = "State", min_expr = NULL, 
     cds_exprs = reshape2::melt(as.matrix(cds_exprs))
   }
   if (is.null(min_expr)) {
-    min_expr = cds_subset@lower_detection_limit
+    min_expr <- metadata(cds_subset)$lower_detection_limit
   }
   colnames(cds_exprs) = c("f_id", "Cell", "expression")
   cds_exprs$expression[cds_exprs$expression < min_expr] = min_expr
@@ -1171,7 +1173,7 @@ plot_percent_cells_positive <- function(cds_subset,
 
   percent <- NULL
 
-  if (cds_subset@expression_family %in% c("negbinomial", "negbinomial.size")){
+  if (metadata(cds_subset)$expression_family %in% c("negbinomial", "negbinomial.size")){
     integer_expression <- TRUE
   }else{
     integer_expression <- FALSE
@@ -1249,9 +1251,9 @@ response_matrix <- function(models, newdata = NULL, response_type="response", co
   res_list <- parallel::mclapply(models, function(x) {
     if (is.na(x$model)) { NA } else {
       print(x)
-      if (x@expression_family %in% c("negbinomial", "negbinomial.size")) {
+      if (metadata(x)$expression_family %in% c("negbinomial", "negbinomial.size")) {
         predict(x, newdata = newdata, type = response_type)
-      } else if (x@expression_family %in% c("uninormal")) {
+      } else if (metadata(x)$expression_family %in% c("uninormal")) {
         predict(x, newdata = newdata, type = response_type)
       }
       else {

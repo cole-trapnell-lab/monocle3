@@ -13,7 +13,7 @@ estimate_dispersions <- function(cds, modelFormulaStr="~ 1",
   dispModelName="blind"
   stopifnot( is( cds, "cell_data_set" ) )
 
-  if(!(identical("negbinomial.size", cds@expression_family) || identical("negbinomial", cds@expression_family))){
+  if(!(identical("negbinomial.size", metadata(cds)$expression_family) || identical("negbinomial", metadata(cds)$expression_family))){
     stop("Error: estimate_dispersions only works, and is only needed, when you're using a cell_data_set with a negbinomial or negbinomial.size expression family")
   }
 
@@ -25,8 +25,8 @@ estimate_dispersions <- function(cds, modelFormulaStr="~ 1",
 
   # Remove results from previous fits
   cds@disp_fit_info = new.env( hash=TRUE )
-  if(!(('negbinomial' == cds@expression_family) ||
-       ('negbinomial.size' == cds@expression_family))) {
+  if(!(('negbinomial' == metadata(cds)$expression_family) ||
+       ('negbinomial.size' == metadata(cds)$expression_family))) {
     stop("Error: estimate_dispersions only works, and is only needed, when you're using a cell_data_set with a negbinomial or negbinomial.size expression family")
   }
 
@@ -38,7 +38,7 @@ estimate_dispersions <- function(cds, modelFormulaStr="~ 1",
   options(dplyr.show_progress = T)
 
   # FIXME: this needs refactoring, badly.
-  if (cds@expression_family %in% c("negbinomial", "negbinomial.size")){
+  if (metadata(cds)$expression_family %in% c("negbinomial", "negbinomial.size")){
     if (length(model_terms) > 1 || (length(model_terms) == 1 && model_terms[1] != "1")){
       cds_colData <- dplyr::group_by_(dplyr::select_(tibble::rownames_to_column(colData(cds)), "rowname", .dots=model_terms), .dots=model_terms)
       disp_table <- as.data.frame(cds_colData %>% do(disp_calc_helper_NB(cds[,.$rowname], min_cells_detected)))
@@ -82,7 +82,7 @@ estimate_dispersions <- function(cds, modelFormulaStr="~ 1",
 
 disp_calc_helper_NB <- function(cds, min_cells_detected) {
   rounded <- round(assays(cds)$exprs)
-  nzGenes <- Matrix::rowSums(rounded > cds@lower_detection_limit)
+  nzGenes <- Matrix::rowSums(rounded > metadata(cds)$lower_detection_limit)
   nzGenes <- names(nzGenes[nzGenes > min_cells_detected])
 
   # Note: we do these operations as DelayedArray ops because standard operations will trigger a conversion
