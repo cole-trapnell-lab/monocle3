@@ -5,8 +5,8 @@
 \title{Plots expression for one or more genes as a violin plot}
 \usage{
 plot_genes_violin(cds_subset, grouping = "State", min_expr = NULL,
-  cell_size = 0.75, nrow = NULL, ncol = 1, panel_order = NULL,
-  color_by = NULL, plot_trend = FALSE, label_by_short_name = TRUE,
+  nrow = NULL, ncol = 1, panel_order = NULL, color_by = NULL,
+  plot_trend = FALSE, label_by_short_name = TRUE,
   relative_expr = TRUE, log_scale = TRUE)
 }
 \arguments{
@@ -15,8 +15,6 @@ plot_genes_violin(cds_subset, grouping = "State", min_expr = NULL,
 \item{grouping}{the cell attribute (e.g. the column of colData(cds)) to group cells by on the horizontal axis}
 
 \item{min_expr}{the minimum (untransformed) expression level to use in plotted the genes.}
-
-\item{cell_size}{the size (in points) of each cell used in the plot}
 
 \item{nrow}{the number of rows used when laying out the panels for each gene's expression}
 
@@ -46,7 +44,8 @@ each group of cells.
 \dontrun{
 library(HSMMSingleCell)
 HSMM <- load_HSMM()
-my_genes <- HSMM[row.names(subset(rowData(HSMM), gene_short_name \%in\% c("ACTA1", "ID1", "CCNB2"))),]
+my_genes <- HSMM[row.names(subset(rowData(HSMM),
+                 gene_short_name \%in\% c("ACTA1", "ID1", "CCNB2"))),]
 plot_genes_violin(my_genes, grouping="Hours", ncol=2, min_expr=0.1)
 }
 }

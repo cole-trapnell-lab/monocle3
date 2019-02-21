@@ -38,6 +38,7 @@
 #' @export
 
 cluster_cells <- function(cds,
+                          reduced_dimension = c("tSNE", "UMAP", "PCA"),
                          use_pca = FALSE,
                          k = 20,
                          louvain_iter = 1,
@@ -49,23 +50,12 @@ cluster_cells <- function(cds,
                          cores=1,
                          ...) {
   method <- match.arg(method)
+  reduced_dimension <- match.arg(reduced_dimension)
   if(method == 'louvain'){
-    if(use_pca) {
-      data <- reducedDims(cds)$normalized_data_projection
-    } else {
-      data <- reducedDims(cds)$tSNE
-    }
-    if(nrow(data) == 0) {
-      message('ReduceDimension is not applied to this dataset. We are using the normalized reduced space obtained from preprocessCDS to cluster cells...')
-      data <- reducedDims(cds)$normalized_data_projection
-      louvain_res <- louvain_clustering(data = data, pd = colData(cds), k = k, weight = weight, louvain_iter = louvain_iter, resolution = res, random_seed = random_seed, verbose = verbose, ...)
-    } else {
-      if(!('louvain_res' %in% names(cds@aux_ordering_data[[cds@dim_reduce_type]]))) {
-        louvain_res <- louvain_clustering(data = data, pd = colData(cds), k = k, weight = weight, louvain_iter = louvain_iter, resolution = res, random_seed = random_seed, verbose = verbose, ...)
-      } else {
-        louvain_res <- cds@aux_ordering_data[[cds@dim_reduce_type]]$louvain_res
-      }
-    }
+    data <- reducedDims(cds)[[reduced_dimension]]
+
+    louvain_res <- louvain_clustering(data = data, pd = colData(cds), k = k, weight = weight, louvain_iter = louvain_iter, resolution = res, random_seed = random_seed, verbose = verbose, ...)
+
     cluster_graph_res <- compute_louvain_connected_components(louvain_res$g, louvain_res$optim_res, verbose = verbose)
     louvain_component <-  igraph::components(cluster_graph_res$cluster_g)$membership[louvain_res$optim_res$membership]
     names(louvain_component) <- igraph::V(louvain_res$g)$name
@@ -73,8 +63,6 @@ cluster_cells <- function(cds,
     colData(cds)$louvain_component <- louvain_component
 
     colData(cds)$Cluster <- factor(igraph::membership(louvain_res$optim_res))
-
-    #cds@aux_clustering_data[["louvian"]] <- list(louvain_res = louvain_res)
 
     return(cds)
   }
@@ -210,66 +198,6 @@ louvain_clustering <- function(data, pd, k = 20, weight = F, louvain_iter = 1, r
 
   igraph::V(g)$names <- as.character(igraph::V(g))
   return(list(g = g, relations = relations, distMatrix = distMatrix, coord = coord, edge_links = edge_links, optim_res = optim_res))
-}
-
-compute_louvain_connected_components <- function(g, optim_res, qval_thresh=0.05, verbose = FALSE){
-  cell_membership <- as.factor(igraph::membership(optim_res))
-  membership_matrix = sparse.model.matrix( ~ cell_membership + 0)
-  num_links = t(membership_matrix) %*% as_adjacency_matrix(g) %*% membership_matrix
-  diag(num_links) = 0
-  louvain_modules = levels(cell_membership)
-
-  cluster_mat <- matrix(0, nrow = length(louvain_modules), ncol = length(louvain_modules)) # a matrix storing the overlapping clusters between louvain clusters which is based on the spanning tree
-  enrichment_mat <- matrix(0, nrow = length(louvain_modules), ncol = length(louvain_modules)) # a matrix storing the overlapping clusters between louvain clusters which is based on the spanning tree
-
-  overlapping_threshold <- 1e-5
-
-  edges_per_module = rowSums(num_links)
-  total_edges = sum(num_links)
-
-  theta <- (as.matrix(edges_per_module) / total_edges) %*% t(edges_per_module / total_edges)
-  var_null_num_links <- theta * (1 - theta) / total_edges
-  num_links_ij <- num_links / total_edges - theta
-  # use mcmapply below (https://stackoverflow.com/questions/7395397/how-to-apply-function-over-each-matrix-elements-indices)
-  # tmp <- data.frame(mrow=c(row(num_links)),   # straightens out the arguments
-  #          mcol=c(col(num_links)),
-  #          m.f.res= mcmapply(function(r, c) pnorm(num_links_ij[r, c], 0, sqrt(var_null_num_links[r, c]), lower.tail = FALSE), row(num_links), col(num_links), mc.cores = cores  ) )
-  # cluster_mat <- as.matrix(dcast(tmp, mrow ~ mcol)[, -1])
-  cluster_mat <- pnorm_over_mat(as.matrix(num_links_ij), var_null_num_links) # much faster c++ version
-
-  enrichment_mat <- num_links_ij
-  num_links <- num_links_ij / total_edges
-
-  cluster_mat = matrix(p.adjust(cluster_mat), nrow=length(louvain_modules), ncol=length(louvain_modules))
-
-  sig_links <- as.matrix(num_links)
-  sig_links[cluster_mat > qval_thresh] = 0
-  diag(sig_links) = 0
-
-  cluster_g <- igraph::graph_from_adjacency_matrix(sig_links, weighted = T, mode = 'undirected')
-  louvain_modules <- igraph::cluster_louvain(cluster_g)
-
-  # return also the layout coordinates and the edges link for the graph of clusters
-
-  coord <- igraph::layout_components(cluster_g)
-  coord <- as.data.frame(coord)
-  colnames(coord) <- c('x', 'y')
-  row.names(coord) <- 1:nrow(coord)
-  coord$Cluster <- 1:nrow(coord)
-  coord$louvain_cluster <- as.character(igraph::membership(louvain_modules))
-
-  edge_links <- NULL
-  if(length(E(cluster_g)) > 0) { # run this only when there is edges
-    edge <- get.data.frame(cluster_g)
-    edge <- as.data.frame(edge)
-    colnames(edge) <- c('start', 'end', 'weight')
-    edge_links <- cbind(coord[edge$start, 1:2], coord[edge$end, 1:2])
-    edge_links <- as.data.frame(edge_links)
-    colnames(edge_links) <- c('x_start', 'x_end', 'y_start', 'y_end')
-    edge_links$weight <- edge[, 3]
-  }
-
-  list(cluster_g = cluster_g, cluster_optim_res = optim_res, num_links = num_links, cluster_mat = cluster_mat, enrichment_mat = enrichment_mat, cluster_coord = coord, edge_links = edge_links)
 }
 
 #' Cluster cells based on louvain community detection algorithm.

@@ -100,7 +100,7 @@ partition_cells <- function(cds,
   louvain_component = as.factor(louvain_component)
   colData(cds)$louvain_component <- louvain_component
 
-  cds@aux_clustering_data$partition_cells <- list(cluster_graph_res = cluster_graph_res, louvain_res = louvain_res)
+  cds@partitions[[reduced_dimension]] <- list(cluster_graph_res = cluster_graph_res, louvain_res = louvain_res)
 
   if(return_all) {
     return(list(cds = cds, cluster_graph_res = cluster_graph_res))
@@ -241,8 +241,8 @@ louvain_clustering <- function(data, pd, k = 20, weight = F, louvain_iter = 1, r
 
 compute_louvain_connected_components <- function(g, optim_res, qval_thresh=0.05, verbose = FALSE){
   cell_membership <- as.factor(igraph::membership(optim_res))
-  membership_matrix = sparse.model.matrix( ~ cell_membership + 0)
-  num_links = t(membership_matrix) %*% igraph::as_adjacency_matrix(g) %*% membership_matrix
+  membership_matrix = Matrix::sparse.model.matrix( ~ cell_membership + 0)
+  num_links = Matrix::t(membership_matrix) %*% igraph::as_adjacency_matrix(g) %*% membership_matrix
   diag(num_links) = 0
   louvain_modules = levels(cell_membership)
 
@@ -251,10 +251,10 @@ compute_louvain_connected_components <- function(g, optim_res, qval_thresh=0.05,
 
   overlapping_threshold <- 1e-5
 
-  edges_per_module = rowSums(num_links)
+  edges_per_module = Matrix::rowSums(num_links)
   total_edges = sum(num_links)
 
-  theta <- (as.matrix(edges_per_module) / total_edges) %*% t(edges_per_module / total_edges)
+  theta <- (as.matrix(edges_per_module) / total_edges) %*% Matrix::t(edges_per_module / total_edges)
   var_null_num_links <- theta * (1 - theta) / total_edges
   num_links_ij <- num_links / total_edges - theta
   cluster_mat <- pnorm_over_mat(as.matrix(num_links_ij), var_null_num_links) # much faster c++ version

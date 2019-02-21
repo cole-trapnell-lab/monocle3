@@ -63,7 +63,7 @@
 #' @export
 reduce_dimension <- function(cds,
                              max_components=2,
-                             reduction_method=c("UMAP", 'tSNE'),
+                             reduction_method=c("UMAP", 'tSNE', 'PCA'),
                              verbose=FALSE,
                              ...){
   extra_arguments <- list(...)
@@ -71,7 +71,7 @@ reduce_dimension <- function(cds,
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
-    msg = "reduction_method must be one of 'UMAP' or 'tSNE'")
+    msg = "reduction_method must be one of 'UMAP', 'PCA' or 'tSNE'")
 
 
   reduction_method <- match.arg(reduction_method)
@@ -88,8 +88,16 @@ reduce_dimension <- function(cds,
                "preprocess_cds() first.'))
   }
 
+  if(reduction_method == "PCA") {
 
-  if (reduction_method == "tSNE") {
+    irlba_res <- sparse_prcomp_irlba(Matrix::t(FM),
+                                     n = min(num_dim,min(dim(FM)) - 1),
+                                     center = scaling, scale. = scaling)
+    irlba_pca_res <- irlba_res$x
+    row.names(irlba_pca_res) <- colnames(cds)
+    reducedDims(cds)$PCA <- as.matrix(irlba_pca_res)
+
+  } else if (reduction_method == "tSNE") {
     # when you pass pca_dim to the function, the number of dimension used for
     # tSNE dimension reduction is used
     if("num_dim" %in% names(extra_arguments)){

@@ -72,7 +72,6 @@ DelayedArray:::set_verbose_block_processing(TRUE)
 options(DelayedArray.block.size=1000e6)
 
 cds <- estimate_size_factors(cds)
-cds <- estimate_dispersions(cds)
 ```
 
 

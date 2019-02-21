@@ -402,14 +402,14 @@ plot_3d_cell_trajectory <- function(cds,
 
   if(!use_plotly) {
     rgl::open3d(windowRect=c(0,0,width,height),
-           useNULL=useNULL_GLdev)
+                useNULL=useNULL_GLdev)
     if (is.null(view_matrix) == FALSE){
       rgl::view3d(userMatrix=view_matrix)
     }
     if (is.null(backbone_segment_color) == FALSE){
       rgl::segments3d(matrix(as.matrix(t(edge_df[,c(3,4,5, 7,8,9)])), ncol=3, byrow=T), lwd=backbone_segment_width,
-                 col=backbone_segment_color,
-                 line_antialias=TRUE)
+                      col=backbone_segment_color,
+                      line_antialias=TRUE)
       if (is.null(backbone_vertex_color) == FALSE)
         rgl::points3d(Matrix::t(reduced_dim_coords[dim,]), col=backbone_vertex_color)
     }
@@ -420,11 +420,11 @@ plot_3d_cell_trajectory <- function(cds,
 
   if(!use_plotly) {
     rgl::points3d(data_df[,c("data_dim_1", "data_dim_2", "data_dim_3")],
-             size = cell_size,
-             col=point_colors_df$point_colors,
-             alpha=point_colors_df$point_alpha,
-             shininess=75,
-             point_antialias=TRUE)
+                  size = cell_size,
+                  col=point_colors_df$point_colors,
+                  alpha=point_colors_df$point_alpha,
+                  shininess=75,
+                  point_antialias=TRUE)
   }
   #bg3d(fogtype="linear")
   medoid_df <- NULL
@@ -453,25 +453,25 @@ plot_3d_cell_trajectory <- function(cds,
 
     if(!use_plotly) {
       rgl::points3d(branch_point_df_source[,c("source_prin_graph_dim_1", "source_prin_graph_dim_2", "source_prin_graph_dim_3")],
-               size = 20,
-               col='black',
-               alpha=0.3,
-               shininess=75,
-               point_antialias=TRUE)
+                    size = 20,
+                    col='black',
+                    alpha=0.3,
+                    shininess=75,
+                    point_antialias=TRUE)
 
       rgl::text3d(x=branch_point_df_source$source_prin_graph_dim_1, y=branch_point_df_source$source_prin_graph_dim_2, z=branch_point_df_source$source_prin_graph_dim_3,
-             texts=as.character(branch_point_df_source$branch_point_idx), color = 'red', cex = text_cex)
+                  texts=as.character(branch_point_df_source$branch_point_idx), color = 'red', cex = text_cex)
 
       rgl::points3d(branch_point_df_target[,c("target_prin_graph_dim_1", "target_prin_graph_dim_2", "target_prin_graph_dim_3")],
-               size = 20,
-               col='black',
-               alpha=0.3,
-               shininess=75,
-               point_antialias=TRUE)
+                    size = 20,
+                    col='black',
+                    alpha=0.3,
+                    shininess=75,
+                    point_antialias=TRUE)
 
       if(show_group_labels){
         rgl::text3d(x=branch_point_df_target$target_prin_graph_dim_1, y=branch_point_df_target$target_prin_graph_dim_2, z=branch_point_df_target$target_prin_graph_dim_3,
-               texts=as.character(branch_point_df_target$branch_point_idx), color = 'red', cex = text_cex)
+                    texts=as.character(branch_point_df_target$branch_point_idx), color = 'red', cex = text_cex)
       }
     }
   }
@@ -547,10 +547,10 @@ plot_3d_cell_trajectory <- function(cds,
   if (is.null(webGL_filename) == FALSE){
     if(!use_plotly) {
       widget <- rgl::rglwidget(elementId = "example",
-                          controllers = "player",
-                          sizingPolicy = htmlwidgets::sizingPolicy(
-                            browser.fill = TRUE
-                          ))
+                               controllers = "player",
+                               sizingPolicy = htmlwidgets::sizingPolicy(
+                                 browser.fill = TRUE
+                               ))
       htmlwidgets::saveWidget(widget, webGL_filename, selfcontained=selfcontained)
     } else {
       htmlwidgets::saveWidget(p, webGL_filename, selfcontained=selfcontained)
@@ -772,13 +772,13 @@ plot_genes_in_pseudotime <-function(cds_subset,
   Cell <- NA
   cds_subset = cds_subset[,is.finite(colData(cds_subset)$Pseudotime)]
 
-  if (metadata(cds)$expression_family %in% c("negbinomial", "negbinomial.size")) {
-    integer_expression <- TRUE
-  }
-  else {
+  if (any(round(assays(cds_subset)$exprs) != assays(cds_subset)$exprs)) {
     integer_expression <- FALSE
     relative_expr <- TRUE
+  } else {
+    integer_expression <- TRUE
   }
+
   if (integer_expression) {
     cds_exprs <- assays(cds_subset)$exprs
     if (relative_expr) {
@@ -828,7 +828,7 @@ plot_genes_in_pseudotime <-function(cds_subset,
 
   new_data <- data.frame(Pseudotime = colData(cds_subset)$Pseudotime)
   model_expectation <- gen_smooth_curves(cds_subset, cores=1, trend_formula = trend_formula,
-                                       relative_expr = T, new_data = new_data)
+                                         relative_expr = T, new_data = new_data)
   colnames(model_expectation) <- colnames(cds_subset)
   expectation <- plyr::ddply(cds_exprs, plyr::.(f_id, Cell), function(x) data.frame("expectation"=model_expectation[x$f_id, x$Cell]))
   cds_exprs <- merge(cds_exprs, expectation)
@@ -883,7 +883,7 @@ plot_genes_in_pseudotime <-function(cds_subset,
 #' @return a data frame containing the data for the fitted spline curves.
 #'
 gen_smooth_curves <- function(cds, new_data, trend_formula = "~sm.ns(Pseudotime, df = 3)",
-                            relative_expr = T, response_type="response", cores = 1) {
+                              relative_expr = T, response_type="response", cores = 1) {
 
   expression_family <- metadata(cds)$expression_family
 
@@ -978,7 +978,7 @@ plot_pc_variance_explained <- function(cds,
     if (is.null(residual_model_formula_str) == FALSE) {
       if (verbose)
         message("Removing batch effects")
-      X.model_mat <- sparse.model.matrix(stats::as.formula(residual_model_formula_str),
+      X.model_mat <- Matrix::sparse.model.matrix(stats::as.formula(residual_model_formula_str),
                                          data = colData(cds), drop.unused.levels = TRUE)
 
       fit <- limma::lmFit(FM, X.model_mat, ...)
@@ -1022,7 +1022,6 @@ plot_pc_variance_explained <- function(cds,
 #' @param cds_subset CellDataSet for the experiment
 #' @param grouping the cell attribute (e.g. the column of colData(cds)) to group cells by on the horizontal axis
 #' @param min_expr the minimum (untransformed) expression level to use in plotted the genes.
-#' @param cell_size the size (in points) of each cell used in the plot
 #' @param nrow the number of rows used when laying out the panels for each gene's expression
 #' @param ncol the number of columns used when laying out the panels for each gene's expression
 #' @param panel_order the order in which genes should be layed out (left-to-right, top-to-bottom)
@@ -1038,34 +1037,39 @@ plot_pc_variance_explained <- function(cds,
 #' \dontrun{
 #' library(HSMMSingleCell)
 #' HSMM <- load_HSMM()
-#' my_genes <- HSMM[row.names(subset(rowData(HSMM), gene_short_name %in% c("ACTA1", "ID1", "CCNB2"))),]
+#' my_genes <- HSMM[row.names(subset(rowData(HSMM),
+#'                  gene_short_name %in% c("ACTA1", "ID1", "CCNB2"))),]
 #' plot_genes_violin(my_genes, grouping="Hours", ncol=2, min_expr=0.1)
 #' }
-plot_genes_violin <- function (cds_subset, grouping = "State", min_expr = NULL, cell_size = 0.75,
-                               nrow = NULL, ncol = 1, panel_order = NULL, color_by = NULL,
-                               plot_trend = FALSE, label_by_short_name = TRUE, relative_expr = TRUE,
+plot_genes_violin <- function (cds_subset,
+                               grouping = "State",
+                               min_expr = NULL,
+                               nrow = NULL,
+                               ncol = 1,
+                               panel_order = NULL,
+                               color_by = NULL,
+                               plot_trend = FALSE,
+                               label_by_short_name = TRUE,
+                               relative_expr = TRUE,
                                log_scale = TRUE)
 {
-  if (metadata(cds_subset)$expression_family %in% c("negbinomial",
-                                                 "negbinomial.size")) {
-    integer_expression = TRUE
+  if (any(round(assays(cds_subset)$exprs) != assays(cds_subset)$exprs)) {
+    integer_expression <- FALSE
+    relative_expr <- TRUE
+  } else {
+    integer_expression <- TRUE
   }
-  else {
-    integer_expression = FALSE
-    relative_expr = TRUE
-  }
+
   if (integer_expression) {
     cds_exprs = assays(cds_subset)$exprs
     if (relative_expr) {
       if (is.null(size_factors(cds_subset))) {
         stop("Error: to call this function with relative_expr=TRUE, you must call estimate_size_factors() first")
       }
-      cds_exprs = Matrix::t(Matrix::t(cds_exprs)/size_factors(cds_subset))
+      cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds_subset))
     }
-    #cds_exprs = reshape2::melt(round(as.matrix(cds_exprs)))
     cds_exprs = reshape2::melt(as.matrix(cds_exprs))
-  }
-  else {
+  } else {
     cds_exprs = assays(cds_subset)$exprs
     cds_exprs = reshape2::melt(as.matrix(cds_exprs))
   }
@@ -1073,7 +1077,7 @@ plot_genes_violin <- function (cds_subset, grouping = "State", min_expr = NULL, 
     min_expr <- metadata(cds_subset)$lower_detection_limit
   }
   colnames(cds_exprs) = c("f_id", "Cell", "expression")
-  cds_exprs$expression[cds_exprs$expression < min_expr] = min_expr
+  cds_exprs$expression[cds_exprs$expression < min_expr] <- min_expr
   cds_colData = colData(cds_subset)
 
   cds_rowData = rowData(cds_subset)
@@ -1161,23 +1165,23 @@ plot_genes_violin <- function (cds_subset, grouping = "State", min_expr = NULL, 
 #' plot_percent_cells_positive(MYOG_ID1, grouping="Media", ncol=2)
 #' }
 plot_percent_cells_positive <- function(cds_subset,
-                                      grouping = "State",
-                                      min_expr=0.1,
-                                      nrow=NULL,
-                                      ncol=1,
-                                      panel_order=NULL,
-                                      plot_as_fraction=TRUE,
-                                      label_by_short_name=TRUE,
-                                      relative_expr=TRUE,
-                                      plot_limits=c(0,100)){
+                                        grouping = "State",
+                                        min_expr=0.1,
+                                        nrow=NULL,
+                                        ncol=1,
+                                        panel_order=NULL,
+                                        plot_as_fraction=TRUE,
+                                        label_by_short_name=TRUE,
+                                        relative_expr=TRUE,
+                                        plot_limits=c(0,100)){
 
   percent <- NULL
 
-  if (metadata(cds_subset)$expression_family %in% c("negbinomial", "negbinomial.size")){
-    integer_expression <- TRUE
-  }else{
+  if (any(round(assays(cds_subset)$exprs) != assays(cds_subset)$exprs)) {
     integer_expression <- FALSE
     relative_expr <- TRUE
+  } else {
+    integer_expression <- TRUE
   }
 
   if (integer_expression)

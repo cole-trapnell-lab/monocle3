@@ -316,7 +316,7 @@ calculateLW <- function(cds, k = 25, return_sparse_matrix = FALSE,
     cell_membership <- as.factor(cell2pp_map)
     uniq_member <- sort(unique(cell_membership))
 
-    membership_matrix <- sparse.model.matrix( ~ cell_membership + 0)
+    membership_matrix <- Matrix::sparse.model.matrix( ~ cell_membership + 0)
     colnames(membership_matrix) <- levels(uniq_member)
     # sparse matrix multiplication for calculating the feasible space
     feasible_space <- membership_matrix %*% tcrossprod(principal_g_tmp[as.numeric(levels(uniq_member)), as.numeric(levels(uniq_member))], membership_matrix)

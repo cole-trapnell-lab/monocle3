@@ -67,7 +67,8 @@ learn_graph <- function(cds,
                        minimal_branch_len = 10,
                        orthogonal_proj_tip = FALSE,
                        verbose = FALSE,
-                       ...){
+                       ...) {
+  reduced_dimension <- "UMAP"
   extra_arguments <- list(...)
   FM <- assays(cds)$normalized_exprs
   irlba_pca_res <- reducedDims(cds)$normalized_data_projection
@@ -81,7 +82,7 @@ learn_graph <- function(cds,
   if(length(unique(colData(cds)[, partition_group])) <= 1) {
     do_partition <- FALSE
   }
-  louvain_res <- cds@aux_clustering_data$partition_cells
+  louvain_res <- cds@partitions[[reduced_dimension]]
 
   if(is.null(louvain_res))
     stop('Please run partition_cells function before running learn_graph!')
@@ -438,8 +439,8 @@ multi_component_RGE <- function(cds,
   ddrtree_res_Z <- reducedDims(cds)$UMAP
   ddrtree_res_Y <- reducedDimK_coord # ensure the order of column names matches that of the original name ids
   # correctly set up R, stree -- the mapping from each cell to the principal graph points
-  R <- sparseMatrix(i = 1, j = 1, x = 0, dims = c(ncol(cds), ncol(merge_rge_res$Y))) # use sparse matrix for large datasets
-  stree <- sparseMatrix(i = 1, j = 1, x = 0, dims = c(ncol(merge_rge_res$Y), ncol(merge_rge_res$Y)))
+  R <- Matrix::sparseMatrix(i = 1, j = 1, x = 0, dims = c(ncol(cds), ncol(merge_rge_res$Y))) # use sparse matrix for large datasets
+  stree <- Matrix::sparseMatrix(i = 1, j = 1, x = 0, dims = c(ncol(merge_rge_res$Y), ncol(merge_rge_res$Y)))
   curr_row_id <- 1
   curr_col_id <- 1
   R_row_names <- NULL

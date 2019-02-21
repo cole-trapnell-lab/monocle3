@@ -47,10 +47,11 @@ setClass( "cell_data_set",
                     #reducedDimA = "matrix",
                     #reducedDimK = "matrix",
                     principal_graph="igraph",
+                    partitions = "SimpleList"
                     #cellPairwiseDistances="matrix",
                     #expression_family="character",
                     #lower_detection_limit="numeric",
-                    disp_fit_info = "environment"
+                    #disp_fit_info = "environment"
                     #dim_reduce_type="character",
                     #rge_method="character",
                     #aux_ordering_data = "environment"
@@ -116,13 +117,12 @@ new_cell_data_set <- function(expression_data,
              metadata = sce@metadata,
              NAMES = sce@NAMES,
              elementMetadata = sce@elementMetadata,
-             rowRanges = sce@rowRanges,
-             disp_fit_info = new.env( hash=TRUE ))
+             rowRanges = sce@rowRanges)
 
   metadata(cds)$lower_detection_limit <- lower_detection_limit
-  metadata(cds)$expression_family <- expression_family
+  #metadata(cds)$expression_family <- expression_family
   metadata(cds)$cds_version <- Biobase::package.version("monocle3")
-
+  partitions <- setNames(SimpleList(), character(0))
   #methods::validObject( cds )
   cds
 }

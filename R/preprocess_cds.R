@@ -107,6 +107,7 @@ preprocess_cds <- function(cds, method = c('PCA', "tfidf", 'none'),
                                      center = scaling, scale. = scaling)
     irlba_pca_res <- irlba_res$x
     row.names(irlba_pca_res) <- colnames(cds)
+    reducedDims(cds)$PCA <- as.matrix(irlba_pca_res)
 
   } else if(method == 'none') {
     irlba_pca_res <- Matrix::t(FM)
@@ -127,7 +128,7 @@ preprocess_cds <- function(cds, method = c('PCA', "tfidf", 'none'),
 
   if (!is.null(residual_model_formula_str)) {
     if (verbose) message("Removing batch effects")
-    X.model_mat <- sparse.model.matrix(stats::as.formula(residual_model_formula_str),
+    X.model_mat <- Matrix::sparse.model.matrix(stats::as.formula(residual_model_formula_str),
                                        data = colData(cds),
                                        drop.unused.levels = TRUE)
 
