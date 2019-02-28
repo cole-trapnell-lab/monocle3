@@ -83,7 +83,7 @@ learn_graph <- function(cds,
   if(length(unique(colData(cds)[, partition_group])) <= 1) {
     do_partition <- FALSE
   }
-  louvain_res <- cds@partitions[[reduced_dimension]]
+  louvain_res <- cds@partitions[[reduced_dimension]]$louvain_res
 
   if(is.null(louvain_res))
     stop('Please run partition_cells function before running learn_graph!')
