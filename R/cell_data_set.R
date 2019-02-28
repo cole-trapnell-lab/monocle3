@@ -38,7 +38,9 @@ setOldClass(c("igraph"), prototype=structure(list(), class="igraph"))
 #' @rdname cell_data_set
 #' @aliases cell_data_set-class
 #' @exportClass cell_data_set
-#' @importFrom SingleCellExperiment SingleCellExperiment
+#' @importFrom SingleCellExperiment SingleCellExperiment colData rowData
+#' @importFrom SummarizedExperiment Assays colData<- rowData<- assays
+#' @importFrom S4Vectors metadata metadata<- SimpleList
 setClass( "cell_data_set",
           contains = c("SingleCellExperiment"),
           slots = c(#cds_version = "character",
@@ -46,7 +48,8 @@ setClass( "cell_data_set",
                     #reducedDimW = "matrix",
                     #reducedDimA = "matrix",
                     #reducedDimK = "matrix",
-                    principal_graph="igraph",
+                    principal_graph_aux="SimpleList",
+                    principal_graph = "SimpleList",
                     partitions = "SimpleList"
                     #cellPairwiseDistances="matrix",
                     #expression_family="character",
@@ -109,7 +112,7 @@ new_cell_data_set <- function(expression_data,
                               colData = cell_metadata)
 
   cds <- new("cell_data_set",
-             assays = Assays(list(exprs=expression_data)),
+             assays = SummarizedExperiment::Assays(list(exprs=expression_data)),
              colData = colData(sce),
              int_elementMetadata =sce@int_elementMetadata,
              int_colData = sce@int_colData,

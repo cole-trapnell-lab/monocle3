@@ -51,48 +51,59 @@ setReplaceMethod("partitionNames", c("cell_data_set", "character"), function(x, 
 
 
 #' @export
-setGeneric("partitions", function(x, ...) standardGeneric("partitions"))
+setGeneric("principal_graph", function(x, ...) standardGeneric("principal_graph"))
 
 #' @export
-setGeneric("partitions<-", function(x, value) standardGeneric("partitions<-"))
-
-#' @export
-setGeneric("partitionNames", function(x) standardGeneric("partitionNames"))
-
-#' @export
-setGeneric("partitionNames<-", function(x, value) standardGeneric("partitionNames<-"))
+setGeneric("principal_graph<-", function(x, value) standardGeneric("principal_graph<-"))
 
 # Getter/setter functions for partitions
 # Copied from reduceDims functions from SingleCellExperiment
 
 #' @export
-setMethod("partitions", "cell_data_set", function(x) {
-  value <- x@partitions
+setMethod("principal_graph", "cell_data_set", function(x) {
+  value <- x@principal_graph
   return(value)
 })
 
 #' @export
 #' @importClassesFrom S4Vectors List
-setReplaceMethod("partitions", "cell_data_set", function(x, value) {
+setReplaceMethod("principal_graph", "cell_data_set", function(x, value) {
   value <- methods::as(value, "List")
   if (is.null(names(value))) {
     names(value) <- character(length(value))
   }
-  x@partitions <- value
+  x@principal_graph <- value
   validObject(x)
   return(x)
 })
 
+
 #' @export
-setMethod("partitionNames", "cell_data_set", function(x) {
-  names(partitions(x))
+setGeneric("principal_graph_aux", function(x, ...) standardGeneric("principal_graph_aux"))
+
+#' @export
+setGeneric("principal_graph_aux<-", function(x, value) standardGeneric("principal_graph_aux<-"))
+
+
+# Getter/setter functions for partitions
+# Copied from reduceDims functions from SingleCellExperiment
+
+#' @export
+setMethod("principal_graph_aux", "cell_data_set", function(x) {
+  value <- x@principal_graph_aux
+  return(value)
 })
 
-
 #' @export
-setReplaceMethod("partitionNames", c("cell_data_set", "character"), function(x, value) {
-  out <- partitions(x)
-  names(out) <- value
-  x@partitions <- out
+#' @importClassesFrom S4Vectors List
+setReplaceMethod("principal_graph_aux", "cell_data_set", function(x, value) {
+  value <- methods::as(value, "List")
+  if (is.null(names(value))) {
+    names(value) <- character(length(value))
+  }
+  x@principal_graph_aux <- value
+  validObject(x)
   return(x)
 })
+
+

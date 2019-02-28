@@ -37,6 +37,7 @@
 #' @export
 order_cells <- function(cds,
                        root_pr_nodes=NULL,
+                       reduced_dimension = "UMAP",
                        root_cells=NULL,
                        reverse = FALSE,
                        orthogonal_proj_tip = FALSE,
@@ -76,7 +77,7 @@ order_cells <- function(cds,
     closest_vertex = cds@auxOrderingData[[cds@rge_method]]$pr_graph_cell_proj_closest_vertex
     root_pr_nodes = closest_vertex[valid_root_cells,]
   }else{
-    if (length(intersect(root_pr_nodes, igraph::V(principal_graph(cds))$name)) == 0){
+    if (length(intersect(root_pr_nodes, igraph::V(principal_graph(cds)[[reduced_dimension]])$name)) == 0){
       stop("Error: no such principal graph node")
     }
   }
@@ -86,9 +87,9 @@ order_cells <- function(cds,
   }
 
 
-  cds@aux_ordering_data[[cds@rge_method]]$root_pr_nodes <- root_pr_nodes
+  cds@principal_graph_aux[[reduced_dimension]]$root_pr_nodes <- root_pr_nodes
 
-  cc_ordering <- extract_general_graph_ordering(cds, root_pr_nodes, orthogonal_proj_tip, verbose)
+  cc_ordering <- extract_general_graph_ordering(cds, root_pr_nodes, orthogonal_proj_tip, verbose, reduced_dimension)
   colData(cds)$Pseudotime = cc_ordering[row.names(colData(cds)), ]$pseudo_time
   if(reverse) {
     finite_cells <- is.finite(colData(cds)$Pseudotime)
@@ -98,10 +99,10 @@ order_cells <- function(cds,
   cds
 }
 
-extract_general_graph_ordering <- function(cds, root_cell, orthogonal_proj_tip = FALSE, verbose=T)
+extract_general_graph_ordering <- function(cds, root_cell, orthogonal_proj_tip = FALSE, verbose=T, reduced_dimension)
 {
   Z <- t(reducedDim(cds)$UMAP)
-  pr_graph <- principal_graph(cds)
+  pr_graph <- principal_graph(cds)[[reduced_dimension]]
 
   res <- list(subtree = pr_graph, root = root_cell)
 
@@ -119,7 +120,7 @@ extract_general_graph_ordering <- function(cds, root_cell, orthogonal_proj_tip =
   closest_vertex <- findNearestVertex(Z[, root_cell, drop = F], Z)
   closest_vertex_id <- colnames(cds)[closest_vertex]
 
-  cell_wise_graph <- cds@aux_ordering_data[[cds@rge_method]]$pr_graph_cell_proj_tree
+  cell_wise_graph <- cds@principal_graph_aux[[reduced_dimension]]$pr_graph_cell_proj_tree
   cell_wise_distances <- igraph::distances(cell_wise_graph, v = closest_vertex_id)
 
   if (length(closest_vertex_id) > 1){

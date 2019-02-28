@@ -4,9 +4,10 @@
 \alias{cluster_cells}
 \title{Cluster cells into a specified number of groups based on .}
 \usage{
-cluster_cells(cds, use_pca = FALSE, k = 20, louvain_iter = 1,
-  weight = FALSE, res = NULL, method = c("louvain"),
-  random_seed = 0L, verbose = F, cores = 1, ...)
+cluster_cells(cds, reduced_dimension = c("tSNE", "UMAP", "PCA"),
+  use_pca = FALSE, k = 20, louvain_iter = 1, weight = FALSE,
+  res = NULL, method = c("louvain"), random_seed = 0L, verbose = F,
+  cores = 1, ...)
 }
 \arguments{
 \item{cds}{the cell_data_set upon which to perform this operation}

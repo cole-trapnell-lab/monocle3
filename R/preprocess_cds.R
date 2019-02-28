@@ -94,10 +94,10 @@ preprocess_cds <- function(cds, method = c('PCA', "tfidf", 'none'),
     stop("Error: all rows have standard deviation zero")
   }
 
+  assays(cds)$normalized_exprs <- FM
+
   fm_rowsums = Matrix::rowSums(FM)
   FM <- FM[is.finite(fm_rowsums) & fm_rowsums != 0, ]
-
-  assays(cds)$normalized_exprs <- FM
 
   if(method == 'PCA') {
     if (verbose) message("Remove noise by PCA ...")
@@ -114,13 +114,13 @@ preprocess_cds <- function(cds, method = c('PCA', "tfidf", 'none'),
   } else if(method == "tfidf") {
     irlba_pca_res <- tfidf(FM)
     do_svd = function(tf_idf_counts, dims=50) {
-      pca.results = irlba::irlba(t(tf_idf_counts), nv=dims)
+      pca.results = irlba::irlba(Matrix::t(tf_idf_counts), nv=dims)
       final_result = pca.results$u %*% diag(pca.results$d)
       rownames(final_result) = colnames(tf_idf_counts)
       colnames(final_result) = paste0('PC_', 1:dims)
       return(final_result)
     }
-    irlba_pca_res = do_svd(irlba_pca_res, num_dim)
+    irlba_pca_res <- do_svd(irlba_pca_res, num_dim)
   } else {
     stop('unknown preprocessing method, stop!')
   }
@@ -132,13 +132,11 @@ preprocess_cds <- function(cds, method = c('PCA', "tfidf", 'none'),
                                        data = colData(cds),
                                        drop.unused.levels = TRUE)
 
-    fit <- limma::lmFit(t(irlba_pca_res), X.model_mat, ...)
+    fit <- limma::lmFit(Matrix::t(irlba_pca_res), X.model_mat, ...)
     beta <- fit$coefficients[, -1, drop = FALSE]
     beta[is.na(beta)] <- 0
     irlba_pca_res <- Matrix::t(as.matrix(Matrix::t(irlba_pca_res)) -
                                  beta %*% Matrix::t(X.model_mat[, -1]))
-  } else {
-    X.model_mat <- NULL
   }
 
   reducedDims(cds)$normalized_data_projection <- as.matrix(irlba_pca_res)
@@ -159,6 +157,7 @@ normalize_expr_data <- function(cds,
 
   # If the user has selected a subset of genes for use in ordering the cells
   # via set_ordering_filter(), subset the expression matrix.
+  # TO DO
   if (!is.null(rowData(cds)$use_for_ordering) &&
       nrow(subset(rowData(cds), use_for_ordering == TRUE)) > 0) {
     FM <- FM[rowData(cds)$use_for_ordering, ]
@@ -168,9 +167,9 @@ normalize_expr_data <- function(cds,
   # pseudocount set it to 1 by default.
   if (is.null(pseudo_count)){
     if(norm_method == "log")
-      pseudo_count = 1
+      pseudo_count <- 1
     else
-      pseudo_count = 0
+      pseudo_count <- 0
   }
 
   if (norm_method == "log") {
@@ -198,10 +197,10 @@ tfidf <- function(count_matrix, frequencies=TRUE, log_scale_tf=TRUE,
   # Use either raw counts or divide by total counts in each cell
   if (frequencies) {
     # "term frequency" method
-    tf = t(t(count_matrix) / Matrix::colSums(count_matrix))
+    tf <- Matrix::t(Matrix::t(count_matrix) / Matrix::colSums(count_matrix))
   } else {
     # "raw count" method
-    tf = count_matrix
+    tf <- count_matrix
   }
 
   # Either TF method can optionally be log scaled

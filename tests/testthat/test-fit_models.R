@@ -9,11 +9,12 @@ test_that("fit_models() returns an error when Size_Factors are missing",{
 })
 
 test_that("fit_models() properly validates model formulae",{
+  metadata(cds)$expression_family <- 'negbinomial'
   ok_formula_model_fits <- fit_models(cds, model_formula_str = "~log_dose")
   num_failed = sum (unlist(lapply(ok_formula_model_fits$model, function(m) { class(m) })) == "logical" )
   expect_lt(num_failed, nrow(cds))
 
-  skip("currently_failing")
+
   expect_error(fit_models(cds, model_formula_str = "~MISSING_TERM"))
 })
 

@@ -55,6 +55,7 @@
 #' @export
 learn_graph <- function(cds,
                        max_components=2,
+                       reduced_dimension = "UMAP",
                        rge_method = 'SimplePPT',
                        auto_param_selection = TRUE,
                        partition_group = 'louvain_component',
@@ -99,6 +100,7 @@ learn_graph <- function(cds,
     if(do_partition && length(louvain_component) == ncol(cds)) {
       multi_tree_DDRTree_res <- multi_component_RGE(cds, scale = scale,
                                                     rge_method = rge_method,
+                                                    reduced_dimension = reduced_dimension,
                                                     partition_group = partition_group,
                                                     irlba_pca_res = irlba_pca_res,
                                                     max_components = max_components,
@@ -225,18 +227,16 @@ learn_graph <- function(cds,
       dp_mst <- igraph::graph.adjacency(rge_res$W, mode = "undirected", weighted = TRUE)
 
       row.names(rge_res$R) <- colnames(cds)
-      cds@aux_ordering_data[[rge_method]] <- rge_res[c('stree', 'Q', 'R', 'objective_vals', 'history')]
+      cds@principal_graph[[reduced_dimension]] <- rge_res[c('stree', 'Q', 'R', 'objective_vals', 'history')]
     }
 
-    reducedDimS(cds) <- as.matrix(rge_res_Z)
-    reducedDimK(cds) <- as.matrix(rge_res_Y)
+    #reducedDimS(cds) <- as.matrix(rge_res_Z)
+    #reducedDimK(cds) <- as.matrix(rge_res_Y)
 
-    principal_graph(cds) <- dp_mst
+    principal_graph(cds)[[reduced_dimension]] <- dp_mst
   }
 
-  cds@rge_method = rge_method
-
-  cds <- project2MST(cds, project_point_to_line_segment, orthogonal_proj_tip, verbose) # recalculate the pr_graph_cell_proj_closest_vertex using the projection method instead of relying on the R matrix
+  cds <- project2MST(cds, project_point_to_line_segment, orthogonal_proj_tip, verbose, reduced_dimension) # recalculate the pr_graph_cell_proj_closest_vertex using the projection method instead of relying on the R matrix
 
   cds
 }
@@ -244,6 +244,7 @@ learn_graph <- function(cds,
 multi_component_RGE <- function(cds,
                                 scale = FALSE,
                                 rge_method,
+                                reduced_dimension,
                                 partition_group = 'louvain_component',
                                 irlba_pca_res,
                                 max_components,
@@ -457,8 +458,8 @@ multi_component_RGE <- function(cds,
   row.names(R) <- R_row_names
   R <- R[colnames(cds), ] # reorder the colnames
 
-  cds@aux_ordering_data[[rge_method]] <- list(stree = stree, Q = merge_rge_res$Q, R = R, objective_vals = merge_rge_res$objective_vals, history = merge_rge_res$history) # rge_res[c('stree', 'Q', 'R', 'objective_vals', 'history')] #
-  cds@aux_ordering_data[[rge_method]]$pr_graph_cell_proj_closest_vertex <- as.data.frame(pr_graph_cell_proj_closest_vertex)[colnames(cds), , drop = F] # Ensure the row order matches up that of the column order of the cds
+  cds@principal_graph_aux[[reduced_dimension]] <- list(stree = stree, Q = merge_rge_res$Q, R = R, objective_vals = merge_rge_res$objective_vals, history = merge_rge_res$history) # rge_res[c('stree', 'Q', 'R', 'objective_vals', 'history')] #
+  cds@principal_graph_aux[[reduced_dimension]]$pr_graph_cell_proj_closest_vertex <- as.data.frame(pr_graph_cell_proj_closest_vertex)[colnames(cds), , drop = F] # Ensure the row order matches up that of the column order of the cds
 
   colnames(ddrtree_res_Y) <- paste0("Y_", 1:ncol(ddrtree_res_Y), sep = "")
 
@@ -614,13 +615,13 @@ pruneTree_in_learnGraph <- function(stree_ori, stree_loop_clousre, minimal_branc
   return(igraph::get.adjacency(stree_loop_clousre))
 }
 
-project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE, verbose){
-  dp_mst <- principal_graph(cds)
+project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE, verbose, reduced_dimension){
+  dp_mst <- principal_graph(cds)[[reduced_dimension]]
   Z <- reducedDims(cds)$UMAP
   Y <- reducedDims(cds)$UMAP
 
-  cds <- findNearestPointOnMST(cds)
-  closest_vertex <- cds@aux_ordering_data[[cds@rge_method]]$pr_graph_cell_proj_closest_vertex
+  cds <- findNearestPointOnMST(cds, reduced_dimension)
+  closest_vertex <- cds@principal_graph_aux[[reduced_dimension]]$pr_graph_cell_proj_closest_vertex
 
   #closest_vertex <- as.vector(closest_vertex)
   closest_vertex_names <- colnames(Y)[closest_vertex[, 1]]
@@ -761,20 +762,20 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE, ver
   }
 
   dp_mst <- igraph::graph.data.frame(dp_mst_df, directed = FALSE)
-  cds@aux_ordering_data[[cds@rge_method]]$pr_graph_cell_proj_tree <- dp_mst
-  cds@aux_ordering_data[[cds@rge_method]]$pr_graph_cell_proj_dist <- P
-  cds@aux_ordering_data[[cds@rge_method]]$pr_graph_cell_proj_closest_vertex <- closest_vertex_df
+  cds@principal_graph_aux[[reduced_dimension]]$pr_graph_cell_proj_tree <- dp_mst
+  cds@principal_graph_aux[[reduced_dimension]]$pr_graph_cell_proj_dist <- P
+  cds@principal_graph_aux[[reduced_dimension]]$pr_graph_cell_proj_closest_vertex <- closest_vertex_df
 
   cds
 }
 
 # Project each point to the nearest on the MST:
-findNearestPointOnMST <- function(cds){
+findNearestPointOnMST <- function(cds, reduced_dimension){
   if(is.null(colData(cds)$louvain_component)) {
     stop('Error: please run partitionCells before running findNearestPointOnMST!')
   }
 
-  dp_mst <- principal_graph(cds)
+  dp_mst <- principal_graph(cds)[[reduced_dimension]]
   dp_mst_list <- igraph::decompose.graph(dp_mst)
 
   if(length(unique(colData(cds)$louvain_component)) != length(dp_mst_list)) {
@@ -788,9 +789,9 @@ findNearestPointOnMST <- function(cds){
     cur_dp_mst <- dp_mst_list[[i]]
 
     if(length(dp_mst_list) == 1) {
-      Z <- reducedDimS(cds)
+      Z <- reducedDim(cds)$UMAP
     } else {
-      Z <- reducedDims(cds)$UMAP[, colData(cds)$louvain_component == i]
+      Z <- t(reducedDims(cds)$UMAP)[, colData(cds)$louvain_component == i]
     }
     Y <- reducedDims(cds)$UMAP[, igraph::V(cur_dp_mst)$name]
 
@@ -808,7 +809,7 @@ findNearestPointOnMST <- function(cds){
     cur_start_index <- cur_start_index + igraph::vcount(cur_dp_mst)
   }
   closest_vertex_df <- closest_vertex_df[colnames(cds), , drop = F]
-  cds@aux_ordering_data[[cds@rge_method]]$pr_graph_cell_proj_closest_vertex <- closest_vertex_df #as.matrix(closest_vertex)
+  cds@principal_graph_aux[[reduced_dimension]]$pr_graph_cell_proj_closest_vertex <- closest_vertex_df #as.matrix(closest_vertex)
   cds
 }
 

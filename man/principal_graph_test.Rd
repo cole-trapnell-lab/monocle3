@@ -4,9 +4,10 @@
 \alias{principal_graph_test}
 \title{Test genes for differential expression based on the low dimensional embedding and the principal graph}
 \usage{
-principal_graph_test(cds, relative_expr = TRUE, k = 25,
-  method = c("Moran_I"), alternative = "greater", cores = 1,
-  interactive = FALSE, verbose = FALSE)
+principal_graph_test(cds, reduced_dimension = "UMAP",
+  relative_expr = TRUE, k = 25, method = c("Moran_I"),
+  alternative = "greater", cores = 1, interactive = FALSE,
+  verbose = FALSE)
 }
 \arguments{
 \item{cds}{a cell_data_set object upon which to perform this operation}

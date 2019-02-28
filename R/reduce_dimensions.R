@@ -81,6 +81,9 @@ reduce_dimension <- function(cds,
   if (verbose) message("Retrieving normalized data ...")
 
   FM <- assays(cds)$normalized_exprs
+  fm_rowsums = Matrix::rowSums(FM)
+  FM <- FM[is.finite(fm_rowsums) & fm_rowsums != 0, ]
+
   irlba_pca_res <- reducedDims(cds)$normalized_data_projection
 
   if(is.null(FM)) {
@@ -91,8 +94,8 @@ reduce_dimension <- function(cds,
   if(reduction_method == "PCA") {
 
     irlba_res <- sparse_prcomp_irlba(Matrix::t(FM),
-                                     n = min(num_dim,min(dim(FM)) - 1),
-                                     center = scaling, scale. = scaling)
+                                     n = min(max_components,min(dim(FM)) - 1),
+                                     center = TRUE, scale. = TRUE)
     irlba_pca_res <- irlba_res$x
     row.names(irlba_pca_res) <- colnames(cds)
     reducedDims(cds)$PCA <- as.matrix(irlba_pca_res)
@@ -100,12 +103,6 @@ reduce_dimension <- function(cds,
   } else if (reduction_method == "tSNE") {
     # when you pass pca_dim to the function, the number of dimension used for
     # tSNE dimension reduction is used
-    if("num_dim" %in% names(extra_arguments)){
-      num_dim <- extra_arguments$num_dim # variance_explained
-    }
-    else{
-      num_dim <- 50
-    }
 
     topDim_pca <- irlba_pca_res
 
@@ -158,7 +155,7 @@ reduce_dimension <- function(cds,
                                     dimnames = list(colnames(cds),
                                                     colnames(cds)))
 
-    principal_graph(cds) <- igraph::graph_from_adjacency_matrix(adj_mat,
+    principal_graph(cds)[[reduction_method]] <- igraph::graph_from_adjacency_matrix(adj_mat,
                                                                 weighted=TRUE)
 
   } else {

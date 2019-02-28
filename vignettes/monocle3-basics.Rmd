@@ -121,7 +121,7 @@ get_correct_root_state <- function(cds, cell_phenotype, root_type){
   cell_ids <- which(colData(cds)[, cell_phenotype] == root_type)
 
   closest_vertex <-
-    cds@aux_ordering_data[[cds@rge_method]]$pr_graph_cell_proj_closest_vertex
+    cds@principal_graph_aux[["UMAP"]]$pr_graph_cell_proj_closest_vertex
   closest_vertex <- as.matrix(closest_vertex[colnames(cds), ])
   root_pr_nodes <-
     igraph::V(cds@principal_graph)$name[as.numeric(names

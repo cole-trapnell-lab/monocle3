@@ -6,7 +6,7 @@
 coding scheme from a cell dataset object}
 \usage{
 calculateLW(cds, k = 25, return_sparse_matrix = FALSE,
-  interactive = FALSE, verbose = FALSE)
+  interactive = FALSE, verbose = FALSE, reduced_dimension = "UMAP")
 }
 \arguments{
 \item{cds}{The cell_data_set object where the neighbors list is calculated from}

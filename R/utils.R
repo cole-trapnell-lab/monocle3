@@ -215,12 +215,12 @@ smart_es_apply <- function(X, MARGIN, FUN, convert_to_dense, ...) {
   if (is.null(parent))
     parent <- emptyenv()
   e1 <- new.env(parent=parent)
-  Biobase::multiassign(names(colData(X)), colData(X), envir=e1)
+  Biobase::multiassign(names(as.data.frame(colData(X))), as.data.frame(colData(X)), envir=e1)
   environment(FUN) <- e1
 
   if (is_sparse_matrix(assays(X)$exprs)){
     res <- sparse_apply(assays(X)$exprs, MARGIN, FUN, convert_to_dense, ...)
-  }else{
+  } else {
     res <- pbapply::pbapply(assays(X)$exprs, MARGIN, FUN, ...)
   }
 
@@ -239,25 +239,19 @@ smart_es_apply <- function(X, MARGIN, FUN, convert_to_dense, ...) {
 #' Build a cell_data_set from the data stored in inst/extdata directory.
 #' @export
 load_a549 <- function(){
-
-  baseLoc <- system.file(package="monocle3")
-  #baseLoc <- './inst'
-  extPath <- file.path(baseLoc, "extdata")
-  small_a549_colData_df = readRDS(file.path(extPath, "small_a549_dex_colData.rda"))
-  small_a549_rowData_df = readRDS(file.path(extPath, "small_a549_dex_rowData.rda"))
-  small_a549_exprs = readRDS(file.path(extPath, "small_a549_dex_exprs.rda"))
-
+  small_a549_colData_df <- readRDS(system.file("extdata", "small_a549_dex_pdata.rda", package = "monocle3"))
+  small_a549_rowData_df <- readRDS(system.file("extdata", "small_a549_dex_fdata.rda", package = "monocle3"))
+  small_a549_exprs <- readRDS(system.file("extdata", "small_a549_dex_exprs.rda", package = "monocle3"))
   small_a549_exprs <- small_a549_exprs[,row.names(small_a549_colData_df)]
 
   pd <- methods::new("AnnotatedDataFrame", data = small_a549_colData_df)
   fd <- methods::new("AnnotatedDataFrame", data = small_a549_rowData_df)
 
   # Now, make a new cell_data_set using the RNA counts
-  cds <- new_cell_data_set(small_a549_exprs,
-                         phenoData = pd,
-                         featureData = fd,
-                         lower_detection_limit = 1,
-                         expression_family="negbinomial")
+  cds <- new_cell_data_set(expression_data = small_a549_exprs,
+                           cell_metadata = small_a549_colData_df,
+                           gene_metadata = small_a549_rowData_df,
+                           lower_detection_limit = 1)
   colData(cds)$Size_Factor = small_a549_colData_df$Size_Factor
 
   cds

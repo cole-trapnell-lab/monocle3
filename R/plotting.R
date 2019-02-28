@@ -43,6 +43,7 @@ monocle_theme_opts <- function()
 plot_cell_trajectory <- function(cds,
                                  x=1,
                                  y=2,
+                                 reduced_dimension = "UMAP",
                                  color_by="Pseudotime",
                                  show_backbone=TRUE,
                                  backbone_color="black",
@@ -81,7 +82,7 @@ plot_cell_trajectory <- function(cds,
     dplyr::select_(prin_graph_dim_1 = x, prin_graph_dim_2 = y) %>%
     dplyr::mutate(sample_name = rownames(.), sample_state = rownames(.))
 
-  dp_mst <- principal_graph(cds)
+  dp_mst <- principal_graph(cds)[[reduced_dimension]]
 
   if (is.null(dp_mst)){
     stop("You must first call order_cells() before using this function")
@@ -171,7 +172,7 @@ plot_cell_trajectory <- function(cds,
 
 
   if (show_branch_points && cds@rge_method %in% c('DDRTree', 'SimplePPT', 'L1graph')){
-    mst_branch_nodes <- cds@aux_ordering_data[[cds@rge_method]]$branch_points
+    mst_branch_nodes <- cds@principal_graph_aux[[reduced_dimension]]$branch_points
     branch_point_df <- ica_space_df %>%
       dplyr::slice(match(mst_branch_nodes, sample_name)) %>%
       dplyr::mutate(branch_point_idx = seq_len(n()))
@@ -236,6 +237,7 @@ plot_cell_trajectory <- function(cds,
 #' }
 #'
 plot_3d_cell_trajectory <- function(cds,
+                                    reduced_dimension = "UMAP",
                                     downsample_size = NULL,
                                     dim=c(1, 2, 3),
                                     color_by=NULL,
@@ -297,7 +299,7 @@ plot_3d_cell_trajectory <- function(cds,
   ica_space_df$sample_state <- row.names(ica_space_df)
   #ica_space_with_state_df <- merge(ica_space_df, lib_info_with_pseudo, by.x="sample_name", by.y="row.names")
   #print(ica_space_with_state_df)
-  dp_mst <- principal_graph(cds)
+  dp_mst <- principal_graph(cds)[[reduced_dimension]]
 
   if (is.null(dp_mst)){
     stop("You must first call orderCells() before using this function")
@@ -442,7 +444,7 @@ plot_3d_cell_trajectory <- function(cds,
   }
   branch_point_df <- NULL
   if (show_branch_points && cds@rge_method %in% c('DDRTree', 'SimplePPT', 'L1graph')){
-    mst_branch_nodes <- cds@aux_ordering_data[[cds@rge_method]]$branch_points
+    mst_branch_nodes <- cds@principal_graph_aux[[reduced_dimension]]$branch_points
     branch_point_df_source <- edge_df %>%
       dplyr::slice(match(mst_branch_nodes, source)) %>%
       dplyr::mutate(branch_point_idx = which(mst_branch_nodes == source))
@@ -965,8 +967,7 @@ plot_pc_variance_explained <- function(cds,
   set.seed(2016)
   if(!is.null(int_metadata(cds)$tsne_variance_explained) & use_existing_pc_variance == T){
     prop_varex <-int_metadata(cds)$tsne_variance_explained
-  }
-  else if(is.null(assays(cds)$normalized_exprs)) {
+  } else if(is.null(assays(cds)$normalized_exprs)) {
     stop(paste("You must call preprocess(cds) before running this function"))
   } else {
     FM <- assays(cds)$normalized_exprs
@@ -985,7 +986,7 @@ plot_pc_variance_explained <- function(cds,
       beta <- fit$coefficients[, -1, drop = FALSE]
       beta[is.na(beta)] <- 0
       FM <- as.matrix(FM) - beta %*% t(X.model_mat[, -1])
-    }else{
+    } else {
       X.model_mat <- NULL
     }
 

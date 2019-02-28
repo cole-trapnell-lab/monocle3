@@ -111,8 +111,8 @@ disp_calc_helper_NB <- function(cds, min_cells_detected) {
 
 
   res <- data.frame(mu=as.vector(f_expression_mean), disp=as.vector(disp_guess_meth_moments))
-  res[res$mu == 0]$mu = NA
-  res[res$mu == 0]$disp = NA
+  res$mu[res$mu == 0] = NA
+  res$disp[res$mu == 0] = NA
   res$disp[res$disp < 0] <- 0
 
   res <- cbind(gene_id=row.names(rowData(cds[nzGenes,])), res)
@@ -160,5 +160,65 @@ parametricDispersionFit <- function( disp_table, verbose = FALSE, initial_coefs=
 
   list(fit, coefs)
 }
+
+
+#' @param modelFormulaStr A model formula, passed as a string, specifying how to group the cells prior to estimated dispersion.
+#' The default groups all cells together.
+#' @param relative_expr Whether to transform expression into relative values
+#' @param min_cells_detected Only include genes detected above lowerDetectionLimit in at least this many cells in the dispersion calculation
+#' @param remove_outliers Whether to remove outliers (using Cook's distance) when estimating dispersions
+#' @param cores The number of cores to use for computing dispersions
+#' @export
+estimate_dispersion_function <- function(cds,
+                                         modelFormulaStr="~ 1",
+                                         relative_expr=TRUE,
+                                         min_cells_detected=1,
+                                         remove_outliers=TRUE,
+                                         cores=1) {
+  stopifnot( is( cds, "cell_data_set" ) )
+
+  if( any( is.na( size_factors(cds) ) ) )
+    stop( "NAs found in size factors. Have you called 'estimate_size_factors'?" )
+
+  mu <- NA
+  model_terms <- unlist(lapply(stringr::str_split(modelFormulaStr, "~|\\+|\\*"),
+                               stringr::str_trim))
+  model_terms <- model_terms[model_terms != ""]
+
+  #if (metadata(cds)$expression_family %in% c("negbinomial", "negbinomial.size")){
+    if (length(model_terms) > 1 || (length(model_terms) == 1 && model_terms[1] != "1")){
+      cds_colData <- dplyr::group_by_(dplyr::select_(tibble::rownames_to_column(colData(cds)), "rowname", .dots=model_terms), .dots=model_terms)
+      disp_table <- as.data.frame(cds_colData %>% do(disp_calc_helper_NB(cds[,.$rowname], min_cells_detected)))
+    }else{
+      cds_colData <- dplyr::group_by_(dplyr::select_(tibble::rownames_to_column(as.data.frame(colData(cds))), "rowname"))
+      disp_table <- as.data.frame(disp_calc_helper_NB(cds, min_cells_detected))
+    }
+
+    if(!is.list(disp_table))
+      stop("Parametric dispersion fitting failed, please set a different lowerDetectionLimit")
+    disp_table <- subset(disp_table, is.na(mu) == FALSE)
+    res <- parametricDispersionFit(disp_table, verbose = FALSE)
+    fit <- res[[1]]
+    coefs <- res[[2]]
+    if (remove_outliers){
+      CD <- cooks.distance(fit)
+      cooksCutoff <- 4/nrow(disp_table)
+      message (paste("Removing", length(CD[CD > cooksCutoff]), "outliers"))
+      outliers <- union(names(CD[CD > cooksCutoff]),
+                        setdiff(row.names(disp_table), names(CD)))
+      res <- parametricDispersionFit(disp_table[row.names(disp_table) %in% outliers == FALSE,], verbose = FALSE)
+      fit <- res[[1]]
+      coefs <- res[[2]]
+    }
+
+    names( coefs ) <- c( "asymptDisp", "extraPois" )
+    ans <- function( q )
+      coefs[1] + coefs[2] / q
+    attr( ans, "coefficients" ) <- coefs
+
+  #}
+  ans
+}
+
 
 
