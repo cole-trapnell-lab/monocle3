@@ -178,7 +178,7 @@ mc_es_apply <- function(X, MARGIN, FUN, required_packages, cores=1, convert_to_d
   if (is.null(parent))
     parent <- emptyenv()
   e1 <- new.env(parent=parent)
-  Biobase::multiassign(names(colData(X)), colData(X), envir=e1)
+  Biobase::multiassign(names(as.data.frame(colData(X))), as.data.frame(colData(X)), envir=e1)
   environment(FUN) <- e1
 
   # Note: use outfile argument to makeCluster for debugging

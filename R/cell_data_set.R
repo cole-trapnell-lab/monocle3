@@ -38,8 +38,8 @@ setOldClass(c("igraph"), prototype=structure(list(), class="igraph"))
 #' @rdname cell_data_set
 #' @aliases cell_data_set-class
 #' @exportClass cell_data_set
-#' @importFrom SingleCellExperiment SingleCellExperiment colData rowData
-#' @importFrom SummarizedExperiment Assays colData<- rowData<- assays
+#' @importFrom SingleCellExperiment SingleCellExperiment colData rowData reducedDim<- reducedDim reducedDims<- reducedDims
+#' @importFrom SummarizedExperiment Assays colData<- rowData<- assays assays<-
 #' @importFrom S4Vectors metadata metadata<- SimpleList
 setClass( "cell_data_set",
           contains = c("SingleCellExperiment"),
