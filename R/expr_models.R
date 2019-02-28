@@ -186,6 +186,13 @@ fit_models <- function(cds,
                      verbose = FALSE,
                      ...) {
 
+  model_form <- stats::as.formula(model_formula_str)
+  for(i in 1:length(model_form)) {
+    if (!as.character(model_form[[i]]) %in% c(names(colData(cds)), "1", "|", "+", "-", ":", "*", "^", "I")) {
+      stop(paste(as.character(model_form[[i]]), "formula element is missing"))
+    }
+  }
+
   disp_func <- NULL
 
   if (cores > 1) {

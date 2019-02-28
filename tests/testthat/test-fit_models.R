@@ -1,6 +1,7 @@
 context("fit_models")
 #skip("for the moment")
 cds <- load_a549()
+metadata(cds)$expression_family <- 'negbinomial'
 
 test_that("fit_models() returns an error when Size_Factors are missing",{
   no_na_cds = cds
@@ -9,7 +10,6 @@ test_that("fit_models() returns an error when Size_Factors are missing",{
 })
 
 test_that("fit_models() properly validates model formulae",{
-  metadata(cds)$expression_family <- 'negbinomial'
   ok_formula_model_fits <- fit_models(cds, model_formula_str = "~log_dose")
   num_failed = sum (unlist(lapply(ok_formula_model_fits$model, function(m) { class(m) })) == "logical" )
   expect_lt(num_failed, nrow(cds))
