@@ -154,12 +154,6 @@ reduce_dimension <- function(cds,
                                     dims = c(ncol(cds), ncol(cds)), index1 = F,
                                     dimnames = list(colnames(cds),
                                                     colnames(cds)))
-
-    principal_graph(cds)[[reduction_method]] <- igraph::graph_from_adjacency_matrix(adj_mat,
-                                                                weighted=TRUE)
-
-  } else {
-    stop("Error: unrecognized dimensionality reduction method")
   }
 
   cds

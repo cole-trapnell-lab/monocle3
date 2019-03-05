@@ -43,7 +43,7 @@ order_cells <- function(cds,
                        orthogonal_proj_tip = FALSE,
                        verbose = FALSE){
 
-  assertthat::assert_that(is(cds, "cell_data_sett"))
+  assertthat::assert_that(is(cds, "cell_data_set"))
   # if (is.null(cds@dim_reduce_type)){
   #  stop("Error: dimensionality not yet reduced. Please call reduce_dimension() and learnGraph() (for learning principal graph) before calling this function.")
   #}
@@ -101,7 +101,7 @@ order_cells <- function(cds,
 
 extract_general_graph_ordering <- function(cds, root_cell, orthogonal_proj_tip = FALSE, verbose=T, reduced_dimension)
 {
-  Z <- t(reducedDim(cds)$UMAP)
+  Z <- t(reducedDims(cds)$UMAP)
   pr_graph <- principal_graph(cds)[[reduced_dimension]]
 
   res <- list(subtree = pr_graph, root = root_cell)

@@ -70,19 +70,12 @@ plot_cell_trajectory <- function(cds,
   #TODO: need to validate cds as ready for this plot (need mst, pseudotime, etc)
   lib_info_with_pseudo <- colData(cds)
 
-  if (is.null(cds@dim_reduce_type) | is.null(cds@rge_method)){
-    stop("Error: dimensionality not reduced or graph is not learned yet. Please call reduce_dimension(), partition_cells() and learn_graph() before calling this function.")
-  }
-
-
-  reduced_dim_coords <- reducedDims(cds)$UMAP
-
-  ica_space_df <- Matrix::t(reduced_dim_coords) %>%
+  ica_space_df <- reducedDims(cds)[[reduced_dimension]] %>%
     as.data.frame() %>%
     dplyr::select_(prin_graph_dim_1 = x, prin_graph_dim_2 = y) %>%
     dplyr::mutate(sample_name = rownames(.), sample_state = rownames(.))
 
-  dp_mst <- principal_graph(cds)[[reduced_dimension]]
+  dp_mst <- cds@principal_graph_aux[[reduced_dimension]]$dp_mst
 
   if (is.null(dp_mst)){
     stop("You must first call order_cells() before using this function")
