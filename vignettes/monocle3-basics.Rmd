@@ -124,7 +124,7 @@ get_correct_root_state <- function(cds, cell_phenotype, root_type){
     cds@principal_graph_aux[["UMAP"]]$pr_graph_cell_proj_closest_vertex
   closest_vertex <- as.matrix(closest_vertex[colnames(cds), ])
   root_pr_nodes <-
-    igraph::V(cds@principal_graph)$name[as.numeric(names
+    igraph::V(cds@principal_graph[["UMAP"]])$name[as.numeric(names
       (which.max(table(closest_vertex[cell_ids,]))))]
 
   root_pr_nodes
@@ -157,7 +157,6 @@ cds <- partition_cells(cds)
  
 cds <- learn_graph(cds,
                    max_components = 3,
-                   RGE_method = 'SimplePPT',
                    partition_component = T,
                    verbose = F)
 

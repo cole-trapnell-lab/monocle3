@@ -70,12 +70,12 @@ plot_cell_trajectory <- function(cds,
   #TODO: need to validate cds as ready for this plot (need mst, pseudotime, etc)
   lib_info_with_pseudo <- colData(cds)
 
-  ica_space_df <- reducedDims(cds)[[reduced_dimension]] %>%
+  ica_space_df <- t(cds@principal_graph_aux[[reduced_dimension]]$dp_mst) %>%
     as.data.frame() %>%
     dplyr::select_(prin_graph_dim_1 = x, prin_graph_dim_2 = y) %>%
     dplyr::mutate(sample_name = rownames(.), sample_state = rownames(.))
 
-  dp_mst <- cds@principal_graph_aux[[reduced_dimension]]$dp_mst
+  dp_mst <- cds@principal_graph[[reduced_dimension]]
 
   if (is.null(dp_mst)){
     stop("You must first call order_cells() before using this function")
@@ -89,7 +89,7 @@ plot_cell_trajectory <- function(cds,
 
   S_matrix <-
     reducedDims(cds)$UMAP
-  data_df <- data.frame(t(S_matrix[c(x,y),]))
+  data_df <- data.frame(S_matrix[,c(x,y)])
   #data_df <- cbind(data_df, sample_state)
   colnames(data_df) <- c("data_dim_1", "data_dim_2")
   data_df$sample_name <- row.names(data_df)
@@ -164,7 +164,7 @@ plot_cell_trajectory <- function(cds,
   }
 
 
-  if (show_branch_points && cds@rge_method %in% c('DDRTree', 'SimplePPT', 'L1graph')){
+  if (show_branch_points){
     mst_branch_nodes <- cds@principal_graph_aux[[reduced_dimension]]$branch_points
     branch_point_df <- ica_space_df %>%
       dplyr::slice(match(mst_branch_nodes, sample_name)) %>%
@@ -276,16 +276,12 @@ plot_3d_cell_trajectory <- function(cds,
   lib_info_with_pseudo <- colData(cds)[cell_sampled, ]
   sample_state <- colData(cds)$State[cell_sampled]
 
-  if (is.null(cds@dim_reduce_type)){
-    stop("Error: dimensionality not yet reduced. Please call reduce_dimension() before calling this function.")
-  }
-
-  reduced_dim_coords <- reducedDims(cds)$UMAP
+  reduced_dim_coords <- cds@principal_graph_aux[[reduced_dimension]]$dp_mst
 
   if(length(dim) != 3)
     dim <- 1:3
 
-  ica_space_df <- data.frame(Matrix::t(reduced_dim_coords[dim,]))
+  ica_space_df <- data.frame(reduced_dim_coords[,dim])
   colnames(ica_space_df) <- c("prin_graph_dim_1", "prin_graph_dim_2",  "prin_graph_dim_3")
 
   ica_space_df$sample_name <- row.names(ica_space_df)
@@ -306,8 +302,8 @@ plot_3d_cell_trajectory <- function(cds,
   edge_df <- merge(edge_df, ica_space_df[,c("sample_name", "prin_graph_dim_1", "prin_graph_dim_2", "prin_graph_dim_3")], by.x="target", by.y="sample_name", all=F)
   edge_df <- plyr::rename(edge_df, c("prin_graph_dim_1"="target_prin_graph_dim_1", "prin_graph_dim_2"="target_prin_graph_dim_2", "prin_graph_dim_3"="target_prin_graph_dim_3"))
 
-  S_matrix <- reducedDims(cds)$UMAP[, cell_sampled]
-  data_df <- data.frame(t(S_matrix[dim,]))
+  S_matrix <- reducedDims(cds)[[reduced_dimension]][cell_sampled,]
+  data_df <- data.frame(S_matrix[,dim])
   #data_df <- cbind(data_df, sample_state)
   colnames(data_df) <- c("data_dim_1", "data_dim_2", "data_dim_3")
   data_df$sample_name <- row.names(data_df)
@@ -436,7 +432,7 @@ plot_3d_cell_trajectory <- function(cds,
     }
   }
   branch_point_df <- NULL
-  if (show_branch_points && cds@rge_method %in% c('DDRTree', 'SimplePPT', 'L1graph')){
+  if (show_branch_points){
     mst_branch_nodes <- cds@principal_graph_aux[[reduced_dimension]]$branch_points
     branch_point_df_source <- edge_df %>%
       dplyr::slice(match(mst_branch_nodes, source)) %>%
@@ -586,6 +582,7 @@ plot_3d_cell_trajectory <- function(cds,
 plot_cell_clusters <- function(cds,
                                x=1,
                                y=2,
+                               reduced_dimension = "UMAP",
                                color_by="Cluster",
                                markers=NULL,
                                show_cell_names=FALSE,
@@ -606,11 +603,7 @@ plot_cell_clusters <- function(cds,
     stop("Error: Clustering is not performed yet. Please call clusterCells() before calling this function.")
   }
 
-  if(cds@dim_reduce_type == 'tSNE') {
-    low_dim_coords <- reducedDims(cds)$tSNE
-  } else {
-    low_dim_coords <- reducedDims(cds)$UMAP
-  }
+  low_dim_coords <- reducedDims(cds)[[reduced_dimension]]
 
   if (nrow(low_dim_coords) == 0){
     message("reduceDimension is not performed yet. We are plotting the normalized reduced space obtained from preprocessCDS function.")

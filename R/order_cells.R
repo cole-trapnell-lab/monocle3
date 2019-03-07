@@ -74,7 +74,7 @@ order_cells <- function(cds,
     if (length(valid_root_cells) == 0){
       stop("Error: no such cell")
     }
-    closest_vertex = cds@auxOrderingData[[cds@rge_method]]$pr_graph_cell_proj_closest_vertex
+    closest_vertex = cds@principal_graph_aux[[reduced_dimension]]$pr_graph_cell_proj_closest_vertex
     root_pr_nodes = closest_vertex[valid_root_cells,]
   }else{
     if (length(intersect(root_pr_nodes, igraph::V(principal_graph(cds)[[reduced_dimension]])$name)) == 0){
@@ -101,7 +101,8 @@ order_cells <- function(cds,
 
 extract_general_graph_ordering <- function(cds, root_cell, orthogonal_proj_tip = FALSE, verbose=T, reduced_dimension)
 {
-  Z <- t(reducedDims(cds)$UMAP)
+  Z <- t(reducedDims(cds)[[reduced_dimension]])
+  Y <- cds@principal_graph_aux[[reduced_dimension]]$dp_mst
   pr_graph <- principal_graph(cds)[[reduced_dimension]]
 
   res <- list(subtree = pr_graph, root = root_cell)
@@ -117,7 +118,7 @@ extract_general_graph_ordering <- function(cds, root_cell, orthogonal_proj_tip =
   # 1. identify nearest cells to the selected principal node
   # 2. build a cell-wise graph for each louvain group
   # 3. run the distance function to assign pseudotime for each cell
-  closest_vertex <- findNearestVertex(Z[, root_cell, drop = F], Z)
+  closest_vertex <- findNearestVertex(Y[, root_cell, drop = F], Z)
   closest_vertex_id <- colnames(cds)[closest_vertex]
 
   cell_wise_graph <- cds@principal_graph_aux[[reduced_dimension]]$pr_graph_cell_proj_tree
