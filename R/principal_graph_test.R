@@ -23,13 +23,13 @@
 #' @export
 principal_graph_test <- function(cds,
                                  reduced_dimension = "UMAP",
-                               relative_expr=TRUE,
-                               k = 25,
-                               method = c('Moran_I'),
-                               alternative = 'greater',
-                               cores=1,
-                               interactive = FALSE,
-                               verbose=FALSE) {
+                                 relative_expr=TRUE,
+                                 k = 25,
+                                 method = c('Moran_I'),
+                                 alternative = 'greater',
+                                 cores=1,
+                                 interactive = FALSE,
+                                 verbose=FALSE) {
   lw <- calculateLW(cds, k = k, interactive = interactive, verbose = verbose, reduced_dimension)
 
   if(verbose) {

@@ -31,15 +31,13 @@
 #'
 #'
 #' @param cds the cell_data_set upon which to perform this operation
-#' @param max_components the dimensionality of the reduced space
 #' @param rge_method Determines how to transform expression values prior to reducing dimensionality
-#' @param partition_group When this argument is set to TRUE (default to be FALSE), we will learn a tree structure for each separate over-connected louvain component.
 #' @param scale When this argument is set to TRUE (default), it will scale each gene before running trajectory reconstruction.
 #' @param close_loop Whether or not to perform an additional run of loop closing after running DDRTree or SimplePPT to identify potential loop structure in the data space
 #' @param euclidean_distance_ratio The maximal ratio between the euclidean distance of two tip nodes in the spanning tree inferred from SimplePPT algorithm and
 #' that of the maximum distance between any connecting points on the spanning tree allowed to be connected during the loop closure procedure .
-#' @param geodestic_distance_ratio  The minimal ratio between the geodestic distance of two tip nodes in the spanning tree inferred from SimplePPT algorithm and
-#' that of the length of the diameter path on the spanning tree allowed to be connected during the loop closure procedure. (Both euclidean_distance_ratio and geodestic_distance_ratio
+#' @param geodesic_distance_ratio  The minimal ratio between the geodestic distance of two tip nodes in the spanning tree inferred from SimplePPT algorithm and
+#' that of the length of the diameter path on the spanning tree allowed to be connected during the loop closure procedure. (Both euclidean_distance_ratio and geodesic_distance_ratio
 #' need to be satisfied to introduce the edge for loop closure.)
 #' @param prune_graph Whether or not to perform an additional run of graph pruning to remove small insignificant branches
 #' @param minimal_branch_len The minimal length of the diameter path for a branch to be preserved during graph pruning procedure
@@ -52,25 +50,36 @@
 #' @references Original SimplePPT: Qi Mao, Le Yang, Li Wang, Steve Goodison, Yijun Sun. SimplePPT: A Simple Principal Tree Algorithm https://epubs.siam.org/doi/10.1137/1.9781611974010.89
 #' @export
 learn_graph <- function(cds,
-                        max_components=2,
-                        partition_group = 'louvain_component',
                         use_partition = TRUE,
-                        scale = FALSE,
                         close_loop = FALSE,
-                        euclidean_distance_ratio = 1,
-                        geodestic_distance_ratio = 1/3,
-                        prune_graph = TRUE,
-                        minimal_branch_len = 10,
-                        orthogonal_proj_tip = FALSE,
+                        learn_graph_control = NULL,
                         verbose = FALSE,
                         ...) {
   reduced_dimension <- "UMAP"
+  partition_group = 'louvain_component'
+
+  euclidean_distance_ratio <- ifelse(is.null(learn_graph_control$euclidean_distance_ratio), 1, learn_graph_control$euclidean_distance_ratio)
+  geodesic_distance_ratio <- ifelse(is.null(learn_graph_control$geodesic_distance_ratio), 1/3, learn_graph_control$geodesic_distance_ratio)
+  minimal_branch_len <- ifelse(is.null(learn_graph_control$minimal_branch_len), 10, learn_graph_control$minimal_branch_len)
+  orthogonal_proj_tip <- ifelse(is.null(learn_graph_control$orthogonal_proj_tip), FALSE, learn_graph_control$orthogonal_proj_tip)
+  prune_graph <- ifelse(is.null(learn_graph_control$prune_graph), TRUE, learn_graph_control$prune_graph)
+  scale <- ifelse(is.null(learn_graph_control$scale), FALSE, learn_graph_control$scale)
 
   assertthat::assert_that(is(cds, "cell_data_set"))
+  assertthat::assert_that(is.logical(use_partition))
+  assertthat::assert_that(is.logical(close_loop))
+  assertthat::assert_that(is.logical(verbose))
+  assertthat::assert_that(is.logical(orthogonal_proj_tip))
+  assertthat::assert_that(is.logical(prune_graph))
+  assertthat::assert_that(is.logical(scale))
+  assertthat::assert_that(is.numeric(euclidean_distance_ratio))
+  assertthat::assert_that(is.numeric(geodesic_distance_ratio))
+  assertthat::assert_that(is.numeric(minimal_branch_len))
+
   assertthat::assert_that(!is.null(reducedDims(cds)$normalized_data_projection),
                           msg = paste("No normalized data projection",
-                                      "calculated. Please run preprocess_cds,
-                                      reduce_dimensions, and partition_cells",
+                                      "calculated. Please run preprocess_cds,",
+                                      "reduce_dimensions, and partition_cells",
                                       "before running learn_graph."))
   assertthat::assert_that(!is.null(reducedDims(cds)[[reduced_dimension]]),
                           msg = paste("No dimensionality reduction for",
@@ -97,7 +106,7 @@ learn_graph <- function(cds,
                                                   extra_arguments = extra_arguments,
                                                   close_loop = close_loop,
                                                   euclidean_distance_ratio = euclidean_distance_ratio,
-                                                  geodestic_distance_ratio = geodestic_distance_ratio,
+                                                  geodesic_distance_ratio = geodesic_distance_ratio,
                                                   prune_graph = prune_graph,
                                                   minimal_branch_len = minimal_branch_len,
                                                   verbose = verbose)
@@ -124,7 +133,8 @@ learn_graph <- function(cds,
     }
 
     centers <- t(X)[seq(1, ncol(X), length.out=ncenter), , drop = F]
-    centers <- centers + matrix(stats::rnorm(length(centers), sd = 1e-10), nrow = nrow(centers)) # add random noise
+    centers <- centers + matrix(stats::rnorm(length(centers), sd = 1e-10),
+                                nrow = nrow(centers)) # add random noise
 
     kmean_res <- tryCatch({
       stats::kmeans(t(X), centers=centers, iter.max = 100)
@@ -153,7 +163,10 @@ learn_graph <- function(cds,
 
     rho <- exp(-rowMeans(nn.dist))
     mat_df <- as.data.frame(mat)
-    tmp <- mat_df %>% tibble::rownames_to_column() %>% dplyr::mutate(cluster = kmean_res$cluster, density = rho) %>% dplyr::group_by(cluster) %>% dplyr::top_n(n = 1, wt = density) %>% dplyr::arrange(-dplyr::desc(cluster))
+    tmp <- mat_df %>% tibble::rownames_to_column() %>%
+      dplyr::mutate(cluster = kmean_res$cluster, density = rho) %>%
+      dplyr::group_by(cluster) %>% dplyr::top_n(n = 1, wt = density) %>%
+      dplyr::arrange(-dplyr::desc(cluster))
     medioids <- X[, tmp$rowname] # select representative cells by highest density
     reduced_dim_res <- t(medioids)
 
@@ -161,8 +174,11 @@ learn_graph <- function(cds,
       message('Running generalized SimplePPT ...')
     }
 
-    L1graph_args <- c(list(X = X, C0 = medioids, G = NULL, gstruct = 'span-tree', verbose = verbose),
-                      extra_arguments[names(extra_arguments) %in% c('maxiter', 'eps', 'L1.lambda', 'L1.gamma', 'L1.sigma', 'nn')])
+    L1graph_args <- c(list(X = X, C0 = medioids, G = NULL,
+                           gstruct = 'span-tree', verbose = verbose),
+                      extra_arguments[names(extra_arguments) %in%
+                                        c('maxiter', 'eps', 'L1.lambda',
+                                          'L1.gamma', 'L1.sigma', 'nn')])
 
     rge_res <- do.call(calc_principal_graph, L1graph_args)
 
@@ -178,7 +194,7 @@ learn_graph <- function(cds,
                                      reducedDimS_old = t(reducedDims(cds)[[reduced_dimension]]),
                                      kmean_res = kmean_res,
                                      euclidean_distance_ratio = euclidean_distance_ratio,
-                                     geodestic_distance_ratio = geodestic_distance_ratio,
+                                     geodesic_distance_ratio = geodesic_distance_ratio,
                                      medioids = medioids,
                                      verbose = verbose)
       stree <- connectTips_res$stree
@@ -188,8 +204,9 @@ learn_graph <- function(cds,
     names(rge_res)[c(2, 4, 5)] <- c('Y', 'R','objective_vals')
 
     if(ncol(rge_res$Y) == ncol(cds)) {
-      colnames(rge_res$Y) <- colnames(assays(cds)$normalized_exprs) #paste("Y_", 1:ncol(ddrtree_res$Y), sep = "")
-      dimnames(rge_res$W) <- list(colnames(assays(cds)$normalized_exprs), colnames(assays(cds)$normalized_exprs))
+      colnames(rge_res$Y) <- colnames(assays(cds)$normalized_exprs)
+      dimnames(rge_res$W) <- list(colnames(assays(cds)$normalized_exprs),
+                                  colnames(assays(cds)$normalized_exprs))
     }
     else {
       colnames(rge_res$Y) <- paste("Y_", 1:ncol(rge_res$Y), sep = "")
@@ -202,7 +219,8 @@ learn_graph <- function(cds,
       if(verbose) {
         message('Running graph pruning ...')
       }
-      stree <- pruneTree_in_learnGraph(stree_ori, as.matrix(stree), minimal_branch_len = minimal_branch_len)
+      stree <- pruneTree_in_learnGraph(stree_ori, as.matrix(stree),
+                                       minimal_branch_len = minimal_branch_len)
       # remove the points in Y; mediods, etc.
       rge_res$W <- stree
       rge_res$Y <- rge_res$Y[, match(row.names(stree), row.names(stree_ori))]
@@ -214,10 +232,13 @@ learn_graph <- function(cds,
     rge_res_Z <- rge_res$X
     rge_res_Y <- rge_res$Y
 
-    dp_mst <- igraph::graph.adjacency(rge_res$W, mode = "undirected", weighted = TRUE)
+    dp_mst <- igraph::graph.adjacency(rge_res$W, mode = "undirected",
+                                      weighted = TRUE)
 
     row.names(rge_res$R) <- colnames(cds)
-    cds@principal_graph[[reduced_dimension]] <- rge_res[c('stree', 'Q', 'R', 'objective_vals', 'history')]
+    cds@principal_graph[[reduced_dimension]] <- rge_res[c('stree', 'Q', 'R',
+                                                          'objective_vals',
+                                                          'history')]
   }
 
   #reducedDimS(cds) <- as.matrix(rge_res_Z)
@@ -226,7 +247,8 @@ learn_graph <- function(cds,
   principal_graph(cds)[[reduced_dimension]] <- dp_mst
   cds@principal_graph_aux[[reduced_dimension]]$dp_mst <- rge_res_Y
 
-  cds <- project2MST(cds, project_point_to_line_segment, orthogonal_proj_tip, verbose, reduced_dimension, rge_res_Y) # recalculate the pr_graph_cell_proj_closest_vertex using the projection method instead of relying on the R matrix
+  cds <- project2MST(cds, project_point_to_line_segment, orthogonal_proj_tip,
+                     verbose, reduced_dimension, rge_res_Y)
 
   cds
 }
@@ -235,12 +257,12 @@ multi_component_RGE <- function(cds,
                                 scale = FALSE,
                                 reduced_dimension,
                                 partition_group = 'louvain_component',
-                                irlba_pca_res,
                                 max_components,
+                                irlba_pca_res,
                                 extra_arguments,
                                 close_loop = FALSE,
                                 euclidean_distance_ratio = 1,
-                                geodestic_distance_ratio = 1/3,
+                                geodesic_distance_ratio = 1/3,
                                 prune_graph = TRUE,
                                 minimal_branch_len = minimal_branch_len,
                                 verbose = FALSE) {
@@ -281,7 +303,8 @@ multi_component_RGE <- function(cds,
     kmean_res <- NULL
 
     centers <- t(X_subset)[seq(1, ncol(X_subset), length.out=ncenter), , drop = F]
-    centers <- centers + matrix(stats::rnorm(length(centers), sd = 1e-10), nrow = nrow(centers)) # add random noise
+    centers <- centers + matrix(stats::rnorm(length(centers), sd = 1e-10),
+                                nrow = nrow(centers)) # add random noise
 
     kmean_res <- tryCatch({
       stats::kmeans(t(X_subset), centers=centers, iter.max = 100)
@@ -292,7 +315,8 @@ multi_component_RGE <- function(cds,
     if (kmean_res$ifault != 0){
       message(paste("Warning: kmeans returned ifault =", kmean_res$ifault))
     }
-    nearest_center <- findNearestVertex(t(kmean_res$centers), X_subset, process_targets_in_blocks=TRUE)
+    nearest_center <- findNearestVertex(t(kmean_res$centers), X_subset,
+                                        process_targets_in_blocks=TRUE)
     medioids <- X_subset[, unique(nearest_center)]
     reduced_dim_res <- t(medioids)
     k <- 25
@@ -312,11 +336,17 @@ multi_component_RGE <- function(cds,
 
     rho <- exp(-rowMeans(nn.dist))
     mat_df <- as.data.frame(mat)
-    tmp <- mat_df %>% tibble::rownames_to_column() %>% dplyr::mutate(cluster = kmean_res$cluster, density = rho) %>% dplyr::group_by(cluster) %>% dplyr::top_n(n = 1, wt = density) %>% dplyr::arrange(-dplyr::desc(cluster))
-    medioids <- X_subset[, tmp$rowname] # select representative cells by highest density
+    tmp <- mat_df %>% tibble::rownames_to_column() %>%
+      dplyr::mutate(cluster = kmean_res$cluster, density = rho) %>%
+      dplyr::group_by(cluster) %>% dplyr::top_n(n = 1, wt = density) %>%
+      dplyr::arrange(-dplyr::desc(cluster))
+
+    # select representative cells by highest density
+    medioids <- X_subset[, tmp$rowname]
 
     reduced_dim_res <- t(medioids)
-    L1graph_args <- c(list(X = X_subset, C0 = medioids, G = NULL, gstruct = 'span-tree', verbose = verbose),
+    L1graph_args <- c(list(X = X_subset, C0 = medioids, G = NULL,
+                           gstruct = 'span-tree', verbose = verbose),
                       extra_arguments[names(extra_arguments) %in% c('maxiter', 'eps', 'L1.lambda', 'L1.gamma', 'L1.sigma', 'nn')])
 
     rge_res <- do.call(calc_principal_graph, L1graph_args)
@@ -347,7 +377,8 @@ multi_component_RGE <- function(cds,
         merge_rge_res$objective_vals <- list(merge_rge_res$objective_vals)
       } else {
         colnames(rge_res$X) <- colnames(X_subset)
-        row.names(rge_res$R) <- colnames(X_subset); colnames(rge_res$R) <- paste0('Y_', (ncol(merge_rge_res$Y) + 1):(ncol(merge_rge_res$Y) + ncol(rge_res$Y)), sep = "")
+        row.names(rge_res$R) <- colnames(X_subset)
+        colnames(rge_res$R) <- paste0('Y_', (ncol(merge_rge_res$Y) + 1):(ncol(merge_rge_res$Y) + ncol(rge_res$Y)), sep = "")
         colnames(rge_res$Y) <- paste("Y_", (ncol(merge_rge_res$Y) + 1):(ncol(merge_rge_res$Y) + ncol(rge_res$Y)), sep = "")
         merge_rge_res$Y <- cbind(merge_rge_res$Y, rge_res$Y)
         # colnames(rge_res$Z) <- colnames(X_subset)
@@ -369,7 +400,7 @@ multi_component_RGE <- function(cds,
                                      reducedDimS_old = t(reducedDims(cds)[[reduced_dimension]])[, louvain_component == cur_comp],
                                      kmean_res = kmean_res,
                                      euclidean_distance_ratio = euclidean_distance_ratio,
-                                     geodestic_distance_ratio = geodestic_distance_ratio,
+                                     geodesic_distance_ratio = geodesic_distance_ratio,
                                      medioids = medioids,
                                      verbose = verbose)
       stree <- connectTips_res$stree
@@ -378,7 +409,8 @@ multi_component_RGE <- function(cds,
         if(verbose) {
           message('Running graph pruning ...')
         }
-        stree <- pruneTree_in_learnGraph(stree_ori, as.matrix(stree), minimal_branch_len = minimal_branch_len)
+        stree <- pruneTree_in_learnGraph(stree_ori, as.matrix(stree),
+                                         minimal_branch_len = minimal_branch_len)
         # remove the points in Y; mediods, etc.
         rge_res$Y <- rge_res$Y[, match(row.names(stree), row.names(stree_ori))]
         rge_res$R <- rge_res$R[, match(row.names(stree), row.names(stree_ori))]

@@ -186,7 +186,7 @@ mc_es_apply <- function(X, MARGIN, FUN, required_packages, cores=1, convert_to_d
   if (platform == "Windows")
     cl <- parallel::makeCluster(cores)
   if (platform %in% c("Linux", "Darwin"))
-    cl <- parallel::makeCluster(cores, type="FORK", outfile="./xxx.txt")
+    cl <- parallel::makeCluster(cores, type="FORK")
 
   cleanup <- function(){
     parallel::stopCluster(cl)
