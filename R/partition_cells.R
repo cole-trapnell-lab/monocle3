@@ -22,7 +22,6 @@
 #' consider any clusters with p-value larger than 0.05 by default as not disconnected.
 #'
 #' @param cds the cell_data_set upon which to perform this operation
-#' @param partition_names Which partition groups (column in the colData) should be used to calculate the connectivity between partitions
 #' @param reduced_dimension Which reduced dimension space should be partitioned?
 #' @param k number of nearest neighbors used for Louvain clustering (pass to louvain_clustering function)
 #' @param weight whether or not to calculate the weight for each edge in the kNN graph (pass to louvain_clustering function)
@@ -37,7 +36,6 @@
 #'
 #' @export
 partition_cells <- function(cds,
-                            partition_names = NULL,
                             reduced_dimension = c('UMAP', 'tSNE', 'PCA'),
                             k = 20,
                             weight = F,
@@ -50,11 +48,6 @@ partition_cells <- function(cds,
   reduced_dimension <- match.arg(reduced_dimension)
 
   assertthat::assert_that(is(cds, "cell_data_set"))
-  if(!is.null(partition_names)) {
-    assertthat::assert_that(partition_names %in%  colnames(colData(cds)),
-                            msg = paste("partition_names must be a column",
-                                        "name in colData(cds)"))
-  }
   assertthat::assert_that(is.character(reduced_dimension))
   assertthat::assert_that(assertthat::is.count(k))
   assertthat::assert_that(is.logical(weight))
@@ -81,7 +74,6 @@ partition_cells <- function(cds,
   if(verbose)
     message("Running louvain clustering algorithm ...")
 
-  if(is.null(partition_names)) {
     louvain_clustering_args <- c(list(data = reduced_dim_res,
                                       pd = colData(cds)[row.names(irlba_pca_res), ],
                                       k = k,
@@ -94,18 +86,6 @@ partition_cells <- function(cds,
       colData(cds)$louvain_component <- 1
       return(cds)
     }
-
-  } else {
-    build_asym_kNN_graph_args <- c(list(data = reduced_dim_res, k = k,
-                                        return_graph = T),
-                                   extra_arguments[names(extra_arguments) %in%
-                                                     c('dist_type',
-                                                       'return_graph')])
-    louvain_res <- list(g = do.call(build_asym_kNN_graph,
-                                    build_asym_kNN_graph_args),
-                        optim_res = list(membership = NULL))
-    louvain_res$optim_res$membership <- colData(cds)[, partition_names]
-  }
 
   cluster_graph_res <- compute_louvain_connected_components(louvain_res$g,
                                                             louvain_res$optim_res,

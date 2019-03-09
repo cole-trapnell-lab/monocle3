@@ -53,17 +53,38 @@ learn_graph <- function(cds,
                         use_partition = TRUE,
                         close_loop = FALSE,
                         learn_graph_control = NULL,
-                        verbose = FALSE,
-                        ...) {
+                        verbose = FALSE) {
   reduced_dimension <- "UMAP"
   partition_group = 'louvain_component'
+
+  if (!is.null(learn_graph_control)) {
+    assertthat::assert_that(is(learn_graph_control, "list"))
+    assertthat::assert_that(all(names(learn_graph_control) %in%
+                                  c("euclidean_distance_ratio",
+                                    "geodesic_distance_ratio",
+                                    "minimal_branch_len",
+                                    "orthogonal_proj_tip",
+                                    "prune_graph",
+                                    "scale",
+                                    "ncenter",
+                                    "maxiter",
+                                    "eps",
+                                    "L1.gamma",
+                                    "L1.sigma")),
+                            msg = "Unknown variable in learn_graph_control")
+  }
 
   euclidean_distance_ratio <- ifelse(is.null(learn_graph_control$euclidean_distance_ratio), 1, learn_graph_control$euclidean_distance_ratio)
   geodesic_distance_ratio <- ifelse(is.null(learn_graph_control$geodesic_distance_ratio), 1/3, learn_graph_control$geodesic_distance_ratio)
   minimal_branch_len <- ifelse(is.null(learn_graph_control$minimal_branch_len), 10, learn_graph_control$minimal_branch_len)
   orthogonal_proj_tip <- ifelse(is.null(learn_graph_control$orthogonal_proj_tip), FALSE, learn_graph_control$orthogonal_proj_tip)
   prune_graph <- ifelse(is.null(learn_graph_control$prune_graph), TRUE, learn_graph_control$prune_graph)
+  ncenter <- learn_graph_control$ncenter
   scale <- ifelse(is.null(learn_graph_control$scale), FALSE, learn_graph_control$scale)
+  maxiter <- ifelse(is.null(learn_graph_control$maxiter), 10, learn_graph_control$maxiter)
+  eps <- ifelse(is.null(learn_graph_control$eps), 1e-5, learn_graph_control$eps)
+  L1.gamma <- ifelse(is.null(learn_graph_control$L1.gamma), 0.5, learn_graph_control$L1.gamma)
+  L1.sigma <- ifelse(is.null(learn_graph_control$L1.sigma), 0.01, learn_graph_control$L1.sigma)
 
   assertthat::assert_that(is(cds, "cell_data_set"))
   assertthat::assert_that(is.logical(use_partition))
@@ -75,6 +96,13 @@ learn_graph <- function(cds,
   assertthat::assert_that(is.numeric(euclidean_distance_ratio))
   assertthat::assert_that(is.numeric(geodesic_distance_ratio))
   assertthat::assert_that(is.numeric(minimal_branch_len))
+  if(!is.null(ncenter)) {
+    assertthat::assert_that(assertthat::is.count(ncenter))
+  }
+  assertthat::assert_that(assertthat::is.count(maxiter))
+  assertthat::assert_that(is.numeric(eps))
+  assertthat::assert_that(is.numeric(L1.sigma))
+  assertthat::assert_that(is.numeric(L1.sigma))
 
   assertthat::assert_that(!is.null(reducedDims(cds)$normalized_data_projection),
                           msg = paste("No normalized data projection",
@@ -95,154 +123,35 @@ learn_graph <- function(cds,
                                       "reduction_method =", reduced_dimension,
                                       "before running learn_graph."))
 
-  extra_arguments <- list(...)
-
-  if(use_partition & length(unique(colData(cds))) > 1) {
-    multi_tree_DDRTree_res <- multi_component_RGE(cds, scale = scale,
-                                                  reduced_dimension = reduced_dimension,
-                                                  partition_group = partition_group,
-                                                  irlba_pca_res = reducedDims(cds)[[reduced_dimension]],
-                                                  max_components = max_components,
-                                                  extra_arguments = extra_arguments,
-                                                  close_loop = close_loop,
-                                                  euclidean_distance_ratio = euclidean_distance_ratio,
-                                                  geodesic_distance_ratio = geodesic_distance_ratio,
-                                                  prune_graph = prune_graph,
-                                                  minimal_branch_len = minimal_branch_len,
-                                                  verbose = verbose)
-
-    rge_res_W <- multi_tree_DDRTree_res$ddrtree_res_W
-    rge_res_Z <- multi_tree_DDRTree_res$ddrtree_res_Z
-    rge_res_Y <- multi_tree_DDRTree_res$ddrtree_res_Y
-    cds <- multi_tree_DDRTree_res$cds
-    dp_mst <- multi_tree_DDRTree_res$dp_mst
+  if (use_partition) {
+    partition_list <- colData(cds)[, "louvain_component"]
   } else {
-    ncenter <- NULL
-    if( ncol(cds) >= 100) {
-      if("ncenter" %in% names(extra_arguments)) #avoid overwrite the ncenter parameter
-        ncenter <- extra_arguments$ncenter
-      else
-        ncenter <- cal_ncenter(nrow(irlba_pca_res))
-    }
-
-    if(scale) {
-      X <- as.matrix(scale(t(irlba_pca_res)))
-    }
-    else {
-      X <- t(irlba_pca_res)
-    }
-
-    centers <- t(X)[seq(1, ncol(X), length.out=ncenter), , drop = F]
-    centers <- centers + matrix(stats::rnorm(length(centers), sd = 1e-10),
-                                nrow = nrow(centers)) # add random noise
-
-    kmean_res <- tryCatch({
-      stats::kmeans(t(X), centers=centers, iter.max = 100)
-    }, error = function(err) {
-      stats::kmeans(t(X), centers = ncenter, iter.max = 100)
-    })
-
-    if (kmean_res$ifault != 0){
-      message(paste("Warning: kmeans returned ifault =", kmean_res$ifault))
-    }
-
-    k <- 25
-    mat <- t(X)
-    if (is.null(k)) {
-      k <- round(sqrt(nrow(mat))/2)
-      k <- max(10, k)
-    }
-    if (verbose)
-      message("Finding kNN using RANN with ", k, " neighbors")
-    dx <- RANN::nn2(mat, k = min(k, nrow(mat) - 1))
-    nn.index <- dx$nn.idx[, -1]
-    nn.dist <- dx$nn.dists[, -1]
-
-    if (verbose)
-      message("Calculating the local density for each sample based on kNNs ...")
-
-    rho <- exp(-rowMeans(nn.dist))
-    mat_df <- as.data.frame(mat)
-    tmp <- mat_df %>% tibble::rownames_to_column() %>%
-      dplyr::mutate(cluster = kmean_res$cluster, density = rho) %>%
-      dplyr::group_by(cluster) %>% dplyr::top_n(n = 1, wt = density) %>%
-      dplyr::arrange(-dplyr::desc(cluster))
-    medioids <- X[, tmp$rowname] # select representative cells by highest density
-    reduced_dim_res <- t(medioids)
-
-    if(verbose) {
-      message('Running generalized SimplePPT ...')
-    }
-
-    L1graph_args <- c(list(X = X, C0 = medioids, G = NULL,
-                           gstruct = 'span-tree', verbose = verbose),
-                      extra_arguments[names(extra_arguments) %in%
-                                        c('maxiter', 'eps', 'L1.lambda',
-                                          'L1.gamma', 'L1.sigma', 'nn')])
-
-    rge_res <- do.call(calc_principal_graph, L1graph_args)
-
-    G <- NULL
-    stree <- rge_res$W
-    stree_ori <- stree
-
-    if(close_loop) {
-      connectTips_res <- connectTips(colData(cds),
-                                     R = rge_res$R,
-                                     stree = stree_ori,
-                                     reducedDimK_old = rge_res$C,
-                                     reducedDimS_old = t(reducedDims(cds)[[reduced_dimension]]),
-                                     kmean_res = kmean_res,
-                                     euclidean_distance_ratio = euclidean_distance_ratio,
-                                     geodesic_distance_ratio = geodesic_distance_ratio,
-                                     medioids = medioids,
-                                     verbose = verbose)
-      stree <- connectTips_res$stree
-      rge_res$W <- stree
-    }
-
-    names(rge_res)[c(2, 4, 5)] <- c('Y', 'R','objective_vals')
-
-    if(ncol(rge_res$Y) == ncol(cds)) {
-      colnames(rge_res$Y) <- colnames(assays(cds)$normalized_exprs)
-      dimnames(rge_res$W) <- list(colnames(assays(cds)$normalized_exprs),
-                                  colnames(assays(cds)$normalized_exprs))
-    }
-    else {
-      colnames(rge_res$Y) <- paste("Y_", 1:ncol(rge_res$Y), sep = "")
-      dimnames(rge_res$W) <- list(colnames(rge_res$Y), colnames(rge_res$Y))
-    }
-
-    stree <- methods::as(rge_res$W, 'sparseMatrix')
-
-    if(prune_graph) {
-      if(verbose) {
-        message('Running graph pruning ...')
-      }
-      stree <- pruneTree_in_learnGraph(stree_ori, as.matrix(stree),
-                                       minimal_branch_len = minimal_branch_len)
-      # remove the points in Y; mediods, etc.
-      rge_res$W <- stree
-      rge_res$Y <- rge_res$Y[, match(row.names(stree), row.names(stree_ori))]
-      rge_res$R <- rge_res$R[, match(row.names(stree), row.names(stree_ori))]
-      dimnames(rge_res$W) <- list(colnames(rge_res$Y), colnames(rge_res$Y))
-    }
-
-    rge_res_W <- rge_res$W
-    rge_res_Z <- rge_res$X
-    rge_res_Y <- rge_res$Y
-
-    dp_mst <- igraph::graph.adjacency(rge_res$W, mode = "undirected",
-                                      weighted = TRUE)
-
-    row.names(rge_res$R) <- colnames(cds)
-    cds@principal_graph[[reduced_dimension]] <- rge_res[c('stree', 'Q', 'R',
-                                                          'objective_vals',
-                                                          'history')]
+    partition_list <- rep(1, nrow(colData(cds)))
   }
 
-  #reducedDimS(cds) <- as.matrix(rge_res_Z)
-  #reducedDimK(cds) <- as.matrix(rge_res_Y)
+  multi_tree_DDRTree_res <- multi_component_RGE(cds, scale = scale,
+                                                reduced_dimension = reduced_dimension,
+                                                partition_list = partition_list,
+                                                irlba_pca_res = reducedDims(cds)[[reduced_dimension]],
+                                                max_components = max_components,
+                                                ncenter = ncenter,
+                                                maxiter = maxiter,
+                                                eps = eps,
+                                                L1.gamma = L1.gamma,
+                                                L1.sigma = L1.sigma,
+                                                close_loop = close_loop,
+                                                euclidean_distance_ratio = euclidean_distance_ratio,
+                                                geodesic_distance_ratio = geodesic_distance_ratio,
+                                                prune_graph = prune_graph,
+                                                minimal_branch_len = minimal_branch_len,
+                                                verbose = verbose)
+
+  rge_res_W <- multi_tree_DDRTree_res$ddrtree_res_W
+  rge_res_Z <- multi_tree_DDRTree_res$ddrtree_res_Z
+  rge_res_Y <- multi_tree_DDRTree_res$ddrtree_res_Y
+  cds <- multi_tree_DDRTree_res$cds
+  dp_mst <- multi_tree_DDRTree_res$dp_mst
+
 
   principal_graph(cds)[[reduced_dimension]] <- dp_mst
   cds@principal_graph_aux[[reduced_dimension]]$dp_mst <- rge_res_Y
@@ -256,34 +165,35 @@ learn_graph <- function(cds,
 multi_component_RGE <- function(cds,
                                 scale = FALSE,
                                 reduced_dimension,
-                                partition_group = 'louvain_component',
+                                partition_list,
                                 max_components,
+                                ncenter,
                                 irlba_pca_res,
-                                extra_arguments,
+                                maxiter,
+                                eps,
+                                L1.gamma,
+                                L1.sigma,
                                 close_loop = FALSE,
                                 euclidean_distance_ratio = 1,
                                 geodesic_distance_ratio = 1/3,
                                 prune_graph = TRUE,
                                 minimal_branch_len = minimal_branch_len,
                                 verbose = FALSE) {
-  louvain_component <- colData(cds)[, partition_group]
-
   X <- t(irlba_pca_res)
 
-  reducedDimK_coord <- NULL
   dp_mst <- NULL
   pr_graph_cell_proj_closest_vertex <- NULL
   cell_name_vec <- NULL
-
+  reducedDimK_coord <- NULL
   merge_rge_res <- NULL
   max_ncenter <- 0
 
-  for(cur_comp in sort(unique(louvain_component))) {
+  for(cur_comp in sort(unique(partition_list))) {
     if(verbose) {
       message(paste0('Processing louvain component ', cur_comp))
     }
 
-    X_subset <- X[, louvain_component == cur_comp]
+    X_subset <- X[, partition_list == cur_comp]
     if(verbose) message('Current louvain_component is ', cur_comp)
 
     #add other parameters...
@@ -291,18 +201,19 @@ multi_component_RGE <- function(cds,
       X_subset <- t(as.matrix(scale(t(X_subset))))
     }
 
-    if(!("ncenter" %in% names(extra_arguments))) {
+    if(is.null(ncenter)) {
       ncenter <- cal_ncenter(ncol(X_subset))
       if(is.null(ncenter)) {
         ncenter <- ncol(X_subset) - 1
       }
     } else {
-      ncenter <- min(ncol(X_subset) - 1, extra_arguments$ncenter)
+      ncenter <- min(ncol(X_subset) - 1, ncenter)
     }
 
     kmean_res <- NULL
 
-    centers <- t(X_subset)[seq(1, ncol(X_subset), length.out=ncenter), , drop = F]
+    centers <- t(X_subset)[seq(1, ncol(X_subset), length.out=ncenter), ,
+                           drop = F]
     centers <- centers + matrix(stats::rnorm(length(centers), sd = 1e-10),
                                 nrow = nrow(centers)) # add random noise
 
@@ -345,95 +256,59 @@ multi_component_RGE <- function(cds,
     medioids <- X_subset[, tmp$rowname]
 
     reduced_dim_res <- t(medioids)
-    L1graph_args <- c(list(X = X_subset, C0 = medioids, G = NULL,
-                           gstruct = 'span-tree', verbose = verbose),
-                      extra_arguments[names(extra_arguments) %in% c('maxiter', 'eps', 'L1.lambda', 'L1.gamma', 'L1.sigma', 'nn')])
+    graph_args <- list(X = X_subset, C0 = medioids, maxiter = maxiter, eps = eps, L1.gamma = L1.gamma, L1.sigma = L1.sigma,
+                         verbose = verbose)
 
-    rge_res <- do.call(calc_principal_graph, L1graph_args)
+    rge_res <- do.call(calc_principal_graph, graph_args)
 
     names(rge_res)[c(2, 4, 5)] <- c('Y', 'R','objective_vals')
     stree <- rge_res$W
 
-    if(!close_loop) {
-      stree_ori <- stree
-
-      if(prune_graph) {
-        if(verbose) {
-          message('Running graph pruning ...')
-        }
-        stree <- pruneTree_in_learnGraph(stree_ori, as.matrix(stree), minimal_branch_len = minimal_branch_len)
-        # remove the points in Y; mediods, etc.
-        rge_res$Y <- rge_res$Y[, match(row.names(stree), row.names(stree_ori))]
-        rge_res$R <- rge_res$R[, match(row.names(stree), row.names(stree_ori))]
+    stree_ori <- stree
+    if(close_loop) {
+      connect_tips_res <- connect_tips(colData(cds)[partition_list == cur_comp, ],
+                                       R = rge_res$R,
+                                       stree = stree,
+                                       reducedDimK_old = rge_res$Y,
+                                       reducedDimS_old = t(reducedDims(cds)[[reduced_dimension]])[, partition_list == cur_comp],
+                                       kmean_res = kmean_res,
+                                       euclidean_distance_ratio = euclidean_distance_ratio,
+                                       geodesic_distance_ratio = geodesic_distance_ratio,
+                                       medioids = medioids,
+                                       verbose = verbose)
+      stree <- connect_tips_res$stree
+    }
+    if(prune_graph) {
+      if(verbose) {
+        message('Running graph pruning ...')
       }
-
-      if(is.null(merge_rge_res)) {
-        colnames(rge_res$Y) <- paste0('Y_', 1:ncol(rge_res$Y))
-        merge_rge_res <- rge_res
-        colnames(merge_rge_res$X) <- colnames(X_subset)
-        row.names(merge_rge_res$R) <- colnames(X_subset); colnames(merge_rge_res$R) <- paste0('Y_', 1:ncol(merge_rge_res$Y))
-        merge_rge_res$R <- list(merge_rge_res$R)
-        merge_rge_res$stree <- list(stree)
-        merge_rge_res$objective_vals <- list(merge_rge_res$objective_vals)
-      } else {
-        colnames(rge_res$X) <- colnames(X_subset)
-        row.names(rge_res$R) <- colnames(X_subset)
-        colnames(rge_res$R) <- paste0('Y_', (ncol(merge_rge_res$Y) + 1):(ncol(merge_rge_res$Y) + ncol(rge_res$Y)), sep = "")
-        colnames(rge_res$Y) <- paste("Y_", (ncol(merge_rge_res$Y) + 1):(ncol(merge_rge_res$Y) + ncol(rge_res$Y)), sep = "")
-        merge_rge_res$Y <- cbind(merge_rge_res$Y, rge_res$Y)
-        # colnames(rge_res$Z) <- colnames(X_subset)
-        merge_rge_res$R <- c(merge_rge_res$R, list(rge_res$R))
-        # colnames(rge_res$Q) <- colnames(X_subset)
-        # rge_res$Q <- cbind(merge_rge_res$Q, rge_res$Q)
-        merge_rge_res$stree <- c(merge_rge_res$stree, list(stree))
-        merge_rge_res$objective_vals <- c(merge_rge_res$objective_vals, list(rge_res$objective_vals))
-      }
+      stree <- pruneTree_in_learnGraph(stree_ori, as.matrix(stree),
+                                       minimal_branch_len = minimal_branch_len)
+      # remove the points in Y; mediods, etc.
+      rge_res$Y <- rge_res$Y[, match(row.names(stree), row.names(stree_ori))]
+      rge_res$R <- rge_res$R[, match(row.names(stree), row.names(stree_ori))]
+      medioids <- medioids[, row.names(stree)]
     }
 
+    if(is.null(merge_rge_res)) {
+      colnames(rge_res$Y) <- paste0('Y_', 1:ncol(rge_res$Y))
+      merge_rge_res <- rge_res
+      colnames(merge_rge_res$X) <- colnames(X_subset)
+      row.names(merge_rge_res$R) <- colnames(X_subset)
+      colnames(merge_rge_res$R) <- paste0('Y_', 1:ncol(merge_rge_res$Y))
+      merge_rge_res$R <- list(merge_rge_res$R)
+      merge_rge_res$stree <- list(stree)
+      merge_rge_res$objective_vals <- list(merge_rge_res$objective_vals)
 
-    if(close_loop) {
-      stree_ori <- stree
-      connectTips_res <- connectTips(colData(cds)[louvain_component == cur_comp, ],
-                                     R = rge_res$R,
-                                     stree = stree,
-                                     reducedDimK_old = rge_res$Y,
-                                     reducedDimS_old = t(reducedDims(cds)[[reduced_dimension]])[, louvain_component == cur_comp],
-                                     kmean_res = kmean_res,
-                                     euclidean_distance_ratio = euclidean_distance_ratio,
-                                     geodesic_distance_ratio = geodesic_distance_ratio,
-                                     medioids = medioids,
-                                     verbose = verbose)
-      stree <- connectTips_res$stree
-
-      if(prune_graph) {
-        if(verbose) {
-          message('Running graph pruning ...')
-        }
-        stree <- pruneTree_in_learnGraph(stree_ori, as.matrix(stree),
-                                         minimal_branch_len = minimal_branch_len)
-        # remove the points in Y; mediods, etc.
-        rge_res$Y <- rge_res$Y[, match(row.names(stree), row.names(stree_ori))]
-        rge_res$R <- rge_res$R[, match(row.names(stree), row.names(stree_ori))]
-        medioids <- medioids[, row.names(stree)]
-      }
-
-      if(is.null(merge_rge_res)) {
-        colnames(rge_res$Y) <- paste0('Y_', 1:ncol(rge_res$Y))
-        merge_rge_res <- rge_res
-        colnames(merge_rge_res$X) <- colnames(X_subset)
-        row.names(merge_rge_res$R) <- colnames(X_subset); colnames(merge_rge_res$R) <- paste0('Y_', 1:ncol(merge_rge_res$Y))
-        merge_rge_res$R <- list(merge_rge_res$R)
-        merge_rge_res$stree <- list(stree)
-        merge_rge_res$objective_vals <- list(merge_rge_res$objective_vals)
-      } else {
-        colnames(rge_res$X) <- colnames(X_subset)
-        row.names(rge_res$R) <- colnames(X_subset); colnames(rge_res$R) <- paste0('Y_', (ncol(merge_rge_res$Y) + 1):(ncol(merge_rge_res$Y) + ncol(rge_res$Y)), sep = "")
-        colnames(rge_res$Y) <- paste("Y_", (ncol(merge_rge_res$Y) + 1):(ncol(merge_rge_res$Y) + ncol(rge_res$Y)), sep = "")
-        merge_rge_res$Y <- cbind(merge_rge_res$Y, rge_res$Y)
-        merge_rge_res$R <- c(merge_rge_res$R, list(rge_res$R))
-        merge_rge_res$stree <- c(merge_rge_res$stree, list(stree))
-        merge_rge_res$objective_vals <- c(merge_rge_res$objective_vals, list(rge_res$objective_vals))
-      }
+    } else {
+      colnames(rge_res$X) <- colnames(X_subset)
+      row.names(rge_res$R) <- colnames(X_subset)
+      colnames(rge_res$R) <- paste0('Y_', (ncol(merge_rge_res$Y) + 1):(ncol(merge_rge_res$Y) + ncol(rge_res$Y)), sep = "")
+      colnames(rge_res$Y) <- paste("Y_", (ncol(merge_rge_res$Y) + 1):(ncol(merge_rge_res$Y) + ncol(rge_res$Y)), sep = "")
+      merge_rge_res$Y <- cbind(merge_rge_res$Y, rge_res$Y)
+      merge_rge_res$R <- c(merge_rge_res$R, list(rge_res$R))
+      merge_rge_res$stree <- c(merge_rge_res$stree, list(stree))
+      merge_rge_res$objective_vals <- c(merge_rge_res$objective_vals, list(rge_res$objective_vals))
     }
 
     if(is.null(reducedDimK_coord)) {
@@ -913,4 +788,243 @@ projPointOnLine <- function(point, line) {
   res <- line[, 1] + c((ap %*% ab) / (ab %*% ab)) * ab
   return(res)
 }
+
+
+#' Function to automatically learn the structure of data by either using L1-graph or the spanning-tree formulization
+#' @param X the input data DxN
+#' @param C0 the initialization of centroids
+#' @param maxiter maximum number of iteraction
+#' @param eps relative objective difference
+#' @param L1.gamma regularization parameter for k-means (the prefix of 'param' is used to avoid name collision with gamma)
+#' @param L1.sigma bandwidth parameter
+#' @param verbose emit results from iteraction
+#' @return a list of X, C, W, P, objs
+#' X is the input data
+#' C is the centers for principal graph
+#' W is the pricipal graph matrix
+#' P is the cluster assignment matrix
+#' objs is the objective value for the function
+calc_principal_graph <- function(X, C0,
+                                 maxiter = 10,
+                                 eps = 1e-5,
+                                 L1.gamma = 0.5,
+                                 L1.sigma = 0.01,
+                                 verbose = T) {
+
+  C <- C0;
+  K <- ncol(C)
+  objs <- c()
+  for(iter in 1:maxiter){
+    norm_sq <- repmat(t(colSums(C^2)), K, 1) #this part calculates the cost matrix Phi
+    Phi <- norm_sq + t(norm_sq) - 2 * t(C) %*% C
+
+    g <- igraph::graph.adjacency(Phi, mode = 'lower', diag = T, weighted = T)
+    g_mst <- igraph::mst(g)
+    stree <- igraph::get.adjacency(g_mst, attr = 'weight', type = 'lower')
+    stree_ori <- stree
+
+    #convert to matrix:
+    stree <- as.matrix(stree)
+    stree <- stree + t(stree)
+
+    W <- stree != 0
+    obj_W <- sum(sum(stree))
+
+    res = soft_assignment(X, C, L1.sigma)
+    P <- res$P
+    obj_P <- res$obj
+
+    obj <- obj_W + L1.gamma * obj_P
+    objs = c(objs, obj)
+    if(verbose)
+      message('iter = ', iter, ' obj = ', obj)
+
+    if(iter > 1){
+      relative_diff = abs( objs[iter-1] - obj) / abs(objs[iter-1]);
+      if(relative_diff < eps){
+        if(verbose)
+          message('eps = ', relative_diff, ', converge.')
+        break
+      }
+      if(iter >= maxiter){
+        if(verbose)
+          message('eps = ', relative_diff, ' reach maxiter.')
+      }
+    }
+
+    C <- generate_centers(X, W, P, L1.gamma)
+
+  }
+
+  return(list(X = X, C = C, W = W, P = P, objs = objs))
+}
+
+
+#' function to reproduce the behavior of repmat function in matlab to replicate and tile an matrix
+#' @param X matrix for tiling and replicate the data
+#' @param m a numeric value for tiling a matrix
+#' @param n a numeric value for tiling a matrix
+#' @return a matrix
+repmat = function(X,m,n){
+  ##R equivalent of repmat (matlab)
+  mx = dim(X)[1]
+  nx = dim(X)[2]
+  matrix(t(matrix(X,mx,nx*n)),mx*m,nx*n,byrow=T)
+}
+
+
+
+#' Function to calculate the third term in the objective function
+#' @param X input data
+#' @param C center of grap (D * K)
+#' @param sigma bandwidth parameter
+#' @return a matrix with diagonal element as 1 while other elements as zero (eye matrix)
+soft_assignment <- function(X, C, sigma){
+
+  D <- nrow(X); N <- ncol(X)
+  K <- ncol(C)
+  norm_X_sq <- repmat(t(t(colSums(X^2))), 1, K);
+  norm_C_sq <- repmat(t(colSums(C^2)), N, 1);
+  dist_XC <- norm_X_sq + norm_C_sq - 2 * t(X) %*% C
+
+  # %% handle numerical problems 0/0 for P
+  min_dist <- apply(dist_XC, 1, min) #rowMin(dist_XC)
+
+  dist_XC <- dist_XC - repmat(t(t(min_dist)), 1, K )
+  Phi_XC <- exp(- dist_XC / sigma)
+  P <- Phi_XC / repmat(t(t(rowSums(Phi_XC))), 1, K)
+
+  obj <- - sigma * sum( log( rowSums( exp(- dist_XC/sigma)) ) #why not \sigma * log (p_{ij})
+                        - min_dist/ sigma );
+
+  return(list(P = P, obj = obj))
+}
+
+#' Function to reproduce the behavior of eye function in matlab
+#' @param X input data
+#' @param W the pricipal graph matrix
+#' @param P the cluster assignment matrix
+#' @param param.gamma regularization parameter for k-means (the prefix of 'param' is used to avoid name collision with gamma)
+#' @return A matrix C for the centers for principal graph
+#'
+generate_centers <- function(X, W, P, param.gamma){
+  D <- nrow(X); N <- nrow(X)
+  K <- ncol(W)
+  # prevent singular
+  Q <- 2 *( diag(colSums(W)) - W ) + param.gamma * diag(colSums(P))
+  B <-  param.gamma * X %*% P;
+  C <- B %*% solve(Q)   #equation 22
+
+  return(C)
+}
+
+#' functions to connect the tip points after learning the DDRTree or simplePPT tree
+connect_tips <- function(pd,
+                         R, # kmean cluster
+                         stree,
+                         reducedDimK_old,
+                         reducedDimS_old,
+                         k = 25,
+                         weight = F,
+                         qval_thresh = 0.05,
+                         kmean_res,
+                         euclidean_distance_ratio = 1,
+                         geodestic_distance_ratio = 1/3,
+                         medioids,
+                         verbose = FALSE,
+                         ...) {
+  if(is.null(row.names(stree)) & is.null(row.names(stree))) {
+    dimnames(stree) <- list(paste0('Y_', 1:ncol(stree)), paste0('Y_', 1:ncol(stree)))
+  }
+
+  stree <- as.matrix(stree)
+  stree[stree != 0] <- 1
+  mst_g_old <- igraph::graph_from_adjacency_matrix(stree, mode = 'undirected')
+  if(is.null(kmean_res)) {
+    tmp <- matrix(apply(R, 1, which.max))
+
+    row.names(tmp) <- colnames(reducedDimS_old)
+
+    tip_pc_points <- which(igraph::degree(mst_g_old) == 1)
+
+    data <- t(reducedDimS_old[, ])
+
+    louvain_res <- louvain_clustering(data, pd[, ], k = k, weight = weight, verbose = verbose)
+
+    # louvain_res$optim_res$memberships[1, ] <-  tmp[raw_data_tip_pc_points, 1]
+    louvain_res$optim_res$membership <- tmp[, 1]
+  } else { # use kmean clustering result
+    tip_pc_points <- which(igraph::degree(mst_g_old) == 1)
+    tip_pc_points_kmean_clusters <- sort(kmean_res$cluster[names(tip_pc_points)])
+    # raw_data_tip_pc_points <- which(kmean_res$cluster %in% tip_pc_points_kmean_clusters) # raw_data_tip_pc_points <- which(kmean_res$cluster %in% tip_pc_points)
+
+    data <- t(reducedDimS_old[, ]) # raw_data_tip_pc_points
+
+    louvain_res <- louvain_clustering(data, pd[row.names(data), ], k = k, weight = weight, verbose = verbose)
+
+    # louvain_res$optim_res$memberships[4, ] <-  kmean_res$cluster #[raw_data_tip_pc_points]
+    louvain_res$optim_res$membership <- kmean_res$cluster #[raw_data_tip_pc_points]
+  }
+
+  # identify edges between only tip cells
+  cluster_graph_res <- compute_louvain_connected_components(louvain_res$g, louvain_res$optim_res, qval_thresh=qval_thresh, verbose = verbose)
+  dimnames(cluster_graph_res$cluster_mat) <- dimnames(cluster_graph_res$num_links)
+  valid_connection <- which(cluster_graph_res$cluster_mat < qval_thresh, arr.ind = T)
+  valid_connection <- valid_connection[apply(valid_connection, 1, function(x) all(x %in% tip_pc_points)), ] # only the tip cells
+
+  # prepare the PAGA graph
+  G <- cluster_graph_res$cluster_mat
+  G[cluster_graph_res$cluster_mat < qval_thresh] <- -1
+  G[cluster_graph_res$cluster_mat > 0] <- 0
+  G <- - G
+
+  if(all(G == 0, na.rm = T)) { # if no connection based on PAGA (only existed in simulated data), use the kNN graph instead
+    return(list(stree = igraph::get.adjacency(mst_g_old), Y = reducedDimK_old, G = G))
+    #G <- get_knn(medioids, K = min(5, ncol(medioids)))$G
+    #if(!is.null(kmean_res)) {
+    #  valid_connection <- which(G > 0, arr.ind = T)
+    #  valid_connection <- valid_connection[apply(valid_connection, 1, function(x) all(x %in% tip_pc_points)), ] # only the tip cells
+    #}
+  }
+
+  if(nrow(valid_connection) == 0) {
+    return(list(stree = igraph::get.adjacency(mst_g_old), Y = reducedDimK_old, G = G))
+  }
+
+  # calculate length of the MST diameter path
+  mst_g <- mst_g_old
+  diameter_dis <- igraph::diameter(mst_g_old)
+  reducedDimK_df <- reducedDimK_old
+
+  pb4 <- txtProgressBar(max = length(nrow(valid_connection)), file = "", style = 3, min = 0)
+
+  # find the maximum distance between nodes from the MST
+  res <- dist(t(reducedDimK_old))
+  g <- igraph::graph_from_adjacency_matrix(as.matrix(res), weighted = T, mode = 'undirected')
+  mst <- igraph::minimum.spanning.tree(g)
+  max_node_dist <- max(igraph::E(mst)$weight)
+
+  # append new edges to close loops in the spanning tree returned from SimplePPT
+  for(i in 1:nrow(valid_connection)) {
+    # cluster id for the tip point; if kmean_res return valid_connection[i, ] is itself; otherwise the id identified in the tmp file
+    edge_vec <- sort(unique(louvain_res$optim_res$membership))[valid_connection[i, ]]
+    edge_vec_in_tip_pc_point <- igraph::V(mst_g_old)$name[edge_vec]
+
+    if(length(edge_vec_in_tip_pc_point) == 1) next;
+    if(all(edge_vec %in% tip_pc_points) & (igraph::distances(mst_g_old, edge_vec_in_tip_pc_point[1], edge_vec_in_tip_pc_point[2]) >= geodestic_distance_ratio * diameter_dis) &
+       (euclidean_distance_ratio * max_node_dist > dist(t(reducedDimK_old[, edge_vec]))) ) {
+      if(verbose) message('edge_vec is ', edge_vec[1], '\t', edge_vec[2])
+      if(verbose) message('edge_vec_in_tip_pc_point is ', edge_vec_in_tip_pc_point[1], '\t', edge_vec_in_tip_pc_point[2])
+
+      mst_g <- igraph::add_edges(mst_g, edge_vec_in_tip_pc_point)
+    }
+    setTxtProgressBar(pb = pb4, value = pb4$getVal() + 1)
+  }
+
+  close(pb4)
+
+  list(stree = igraph::get.adjacency(mst_g), Y = reducedDimK_df, G = G)
+}
+
+
 
