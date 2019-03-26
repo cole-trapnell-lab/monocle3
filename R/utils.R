@@ -126,6 +126,7 @@ sparse_apply <- function(Sp_X, MARGIN, FUN, convert_to_dense, ...){
     }
   }
 
+
   return(res)
 
 }
