@@ -178,7 +178,7 @@ learn_graph <- function(cds,
       stree_ori <- stree
 
       if(close_loop) {
-        connectTips_res <- connectTips(pData(cds),
+        connectTips_res <- connect_tips(pData(cds),
                                        R = rge_res$R,
                                        stree = stree_ori,
                                        reducedDimK_old = rge_res$C,
@@ -378,7 +378,7 @@ multi_component_RGE <- function(cds,
 
     if(close_loop) {
       stree_ori <- stree
-      connectTips_res <- connectTips(pData(cds)[louvain_component == cur_comp, ],
+      connectTips_res <- connect_tips(pData(cds)[louvain_component == cur_comp, ],
                                      R = rge_res$R,
                                      stree = stree,
                                      reducedDimK_old = rge_res$Y,

@@ -680,7 +680,7 @@ plot_cell_clusters <- function(cds,
   }else{
     text_df <- data_df %>% dplyr::group_by_(color_by) %>% summarize(text_x = median(x = data_dim_1),
                                                                     text_y = median(x = data_dim_2))
-    if(color_by != "Cluster" & !is.numeric(data_df[, color_by])) {
+    if(color_by != "Cluster" & !is.numeric(data_df[, color_by]) & !is.factor(data_df[, color_by])) {
       text_df$label <- paste0(1:nrow(text_df))
       text_df$process_label <- paste0(1:nrow(text_df), '_', as.character(as.matrix(text_df[, 1])))
       process_label <- text_df$process_label
@@ -827,8 +827,11 @@ plot_genes_in_pseudotime <-function(cds_subset,
   cds_exprs$feature_label <- factor(cds_exprs$feature_label)
 
   new_data <- data.frame(Pseudotime = pData(cds_subset)$Pseudotime)
-  model_expectation <- gen_smooth_curves(cds_subset, cores=1, trend_formula = trend_formula,
-                                       relative_expr = T, new_data = new_data)
+  model_tbl = fit_models(cds_subset, model_formula_str = trend_formula)
+
+  model_expectation <- model_predictions(model_tbl,
+                                         new_data = pData(cds_subset))
+
   colnames(model_expectation) <- colnames(cds_subset)
   expectation <- plyr::ddply(cds_exprs, plyr::.(f_id, Cell), function(x) data.frame("expectation"=model_expectation[x$f_id, x$Cell]))
   cds_exprs <- merge(cds_exprs, expectation)
@@ -932,7 +935,6 @@ gen_smooth_curves <- function(cds, new_data, trend_formula = "~sm.ns(Pseudotime,
   }
 
 }
-
 
 #' Plots the percentage of variance explained by the each component based on PCA from the normalized expression
 #' data using the same procedure used in reduceDimension function.
@@ -1251,12 +1253,12 @@ response_matrix <- function(models, newdata = NULL, response_type="response", co
     if (is.na(x$model)) { NA } else {
       print(x)
       if (expression_family %in% c("negbinomial", "negbinomial.size")) {
-        predict(x, newdata = newdata, type = response_type)
+        predict(x$model, newdata = newdata, type = response_type)
       } else if (expression_family %in% c("uninormal")) {
-        predict(x, newdata = newdata, type = response_type)
+        predict(x$model, newdata = newdata, type = response_type)
       }
       else {
-        10^predict(x, newdata = newdata, type = response_type)
+        10^predict(x$model, newdata = newdata, type = response_type)
       }
     }
   }, mc.cores = cores)

@@ -146,6 +146,115 @@ extract_general_graph_ordering <- function(cds, root_cell, orthogonal_proj_tip =
 }
 
 
+#' functions to connect the tip points after learning the DDRTree or simplePPT tree
+connectTips <- function(pd,
+                        R, # kmean cluster
+                        stree,
+                        reducedDimK_old,
+                        reducedDimS_old,
+                        k = 25,
+                        weight = F,
+                        qval_thresh = 0.05,
+                        kmean_res,
+                        euclidean_distance_ratio = 1,
+                        geodestic_distance_ratio = 1/3,
+                        medioids,
+                        verbose = FALSE,
+                        ...) {
+  if(is.null(row.names(stree)) & is.null(row.names(stree))) {
+    dimnames(stree) <- list(paste0('Y_', 1:ncol(stree)), paste0('Y_', 1:ncol(stree)))
+  }
+
+  stree <- as.matrix(stree)
+  stree[stree != 0] <- 1
+  mst_g_old <- igraph::graph_from_adjacency_matrix(stree, mode = 'undirected')
+  if(is.null(kmean_res)) {
+    tmp <- matrix(apply(R, 1, which.max))
+
+    row.names(tmp) <- colnames(reducedDimS_old)
+
+    tip_pc_points <- which(igraph::degree(mst_g_old) == 1)
+
+    data <- t(reducedDimS_old[, ])
+
+    louvain_res <- louvain_clustering(data, pd[, ], k = k, weight = weight, verbose = verbose)
+
+    # louvain_res$optim_res$memberships[1, ] <-  tmp[raw_data_tip_pc_points, 1]
+    louvain_res$optim_res$membership <- tmp[, 1]
+  } else { # use kmean clustering result
+    tip_pc_points <- which(igraph::degree(mst_g_old) == 1)
+    tip_pc_points_kmean_clusters <- sort(kmean_res$cluster[names(tip_pc_points)])
+    # raw_data_tip_pc_points <- which(kmean_res$cluster %in% tip_pc_points_kmean_clusters) # raw_data_tip_pc_points <- which(kmean_res$cluster %in% tip_pc_points)
+
+    data <- t(reducedDimS_old[, ]) # raw_data_tip_pc_points
+
+    louvain_res <- louvain_clustering(data, pd[row.names(data), ], k = k, weight = weight, verbose = verbose)
+
+    # louvain_res$optim_res$memberships[4, ] <-  kmean_res$cluster #[raw_data_tip_pc_points]
+    louvain_res$optim_res$membership <- kmean_res$cluster #[raw_data_tip_pc_points]
+  }
+
+  # identify edges between only tip cells
+  cluster_graph_res <- compute_louvain_connected_components(louvain_res$g, louvain_res$optim_res, qval_thresh=qval_thresh, verbose = verbose)
+  dimnames(cluster_graph_res$cluster_mat) <- dimnames(cluster_graph_res$num_links)
+  valid_connection <- which(cluster_graph_res$cluster_mat < qval_thresh, arr.ind = T)
+  valid_connection <- valid_connection[apply(valid_connection, 1, function(x) all(x %in% tip_pc_points)), ] # only the tip cells
+
+  # prepare the PAGA graph
+  G <- cluster_graph_res$cluster_mat
+  G[cluster_graph_res$cluster_mat < qval_thresh] <- -1
+  G[cluster_graph_res$cluster_mat > 0] <- 0
+  G <- - G
+
+  if(all(G == 0, na.rm = T)) { # if no connection based on PAGA (only existed in simulated data), use the kNN graph instead
+    return(list(stree = igraph::get.adjacency(mst_g_old), Y = reducedDimK_old, G = G))
+    #G <- get_knn(medioids, K = min(5, ncol(medioids)))$G
+    #if(!is.null(kmean_res)) {
+    #  valid_connection <- which(G > 0, arr.ind = T)
+    #  valid_connection <- valid_connection[apply(valid_connection, 1, function(x) all(x %in% tip_pc_points)), ] # only the tip cells
+    #}
+  }
+
+  if(nrow(valid_connection) == 0) {
+    return(list(stree = igraph::get.adjacency(mst_g_old), Y = reducedDimK_old, G = G))
+  }
+
+  # calculate length of the MST diameter path
+  mst_g <- mst_g_old
+  diameter_dis <- igraph::diameter(mst_g_old)
+  reducedDimK_df <- reducedDimK_old
+
+  pb4 <- txtProgressBar(max = length(nrow(valid_connection)), file = "", style = 3, min = 0)
+
+  # find the maximum distance between nodes from the MST
+  res <- dist(t(reducedDimK_old))
+  g <- igraph::graph_from_adjacency_matrix(as.matrix(res), weighted = T, mode = 'undirected')
+  mst <- igraph::minimum.spanning.tree(g)
+  max_node_dist <- max(igraph::E(mst)$weight)
+
+  # append new edges to close loops in the spanning tree returned from SimplePPT
+  for(i in 1:nrow(valid_connection)) {
+    # cluster id for the tip point; if kmean_res return valid_connection[i, ] is itself; otherwise the id identified in the tmp file
+    edge_vec <- sort(unique(louvain_res$optim_res$membership))[valid_connection[i, ]]
+    edge_vec_in_tip_pc_point <- igraph::V(mst_g_old)$name[edge_vec]
+
+    if(length(edge_vec_in_tip_pc_point) == 1) next;
+    if(all(edge_vec %in% tip_pc_points) & (igraph::distances(mst_g_old, edge_vec_in_tip_pc_point[1], edge_vec_in_tip_pc_point[2]) >= geodestic_distance_ratio * diameter_dis) &
+       (euclidean_distance_ratio * max_node_dist > dist(t(reducedDimK_old[, edge_vec]))) ) {
+      if(verbose) message('edge_vec is ', edge_vec[1], '\t', edge_vec[2])
+      if(verbose) message('edge_vec_in_tip_pc_point is ', edge_vec_in_tip_pc_point[1], '\t', edge_vec_in_tip_pc_point[2])
+
+      mst_g <- igraph::add_edges(mst_g, edge_vec_in_tip_pc_point)
+    }
+    setTxtProgressBar(pb = pb4, value = pb4$getVal() + 1)
+  }
+
+  close(pb4)
+
+  list(stree = igraph::get.adjacency(mst_g), Y = reducedDimK_df, G = G)
+}
+
+
 
 
 
