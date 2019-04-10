@@ -99,6 +99,15 @@ cds <- reduce_dimension(cds, reduction_method = 'UMAP')
 cds <- reduce_dimension(cds, reduction_method = 'tSNE')
 ```
 
+```{r}
+cds <- cluster_cells(cds,
+                     method = 'louvain',
+                     res = 1e-6,
+                     louvain_iter = 1,
+                     verbose = T)
+    
+```
+
 
 ```{r}
 cds <- partition_cells(cds)

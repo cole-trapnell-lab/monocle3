@@ -293,7 +293,8 @@ calculateLW <- function(cds, k = 25, return_sparse_matrix = FALSE,
     }
 
     knn_list <- lapply(points_selected, function(x) id_map[as.character(knn_res[x, -1])])
-  } else {
+  }
+  else {
     cell2pp_map <- cds@principal_graph_aux[[reduced_dimension]]$pr_graph_cell_proj_closest_vertex # mapping from each cell to the principal points
     if(is.null(cell2pp_map)) {
       stop("Error: projection matrix for each cell to principal points doesn't exist, you may need to rerun learnGraph")

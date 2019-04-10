@@ -3,64 +3,28 @@ setOldClass(c("igraph"), prototype=structure(list(), class="igraph"))
 #' The cell_data_set class
 #'
 #' The main class used by Monocle3 to hold single cell expression data.
-#' cell_data_set extends the basic Bioconductor ExpressionSet class.
+#' cell_data_set extends the basic Bioconductor SingleCellExperiment class.
 #'
 #' This class is initialized from a matrix of expression values Methods that
 #' operate on cell_data_set objects constitute the basic Monocle workflow.
 #'
-#'
-#' @field reducedDimS Matrix of class numeric, containing the source values
-#'   computed by Independent Components Analysis.
-#' @field reducedDimW Matrix of class numeric, containing the whitened
-#'   expression values computed during Independent Components Analysis.
-#' @field reducedDimA Matrix of class numeric, containing the weight values
-#'   computed by Independent Components Analysis.
-#' @field reducedDimK A Matrix of class numeric, containing the pre-whitening
-#'   matrix computed by Independent Components Analysis.
-#' @field principal_graph An Object of class igraph, containing the minimum
-#'   spanning tree used by Monocle to order cells according to progress through
-#'   a biological process.
-#' @field cellPairwiseDistances A Matrix of class numeric, containing the
-#'   pairwise distances between cells in the reduced dimension space.
-#' @field expression_family An Object of class character, specifying the
-#'   expression family function used for expression responses.
-#' @field lower_detection_limit A numeric value specifying the minimum
-#'   expression level considered to be true expression.
-#' @field disp_fit_info An environment containing lists, one for each set of
-#'   estimated dispersion values. See estimate_dispersions.
-#' @field dim_reduce_type A string encoding how this cell_data_set has been
-#'   reduced in dimensionality
-#' @field rge_method A string encoding how this cell_data_set has been fitted
-#'   with a principal graph
-#' @field aux_ordering_data An environment of auxilliary data structures used
-#'   by various steps in Monocle. Not to be accessed by users directly.
+#' @field principal_graph_aux
+#' @field principal_graph
+#' @field partitions
 #' @name cell_data_set
 #' @rdname cell_data_set
 #' @aliases cell_data_set-class
 #' @exportClass cell_data_set
-#' @importFrom SingleCellExperiment SingleCellExperiment colData rowData reducedDim<- reducedDim reducedDims<- reducedDims
+#' @importFrom SingleCellExperiment SingleCellExperiment colData rowData
+#' @importFrom SingleCellExperiment reducedDim<- reducedDim reducedDims<-
+#' @importFrom SingleCellExperiment reducedDims
 #' @importFrom SummarizedExperiment Assays colData<- rowData<- assays assays<-
 #' @importFrom S4Vectors metadata metadata<- SimpleList
 setClass( "cell_data_set",
           contains = c("SingleCellExperiment"),
-          slots = c(#cds_version = "character",
-                    #reducedDimS = "matrix",
-                    #reducedDimW = "matrix",
-                    #reducedDimA = "matrix",
-                    #reducedDimK = "matrix",
-                    principal_graph_aux="SimpleList",
+          slots = c(principal_graph_aux="SimpleList",
                     principal_graph = "SimpleList",
-                    partitions = "SimpleList"
-                    #cellPairwiseDistances="matrix",
-                    #expression_family="character",
-                    #lower_detection_limit="numeric",
-                    #disp_fit_info = "environment"
-                    #dim_reduce_type="character",
-                    #rge_method="character",
-                    #aux_ordering_data = "environment"
-                    #aux_clustering_data = "environment"
-                    #normalized_data_projection = "matrix"
-          )
+                    partitions = "SimpleList")
 )
 
 
@@ -104,9 +68,6 @@ new_cell_data_set <- function(expression_data,
                "the Matrix package or dense)"))
   }
 
-
-  #cell_metadata$`size_factor` <- rep( NA_real_, nrow(cell_metadata))
-
   sce <- SingleCellExperiment(list(exprs=expression_data),
                               rowData = gene_metadata,
                               colData = cell_metadata)
@@ -123,9 +84,7 @@ new_cell_data_set <- function(expression_data,
              rowRanges = sce@rowRanges)
 
   metadata(cds)$lower_detection_limit <- lower_detection_limit
-  #metadata(cds)$expression_family <- expression_family
   metadata(cds)$cds_version <- Biobase::package.version("monocle3")
   partitions <- setNames(SimpleList(), character(0))
-  #methods::validObject( cds )
   cds
 }

@@ -1,7 +1,8 @@
 #' Cluster cells into a specified number of groups based on .
 #'
-#' Unsupervised clustering of cells is a common step in many single-cell expression
-#' workflows. In an experiment containing a mixture of cell types, each cluster might
+#' Unsupervised clustering of cells is a common step in many single-cell
+#' expression workflows. In an experiment containing a mixture of cell types,
+#' each cluster might
 #' correspond to a different cell type. This method takes a cell_data_set as input
 #' along with a requested number of clusters, clusters them with an unsupervised
 #' algorithm (by default, density peak clustering), and then returns the cell_data_set with the
@@ -38,25 +39,30 @@
 #' @export
 
 cluster_cells <- function(cds,
-                          reduced_dimension = c("tSNE", "UMAP", "PCA"),
-                         use_pca = FALSE,
-                         k = 20,
-                         louvain_iter = 1,
-                         weight = FALSE,
-                         res = NULL,
-                         method = c('louvain'),
-                         random_seed = 0L,
-                         verbose = F,
-                         cores=1,
-                         ...) {
+                          reduced_dimension = c("UMAP", "tSNE", "PCA"),
+                          k = 20,
+                          louvain_iter = 1,
+                          weight = FALSE,
+                          resolution = NULL,
+                          method = c('louvain'),
+                          random_seed = 0L,
+                          verbose = F,
+                          ...) {
   method <- match.arg(method)
   reduced_dimension <- match.arg(reduced_dimension)
   if(method == 'louvain'){
     data <- reducedDims(cds)[[reduced_dimension]]
 
-    louvain_res <- louvain_clustering(data = data, pd = colData(cds), k = k, weight = weight, louvain_iter = louvain_iter, resolution = res, random_seed = random_seed, verbose = verbose, ...)
+    louvain_res <- louvain_clustering(data = data, pd = colData(cds), k = k,
+                                      weight = weight,
+                                      louvain_iter = louvain_iter,
+                                      resolution = resolution,
+                                      random_seed = random_seed,
+                                      verbose = verbose, ...)
 
-    cluster_graph_res <- compute_louvain_connected_components(louvain_res$g, louvain_res$optim_res, verbose = verbose)
+    cluster_graph_res <- compute_louvain_connected_components(louvain_res$g,
+                                                              louvain_res$optim_res,
+                                                              verbose = verbose)
     louvain_component <-  igraph::components(cluster_graph_res$cluster_g)$membership[louvain_res$optim_res$membership]
     names(louvain_component) <- igraph::V(louvain_res$g)$name
     louvain_component <- as.factor(louvain_component)
@@ -88,7 +94,9 @@ cluster_cells <- function(cds,
 #' layout_component, if the number of cells is less than 3000), edge_links (the data frame to plot the edges of
 #' the igraph, if the number of cells is less than 3000) and optim_res (the louvain clustering result)).
 #'
-louvain_clustering <- function(data, pd, k = 20, weight = F, louvain_iter = 1, resolution = NULL, random_seed = 0L, verbose = F, ...) {
+louvain_clustering <- function(data, pd, k = 20, weight = F,
+                               louvain_iter = 1, resolution = NULL,
+                               random_seed = 0L, verbose = F, ...) {
   extra_arguments <- list(...)
   cell_names <- row.names(pd)
   if(!identical(cell_names, row.names(pd)))

@@ -7,9 +7,11 @@ is_sparse_matrix <- function(x){
 #'
 #' @param cds The cell_data_set
 #' @param locfunc The location function used to find the representive value
-#' @param round_exprs A logic flag to determine whether or not the expression value should be rounded
-#' @param method A character to specify the size factor calculation appraoches. It can be either "mean-geometric-mean-total" (default),
-#' "weighted-median", "median-geometric-mean", "median", "mode", "geometric-mean-total".
+#' @param round_exprs A logic flag to determine whether or not the expression
+#'   value should be rounded
+#' @param method A character to specify the size factor calculation appraoches.
+#'   It can be either "mean-geometric-mean-total" (default), "weighted-median",
+#'   "median-geometric-mean", "median", "mode", "geometric-mean-total".
 #' @export
 estimate_size_factors <- function(cds, locfunc = stats::median,
                                   round_exprs=TRUE,
@@ -52,7 +54,10 @@ estimate_sf_sparse <- function(counts,
 }
 
 # Estimate size factors for each column, given a matrix
-estimate_sf_dense <- function(counts, locfunc = median, round_exprs=TRUE, method="mean-geometric-mean-total"){
+estimate_sf_dense <- function(counts,
+                              locfunc = median,
+                              round_exprs=TRUE,
+                              method="mean-geometric-mean-total"){
 
   CM <- counts
   if (round_exprs)
@@ -143,8 +148,13 @@ split_cols <- function (x, ncl) {
 #' @keywords internal
 sparse_par_r_apply <- function (cl, x, FUN, convert_to_dense, ...)
 {
-  par_res <- do.call(c, BiocGenerics::clusterApply(cl = cl, x = split_rows(x, length(cl)),
-                                     fun = sparse_apply, MARGIN = 1L, FUN = FUN, convert_to_dense=convert_to_dense, ...), quote = TRUE)
+  par_res <- do.call(c, BiocGenerics::clusterApply(cl = cl,
+                                                   x = split_rows(x,
+                                                                  length(cl)),
+                                     fun = sparse_apply, MARGIN = 1L,
+                                     FUN = FUN,
+                                     convert_to_dense=convert_to_dense, ...),
+                     quote = TRUE)
   names(par_res) <- row.names(x)
   par_res
 }
@@ -152,8 +162,13 @@ sparse_par_r_apply <- function (cl, x, FUN, convert_to_dense, ...)
 #' @keywords internal
 sparse_par_c_apply <- function (cl = NULL, x, FUN, convert_to_dense, ...)
 {
-  par_res <- do.call(c, BiocGenerics::clusterApply(cl = cl, x = split_cols(x, length(cl)),
-                                     fun = sparse_apply, MARGIN = 2L, FUN = FUN, convert_to_dense=convert_to_dense, ...), quote = TRUE)
+  par_res <- do.call(c, BiocGenerics::clusterApply(cl = cl,
+                                                   x = split_cols(x,
+                                                                  length(cl)),
+                                     fun = sparse_apply, MARGIN = 2L,
+                                     FUN = FUN,
+                                     convert_to_dense=convert_to_dense, ...),
+                     quote = TRUE)
   names(par_res) <- colnames(x)
   par_res
 }
@@ -161,8 +176,8 @@ sparse_par_c_apply <- function (cl = NULL, x, FUN, convert_to_dense, ...)
 
 #' Multicore apply-like function for cell_data_set
 #'
-#' mcesApply computes the row-wise or column-wise results of FUN, just like esApply.
-#' Variables in colData from X are available in FUN.
+#' mcesApply computes the row-wise or column-wise results of FUN, just like
+#' esApply. Variables in colData from X are available in FUN.
 #'
 #' @param X a cell_data_set object
 #' @param MARGIN The margin to apply to, either 1 for rows (samples) or 2 for columns (features)

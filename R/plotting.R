@@ -618,7 +618,7 @@ plot_cell_clusters <- function(cds,
   #TODO: need to validate cds as ready for this plot (need mst, pseudotime, etc)
   lib_info <- colData(cds)
 
-  data_df <- data.frame(t(low_dim_coords[c(x,y),]))
+  data_df <- data.frame(low_dim_coords[,c(x,y)])
   colnames(data_df) <- c("data_dim_1", "data_dim_2")
   data_df$sample_name <- colnames(cds)
   data_df <- merge(data_df, lib_info, by.x="sample_name", by.y="row.names")
@@ -666,8 +666,8 @@ plot_cell_clusters <- function(cds,
     data_df$value <- with(data_df, ifelse(value >= 0.01, value, NA))
     g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2)) + facet_wrap(~feature_label)
   }else{
-    text_df <- data_df %>% dplyr::group_by_(color_by) %>% summarize(text_x = median(x = data_dim_1),
-                                                                    text_y = median(x = data_dim_2))
+    text_df <- data_df %>% dplyr::group_by_(color_by) %>% dplyr::summarize(text_x = median(x = data_dim_1),
+                                                                           text_y = median(x = data_dim_2))
     if(color_by != "Cluster" & !is.numeric(data_df[, color_by])) {
       text_df$label <- paste0(1:nrow(text_df))
       text_df$process_label <- paste0(1:nrow(text_df), '_', as.character(as.matrix(text_df[, 1])))
@@ -966,7 +966,7 @@ plot_pc_variance_explained <- function(cds,
       if (verbose)
         message("Removing batch effects")
       X.model_mat <- Matrix::sparse.model.matrix(stats::as.formula(residual_model_formula_str),
-                                         data = colData(cds), drop.unused.levels = TRUE)
+                                                 data = colData(cds), drop.unused.levels = TRUE)
 
       fit <- limma::lmFit(FM, X.model_mat, ...)
       beta <- fit$coefficients[, -1, drop = FALSE]
@@ -1000,23 +1000,31 @@ plot_pc_variance_explained <- function(cds,
     return(p)
 }
 
-#' @title Plots expression for one or more genes as a violin plot
+#' @title Plot expression for one or more genes as a violin plot
 #'
-#' @description Accepts a subset of a CellDataSet and an attribute to group cells by,
-#' and produces one or more ggplot2 objects that plots the level of expression for
-#' each group of cells.
+#' @description Accepts a subset of a cell_data_set and an attribute to group
+#' cells by, and produces a ggplot2 object that plots the level of expression
+#' for each group of cells.
 #'
-#' @param cds_subset CellDataSet for the experiment
-#' @param grouping the cell attribute (e.g. the column of colData(cds)) to group cells by on the horizontal axis
-#' @param min_expr the minimum (untransformed) expression level to use in plotted the genes.
-#' @param nrow the number of rows used when laying out the panels for each gene's expression
-#' @param ncol the number of columns used when laying out the panels for each gene's expression
-#' @param panel_order the order in which genes should be layed out (left-to-right, top-to-bottom)
-#' @param color_by the cell attribute (e.g. the column of colData(cds)) to be used to color each cell
-#' @param plot_trend whether to plot a trendline tracking the average expression across the horizontal axis.
-#' @param label_by_short_name label figure panels by gene_short_name (TRUE) or feature id (FALSE)
-#' @param relative_expr Whether to transform expression into relative values
-#' @param log_scale a boolean that determines whether or not to scale data logarithmically
+#' @param cds_subset Subset cell_data_set to be plotted.
+#' @param grouping the cell attribute (e.g. the column of colData(cds)) to
+#'   group cells by on the horizontal axis.
+#' @param min_expr the minimum (untransformed) expression level to use when
+#'   plotted the genes. If \code{NULL},
+#'   \code{metadata(cds_subset)$lower_detection_limit} is used.
+#' @param nrow the number of panels per row in the figure.
+#' @param ncol the number of panels per column in the figure.
+#' @param panel_order the order in which genes should be layed out
+#'   (left-to-right, top-to-bottom). Should be gene_short_name, if
+#'   \code{label_by_short_name = TRUE} or gene ID if
+#'   \code{label_by_short_name = FALSE}.
+#' @param color_by the cell attribute (e.g. the column of colData(cds)) to be
+#'   used to color each cell.
+#' @param plot_trend whether to plot a trendline tracking the average
+#'   expression across the horizontal axis.
+#' @param label_by_short_name label figure panels by gene_short_name (TRUE) or
+#'   feature id (FALSE).
+#' @param log_scale Logical, whether or not to scale data logarithmically.
 #' @return a ggplot2 plot object
 #' @import ggplot2
 #' @export
@@ -1037,110 +1045,135 @@ plot_genes_violin <- function (cds_subset,
                                color_by = NULL,
                                plot_trend = FALSE,
                                label_by_short_name = TRUE,
-                               relative_expr = TRUE,
-                               log_scale = TRUE)
-{
-  if (any(round(assays(cds_subset)$exprs) != assays(cds_subset)$exprs)) {
-    integer_expression <- FALSE
-    relative_expr <- TRUE
-  } else {
-    integer_expression <- TRUE
+                               normalize = TRUE,
+                               log_scale = TRUE) {
+
+  assertthat::assert_that(is(cds_subset, "cell_data_set"))
+
+  assertthat::assert_that(grouping %in% names(colData(cds_subset)),
+                          msg = paste("grouping must be a column in the",
+                                      "colData table"))
+  if(!is.null(min_expr)) {
+    assertthat::assert_that(assertthat::is.number(min_expr))
   }
 
-  if (integer_expression) {
-    cds_exprs = assays(cds_subset)$exprs
-    if (relative_expr) {
-      if (is.null(size_factors(cds_subset))) {
-        stop("Error: to call this function with relative_expr=TRUE, you must call estimate_size_factors() first")
-      }
-      cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds_subset))
-    }
-    cds_exprs = reshape2::melt(as.matrix(cds_exprs))
+  if(!is.null(nrow)) {
+    assertthat::assert_that(assertthat::is.count(nrow))
+  }
+
+  assertthat::assert_that(assertthat::is.count(ncol))
+
+  if(!is.null(color_by)) {
+    assertthat::assert_that(color_by %in% names(colData(cds_subset)))
+  }
+
+  assertthat::assert_that(is.logical(plot_trend))
+  assertthat::assert_that(is.logical(label_by_short_name))
+  assertthat::assert_that(is.logical(normalize))
+  assertthat::assert_that(is.logical(log_scale))
+
+  if (normalize) {
+    cds_exprs <- assays(cds_subset)$exprs
+    cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds_subset))
+    cds_exprs <- reshape2::melt(as.matrix(cds_exprs))
   } else {
-    cds_exprs = assays(cds_subset)$exprs
-    cds_exprs = reshape2::melt(as.matrix(cds_exprs))
+    cds_exprs <- assays(cds_subset)$exprs
+    cds_exprs <- reshape2::melt(as.matrix(cds_exprs))
   }
   if (is.null(min_expr)) {
     min_expr <- metadata(cds_subset)$lower_detection_limit
   }
-  colnames(cds_exprs) = c("f_id", "Cell", "expression")
+  colnames(cds_exprs) <- c("f_id", "Cell", "expression")
   cds_exprs$expression[cds_exprs$expression < min_expr] <- min_expr
-  cds_colData = colData(cds_subset)
 
-  cds_rowData = rowData(cds_subset)
-  cds_exprs = merge(cds_exprs, cds_rowData, by.x = "f_id", by.y = "row.names")
-  cds_exprs = merge(cds_exprs, cds_colData, by.x = "Cell", by.y = "row.names")
-  cds_exprs$adjusted_expression = log10(cds_exprs$expression)
+  cds_exprs <- merge(cds_exprs, rowData(cds_subset), by.x = "f_id",
+                     by.y = "row.names")
+  cds_exprs <- merge(cds_exprs, colData(cds_subset), by.x = "Cell",
+                     by.y = "row.names")
 
-  if (label_by_short_name == TRUE) {
-    if (is.null(cds_exprs$gene_short_name) == FALSE) {
-      cds_exprs$feature_label = cds_exprs$gene_short_name
-      cds_exprs$feature_label[is.na(cds_exprs$feature_label)] = cds_exprs$f_id
+  if (label_by_short_name) {
+    if (!is.null(cds_exprs$gene_short_name)) {
+      cds_exprs$feature_label <- cds_exprs$gene_short_name
+      cds_exprs$feature_label[is.na(cds_exprs$feature_label)] <- cds_exprs$f_id
+    } else {
+      cds_exprs$feature_label <- cds_exprs$f_id
     }
-    else {
-      cds_exprs$feature_label = cds_exprs$f_id
-    }
+  } else {
+    cds_exprs$feature_label <- cds_exprs$f_id
   }
-  else {
-    cds_exprs$feature_label = cds_exprs$f_id
-  }
-  if (is.null(panel_order) == FALSE) {
+
+  if (!is.null(panel_order)) {
     cds_exprs$feature_label = factor(cds_exprs$feature_label,
                                      levels = panel_order)
   }
-  q = ggplot(aes_string(x = grouping, y = "expression"), data = cds_exprs) + monocle_theme_opts()
-  if (is.null(color_by) == FALSE) {
-    q = q + geom_violin(aes_string(fill = color_by))
+
+  cds_exprs[,grouping] <- as.factor(cds_exprs[,grouping])
+
+  q <- ggplot(aes_string(x = grouping, y = "expression"), data = cds_exprs) +
+    monocle_theme_opts()
+  if (!is.null(color_by)) {
+    cds_exprs[,color_by] <- as.factor(cds_exprs[,color_by])
+    q <- q + geom_violin(aes_string(fill = color_by))
   }
   else {
-    q = q + geom_violin()
+    q <- q + geom_violin()
   }
-  if (plot_trend == TRUE) {
-    q = q + stat_summary(fun.data = "mean_cl_boot",
-                         size = 0.2)
-    q = q + stat_summary(aes_string(x = grouping, y = "expression",
-                                    group = color_by), fun.data = "mean_cl_boot",
-                         size = 0.2, geom = "line")
+  if (plot_trend) {
+    cds_exprs[,color_by] <- as.factor(cds_exprs[,color_by])
+    q <- q + stat_summary(fun.data = "mean_cl_boot",
+                          size = 0.2)
+    q <- q + stat_summary(aes_string(x = grouping, y = "expression",
+                                     group = color_by),
+                          fun.data = "mean_cl_boot",
+                          size = 0.2, geom = "line")
   }
-  q = q + facet_wrap(~feature_label, nrow = nrow,
-                     ncol = ncol, scales = "free_y")
+  q <- q + facet_wrap(~feature_label, nrow = nrow,
+                      ncol = ncol, scales = "free_y")
   if (min_expr < 1) {
-    q = q + expand_limits(y = c(min_expr, 1))
+    q <- q + expand_limits(y = c(min_expr, 1))
   }
 
+  q <- q + ylab("Expression") + xlab(grouping)
 
-  q = q + ylab("Expression") + xlab(grouping)
+  if (log_scale){
 
-  if (log_scale == TRUE){
-
-    q = q + scale_y_log10()
+    q <- q + scale_y_log10()
   }
   q
 }
 
 
-#' Plots the number of cells expressing one or more genes as a barplot
+#' Plots the number of cells expressing one or more genes above a given value
+#' as a barplot
 #'
-#'  @description Accetps a CellDataSet and a parameter,"grouping", used for dividing cells into groups.
-#'  Returns one or more bar graphs (one graph for each gene in the CellDataSet).
-#'  Each graph shows the percentage of cells that express a gene in the in the CellDataSet for
-#'  each sub-group of cells created by "grouping".
+#'  @description Accepts a cell_data_set and the parameter "grouping", used for
+#'  dividing cells into groups. Returns one or more bar graphs (one graph for
+#'  each gene in the cell_data_set). Each graph shows the percentage of cells
+#'  that express a gene in each sub-group in the cell_data_set.
 #'
-#'  Let's say the CellDataSet passed in included genes A, B, and C and the "grouping parameter divided
-#'  all of the cells into three groups called X, Y, and Z. Then three graphs would be produced called A,
-#'  B, and C. In the A graph there would be three bars one for X, one for Y, and one for Z. So X bar in the
-#'  A graph would show the percentage of cells in the X group that express gene A.
+#'  As an example, let's say the cell_data_set passed into the function as
+#'  cds_subset included genes A, B, and C and the grouping parameter divided
+#'  the cells into three groups called X, Y, and Z. Then three graphs would be
+#'  produced called A, B, and C. In each graph there would be three bars one
+#'  for X, one for Y, and one for Z. The X bar in the A graph would show the
+#'  percentage of cells in the X group that express gene A.
 #'
-#' @param cds_subset CellDataSet for the experiment
-#' @param grouping the cell attribute (e.g. the column of colData(cds)) to group cells by on the horizontal axis
-#' @param min_expr the minimum (untransformed) expression level to use in plotted the genes.
-#' @param nrow the number of rows used when laying out the panels for each gene's expression
-#' @param ncol the number of columns used when laying out the panels for each gene's expression
-#' @param panel_order the order in which genes should be layed out (left-to-right, top-to-bottom)
-#' @param plot_as_fraction whether to show the percent instead of the number of cells expressing each gene
-#' @param label_by_short_name label figure panels by gene_short_name (TRUE) or feature id (FALSE)
-#' @param relative_expr Whether to transform expression into relative values
-#' @param plot_limits A pair of number specifying the limits of the y axis. If NULL, scale to the range of the data.
+#' @param cds_subset Subset cell_data_set to be plotted.
+#' @param grouping the cell attribute (e.g. the column of colData(cds)) to
+#'   group cells by on the horizontal axis
+#' @param min_expr the minimum (untransformed) expression level to consider the
+#'   gene 'expressed'. If \code{NULL},
+#'   \code{metadata(cds_subset)$lower_detection_limit} is used.
+#' @param nrow the number of panels per row in the figure.
+#' @param ncol the number of panels per column in the figure.
+#' @param panel_order the order in which genes should be layed out
+#'   (left-to-right, top-to-bottom)
+#' @param plot_as_count whether to plot as a count of cells rather than a
+#'   percent.
+#' @param label_by_short_name label figure panels by gene_short_name (TRUE) or
+#'   feature id (FALSE).
+#' @param plot_limits A pair of number specifying the limits of the y axis. If
+#'   \code{NULL}, scale to the range of the data. Example \code{c(0,100)}.
 #' @return a ggplot2 plot object
 #' @import ggplot2
 #' @export
@@ -1148,79 +1181,95 @@ plot_genes_violin <- function (cds_subset,
 #' \dontrun{
 #' library(HSMMSingleCell)
 #' HSMM <- load_HSMM()
-#' MYOG_ID1 <- HSMM[row.names(subset(rowData(HSMM), gene_short_name %in% c("MYOG", "ID1"))),]
+#' MYOG_ID1 <- HSMM[row.names(subset(rowData(HSMM),
+#'                                   gene_short_name %in% c("MYOG", "ID1"))),]
 #' plot_percent_cells_positive(MYOG_ID1, grouping="Media", ncol=2)
 #' }
 plot_percent_cells_positive <- function(cds_subset,
                                         grouping = "State",
-                                        min_expr=0.1,
-                                        nrow=NULL,
-                                        ncol=1,
-                                        panel_order=NULL,
-                                        plot_as_fraction=TRUE,
+                                        min_expr = NULL,
+                                        nrow = NULL,
+                                        ncol = 1,
+                                        panel_order = NULL,
+                                        plot_as_count = FALSE,
                                         label_by_short_name=TRUE,
-                                        relative_expr=TRUE,
-                                        plot_limits=c(0,100)){
+                                        normalize = TRUE,
+                                        plot_limits = NULL){
 
-  percent <- NULL
+  assertthat::assert_that(is(cds_subset, "cell_data_set"))
 
-  if (any(round(assays(cds_subset)$exprs) != assays(cds_subset)$exprs)) {
-    integer_expression <- FALSE
-    relative_expr <- TRUE
-  } else {
-    integer_expression <- TRUE
+  assertthat::assert_that(grouping %in% names(colData(cds_subset)),
+                          msg = paste("grouping must be a column in the",
+                                      "colData table"))
+  if(!is.null(min_expr)) {
+    assertthat::assert_that(assertthat::is.number(min_expr))
   }
 
-  if (integer_expression)
-  {
-    marker_exprs <- assays(cds_subset)$exprs
-    if (relative_expr){
-      if (is.null(size_factors(cds_subset)))
-      {
-        stop("Error: to call this function with relative_expr=TRUE, you must call estimate_size_factors() first")
-      }
-      marker_exprs <- Matrix::t(Matrix::t(marker_exprs) / size_factors(cds_subset))
-    }
+  if(!is.null(nrow)) {
+    assertthat::assert_that(assertthat::is.count(nrow))
+  }
+
+  assertthat::assert_that(assertthat::is.count(ncol))
+  assertthat::assert_that(is.logical(plot_as_count))
+  assertthat::assert_that(is.logical(label_by_short_name))
+  assertthat::assert_that(is.logical(normalize))
+
+  if (is.null(min_expr)) {
+    min_expr <- metadata(cds_subset)$lower_detection_limit
+  }
+
+  marker_exprs <- assays(cds_subset)$exprs
+
+  if (normalize) {
+    marker_exprs <- Matrix::t(Matrix::t(marker_exprs)/size_factors(cds_subset))
     marker_exprs_melted <- reshape2::melt(round(as.matrix(marker_exprs)))
-  }else{
-    marker_exprs_melted <- reshape2::melt(assays(marker_exprs)$exprs)
+  } else {
+    marker_exprs_melted <- reshape2::melt(as.matrix(marker_exprs))
   }
 
   colnames(marker_exprs_melted) <- c("f_id", "Cell", "expression")
 
-  marker_exprs_melted <- merge(marker_exprs_melted, colData(cds_subset), by.x="Cell", by.y="row.names")
-  marker_exprs_melted <- merge(marker_exprs_melted, rowData(cds_subset), by.x="f_id", by.y="row.names")
+  marker_exprs_melted <- merge(marker_exprs_melted, colData(cds_subset),
+                               by.x="Cell", by.y="row.names")
+  marker_exprs_melted <- merge(marker_exprs_melted, rowData(cds_subset),
+                               by.x="f_id", by.y="row.names")
 
-  if (label_by_short_name == TRUE){
-    if (is.null(marker_exprs_melted$gene_short_name) == FALSE){
+  if (label_by_short_name) {
+    if (!is.null(marker_exprs_melted$gene_short_name)){
       marker_exprs_melted$feature_label <- marker_exprs_melted$gene_short_name
-      marker_exprs_melted$feature_label[is.na(marker_exprs_melted$feature_label)]  <- marker_exprs_melted$f_id
-    }else{
+      marker_exprs_melted$feature_label[
+        is.na(marker_exprs_melted$feature_label)] <- marker_exprs_melted$f_id
+    } else {
       marker_exprs_melted$feature_label <- marker_exprs_melted$f_id
     }
-  }else{
+  } else {
     marker_exprs_melted$feature_label <- marker_exprs_melted$f_id
   }
 
-  if (is.null(panel_order) == FALSE)
-  {
-    marker_exprs_melted$feature_label <- factor(marker_exprs_melted$feature_label, levels=panel_order)
+  if (!is.null(panel_order)) {
+    marker_exprs_melted$feature_label <-
+      factor(marker_exprs_melted$feature_label, levels=panel_order)
   }
 
-  marker_counts <- plyr::ddply(marker_exprs_melted, c("feature_label", grouping), function(x) {
-    data.frame(target=sum(x$expression > min_expr),
-               target_fraction=sum(x$expression > min_expr)/nrow(x)) } )
+  marker_counts <- plyr::ddply(marker_exprs_melted, c("feature_label",
+                                                      grouping),
+                               function(x) {
+          data.frame(target = sum(x$expression > min_expr),
+                     target_fraction = sum(x$expression > min_expr)/nrow(x)) })
 
-  #print (head(marker_counts))
-  if (plot_as_fraction){
+  if (!plot_as_count){
     marker_counts$target_fraction <- marker_counts$target_fraction * 100
-    qp <- ggplot(aes_string(x=grouping, y="target_fraction", fill=grouping), data=marker_counts) +
+    qp <- ggplot(aes_string(x=grouping, y="target_fraction", fill=grouping),
+                 data=marker_counts) +
       ylab("Cells (percent)")
-    if (is.null(plot_limits) == FALSE)
-      qp <- qp + scale_y_continuous(limits=plot_limits)
-  }else{
-    qp <- ggplot(aes_string(x=grouping, y="target", fill=grouping), data=marker_counts) +
+  } else {
+    qp <- ggplot(aes_string(x=grouping, y="target", fill=grouping),
+                 data=marker_counts) +
       ylab("Cells")
+  }
+
+  if (is.null(plot_limits) == FALSE) {
+    qp <- qp + scale_y_continuous(limits=plot_limits)
   }
 
   qp <- qp + facet_wrap(~feature_label, nrow=nrow, ncol=ncol, scales="free_y")
