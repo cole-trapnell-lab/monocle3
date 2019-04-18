@@ -1,0 +1,119 @@
+---
+layout: vanilla
+permalink: /papers/
+description: "Papers describing Monocle."
+modified: 2013-09-11
+tags: [Monocle]
+---
+<!DOCTYPE html>
+<html lang="{{ page.lang | default: site.lang | default: "en" }}">
+
+{% include head.html %}
+
+{% include header.html %}
+
+<div class="container">
+  <div class="row">
+    <!-- sidebar, which will move to the top on a small screen -->
+    <div class="col-sm-4">
+      <nav id="toc" data-spy="affix" data-toggle="toc"></nav>
+    </div>
+    <!-- main content area -->
+    <div class="col-sm-12">
+
+
+    <div class="text-center">
+      <h3 data-toc-skip>Monocle is an ongoing research project as well as a toolkit. If you use Monocle, <strong>please cite these papers</strong> in your work! </h3>
+    </div>
+<br>
+
+<hr class="featurette-divider">
+
+<div class="row featurette">
+  <div class="col-md-3">
+    <img class="featurette-image img-responsive center-block" src="{{site.baseurl}}/images/trapnell-cacchiarelli-monocle.png" alt="Monocle 1">
+  </div>
+
+  <div class="col-md-9">
+    <h3 data-toc-skip>The dynamics and regulators of cell fate decisions are revealed by pseudotemporal ordering of single cells</h3>
+    <p>Cole Trapnell*, Davide Cacchiarelli*, Jonna Grimsby, Prapti Pokharel, Shuqiang Li, Michael Morse, Niall J. Lennon, Kenneth J. Livak, Tarjei S. Mikkelsen, John L. Rinn.
+    <p><em>Nature Biotechnology</em> 2014
+    <br>
+    <p> Defining the transcriptional dynamics of a temporal process such as cell differentiation is challenging owing to the high variability in gene expression between individual cells. Time-series gene expression analyses of bulk cells have difficulty distinguishing early and late phases of a transcriptional cascade or identifying rare subpopulations of cells, and single-cell proteomic methods rely on a priori knowledge of key distinguishing markers. Here we describe Monocle, an unsupervised algorithm that increases the temporal resolution of transcriptome dynamics using single-cell RNA-Seq data collected at multiple time points. Applied to the differentiation of primary human myoblasts, Monocle revealed switch-like changes in expression of key regulatory factors, sequential waves of gene regulation, and expression of regulators that were not known to act in differentiation. We validated some of these predicted regulators in a loss-of function screen. Monocle can in principle be used to recover single-cell gene expression kinetics from a wide array of cellular processes, including differentiation, proliferation and oncogenic transformation
+    <p><strong>This is the original Monocle paper, which introduced the concept of pseudotime ordering for single-cell analysis</strong>
+
+    <div class="text-center">
+      <a class="btn btn-default btn-sm" href="http://dx.doi.org/10.1038/nbt.2859" role="button">HTML</a>
+      <a class="btn btn-default btn-sm" href="http://cole-trapnell-lab.github.io/pdfs/papers/trapnell-cacchiarelli-monocle.pdf" role="button">PDF</a>
+    </div>
+
+  </div>
+</div>
+
+<hr class="featurette-divider">
+
+<div class="row featurette">
+  <div class="col-md-3">
+    <img class="featurette-image img-responsive center-block" src="{{site.baseurl}}/images/census-BEAM2.png" alt="Census + BEAM">
+  </div>
+
+  <div class="col-md-9">
+    <h3 data-toc-skip>Single-cell mRNA quantification and differential analysis with Census</h3>
+    <p>Xiaojie Qiu, Andrew Hill,	Jonathan Packer, Dejun Lin,	Yi-An Ma, Cole Trapnell
+    <p><em>Nature Methods</em> 2017
+    <br>
+    <p> Single-cell gene expression studies promise to reveal rare cell types and cryptic states, but the high variability of single-cell RNA-seq measurements frustrates efforts to assay transcriptional differences between cells. We introduce the Census algorithm to convert relative RNA-seq expression levels into relative transcript counts without the need for experimental spike-in controls. Analyzing changes in relative transcript counts led to dramatic improvements in accuracy compared to normalized read counts and enabled new statistical tests for identifying developmentally regulated genes. Census counts can be analyzed with widely used regression techniques to reveal changes in cell-fate-dependent gene expression, splicing patterns and allelic imbalances. We reanalyzed single-cell data from several developmental and disease studies, and demonstrate that Census enabled robust analysis at multiple layers of gene regulation. Census is freely available through our updated single-cell analysis toolkit, Monocle 2.
+
+    <p><strong>This paper describes BEAM (used in branch analysis) and Census (the core of <code>relative2abs</code>)</strong>
+
+    <div class="text-center">
+      <a class="btn btn-default btn-sm" href="http://dx.doi.org/10.1038/nmeth.4150" role="button">HTML</a>
+      <a class="btn btn-default btn-sm" href="http://cole-trapnell-lab.github.io/pdfs/papers/qiu-census.pdf" role="button">PDF</a>
+    </div>
+
+  </div>
+</div>
+
+<hr class="featurette-divider">
+
+<div class="row featurette">
+  <div class="col-md-3">
+    <img class="featurette-image img-responsive center-block" src="{{site.baseurl}}/images/monocle2.png" alt="Monocle 2">
+  </div>
+
+  <div class="col-md-9">
+    <h3 data-toc-skip>Reversed graph embedding resolves complex single-cell developmental trajectories</h3>
+    <p>Xiaojie Qiu, Qi Mao, Ying Tang, Li Wang,	Raghav Chawla, Hannah Pliner, Cole Trapnell
+    <p>bioRxiv preprint
+
+    <br>
+    <p> Organizing single cells along a developmental trajectory has emerged as a powerful tool for understanding how gene regulation governs cell fate decisions. However, learning the structure of complex single-cell trajectories with two or more branches remains a challenging computational problem. We present Monocle 2, which uses reversed graph embedding to reconstruct single-cell trajectories in a fully unsupervised manner. Monocle 2 learns an explicit principal graph to describe the data, greatly improving the robustness and accuracy of its trajectories compared to other algorithms. Monocle 2 uncovered a new, alternative cell fate in what we previously reported to be a linear trajectory for differentiating myoblasts. We also reconstruct branched trajectories for two studies of blood development, and show that loss of function mutations in key lineage transcription factors diverts cells to alternative branches on the a trajectory. Monocle 2 is thus a powerful tool for analyzing cell fate decisions with single-cell genomics.
+
+    <p><strong>This paper describes Monocle 2 and the use of Reversed Graph Embedding for single-cell analysis.</strong>
+
+    <div class="text-center">
+      <a class="btn btn-default btn-sm" href="http://dx.doi.org/10.1101/110668" role="button">HTML</a>
+      <a class="btn btn-default btn-sm" href="http://cole-trapnell-lab.github.io/pdfs/papers/qiu-monocle2.pdf" role="button">PDF</a>
+    </div>
+
+  </div>
+</div>
+
+
+</div>
+</div>
+</div>
+
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+
+{% include footer.html %}
+
+
+</body>
+
+</html>

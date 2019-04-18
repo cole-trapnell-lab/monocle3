@@ -1,0 +1,10 @@
+dependencies:
+  -  name: rglwidgetClass
+     version: 2.0
+     src: htmlwidgets/lib/rglClass
+     script: rglClass.src.js
+     stylesheet: rgl.css
+  -  name: CanvasMatrix4
+     version: 2016
+     src: htmlwidgets/lib/CanvasMatrix
+     script: CanvasMatrix.src.js

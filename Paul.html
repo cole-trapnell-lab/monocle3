@@ -1,0 +1,867 @@
+---
+layout: vanilla
+permalink: /Paul/
+description: "Documentation for Monocle."
+modified: 2013-09-11
+tags: [monocle, manual, vignette]
+---
+<!DOCTYPE html>
+<html lang= "{{ page.lang | default: site.lang | default: "en" }}">
+
+  {% include head.html %}
+
+  <!-- See here for how to use the TOC control:
+  https://afeld.github.io/bootstrap-toc/ -->
+  <body  data-spy= "scroll" data-target= "#toc">
+    {% include header.html %}
+
+    <div class= "container">
+      <div class= "row">
+        <!-- sidebar, which will move to the top on a small screen -->
+        <div class= "col-sm-4">
+          <nav id= "toc" data-spy= "affix" data-toggle= "toc"></nav>
+        </div>
+        <!-- main content area -->
+        <div class= "col-sm-8">
+
+<h2>Overview</h2>
+
+<p>Single cell gene expression studies allow you to track transcriptional
+regulation in complex biological processes and highly hetergeneous
+cell populations. These studies can lead to the discovery of genes that distinguish
+subtypes of cells, mark intermediate states during a
+biological process, and bifurcate between two alternative cellular fates.
+In single cell studies, individual cells are usually processed
+through a gene expression program in an unsynchronized manner. In effect, each
+cell is a snapshot of the transcriptional program under study. </p>
+
+<p><strong>Monocle</strong> provides tools for analyzing single-cell expression
+experiments. Monocle introduced the strategy of ordering single cells along a trajectory
+based on how much progress they have made in a biological process, such as cell differentiation. We refer to this
+strategy as ordering cells in <strong>pseudotime</strong>. Monocle orders cells by learning an explicit
+principal graph from the single cell genomics data with advanced machine learning techniques, like Reversed Graph Embedding.
+These techniques robustly and accurately resolve complicated biological processes.</p>
+
+<p>Monocle was designed for single cell RNA-Seq experiments, but it can be used
+  with other assays. To learn more about the underlying algorithms that support
+  Monocle or how to use single cell RNA-Seq to study complex biological processes,
+  explore <a href= "{{ site.baseurl }}/papers/">our publications</a>.</p>
+
+<h2>Introduction</h2>
+
+<p>The monocle package provides a toolkit for analyzing single cell gene expression
+experiments. This vignette provides an overview of a single cell RNA-Seq
+analysis workflow with Monocle. Monocle was originally developed to analyze
+dynamic biological processes such as cell differentiation, but it can also
+support other experimental settings.</p>
+
+<p><strong>Monocle 3</strong> includes new and improved algorithms for classifying
+and counting cells, performing differential expression analysis between
+subpopulations of cells, and reconstructing cellular trajectories. Monocle 3 has
+also been re-engineered to work well with very large single-cell RNA-Seq
+experiments containing tens of thousands of cells or more.</p>
+
+<p>Monocle can help you perform three main types of analysis:
+<ul>
+<li><strong>Clustering, classifying, and counting cells.</strong> Single-cell RNA-Seq experiments allow you to discover new (and possibly rare) subtypes of cells. Monocle helps you identify them.
+<li><strong>Constructing single-cell trajectories.</strong> In development, disease, and throughout life, cells transition from one state to another. Monocle helps you discover these transitions.
+<li> <strong>Differential expression analysis.</strong> Characterizing new cell types and states begins with comparing them to other, better understood cells. Monocle includes a sophisticated but easy to use system for differential expression.
+</ul>
+
+Before we look at Monocle's functions for each of these common analysis tasks,
+let's see how to install Monocle.
+
+<h2>Installing Monocle 3</h2>
+
+<h3> Required software </h3>
+
+<p>Monocle runs in the <a href= "http://www.r-project.org/">R statistical
+computing environment</a>. You will need R version 3.5 or higher, Bioconductor
+version 3.5, and monocle 3.0.0 or higher to have access to the latest features.
+To install monocle 3 through the cole-trapnell-lab GitHub, execute:
+
+{% highlight R %}
+  git clone 'PLACE REPO CONTAINING MONOCLE 3 RELEASE HERE'
+{% endhighlight %}
+
+<h3> Testing the installation </h3>
+
+<p> To ensure that Monocle was installed correctly, start a new R session and run:
+</p>
+
+{% highlight R %}
+library(monocle)
+{% endhighlight %}
+
+<h2>Getting Help</h2>
+
+<p>Questions about Monocle should be posted on our <a
+href= "https://groups.google.com/forum/#!forum/monocle-users">Google Group</a>.
+Please use <a href= "mailto:monocle.users@gmail.com">monocle.users@gmail.com</a>
+for private communications that cannot be addressed by the Monocle user
+community. Please do not email technical questions to Monocle contributors
+directly.</p>
+
+<h2>Recommended Analysis Protocol</h2>
+
+<p> Monocle is a powerful toolkit for analyzing single-cell RNA-seq.  You don't need
+to use all of its features for every analysis, and there are more than one way
+to do some steps. The workflow is broken up into broad steps. When there's more than
+one way to do a certain step, we've labeled the options as follows:
+</p>
+
+<table class= "table">
+<tbody>
+<tr>
+<td><span class= "label label-danger">Required</span></td>
+<td>You need to do this.</td>
+</tr>
+<tr>
+<td><span class= "label label-info">Recommended</span> </td>
+<td>Of the ways you could do this, we recommend you try this one first.</td>
+</tr>
+<tr>
+<td><span class= "label label-success">Alternative</span></td>
+<td>Of the ways you could do this, this way might work better than the one we usually recommend.</td>
+</tr>
+</tbody>
+</table>
+
+<h2>Getting Started with Monocle</h2>
+
+<h3>Workflow steps at a glance</h3>
+<p>Below, you can see snippets of code that highlight the main steps of Monocle.
+Click on the section headers to jump to the detailed sections describing each one. </p>
+
+<h4><a href= "{{ site.baseurl }}/Paul/#getting-started-with-monocle">Store Data in a <a href = "https://rdrr.io/bioc/monocle/man/CellDataSet.html">CellDataSet</a> Object</a></h4>
+The first step in working with Monocle is to load up your data into Monocle's
+main class, <code><a href = "https://rdrr.io/bioc/monocle/man/CellDataSet.html">CellDataSet</a></code>:
+
+{%highlight R%}
+fd <- new("AnnotatedDataFrame", data = gene_expression_table)
+pd <- new("AnnotatedDataFrame", data = cell_data_table)
+
+cds <- new_cell_data_set(cell_gene_exprs,
+                      phenoData = pd,
+                      featureData = fd,
+                      lower_detection_limit = 1,
+                      expression_family = "negbinomial.size")
+{%endhighlight%}
+
+{% highlight R %}
+lung <- load_lung()
+
+# To convert to Seurat object
+lung_seurat <- exportCDS(lung, 'Seurat')
+{% endhighlight %}
+
+{% highlight R %}
+cds_sparse <- new_cell_data_set(as(cell_gene_exprs, "sparseMatrix"),
+                phenoData = pd,
+                featureData = fd,
+                lower_detection_limit = 0.5,
+                expression_family = "negbinomial.size")
+{% endhighlight %}
+
+{% highlight R %}
+pd <- new("AnnotatedDataFrame", data = cell_data_table)
+fd <- new("AnnotatedDataFrame", data = gene_expression_table)
+
+# First create a CellDataSet from the relative expression levels
+cds_relative_test <- new_cell_data_set(as.matrix(cell_gene_exprs),
+                phenoData = pd,
+                featureData = fd,
+                lower_detection_limit = 0.1,
+                expression_family = "tobit(Lower = 0.1)")
+
+# Next, use it to estimate RNA counts
+rpc_matrix <- relative2abs(cds_relative_test, method = "num_genes")
+
+# Now, make a new CellDataSet using the RNA counts
+cds_relative_test <- new_cell_data_set(as(as.matrix(rpc_matrix),
+                  "sparseMatrix"),
+                phenoData = pd,
+                featureData = fd,
+                lower_detection_limit = 0.5,
+                expression_family = "negbinomial.size")
+{% endhighlight %}
+
+{% highlight R %}
+cds <- estimate_size_factors(cds)
+cds <- estimate_dispersions(cds)
+{% endhighlight %}
+
+{% highlight R %}
+cds <- detect_genes(cds, min_expr = 0.1)
+print(head(fData(cds)))
+{% endhighlight %}
+
+{% highlight R %}
+expressed_genes <- row.names(subset(fData(cds),
+  num_cells_expressed >= 100))
+{% endhighlight %}
+
+{% highlight R %}
+print(head(pData(cds)))
+{% endhighlight %}
+
+{% highlight R %}
+pData(cds)$Total_mRNAs <- Matrix::colSums(exprs(cds))
+cds <- cds[,pData(cds)$Total_mRNAs < 1e6]
+
+upper_bound <- 10^(mean(log10(pData(cds)$Total_mRNAs)) +
+            2*sd(log10(pData(cds)$Total_mRNAs)))
+lower_bound <- 10^(mean(log10(pData(cds)$Total_mRNAs)) -
+            2*sd(log10(pData(cds)$Total_mRNAs)))
+{% endhighlight %}
+
+{% highlight R %}
+qplot(Total_mRNAs, data = pData(cds), geom =
+"density", color = Pool_barcode) +
+geom_vline(xintercept = lower_bound) +
+geom_vline(xintercept = upper_bound)
+{% endhighlight %}
+
+{% highlight R %}
+cds <- cds[,pData(cds)$Total_mRNAs >
+        lower_bound & pData(cds)$Total_mRNAs < upper_bound]
+cds <- detect_genes(cds, min_expr = 0.1)
+{% endhighlight %}
+
+{% highlight R %}
+# Log-transform each value in the expression matrix.
+L <- exprs(cds[expressed_genes,])
+
+# Standardize each gene, so that they are all on the same scale,
+# Then melt the data with plyr so we can plot it easily
+
+melted_dens_df <- melt(Matrix::t(scale(Matrix::t(L))))
+
+# Plot the distribution of the standardized gene expression values.
+qplot(value, geom = "density", data = melted_dens_df) +
+stat_function(fun = dnorm, size = 0.5, color = 'red') +
+xlab("Standardized log(FPKM)") +
+ylab("Density") +
+scale_x_continuous(limits = c(-10, 20))
+{% endhighlight %}
+
+<h4><a href= "{{ site.baseurl }}/Paul/#classifying-and-counting-cells">Determine stregnth of marker genes using garnett</a></h4>
+Next, use garnett, another R package that allows you to classify cell types by listing pre-known markers genes, to classify cells by type
+and determine how effective your marker genes are:
+
+
+<h2>Classifying and Counting Cells</h2>
+
+<h2>Constructing Single Cell Trajectories</h2>
+
+<h2>Differential Expression Analysis</h2>
+
+<h2>Analyzing Branches in Single-Cell Trajectories</h2>
+
+<h2>Appendices</h2>
+
+<h2>Major Updates in Monocle 3</h2>
+
+<h2>Theory Behind Monocle</h2>
+
+<h2>Citation</h2>
+
+<h2>Acknowledgements</h2>
+
+<h2>References</h2>
+
+{% highlight R %}
+# clear existing environment
+rm(list = ls())
+
+# turn off warning messages throughout vignette
+options(warn=-1)
+
+# load all necessary R libraries
+suppressMessages(library(devtools))
+suppressMessages(load_all("/Users/andyshehmohajeri/Documents/monocle3_Dec_2018/monocle-dev"))
+suppressMessages(library(reticulate))
+suppressMessages(library(VGAM))
+suppressMessages(library(plyr))
+suppressMessages(library(igraph))
+suppressMessages(library(HSMMSingleCell))
+suppressMessages(library(Matrix))
+suppressMessages(library(reshape2))
+suppressMessages(library(ggrastr))
+suppressMessages(library(lmtest))
+suppressMessages(library(org.Hs.eg.db))
+suppressMessages(library(garnett))
+
+
+
+# Tell R where to access desired python library
+use_python("/Users/andyshehmohajeri/anaconda3/envs/r-reticulate/bin/python")
+
+# install all necessary python libraries
+suppressMessages(py_install('umap-learn', pip = T, pip_ignore_installed = T)) # ensure the umap-learn 2.4 version will be installed
+suppressMessages(py_install("louvain"))
+
+# read needed data files
+gene_expression_table <- readRDS('/Users/andyshehmohajeri/Documents/Monocle_3_Vignette_Files/gene_expression_table.Rds')
+cell_data_table <- readRDS('/Users/andyshehmohajeri/Documents/Monocle_3_Vignette_Files/cell_data_table.Rds')
+cell_gene_exprs <- readRDS('/Users/andyshehmohajeri/Documents/Monocle_3_Vignette_Files/cell_gene_exprs.Rds')
+{% endhighlight %}
+
+{% highlight R %}
+fd <- new("AnnotatedDataFrame", data = gene_expression_table)
+pd <- new("AnnotatedDataFrame", data = cell_data_table)
+
+cds <- newCellDataSet(cell_gene_exprs,
+                      phenoData = pd,
+                      featureData = fd,
+                      lowerDetectionLimit=1,
+                      expressionFamily=negbinomial.size())
+{% endhighlight %}
+
+{% highlight R %}
+fd <- new("AnnotatedDataFrame", data = gene_expression_table)
+pd <- new("AnnotatedDataFrame", data = cell_data_table)
+
+cds <- newCellDataSet(cell_gene_exprs,
+                      phenoData = pd,
+                      featureData = fd,
+                      lowerDetectionLimit=1,
+                      expressionFamily=negbinomial.size())
+{% endhighlight %}
+
+{% highlight R %}
+lung <- load_lung()
+
+# To convert to Seurat object
+lung_seurat <- exportCDS(lung, 'Seurat')
+
+# To convert to SCESet
+lung_SCESet <- exportCDS(lung, 'Scater')
+{% endhighlight %}
+
+{% highlight R %}
+cds_sparse <- newCellDataSet(as(cell_gene_exprs,
+                "sparseMatrix"),
+                phenoData = pd,
+                featureData = fd,
+                lowerDetectionLimit = 0.5,
+                expressionFamily = negbinomial.size())
+{% endhighlight %}
+
+{% highlight R %}
+pd <- new("AnnotatedDataFrame", data = cell_data_table)
+fd <- new("AnnotatedDataFrame", data = gene_expression_table)
+
+# First create a CellDataSet from the relative expression levels
+cds_relative_test <- newCellDataSet(as.matrix(cell_gene_exprs),
+                phenoData = pd,
+                featureData = fd,
+                lowerDetectionLimit = 0.1,
+                expressionFamily = tobit(Lower = 0.1))
+
+# Next, use it to estimate RNA counts
+rpc_matrix <- relative2abs(cds_relative_test, method = "num_genes")
+
+# Now, make a new CellDataSet using the RNA counts
+cds_relative_test <- newCellDataSet(as(as.matrix(rpc_matrix),
+                "sparseMatrix"),
+                phenoData = pd,
+                featureData = fd,
+                lowerDetectionLimit = 0.5,
+                expressionFamily = negbinomial.size())
+{% endhighlight %}
+
+{% highlight R %}
+cds <- detectGenes(cds, min_expr = 0.1)
+print(head(fData(cds)))
+{% endhighlight %}
+
+{% highlight R %}
+expressed_genes <- row.names(subset(fData(cds),
+                   num_cells_expressed >= 100))
+print(head(pData(cds)))
+{% endhighlight %}
+
+{% highlight R %}
+pData(cds)$Total_mRNAs <- Matrix::colSums(exprs(cds))
+cds <- cds[,pData(cds)$Total_mRNAs < 1e6]
+
+upper_bound <- 10^(mean(log10(pData(cds)$Total_mRNAs)) +
+            2*sd(log10(pData(cds)$Total_mRNAs)))
+lower_bound <- 10^(mean(log10(pData(cds)$Total_mRNAs)) -
+            2*sd(log10(pData(cds)$Total_mRNAs)))
+qplot(Total_mRNAs, data = pData(cds), geom =
+"density", color = Pool_barcode) +
+geom_vline(xintercept = lower_bound) +
+geom_vline(xintercept = upper_bound)
+{% endhighlight %}
+
+{% highlight R %}
+cds <- cds[,pData(cds)$Total_mRNAs >
+      lower_bound & pData(cds)$Total_mRNAs < upper_bound]
+cds <- detectGenes(cds, min_expr = 0.1)
+# Log-transform each value in the expression matrix.
+L <- exprs(cds[expressed_genes,])
+
+# Standardize each gene, so that they are all on the same scale,
+# Then melt the data with plyr so we can plot it easily
+
+melted_dens_df <- melt(Matrix::t(scale(Matrix::t(L))))
+
+# Plot the distribution of the standardized gene expression values.
+qplot(value, geom = "density", data = melted_dens_df) +
+stat_function(fun = dnorm, size = 0.5, color = 'red') +
+xlab("Standardized log(FPKM)") +
+ylab("Density") +
+scale_x_continuous(limits = c(-10, 20))
+{% endhighlight %}
+
+{% highlight R %}
+marker_file_path <- "/Users/andyshehmohajeri/Documents/paulMarkerFile.txt"
+marker_check <- check_markers(cds,
+                              marker_file_path,
+                              db = org.Hs.eg.db,
+                              cds_gene_id_type = "gene_short_name",
+                              marker_file_gene_id_type = "SYMBOL")
+plot_markers(marker_check)
+{% endhighlight %}
+
+{% highlight R %}
+cds <- preprocessCDS(cds)
+{% endhighlight %}
+
+{% highlight R %}
+cds <- reduceDimension(cds, reduction_method = 'UMAP', verbose = T)
+{% endhighlight %}
+
+{% highlight R %}
+marker_diff <- markerDiffTable(cds, cth)
+{% endhighlight %}
+
+{% highlight R %}
+cds <- classifyCells(cds, cth, method = "glmnet")
+{% endhighlight %}
+
+{% highlight R %}
+table(pData(cds)$CellType)
+{% endhighlight %}
+
+{% highlight R %}
+pie <- ggplot(pData(cds),
+aes(x = factor(1), fill = factor(CellType))) + geom_bar(width = 1)
+pie + coord_polar(theta = "y") +
+theme(axis.title.x = element_blank(), axis.title.y = element_blank())
+{% endhighlight %}
+
+{% highlight R %}
+disp_table <- dispersionTable(cds)
+unsup_clustering_genes <- subset(disp_table, mean_expression >= 0.1)
+cds <- setOrderingFilter(cds, unsup_clustering_genes$gene_id)
+plot_ordering_genes(cds)
+{% endhighlight %}
+
+{% highlight R %}
+plot_pc_variance_explained(cds, return_all = F)
+{% endhighlight %}
+
+{% highlight R %}
+cds <- preprocessCDS(cds)
+{% endhighlight %}
+
+{% highlight R %}
+cds <- reduceDimension(cds, reduction_method = 'UMAP', verbose = T)
+
+cds <- clusterCells(cds, num_clusters = 18)
+plot_cell_clusters(cds, 1, 2, color = "CellType", markers = c("Car1", "Prtn3"))
+{% endhighlight %}
+
+{% highlight R %}
+cds <- reduceDimension(cds, reduction_method = 'UMAP', verbose = T)
+cds <- partitionCells(cds)
+plot_cell_clusters(cds, 1, 2, color = "CellType")
+{% endhighlight %}
+
+{% highlight R %}
+cds <- clusterCells(cds, num_clusters = 18, frequency_thresh = 0.1, cell_type_hierarchy = cth)
+plot_cell_clusters(cds, 1, 2, color = 'CellType') +
+    facet_wrap(~CellType)
+{% endhighlight %}
+
+{% highlight R %}
+marker_diff <- markerDiffTable(cds, cth)
+{% endhighlight %}
+
+{% highlight R %}
+candidate_clustering_genes <-
+    row.names(subset(marker_diff, qval < 0.01))
+marker_spec <-
+  calculateMarkerSpecificity(cds[candidate_clustering_genes,], cth)
+head(selectTopMarkers(marker_spec, 3))
+{% endhighlight %}
+
+{% highlight R %}
+semisup_clustering_genes <- unique(selectTopMarkers(marker_spec, 150)$gene_id)
+cds <- setOrderingFilter(cds, semisup_clustering_genes)
+plot_ordering_genes(cds)
+{% endhighlight %}
+
+{% highlight R %}
+plot_pc_variance_explained(cds, return_all = F)
+{% endhighlight %}
+
+{% highlight R %}
+cds <- reduceDimension(cds, reduction_method = 'UMAP', verbose = T, norm_method = "log")
+cds <- clusterCells(cds, num_clusters = 18)
+plot_cell_clusters(cds, 1, 2, color = "CellType")
+{% endhighlight %}
+
+{% highlight R %}
+cds <- clusterCells(cds, num_clusters = 18, frequency_thresh = 0.1, cell_type_hierarchy = cth)
+plot_cell_clusters(cds, 1, 2, color = "CellType", markers = c("Klf1", "Gata2"))
+{% endhighlight %}
+
+{% highlight R %}
+pie <- ggplot(pData(cds), aes(x = factor(1), fill = factor(CellType))) +
+geom_bar(width = 1)
+pie + coord_polar(theta = "y") +
+theme(axis.title.x = element_blank(), axis.title.y = element_blank())
+{% endhighlight %}
+
+{% highlight R %}
+diff_test_res <- differentialGeneTest(cds[expressed_genes,],
+              fullModelFormulaStr = "~CellType")
+ordering_genes <- row.names (subset(diff_test_res, qval < 0.01))
+{% endhighlight %}
+
+{% highlight R %}
+cds <- setOrderingFilter(cds, ordering_genes)
+plot_ordering_genes(cds)
+{% endhighlight %}
+
+{% highlight R %}
+cds <- reduceDimension(cds, reduction_method = 'UMAP', verbose = T)
+{% endhighlight %}
+
+{% highlight R %}
+cds <- partitionCells(cds, "CellType")
+{% endhighlight %}
+
+{% highlight R %}
+cds <- learnGraph(cds,  RGE_method = 'SimplePPT')
+{% endhighlight %}
+
+{% highlight R %}
+MPs_node_ids = get_correct_root_state(cds,
+                                      cell_phenotype = "CellType",
+                                      root_type = "Multipotent progenitors")
+
+cds <- orderCells(cds, root_pr_nodes = MPs_node_ids)
+{% endhighlight %}
+
+{% highlight R %}
+plot_cell_trajectory(cds,
+                     color_by = "CellType")
+{% endhighlight %}
+
+{% highlight R %}
+plot_cell_trajectory(cds,
+                     color_by = "Pseudotime")
+{% endhighlight %}
+
+{% highlight R %}
+plot_cell_trajectory(cds, color_by = "CellType") +
+    facet_wrap(~CellType, nrow = 3)
+{% endhighlight %}
+
+{% highlight R %}
+blast_genes <- row.names(subset(fData(cds),
+gene_short_name %in% c("Car2", "Mpo", "Calr")))
+plot_genes_jitter(cds[blast_genes,],
+    grouping = "CellType",
+    min_expr = 0.1) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+{% endhighlight %}
+
+{% highlight R %}
+cds_expressed_genes <-  row.names(subset(fData(cds),
+num_cells_expressed >= 10))
+cds_filtered <- cds[cds_expressed_genes,]
+my_genes <- row.names(subset(fData(cds),
+          gene_short_name %in% c("Car2", "Calr", "Mpo")))
+cds_subset <- cds_filtered[my_genes,]
+plot_genes_in_pseudotime(cds_subset, color_by = "CellType")
+{% endhighlight %}
+
+{% highlight R %}
+cds <- detectGenes(cds, min_expr = 0.1)
+fData(cds)$use_for_ordering <-
+    fData(cds)$num_cells_expressed > 0.05 * ncol(cds)
+{% endhighlight %}
+
+{% highlight R %}
+plot_pc_variance_explained(cds, return_all = F)
+{% endhighlight %}
+
+{% highlight R %}
+cds <- reduceDimension(cds, reduction_method = 'UMAP', verbose = T)
+{% endhighlight %}
+
+{% highlight R %}
+cds <- clusterCells(cds, verbose = F)
+{% endhighlight %}
+
+{% highlight R %}
+plot_cell_clusters(cds, color_by = 'Cluster')
+{% endhighlight %}
+
+{% highlight R %}
+plot_rho_delta(cds, rho_threshold = 4, delta_threshold = 4 )
+{% endhighlight %}
+
+{% highlight R %}
+cds <- clusterCells(cds,
+                 rho_threshold = 4,
+                 delta_threshold = 4,
+                 skip_rho_sigma = F,
+                 verbose = F)
+{% endhighlight %}
+
+{% highlight R %}
+plot_cell_clusters(cds, color_by = 'CellType')
+{% endhighlight %}
+
+{% highlight R %}
+clustering_DEG_genes <-
+    differentialGeneTest(cds[cds_expressed_genes,],
+          fullModelFormulaStr = '~CellType',
+          cores = 1)
+{% endhighlight %}
+
+{% highlight R %}
+cds_ordering_genes <-
+    row.names(clustering_DEG_genes)[order(clustering_DEG_genes$qval)][1:1000]
+
+cds <-
+    setOrderingFilter(cds,
+        ordering_genes = cds_ordering_genes)
+{% endhighlight %}
+
+{% highlight R %}
+cds <- reduceDimension(cds, reduction_method = 'UMAP', verbose = T)
+{% endhighlight %}
+
+{% highlight R %}
+cds <- learnGraph(cds,  RGE_method = 'SimplePPT')
+{% endhighlight %}
+
+{% highlight R %}
+cds <- orderCells(cds, root_pr_nodes = MPs_node_ids)
+{% endhighlight %}
+
+{% highlight R %}
+plot_cell_trajectory(cds, color_by = "CellType")
+{% endhighlight %}
+
+{% highlight R %}
+disp_table <- dispersionTable(cds)
+ordering_genes <- subset(disp_table,
+                  mean_expression >= 0.5 &
+                  dispersion_empirical >= 1 * dispersion_fit)$gene_id
+{% endhighlight %}
+
+{% highlight R %}
+Sox4_id <-
+    row.names(subset(fData(cds), gene_short_name == "Sox4"))
+
+Myb_id <-
+    row.names(subset(fData(cds), gene_short_name == "Myb"))
+
+Apoe_id <-
+    row.names(subset(fData(cds), gene_short_name == "Apoe"))
+
+cth <- newCellTypeHierarchy()
+
+cth <- addCellType(cth,
+                   "GMP",
+                   classify_func = function(x) { x[Sox4_id,] >= 1 })
+
+cth <- addCellType(cth,
+                   "MP/EP",
+                   classify_func = function(x) { x[Apoe_id,] >= 1 })
+
+
+cth <- addCellType(cth,
+                   "Erythrocyte",
+                   classify_func = function(x) { x[Myb_id,] >= 1  & x[Cited4_id,] >= 1})
+
+cds <- classifyCells(cds, cth)
+{% endhighlight %}
+
+{% highlight R %}
+marker_diff <- markerDiffTable(cds[cds_expressed_genes,],
+                       cth,
+                       cores = 1)
+semisup_clustering_genes <-
+    row.names(subset(marker_diff, qval < 0.05))
+semisup_clustering_genes <-
+    row.names(marker_diff)[order(marker_diff$qval)][1:1000]
+{% endhighlight %}
+
+{% highlight R %}
+cds <- setOrderingFilter(cds, semisup_clustering_genes)
+cds <- reduceDimension(cds, reduction_method = 'UMAP', verbose = T)
+cds <- learnGraph(cds,  RGE_method = 'SimplePPT')
+
+GMPs_node_ids = get_correct_root_state(cds,
+                                      cell_phenotype = "CellType",
+                                      root_type = "GMP")
+
+cds <- orderCells(cds, root_pr_nodes = GMPs_node_ids)
+
+plot_cell_trajectory(cds, color_by = "CellType") +
+    theme(legend.position = "right")
+{% endhighlight %}
+
+{% highlight R %}
+marker_genes <- row.names(subset(fData(cds),
+                   gene_short_name %in% c("Zfpm1", "Id2", "Cited2",
+                                          "Sox4", "Etv6","Lmo4",
+                                          "Cebpe",  "Gata2",  "Gfi1b",
+                                          "Gata1",  "Cited4", "Vamp5",
+                                          "Batf3", "H2-Aa", "Car1",
+                                          "Car2",  "Klf1", "Cpox",
+                                          "Apoe", "Prtn3", "Irf8")))
+{% endhighlight %}
+
+{% highlight R %}
+diff_test_res <- differentialGeneTest(cds[marker_genes,],
+                                      fullModelFormulaStr = "~CellType")
+
+# Select genes that are significant at an FDR < 10%
+sig_genes <- subset(diff_test_res, qval < 0.1)
+
+sig_genes[,c("gene_short_name", "pval", "qval")]
+{% endhighlight %}
+
+{% highlight R %}
+MYE_ID1 <- cds[row.names(subset(fData(cds),
+              gene_short_name %in% c("Zfpm1", "Batf3", "Cpox"))),]
+plot_genes_jitter(MYE_ID1, grouping = "CellType", ncol= 2) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+{% endhighlight %}
+
+{% highlight R %}
+to_be_tested <- row.names(subset(fData(cds),
+              gene_short_name %in% c("Car1", "Csda", "Phb2")))
+cds_subset <- cds[to_be_tested,]
+{% endhighlight %}
+
+{% highlight R %}
+diff_test_res <- differentialGeneTest(cds_subset,
+                    fullModelFormulaStr = "~CellType")
+diff_test_res[,c("gene_short_name", "pval", "qval")]
+{% endhighlight %}
+
+{% highlight R %}
+plot_genes_jitter(cds_subset,
+                  grouping = "CellType",
+                  color_by = "CellType",
+                  nrow= 1,
+                  ncol = NULL,
+                  plot_trend = TRUE) +
+                  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+{% endhighlight %}
+
+{% highlight R %}
+full_model_fits <-
+    fitModel(cds_subset,  modelFormulaStr = "~CellType")
+reduced_model_fits <- fitModel(cds_subset, modelFormulaStr = "~1")
+diff_test_res <- compareModels(full_model_fits, reduced_model_fits)
+diff_test_res
+{% endhighlight %}
+
+{% highlight R %}
+to_be_tested <- row.names(subset(fData(cds),
+gene_short_name %in% c("Car1", "Csda", "Phb2")))
+cds_subset <- cds_subset[to_be_tested,]
+
+names(diff_test_res)[1] = 'gene_short_name'
+{% endhighlight %}
+
+{% highlight R %}
+diff_test_res <- differentialGeneTest(cds_subset,
+fullModelFormulaStr = "~sm.ns(Pseudotime)")
+{% endhighlight %}
+
+{% highlight R %}
+diff_test_res[,c("gene_short_name", "pval", "qval")]
+{% endhighlight %}
+
+{% highlight R %}
+plot_genes_in_pseudotime(cds_subset, color_by = "CellType")
+{% endhighlight %}
+
+{% highlight R %}
+plot_pseudotime_heatmap(cds_subset,
+                num_clusters = 18,
+                cores = 1,
+                show_rownames = T)
+{% endhighlight %}
+
+{% highlight R %}
+to_be_tested <-
+    row.names(subset(fData(cds_subset),
+        gene_short_name %in% c("Car1", "Csda", "Phb2")))
+
+cds_subset <- cds[to_be_tested,]
+
+diff_test_res <- differentialGeneTest(cds_subset,
+                        fullModelFormulaStr = "~CellType")
+diff_test_res[,c("gene_short_name", "pval", "qval")]
+plot_genes_jitter(cds_subset,
+    grouping = "CellType", plot_trend = TRUE) +
+        facet_wrap( ~ feature_label, scales= "free_y") +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1))
+{% endhighlight %}
+
+{% highlight R %}
+BEAM_res <- BEAM(cds, cores = 1, branch_point = 1)
+BEAM_res <- BEAM_res[order(BEAM_res$qval),]
+BEAM_res <- BEAM_res[,c("gene_short_name", "pval", "qval")]
+{% endhighlight %}
+
+{% highlight R %}
+plot_genes_branched_heatmap(lung[row.names(subset(BEAM_res,
+                                          qval < 1e-4)),],
+                                          branch_point = 1,
+                                          num_clusters = 4,
+                                          cores = 1,
+                                          use_gene_short_name = T,
+                                          show_rownames = T)
+{% endhighlight %}
+
+{% highlight R %}
+lung_genes <- row.names(subset(fData(cds),
+          gene_short_name %in% c("Car1", "Csda", "Phb2")))
+plot_genes_branched_pseudotime(lung[lung_genes,],
+                       branch_point = 1,
+                       color_by = "Time",
+                       ncol = 1)
+{% endhighlight %}
+
+        </div>
+      </div>
+    </div>
+
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+
+{% include footer.html %}
+
+</body>
+
+</html>

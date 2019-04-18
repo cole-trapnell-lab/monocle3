@@ -1,0 +1,115 @@
+---
+layout: vanilla
+permalink: /tutorials/
+description: "Tutorials for Monocle."
+modified: 2017-7-11
+tags: [monocle, manual, vignette]
+---
+
+<!DOCTYPE html>
+<html lang= "{{ page.lang | default: site.lang | default: "en" }}">
+
+  {% include head.html %}
+
+  <body  data-spy= "scroll" data-target= "#toc">
+    {% include header.html %}
+
+    <div class= "container">
+      <div class= "row">
+        <!-- sidebar, which will move to the top on a small screen -->
+        <div class= "col-sm-4">
+          <nav id= "toc" data-spy= "affix" data-toggle= "toc"></nav>
+        </div>
+        <!-- main content area -->
+        <div class= "col-sm-12">
+
+          <div class="text-center">
+            <h3 data-toc-skip>Below are a few examples on how to use Monocle to analyze particular datasets</h3>
+          </div>
+
+          <hr class="featurette-divider">
+
+
+
+
+          <div class="row featurette">
+            <div class="col-md-4">
+              <img class="featurette-image img-responsive center-block" src="{{site.baseurl}}/images/olsson-complex-plot.png" alt="Monocle 1" height = 400/>
+            </div>
+            <div class="col-md-8">
+
+              <h3 data-toc-skip>Olsson Dataset Analysis</h3>
+              <br>
+              <p> In this tutorial, we demonstrate how to use reversed graph embedding (RGE) in Monocle 2 to resolve the complicated haematopoiesis process which involves two major branch points. In regards to the branch points, HSC bifurcates into either megakaryote/erythroid progenitor (MEP) or granulocyte/monocyte progenitor (GMP) and the bifurcation from GMP into either granulocyte and monocyte progenitor.
+                The reconstructed developmental trajectory is learned in four dimensions but can be visualized in two dimensions. With the trajectory learned, we are able to identify genes showing significant a bifurcation pattern during each lineage bifurcation through <a href = "{{ site.baseurl }}/papers/">BEAM</a>. We can further combine ChIP-seq datasets and Irf8 (monocyte master regulator) for Gfi1 (granulocyte master regulator) as well as the transcription factors to build a regulatory network from master regulators to other important downstream regulators and then those regulators to their downstream targets. This network hierarchy is promising to resolve the fundamental regulatory mechanism for the hematopoiesis. We also provided a multi-way heatmap and multi-way kinetic curves to visualize important marker genes over the differentiation process. Some additional analyses are included, which are used for the tutorial on analyzing the Paul dataset.
+
+                <div class="text-center">
+                  <a class="btn btn-default btn-sm" href="{{site.baseurl}}/tutorial_data/Olsson_dataset_analysis_final.html" role="button">HTML</a>
+                  <a class="btn btn-default btn-sm" href="https://github.com/cole-trapnell-lab/monocle2-rge-paper/blob/master/Olsson_dataset_analysis_final.ipynb" role="button">ipynb</a>
+                </div>
+
+
+            </div>
+          </div>
+
+          <br>
+
+          <hr class="featurette-divider">
+
+          <div class="row featurette">
+            <div class="col-md-4">
+                <img class="featurette-image img-responsive center-block" src="{{site.baseurl}}/images/paul-a-c.png" alt="Monocle 1" height = 400/>
+            </div>
+            <div class="col-md-8">
+              <h3 data-toc-skip>Paul Dataset Analysis</h3>
+              <br>
+              <p> In this tutorial, we demonstrate how to use Monocle 2 to resolve the complicated haematopoiesis process that contains five branch points by applying reversed graph embedding (RGE). To demonstrate this we will be analyzing the Paul dataset. The reconstructed developmental trajectory is learned in ten dimensions, selected based on PC variance explained, but can be visualized in two dimensions using a tree layout. We show that the structure of the tree we reconstructed matches well with the cell type assignment from the <a href = "http://www.cell.com/cell/abstract/S0092-8674(15)01493-2"> original paper </a>. When we use genes based on the above Olsson dataset to define stemness or lineage specificity for each cell on the tree, we can see the smooth transition of cell differentation. Multi-way kinetic curves and multi-way heatmaps visualize the dynamics of six different cell fate commitments.
+
+                <div class="text-center">
+                  <a class="btn btn-default btn-sm" href="{{site.baseurl}}/tutorial_data/Paul_dataset_analysis_final.html" role="button">HTML</a>
+                  <a class="btn btn-default btn-sm" href="https://github.com/cole-trapnell-lab/monocle2-rge-paper/blob/master/Paul_dataset_analysis_final.ipynb" role="button">ipynb</a>
+                </div>
+
+            </div>
+          </div>
+
+          <br>
+
+          <hr class="featurette-divider">
+
+          <div class="row featurette">
+            <div class="col-md-4">
+                <img class="featurette-image img-responsive center-block" src="{{site.baseurl}}/images/monocle3_paul_3d_tutorial_ad.png" alt="Monocle 1" height = 400/>
+            </div>
+            <div class="col-md-8">
+              <h3 data-toc-skip>Paul Dataset Analysis with Monocle 3</h3>
+              <br>
+              <p> In this tutorial, we demonstrate how to use Monocle 3 to analyze the Paul data. We show off several of Monocle 3's new features, including UMAP, disjoint trajectories, 3D interactive plots, and a new test for trajectory dependent genes.
+
+                <div class="text-center">
+                  <a class="btn btn-default btn-sm" href="{{site.baseurl}}/tutorial_data/Paul_blood_dataset_monocle3.html" role="button">HTML</a>
+                  <a class="btn btn-default btn-sm" href="https://github.com/cole-trapnell-lab/monocle-release/blob/monocle3_alpha/notebook/Paul_blood_dataset.ipynb" role="button">ipynb</a>
+                </div>
+
+            </div>
+          </div>
+
+          <hr class="featurette-divider">
+          <br>
+
+          <div class="row featurette">
+            <div class="col-md-4">
+              <img class="featurette-image img-responsive center-block" src="{{site.baseurl}}/images/MCA_plot_tutorial.png" alt="Monocle 1" height = 400/>
+            </div>
+            <div class="col-md-8">
+
+              <h3 data-toc-skip>MCA Dataset Analysis Clustering</h3>
+              <br>
+              <p> In this tutorial, we demonstrate how to use Monocle 3 (beta version) to cluster cells for very large datasets. We will mainly introduce 1) use delayedarray to facilitate calculations in functions estimateSizeFactor, estimateDispersions and preprocessCDS, etc for large datasets. 2) apply UMAP, a very promising non-linear dimension reduction to learn low dimensional representation of the data. 3) introduce a general differential test (manifoldTest) to identify genes spatially autocorrelated on the low dimensional embedding.</p>
+
+                <div class="text-center">
+                  <a class="btn btn-default btn-sm" href="{{site.baseurl}}/tutorial_data/MCA_data_analysis.html" role="button">HTML</a>
+                  <a class="btn btn-default btn-sm" href="https://github.com/cole-trapnell-lab/monocle-release/blob/monocle3_alpha/notebook/MCA_data_analysis.ipynb" role="button">ipynb</a>
+                </div>
+            </div>
+          </div>

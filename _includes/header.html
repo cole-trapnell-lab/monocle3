@@ -1,0 +1,42 @@
+<!-- <header class="site-header" role="banner"> -->
+  <div class="container-fullwidth">
+  <nav class="navbar navbar-inverse navbar-static-top">
+    <div class="container">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="{{ site.baseurl }}/">Monocle</a>
+      </div>
+      <div id="navbar" class="collapse navbar-collapse">
+        <ul class="nav navbar-nav">
+          <!-- <li class="active"><a href="#">Home</a></li> -->
+
+          <script>
+
+          function mobileDetect() {
+            if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|BB|PlayBook|IEMobile|Windows Phone|Kindle|Silk|Opera Mini/i.test(navigator.userAgent)) {
+              window.location.href = "{{ site.baseurl }}/docs_mobile/"
+            } else {
+              window.location.href = "{{ site.baseurl }}/docs/"
+            }
+          }
+
+          </script>
+          <li><a href="{{ site.baseurl }}/Paul/">Documentation</a></li>
+          <li><a href="javascript:void(0)" onclick="mobileDetect();">Monocle 2 Documentation</a></li>
+          <li><a href="{{ site.baseurl }}/monocle3/">Monocle 3 alpha</a></li>
+          <li><a href="{{ site.baseurl }}/papers/">Publications</a></li>
+          <li><a href="{{ site.baseurl }}/tutorials/">Tutorials</a></li>
+          <li><a href="https://github.com/cole-trapnell-lab/monocle-release">GitHub</a></li>
+        </ul>
+      </div><!--/.nav-collapse -->
+    </div>
+  </nav>
+  </div>
+
+</header>

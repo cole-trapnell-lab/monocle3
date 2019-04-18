@@ -1,0 +1,56 @@
+<!-- <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>{% if page.title %}{{ page.title | escape }}{% else %}{{ site.title | escape }}{% endif %}</title>
+  <meta name="description" content="{{ page.excerpt | default: site.description | strip_html | normalize_whitespace | truncate: 160 | escape }}">
+
+  <link rel="stylesheet" href="{{ "/css/main.css" | relative_url }}">
+  <link rel="canonical" href="{{ page.url | replace:'index.html','' | absolute_url }}">
+  <link rel="alternate" type="application/rss+xml" title="{{ site.title | escape }}" href="{{ "/feed.xml" | relative_url }}">
+
+  {% if jekyll.environment == 'production' and site.google_analytics %}
+  {% include google-analytics.html %}
+  {% endif %}
+</head> -->
+
+<head>
+   <meta charset="utf-8">
+   <meta http-equiv="X-UA-Compatible" content="IE=edge">
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+   <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+   <title>{% if page.title %}{{ page.title | escape }}{% else %}{{ site.title | escape }}{% endif %}</title>
+   <meta name="description" content="{{ page.excerpt | default: site.description | strip_html | normalize_whitespace | truncate: 160 | escape }}">
+   <!-- <link rel="icon" href="../../favicon.ico"> -->
+
+   <title>Theme Template for Bootstrap</title>
+
+  <link rel="stylesheet" href="{{ "/css/main.css" | relative_url }}">
+  <link rel="stylesheet" href="{{site.baseurl}}/node_modules/prismjs/themes/base16-atelierlakeside.light.css" />
+  <link rel="stylesheet" href="https://cdn.rawgit.com/afeld/bootstrap-toc/v0.4.1/dist/bootstrap-toc.min.css">
+  <!-- add after bootstrap.min.js -->
+  <link rel="canonical" href="{{ page.url | replace:'index.html','' | absolute_url }}">
+
+     <!-- Begin of scripts to run the widget -->
+     <script src="{{site.baseurl}}/widget_scripts/htmlwidgets-1.2/htmlwidgets.js"></script>
+     <link href="{{site.baseurl}}/widget_scripts/rglwidgetClass-2/rgl.css" rel="stylesheet" />
+     <script src="{{site.baseurl}}/widget_scripts/rglwidgetClass-2/rglClass.src.js"></script>
+     <script src="{{site.baseurl}}/widget_scripts/CanvasMatrix4-2016/CanvasMatrix.src.js"></script>
+     <script src="{{site.baseurl}}/widget_scripts/rglWebGL-binding-0.99.16/rglWebGL.js"></script>
+     <script src="{{site.baseurl}}/widget_scripts/jquery-1.11.3/jquery.min.js"></script>
+     <link href="{{site.baseurl}}/widget_scripts/crosstalk-1.0.0/css/crosstalk.css" rel="stylesheet" /> 
+     <script src="{{site.baseurl}}/widget_scripts/crosstalk-1.0.0/js/crosstalk.min.js"></script> 
+     <!-- End of scripts to run the widget -->
+   
+
+   <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+   <!--[if lt IE 9]>
+     <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+     <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+   <![endif]-->
+
+   <!-- {% if jekyll.environment == 'production' and site.google_analytics %}
+   {% include google-analytics.html %}
+   {% endif %} -->
+ </head>
