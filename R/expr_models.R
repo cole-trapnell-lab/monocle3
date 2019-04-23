@@ -428,10 +428,10 @@ likelihood_ratio_test_pval = function(model_summary_x, model_summary_y){
 
 #' Predict output of fitted models and return as a matrix
 #' @export
-model_predictions = function(model_tbl, new_data) {
+model_predictions = function(model_tbl, new_data, type="response") {
   predict_helper = function(model, cds){
     tryCatch({
-      predict(model, newdata=new_data)
+      predict(model, newdata=new_data, type=type)
     }, error = function(e){
       retval = rep_len(NA, nrow(new_data))
       names(retval) = row.names(new_data)
