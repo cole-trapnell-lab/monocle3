@@ -817,7 +817,7 @@ plot_genes_in_pseudotime <-function(cds_subset,
   if (is.null(color_by) == FALSE) {
     q <- q + geom_point(aes_string(color = color_by), size = I(cell_size), position=position_jitter(horizontal_jitter, vertical_jitter))
     if (class(colData(cds_subset)[,color_by]) == "numeric"){
-      q <- q + scale_color_viridis(option="C")
+      q <- q + viridis::scale_color_viridis(option="C")
     }
   }
   else {
