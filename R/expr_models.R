@@ -110,6 +110,7 @@ clean_model_object = function(model) {
 #' @param verbose Whether to show VGAM errors and warnings. Only valid for cores = 1.
 #' @param ... test
 #' @name fit_model_helper
+#' @importFrom VGAM sm.ns
 #' @keywords internal
 fit_model_helper <- function(x,
                              model_formula_str,
@@ -429,3 +430,21 @@ likelihood_ratio_test_pval = function(model_summary_x, model_summary_y){
   LLR = 2 * abs(model_summary_x$logLik  - model_summary_y$logLik)
   p_val = pchisq(LLR, dfs, lower.tail = FALSE)
 }
+
+#' Predict output of fitted models and return as a matrix
+#' @export
+model_predictions = function(model_tbl, new_data) {
+  predict_helper = function(model, cds){
+    tryCatch({
+      predict(model, newdata=new_data)
+    }, error = function(e){
+      retval = rep_len(NA, nrow(new_data))
+      names(retval) = row.names(new_data)
+      return(retval)
+    })
+  }
+  model_tbl = model_tbl %>% dplyr::mutate(predictions = purrr::map(model, predict_helper, new_data))
+  pred_matrix = t(do.call(cbind, model_tbl$predictions))
+  return(pred_matrix)
+}
+

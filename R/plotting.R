@@ -628,12 +628,11 @@ plot_cell_clusters <- function(cds,
     markers_rowData <- subset(rowData(cds), gene_short_name %in% markers)
     if (nrow(markers_rowData) >= 1){
       cds_subset <- cds[row.names(markers_rowData),]
-      if (cds_subset@expressionFamily@vfamily %in% c("quasipoisson", "poisson", "zipoisson", "negbinomial", "zinegbinomial")) {
+      if (metadata(cds)@expression_family %in% c("quasipoisson", "poisson", "zipoisson", "negbinomial", "zinegbinomial")) {
         integer_expression <- TRUE
       }
       else {
         integer_expression <- FALSE
-
       }
       if (integer_expression) {
         cds_exprs <- assays(cds_subset)$exprs
@@ -668,7 +667,7 @@ plot_cell_clusters <- function(cds,
   }else{
     text_df <- data_df %>% dplyr::group_by_(color_by) %>% dplyr::summarize(text_x = median(x = data_dim_1),
                                                                            text_y = median(x = data_dim_2))
-    if(color_by != "Cluster" & !is.numeric(data_df[, color_by])) {
+  if(color_by != "Cluster" & !is.numeric(data_df[, color_by]) & !is.factor(data_df[, color_by])) {
       text_df$label <- paste0(1:nrow(text_df))
       text_df$process_label <- paste0(1:nrow(text_df), '_', as.character(as.matrix(text_df[, 1])))
       process_label <- text_df$process_label
@@ -684,6 +683,7 @@ plot_cell_clusters <- function(cds,
   # FIXME: setting size here overrides the marker expression funtionality.
   # Don't do it!
   if (is.null(markers_exprs) == FALSE && nrow(markers_exprs) > 0){
+
     if (cds_subset@expressionFamily@vfamily %in% c("quasipoisson", "poisson", "zipoisson", "negbinomial", "zinegbinomial")){
       g <- g + plotting_func(aes(color=log10(value + min_expr), alpha = ifelse(!is.na(value), "2", "1")), size=I(cell_size), stroke = I(cell_size / 2), na.rm = TRUE) +
         viridis::scale_color_viridis(option = "viridis", name = "log10(values + 0.1)", na.value = "grey80", end = 0.8) +
@@ -795,9 +795,13 @@ plot_genes_in_pseudotime <-function(cds_subset,
   cds_exprs$f_id <- as.character(cds_exprs$f_id)
   cds_exprs$feature_label <- factor(cds_exprs$feature_label)
 
-  new_data <- data.frame(Pseudotime = colData(cds_subset)$Pseudotime)
-  model_expectation <- gen_smooth_curves(cds_subset, cores=1, trend_formula = trend_formula,
-                                         new_data = new_data)
+
+  new_data <- data.frame(Pseudotime = pData(cds_subset)$Pseudotime)
+  model_tbl = fit_models(cds_subset, model_formula_str = trend_formula)
+
+  model_expectation <- model_predictions(model_tbl,
+                                         new_data = colData(cds_subset))
+
   colnames(model_expectation) <- colnames(cds_subset)
   expectation <- plyr::ddply(cds_exprs, plyr::.(f_id, Cell), function(x) data.frame("expectation"=model_expectation[x$f_id, x$Cell]))
   cds_exprs <- merge(cds_exprs, expectation)
@@ -834,69 +838,6 @@ plot_genes_in_pseudotime <-function(cds_subset,
   q <- q + monocle_theme_opts()
   q
 }
-
-#' Fit smooth spline curves and return the response matrix
-#'
-#' This function will fit smooth spline curves for the gene expression dynamics along pseudotime in a gene-wise manner and return
-#' the corresponding response matrix. This function is build on other functions (fit_models and response_matrix) and used in calILRs and calABCs functions
-#'
-#' @param cds a CellDataSet object upon which to perform this operation
-#' @param new_data a data.frame object including columns (for example, Pseudotime) with names specified in the model formula. The values in the data.frame should be consist with the corresponding values from cds object.
-#' @param trend_formula a formula string specifying the model formula used in fitting the spline curve for each gene/feature.
-#' @param response_type the response desired, as accepted by VGAM's predict function
-#' @param cores the number of cores to be used while testing each gene for differential expression
-#' @return a data frame containing the data for the fitted spline curves.
-#'
-gen_smooth_curves <- function(cds, new_data, trend_formula = "~sm.ns(Pseudotime, df = 3)",
-                              response_type="response", cores = 1) {
-
-  expression_family <- metadata(cds)$expression_family
-
-  if(cores > 1) {
-    expression_curve_matrix <- mcesApply(cds, 1, function(x, trend_formula, expression_family, new_data, fit_model_helper, response_matrix,
-                                                          calculate_NB_dispersion_hint, calculate_QP_dispersion_hint){
-      environment(fit_model_helper) <- environment()
-      environment(response_matrix) <- environment()
-      model_fits <- fit_model_helper(x, modelFormulaStr = trend_formula, expression_family = expression_family,
-                                     disp_func = cds@dispFitInfo[['blind']]$disp_func)
-      if(is.null(model_fits))
-        expression_curve <- as.data.frame(matrix(rep(NA, nrow(new_data)), nrow = 1))
-      else
-        expression_curve <- as.data.frame(response_matrix(list(model_fits), newdata = new_data))
-      colnames(expression_curve) <- row.names(new_data)
-      expression_curve
-      #return(expression_curve)
-    }, required_packages=c("BiocGenerics", "Biobase", "VGAM", "plyr"), cores=cores,
-    trend_formula = trend_formula, expression_family = expression_family, new_data = new_data,
-    fit_model_helper = fit_model_helper, response_matrix = response_matrix, calculate_NB_dispersion_hint = calculate_NB_dispersion_hint,
-    calculate_QP_dispersion_hint = calculate_QP_dispersion_hint
-    )
-    expression_curve_matrix <- as.matrix(do.call(rbind, expression_curve_matrix))
-    return(expression_curve_matrix)
-  }
-  else {
-    expression_curve_matrix <- smart_es_apply(cds, 1, function(x, trend_formula, expression_family, new_data){
-      environment(fit_model_helper) <- environment()
-      environment(response_matrix) <- environment()
-      model_fits <- fit_model_helper(x, model_formula_str = trend_formula, expression_family = expression_family,
-                                     disp_func = cds@dispFitInfo[['blind']]$disp_func)
-      if(is.null(model_fits))
-        expression_curve <- as.data.frame(matrix(rep(NA, nrow(new_data)), nrow = 1))
-      else
-        expression_curve <- as.data.frame(response_matrix(list(model_fits), new_data, response_type=response_type))
-      colnames(expression_curve) <- row.names(new_data)
-      expression_curve
-    },
-    convert_to_dense=TRUE,
-    trend_formula = trend_formula, expression_family = expression_family, new_data = new_data
-    )
-    expression_curve_matrix <- as.matrix(do.call(rbind, expression_curve_matrix))
-    row.names(expression_curve_matrix) <- row.names(rowData(cds))
-    return(expression_curve_matrix)
-  }
-
-}
-
 
 #' Plots the percentage of variance explained by the each component based on PCA from the normalized expression
 #' data using the same procedure used in reduceDimension function.
@@ -1260,50 +1201,186 @@ plot_percent_cells_positive <- function(cds_subset,
 }
 
 
-#' Calculates response values.
-#'
-#' Generates a matrix of response values for a set of fitted models
-#' @param models a list of models, e.g. as returned by fitModels()
-#' @param newdata a dataframe used to generate new data for interpolation of time points
-#' @param response_type the response desired, as accepted by VGAM's predict function
-#' @param cores number of cores used for calculation
-#' @return a matrix where each row is a vector of response values for a particular feature's model, and columns are cells.
-response_matrix <- function(models, newdata = NULL, response_type="response", cores = 1) {
-  res_list <- parallel::mclapply(models, function(x) {
-    if (is.na(x$model)) { NA } else {
-      print(x)
-      if (metadata(x)$expression_family %in% c("quasipoisson", "poisson", "zipoisson", "negbinomial", "zinegbinomial")) {
-        predict(x, newdata = newdata, type = response_type)
-      } else if (metadata(x)$expression_family %in% c("uninormal")) {
-        predict(x, newdata = newdata, type = response_type)
-      }
-      else {
-        10^predict(x, newdata = newdata, type = response_type)
-      }
-    }
-  }, mc.cores = cores)
 
-  res_list_lengths <- lapply(res_list[is.na(res_list) == FALSE],
-                             length)
-  stopifnot(length(unique(res_list_lengths)) == 1)
-  num_na_fits <- length(res_list[is.na(res_list)])
-  if (num_na_fits > 0) {
-    na_matrix <- matrix(rep(rep(NA, res_list_lengths[[1]]),
-                            num_na_fits), nrow = num_na_fits)
-    row.names(na_matrix) <- names(res_list[is.na(res_list)])
-    non_na_matrix <- Matrix::t(do.call(cbind, lapply(res_list[is.na(res_list) ==
-                                                                FALSE], unlist)))
-    row.names(non_na_matrix) <- names(res_list[is.na(res_list) ==
-                                                 FALSE])
-    res_matrix <- rbind(non_na_matrix, na_matrix)
-    res_matrix <- res_matrix[names(res_list), ]
+#' Plots a pseudotime-ordered, row-centered heatmap
+#'
+#' @description The function plot_pseudotime_heatmap takes a CellDataSet object
+#' (usually containing a only subset of significant genes) and generates smooth expression
+#' curves much like plot_genes_in_pseudotime.
+#' Then, it clusters these genes and plots them using the pheatmap package.
+#' This allows you to visualize modules of genes that co-vary across pseudotime.
+#'
+#' @param cds_subset CellDataSet for the experiment (normally only the branching genes detected with branchTest)
+#' @param cluster_rows Whether to cluster the rows of the heatmap.
+#' @param hclust_method The method used by pheatmap to perform hirearchical clustering of the rows.
+#' @param num_clusters Number of clusters for the heatmap of branch genes
+#' @param hmcols The color scheme for drawing the heatmap.
+#' @param add_annotation_row Additional annotations to show for each row in the heatmap. Must be a dataframe with one row for each row in the fData table of cds_subset, with matching IDs.
+#' @param add_annotation_col Additional annotations to show for each column in the heatmap. Must be a dataframe with one row for each cell in the pData table of cds_subset, with matching IDs.
+#' @param show_rownames Whether to show the names for each row in the table.
+#' @param use_gene_short_name Whether to use the short names for each row. If FALSE, uses row IDs from the fData table.
+#' @param scale_max The maximum value (in standard deviations) to show in the heatmap. Values larger than this are set to the max.
+#' @param scale_min The minimum value (in standard deviations) to show in the heatmap. Values smaller than this are set to the min.
+#' @param norm_method Determines how to transform expression values prior to rendering
+#' @param trend_formula A formula string specifying the model used in fitting the spline curve for each gene/feature.
+#' @param return_heatmap Whether to return the pheatmap object to the user.
+#' @param cores Number of cores to use when smoothing the expression curves shown in the heatmap.
+#' @return A list of heatmap_matrix (expression matrix for the branch committment), ph (pheatmap heatmap object),
+#' annotation_row (annotation data.frame for the row), annotation_col (annotation data.frame for the column).
+#' @import pheatmap
+#' @importFrom stats sd as.dist cor cutree
+#' @export
+#'
+plot_pseudotime_heatmap <- function(cds_subset,
+
+                                    cluster_rows = TRUE,
+                                    hclust_method = "ward.D2",
+                                    num_clusters = 6,
+
+                                    hmcols = NULL,
+
+                                    add_annotation_row = NULL,
+                                    add_annotation_col = NULL,
+                                    show_rownames = FALSE,
+                                    use_gene_short_name = TRUE,
+                                    norm_method = c("log", "none"),
+                                    scale_max=3,
+                                    scale_min=-3,
+
+                                    trend_formula = '~VGAM::sm.ns(Pseudotime, df=3)',
+
+                                    return_heatmap=FALSE,
+                                    cores=1){
+  num_clusters <- min(num_clusters, nrow(cds_subset))
+  pseudocount <- 1
+  newdata <- data.frame(Pseudotime = seq(min(colData(cds_subset)$Pseudotime), max(colData(cds_subset)$Pseudotime),length.out = 100))
+  model_tbl = fit_models(cds_subset, model_formula_str = trend_formula, cores=cores)
+
+  model_expectation <- model_predictions(model_tbl,
+                                         new_data = colData(cds_subset))
+
+
+  #remove genes with no expression in any condition
+  model_expectation=model_expectation[!apply(model_expectation,1,sum)==0,]
+
+  norm_method <- match.arg(norm_method)
+
+
+  if(norm_method == 'log') {
+    model_expectation = log10(model_expectation+pseudocount)
+  }
+
+  # Row-center the data.
+  model_expectation=model_expectation[!apply(model_expectation,1,sd)==0,]
+  model_expectation=Matrix::t(scale(Matrix::t(model_expectation),center=TRUE))
+  model_expectation=model_expectation[is.na(row.names(model_expectation)) == FALSE,]
+  model_expectation[is.nan(model_expectation)] = 0
+  model_expectation[model_expectation>scale_max] = scale_max
+  model_expectation[model_expectation<scale_min] = scale_min
+
+  heatmap_matrix <- model_expectation
+
+  row_dist <- as.dist((1 - cor(Matrix::t(heatmap_matrix)))/2)
+  row_dist[is.na(row_dist)] <- 1
+
+  if(is.null(hmcols)) {
+    bks <- seq(-3.1,3.1, by = 0.1)
+    hmcols <- viridis::viridis(length(bks) - 1) #blue2green2red(length(bks) - 1)
   }
   else {
-    res_matrix <- Matrix::t(do.call(cbind, lapply(res_list, unlist)))
-    row.names(res_matrix) <- names(res_list[is.na(res_list) ==
-                                              FALSE])
+    bks <- seq(-3.1,3.1, length.out = length(hmcols))
   }
-  res_matrix
+
+  ph <- pheatmap::pheatmap(heatmap_matrix,
+                 useRaster = T,
+                 cluster_cols=FALSE,
+                 cluster_rows=cluster_rows,
+                 show_rownames=F,
+                 show_colnames=F,
+                 clustering_distance_rows=row_dist,
+                 clustering_method = hclust_method,
+                 cutree_rows=num_clusters,
+                 silent=TRUE,
+                 filename=NA,
+                 breaks=bks,
+                 border_color = NA,
+                 color=hmcols)
+
+  if(cluster_rows) {
+    annotation_row <- data.frame(Cluster=factor(cutree(ph$tree_row, num_clusters)))
+  } else {
+    annotation_row <- NULL
+  }
+
+  if(!is.null(add_annotation_row)) {
+    old_colnames_length <- ncol(annotation_row)
+    annotation_row <- cbind(annotation_row, add_annotation_row[row.names(annotation_row), ])
+    colnames(annotation_row)[(old_colnames_length+1):ncol(annotation_row)] <- colnames(add_annotation_row)
+    # annotation_row$bif_time <- add_annotation_row[as.character(fData(absolute_cds[row.names(annotation_row), ])$gene_short_name), 1]
+  }
+
+  if(!is.null(add_annotation_col)) {
+    if(nrow(add_annotation_col) != 100) {
+      stop('add_annotation_col should have only 100 rows (check model_predictions before you supply the annotation data)!')
+    }
+    annotation_col <- add_annotation_col
+  } else {
+    annotation_col <- NA
+  }
+
+  if (use_gene_short_name == TRUE) {
+    if (is.null(fData(cds_subset)$gene_short_name) == FALSE) {
+      feature_label <- as.character(fData(cds_subset)[row.names(heatmap_matrix), 'gene_short_name'])
+      feature_label[is.na(feature_label)] <- row.names(heatmap_matrix)
+
+      row_ann_labels <- as.character(fData(cds_subset)[row.names(annotation_row), 'gene_short_name'])
+      row_ann_labels[is.na(row_ann_labels)] <- row.names(annotation_row)
+    }
+    else {
+      feature_label <- row.names(heatmap_matrix)
+      row_ann_labels <- row.names(annotation_row)
+    }
+  }
+  else {
+    feature_label <- row.names(heatmap_matrix)
+    if(!is.null(annotation_row))
+      row_ann_labels <- row.names(annotation_row)
+  }
+
+  row.names(heatmap_matrix) <- feature_label
+  if(!is.null(annotation_row))
+    row.names(annotation_row) <- row_ann_labels
+
+  colnames(heatmap_matrix) <- c(1:ncol(heatmap_matrix))
+
+  ph_res <- pheatmap::pheatmap(heatmap_matrix[, ], #ph$tree_row$order
+                     useRaster = T,
+                     cluster_cols = FALSE,
+                     cluster_rows = cluster_rows,
+                     show_rownames=show_rownames,
+                     show_colnames=F,
+                     #scale="row",
+                     clustering_distance_rows=row_dist, #row_dist
+                     clustering_method = hclust_method, #ward.D2
+                     cutree_rows=num_clusters,
+                     # cutree_cols = 2,
+                     annotation_row=annotation_row,
+                     annotation_col=annotation_col,
+                     treeheight_row = 20,
+                     breaks=bks,
+                     fontsize = 6,
+                     color=hmcols,
+                     border_color = NA,
+                     silent=TRUE,
+                     filename=NA
+  )
+
+  grid::grid.rect(gp=grid::gpar("fill", col=NA))
+  grid::grid.draw(ph_res$gtable)
+  if (return_heatmap){
+    return(ph_res)
+  }
 }
+
 
 
