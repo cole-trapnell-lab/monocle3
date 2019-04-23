@@ -10,7 +10,7 @@ monocle_theme_opts <- function()
     theme(legend.key=element_blank())
 }
 
-#' Plots the minimum spanning tree on cells.
+#' Plots the cells along with their trajectories.
 #'
 #' @param cds cell_data_set for the experiment
 #' @param x the column of reducedDimS(cds) to plot on the horizontal axis
@@ -50,7 +50,7 @@ plot_cell_trajectory <- function(cds,
                                  markers_linear = FALSE,
                                  show_cell_names=FALSE,
                                  show_state_number = FALSE,
-                                 cell_size=1.5,
+                                 cell_size=1,
                                  cell_link_size=0.75,
                                  cell_name_size=2,
                                  state_number_size = 2.9,
@@ -133,7 +133,8 @@ plot_cell_trajectory <- function(cds,
   }
   if (is.null(markers_exprs) == FALSE && nrow(markers_exprs) > 0){
     data_df <- merge(data_df, markers_exprs, by.x="sample_name", by.y="cell_id")
-    data_df$value <- with(data_df, ifelse(value >= 0.01, value, NA))
+    data_df$value <- with(data_df, ifelse(value > min_expr, value, NA))
+    data_df$feature_label <- factor(data_df$feature_label,levels = markers)
     if(markers_linear){
       g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2)) + plotting_func(aes(color=value, alpha = ifelse(!is.na(value), "2", "1")), size=I(cell_size), stroke = I(cell_size / 2), na.rm = TRUE) +
         viridis::scale_color_viridis(option = "viridis", name = "log10(values + 0.1)", na.value = "grey80", end = 0.8) +
