@@ -106,7 +106,6 @@ clean_model_object = function(model) {
 #' @param x test
 #' @param model_formula_str a formula string specifying the model to fit for the genes.
 #' @param expression_family specifies the family function used for expression responses
-#' @param relative_expr Whether to transform expression into relative values
 #' @param disp_func test
 #' @param verbose Whether to show VGAM errors and warnings. Only valid for cores = 1.
 #' @param ... test
@@ -175,7 +174,6 @@ fit_model_helper <- function(x,
 #'
 #' @param cds the cell_data_set upon which to perform this operation
 #' @param model_formula_str a formula string specifying the model to fit for the genes.
-#' @param relative_expr Whether to fit a model to relative or absolute expression. Only meaningful for count-based expression data. If TRUE, counts are normalized by Size_Factor prior to fitting.
 #' @param cores the number of processor cores to be used during fitting.
 #' @return a tibble containing VGAM model objects
 #' @export

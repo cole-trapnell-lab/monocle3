@@ -56,7 +56,7 @@ new_cell_data_set <- function(expression_data,
                               cell_metadata = NULL,
                               gene_metadata = NULL,
                               lower_detection_limit = 0.1,
-                              expression_family="negbinomial.size") {
+                              expression_family="quasipoisson") {
 
   if(!('gene_short_name' %in% colnames(gene_metadata))) {
     warning(paste("Warning: gene_metadata must contain a column verbatim named",
@@ -85,6 +85,7 @@ new_cell_data_set <- function(expression_data,
 
   metadata(cds)$lower_detection_limit <- lower_detection_limit
   metadata(cds)$cds_version <- Biobase::package.version("monocle3")
+  metadata(cds)$expression_family = expression_family
   partitions <- setNames(SimpleList(), character(0))
   cds
 }

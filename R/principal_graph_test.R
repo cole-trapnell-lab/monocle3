@@ -11,7 +11,6 @@
 #'
 #' @param cds a cell_data_set object upon which to perform this operation
 # #' @param landmark_num Number of landmark cells selected for performing aggregate Moran's I test, default is NULL (no landmark selection and all cells are used)
-#' @param relative_expr Whether to transform expression into relative values.
 #' @param k Number of nearest neighbors used for building the kNN graph which is passed to knn2nb function during the Moran's I (Geary's C) test procedure.
 #' @param method a character string specifying the method (the default 'Moran_I' or 'Geary_C') for detecting significant genes showing correlated genes along the principal graph embedded in the low dimensional space.
 #' @param alternative a character string specifying the alternative hypothesis, must be one of greater (default), less or two.sided.
@@ -23,7 +22,6 @@
 #' @export
 principal_graph_test <- function(cds,
                                  reduced_dimension = "UMAP",
-                                 relative_expr=TRUE,
                                  k = 25,
                                  method = c('Moran_I'),
                                  alternative = 'greater',
@@ -45,11 +43,7 @@ principal_graph_test <- function(cds,
     if (metadata(cds)$expression_family %in% c("uninormal", "binomialff")){
       exprs_val <- exprs_val
     }else{
-      if(relative_expr) {
         exprs_val <- log10(exprs_val / sz + 0.1)
-      } else {
-        exprs_val <- log10(exprs_val + 0.1)
-      }
     }
 
     test_res <- tryCatch({
