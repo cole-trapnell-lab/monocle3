@@ -19,7 +19,6 @@ monocle_theme_opts <- function()
 #' @param show_backbone whether to show the diameter path of the MST used to order the cells
 #' @param backbone_color the color used to render the backbone.
 #' @param markers a gene name or gene id to use for setting the size of each cell in the plot
-#' @param use_color_gradient Whether or not to use color gradient instead of cell size to show marker expression level
 #' @param markers_linear a boolean used to indicate whether you want to scale the markers logarithimically or linearly
 #' @param show_cell_names draw the name of each cell in the plot
 #' @param show_state_number show state number
@@ -48,7 +47,6 @@ plot_cell_trajectory <- function(cds,
                                  show_backbone=TRUE,
                                  backbone_color="black",
                                  markers=NULL,
-                                 use_color_gradient = FALSE,
                                  markers_linear = FALSE,
                                  show_cell_names=FALSE,
                                  show_state_number = FALSE,
@@ -58,7 +56,8 @@ plot_cell_trajectory <- function(cds,
                                  state_number_size = 2.9,
                                  show_branch_points=TRUE,
                                  theta = 0,
-                                 alpha = 1,
+                                 alpha = NULL,
+                                 min_expr=0.1,
                                  ...) {
   requireNamespace("igraph")
   gene_short_name <- NA
@@ -66,6 +65,11 @@ plot_cell_trajectory <- function(cds,
   sample_state <- colData(cds)$State
   data_dim_1 <- NA
   data_dim_2 <- NA
+  if (require("ggrastr",character.only = TRUE)){
+    plotting_func = ggrastr::geom_point_rast
+  }else{
+    plotting_func = ggplot2::geom_point
+  }
 
   #TODO: need to validate cds as ready for this plot (need mst, pseudotime, etc)
   lib_info_with_pseudo <- colData(cds)
@@ -112,30 +116,36 @@ plot_cell_trajectory <- function(cds,
   if (is.null(markers) == FALSE) {
     markers_rowData <- subset(rowData(cds), gene_short_name %in% markers)
     if (nrow(markers_rowData) >= 1) {
-      markers_exprs <- reshape2::melt(as.matrix(assays(cds)$exprs[row.names(markers_rowData),]))
+      cds_exprs <- assays(cds[row.names(markers_rowData),])$exprs
+      cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds))
+      #cds_exprs <- reshape2::melt(round(as.matrix(cds_exprs)))
+      markers_exprs = matrix(cds_exprs, nrow=nrow(markers_rowData))
+      markers_exprs = round(markers_exprs)
+      colnames(markers_exprs) = colnames(assays(cds)$exprs)
+      row.names(markers_exprs) = row.names(markers_rowData)
+      markers_exprs <- reshape2::melt(markers_exprs)
       colnames(markers_exprs)[1:2] <- c('feature_id','cell_id')
       markers_exprs <- merge(markers_exprs, markers_rowData, by.x = "feature_id", by.y="row.names")
       #print (head( markers_exprs[is.na(markers_exprs$gene_short_name) == FALSE,]))
       markers_exprs$feature_label <- as.character(markers_exprs$gene_short_name)
-      markers_exprs$feature_label[is.na(markers_exprs$feature_label)] <- markers_exprs$Var1
+      markers_exprs$feature_label[is.na(markers_exprs$feature_label)] <- markers_exprs$feature_id
     }
   }
   if (is.null(markers_exprs) == FALSE && nrow(markers_exprs) > 0){
     data_df <- merge(data_df, markers_exprs, by.x="sample_name", by.y="cell_id")
-    if(use_color_gradient) {
-      if(markers_linear){
-        g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2)) + geom_point(aes(color= value), size=I(cell_size), na.rm = TRUE, alpha = alpha) +
-          viridis::scale_color_viridis(name = paste0("value"), ...) + facet_wrap(~feature_label)
-      } else {
-        g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2)) + geom_point(aes(color=log10(value + 0.1)), size=I(cell_size), na.rm = TRUE, alpha = alpha) +
-          viridis::scale_color_viridis(name = paste0("log10(value + 0.1)"), ...) + facet_wrap(~feature_label)
-      }
+    data_df$value <- with(data_df, ifelse(value >= 0.01, value, NA))
+    if(markers_linear){
+      g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2)) + plotting_func(aes(color=value, alpha = ifelse(!is.na(value), "2", "1")), size=I(cell_size), stroke = I(cell_size / 2), na.rm = TRUE) +
+        viridis::scale_color_viridis(option = "viridis", name = "log10(values + 0.1)", na.value = "grey80", end = 0.8) +
+        guides(alpha = FALSE) + facet_wrap(~feature_label)
+      # g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2)) + geom_point(aes(color= value), size=I(cell_size), na.rm = TRUE, alpha = alpha) +
+      #     viridis::scale_color_viridis(name = paste0("value"), ...) + facet_wrap(~feature_label)
     } else {
-      if(markers_linear){
-        g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2, size= (value * 0.1))) + facet_wrap(~feature_label)
-      } else {
-        g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2, size=log10(value + 0.1))) + facet_wrap(~feature_label)
-      }
+      g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2)) + plotting_func(aes(color=log10(value+min_expr), alpha = ifelse(!is.na(value), "2", "1")), size=I(cell_size), stroke = I(cell_size / 2), na.rm = TRUE) +
+        viridis::scale_color_viridis(option = "viridis", name = "log10(values + 0.1)", na.value = "grey80", end = 0.8) +
+        guides(alpha = FALSE) + facet_wrap(~feature_label)
+      # g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2)) + geom_point(aes(color=log10(value + 0.1)), size=I(cell_size), na.rm = TRUE, alpha = alpha) +
+      #     viridis::scale_color_viridis(name = paste0("log10(value + 0.1)"), ...) + facet_wrap(~feature_label)
     }
   } else {
     g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2))
@@ -143,26 +153,6 @@ plot_cell_trajectory <- function(cds,
   if (show_backbone){
     g <- g + geom_segment(aes_string(x="source_prin_graph_dim_1", y="source_prin_graph_dim_2", xend="target_prin_graph_dim_1", yend="target_prin_graph_dim_2"), size=cell_link_size, linetype="solid", na.rm=TRUE, data=edge_df)
   }
-
-  # FIXME: setting size here overrides the marker expression funtionality.
-  # Don't do it!
-  if (is.null(markers_exprs) == FALSE && nrow(markers_exprs) > 0){
-    if(use_color_gradient) {
-      # g <- g + geom_point(aes_string(color = color_by), na.rm = TRUE)
-    } else {
-      g <- g + geom_point(aes_string(color = color_by), na.rm = TRUE, alpha = alpha)
-    }
-  }else {
-    if(use_color_gradient) {
-      # g <- g + geom_point(aes_string(color = color_by), na.rm = TRUE)
-    } else {
-      g <- g + geom_point(aes_string(color = color_by), size=I(cell_size), na.rm = TRUE, alpha = alpha)
-      if (class(colData(cds)[,color_by]) == "numeric"){
-        g <- g + viridis::scale_color_viridis(option="C")
-      }
-    }
-  }
-
 
   if (show_branch_points){
     mst_branch_nodes <- cds@principal_graph_aux[[reduced_dimension]]$branch_points
@@ -684,7 +674,7 @@ plot_cell_clusters <- function(cds,
   # Don't do it!
   if (is.null(markers_exprs) == FALSE && nrow(markers_exprs) > 0){
 
-    if (cds_subset@expressionFamily@vfamily %in% c("quasipoisson", "poisson", "zipoisson", "negbinomial", "zinegbinomial")){
+    if (metadata(cds_subset)$expression_family %in% c("quasipoisson", "poisson", "zipoisson", "negbinomial", "zinegbinomial")){
       g <- g + plotting_func(aes(color=log10(value + min_expr), alpha = ifelse(!is.na(value), "2", "1")), size=I(cell_size), stroke = I(cell_size / 2), na.rm = TRUE) +
         viridis::scale_color_viridis(option = "viridis", name = "log10(values + 0.1)", na.value = "grey80", end = 0.8) +
         guides(alpha = FALSE) + facet_wrap(~feature_label, nrow = nrow, ncol = ncol)
