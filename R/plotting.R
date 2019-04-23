@@ -796,7 +796,7 @@ plot_genes_in_pseudotime <-function(cds_subset,
   cds_exprs$feature_label <- factor(cds_exprs$feature_label)
 
 
-  new_data <- data.frame(Pseudotime = pData(cds_subset)$Pseudotime)
+  new_data <- data.frame(Pseudotime = colData(cds_subset)$Pseudotime)
   model_tbl = fit_models(cds_subset, model_formula_str = trend_formula)
 
   model_expectation <- model_predictions(model_tbl,
@@ -1247,7 +1247,7 @@ plot_pseudotime_heatmap <- function(cds_subset,
                                     scale_max=3,
                                     scale_min=-3,
 
-                                    trend_formula = '~VGAM::sm.ns(Pseudotime, df=3)',
+                                    trend_formula = '~splines::ns(Pseudotime, df=3)',
 
                                     return_heatmap=FALSE,
                                     cores=1){
