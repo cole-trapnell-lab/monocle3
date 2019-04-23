@@ -96,6 +96,14 @@ preprocess_cds <- function(cds, method = c('PCA', "tfidf", 'none'),
 
   assays(cds)$normalized_exprs <- FM
 
+  # If the user has selected a subset of genes for use in ordering the cells
+  # via set_ordering_filter(), subset the expression matrix.
+  # TO DO
+  if (!is.null(rowData(cds)$use_for_ordering) &&
+      nrow(subset(rowData(cds), use_for_ordering == TRUE)) > 0) {
+    FM <- FM[rowData(cds)$use_for_ordering, ]
+  }
+
   fm_rowsums = Matrix::rowSums(FM)
   FM <- FM[is.finite(fm_rowsums) & fm_rowsums != 0, ]
 
@@ -154,14 +162,6 @@ normalize_expr_data <- function(cds,
   check_size_factors(cds)
 
   FM <- assays(cds)$exprs
-
-  # If the user has selected a subset of genes for use in ordering the cells
-  # via set_ordering_filter(), subset the expression matrix.
-  # TO DO
-  if (!is.null(rowData(cds)$use_for_ordering) &&
-      nrow(subset(rowData(cds), use_for_ordering == TRUE)) > 0) {
-    FM <- FM[rowData(cds)$use_for_ordering, ]
-  }
 
   # If we're going to be using log, and the user hasn't given us a
   # pseudocount set it to 1 by default.

@@ -957,6 +957,10 @@ plot_pc_variance_explained <- function(cds,
     stop(paste("You must call preprocess(cds) before running this function"))
   } else {
     FM <- assays(cds)$normalized_exprs
+    if (!is.null(rowData(cds)$use_for_ordering) &&
+        nrow(subset(rowData(cds), use_for_ordering == TRUE)) > 0) {
+      FM <- FM[rowData(cds)$use_for_ordering, ]
+    }
 
     xm <- Matrix::rowMeans(FM)
     xsd <- sqrt(Matrix::rowMeans((FM - xm)^2))
