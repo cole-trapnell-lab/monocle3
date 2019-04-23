@@ -13,8 +13,6 @@ fit_models(cds, model_formula_str, cores = 1, clean_model = TRUE,
 \item{model_formula_str}{a formula string specifying the model to fit for the genes.}
 
 \item{cores}{the number of processor cores to be used during fitting.}
-
-\item{relative_expr}{Whether to fit a model to relative or absolute expression. Only meaningful for count-based expression data. If TRUE, counts are normalized by Size_Factor prior to fitting.}
 }
 \value{
 a tibble containing VGAM model objects

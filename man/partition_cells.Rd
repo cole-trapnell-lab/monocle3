@@ -4,19 +4,14 @@
 \alias{partition_cells}
 \title{This function tries to partition cells into different graphs based on a similar approach proposed by Alex Wolf and colleagues}
 \usage{
-partition_cells(cds, partition_names = NULL,
-  reduced_dimension = c("UMAP", "tSNE"), use_pca = FALSE, k = 20,
-  weight = F, louvain_iter = 1, resolution = NULL,
+partition_cells(cds, reduced_dimension = c("UMAP", "tSNE", "PCA"),
+  k = 20, weight = F, louvain_iter = 1, resolution = NULL,
   louvain_qval = 0.05, return_all = FALSE, verbose = FALSE, ...)
 }
 \arguments{
 \item{cds}{the cell_data_set upon which to perform this operation}
 
-\item{partition_names}{Which partition groups (column in the colData) should be used to calculate the connectivity between partitions}
-
 \item{reduced_dimension}{Which reduced dimension space should be partitioned?}
-
-\item{use_pca}{Whether or not to cluster cells based on top PCA component. Default to be FALSE.}
 
 \item{k}{number of nearest neighbors used for Louvain clustering (pass to louvain_clustering function)}
 

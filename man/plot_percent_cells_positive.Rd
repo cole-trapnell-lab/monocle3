@@ -2,54 +2,63 @@
 % Please edit documentation in R/plotting.R
 \name{plot_percent_cells_positive}
 \alias{plot_percent_cells_positive}
-\title{Plots the number of cells expressing one or more genes as a barplot}
+\title{Plots the number of cells expressing one or more genes above a given value
+as a barplot}
 \usage{
 plot_percent_cells_positive(cds_subset, grouping = "State",
-  min_expr = 0.1, nrow = NULL, ncol = 1, panel_order = NULL,
-  plot_as_fraction = TRUE, label_by_short_name = TRUE,
-  relative_expr = TRUE, plot_limits = c(0, 100))
+  min_expr = NULL, nrow = NULL, ncol = 1, panel_order = NULL,
+  plot_as_count = FALSE, label_by_short_name = TRUE,
+  normalize = TRUE, plot_limits = NULL)
 }
 \arguments{
-\item{cds_subset}{CellDataSet for the experiment}
+\item{cds_subset}{Subset cell_data_set to be plotted.}
 
-\item{grouping}{the cell attribute (e.g. the column of colData(cds)) to group cells by on the horizontal axis}
+\item{grouping}{the cell attribute (e.g. the column of colData(cds)) to
+group cells by on the horizontal axis}
 
-\item{min_expr}{the minimum (untransformed) expression level to use in plotted the genes.}
+\item{min_expr}{the minimum (untransformed) expression level to consider the
+gene 'expressed'. If \code{NULL},
+\code{metadata(cds_subset)$lower_detection_limit} is used.}
 
-\item{nrow}{the number of rows used when laying out the panels for each gene's expression}
+\item{nrow}{the number of panels per row in the figure.}
 
-\item{ncol}{the number of columns used when laying out the panels for each gene's expression}
+\item{ncol}{the number of panels per column in the figure.}
 
-\item{panel_order}{the order in which genes should be layed out (left-to-right, top-to-bottom)}
+\item{panel_order}{the order in which genes should be layed out
+(left-to-right, top-to-bottom)}
 
-\item{plot_as_fraction}{whether to show the percent instead of the number of cells expressing each gene}
+\item{plot_as_count}{whether to plot as a count of cells rather than a
+percent.}
 
-\item{label_by_short_name}{label figure panels by gene_short_name (TRUE) or feature id (FALSE)}
+\item{label_by_short_name}{label figure panels by gene_short_name (TRUE) or
+feature id (FALSE).}
 
-\item{relative_expr}{Whether to transform expression into relative values}
-
-\item{plot_limits}{A pair of number specifying the limits of the y axis. If NULL, scale to the range of the data.}
+\item{plot_limits}{A pair of number specifying the limits of the y axis. If
+\code{NULL}, scale to the range of the data. Example \code{c(0,100)}.}
 }
 \value{
 a ggplot2 plot object
 }
 \description{
-@description Accetps a CellDataSet and a parameter,"grouping", used for dividing cells into groups.
-Returns one or more bar graphs (one graph for each gene in the CellDataSet).
-Each graph shows the percentage of cells that express a gene in the in the CellDataSet for
-each sub-group of cells created by "grouping".
+@description Accepts a cell_data_set and the parameter "grouping", used for
+dividing cells into groups. Returns one or more bar graphs (one graph for
+each gene in the cell_data_set). Each graph shows the percentage of cells
+that express a gene in each sub-group in the cell_data_set.
 }
 \details{
-Let's say the CellDataSet passed in included genes A, B, and C and the "grouping parameter divided
-all of the cells into three groups called X, Y, and Z. Then three graphs would be produced called A,
-B, and C. In the A graph there would be three bars one for X, one for Y, and one for Z. So X bar in the
-A graph would show the percentage of cells in the X group that express gene A.
+As an example, let's say the cell_data_set passed into the function as
+cds_subset included genes A, B, and C and the grouping parameter divided
+the cells into three groups called X, Y, and Z. Then three graphs would be
+produced called A, B, and C. In each graph there would be three bars one
+for X, one for Y, and one for Z. The X bar in the A graph would show the
+percentage of cells in the X group that express gene A.
 }
 \examples{
 \dontrun{
 library(HSMMSingleCell)
 HSMM <- load_HSMM()
-MYOG_ID1 <- HSMM[row.names(subset(rowData(HSMM), gene_short_name \%in\% c("MYOG", "ID1"))),]
+MYOG_ID1 <- HSMM[row.names(subset(rowData(HSMM),
+                                  gene_short_name \%in\% c("MYOG", "ID1"))),]
 plot_percent_cells_positive(MYOG_ID1, grouping="Media", ncol=2)
 }
 }

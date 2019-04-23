@@ -4,15 +4,12 @@
 \alias{principal_graph_test}
 \title{Test genes for differential expression based on the low dimensional embedding and the principal graph}
 \usage{
-principal_graph_test(cds, reduced_dimension = "UMAP",
-  relative_expr = TRUE, k = 25, method = c("Moran_I"),
-  alternative = "greater", cores = 1, interactive = FALSE,
-  verbose = FALSE)
+principal_graph_test(cds, reduced_dimension = "UMAP", k = 25,
+  method = c("Moran_I"), alternative = "greater", cores = 1,
+  interactive = FALSE, verbose = FALSE)
 }
 \arguments{
 \item{cds}{a cell_data_set object upon which to perform this operation}
-
-\item{relative_expr}{Whether to transform expression into relative values.}
 
 \item{k}{Number of nearest neighbors used for building the kNN graph which is passed to knn2nb function during the Moran's I (Geary's C) test procedure.}
 

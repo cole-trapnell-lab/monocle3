@@ -12,10 +12,12 @@ estimate_size_factors(cds, locfunc = stats::median, round_exprs = TRUE,
 
 \item{locfunc}{The location function used to find the representive value}
 
-\item{round_exprs}{A logic flag to determine whether or not the expression value should be rounded}
+\item{round_exprs}{A logic flag to determine whether or not the expression
+value should be rounded}
 
-\item{method}{A character to specify the size factor calculation appraoches. It can be either "mean-geometric-mean-total" (default),
-"weighted-median", "median-geometric-mean", "median", "mode", "geometric-mean-total".}
+\item{method}{A character to specify the size factor calculation appraoches.
+It can be either "mean-geometric-mean-total" (default), "weighted-median",
+"median-geometric-mean", "median", "mode", "geometric-mean-total".}
 }
 \description{
 Function to calculate the size factor for the single-cell RNA-seq data
