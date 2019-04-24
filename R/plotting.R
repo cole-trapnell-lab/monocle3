@@ -1026,10 +1026,10 @@ plot_genes_violin <- function (cds_subset,
     monocle_theme_opts()
   if (!is.null(color_by)) {
     cds_exprs[,color_by] <- as.factor(cds_exprs[,color_by])
-    q <- q + geom_violin(aes_string(fill = color_by))
+    q <- q + geom_violin(aes_string(fill = color_by), scale="width")
   }
   else {
-    q <- q + geom_violin()
+    q <- q + geom_violin(scale="width")
   }
   if (plot_trend) {
     cds_exprs[,color_by] <- as.factor(cds_exprs[,color_by])
