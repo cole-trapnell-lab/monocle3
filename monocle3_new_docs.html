@@ -1,0 +1,1147 @@
+---
+layout: vanilla
+permalink: /monocle3_docs/
+description: "Documentation for Monocle."
+modified: 2013-09-11
+tags: [monocle, manual, vignette]
+---
+<!DOCTYPE html>
+<html lang= "{{ page.lang | default: site.lang | default: "en" }}">
+
+  {% include head.html %}
+
+  <!-- See here for how to use the TOC control:
+  https://afeld.github.io/bootstrap-toc/ -->
+  <body  data-spy= "scroll" data-target= "#toc">
+    {% include header.html %}
+
+<div class= "container">
+<div class= "row">
+<!-- sidebar, which will move to the top on a small screen -->
+<div class= "col-sm-4">
+  <nav id= "toc" data-spy= "affix" data-toggle= "toc"></nav>
+</div>
+<!-- main content area -->
+<div class= "col-sm-8">
+
+<h2>Overview</h2>
+<p>Single cell gene expression studies enables one to profile transcriptional
+regulation in complex biological processes and  highly hetergeneous
+cell populations. These studies facilitate the discovery of genes that identify certain
+subtypes of cells, or that mark intermediate states during a
+biological process as well as bifurcate between two alternative cellular fates.
+In many single cell studies, individual cells are executing
+through a gene expression program in an unsynchronized manner. In effect, each
+cell is a snapshot of the transcriptional program under study. The package
+<strong>Monocle</strong> provides tools for analyzing single-cell expression
+experiments. Monocle introduced the strategy of ordering single cells in
+<strong>pseudotime</strong>, placing them along a trajectory corresponding to a
+biological process such as cell differentiation by taking advantage of individual cell's asynchronous
+progression of those processes. Monocle orders cells by learning an explicit principal graph from the
+single cell genomics data with advanced machine learning techniques (Reversed Graph Embedding), which
+robustly and accurately resolves complicated biological processes. Monocle also performs clustering
+(i.e. using t-SNE and density peaks clustering). Monocle then performs differential gene expression testing, allowing one to
+identify genes that are differentially expressed between different state, along a biological process as well as
+alternative cell fates. Monocle is designed for single cell RNA-Seq studies, but can be
+used with other assays. For more information on the algorithm at the core of
+<strong>Monocle</strong>, or to learn more about how to use single cell RNA-Seq
+to study complex biological processes, explore <a href= "{{ site.baseurl }}/papers/">our
+publications</a>.</p>
+
+<h2>Introduction</h2>
+
+<p>The monocle package provides a toolkit for analyzing single cell gene expression
+experiments. This vignette provides an overview of a single cell RNA-Seq
+analysis workflow with Monocle. Monocle was originally developed to analyze
+dynamic biological processes such as cell differentiation, although it also
+supports other experimental settings.</p>
+
+<p><strong>Monocle 2</strong> includes new and improved algorithms for classifying
+and counting cells, performing differential expression analysis between
+subpopulations of cells, and reconstructing cellular trajectories. Monocle 2 has
+also been re-engineered to work well with very large single-cell RNA-Seq
+experiments containing tens of thousands of cells or more.</p>
+
+<p>Monocle can help you perform three main types of analysis:
+<ul>
+<li><strong>Clustering, classifying, and counting cells.</strong> Single-cell RNA-Seq experiments allow you to discover new (and possibly rare) subtypes of cells. Monocle helps you identify them.
+<li><strong>Constructing single-cell trajectories.</strong> In development, disease, and throughout life, cells transition from one state to another. Monocle helps you discover these transitions.
+<li> <strong>Differential expression analysis.</strong> Characterizing new cell types and states begins with comparing them to other, better understood cells. Monocle includes a sophisticated but easy to use system for differential expression.
+</ul>
+
+Before we look at Monocle's functions for each of these common analysis tasks,
+let's see how to install Monocle.
+
+          
+<h2>Installing Monocle 3</h2>
+
+<h3> Required software </h3>
+
+<p>Monocle runs in the <a href= "http://www.r-project.org/">R statistical
+computing environment</a>. You will need R version 3.5 or higher, Bioconductor
+version 3.5, and monocle 3.0.0 or higher to have access to the latest features.
+To install monocle 3 through the cole-trapnell-lab GitHub, execute:
+
+{% highlight R %}
+  git clone 'XXX PLACE REPO CONTAINING MONOCLE 3 RELEASE HERE XXX '
+{% endhighlight %}
+
+<h3> Testing the installation </h3>
+
+<p> To ensure that Monocle was installed correctly, start a new R session and run:
+</p>
+
+{% highlight R %}
+library(monocle)
+{% endhighlight %}
+
+<h2>Getting Help</h2>
+
+<p>Questions about Monocle should be posted on our <a
+href= "https://groups.google.com/forum/#!forum/monocle-users">Google Group</a>.
+Please use <a href= "mailto:monocle.users@gmail.com">monocle.users@gmail.com</a>
+for private communications that cannot be addressed by the Monocle user
+community. Please do not email technical questions to Monocle contributors
+directly.</p>
+
+<h2>Recommended analysis protocol</h2>
+
+<p>Monocle is a powerful toolkit for analyzing single-cell RNA-seq.  You don't need
+to use all of its features for every analysis, and there are more than one way
+to do some steps. The workflow is broken up into broad steps. When there's more than
+one way to do a certain step, we've labeled the options as follows:
+
+<table class= "table">
+<tbody>
+<tr>
+<td><span class= "label label-danger">Required</span></td>
+<td>You need to do this.</td>
+</tr>
+<tr>
+<td><span class= "label label-info">Recommended</span> </td>
+<td>Of the ways you could do this, we recommend you try this one first.</td>
+</tr>
+<tr>
+<td><span class= "label label-success">Alternative</span></td>
+<td>Of the ways you could do this, this way might work better than the one we usually recommend.</td>
+</tr>
+</tbody>
+</table>
+
+<h3>Workflow steps at a glance</h3>
+<p>Below, you can see snippets of code that highlight the main steps of Monocle.
+Click on the section headers to jump to the detailed sections describing each one. </p>
+
+<h4><a href= "{{ site.baseurl }}/docs/#getting-started-with-monocle">Store Data in a <a href = "https://rdrr.io/bioc/monocle/man/cell_data_set.html">cell_data_set</a> Object</a></h4>
+The first step in working with Monocle is to load up your data into Monocle's
+main class, <code><a href = "https://rdrr.io/bioc/monocle/man/cell_data_set.html">cell_data_set</a></code>:
+
+{% highlight R %}
+expression_matrix = readRDS(url("http://jpacker-data.s3.amazonaws.com/for-cole/for-cole.ciliated.amphid.neurons.exprs.rds"))
+cell_metadata = readRDS(url("http://jpacker-data.s3.amazonaws.com/for-cole/for-cole.ciliated.amphid.neurons.pData.rds"))
+gene_annotation = readRDS(url("http://jpacker-data.s3.amazonaws.com/for-cole/for-cole.ciliated.amphid.neurons.fData.rds"))
+gene_annotation$use_for_ordering = NULL
+
+cds <- new_cell_data_set(expression_matrix,
+                cell_metadata = cell_metadata,
+                gene_metadata = gene_annotation)
+## Step 1: Normalize and pre-process the data
+cds <- estimate_size_factors(cds)
+cds <- preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ batch")
+
+{% endhighlight %}
+
+<!-- <h4><a href= "{{ site.baseurl }}/docs/#classifying-and-counting-cells">Classify cells with known marker genes</a></h4>
+Next, leverage your knowledge of key marker genes to quickly and easily classify your cells by type:
+{% highlight R %}
+cth <- newCellTypeHierarchy()
+
+MYF5_id <- row.names(subset(fData(cds), gene_short_name == "MYF5"))
+ANPEP_id <- row.names(subset(fData(cds), gene_short_name == "ANPEP"))
+
+cth <- addCellType(cth, "Myoblast", classify_func =
+function(x) { x[MYF5_id,] >= 1 })
+cth <- addCellType(cth, "Fibroblast", classify_func =
+function(x) { x[MYF5_id,] < 1 & x[ANPEP_id,] > 1 } )
+
+cds <- classifyCells(cds, cth, 0.1)
+{% endhighlight %} -->
+
+<h4><a href= "{{ site.baseurl }}/docs/#clustering-cells">Cluster your cells</a></h4>
+You can easily cluster your cells to find new types:
+
+{% highlight R %}
+cds = reduce_dimension(cds, reduction_method = 'UMAP', verbose=TRUE)
+cds = cluster_cells(cds)
+{% endhighlight %}
+
+<h4><a href= "{{ site.baseurl }}/docs/#constructing-single-cell-trajectories">Order cells in pseudotime along a trajectory</a></h4>
+Now, put your cells in order by how much progress they've made through whatever process you're studying, such as differentiation,
+reprogramming, or an immune response.
+
+{% highlight R %}
+cds = partition_cells(cds)
+cds = learn_graph(cds, learn_graph_control=list(ncenter=1000), close_loop=TRUE, verbose=TRUE)
+cds = order_cells(cds)
+plot_cell_trajectory(cds)
+{% endhighlight %}
+
+<h4><a href= "{{ site.baseurl }}/docs/#differential-expression-analysis">Perform differential expression analysis</a></h4>
+Compare groups of cells in myriad ways to find differentially expressed genes,
+controlling for batch effects and treatments as you like:
+
+{% highlight R %}
+gene_fits = fit_models(cds, model_formula_str = "~embryo.time")
+fit_coefs = coefficient_table(gene_fits)
+emb_time_terms = fit_coefs %>% filter(term == "embryo.time")
+emb_time_terms = emb_time_terms %>% mutate(q_value = p.adjust(p_value))
+sig_genes = emb_time_terms %>% filter (q_value < 0.05) %>% pull(gene_short_name)
+{% endhighlight %}
+
+
+<h2>Getting Started with Monocle </h2>
+
+Monocle takes a matrix of gene expression values as calculated by Cufflinks or another gene expression estimation program. Monocle can work with relative expression values (e.g. FPKM or TPM units) or absolute transcript counts (e.g. from UMI experiments). Monocle also works "out-of-the-box" with the transcript count matrices produced by <a href= "https://support.10xgenomics.com/single-cell/software/overview/welcome">CellRanger</a>, the software pipeline for analyzing experiments from the 10X Genomics Chromium instrument. Monocle also works well with data from other RNA-Seq workflows such as <a href= "http://biorxiv.org/content/early/2017/02/02/104844">sci-RNA-Seq</a> and instruments like the Biorad ddSEQ. Although Monocle can be used with raw read counts, these are not directly proportional to expression values unless you normalize them by length, so some Monocle functions could produce nonsense results. If you don't have UMI counts, We recommend you load up FPKM or TPM values instead of raw read counts.
+
+<h3>The cell_data_set class</h3>
+
+Monocle holds single cell expression data in objects of the <code><a href = "https://rdrr.io/bioc/monocle/man/cell_data_set.html">cell_data_set</a></code> class. The class is derived from the Bioconductor <code>ExpressionSet</code> class, which provides a common interface familiar to those who have analyzed microarray experiments with Bioconductor. The class requires three input files:
+<ul>
+<li> <code>exprs</code>, a numeric matrix of expression values, where rows are genes, and columns are cells
+<li> <code>phenoData</code>, an <code>AnnotatedDataFrame</code> object, where rows are cells, and columns are cell attributes (such as cell type, culture condition, day captured, etc.)
+<li> <code>featureData</code>, an <code>AnnotatedDataFrame</code> object, where rows are features (e.g. genes), and columns are gene attributes, such as biotype, gc content, etc.
+</ul>
+<p>
+<div class= "panel panel-warning">
+<div class= "panel-heading">
+
+<h3 class= "panel-title" data-toc-skip>Required dimensions for input files</h3>
+
+</div>
+<div class= "panel-body">
+The expression value matrix <strong>must</strong>:
+<ul>
+<li>have the same number of columns as the <code>phenoData</code> has rows.
+<li>have the same number of rows as the <code>featureData</code> data frame has rows.
+</ul>
+Additionally:
+<ul>
+<li>row names of the <code>phenoData</code> object should match the column names of the expression matrix.
+<li>row names of the <code>featureData</code> object should match row names of the expression matrix.
+<li> one of the columns of the <code>featureData</code> should be named "gene_short_name".
+</ul>
+
+</div>
+</div>
+
+<p>You can create a new <code><a href = "https://rdrr.io/bioc/monocle/man/cell_data_set.html">cell_data_set</a></code> object as follows:</p>
+
+<p>
+{% highlight R %}
+#do not run
+HSMM_expr_matrix <- read.table("fpkm_matrix.txt")
+HSMM_sample_sheet <- read.delim("cell_sample_sheet.txt")
+HSMM_gene_annotation <- read.delim("gene_annotations.txt")
+{% endhighlight %}
+</p>
+
+<p>Once these tables are loaded, you can create the <a href = "https://rdrr.io/bioc/monocle/man/cell_data_set.html">cell_data_set</a> object like this:</p>
+
+<p>
+{% highlight R %}
+pd <- new("AnnotatedDataFrame", data = HSMM_sample_sheet)
+fd <- new("AnnotatedDataFrame", data = HSMM_gene_annotation)
+HSMM <- new_cell_data_set(as.matrix(HSMM_expr_matrix),
+phenoData = pd, featureData = fd)
+{% endhighlight %}
+</p>
+
+<p>This will create a <a href = "https://rdrr.io/bioc/monocle/man/cell_data_set.html">cell_data_set</a> object with expression values measured in
+FPKM, a measure of relative expression reported by Cufflinks. By default,
+Monocle assumes that your expression data is in units of transcript counts and
+uses a negative binomial model to test for differential expression in downstream
+steps. However, if you're using relative expression values such as TPM or FPKM
+data, see below for how to tell Monocle how to model it in downstream steps.</p>
+
+<!-- FIXME: UPDATE THE DESCRIPTION BELOW TO REFLECT NEW CENSUS PACKAGE  -->
+<!-- <p>
+<div class= "panel panel-warning">
+<div class= "panel-heading">
+<h3 class= "panel-title" data-toc-skip>Don't normalize data yourself</h3>
+</div>
+<div class= "panel-body">
+if you do have UMI data, you should <i>not</i> normalize it yourself prior to creating your <code><a href = "https://rdrr.io/bioc/monocle/man/cell_data_set.html">cell_data_set</a></code>.
+You should also <i>not</i> try to convert the UMI counts to relative abundances (by converting it to FPKM/TPM data).
+You should <i>not</i> use <code><a href = "https://rdrr.io/bioc/monocle/man/relative2abs.html">relative2abs()</a></code> as discussed below in the section on  <a href = "{{ site.baseurl }}/docs/#converting-tpm-fpkm-values-into-mrna-counts-alternative"> Converting TPM to mRNA Counts</a>. Monocle will do all needed normalization steps internally.
+Normalizing it yourself risks breaking some of Monocle's key steps.
+</div>
+</div>
+</p> -->
+
+<h3>Importing & exporting data with other packages</h3>
+
+<strong>XXX NEED TO UPDATE XXX</strong>
+
+<p> Monocle is able to convert Seurat objects from the package "Seurat" and SCESets from the package
+"scater" into cell_data_set objects that Monocle can use.
+It's also worth noting that the function will also work with SCESets from "Scran".
+To convert from either a Seurat object or a SCESet
+to a cell_data_set, execute the function <code>importCDS()</code> as shown:</p>
+
+{% highlight R %}
+
+# Where 'data_to_be_imported' can either be a Seurat object
+# or an SCESet.
+
+importCDS(data_to_be_imported)
+
+# We can set the parameter 'import_all' to TRUE if we'd like to
+# import all the slots from our Seurat object or SCESet.
+# (Default is FALSE or only keep minimal dataset)
+
+importCDS(data_to_be_imported, import_all = TRUE)
+
+{% endhighlight %}
+
+<p> Monocle can also export data from cell_data_sets to the "Seurat" and "scater" packages through the
+function <code>exportCDS()</code>:
+
+{% highlight R %}
+lung <- load_lung()
+
+# To convert to Seuxrat object
+lung_seurat <- exportCDS(lung, 'Seurat')
+
+# To convert to SCESet
+lung_SCESet <- exportCDS(lung, 'Scater')
+
+{% endhighlight %}
+
+<h3 data-toc-text= "Working with large data sets">Working with large data sets <span class= "label label-info">Recommended</span></h3>
+
+<p> Some single-cell RNA-Seq experiments report measurements from tens of thousands of cells or more.
+As instrumentation improves and costs drop, experiments will become ever larger and more complex, with many conditions, controls, and replicates.
+A matrix of expression data with 50,000 cells and a measurement for each of the 25,000+ genes in the human genome can take up a lot of memory.
+However, because current protocols typically don't capture all or even most of the mRNA molecules in each cell, many of the entries of expression matrices are zero.
+Using <i>sparse matrices</i> can help you work with huge datasets on a typical computer.
+We generally recommend the use of sparseMatrices for most users, as it speeds up many computations even for more modestly sized datasets. </p>
+
+<p> To work with your data in a sparse format, simply provide it to Monocle as a sparse matrix from the <code>Matrix</code> package: </p>
+
+<p>
+{% highlight R %}
+HSMM <- new_cell_data_set(as(umi_matrix, "sparseMatrix"),
+      phenoData = pd,
+      featureData = fd,
+      lowerDetectionLimit = 0.5,
+      expressionFamily = negbinomial.size())
+{% endhighlight %}
+</p>
+
+<p>
+<div class= "panel panel-warning">
+<div class= "panel-heading">
+<h3 class= "panel-title" data-toc-skip>Don't accidentally convert to a dense expression matrix</h3>
+</div>
+<div class= "panel-body">
+The output from a number of RNA-Seq pipelines, including CellRanger, is already in a sparseMatrix format (e.g. MTX).
+If so, you should just pass it directly to <a href = "https://rdrr.io/bioc/monocle/man/new_cell_data_set.html">new_cell_data_set</a> without first converting it to a dense matrix (via <code>as.matrix()</code>, because that may exceed your available memeory.
+</div>
+</div>
+</p>
+
+If you have 10X Genomics data and are using <code>cellrangerRkit</code>, you can use it to load your data and then pass that to Monocle as follows:
+
+{% highlight R %}
+
+cellranger_pipestance_path <- "/path/to/your/pipeline/output/directory"
+gbm <- load_cellranger_matrix(cellranger_pipestance_path)
+
+fd <- fData(gbm)
+
+# The number 2 is picked arbitrarily in the line below.
+# Where "2" is placed you should place the column number that corresponds to your
+# featureData's gene short names.
+
+colnames(fd)[2] <- "gene_short_name"
+
+gbm_cds <- new_cell_data_set(exprs(gbm),
+        phenoData = new("AnnotatedDataFrame", data = pData(gbm)),
+        featureData = new("AnnotatedDataFrame", data = fd),
+        lowerDetectionLimit = 0.5,
+        expressionFamily = negbinomial.size())
+{% endhighlight %}
+
+Monocle's sparse matrix support is provided by the <code>Matrix</code> package.
+Other sparse matrix packages, such as <code>slam</code> or <code>SparseM</code> are not supported.
+
+<h3 data-toc-text= "Estimate size factors">Estimate size factors<span class= "label label-danger">Required</span></h3>
+
+<p> Finally, we'll also call a function that pre-calculates some information about the data.
+Size factors help us normalize for differences in mRNA recovered across cells. </p>
+
+
+{% highlight R %}
+HSMM <- estimateSizeFactors(HSMM)
+{% endhighlight %}
+
+<p>We're now ready to start using the <code>HSMM</code> object in our analysis.
+
+<h2 data-toc-text= "Quality control">Quality control <span class= "label label-info">Recommended</span></h2>
+
+<h2>Annotating your cells according to type</h2>
+
+<h2>Constructing Single Cell Trajectories </h2>
+
+<p>   During development, in response to stimuli, and througout life, cells
+transition from one functional "state" to another. Cells in different states
+express different sets of genes, producing a dynamic repetoire of proteins and
+metabolites that carry out their work. As cells move between states, undergo a
+process of transcriptional re-configuration, with some genes being silenced and
+others newly activated. These transient states are often hard to characterize
+because purifying cells in between more stable endpoint states can be difficult
+or impossible. Single-cell RNA-Seq can enable you to see these states without
+the need for purification. However, to do so, we must determine where each cell
+is the range of possible states. </p>
+
+<p>   Monocle introduced the strategy of using RNA-Seq for <em>single cell
+trajectory analysis</em>. Rather than purifying cells into discrete states
+experimentally, Monocle uses an algorithm to learn the sequence of gene
+expression changes each cell must go through as part of a dynamic biological
+process. Once it has learned the overall "trajectory" of gene expression
+changes, Monocle can place each cell at its proper position in the trajectory.
+You can then use Monocle's differential analysis toolkit to find genes regulated
+over the course of the trajectory, as described in the section <a href = "{{
+site.baseurl }}/docs/#finding-genes-that-change-as-a-function-of-pseudotime">
+Finding Genes that Change as a Function of Pseudotime </a>. If there are
+multiple outcome for the process, Monocle will reconstruct a "branched"
+trajectory. These branches correspond to cellular "decisions", and Monocle
+provides powerful tools for identifying the genes affected by them and involved
+in making them. You can see how to analyze branches in the section <a href = "{{
+site.baseurl }}/docs/#analyzing-branches-in-single-cell-trajectories"> Analyzing
+Branches in Single-Cell Trajectories </a>. Monocle relies on a machine learning
+technique called <em>reversed graph embedding</em> to construct single-cell
+trajectories. You can read more about the theoretical foundations of Monocle's
+approach in the section <a href = "{{ site.baseurl }}/docs/#theory-behind-monocle">
+Theory Behind Monocle </a> , or consult the references shown at the end of the
+vignette. </p>
+
+
+<div class= "panel panel-info">
+<div class= "panel-heading">
+<h3 class= "panel-title">What is pseudotime?</h3>
+</div>
+<div class= "panel-body">
+Pseudotime is a measure of how much progress an individual cell has made through a process such as cell differentiation.
+
+
+In many biological processes, cells do not progress in perfect synchrony.  In single-cell expression studies of processes such as cell differentiation, captured cells might be widely distributed in terms of progress.  That is, in a population of cells captured at exactly the same time, some cells might be far along, while others might not yet even have begun the process.  This asynchrony creates major problems when you want to understand the sequence of regulatory changes that occur as cells transition from one state to the next. Tracking the expression across cells captured at the same time produces a very compressed sense of a gene's kinetics, and the apparent variability of that gene's expression will be very high.
+
+By ordering each cell according to its progress along a learned trajectory, Monocle alleviates the problems that arise due to asynchrony. Instead of tracking changes in expression as a function of time, Monocle tracks changes as a function of progress along the trajectory, which we term ``pseudotime''. Pseudotime is an abstract unit of progress: it's simply the distance between a cell and the start of the trajectory, measured along the shortest path. The trajectory's total length is defined in terms of the total amount of transcriptional change that a cell undergoes as it moves from the starting state to the end state.
+
+</div>
+</div>
+
+<h3>The ordering workflow</h3>
+
+Before we get into the details of ordering cells along a trajectory, it's
+important to understand what Monocle is doing. The ordering workflow has three
+main steps, each of which involve a significant machine learning task.
+
+{% highlight R %}
+expression_matrix = readRDS(url("http://jpacker-data.s3.amazonaws.com/for-cole/for-cole.ciliated.amphid.neurons.exprs.rds"))
+cell_metadata = readRDS(url("http://jpacker-data.s3.amazonaws.com/for-cole/for-cole.ciliated.amphid.neurons.pData.rds"))
+gene_annotation = readRDS(url("http://jpacker-data.s3.amazonaws.com/for-cole/for-cole.ciliated.amphid.neurons.fData.rds"))
+gene_annotation$use_for_ordering = NULL
+
+cds <- new_cell_data_set(expression_matrix,
+                         cell_metadata = cell_metadata,
+                         gene_metadata = gene_annotation)
+{% endhighlight %}
+
+<h4>Step 1: Normalize data</h4>
+
+{% highlight R %}
+cds <- estimate_size_factors(cds)
+cds <- preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+{% endhighlight %}
+
+
+<h4>Step 2: reducing the dimensionality of the data </h4>
+<p>    Once we have normalized the data and removed any batch effects, Monocle
+applies a <em>dimensionality reduction</em> to the data.  Monocle uses a
+recently developed algoithm called <a href = "{{ site.baseurl
+}}/docs/#reversed-graph-embedding"> Reversed Graph Embedding </a> to reduce the
+data's dimensionality.</p>
+
+{% highlight R %}
+cds <- estimate_size_factors(cds)
+cds <- preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+{% endhighlight %}
+
+<h4>Step 3: Cluster the cells </h4>
+{% highlight R %}
+cds <- cluster_cells(cds)
+plot_cell_clusters(cds, color_by = "Cluster", show_group_id=TRUE)+ 
+    ggplot2::theme(legend.position="none")
+
+plot_cell_clusters(cds, color_by = "louvain_component", show_group_id=TRUE)+ 
+    ggplot2::theme(legend.position="none")
+{% endhighlight %}
+
+
+<h4>Step 4: Learn the cell trajectories </h4>
+{% highlight R %}
+cds <- partition_cells(cds)
+cds <- learn_graph(cds, learn_graph_control=list(ncenter=1000), close_loop=TRUE, verbose=TRUE)
+# a helper function to identify the root principal points:
+
+plot_cell_trajectory(cds, color_by = "cell.type", cell_size=0.1) + 
+    #ggplot2::scale_color_manual(values=color_map) + 
+    ggplot2::theme(legend.position="right")
+
+plot_cell_trajectory(cds, color_by = "embryo.time.bin", cell_size=0.1) + 
+    #ggplot2::scale_color_manual(values=color_map) + 
+    ggplot2::theme(legend.position="right")
+
+plot_cell_trajectory(cds, color_by = "Pseudotime", cell_size=0.1) + 
+    #ggplot2::scale_color_manual(values=color_map) + 
+    ggplot2::theme(legend.position="right")
+
+plot_cell_trajectory(cds, color_by = "batch") + 
+    #ggplot2::scale_color_manual(values=color_map) + 
+    ggplot2::theme(legend.position="right")
+
+
+get_earliest_principal_node <- function(cds, time_bin="130-170"){
+  cell_ids <- which(colData(cds)[, "embryo.time.bin"] == time_bin)
+
+  closest_vertex <-
+    cds@principal_graph_aux[["UMAP"]]$pr_graph_cell_proj_closest_vertex
+  closest_vertex <- as.matrix(closest_vertex[colnames(cds), ])
+  root_pr_nodes <-
+    igraph::V(principal_graph(cds)[["UMAP"]])$name[as.numeric(names
+      (which.max(table(closest_vertex[cell_ids,]))))]
+
+  root_pr_nodes
+}
+cds = order_cells(cds, root_pr_nodes=get_earliest_principal_node(cds))
+
+plot_cell_trajectory(cds, markers=c("egl-21", "egl-1"))
+plot_genes_in_pseudotime(cds[rowData(cds)$gene_short_name %in% c("egl-21", "egl-1"),])
+
+ciliated_genes = c("che-1",
+                   "hlh-17",
+                   "nhr-6",
+                   "dmd-6",
+                   "ceh-36",
+                   "ham-1")
+
+plot_cell_trajectory(cds, markers=ciliated_genes)
+{% endhighlight %}
+
+<h4>Step 5: Visualize the trajectories </h4>
+{% highlight R %}
+cds <- estimate_size_factors(cds)
+cds <- preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+{% endhighlight %}
+
+
+<h2>Differential Expression Analysis </h2>
+Differential gene expression analysis is a common task in RNA-Seq experiments.  Monocle can help you find genes that are differentially expressed between groups of cells and assesses the statistical signficance of those changes. Monocle 3 includes a powerful systems for finding genes that vary across cells of different types, were collected at different developmental time points, or that have been perturbed in different ways. 
+
+<h3>Basic Differential Analysis </h3>
+Performing differential expression analysis on all genes in a <a href = "https://rdrr.io/bioc/monocle/man/cell_data_set.html">cell_data_set</a> object can take anywhere from minutes to hours, depending on how complex the analysis is. Let's begin with a small set of genes that we know are important in ciliated neurons to demonstrate Monocle's capabilities:
+
+{% highlight R %}
+ciliated_genes = c("che-1",
+                   "hlh-17",
+                   "nhr-6",
+                   "dmd-6",
+                   "ceh-36",
+                   "ham-1")
+cds_subset = cds[rowData(cds)$gene_short_name %in% ciliated_genes,]
+{% endhighlight %}
+
+<p> In the embryo data, the cells were collected at different time points. We can test whether any of the genes above change over time in their expression by first fitting a <emph>generalized linear model</emph> to each one: </p>
+
+\begin{equation}
+  log(y_i) = \beta_0 + \beta_t x_t
+\end{equation}
+
+<p>where $y_i$ is a random variable corresponding to the expression values of gene $i$, $x_t$ is the time each cell was collected (in minutes), and the $\beta_t$ capture the effect of time on expression, and $\beta_0$ is an intercept term. We can identify genes that vary over time by fitting this model to each one, and then testing whether it's $\beta_t$ is significantly different from zero. To do so, we first call the <code>fit_models()</code> function:</p>
+
+{% highlight R %}
+gene_fits = fit_models(cds_subset, model_formula_str = "~embryo.time")
+{% endhighlight %}
+
+<p><code>gene_fits</code> is a <a href="https://tibble.tidyverse.org/">tibble</a> that contains a row for each gene. The <code>model</code> column contains generalized linear model objects, each of which aims to explain the expression of a gene across the cells using the equation above.</p>
+
+<p> Now let's see which, if any of these genes have time-dependent expression. First, we extract a table of coefficients from each model using the <code>coefficient_table()</code> function:</p>
+{% highlight R %}
+fit_coefs = coefficient_table(gene_fits)
+{% endhighlight %}
+
+<p></p><code>fit_coefs</code> looks like this: </p>
+
+<div style="width:750px; height:250px; overflow: auto">
+  <table class= "table">
+    <thead>
+    <tr>
+    <th>id</th>
+    <th>gene_short_name</th>
+    <th>num_cells_expressed</th>
+    <th>status</th>
+    <th>term</th>
+    <th>estimate</th>
+    <th>std_err</th>
+    <th>test_val</th>
+    <th>p_value</th>
+    <th>normalized_effect</th>
+    <th>model_component</th>
+    <th>q_value</th>
+    </tr>
+    </thead>
+    <tbody>
+  {% for term in site.data.de_tests.emb_terms %}
+    <tr>
+    <td>{{ term.id }}</td>
+    <td>{{ term.gene_short_name }}</td>
+    <td>{{ term.num_cells_expressed }}</td>
+    <td>{{ term.status }}</td>
+    <td>{{ term.term }}</td>
+    <td>{{ term.estimate }}</td>
+    <td>{{ term.std_err }}</td>
+    <td>{{ term.test_val }}</td>
+    <td>{{ term.p_value }}</td>
+    <td>{{ term.normalized_effect }}</td>
+    <td>{{ term.model_component }}</td>
+    <td>{{ term.q_value }}</td>
+    </tr>
+    <tr>
+  {% endfor %}
+</table>
+</div>
+
+<p>Note that the table includes one row for each <emph>term</emph> of each gene's model. We generally don't care about the intercept term $\beta_0$, so we can easily just extract the time terms:</p>
+
+{% highlight R %}
+emb_time_terms = fit_coefs %>% filter(term == "embryo.time")
+{% endhighlight %}
+
+<p>Now, let's pull out the genes that have a significant time component. <code>coefficient_table()</code> calculates tests each coefficient for whether it is significantly different than zero under the <a href="https://en.wikipedia.org/wiki/Wald_test">Wald test</a>. By default, <code>coefficient_table()</code> adjusts these p-values for <code<>multiple hypothesis testing</code> using the method of <a href="https://en.wikipedia.org/wiki/False_discovery_rate">Benjamini and Hochberg</a>. These adjusted values can be found in the <code>q_value</code> column. We can filter the results and control the false discovery rate as follows: 
+
+{% highlight R %}
+emb_time_terms %>% filter (q_value < 0.05) %>% 
+  select(gene_short_name, term, q_value, estimate)
+{% endhighlight %}
+
+<div style="width:750px; overflow: auto">
+  <table class= "table">
+    <thead>
+    <tr>
+    <th>gene_short_name</th>
+    <th>term</th>
+    <th>q_value</th>
+    <th>estimate</th>
+    </tr>
+    </thead>
+    <tbody>
+  {% for term in site.data.de_tests.emb_time_sig_terms %}
+    <tr>
+    <td>{{ term.gene_short_name }}</td>
+    <td>{{ term.term }}</td>
+    <td>{{ term.q_value }}</td>
+    <td>{{ term.estimate }}</td>
+    </tr>
+    <tr>
+  {% endfor %}
+</table>
+</div>
+
+<p>We can see that five of the six genes significantly vary as a function of time. </p>
+
+<p> Monocle also provides some easy ways to plot the expression of a small set of genes grouped by the factors you use during differential analysis.  This helps you visualize the differences revealed by the tests above.  One type of plot is a "jitter" plot. </p>
+
+
+{% highlight R %}
+MYOG_ID1 <- HSMM_myo[row.names(subset(fData(HSMM_myo),
+    gene_short_name %in% c("MYOG", "CCNB2"))),]
+plot_genes_jitter(MYOG_ID1, grouping = "Media", ncol= 2)
+{% endhighlight %}
+
+<div class= "text-center">
+<img src= "{{site.baseurl}}/images/vignette/plot_myog_jitter-1.png" width= 500>
+</div>
+
+<p> Note that we can control how to layout the genes in the plot by specifying
+the number of rows and columns.  See the man page on
+<code><a href = "https://rdrr.io/bioc/monocle/man/plot_genes_jitter.html">plot_genes_jitter</a></code> for more details on controlling its layout. Most
+if not all of Monocle's plotting routines return a plot object from the
+<em>ggplot2</em> package.  This package uses a grammar of graphics to control
+various aspects of a plot, and makes it easy to customize how your data is
+presented.  See the <em>ggplot2</em> book <a href =
+"http://www.springer.com/us/book/9780387981413"> [5] </a> for more details. </p>
+
+<!-- <h3 data-toc-text= "Choosing a distribution for your data">Choosing a distribution for your data <span class= "label label-danger">Required</span></h3>
+
+<p> Monocle works well with both relative expression data and count-based measures (e.g. UMIs).
+In general, it works best with transcript count data, especially UMI data.
+Whatever your data type, it is <i>critical</i> that specify the appropriate distribution for it.
+FPKM/TPM values are generally log-normally distributed, while UMIs or read counts are better modeled with the negative binomial.
+To work with count data, specify the negative binomial distribution as the <code>expressionFamily</code> argument to <code><a href = "https://rdrr.io/bioc/monocle/man/new_cell_data_set.html">new_cell_data_set</a></code>: </p>
+<p>
+{% highlight R %}
+#Do not run
+HSMM <- new_cell_data_set(count_matrix,
+      phenoData = pd,
+      featureData = fd,
+      expressionFamily=negbinomial.size())
+{% endhighlight %}
+</p>
+<p>
+There are several allowed values for <code>expressionFamily</code>, which expects a "family function" from the VGAM package:
+</p>
+<p>
+<table class= "table">
+<thead>
+<tr>
+<th>Family function</th>
+<th>Data type</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>negbinomial.size()</code></td>
+<td>UMIs, Transcript counts from experiments with spike-ins or <code><a href = "https://rdrr.io/bioc/monocle/man/relative2abs.html">relative2abs()</a></code>, raw read counts</td>
+<td>Negative binomial distribution with fixed variance (which is automatically calculated by Monocle). Recommended for most users.</td>
+</tr>
+<tr>
+<td><code>negbinomial()</code></td>
+<td>UMIs, Transcript counts from experiments with spike-ins or <code><a href = "https://rdrr.io/bioc/monocle/man/relative2abs.html">relative2abs</a></code>, raw read counts</td>
+<td>Slightly more accurate than <code>negbinomial.size()</code>, but much, much slower. Not recommended except for very small datasets.</td>
+</tr>
+<tr>
+<td><code>tobit()</code></td>
+<td>FPKM, TPM</td>
+<td>Tobits are truncated normal distributions. Using <code>tobit()</code> will tell Monocle to log-transform your data where appropriate. Do not transform it yourself.</td>
+</tr>
+<tr>
+<td><code>gaussianff()</code></td>
+<td>log-transformed FPKM/TPMs, Ct values from single-cell qPCR</td>
+<td>If you want to use Monocle on data you have already transformed to be normally distributed, you can use this function, though some Monocle features may not work well.</td>
+</tr>
+</tbody>
+</table>
+</p>
+<p>
+<div class= "panel panel-danger">
+<div class= "panel-heading">
+<h3 class= "panel-title" data-toc-skip>Use the right distribution!</h3>
+</div>
+<div class= "panel-body">
+<strong>Using the wrong expressionFamily for your data will lead to bad results</strong>, errors from Monocle, or both.
+However, if you have FPKM/TPM data, you can still use negative binomial if you first convert your relative expression values to transcript counts using <code><a href = "https://rdrr.io/bioc/monocle/man/relative2abs.html">relative2abs()</a></code>.
+This often leads to much more accurate results than using <code>tobit()</code>. See the section on  <a href = "{{ site.baseurl }}/docs/#converting-tpm-fpkm-values-into-mrna-counts-alternative"> Converting TPM to mRNA Counts</a> for details.
+</div>
+</div>
+</p> -->
+
+
+<p> In this section, we'll explore how to use Monocle to find genes that are differentially expressed according to several different criteria. First, we'll look at how to use our previous classification of the cells by type to find genes that distinguish fibroblasts and myoblasts. Second, we'll look at how to find genes that are differentially expressed as a function of pseudotime, such as those that become activated or repressed during differentiation.  Finally, you'll see how to perform multi-factorial differential analysis, which can help subtract the effects of confounding variables in your experiment. </p>
+
+<p> To keep the vignette simple and fast, we'll be working with small sets of genes. Rest assured, however, that Monocle can analyze many thousands of genes even in large experiments, making it useful for discovering dynamically regulated genes during the biological process you're studying. </p>
+
+
+<h3>Finding Genes that Distinguish Cell Type or State </h3>
+
+
+<p> During a dynamic biological process such as differentiation, cells might assume distinct intermediate or final states.  Recall that earlier we distinguished myoblasts from contaminating fibroblasts on the basis of several key markers. Let's look at several other genes that should distinguish between fibroblasts and myoblasts. </p>
+
+{%highlight R%}
+to_be_tested <- row.names(subset(fData(HSMM),
+    gene_short_name %in% c("UBC", "NCAM1", "ANPEP")))
+cds_subset <- HSMM[to_be_tested,]
+{%endhighlight%}
+
+
+<p>To test the effects of <code>CellType</code> on gene expression, we simply
+call <code><a href = "https://rdrr.io/bioc/monocle/man/differentialGeneTest.html">differentialGeneTest</a></code> on the genes we've selected.
+
+<p>However, we have to specify a <em>model formula</em> in the call to tell
+Monocle that we care about genes with expression levels that depends on
+<em>CellType</em>. Monocle's differential expression analysis works essentially
+by fitting two models to the expression values for each gene, working through
+each gene independently. The first of the two models is called the <em>full</em>
+model. This model is essentially a way of predicting the expression value of
+each gene in a given cell knowing only whether that cell is a fibroblast or a
+myoblast. The second model, called the <em>reduced</em> model, does the same
+thing, but it doesn't know the <em>CellType</em> for each cell. It has to come
+up with a reasonable prediction of the expression value for the gene that will
+be used for <em>all</em> the cells. Because the full model has more information
+about each cell, it will do a better job of predicting the expression of the
+gene in each cell. The question Monocle must answer for each gene is <em>how
+much better</em> the full model's prediction is than the reduced model's. The
+greater the improvement that comes from knowing the <em>CellType</em> of each
+cell, the more significant the differential expression result. This is a common
+strategy in differential analysis, and we leave a detailed statistical
+exposition of such methods to others. </p>
+
+<p> To set up the test based on <em>CellType</em>, we simply call <code><a href = "https://rdrr.io/bioc/monocle/man/differentialGeneTest.html">differentialGeneTest</a></code> with a string specifying <em>fullModelFormulaStr</em>.  We don't have to specify the reduced model in this case, because the default of <em>~1</em> is what we want here. </p>
+
+{% highlight R %}
+diff_test_res <- differentialGeneTest(cds_subset,
+          fullModelFormulaStr = "~CellType")
+diff_test_res[,c("gene_short_name", "pval", "qval")]
+{% endhighlight %}
+
+<p> Note that all the genes are significantly differentially expressed as a
+function of <em>CellType</em> except the housekeeping gene TBP, which we're
+using a negative control. However, we don't know which genes correspond to
+myoblast-specific genes (those more highly expressed in myoblasts versus
+fibroblast specific genes.  We can again plot them with a jitter plot to see:
+</p>
+
+{%highlight R%}
+plot_genes_jitter(cds_subset,
+        grouping = "CellType",
+        color_by = "CellType",
+        nrow= 1,
+        ncol = NULL,
+        plot_trend = TRUE)
+{%endhighlight%}
+
+<div class= "text-center">
+<img src= "{{site.baseurl}}/images/vignette/jitter_plot_diff_res-1.png" width= 760>
+</div>
+
+<p> We could also simply compute summary statistics such as mean or
+median expression level on a per-<em>CellType</em> basis to see this, which
+might be handy if we are looking at more than a handful of genes. Of course, we
+could test for genes that change as a function of <em>Hours</em> to find
+time-varying genes, or <em>Media</em> to identify genes that are responsive to
+the serum switch. In general, model formulae can contain terms in the pData
+table of the <a href = "https://rdrr.io/bioc/monocle/man/cell_data_set.html">cell_data_set</a>. </p>
+
+The <code><a href = "https://rdrr.io/bioc/monocle/man/differentialGeneTest.html">differentialGeneTest</a></code> function is actually quite simple "under the hood".  The call above is equivalent to:
+{% highlight R %}
+full_model_fits <-
+fitModel(cds_subset,  modelFormulaStr = "~CellType")
+reduced_model_fits <- fitModel(cds_subset, modelFormulaStr = "~1")
+diff_test_res <- compareModels(full_model_fits, reduced_model_fits)
+diff_test_res
+{% endhighlight %}
+
+<p> Occassionally, as we'll see later, it's useful to be able to call <code><a href = "https://rdrr.io/bioc/monocle/man/fitModel.html">fitModel</a></code> directly. </p>
+
+The differential analysis procedure in Monocle is extremely flexible: the model formulae you use in your tests can include any term that exists as a column in the <code>pData</code> table, including those columns that are added by Monocle in other analysis steps. For example, if you use <code><a href = "https://rdrr.io/bioc/monocle/man/clusterCells.html">clusterCells</a></code>, you can test for genes that differ between clusters by using <em>Cluster</em> as your model formula.
+
+
+<h3>Finding Genes that Change as a Function of Pseudotime </h3>
+
+<p> Monocle's main job is to put cells in order of progress through a biological process (such as cell differentiation) without knowing which genes to look at ahead of time.
+Once it's done so, you can analyze the cells to find genes that changes as the cells make progress.
+For example, you can find genes that are significantly upregulated as the cells "mature".  Let's look at a panel of genes important for myogenesis: </p>
+
+<p> Monocle's main job is to put cells in order of progress through a biological process (such as cell differentiation) without knowing which genes to look at ahead of time.
+Once it's done so, you can analyze the cells to find genes that changes as the cells make progress.
+For example, you can find genes that are significantly upregulated as the cells "mature".  Let's look at a panel of genes important for myogenesis: </p>
+
+{% highlight R %}
+to_be_tested <- row.names(subset(fData(HSMM),
+gene_short_name %in% c("MYH3", "MEF2C", "CCNB2", "TNNT1")))
+cds_subset <- HSMM_myo[to_be_tested,]
+{% endhighlight %}
+
+<p> Again, we'll need to specify the model we want to use for differential analysis.  This model will be a bit more complicated than the one we used to look at the differences between <em>CellType</em>.  Monocle assigns each cell a "pseudotime" value, which records its progress through the process in the experiment.  The model can test against changes as a function of this value. Monocle uses the <em>VGAM</em> package to model a gene's expression level as a smooth, nonlinear function of pseudotime. </p>
+
+
+
+{% highlight R %}
+diff_test_res <- differentialGeneTest(cds_subset,
+fullModelFormulaStr = "~sm.ns(Pseudotime)")
+{% endhighlight %}
+
+The <code>sm.ns</code> function states that Monocle should fit a natural spline through the expression values to help it describe the changes in expression as a function of progress.
+We'll see what this trend looks like in just a moment. Other smoothing functions are available.
+
+Once again, let's add in the gene annotations so it's easy to see which genes are significant.
+
+<p>
+{% highlight R %}
+diff_test_res[,c("gene_short_name", "pval", "qval")]
+{% endhighlight %}
+</p>
+
+We can plot the expression levels of these genes, all of which show significant changes as a function of differentiation, using the function <code><a href = "https://rdrr.io/bioc/monocle/man/plot_genes_in_pseudotime.html">plot_genes_in_pseudotime</a></code>.
+This function has a number of cosmetic options you can use to control the layout and appearance of your plot.
+
+{% highlight R %}
+plot_genes_in_pseudotime(cds_subset, color_by = "Hours")
+{% endhighlight %}
+
+<div class= "text-center">
+<img src= "{{site.baseurl}}/images/vignette/plot_diff_res_pt-1.png" width= 400>
+</div>
+
+
+<h3>Clustering Genes by Pseudotemporal Expression Pattern </h3>
+
+
+<p> A common question that arises when studying time-series gene expression studies is: "which genes follow similar kinetic trends"?
+Monocle can help you answer this question by grouping genes that have similar trends, so you can analyze these groups to see what they have in common.
+Monocle provides a convenient way to visualize all pseudotime-dependent genes. The function
+<code><a href = "https://rdrr.io/bioc/monocle/man/plot_pseudotime_heatmap.html">plot_pseudotime_heatmap</a></code> takes a <a href = "https://rdrr.io/bioc/monocle/man/cell_data_set.html">cell_data_set</a> object (usually containing a only subset of significant genes)
+and generates smooth expression curves much like  <code><a href = "https://rdrr.io/bioc/monocle/man/plot_genes_in_pseudotime.html">plot_genes_in_pseudotime</a></code>. Then, it clusters these genes
+and plots them using the <em>pheatmap</em> package.  This allows you to visualize modules of genes that
+co-vary across pseudotime. </p>
+
+
+{% highlight R %}
+diff_test_res <- differentialGeneTest(HSMM_myo[marker_genes,],
+    fullModelFormulaStr = "~sm.ns(Pseudotime)")
+sig_gene_names <- row.names(subset(diff_test_res, qval < 0.1))
+plot_pseudotime_heatmap(HSMM_myo[sig_gene_names,],
+      num_clusters = 3,
+      cores = 1,
+      show_rownames = T)
+{% endhighlight %}
+
+<div class= "text-center">
+<img src= "{{site.baseurl}}/images/vignette/plot_diff_res_pt_heatmap-1.png" width= 550>
+</div>
+
+<h2>Analyzing Branches in Single-Cell Trajectories </h2>
+
+<h2>Appendices</h2>
+
+<h2>Major updates in Monocle 3 </h2>
+
+<!-- <p>Monocle 2 is a near-complete re-write of Monocle 1. Monocle 2 is geared towards larger, more complex single-cell RNA-Seq experiments than those possible at the time Monocle 1 was written.
+It's also redesigned to support analysis of mRNA counts, which were hard to estimate experimentally in early versions of single-cell RNA-Seq.
+Now, with spike controls or UMIs, gene expression can  be measured in mRNA counts. Analysis of these counts is typically easier and more accurate than relative expression values, and we encourage all users to adopt an mRNA-count centered workflow.
+Numerous Monocle functions have been re-written to take advantage of the nicer statistical properties of mRNA counts.
+For example, we adopt the dispersion modeling and variance-stabilization techniques introduced by DESeq <a href = "https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-10-r106">[6]</a> during differential analysis, dimensionality reduction, and other steps.
+
+<p>Trajectory reconstruction in Monocle 2 is vastly more robust, faster, and more powerful than in Monocle 1. Monocle 2 uses an advanced nonlinear reconstruction algorithm called DDRTree <a href= "http://dl.acm.org/citation.cfm?id= 2783309">[7]</a>, described below in the section <a href = "{{ site.baseurl }}/docs/#theory-behind-monocle"> Theory Behind Monocle </a>. This algorithm can expose branches that are hard to see with the less powerful linear technique used in Monocle 1.
+The algorithm is also far less sensitive to outliers, so careful QC and selection of high quality cells is less critical.
+Finally, DDRTree is much more robust in that it reports qualititatively similar trajectories more consistently when you vary the number of cells in the experiment.
+Although which genes are included in the ordering still greatly impact the trajectory, varying them also produces more qualititatively consistent trajectories than the previous linear technique.
+
+<p>Because Monocle 2 is so much better at finding branches, it also includes some additional tools to help you interpret them. <a href = "https://rdrr.io/bioc/monocle/man/BEAM.html">Branch expression analysis modeling (BEAM)</a> is a new test for analyzing specific branch points <a href= "https://www.ncbi.nlm.nih.gov/pubmed/28114287">[8]</a>. <a href = "https://rdrr.io/bioc/monocle/man/BEAM.html">BEAM</a> reports branch-dependent genes, and Monocle 2 includes some new visualization functions to help you inspect these genes. Overall, we find that branching is pervasive in diverse biological processes, and thus we expect <a href = "https://rdrr.io/bioc/monocle/man/BEAM.html">BEAM</a> will be very useful to those analyzing single-cell RNA-Seq data in many settings.
+
+<p>Monocle 2 also includes functionality that is inspired by other packages that weren't available when Monocle 1 was written. For example, much of Monocle 2's clustering strategy is similar to
+Seurat <a href= "https://www.ncbi.nlm.nih.gov/pubmed/25867923">[9]</a> from Rahul Satija's lab.
+
+<p>A manuscript describing Monocle 2 and the general stragegy of using reversed
+graph embedding for single-cell trajectory analysis is available on the bioRxiv <a href= "http://www.biorxiv.org/content/early/2017/02/21/110668">[10]</a>.
+
+<h2>Theory Behind Monocle </h2>
+
+<h3 data-toc-text= "dpFeature">dpFeature: Selecting features from dense cell clusters </h3>
+
+
+<p>Appling algorithms like t-SNE to cells transiting through a continuous process like cell differentiation often groups the cells into clusters that do not necessarily reflect their progression through the process. Nevertheless, the genes that are differentially expressed by cells the clusters are often highly informative markers of each cell's progress through the trajectory. That is, clustering algorithms like t-SNE can find often genes that vary over the trajectory, but not the trajectory itself. We designed a simple procedure to identify these genes for use in trajectory reconstruction.
+
+<p>The dpFeature procedure works as follows.
+First, dpFeature excludes genes that only expressed in a very small percentage of cells (by default, <em>5%</em>).
+Second, dpFeature performs PCA on the remaining genes in order to identify the principal components that explain a substantial amount of variance in the data.
+These top PCs are then used to initialize t-SNE, which projects the cells into two-dimensional t-SNE space.
+Next, dpFeature uses a recently developed clustering algorithm, called "density peak" clustering <a href = "http://science.sciencemag.org/content/344/6191/1492">[4]</a> to cluster the cells in the two-dimensional t-SNE space.
+The density peak clustering algorithm calculates each cell's local density (&Rho;) and its distance (&Delta;) to another cell with higher density.
+The &Rho; and &Delta; values for each cell can be plotted in a so-called "decision plot" in order to select thresholds that define "peaks" in the t-SNE space.
+Cells with high local density that are far away from other cells with high local density correspond to the density peaks.
+These density peaks nucleate clusters: all other cells will be associated with the nearest density peak cell.
+Finally, we identify genes that differ between the clusters by performing a likelihood ratio test between using a generalized linear model that knows the cluster to which each cell is assigned and a model that doesn't.
+We then select (by default) the top 1,000 significantly differentially expressed genes as the ordering genes for the trajectory reconstruction. -->
+
+
+<h3>Reversed graph embedding </h3>
+
+<p> Single-cell expression datasets are some of the largest and most complex encountered
+in genomics. Even the smallest single-cell RNA-Seq experiments sample hundreds of cells, measuring the
+expression level of the more than 20,000 genes in each cell. Visualizing these
+datasets, identifying cells of different types, and comparing them to one another
+all pose major bioinformatics challenges. </p>
+
+<p> <em>Manifold learning</em> is a common strategy for dealing with complex, high-dimensional
+data. The premise of this approach is simple: the data may reside in a very high-dimensional space,
+but the intrinsic structure of the dataset is much simpler. Moreover, the data
+are not random - they are generated by a process that can be understood by
+inspecting the global structure of the dataset. For example, a single single-cell RNA-Seq
+experiment may reside in 20,000 dimensions, but the cells might all lie on or "near"
+a curve <em>embedded</em> within a much lower dimensional space. For example, we
+might expect that cells in different phases of the cell cycle be distributed along
+a closed loop. Indeed a recent large-scale single-cell RNA-Seq study found exactly
+that <a href= "https://www.ncbi.nlm.nih.gov/pubmed/26000488">[11]</a>. </p>
+
+<p>Manifold learning often involves <em>dimensionality reduction</em> techniques as a
+first step. Conventional dimensionality reduction approaches (for
+example, PCA, ICA, Isomap, LLE, etc.) are limited in their ability to explictly
+recover the intrinisic structure from the data. </p>
+
+<p>Monocle 2 uses a technique called <em>reversed graph embedding</em> <a href= "http://www.biorxiv.org/content/early/2017/02/21/110668">[10,</a> <a href= "http://ieeexplore.ieee.org/document/7769209/?reload=true">12]</a>  to learn the
+structure of the manifold that describes a single-cell experiment. It simultaneously: </p>
+
+<ol>
+<li> Reduces high dimensional expression data into a lower dimension space.
+<li> Learns an explicit, smooth manifold that generates the data.
+<li> Assigns each cell to its position on that manifold
+</ol>
+
+<p>Together, these tasks allow Monocle 2 to order cells in pseudotime in an entirely
+unsupervised, data-driven way. Importantly, Monocle 2 learns manifolds that are
+trees without needing any <em>a priori</em> information about the structure of the
+tree. Users do not need to provide Monocle 2 with constraints on the number of branches, etc.
+These are learned from the data. This allows Monocle 2 to to discriminate between
+linear and branched trajectories automatically. To our knowledge, Monocle 2 is the first
+trajectory reconstruction algorithm to learn smooth tree-like manifolds without
+needing to know its high-level structure ahead of time.
+
+<p>Reversed graph embedding simultaneously learns a <em>principal graph</em> that
+approximates the manifold, as well as a function that maps points on the graph
+(which is embedded in low dimensions) back to the original high dimensional space.
+Reversed graph embedding aims to learn both a set of <em>latent points</em>
+$$ \mathcal{Z} = \{\mathbf{z}_1, ..., \mathbf{z}_M\}$$corresponding to the input data
+that reside in the low-dimensional space along with a graph $\mathcal{G}$ that
+connects them. This graph approximates the manifold. In order to map points on
+the manifold back to the original high-dimensional input space, we also need to
+learn a function $f_{\mathcal{G}}$.
+
+<p>Learning a good reversed graph embedding can be described as an optimization problem that
+joint captures the positions of the latent points $\mathbf{z}$, the graph $\mathcal{G}$, and the function
+$f_\mathcal{G}$.
+
+<p>To learn the positions of the latent points $\mathbf{z}$, we must optimize:
+
+\begin{equation}
+\mathop{min}_{f_g \in \mathcal{F}} \mathop{min}_{\{\mathbf{z}_1, ...,
+\mathbf{z}_M\}} \sum_{i = 1}^N ||\mathbf{x}_i - f_g (\mathbf{z}_i)||^2
+\end{equation}
+
+<p>Given a set of latent point coordinates, the optimization of graph inference can
+be represented as:
+
+\begin{equation} \label{eq:mintree}
+\mathop{min}_{f_\mathcal{G} \in \mathcal{F}} \mathop{min}_{\{\mathbf{z}_1, ..., \mathbf{z}_M\}} \sum_{(V_i, V_j) \in
+\mathcal{E}} b_{i,j}||f_g(\mathbf{z}_i) - f_g(\mathbf{z}_j)||^2
+\end{equation}
+
+<p>where
+$\mathcal{X} = \{ \mathbf{x}_1, ..., \mathbf{x}_N\}$ are the original
+single-cell expression profiles. The $V_i$ are the the vertices of the
+undirected graph $\mathcal{G} = (\mathcal{V}, \mathcal{E})$. The weights for the
+edge in $\mathcal{E}$ are encoded as $b_{ij}$.
+
+<p>The first optimization problem aims to position the latent points such that their
+image under $f_\mathcal{G}$ (that is, their corresponding positions in the high-dimensional space)
+will be "close" to the input data. The second optimization aims to keep latent
+points that are close to one another in the low dimensional space close to one
+another in the high dimensional space as well. These two goals must be balanced
+against one another. Reversed graph embedding achieves this through the parameter
+$\lambda$
+
+\begin{equation}
+\mathop{min}_{\mathcal{G} \in \hat{\mathcal{G}}_b}\mathop{min}_{f_g \in \mathcal{F}} \mathop{min}_{\{\mathbf{z}_1, ...,
+\mathbf{z}_M\}} \sum_{i = 1}^N ||\mathbf{x}_i - f_g (\mathbf{z}_i)||^2 + \frac{\lambda}{2} \sum_{(V_i, V_j) \in \mathcal{E}}
+b_{i,j}||f_g(\mathbf{z}_i) - f_g(\mathbf{z}_j)||^2
+\end{equation}
+
+<p>Reversed graph embedding requires a feasible set $\hat{\mathcal{G}}_b$ of graphs and a
+mapping function $f_\mathcal{G}$. In practice, implementing reversed graph embedding
+requires that we place some constraints on $\hat{\mathcal{G}}_b$ and $f_\mathcal{G}$.
+As work on reversed graph embedding continues, we anticipate that more general
+schemes that consider a wider range of feasible graphs and mapping functions will
+become available. Monocle users should expect more general reversed graph embedding
+schemes in future versions.
+
+<p>Mao <em>et al</em> initially described two specific ways to implement the general framework
+of reversed graph embedding. Both are briefly summarized below. See the original
+paper on DDRTree for more details. Monocle 2 uses the second scheme, but can easily be
+run in a mode that corresponds to the first.
+
+ 
+
+<h2>Citation </h2>
+
+
+If you use Monocle to analyze your experiments, please cite:
+
+{% highlight R %}
+
+citation("monocle")
+
+##   Cole Trapnell and Davide Cacchiarelli et al (2014): The dynamics
+##   and regulators of cell fate decisions are revealed by
+##   pseudo-temporal ordering of single cells. Nature Biotechnology
+##
+##   Xiaojie Qiu, Andrew Hill, Cole Trapnell et al (2017):
+##   Single-cell mRNA quantification and differential analysis with
+##   Census. Nature Methods
+##
+##   Xiaojie Qiu, Cole Trapnell et al (2017): Reverse graph embedding
+##   resolves complex single-cell developmental trajectories. BioRxiv
+##
+##   To see these entries in BibTeX format, use 'print(<citation>,
+##   bibtex=TRUE)', 'toBibtex(.)', or set
+##   'options(citation.bibtex.max= 999)'.
+
+{% endhighlight %}
+
+
+<h2>Acknowledgements </h2>
+
+Monocle was originally built by Cole Trapnell and Davide Cacchiarelli, with substantial design input John Rinn and Tarjei Mikkelsen. We are grateful to Sharif Bordbar, Chris Zhu, Amy Wagers and the Broad RNAi platform for technical assistance, and Magali Soumillon for helpful discussions. Cole Trapnell is a Damon Runyon Postdoctoral Fellow. Davide Cacchiarelli is a Human Frontier Science Program Fellow. Cacchiarelli and Mikkelsen were supported by the Harvard Stem Cell Institute. John Rinn is the Alvin and Esta Star Associate Professor. This work was supported by NIH grants 1DP2OD00667, P01GM099117, and P50HG006193-01. This work was also supported in part by the Single Cell Genomics initiative, a collaboration between the Broad Institute and Fluidigm Inc.
+
+Monocle 2 was developed by Cole Trapnell's lab. Significant portions were written by Xiaojie Qiu. The work was supported by NIH grant 1DP2HD088158 as well as an Alfred P. Sloan Foundation Research Fellowship.
+
+This vignette was created from Wolfgang Huber's Bioconductor vignette style document, and patterned after the vignette for <em>DESeq</em>, by Simon Anders and Wolfgang Huber.
+
+
+<h2>References </h2>
+
+
+<p> [1] Cole Trapnell, Davide Cacchiarelli, Jonna Grimsby, Prapti Pokharel, Shuqiang Li, Michael Morse, Niall J. Lennon, Kenneth J. Livak, Tarjei S. Mikkelsen, and John L. Rinn. <a href = "http://www.nature.com/nbt/journal/v32/n4/abs/nbt.2859.html"> The dynamics and regulators of cell fate decisions are revealed by pseudotemporal ordering of single cells</a>. Nature Biotechnology, 2014. </p>
+
+<p> [2] Cole Trapnell, Adam Roberts, Loyal Goff, Geo Pertea, Daehwan Kim, David R Kelley, Harold Pimentel, Steven L Salzberg, John L Rinn, and Lior Pachter. <a href = "https://www.ncbi.nlm.nih.gov/pubmed/22383036"> Differential gene and transcript expression analysis of RNA-seq experiments with TopHat and Cufflinks</a>. Nature Protocols, 7(3):562–578, March 2012. </p>
+
+<p> [3] Laurens van der Maaten and Geoffrey Hinton. <a href = "http://www.jmlr.org/papers/volume9/vandermaaten08a/vandermaaten08a.pdf"> Visualizing data using t-SNE</a>. J. Mach. Learn. Res., 9(Nov):2579– 2605, 2008. </p>
+
+<p> [4] Alex Rodriguez. Alessandro Laio. <a href = "http://science.sciencemag.org/content/344/6191/1492"> Clustering by fast search and find of density peaks</a>. Science, 344:1492–1496, 2014. </p>
+
+<p> [5] Hadley Wickham. <a href = "http://www.springer.com/us/book/9780387981413"> ggplot2: Elegant Graphics for Data Analysis</a>. Springer-Verlag New York, 2009. </p>
+
+<p> [6] Simon Anders and Wolfgang Huber. <a href = "https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-10-r106"> Differential expression analysis for sequence count data</a>. Genome Biol., 11(10):R106, 2010. </p>
+
+<p> [7] Qi Mao, Li Wang, Steve Goodison, and Yijun Sun. <a href= "http://dl.acm.org/citation.cfm?id= 2783309"> Dimensionality reduction via graph structure learning</a>. In Proceedings of the 21th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining, pages 765–774. ACM, 2015. </p>
+
+<p> [8] X Qiu, A Hill, J Packer, D Lin, YA Ma, and C Trapnell. <a href= "https://www.ncbi.nlm.nih.gov/pubmed/28114287"> Single-cell mrna quantification and differential analysis with census</a>. Nature methods, 2017. </p>
+
+<p> [9] Rahul Satija, Jeffrey A Farrell, David Gennert, Alexander F Schier, and Aviv Regev. <a href= "https://www.ncbi.nlm.nih.gov/pubmed/25867923"> Spatial reconstruction of single-cell gene expression data</a>. Nat. Biotechnol., 33(5):495–502, May 2015. </p>
+
+<p> [10] Xiaojie Qiu, Qi Mao, Ying Tang, Li Wang, Raghav Chawla, Hannah Pliner, and Cole Trapnell. <a href= "http://www.biorxiv.org/content/early/2017/02/21/110668"> Reversed graph embedding resolves complex single-cell developmental trajectories</a>. 21 February 2017. </p>
+
+<p> [11] Evan Z Macosko, Anindita Basu, Rahul Satija, James Nemesh, Karthik Shekhar, Melissa Goldman, Itay Tirosh, Allison R Bialas, Nolan Kamitaki, Emily M Martersteck, John J Trombetta, David A Weitz, Joshua R Sanes, Alex K Shalek, Aviv Regev, and Steven A McCarroll. <a href= "https://www.ncbi.nlm.nih.gov/pubmed/26000488">Highly parallel genome-wide expression profiling of individual cells using nanoliter droplets</a>. Cell, 161(5):1202–1214, 2015. </p>
+
+<p> [12] Qi Mao, Li Wang, Ivor Tsang, and Yijun Sun. <a href= "http://ieeexplore.ieee.org/document/7769209/?reload=true">Principal graph and structure learning based on reversed graph embedding </a>. IEEE Trans. Pattern Anal. Mach. Intell., 5 December 2016. </p>
+
+<p> [13] Cabili, Moran N. et al. <a href = "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3185964/">Integrative Annotation of Human Large Intergenic Noncoding RNAs Reveals Global Properties and Specific Subclasses</a>. Genes & Development 25.18 (2011): 1915–1927. PMC. Web. 21 June 2017. </p>
+
+
+</div>
+</div>
+</div>
+
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+
+{% include footer.html %}
+
+</body>
+
+</html>
