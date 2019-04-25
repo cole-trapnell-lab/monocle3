@@ -72,7 +72,7 @@ experiments containing tens of thousands of cells or more.</p>
 Before we look at Monocle's functions for each of these common analysis tasks,
 let's see how to install Monocle.
 
-          
+
 <h2>Installing Monocle 3</h2>
 
 <h3> Required software </h3>
@@ -249,10 +249,9 @@ HSMM_gene_annotation <- read.delim("gene_annotations.txt")
 
 <p>
 {% highlight R %}
-pd <- new("AnnotatedDataFrame", data = HSMM_sample_sheet)
-fd <- new("AnnotatedDataFrame", data = HSMM_gene_annotation)
-HSMM <- new_cell_data_set(as.matrix(HSMM_expr_matrix),
-phenoData = pd, featureData = fd)
+cds <- new_cell_data_set(expression_matrix,
+                                   cell_metadata = cell_metadata,
+                                   gene_metadata = gene_annotation)
 {% endhighlight %}
 </p>
 
@@ -312,9 +311,6 @@ lung <- load_lung()
 # To convert to Seuxrat object
 lung_seurat <- exportCDS(lung, 'Seurat')
 
-# To convert to SCESet
-lung_SCESet <- exportCDS(lung, 'Scater')
-
 {% endhighlight %}
 
 <h3 data-toc-text= "Working with large data sets">Working with large data sets <span class= "label label-info">Recommended</span></h3>
@@ -330,9 +326,9 @@ We generally recommend the use of sparseMatrices for most users, as it speeds up
 
 <p>
 {% highlight R %}
-HSMM <- new_cell_data_set(as(umi_matrix, "sparseMatrix"),
-      phenoData = pd,
-      featureData = fd,
+cds <- new_cell_data_set(as(umi_matrix, "sparseMatrix"),
+      cell_metadata = pd,
+      gene_metadata = fd,
       lowerDetectionLimit = 0.5,
       expressionFamily = negbinomial.size())
 {% endhighlight %}
@@ -366,8 +362,8 @@ fd <- fData(gbm)
 colnames(fd)[2] <- "gene_short_name"
 
 gbm_cds <- new_cell_data_set(exprs(gbm),
-        phenoData = new("AnnotatedDataFrame", data = pData(gbm)),
-        featureData = new("AnnotatedDataFrame", data = fd),
+        cell_metadata = pData(gbm),
+        gene_metadata = fd,
         lowerDetectionLimit = 0.5,
         expressionFamily = negbinomial.size())
 {% endhighlight %}
@@ -382,7 +378,7 @@ Size factors help us normalize for differences in mRNA recovered across cells. <
 
 
 {% highlight R %}
-HSMM <- estimateSizeFactors(HSMM)
+cds <- estimate_size_factors(cell_data_set)
 {% endhighlight %}
 
 <p>We're now ready to start using the <code>HSMM</code> object in our analysis.
@@ -482,10 +478,10 @@ cds <- preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ bg.300
 <h4>Step 3: Cluster the cells </h4>
 {% highlight R %}
 cds <- cluster_cells(cds)
-plot_cell_clusters(cds, color_by = "Cluster", show_group_id=TRUE)+ 
+plot_cell_clusters(cds, color_by = "Cluster", show_group_id=TRUE)+
     ggplot2::theme(legend.position="none")
 
-plot_cell_clusters(cds, color_by = "louvain_component", show_group_id=TRUE)+ 
+plot_cell_clusters(cds, color_by = "louvain_component", show_group_id=TRUE)+
     ggplot2::theme(legend.position="none")
 {% endhighlight %}
 
@@ -496,20 +492,20 @@ cds <- partition_cells(cds)
 cds <- learn_graph(cds, learn_graph_control=list(ncenter=1000), close_loop=TRUE, verbose=TRUE)
 # a helper function to identify the root principal points:
 
-plot_cell_trajectory(cds, color_by = "cell.type", cell_size=0.1) + 
-    #ggplot2::scale_color_manual(values=color_map) + 
+plot_cell_trajectory(cds, color_by = "cell.type", cell_size=0.1) +
+    #ggplot2::scale_color_manual(values=color_map) +
     ggplot2::theme(legend.position="right")
 
-plot_cell_trajectory(cds, color_by = "embryo.time.bin", cell_size=0.1) + 
-    #ggplot2::scale_color_manual(values=color_map) + 
+plot_cell_trajectory(cds, color_by = "embryo.time.bin", cell_size=0.1) +
+    #ggplot2::scale_color_manual(values=color_map) +
     ggplot2::theme(legend.position="right")
 
-plot_cell_trajectory(cds, color_by = "Pseudotime", cell_size=0.1) + 
-    #ggplot2::scale_color_manual(values=color_map) + 
+plot_cell_trajectory(cds, color_by = "Pseudotime", cell_size=0.1) +
+    #ggplot2::scale_color_manual(values=color_map) +
     ggplot2::theme(legend.position="right")
 
-plot_cell_trajectory(cds, color_by = "batch") + 
-    #ggplot2::scale_color_manual(values=color_map) + 
+plot_cell_trajectory(cds, color_by = "batch") +
+    #ggplot2::scale_color_manual(values=color_map) +
     ggplot2::theme(legend.position="right")
 
 
@@ -547,7 +543,7 @@ cds <- preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ bg.300
 {% endhighlight %}
 
 <h2>Differential Expression Analysis </h2>
-Differential gene expression analysis is a common task in RNA-Seq experiments.  Monocle can help you find genes that are differentially expressed between groups of cells and assesses the statistical signficance of those changes. Monocle 3 includes a powerful systems for finding genes that vary across cells of different types, were collected at different developmental time points, or that have been perturbed in different ways. 
+Differential gene expression analysis is a common task in RNA-Seq experiments.  Monocle can help you find genes that are differentially expressed between groups of cells and assesses the statistical signficance of those changes. Monocle 3 includes a powerful systems for finding genes that vary across cells of different types, were collected at different developmental time points, or that have been perturbed in different ways.
 
 <h3>Basic Differential Analysis </h3>
 <p> In this section, we'll explore how to use Monocle to find genes that are differentially expressed according to several different criteria. Performing differential expression analysis on all genes in a <a href = "https://rdrr.io/bioc/monocle/man/cell_data_set.html">cell_data_set</a> object can take anywhere from minutes to hours, depending on how complex the analysis is. To keep the vignette simple and fast, we'll be working with small sets of genes. Rest assured, however, that Monocle can analyze many thousands of genes even in large experiments, making it useful for discovering dynamically regulated genes during the biological process you're studying. </p>
@@ -630,10 +626,10 @@ fit_coefs = coefficient_table(gene_fits)
 emb_time_terms = fit_coefs %>% filter(term == "embryo.time")
 {% endhighlight %}
 
-<p>Now, let's pull out the genes that have a significant time component. <code>coefficient_table()</code> calculates tests each coefficient for whether it is significantly different than zero under the <a href="https://en.wikipedia.org/wiki/Wald_test">Wald test</a>. By default, <code>coefficient_table()</code> adjusts these p-values for <code<>multiple hypothesis testing</code> using the method of <a href="https://en.wikipedia.org/wiki/False_discovery_rate">Benjamini and Hochberg</a>. These adjusted values can be found in the <code>q_value</code> column. We can filter the results and control the false discovery rate as follows: 
+<p>Now, let's pull out the genes that have a significant time component. <code>coefficient_table()</code> calculates tests each coefficient for whether it is significantly different than zero under the <a href="https://en.wikipedia.org/wiki/Wald_test">Wald test</a>. By default, <code>coefficient_table()</code> adjusts these p-values for <code<>multiple hypothesis testing</code> using the method of <a href="https://en.wikipedia.org/wiki/False_discovery_rate">Benjamini and Hochberg</a>. These adjusted values can be found in the <code>q_value</code> column. We can filter the results and control the false discovery rate as follows:
 
 {% highlight R %}
-emb_time_terms %>% filter (q_value < 0.05) %>% 
+emb_time_terms %>% filter (q_value < 0.05) %>%
   select(gene_short_name, term, q_value, estimate)
 {% endhighlight %}
 
@@ -1058,7 +1054,7 @@ of reversed graph embedding. Both are briefly summarized below. See the original
 paper on DDRTree for more details. Monocle 2 uses the second scheme, but can easily be
 run in a mode that corresponds to the first.
 
- 
+
 
 <h2>Citation </h2>
 
