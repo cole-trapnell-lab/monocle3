@@ -332,7 +332,7 @@ coefficient_table <- function(model_tbl) {
   M_f = model_tbl %>%
     dplyr::mutate(terms = purrr::map2(.f = purrr::possibly(extract_coefficient_helper, NA_real_), .x = model, .y = model_summary)) %>%
     tidyr::unnest(terms)
-  M_f = M_f %>% dplyr::group_by(model_component, term) %>% mutate(q_value = p.adjust(p_value)) %>% ungroup()
+  M_f = M_f %>% dplyr::group_by(model_component, term) %>% dplyr::mutate(q_value = p.adjust(p_value)) %>% dplyr::ungroup()
   return(M_f)
 }
 
