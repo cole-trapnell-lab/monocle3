@@ -5,3 +5,6 @@ inst/doc
 .Ruserdata
 _site
 .sass-cache
+.gitignore~
+.DS_Store
+Gemfile.lock
