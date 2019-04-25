@@ -4,11 +4,11 @@
 \alias{mc_es_apply}
 \title{Multicore apply-like function for cell_data_set}
 \usage{
-mc_es_apply(X, MARGIN, FUN, required_packages, cores = 1,
+mc_es_apply(cds, MARGIN, FUN, required_packages, cores = 1,
   convert_to_dense = TRUE, ...)
 }
 \arguments{
-\item{X}{a cell_data_set object}
+\item{cds}{a cell_data_set object}
 
 \item{MARGIN}{The margin to apply to, either 1 for rows (samples) or 2 for columns (features)}
 
@@ -23,9 +23,9 @@ mc_es_apply(X, MARGIN, FUN, required_packages, cores = 1,
 \item{...}{Additional parameters for FUN}
 }
 \value{
-The result of with(colData(X) apply(counts(cds)), MARGIN, FUN, ...))
+The result of with(colData(cds) apply(counts(cds)), MARGIN, FUN, ...))
 }
 \description{
 mcesApply computes the row-wise or column-wise results of FUN, just like
-esApply. Variables in colData from X are available in FUN.
+esApply. Variables in colData from cds are available in FUN.
 }

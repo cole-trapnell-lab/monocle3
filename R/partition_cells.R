@@ -56,10 +56,6 @@ partition_cells <- function(cds,
   assertthat::assert_that(is.numeric(louvain_qval))
   assertthat::assert_that(is.logical(return_all))
   assertthat::assert_that(is.logical(verbose))
-  assertthat::assert_that(!is.null(reducedDims(cds)$normalized_data_projection),
-                          msg = paste("No normalized data projection",
-                                      "calculated. Please run preprocess_cds",
-                                      "before running partition_cells."))
   assertthat::assert_that(!is.null(reducedDims(cds)[[reduced_dimension]]),
                           msg = paste("No dimensionality reduction for",
                                       reduced_dimension, "calculated.",
@@ -67,15 +63,13 @@ partition_cells <- function(cds,
                                       "reduction_method =", reduced_dimension,
                                       "before running partition_cells."))
 
-
-  irlba_pca_res <- reducedDims(cds)$normalized_data_projection
   reduced_dim_res <- reducedDims(cds)[[reduced_dimension]]
 
   if(verbose)
     message("Running louvain clustering algorithm ...")
 
     louvain_clustering_args <- c(list(data = reduced_dim_res,
-                                      pd = colData(cds)[row.names(irlba_pca_res), ],
+                                      pd = colData(cds)[row.names(reduced_dim_res), ],
                                       k = k,
                                       resolution = resolution, weight = weight,
                                       louvain_iter = louvain_iter,
@@ -91,7 +85,7 @@ partition_cells <- function(cds,
                                                             louvain_res$optim_res,
                                                             louvain_qval, verbose)
   louvain_component <- igraph::components(cluster_graph_res$cluster_g)$membership[louvain_res$optim_res$membership]
-  names(louvain_component) <- row.names(irlba_pca_res)
+  names(louvain_component) <- row.names(reduced_dim_res)
   louvain_component <- as.factor(louvain_component)
   colData(cds)$louvain_component <- louvain_component
 

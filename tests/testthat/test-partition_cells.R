@@ -4,7 +4,7 @@ cds <- load_a549()
 
 test_that("test partition_cells error messages work", {
   expect_error(cds <- partition_cells(cds),
-               "No normalized data projection calculated. Please run preprocess_cds before running partition_cells.")
+               "No dimensionality reduction for UMAP calculated. Please run reduce_dimensions with reduction_method = UMAP before running partition_cells.")
   cds <- preprocess_cds(cds)
   expect_error(cds <- partition_cells(cds),
                "No dimensionality reduction for UMAP calculated. Please run reduce_dimensions with reduction_method = UMAP before running partition_cells.")

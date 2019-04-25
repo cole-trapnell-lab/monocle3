@@ -104,11 +104,6 @@ learn_graph <- function(cds,
   assertthat::assert_that(is.numeric(L1.sigma))
   assertthat::assert_that(is.numeric(L1.sigma))
 
-  assertthat::assert_that(!is.null(reducedDims(cds)$normalized_data_projection),
-                          msg = paste("No normalized data projection",
-                                      "calculated. Please run preprocess_cds,",
-                                      "reduce_dimensions, and partition_cells",
-                                      "before running learn_graph."))
   assertthat::assert_that(!is.null(reducedDims(cds)[[reduced_dimension]]),
                           msg = paste("No dimensionality reduction for",
                                       reduced_dimension, "calculated.",

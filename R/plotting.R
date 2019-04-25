@@ -60,10 +60,6 @@ plot_cell_trajectory <- function(cds,
                                  min_expr=0.1,
                                  ...) {
 
-  assertthat::assert_that(!is.null(reducedDims(cds)$normalized_data_projection),
-                          msg = paste("No normalized data projection",
-                                      "calculated. Please run preprocess_cds",
-                                      "before running plot_cell_trajectory"))
   assertthat::assert_that(!is.null(reducedDims(cds)[[reduced_dimension]]),
                           msg = paste("No dimensionality reduction for",
                                       reduced_dimension, "calculated.",
@@ -595,6 +591,7 @@ plot_cell_clusters <- function(cds,
                                nrow = NULL,
                                ncol = NULL,
                                ...){
+
   if (require("ggrastr",character.only = TRUE)){
     plotting_func = ggrastr::geom_point_rast
   }else{
@@ -604,13 +601,7 @@ plot_cell_clusters <- function(cds,
   if (length(colData(cds)$Cluster) == 0){
     stop("Error: Clustering is not performed yet. Please call clusterCells() before calling this function.")
   }
-
   low_dim_coords <- reducedDims(cds)[[reduced_dimension]]
-
-  if (nrow(low_dim_coords) == 0){
-    message("reduceDimension is not performed yet. We are plotting the normalized reduced space obtained from preprocessCDS function.")
-    low_dim_coords <- t(reducedDims(cds)$normalized_data_projection)
-  }
 
   gene_short_name <- NULL
   sample_name <- NULL

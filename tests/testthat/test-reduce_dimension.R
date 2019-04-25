@@ -32,15 +32,21 @@ test_that("reduce_dimension runs", {
 
   cds <- reduce_dimension(cds, reduction_method = "PCA")
   expect_equal(nrow(reducedDims(cds)$PCA), nrow(colData(cds)))
-  expect_equal(ncol(reducedDims(cds)$PCA), 2)
   expect_equal(as.numeric(reducedDims(cds)$PCA["E11_A01_RT_467","PC1"]),
-               -2.4207391, tolerance = 1e-4)
+               2.4207391, tolerance = 1e-4)
 
-  cds <- reduce_dimension(cds,  max_components = 50, reduction_method = "PCA")
-  expect_equal(nrow(reducedDims(cds)$PCA), nrow(colData(cds)))
-  expect_equal(ncol(reducedDims(cds)$PCA), 50)
-  expect_equal(as.numeric(reducedDims(cds)$PCA["E11_A01_RT_467","PC50"]),
-               -1.155851, tolerance = 1e-4)
+  cds <- preprocess_cds(cds, num_dim = 20, method = "LSI")
+  cds <- reduce_dimension(cds, preprocess_method = "LSI")
+  expect_equal(nrow(reducedDims(cds)$UMAP), nrow(colData(cds)))
+  expect_equal(ncol(reducedDims(cds)$UMAP), 2)
+  expect_equal(as.numeric(reducedDims(cds)$UMAP[1,1]), 1.359459,
+               tolerance = 1e-4)
+
+  cds <- reduce_dimension(cds, reduction_method = "tSNE", preprocess_method = "LSI")
+  expect_equal(nrow(reducedDims(cds)$tSNE), nrow(colData(cds)))
+  expect_equal(ncol(reducedDims(cds)$tSNE), 2)
+  expect_equal(as.numeric(reducedDims(cds)$tSNE[1,1]), 3.996713,
+               tolerance = 1e-4)
 
   expect_error(reduce_dimension(cds, reduction_method = "DDRTree"),
                "reduction_method must be one of 'UMAP', 'PCA' or 'tSNE'")

@@ -4,7 +4,7 @@ cds <- load_a549()
 
 test_that("test learn_graph error messages work", {
   expect_error(cds <- learn_graph(cds),
-               "No normalized data projection calculated. Please run preprocess_cds, reduce_dimensions, and partition_cells before running learn_graph.")
+               "No dimensionality reduction for UMAP calculated. Please run reduce_dimensions with reduction_method = UMAP and partition_cells before running learn_graph.")
   cds <- preprocess_cds(cds)
   expect_error(cds <- learn_graph(cds),
                "No dimensionality reduction for UMAP calculated. Please run reduce_dimensions with reduction_method = UMAP and partition_cells before running learn_graph.")

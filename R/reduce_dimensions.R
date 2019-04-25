@@ -64,6 +64,7 @@
 reduce_dimension <- function(cds,
                              max_components=2,
                              reduction_method=c("UMAP", 'tSNE', 'PCA'),
+                             preprocess_method=c("PCA", "LSI"),
                              verbose=FALSE,
                              ...){
   extra_arguments <- list(...)
@@ -73,50 +74,46 @@ reduce_dimension <- function(cds,
              error = function(e) FALSE),
     msg = "reduction_method must be one of 'UMAP', 'PCA' or 'tSNE'")
 
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(preprocess_method) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "preprocess_method must be one of 'PCA' or 'LSI'")
 
   reduction_method <- match.arg(reduction_method)
+  preprocess_method <- match.arg(preprocess_method)
+
+  assertthat::assert_that(assertthat::is.count(max_components))
+
+  assertthat::assert_that(!is.null(reducedDims(cds)[[preprocess_method]]),
+                          msg = paste("Data has not been preprocessed with",
+                                      "chosen method:", preprocess_method,
+                                      "Please run preprocess_cds with",
+                                      "method =", preprocess_method,
+                                      "before running reduce_dimension."))
+  if(reduction_method == "PCA") {
+    assertthat::assert_that(preprocess_method == "PCA",
+                            msg = paste("preprocess_method must be 'PCA' when",
+                                        "reduction_method = 'PCA'"))
+    assertthat::assert_that(!is.null(reducedDims(cds)[["PCA"]]),
+                            msg = paste("When reduction_method = 'PCA', the",
+                                        "cds must have been preprocessed for",
+                                        "PCA. Please run preprocess_cds with",
+                                        "method = 'PCA' before running",
+                                        "reduce_dimension with",
+                                        "reduction_method = 'PCA'."))
+  }
+
   #ensure results from RNG sensitive algorithms are the same on all calls
   set.seed(2016)
 
-  if (verbose) message("Retrieving normalized data ...")
-
-  FM <- assays(cds)$normalized_exprs
-
-  if (!is.null(rowData(cds)$use_for_ordering) &&
-      nrow(subset(rowData(cds), use_for_ordering == TRUE)) > 0) {
-    FM <- FM[rowData(cds)$use_for_ordering, ]
-  }
-
-
-  fm_rowsums = Matrix::rowSums(FM)
-  FM <- FM[is.finite(fm_rowsums) & fm_rowsums != 0, ]
-
-  irlba_pca_res <- reducedDims(cds)$normalized_data_projection
-
-  if(is.null(FM)) {
-    stop(paste('The cds has not been pre-processed yet. Please run",
-               "preprocess_cds() first.'))
-  }
+  preprocess_mat <- reducedDims(cds)[[preprocess_method]]
 
   if(reduction_method == "PCA") {
-
-    irlba_res <- sparse_prcomp_irlba(Matrix::t(FM),
-                                     n = min(max_components,min(dim(FM)) - 1),
-                                     center = TRUE, scale. = TRUE)
-    irlba_pca_res <- irlba_res$x
-    row.names(irlba_pca_res) <- colnames(cds)
-    reducedDims(cds)$PCA <- as.matrix(irlba_pca_res)
-
+    if (verbose) message("Returning preprocessed PCA matrix")
   } else if (reduction_method == "tSNE") {
-    # when you pass pca_dim to the function, the number of dimension used for
-    # tSNE dimension reduction is used
-
-    topDim_pca <- irlba_pca_res
-
-    # then run tSNE
     if (verbose) message("Reduce dimension by tSNE ...")
 
-    tsne_res <- Rtsne::Rtsne(as.matrix(topDim_pca), dims = max_components,
+    tsne_res <- Rtsne::Rtsne(as.matrix(preprocess_mat), dims = max_components,
                              pca = F, check_duplicates=FALSE, ...)
 
     tsne_data <- tsne_res$Y[, 1:max_components]
@@ -124,18 +121,11 @@ reduce_dimension <- function(cds,
 
     reducedDims(cds)$tSNE <- tsne_data
 
-    # set the important information from densityClust to certain part of the
-    # cds object:
-    # not actually used... int_metadata(cds)$tsne_pca_components_used <- num_dim
-
-    colData(cds)$tsne_1 = reducedDims(cds)$tSNE[,1]
-    colData(cds)$tsne_2 = reducedDims(cds)$tSNE[,2]
-
   } else if (reduction_method == c("UMAP")) {
     if (verbose)
       message("Running Uniform Manifold Approximation and Projection")
 
-    umap_args <- c(list(X = irlba_pca_res,
+    umap_args <- c(list(X = preprocess_mat,
                         log = F,
                         n_component = as.integer(max_components),
                         verbose = verbose,
@@ -152,15 +142,8 @@ reduce_dimension <- function(cds,
     tmp <- do.call(UMAP, umap_args)
     # normalize UMAP space
     umap_res <- (tmp$embedding_-min(tmp$embedding_))/max(tmp$embedding_)
-    row.names(umap_res) <- colnames(FM)
+    row.names(umap_res) <- colnames(cds)
     reducedDims(cds)$UMAP <- umap_res
-
-    adj_mat <- Matrix::sparseMatrix(i = tmp$graph_$indices,
-                                    p = tmp$graph_$indptr,
-                                    x = -as.numeric(tmp$graph_$data),
-                                    dims = c(ncol(cds), ncol(cds)), index1 = F,
-                                    dimnames = list(colnames(cds),
-                                                    colnames(cds)))
   }
 
   cds

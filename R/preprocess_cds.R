@@ -75,17 +75,35 @@
 #'   function
 #' @return an updated cell_data_set object
 #' @export
-preprocess_cds <- function(cds, method = c('PCA', "tfidf", 'none'),
+preprocess_cds <- function(cds, method = c('PCA', "LSI"),
                            num_dim=50,
-                           norm_method = c("log", "none"),
+                           norm_method = c("log", "size_only"),
+                           use_genes = NULL,
                            residual_model_formula_str=NULL,
                            pseudo_count=NULL,
                            scaling = TRUE,
                            verbose=FALSE,
                            ...) {
   extra_arguments <- list(...)
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(method) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "method must be one of 'PCA' or 'LSI'")
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(norm_method) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "norm_method must be one of 'log' or 'size_only'")
+  assertthat::assert_that(assertthat::is.count(num_dim))
+  if(!is.null(use_genes)) {
+    assertthat::assert_that(is.character(use_genes))
+    assertthat::assert_that(all(use_genes %in% row.names(rowData(cds))),
+                            msg = paste("use_genes must be NULL, or all must",
+                            "be present in the row.names of rowData(cds)"))
+  }
+
   method <- match.arg(method)
   norm_method <- match.arg(norm_method)
+
   #ensure results from RNG sensitive algorithms are the same on all calls
   set.seed(2016)
   FM <- normalize_expr_data(cds, norm_method, pseudo_count)
@@ -94,14 +112,11 @@ preprocess_cds <- function(cds, method = c('PCA', "tfidf", 'none'),
     stop("Error: all rows have standard deviation zero")
   }
 
-  assays(cds)$normalized_exprs <- FM
-
   # If the user has selected a subset of genes for use in ordering the cells
   # via set_ordering_filter(), subset the expression matrix.
   # TO DO
-  if (!is.null(rowData(cds)$use_for_ordering) &&
-      nrow(subset(rowData(cds), use_for_ordering == TRUE)) > 0) {
-    FM <- FM[rowData(cds)$use_for_ordering, ]
+  if (!is.null(use_genes)) {
+    FM <- FM[use_genes, ]
   }
 
   fm_rowsums = Matrix::rowSums(FM)
@@ -113,26 +128,22 @@ preprocess_cds <- function(cds, method = c('PCA', "tfidf", 'none'),
     irlba_res <- sparse_prcomp_irlba(Matrix::t(FM),
                                      n = min(num_dim,min(dim(FM)) - 1),
                                      center = scaling, scale. = scaling)
-    irlba_pca_res <- irlba_res$x
-    row.names(irlba_pca_res) <- colnames(cds)
-    reducedDims(cds)$PCA <- as.matrix(irlba_pca_res)
+    preproc_res <- irlba_res$x
+    row.names(preproc_res) <- colnames(cds)
 
-  } else if(method == 'none') {
-    irlba_pca_res <- Matrix::t(FM)
-  } else if(method == "tfidf") {
-    irlba_pca_res <- tfidf(FM)
-    do_svd = function(tf_idf_counts, dims=50) {
+  } else if(method == "LSI") {
+    preproc_res <- tfidf(FM)
+    do_svd <- function(tf_idf_counts, dims=50) {
       pca.results = irlba::irlba(Matrix::t(tf_idf_counts), nv=dims)
       final_result = pca.results$u %*% diag(pca.results$d)
       rownames(final_result) = colnames(tf_idf_counts)
-      colnames(final_result) = paste0('PC_', 1:dims)
+      colnames(final_result) = paste0('C_', 1:dims)
       return(final_result)
     }
-    irlba_pca_res <- do_svd(irlba_pca_res, num_dim)
-  } else {
-    stop('unknown preprocessing method, stop!')
+    preproc_res <- do_svd(preproc_res, num_dim)
   }
-  row.names(irlba_pca_res) <- colnames(cds)
+
+  row.names(preproc_res) <- colnames(cds)
 
   if (!is.null(residual_model_formula_str)) {
     if (verbose) message("Removing batch effects")
@@ -140,14 +151,14 @@ preprocess_cds <- function(cds, method = c('PCA', "tfidf", 'none'),
                                        data = colData(cds),
                                        drop.unused.levels = TRUE)
 
-    fit <- limma::lmFit(Matrix::t(irlba_pca_res), X.model_mat, ...)
+    fit <- limma::lmFit(Matrix::t(preproc_res), X.model_mat, ...)
     beta <- fit$coefficients[, -1, drop = FALSE]
     beta[is.na(beta)] <- 0
-    irlba_pca_res <- Matrix::t(as.matrix(Matrix::t(irlba_pca_res)) -
+    preproc_res <- Matrix::t(as.matrix(Matrix::t(preproc_res)) -
                                  beta %*% Matrix::t(X.model_mat[, -1]))
   }
 
-  reducedDims(cds)$normalized_data_projection <- as.matrix(irlba_pca_res)
+  reducedDims(cds)[[method]] <- as.matrix(preproc_res)
 
   cds
 }
@@ -156,7 +167,7 @@ preprocess_cds <- function(cds, method = c('PCA', "tfidf", 'none'),
 # Helper function to normalize the expression data prior to dimensionality
 # reduction
 normalize_expr_data <- function(cds,
-                                norm_method = c("log", "none"),
+                                norm_method = c("log", "size_only"),
                                 pseudo_count = NULL) {
   norm_method <- match.arg(norm_method)
   check_size_factors(cds)
@@ -184,7 +195,7 @@ normalize_expr_data <- function(cds,
       FM@x = log2(FM@x + 1)
     }
 
-  } else if (norm_method == "none"){
+  } else if (norm_method == "size_only"){
     FM <- Matrix::t(Matrix::t(FM)/size_factors(cds))
     FM <- FM + pseudo_count
   }
@@ -218,7 +229,6 @@ tfidf <- function(count_matrix, frequencies=TRUE, log_scale_tf=TRUE,
   # Try to just to the multiplication and fall back on delayed array
   # TODO hopefully this actually falls back and not get jobs killed in SGE
   tf_idf_counts = tryCatch({
-    print('TF*IDF multiplication, attempting in-memory computation')
     tf_idf_counts = tf * idf
     tf_idf_counts
   }, error = function(e) {
