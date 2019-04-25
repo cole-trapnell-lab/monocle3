@@ -14,8 +14,9 @@ test_that("fit_models() properly validates model formulae",{
   num_failed = sum (unlist(lapply(ok_formula_model_fits$model, function(m) { class(m) })) == "logical" )
   expect_lt(num_failed, nrow(cds))
 
-  skip("currently broken")
-  expect_error(fit_models(cds, model_formula_str = "~MISSING_TERM"))
+  # Skip the test below until we resolve this issue:
+  # https://github.com/cole-trapnell-lab/monocle3/issues/17
+  skip(expect_error(fit_models(cds, model_formula_str = "~MISSING_TERM")))
 })
 
 test_that("fit_models() multicore works",{
