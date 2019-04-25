@@ -239,9 +239,10 @@ Additionally:
 <p>
 {% highlight R %}
 #do not run
-HSMM_expr_matrix <- read.table("fpkm_matrix.txt")
-HSMM_sample_sheet <- read.delim("cell_sample_sheet.txt")
-HSMM_gene_annotation <- read.delim("gene_annotations.txt")
+expression_matrix = readRDS(url("http://jpacker-data.s3.amazonaws.com/for-cole/for-cole.ciliated.amphid.neurons.exprs.rds"))
+cell_metadata = readRDS(url("http://jpacker-data.s3.amazonaws.com/for-cole/for-cole.ciliated.amphid.neurons.pData.rds"))
+gene_annotation = readRDS(url("http://jpacker-data.s3.amazonaws.com/for-cole/for-cole.ciliated.amphid.neurons.fData.rds"))
+gene_annotation$use_for_ordering = NULL
 {% endhighlight %}
 </p>
 
@@ -302,7 +303,7 @@ importCDS(data_to_be_imported, import_all = TRUE)
 
 {% endhighlight %}
 
-<p> Monocle can also export data from cell_data_sets to the "Seurat" and "scater" packages through the
+<p> Monocle can also export data from cell_data_sets to the package "Seurat" through the
 function <code>exportCDS()</code>:
 
 {% highlight R %}
@@ -349,6 +350,7 @@ If so, you should just pass it directly to <a href = "https://rdrr.io/bioc/monoc
 If you have 10X Genomics data and are using <code>cellrangerRkit</code>, you can use it to load your data and then pass that to Monocle as follows:
 
 {% highlight R %}
+# Use tenx_to_cds here when it is ready
 
 cellranger_pipestance_path <- "/path/to/your/pipeline/output/directory"
 gbm <- load_cellranger_matrix(cellranger_pipestance_path)
@@ -472,15 +474,20 @@ data's dimensionality.</p>
 
 {% highlight R %}
 cds <- estimate_size_factors(cds)
-cds <- preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+cds <- reduce_dimension(cds, max_components= __, reduction_method="UMAP")
 {% endhighlight %}
 
 <h4>Step 3: Cluster the cells </h4>
 {% highlight R %}
 cds <- cluster_cells(cds)
+{% endhighlight %}
+
+{% highlight R %}
 plot_cell_clusters(cds, color_by = "Cluster", show_group_id=TRUE)+
     ggplot2::theme(legend.position="none")
+{% endhighlight %}
 
+{% highlight R %}
 plot_cell_clusters(cds, color_by = "louvain_component", show_group_id=TRUE)+
     ggplot2::theme(legend.position="none")
 {% endhighlight %}
@@ -491,24 +498,35 @@ plot_cell_clusters(cds, color_by = "louvain_component", show_group_id=TRUE)+
 cds <- partition_cells(cds)
 cds <- learn_graph(cds, learn_graph_control=list(ncenter=1000), close_loop=TRUE, verbose=TRUE)
 # a helper function to identify the root principal points:
+{% endhighlight %}
 
+<h4>Step 5: Visualize the trajectories </h4>
+
+{% highlight R %}
 plot_cell_trajectory(cds, color_by = "cell.type", cell_size=0.1) +
     #ggplot2::scale_color_manual(values=color_map) +
     ggplot2::theme(legend.position="right")
+{% endhighlight %}
 
+{% highlight R %}
 plot_cell_trajectory(cds, color_by = "embryo.time.bin", cell_size=0.1) +
     #ggplot2::scale_color_manual(values=color_map) +
     ggplot2::theme(legend.position="right")
+{% endhighlight %}
 
+{% highlight R %}
 plot_cell_trajectory(cds, color_by = "Pseudotime", cell_size=0.1) +
     #ggplot2::scale_color_manual(values=color_map) +
     ggplot2::theme(legend.position="right")
+{% endhighlight %}
 
+{% highlight R %}
 plot_cell_trajectory(cds, color_by = "batch") +
     #ggplot2::scale_color_manual(values=color_map) +
     ggplot2::theme(legend.position="right")
+{% endhighlight %}
 
-
+{% highlight R %}
 get_earliest_principal_node <- function(cds, time_bin="130-170"){
   cell_ids <- which(colData(cds)[, "embryo.time.bin"] == time_bin)
 
@@ -522,10 +540,14 @@ get_earliest_principal_node <- function(cds, time_bin="130-170"){
   root_pr_nodes
 }
 cds = order_cells(cds, root_pr_nodes=get_earliest_principal_node(cds))
-
 plot_cell_trajectory(cds, markers=c("egl-21", "egl-1"))
-plot_genes_in_pseudotime(cds[rowData(cds)$gene_short_name %in% c("egl-21", "egl-1"),])
+{% endhighlight %}
 
+{% highlight R %}
+plot_genes_in_pseudotime(cds[rowData(cds)$gene_short_name %in% c("egl-21", "egl-1"),])
+{% endhighlight %}
+
+{% highlight R %}
 ciliated_genes = c("che-1",
                    "hlh-17",
                    "nhr-6",
@@ -536,14 +558,9 @@ ciliated_genes = c("che-1",
 plot_cell_trajectory(cds, markers=ciliated_genes)
 {% endhighlight %}
 
-<h4>Step 5: Visualize the trajectories </h4>
-{% highlight R %}
-cds <- estimate_size_factors(cds)
-cds <- preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
-{% endhighlight %}
 
 <h2>Differential Expression Analysis </h2>
-Differential gene expression analysis is a common task in RNA-Seq experiments.  Monocle can help you find genes that are differentially expressed between groups of cells and assesses the statistical signficance of those changes. Monocle 3 includes a powerful systems for finding genes that vary across cells of different types, were collected at different developmental time points, or that have been perturbed in different ways.
+Differential gene expression analysis is a common task in RNA-Seq experiments.  Monocle can help you find genes that are differentially expressed between groups of cells and assesses the statistical signficance of those changes. Monocle 3 includes a powerful system for finding genes that vary across cells of different types, were collected at different developmental time points, or that have been perturbed in different ways.
 
 <h3>Basic Differential Analysis </h3>
 <p> In this section, we'll explore how to use Monocle to find genes that are differentially expressed according to several different criteria. Performing differential expression analysis on all genes in a <a href = "https://rdrr.io/bioc/monocle/man/cell_data_set.html">cell_data_set</a> object can take anywhere from minutes to hours, depending on how complex the analysis is. To keep the vignette simple and fast, we'll be working with small sets of genes. Rest assured, however, that Monocle can analyze many thousands of genes even in large experiments, making it useful for discovering dynamically regulated genes during the biological process you're studying. </p>
@@ -658,7 +675,7 @@ emb_time_terms %>% filter (q_value < 0.05) %>%
 
 <p>We can see that five of the six genes significantly vary as a function of time. </p>
 
-<strong>XXX COLE MARKER XXX</strong> 
+<strong>XXX COLE MARKER XXX</strong>
 
 <p> Monocle also provides some easy ways to plot the expression of a small set of genes grouped by the factors you use during differential analysis.  This helps you visualize the differences revealed by the tests above.  One type of plot is a "jitter" plot. </p>
 
