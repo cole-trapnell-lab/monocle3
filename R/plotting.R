@@ -69,7 +69,7 @@ plot_cell_trajectory <- function(cds,
                                       reduced_dimension, "calculated.",
                                       "Please run reduce_dimensions with",
                                       "reduction_method =", reduced_dimension,
-                                      "before running partition_cells."))
+                                      "before running plot_cell_trajectory"))
   #requireNamespace("igraph")
   gene_short_name <- NA
   sample_name <- NA
