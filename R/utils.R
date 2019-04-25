@@ -218,9 +218,9 @@ mc_es_apply <- function(X, MARGIN, FUN, required_packages, cores=1, convert_to_d
   }
 
   if (MARGIN == 1){
-    suppressWarnings(res <- sparse_par_r_apply(cl, counts(cds), FUN, convert_to_dense, ...))
+    suppressWarnings(res <- sparse_par_r_apply(cl, counts(X), FUN, convert_to_dense, ...))
   }else{
-    suppressWarnings(res <- sparse_par_c_apply(cl, counts(cds), FUN, convert_to_dense, ...))
+    suppressWarnings(res <- sparse_par_c_apply(cl, counts(X), FUN, convert_to_dense, ...))
   }
 
   res
@@ -234,10 +234,10 @@ smart_es_apply <- function(X, MARGIN, FUN, convert_to_dense, ...) {
   Biobase::multiassign(names(as.data.frame(colData(X))), as.data.frame(colData(X)), envir=e1)
   environment(FUN) <- e1
 
-  if (is_sparse_matrix(counts(cds))){
-    res <- sparse_apply(counts(cds), MARGIN, FUN, convert_to_dense, ...)
+  if (is_sparse_matrix(counts(X))){
+    res <- sparse_apply(counts(X), MARGIN, FUN, convert_to_dense, ...)
   } else {
-    res <- pbapply::pbapply(counts(cds), MARGIN, FUN, ...)
+    res <- pbapply::pbapply(counts(X), MARGIN, FUN, ...)
   }
 
   if (MARGIN == 1)
