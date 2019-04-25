@@ -178,9 +178,9 @@ sparse_par_c_apply <- function (cl = NULL, x, FUN, convert_to_dense, ...)
 #' Multicore apply-like function for cell_data_set
 #'
 #' mcesApply computes the row-wise or column-wise results of FUN, just like
-#' esApply. Variables in colData from X are available in FUN.
+#' esApply. Variables in colData from cds are available in FUN.
 #'
-#' @param X a cell_data_set object
+#' @param cds a cell_data_set object
 #' @param MARGIN The margin to apply to, either 1 for rows (samples) or 2 for columns (features)
 #' @param FUN Any function
 #' @param required_packages A list of packages FUN will need. Failing to provide packages needed by FUN will generate errors in worker threads.
@@ -188,13 +188,13 @@ sparse_par_c_apply <- function (cl = NULL, x, FUN, convert_to_dense, ...)
 #' @param ... Additional parameters for FUN
 #' @param cores The number of cores to use for evaluation
 #'
-#' @return The result of with(colData(X) apply(counts(cds)), MARGIN, FUN, ...))
-mc_es_apply <- function(X, MARGIN, FUN, required_packages, cores=1, convert_to_dense=TRUE, ...) {
+#' @return The result of with(colData(cds) apply(counts(cds)), MARGIN, FUN, ...))
+mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1, convert_to_dense=TRUE, ...) {
   parent <- environment(FUN)
   if (is.null(parent))
     parent <- emptyenv()
   e1 <- new.env(parent=parent)
-  Biobase::multiassign(names(as.data.frame(colData(X))), as.data.frame(colData(X)), envir=e1)
+  Biobase::multiassign(names(as.data.frame(colData(cds))), as.data.frame(colData(cds)), envir=e1)
   environment(FUN) <- e1
 
   # Note: use outfile argument to makeCluster for debugging
@@ -218,33 +218,33 @@ mc_es_apply <- function(X, MARGIN, FUN, required_packages, cores=1, convert_to_d
   }
 
   if (MARGIN == 1){
-    suppressWarnings(res <- sparse_par_r_apply(cl, counts(X), FUN, convert_to_dense, ...))
+    suppressWarnings(res <- sparse_par_r_apply(cl, counts(cds), FUN, convert_to_dense, ...))
   }else{
-    suppressWarnings(res <- sparse_par_c_apply(cl, counts(X), FUN, convert_to_dense, ...))
+    suppressWarnings(res <- sparse_par_c_apply(cl, counts(cds), FUN, convert_to_dense, ...))
   }
 
   res
 }
 
-smart_es_apply <- function(X, MARGIN, FUN, convert_to_dense, ...) {
+smart_es_apply <- function(cds, MARGIN, FUN, convert_to_dense, ...) {
   parent <- environment(FUN)
   if (is.null(parent))
     parent <- emptyenv()
   e1 <- new.env(parent=parent)
-  Biobase::multiassign(names(as.data.frame(colData(X))), as.data.frame(colData(X)), envir=e1)
+  Biobase::multiassign(names(as.data.frame(colData(cds))), as.data.frame(colData(cds)), envir=e1)
   environment(FUN) <- e1
 
-  if (is_sparse_matrix(counts(X))){
-    res <- sparse_apply(counts(X), MARGIN, FUN, convert_to_dense, ...)
+  if (is_sparse_matrix(counts(cds))){
+    res <- sparse_apply(counts(cds), MARGIN, FUN, convert_to_dense, ...)
   } else {
-    res <- pbapply::pbapply(counts(X), MARGIN, FUN, ...)
+    res <- pbapply::pbapply(counts(cds), MARGIN, FUN, ...)
   }
 
   if (MARGIN == 1)
   {
-    names(res) <- row.names(X)
+    names(res) <- row.names(cds)
   }else{
-    names(res) <- colnames(X)
+    names(res) <- colnames(cds)
   }
 
   res
