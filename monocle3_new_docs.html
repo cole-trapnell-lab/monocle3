@@ -563,7 +563,9 @@ plot_cell_trajectory(cds, markers=ciliated_genes)
 Differential gene expression analysis is a common task in RNA-Seq experiments.  Monocle can help you find genes that are differentially expressed between groups of cells and assesses the statistical signficance of those changes. Monocle 3 includes a powerful system for finding genes that vary across cells of different types, were collected at different developmental time points, or that have been perturbed in different ways.
 
 <h3>Basic Differential Analysis </h3>
-Performing differential expression analysis on all genes in a <a href = "https://rdrr.io/bioc/monocle/man/cell_data_set.html">cell_data_set</a> object can take anywhere from minutes to hours, depending on how complex the analysis is. Let's begin with a small set of genes that we know are important in ciliated neurons to demonstrate Monocle's capabilities:
+<p> In this section, we'll explore how to use Monocle to find genes that are differentially expressed according to several different criteria. Performing differential expression analysis on all genes in a <a href = "https://rdrr.io/bioc/monocle/man/cell_data_set.html">cell_data_set</a> object can take anywhere from minutes to hours, depending on how complex the analysis is. To keep the vignette simple and fast, we'll be working with small sets of genes. Rest assured, however, that Monocle can analyze many thousands of genes even in large experiments, making it useful for discovering dynamically regulated genes during the biological process you're studying. </p>
+
+<p> Let's begin with a small set of genes that we know are important in ciliated neurons to demonstrate Monocle's capabilities:</p>
 
 {% highlight R %}
 ciliated_genes = c("che-1",
@@ -673,6 +675,8 @@ emb_time_terms %>% filter (q_value < 0.05) %>%
 
 <p>We can see that five of the six genes significantly vary as a function of time. </p>
 
+<strong>XXX COLE MARKER XXX</strong>
+
 <p> Monocle also provides some easy ways to plot the expression of a small set of genes grouped by the factors you use during differential analysis.  This helps you visualize the differences revealed by the tests above.  One type of plot is a "jitter" plot. </p>
 
 
@@ -759,12 +763,6 @@ This often leads to much more accurate results than using <code>tobit()</code>. 
 </div>
 </div>
 </p> -->
-
-
-<p> In this section, we'll explore how to use Monocle to find genes that are differentially expressed according to several different criteria. First, we'll look at how to use our previous classification of the cells by type to find genes that distinguish fibroblasts and myoblasts. Second, we'll look at how to find genes that are differentially expressed as a function of pseudotime, such as those that become activated or repressed during differentiation.  Finally, you'll see how to perform multi-factorial differential analysis, which can help subtract the effects of confounding variables in your experiment. </p>
-
-<p> To keep the vignette simple and fast, we'll be working with small sets of genes. Rest assured, however, that Monocle can analyze many thousands of genes even in large experiments, making it useful for discovering dynamically regulated genes during the biological process you're studying. </p>
-
 
 <h3>Finding Genes that Distinguish Cell Type or State </h3>
 
