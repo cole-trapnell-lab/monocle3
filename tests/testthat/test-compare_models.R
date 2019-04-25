@@ -4,22 +4,19 @@ cds <- load_a549()
 test_that("compare_models() correctly deems NB better than Poisson",{
   test_cds = cds[rowData(cds)$gene_short_name == "ANGPTL4",]
   zinb_cds = test_cds
-  metadata(zinb_cds)$expression_family = "zinegbinomial"
-  zinb_fit = fit_models(zinb_cds, model_formula_str = "~log_dose")
+  zinb_fit = fit_models(zinb_cds, expression_family = "zinegbinomial", model_formula_str = "~log_dose")
 
   zipoisson_cds = test_cds
-  metadata(zipoisson_cds)$expression_family = "zipoisson"
-  zipoisson_fit = fit_models(zipoisson_cds, model_formula_str = "~log_dose")
+  zipoisson_fit = fit_models(zipoisson_cds,expression_family = "zipoisson", model_formula_str = "~log_dose")
 
   nb_cds = test_cds
-  metadata(nb_cds)$expression_family = "negbinomial"
-  nb_fit = fit_models(nb_cds, model_formula_str = "~log_dose")
-  nb_reduced_fit = fit_models(nb_cds, model_formula_str = "~1")
+  nb_fit = fit_models(nb_cds, model_formula_str = "~log_dose", expression_family = "negbinomial")
+  nb_reduced_fit = fit_models(nb_cds, model_formula_str = "~1", expression_family = "negbinomial")
   nb_comparison = compare_models(nb_fit, nb_reduced_fit)
   expect_equal(nb_comparison$p_value[1], 0.0000228, tolerance=1e-3)
 
-  nb_fit = fit_models(nb_cds, model_formula_str = "~log_dose", clean_model = FALSE)
-  nb_reduced_fit = fit_models(nb_cds, model_formula_str = "~1", clean_model = FALSE)
+  nb_fit = fit_models(nb_cds, model_formula_str = "~log_dose", clean_model = FALSE, expression_family = "negbinomial")
+  nb_reduced_fit = fit_models(nb_cds, model_formula_str = "~1", clean_model = FALSE, expression_family = "negbinomial")
   require("lmtest") # TODO: skip the test below if lmtest isn't available
   lmtest_lrt_pval = lmtest::lrtest(nb_fit$model[[1]], nb_reduced_fit$model[[1]])[2,5]
   expect_equal(nb_comparison$p_value[1], lmtest_lrt_pval)

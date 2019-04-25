@@ -582,6 +582,7 @@ plot_cell_clusters <- function(cds,
                                y=2,
                                reduced_dimension = "UMAP",
                                color_by="Cluster",
+                               expression_family,
                                markers=NULL,
                                show_cell_names=FALSE,
                                cell_size=1.5,
@@ -621,7 +622,7 @@ plot_cell_clusters <- function(cds,
     markers_rowData <- subset(rowData(cds), gene_short_name %in% markers)
     if (nrow(markers_rowData) >= 1){
       cds_subset <- cds[row.names(markers_rowData),]
-      if (metadata(cds)@expression_family %in% c("quasipoisson", "poisson", "zipoisson", "negbinomial", "zinegbinomial")) {
+      if (expression_family %in% c("quasipoisson", "poisson", "zipoisson", "negbinomial", "zinegbinomial")) {
         integer_expression <- TRUE
       }
       else {
@@ -677,7 +678,7 @@ plot_cell_clusters <- function(cds,
   # Don't do it!
   if (is.null(markers_exprs) == FALSE && nrow(markers_exprs) > 0){
 
-    if (metadata(cds_subset)$expression_family %in% c("quasipoisson", "poisson", "zipoisson", "negbinomial", "zinegbinomial")){
+    if (expression_family %in% c("quasipoisson", "poisson", "zipoisson", "negbinomial", "zinegbinomial")){
       g <- g + plotting_func(aes(color=log10(value + min_expr), alpha = ifelse(!is.na(value), "2", "1")), size=I(cell_size), stroke = I(cell_size / 2), na.rm = TRUE) +
         viridis::scale_color_viridis(option = "viridis", name = "log10(values + 0.1)", na.value = "grey80", end = 0.8) +
         guides(alpha = FALSE) + facet_wrap(~feature_label, nrow = nrow, ncol = ncol)

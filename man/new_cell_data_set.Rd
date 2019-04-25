@@ -5,8 +5,7 @@
 \title{Creates a new cell_data_set object.}
 \usage{
 new_cell_data_set(expression_data, cell_metadata = NULL,
-  gene_metadata = NULL, lower_detection_limit = 0.1,
-  expression_family = "quasipoisson")
+  gene_metadata = NULL, lower_detection_limit = 0.1)
 }
 \arguments{
 \item{expression_data}{expression data matrix for an experiment}
@@ -17,9 +16,6 @@ new_cell_data_set(expression_data, cell_metadata = NULL,
 
 \item{lower_detection_limit}{the minimum expression level that consistitutes
 true expression}
-
-\item{expression_family}{character, the expression family function to be
-used for expression response variables}
 }
 \value{
 a new cell_data_set object

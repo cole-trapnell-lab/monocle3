@@ -5,9 +5,10 @@
 \title{Plots clusters of cells .}
 \usage{
 plot_cell_clusters(cds, x = 1, y = 2, reduced_dimension = "UMAP",
-  color_by = "Cluster", markers = NULL, show_cell_names = FALSE,
-  cell_size = 1.5, cell_name_size = 2, min_expr = 0.1,
-  show_group_id = FALSE, nrow = NULL, ncol = NULL, ...)
+  color_by = "Cluster", expression_family, markers = NULL,
+  show_cell_names = FALSE, cell_size = 1.5, cell_name_size = 2,
+  min_expr = 0.1, show_group_id = FALSE, nrow = NULL, ncol = NULL,
+  ...)
 }
 \arguments{
 \item{cds}{CellDataSet for the experiment}

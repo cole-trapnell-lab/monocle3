@@ -35,8 +35,6 @@ setClass( "cell_data_set",
 #' @param gene_metadata data frame containing attributes of features (e.g. genes)
 #' @param lower_detection_limit the minimum expression level that consistitutes
 #'   true expression
-#' @param expression_family character, the expression family function to be
-#'   used for expression response variables
 #' @return a new cell_data_set object
 #' @export
 #' @examples
@@ -55,8 +53,7 @@ setClass( "cell_data_set",
 new_cell_data_set <- function(expression_data,
                               cell_metadata = NULL,
                               gene_metadata = NULL,
-                              lower_detection_limit = 0.1,
-                              expression_family="quasipoisson") {
+                              lower_detection_limit = 0.1) {
 
   if(!('gene_short_name' %in% colnames(gene_metadata))) {
     warning(paste("Warning: gene_metadata must contain a column verbatim named",
@@ -85,7 +82,6 @@ new_cell_data_set <- function(expression_data,
 
   metadata(cds)$lower_detection_limit <- lower_detection_limit
   metadata(cds)$cds_version <- Biobase::package.version("monocle3")
-  metadata(cds)$expression_family = expression_family
   partitions <- setNames(SimpleList(), character(0))
   cds
 }

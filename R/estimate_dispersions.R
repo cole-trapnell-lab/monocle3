@@ -7,12 +7,13 @@
 #' @param cores The number of cores to use for computing dispersions
 #' @export
 estimate_dispersions <- function(cds, modelFormulaStr="~ 1",
+                                 expression_family,
                                  min_cells_detected=1,
                                  cores=1,...) {
   dispModelName="blind"
   stopifnot( is( cds, "cell_data_set" ) )
 
-  if(!(identical("negbinomial.size", metadata(cds)$expression_family) || identical("negbinomial", metadata(cds)$expression_family))){
+  if(!(identical("negbinomial.size", expression_family) || identical("negbinomial", expression_family))){
     stop("Error: estimate_dispersions only works, and is only needed, when you're using a cell_data_set with a negbinomial or negbinomial.size expression family")
   }
 
@@ -24,8 +25,8 @@ estimate_dispersions <- function(cds, modelFormulaStr="~ 1",
 
   # Remove results from previous fits
   cds@disp_fit_info = new.env( hash=TRUE )
-  if(!(('negbinomial' == metadata(cds)$expression_family) ||
-       ('negbinomial.size' == metadata(cds)$expression_family))) {
+  if(!(('negbinomial' == expression_family) ||
+       ('negbinomial.size' == expression_family))) {
     stop("Error: estimate_dispersions only works, and is only needed, when you're using a cell_data_set with a negbinomial or negbinomial.size expression family")
   }
 
@@ -37,7 +38,7 @@ estimate_dispersions <- function(cds, modelFormulaStr="~ 1",
   options(dplyr.show_progress = T)
 
   # FIXME: this needs refactoring, badly.
-  if (metadata(cds)$expression_family %in% c("negbinomial", "negbinomial.size")){
+  if (expression_family %in% c("negbinomial", "negbinomial.size")){
     if (length(model_terms) > 1 || (length(model_terms) == 1 && model_terms[1] != "1")){
       cds_colData <- dplyr::group_by_(dplyr::select_(tibble::rownames_to_column(colData(cds)), "rowname", .dots=model_terms), .dots=model_terms)
       disp_table <- as.data.frame(cds_colData %>% do(disp_calc_helper_NB(cds[,.$rowname], min_cells_detected)))
@@ -182,7 +183,6 @@ estimate_dispersion_function <- function(cds,
                                stringr::str_trim))
   model_terms <- model_terms[model_terms != ""]
 
-  #if (metadata(cds)$expression_family %in% c("negbinomial", "negbinomial.size")){
     if (length(model_terms) > 1 || (length(model_terms) == 1 && model_terms[1] != "1")){
       cds_colData <- dplyr::group_by_(dplyr::select_(tibble::rownames_to_column(colData(cds)), "rowname", .dots=model_terms), .dots=model_terms)
       disp_table <- as.data.frame(cds_colData %>% do(disp_calc_helper_NB(cds[,.$rowname], min_cells_detected)))

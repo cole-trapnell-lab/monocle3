@@ -169,11 +169,13 @@ fit_model_helper <- function(x,
 #'
 #' @param cds the cell_data_set upon which to perform this operation
 #' @param model_formula_str a formula string specifying the model to fit for the genes.
+#' @param expression_family specifies the family function used for expression responses.
 #' @param cores the number of processor cores to be used during fitting.
 #' @return a tibble containing model objects
 #' @export
 fit_models <- function(cds,
                      model_formula_str,
+                     expression_family,
                      cores = 1,
                      clean_model = TRUE,
                      verbose = FALSE,
@@ -206,7 +208,7 @@ fit_models <- function(cds,
         required_packages = c("BiocGenerics", "Biobase", "MASS", "purrr", "pscl", "speedglm", "dplyr", "Matrix"),
         cores = cores,
         model_formula_str = model_formula_str,
-        expression_family = metadata(cds)$expression_family ,
+        expression_family = expression_family ,
         disp_func = disp_func,
         clean_model = clean_model,
         verbose = verbose,
@@ -220,7 +222,7 @@ fit_models <- function(cds,
       fit_model_helper,
       convert_to_dense = TRUE,
       model_formula_str = model_formula_str,
-      expression_family = metadata(cds)$expression_family,
+      expression_family = expression_family,
       disp_func = disp_func,
       clean_model = clean_model,
       verbose = verbose,
