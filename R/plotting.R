@@ -934,10 +934,6 @@ plot_pc_variance_explained <- function(cds,
 #'   (left-to-right, top-to-bottom). Should be gene_short_name, if
 #'   \code{label_by_short_name = TRUE} or gene ID if
 #'   \code{label_by_short_name = FALSE}.
-#' @param color_by the cell attribute (e.g. the column of colData(cds)) to be
-#'   used to color each cell.
-#' @param plot_trend whether to plot a trendline tracking the average
-#'   expression across the horizontal axis.
 #' @param label_by_short_name label figure panels by gene_short_name (TRUE) or
 #'   feature id (FALSE).
 #' @param log_scale Logical, whether or not to scale data logarithmically.
@@ -958,8 +954,6 @@ plot_genes_violin <- function (cds_subset,
                                nrow = NULL,
                                ncol = 1,
                                panel_order = NULL,
-                               color_by = NULL,
-                               plot_trend = FALSE,
                                label_by_short_name = TRUE,
                                normalize = TRUE,
                                log_scale = TRUE) {
@@ -979,11 +973,6 @@ plot_genes_violin <- function (cds_subset,
 
   assertthat::assert_that(assertthat::is.count(ncol))
 
-  if(!is.null(color_by)) {
-    assertthat::assert_that(color_by %in% names(colData(cds_subset)))
-  }
-
-  assertthat::assert_that(is.logical(plot_trend))
   assertthat::assert_that(is.logical(label_by_short_name))
   assertthat::assert_that(is.logical(normalize))
   assertthat::assert_that(is.logical(log_scale))
@@ -1027,22 +1016,10 @@ plot_genes_violin <- function (cds_subset,
 
   q <- ggplot(aes_string(x = grouping, y = "expression"), data = cds_exprs) +
     monocle_theme_opts()
-  if (!is.null(color_by)) {
-    cds_exprs[,color_by] <- as.factor(cds_exprs[,color_by])
-    q <- q + geom_violin(aes_string(fill = color_by), scale="width")
-  }
-  else {
-    q <- q + geom_violin(scale="width")
-  }
-  if (plot_trend) {
-    cds_exprs[,color_by] <- as.factor(cds_exprs[,color_by])
-    q <- q + stat_summary(fun.data = "mean_cl_boot",
-                          size = 0.2)
-    q <- q + stat_summary(aes_string(x = grouping, y = "expression",
-                                     group = color_by),
-                          fun.data = "mean_cl_boot",
-                          size = 0.2, geom = "line")
-  }
+
+  cds_exprs[,grouping] <- as.factor(cds_exprs[,grouping])
+  q <- q + geom_violin(aes_string(fill = grouping), scale="width")
+
   q <- q + facet_wrap(~feature_label, nrow = nrow,
                       ncol = ncol, scales = "free_y")
   if (min_expr < 1) {
