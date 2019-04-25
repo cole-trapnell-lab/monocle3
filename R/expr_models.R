@@ -344,7 +344,7 @@ compare_models <- function(model_tbl_x, model_tbl_y){
   joined_fits = dplyr::full_join(model_x_eval, model_y_eval, by=c("id", "gene_short_name", "num_cells_expressed"))
 
   joined_fits = joined_fits %>% dplyr::mutate(
-    dfs = round(abs(df.residual.x  - df.residual.y)),
+    dfs = round(abs(df_residual.x  - df_residual.y)),
     LLR = 2 * abs(logLik.x  - logLik.y),
     p_value = pchisq(LLR, dfs, lower.tail = FALSE)
   )
@@ -372,41 +372,41 @@ evaluate_fits = function(model_tbl){
 
 
     mass_glance = function(m) {
-      tibble::tibble(null.deviance = m$null.deviance,
-                     df.null = m$df.null,
+      tibble::tibble(null_deviance = m$null.deviance,
+                     df_null = m$df.null,
                      logLik = as.numeric(logLik(m)),
                      AIC = AIC(m),
                      BIC = AIC(m),
                      deviance = m$deviance,
-                     df.residual = m$df.residual)
+                     df_residual = m$df.residual)
     }
 
     zeroinfl_glance = function(m) {
-      tibble::tibble(null.deviance = NA_real_,
-             df.null = m$df.null,
+      tibble::tibble(null_deviance = NA_real_,
+                     df_null = m$df.null,
              logLik = as.numeric(logLik(m)),
              AIC = AIC(m),
              BIC = AIC(m),
              deviance = NA_real_,
-             df.residual = m$df.residual)
+             df_residual = m$df.residual)
     }
     speedglm_glance = function(m) {
-      tibble::tibble(null.deviance = m$nulldev,
-                     df.null = m$nulldf,
+      tibble::tibble(null_deviance = m$nulldev,
+                     df_null = m$nulldf,
                      logLik = m$logLik,
                      AIC = m$aic,
                      BIC = NA_real_,
                      deviance = m$deviance,
-                     df.residual = m$df)
+                     df_residual = m$df)
     }
     default_glance = function(m) {
-      tibble::tibble(null.deviance = NA_real_,
-                     df.null = NA_integer_,
+      tibble::tibble(null_deviance = NA_real_,
+                     df_null = NA_integer_,
                      logLik = NA_real_,
                      AIC = NA_real_,
                      BIC = NA_real_,
                      deviance = NA_real_,
-                     df.residual = NA_integer_)
+                     df_residual = NA_integer_)
     }
 
     tryCatch({switch(class(m)[1],
