@@ -60,7 +60,18 @@ plot_cell_trajectory <- function(cds,
                                  theta = 0,
                                  alpha = 1,
                                  ...) {
-  requireNamespace("igraph")
+
+  assertthat::assert_that(!is.null(reducedDims(cds)$normalized_data_projection),
+                          msg = paste("No normalized data projection",
+                                      "calculated. Please run preprocess_cds",
+                                      "before running plot_cell_trajectory"))
+  assertthat::assert_that(!is.null(reducedDims(cds)[[reduced_dimension]]),
+                          msg = paste("No dimensionality reduction for",
+                                      reduced_dimension, "calculated.",
+                                      "Please run reduce_dimensions with",
+                                      "reduction_method =", reduced_dimension,
+                                      "before running partition_cells."))
+  #requireNamespace("igraph")
   gene_short_name <- NA
   sample_name <- NA
   sample_state <- colData(cds)$State
