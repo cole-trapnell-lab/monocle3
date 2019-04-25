@@ -106,11 +106,11 @@ clean_model_object = function(model) {
 #' @param x test
 #' @param model_formula_str a formula string specifying the model to fit for the genes.
 #' @param expression_family specifies the family function used for expression responses
-#' @param relative_expr Whether to transform expression into relative values
 #' @param disp_func test
 #' @param verbose Whether to show VGAM errors and warnings. Only valid for cores = 1.
 #' @param ... test
 #' @name fit_model_helper
+#' @importFrom VGAM sm.ns
 #' @keywords internal
 fit_model_helper <- function(x,
                              model_formula_str,
@@ -163,21 +163,14 @@ fit_model_helper <- function(x,
 
 #' Fits a model for each gene in a cell_data_set object.
 #'
-#' This function fits a vector generalized additive model (VGAM) from the VGAM package for each gene in a cell_data_set
-#' By default, expression levels are modeled as smooth functions of the Pseudotime value of each
-#' cell. That is, expression is a function of progress through the biological process.  More complicated formulae can be provided to account for
-#' additional covariates (e.g. day collected, genotype of cells, media conditions, etc).
-#'
-#' This function fits a vector generalized additive model (VGAM) from the VGAM package for each gene in a cell_data_set
-#' By default, expression levels are modeled as smooth functions of the Pseudotime value of each
-#' cell. That is, expression is a function of progress through the biological process.  More complicated formulae can be provided to account for
+#' This function fits a generalized linear model for each gene in a cell_data_set.
+#' Formulae can be provided to account for
 #' additional covariates (e.g. day collected, genotype of cells, media conditions, etc).
 #'
 #' @param cds the cell_data_set upon which to perform this operation
 #' @param model_formula_str a formula string specifying the model to fit for the genes.
-#' @param relative_expr Whether to fit a model to relative or absolute expression. Only meaningful for count-based expression data. If TRUE, counts are normalized by Size_Factor prior to fitting.
 #' @param cores the number of processor cores to be used during fitting.
-#' @return a tibble containing VGAM model objects
+#' @return a tibble containing model objects
 #' @export
 fit_models <- function(cds,
                      model_formula_str,
@@ -188,18 +181,19 @@ fit_models <- function(cds,
 
   model_form <- stats::as.formula(model_formula_str)
 
-  if (length(model_form[[2]]) == 1) {
-    if (!as.character(model_form[[2]]) %in% c(names(colData(cds)), "~", "1", "|", "+", "-", ":", "*", "^", "I")) {
-      stop(paste(as.character(model_form[[2]][[i]]), "formula element is missing"))
-    }
-  } else {
-    for(i in 1:length(model_form[[2]])) {
-      if (!as.character(model_form[[2]][[i]]) %in% c(names(colData(cds)), "~", "1", "|", "+", "-", ":", "*", "^", "I")) {
-        stop(paste(as.character(model_form[[2]][[i]]), "formula element is missing"))
-      }
-    }
-  }
-
+  # FIXME: These checks are too stringent, because they don't catch formula that include functions of columns in colData.
+  # for example, the formula `~ splines::ns(Pseudotime, df=3) triggers the error.
+  # if (length(model_form[[2]]) == 1) {
+  #   if (!as.character(model_form[[2]]) %in% c(names(colData(cds)), "~", "1", "|", "+", "-", ":", "*", "^", "I")) {
+  #     stop(paste(as.character(model_form[[2]][[i]]), "formula element is missing"))
+  #   }
+  # } else {
+  #   for(i in 1:length(model_form[[2]])) {
+  #     if (!as.character(model_form[[2]][[i]]) %in% c(names(colData(cds)), "~", "1", "|", "+", "-", ":", "*", "^", "I")) {
+  #       stop(paste(as.character(model_form[[2]][[i]]), "formula element is missing"))
+  #     }
+  #   }
+  # }
 
   disp_func <- NULL
 
@@ -338,6 +332,7 @@ coefficient_table <- function(model_tbl) {
   M_f = model_tbl %>%
     dplyr::mutate(terms = purrr::map2(.f = purrr::possibly(extract_coefficient_helper, NA_real_), .x = model, .y = model_summary)) %>%
     tidyr::unnest(terms)
+  M_f = M_f %>% dplyr::group_by(model_component, term) %>% mutate(q_value = p.adjust(p_value)) %>% ungroup()
   return(M_f)
 }
 
@@ -431,3 +426,21 @@ likelihood_ratio_test_pval = function(model_summary_x, model_summary_y){
   LLR = 2 * abs(model_summary_x$logLik  - model_summary_y$logLik)
   p_val = pchisq(LLR, dfs, lower.tail = FALSE)
 }
+
+#' Predict output of fitted models and return as a matrix
+#' @export
+model_predictions = function(model_tbl, new_data, type="response") {
+  predict_helper = function(model, cds){
+    tryCatch({
+      predict(model, newdata=new_data, type=type)
+    }, error = function(e){
+      retval = rep_len(NA, nrow(new_data))
+      names(retval) = row.names(new_data)
+      return(retval)
+    })
+  }
+  model_tbl = model_tbl %>% dplyr::mutate(predictions = purrr::map(model, predict_helper, new_data))
+  pred_matrix = t(do.call(cbind, model_tbl$predictions))
+  return(pred_matrix)
+}
+

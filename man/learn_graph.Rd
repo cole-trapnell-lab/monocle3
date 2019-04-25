@@ -4,36 +4,25 @@
 \alias{learn_graph}
 \title{Learn principal graph from the reduced space using reversed graph embedding}
 \usage{
-learn_graph(cds, max_components = 2, reduced_dimension = "UMAP",
-  rge_method = "SimplePPT", auto_param_selection = TRUE,
-  partition_group = "louvain_component", do_partition = TRUE,
-  scale = FALSE, close_loop = FALSE, euclidean_distance_ratio = 1,
-  geodestic_distance_ratio = 1/3, prune_graph = TRUE,
-  minimal_branch_len = 10, orthogonal_proj_tip = FALSE,
-  verbose = FALSE, ...)
+learn_graph(cds, use_partition = TRUE, close_loop = FALSE,
+  learn_graph_control = NULL, verbose = FALSE)
 }
 \arguments{
 \item{cds}{the cell_data_set upon which to perform this operation}
 
-\item{max_components}{the dimensionality of the reduced space}
+\item{close_loop}{Whether or not to perform an additional run of loop closing after running DDRTree or SimplePPT to identify potential loop structure in the data space}
+
+\item{verbose}{Whether to emit verbose output during dimensionality reduction}
 
 \item{rge_method}{Determines how to transform expression values prior to reducing dimensionality}
 
-\item{auto_param_selection}{when this argument is set to TRUE (default), it will automatically calculate the proper value for the ncenter (number of centroids) parameters which will be passed into DDRTree call.}
-
-\item{partition_group}{When this argument is set to TRUE (default to be FALSE), we will learn a tree structure for each separate over-connected louvain component.}
-
-\item{do_partition}{When this argument is set to TRUE (default to be FALSE), we will learn a tree structure for each separate over-connected louvain component.}
-
 \item{scale}{When this argument is set to TRUE (default), it will scale each gene before running trajectory reconstruction.}
-
-\item{close_loop}{Whether or not to perform an additional run of loop closing after running DDRTree or SimplePPT to identify potential loop structure in the data space}
 
 \item{euclidean_distance_ratio}{The maximal ratio between the euclidean distance of two tip nodes in the spanning tree inferred from SimplePPT algorithm and
 that of the maximum distance between any connecting points on the spanning tree allowed to be connected during the loop closure procedure .}
 
-\item{geodestic_distance_ratio}{The minimal ratio between the geodestic distance of two tip nodes in the spanning tree inferred from SimplePPT algorithm and
-that of the length of the diameter path on the spanning tree allowed to be connected during the loop closure procedure. (Both euclidean_distance_ratio and geodestic_distance_ratio
+\item{geodesic_distance_ratio}{The minimal ratio between the geodestic distance of two tip nodes in the spanning tree inferred from SimplePPT algorithm and
+that of the length of the diameter path on the spanning tree allowed to be connected during the loop closure procedure. (Both euclidean_distance_ratio and geodesic_distance_ratio
 need to be satisfied to introduce the edge for loop closure.)}
 
 \item{prune_graph}{Whether or not to perform an additional run of graph pruning to remove small insignificant branches}
@@ -41,8 +30,6 @@ need to be satisfied to introduce the edge for loop closure.)}
 \item{minimal_branch_len}{The minimal length of the diameter path for a branch to be preserved during graph pruning procedure}
 
 \item{orthogonal_proj_tip}{Whether to perform orthogonal projection for cells corresponding to the tip principal points. Default to be FALSE}
-
-\item{verbose}{Whether to emit verbose output during dimensionality reduction}
 
 \item{...}{additional arguments to pass to the dimensionality reduction function}
 }

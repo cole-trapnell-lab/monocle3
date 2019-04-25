@@ -2,43 +2,50 @@
 % Please edit documentation in R/plotting.R
 \name{plot_genes_violin}
 \alias{plot_genes_violin}
-\title{Plots expression for one or more genes as a violin plot}
+\title{Plot expression for one or more genes as a violin plot}
 \usage{
 plot_genes_violin(cds_subset, grouping = "State", min_expr = NULL,
   nrow = NULL, ncol = 1, panel_order = NULL, color_by = NULL,
-  plot_trend = FALSE, label_by_short_name = TRUE,
-  relative_expr = TRUE, log_scale = TRUE)
+  plot_trend = FALSE, label_by_short_name = TRUE, normalize = TRUE,
+  log_scale = TRUE)
 }
 \arguments{
-\item{cds_subset}{CellDataSet for the experiment}
+\item{cds_subset}{Subset cell_data_set to be plotted.}
 
-\item{grouping}{the cell attribute (e.g. the column of colData(cds)) to group cells by on the horizontal axis}
+\item{grouping}{the cell attribute (e.g. the column of colData(cds)) to
+group cells by on the horizontal axis.}
 
-\item{min_expr}{the minimum (untransformed) expression level to use in plotted the genes.}
+\item{min_expr}{the minimum (untransformed) expression level to use when
+plotted the genes. If \code{NULL},
+\code{metadata(cds_subset)$lower_detection_limit} is used.}
 
-\item{nrow}{the number of rows used when laying out the panels for each gene's expression}
+\item{nrow}{the number of panels per row in the figure.}
 
-\item{ncol}{the number of columns used when laying out the panels for each gene's expression}
+\item{ncol}{the number of panels per column in the figure.}
 
-\item{panel_order}{the order in which genes should be layed out (left-to-right, top-to-bottom)}
+\item{panel_order}{the order in which genes should be layed out
+(left-to-right, top-to-bottom). Should be gene_short_name, if
+\code{label_by_short_name = TRUE} or gene ID if
+\code{label_by_short_name = FALSE}.}
 
-\item{color_by}{the cell attribute (e.g. the column of colData(cds)) to be used to color each cell}
+\item{color_by}{the cell attribute (e.g. the column of colData(cds)) to be
+used to color each cell.}
 
-\item{plot_trend}{whether to plot a trendline tracking the average expression across the horizontal axis.}
+\item{plot_trend}{whether to plot a trendline tracking the average
+expression across the horizontal axis.}
 
-\item{label_by_short_name}{label figure panels by gene_short_name (TRUE) or feature id (FALSE)}
+\item{label_by_short_name}{label figure panels by gene_short_name (TRUE) or
+feature id (FALSE).}
 
-\item{relative_expr}{Whether to transform expression into relative values}
-
-\item{log_scale}{a boolean that determines whether or not to scale data logarithmically}
+\item{log_scale}{Logical, whether or not to scale data logarithmically.}
 }
 \value{
 a ggplot2 plot object
 }
 \description{
-Accepts a subset of a CellDataSet and an attribute to group cells by,
-and produces one or more ggplot2 objects that plots the level of expression for
-each group of cells.
+Accepts a subset of a cell_data_set and an attribute to group
+cells by, and produces a ggplot2 object that plots the level of expression
+for each group of cells.
 }
 \examples{
 \dontrun{

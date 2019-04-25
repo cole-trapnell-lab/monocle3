@@ -81,6 +81,13 @@ reduce_dimension <- function(cds,
   if (verbose) message("Retrieving normalized data ...")
 
   FM <- assays(cds)$normalized_exprs
+
+  if (!is.null(rowData(cds)$use_for_ordering) &&
+      nrow(subset(rowData(cds), use_for_ordering == TRUE)) > 0) {
+    FM <- FM[rowData(cds)$use_for_ordering, ]
+  }
+
+
   fm_rowsums = Matrix::rowSums(FM)
   FM <- FM[is.finite(fm_rowsums) & fm_rowsums != 0, ]
 

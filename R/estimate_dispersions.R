@@ -2,14 +2,13 @@
 
 #' @param modelFormulaStr A model formula, passed as a string, specifying how to group the cells prior to estimated dispersion.
 #' The default groups all cells together.
-#' @param relative_expr Whether to transform expression into relative values
 #' @param min_cells_detected Only include genes detected above lowerDetectionLimit in at least this many cells in the dispersion calculation
 #' @param remove_outliers Whether to remove outliers (using Cook's distance) when estimating dispersions
 #' @param cores The number of cores to use for computing dispersions
 #' @export
 estimate_dispersions <- function(cds, modelFormulaStr="~ 1",
-                                 relative_expr=TRUE, min_cells_detected=1,
-                                 remove_outliers=TRUE, cores=1,...) {
+                                 min_cells_detected=1,
+                                 cores=1,...) {
   dispModelName="blind"
   stopifnot( is( cds, "cell_data_set" ) )
 
@@ -164,14 +163,12 @@ parametricDispersionFit <- function( disp_table, verbose = FALSE, initial_coefs=
 
 #' @param modelFormulaStr A model formula, passed as a string, specifying how to group the cells prior to estimated dispersion.
 #' The default groups all cells together.
-#' @param relative_expr Whether to transform expression into relative values
 #' @param min_cells_detected Only include genes detected above lowerDetectionLimit in at least this many cells in the dispersion calculation
 #' @param remove_outliers Whether to remove outliers (using Cook's distance) when estimating dispersions
 #' @param cores The number of cores to use for computing dispersions
 #' @export
 estimate_dispersion_function <- function(cds,
                                          modelFormulaStr="~ 1",
-                                         relative_expr=TRUE,
                                          min_cells_detected=1,
                                          remove_outliers=TRUE,
                                          cores=1) {

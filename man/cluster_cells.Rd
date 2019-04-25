@@ -4,15 +4,12 @@
 \alias{cluster_cells}
 \title{Cluster cells into a specified number of groups based on .}
 \usage{
-cluster_cells(cds, reduced_dimension = c("tSNE", "UMAP", "PCA"),
-  use_pca = FALSE, k = 20, louvain_iter = 1, weight = FALSE,
-  res = NULL, method = c("louvain"), random_seed = 0L, verbose = F,
-  cores = 1, ...)
+cluster_cells(cds, reduced_dimension = c("UMAP", "tSNE", "PCA"),
+  k = 20, louvain_iter = 1, weight = FALSE, resolution = NULL,
+  method = c("louvain"), random_seed = 0L, verbose = F, ...)
 }
 \arguments{
 \item{cds}{the cell_data_set upon which to perform this operation}
-
-\item{use_pca}{Whether or not to cluster cells based on top PCA component. Default to be FALSE.}
 
 \item{k}{number of kNN used in creating the k nearest neighbor graph for Louvain clustering. The number of kNN is related to the resolution of the clustering result, bigger number of kNN gives low resolution and vice versa. Default to be 20}
 
@@ -20,24 +17,27 @@ cluster_cells(cds, reduced_dimension = c("tSNE", "UMAP", "PCA"),
 
 \item{weight}{A logic argument to determine whether or not we will use Jaccard coefficent for two nearest neighbors (based on the overlapping of their kNN) as the weight used for Louvain clustering. Default to be FALSE.}
 
-\item{res}{Resolution parameter for the louvain clustering. Values between 0 and 1e-2 are good, bigger values give you more clusters. Default is set to be \code{seq(0, 1e-4, length.out = 5)}.}
-
 \item{method}{method for clustering cells. Three methods are available, including densityPeak, louvian and DDRTree. By default, we use density peak clustering algorithm for clustering. For big datasets (like data with 50 k cells or so), we recommend using the louvain clustering algorithm.}
 
 \item{random_seed}{the seed used by the random number generator in louvain-igraph package. This argument will be ignored if louvain_iter is larger than 1.}
 
 \item{verbose}{Verbose A logic flag to determine whether or not we should print the running details.}
 
-\item{cores}{number of cores computer should use to execute function}
-
 \item{...}{Additional arguments passed to \code{\link{densityClust}()}}
+
+\item{use_pca}{Whether or not to cluster cells based on top PCA component. Default to be FALSE.}
+
+\item{res}{Resolution parameter for the louvain clustering. Values between 0 and 1e-2 are good, bigger values give you more clusters. Default is set to be \code{seq(0, 1e-4, length.out = 5)}.}
+
+\item{cores}{number of cores computer should use to execute function}
 }
 \value{
 an updated cell_data_set object, in which phenoData contains values for Cluster for each cell
 }
 \description{
-Unsupervised clustering of cells is a common step in many single-cell expression
-workflows. In an experiment containing a mixture of cell types, each cluster might
+Unsupervised clustering of cells is a common step in many single-cell
+expression workflows. In an experiment containing a mixture of cell types,
+each cluster might
 correspond to a different cell type. This method takes a cell_data_set as input
 along with a requested number of clusters, clusters them with an unsupervised
 algorithm (by default, density peak clustering), and then returns the cell_data_set with the

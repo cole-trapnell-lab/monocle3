@@ -6,7 +6,7 @@
 \usage{
 new_cell_data_set(expression_data, cell_metadata = NULL,
   gene_metadata = NULL, lower_detection_limit = 0.1,
-  expression_family = "negbinomial.size")
+  expression_family = "quasipoisson")
 }
 \arguments{
 \item{expression_data}{expression data matrix for an experiment}

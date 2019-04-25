@@ -19,8 +19,6 @@ fit_model_helper(x, model_formula_str, expression_family,
 \item{verbose}{Whether to show VGAM errors and warnings. Only valid for cores = 1.}
 
 \item{...}{test}
-
-\item{relative_expr}{Whether to transform expression into relative values}
 }
 \description{
 test
