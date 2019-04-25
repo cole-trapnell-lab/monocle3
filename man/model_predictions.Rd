@@ -4,7 +4,7 @@
 \alias{model_predictions}
 \title{Predict output of fitted models and return as a matrix}
 \usage{
-model_predictions(model_tbl, new_data)
+model_predictions(model_tbl, new_data, type = "response")
 }
 \description{
 Predict output of fitted models and return as a matrix

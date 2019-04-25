@@ -2,16 +2,15 @@
 % Please edit documentation in R/plotting.R
 \name{plot_cell_trajectory}
 \alias{plot_cell_trajectory}
-\title{Plots the minimum spanning tree on cells.}
+\title{Plots the cells along with their trajectories.}
 \usage{
 plot_cell_trajectory(cds, x = 1, y = 2, reduced_dimension = "UMAP",
   color_by = "Pseudotime", show_backbone = TRUE,
-  backbone_color = "black", markers = NULL,
-  use_color_gradient = FALSE, markers_linear = FALSE,
-  show_cell_names = FALSE, show_state_number = FALSE,
-  cell_size = 1.5, cell_link_size = 0.75, cell_name_size = 2,
-  state_number_size = 2.9, show_branch_points = TRUE, theta = 0,
-  alpha = 1, ...)
+  backbone_color = "black", markers = NULL, markers_linear = FALSE,
+  show_cell_names = FALSE, show_state_number = FALSE, cell_size = 1,
+  cell_link_size = 0.75, cell_name_size = 2, state_number_size = 2.9,
+  show_branch_points = TRUE, theta = 0, alpha = NULL,
+  min_expr = 0.1, ...)
 }
 \arguments{
 \item{cds}{cell_data_set for the experiment}
@@ -27,8 +26,6 @@ plot_cell_trajectory(cds, x = 1, y = 2, reduced_dimension = "UMAP",
 \item{backbone_color}{the color used to render the backbone.}
 
 \item{markers}{a gene name or gene id to use for setting the size of each cell in the plot}
-
-\item{use_color_gradient}{Whether or not to use color gradient instead of cell size to show marker expression level}
 
 \item{markers_linear}{a boolean used to indicate whether you want to scale the markers logarithimically or linearly}
 
@@ -56,7 +53,7 @@ plot_cell_trajectory(cds, x = 1, y = 2, reduced_dimension = "UMAP",
 a ggplot2 plot object
 }
 \description{
-Plots the minimum spanning tree on cells.
+Plots the cells along with their trajectories.
 }
 \examples{
 \dontrun{

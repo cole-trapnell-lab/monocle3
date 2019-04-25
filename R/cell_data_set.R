@@ -68,12 +68,12 @@ new_cell_data_set <- function(expression_data,
                "the Matrix package or dense)"))
   }
 
-  sce <- SingleCellExperiment(list(exprs=expression_data),
+  sce <- SingleCellExperiment(list(counts=expression_data),
                               rowData = gene_metadata,
                               colData = cell_metadata)
 
   cds <- new("cell_data_set",
-             assays = SummarizedExperiment::Assays(list(exprs=expression_data)),
+             assays = SummarizedExperiment::Assays(list(counts=expression_data)),
              colData = colData(sce),
              int_elementMetadata =sce@int_elementMetadata,
              int_colData = sce@int_colData,

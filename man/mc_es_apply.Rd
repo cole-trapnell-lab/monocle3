@@ -23,7 +23,7 @@ mc_es_apply(X, MARGIN, FUN, required_packages, cores = 1,
 \item{...}{Additional parameters for FUN}
 }
 \value{
-The result of with(colData(X) apply(assays(X)$exprs), MARGIN, FUN, ...))
+The result of with(colData(X) apply(counts(cds)), MARGIN, FUN, ...))
 }
 \description{
 mcesApply computes the row-wise or column-wise results of FUN, just like

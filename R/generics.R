@@ -106,4 +106,68 @@ setReplaceMethod("principal_graph_aux", "cell_data_set", function(x, value) {
   return(x)
 })
 
+#' @export
+setGeneric("exprs", function(x, ...) standardGeneric("exprs"))
 
+# Getter/setter wrappers for exprs
+# Copied from reduceDims functions from SingleCellExperiment
+
+#' @export
+setMethod("exprs", "cell_data_set", function(x) {
+  value <- assays(x)$counts
+  return(value)
+})
+
+#' @export
+setGeneric("pData", function(x, ...) standardGeneric("pData"))
+
+#' @export
+setGeneric("pData<-", function(x, value) standardGeneric("pData<-"))
+
+# Getter/setter wrappers for pdata
+# Copied from reduceDims functions from SingleCellExperiment
+
+#' @export
+setMethod("pData", "cell_data_set", function(x) {
+  value <- colData(x)
+  return(value)
+})
+
+#' @export
+#' @importClassesFrom S4Vectors List
+setReplaceMethod("pData", "cell_data_set", function(x, value) {
+  value <- methods::as(value, "List")
+  if (is.null(names(value))) {
+    names(value) <- character(length(value))
+  }
+  colData(x) <- value
+  validObject(x)
+  return(x)
+})
+
+#' @export
+setGeneric("fData", function(x, ...) standardGeneric("fData"))
+
+#' @export
+setGeneric("fData<-", function(x, value) standardGeneric("fData<-"))
+
+# Getter/setter wrappers for pdata
+# Copied from reduceDims functions from SingleCellExperiment
+
+#' @export
+setMethod("fData", "cell_data_set", function(x) {
+  value <- rowData(x)
+  return(value)
+})
+
+#' @export
+#' @importClassesFrom S4Vectors List
+setReplaceMethod("fData", "cell_data_set", function(x, value) {
+  value <- methods::as(value, "List")
+  if (is.null(names(value))) {
+    names(value) <- character(length(value))
+  }
+  rowData(x) <- value
+  validObject(x)
+  return(x)
+})

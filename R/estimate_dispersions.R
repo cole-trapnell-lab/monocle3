@@ -80,7 +80,7 @@ estimate_dispersions <- function(cds, modelFormulaStr="~ 1",
 
 
 disp_calc_helper_NB <- function(cds, min_cells_detected) {
-  rounded <- round(assays(cds)$exprs)
+  rounded <- round(counts(cds))
   nzGenes <- Matrix::rowSums(rounded > metadata(cds)$lower_detection_limit)
   nzGenes <- names(nzGenes[nzGenes > min_cells_detected])
 
@@ -95,7 +95,7 @@ disp_calc_helper_NB <- function(cds, min_cells_detected) {
 
   xim <- mean(1/ colData(cds[nzGenes,])$Size_Factor)
 
-  if (is_sparse_matrix(assays(cds)$exprs)){
+  if (is_sparse_matrix(counts(cds))){
     f_expression_mean <- methods::as(DelayedMatrixStats::rowMeans2(x), "sparseVector")
   }else{
     f_expression_mean <- DelayedMatrixStats::rowMeans2(x)

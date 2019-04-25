@@ -127,12 +127,12 @@ plot_cell_trajectory <- function(cds,
   if (is.null(markers) == FALSE) {
     markers_rowData <- subset(rowData(cds), gene_short_name %in% markers)
     if (nrow(markers_rowData) >= 1) {
-      cds_exprs <- assays(cds[row.names(markers_rowData),])$exprs
+      cds_exprs <- counts(cds)[row.names(markers_rowData),]
       cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds))
       #cds_exprs <- reshape2::melt(round(as.matrix(cds_exprs)))
       markers_exprs = matrix(cds_exprs, nrow=nrow(markers_rowData))
       markers_exprs = round(markers_exprs)
-      colnames(markers_exprs) = colnames(assays(cds)$exprs)
+      colnames(markers_exprs) = colnames(counts(cds))
       row.names(markers_exprs) = row.names(markers_rowData)
       markers_exprs <- reshape2::melt(markers_exprs)
       colnames(markers_exprs)[1:2] <- c('feature_id','cell_id')
@@ -316,7 +316,7 @@ plot_3d_cell_trajectory <- function(cds,
     markers_rowData <- subset(rowData(cds), gene_short_name %in% markers)
     if (nrow(markers_rowData) >= 1){
 
-      markers_expr_val <- assays(cds)$exprs[row.names(markers_rowData), cell_sampled]
+      markers_expr_val <- counts(cds)[row.names(markers_rowData), cell_sampled]
       markers_expr_val <- Matrix::colSums(markers_expr_val)
       markers_expr_val <- markers_expr_val / colData(cds)$Size_Factor
       nz_points = markers_expr_val != 0
@@ -637,7 +637,7 @@ plot_cell_clusters <- function(cds,
         integer_expression <- FALSE
       }
       if (integer_expression) {
-        cds_exprs <- assays(cds_subset)$exprs
+        cds_exprs <- counts(cds_subset)
 
         if (is.null(size_factors(cds_subset))) {
           stop("Error: to call this function you must call estimate_size_factors() first")
@@ -647,7 +647,7 @@ plot_cell_clusters <- function(cds,
         cds_exprs <- reshape2::melt(round(as.matrix(cds_exprs)))
       }
       else {
-        cds_exprs <- reshape2::melt(as.matrix(assays(cds_subset)$exprs))
+        cds_exprs <- reshape2::melt(as.matrix(counts(cds_subset)))
       }
       markers_exprs <- cds_exprs
       #markers_exprs <- reshape2::melt(as.matrix(cds_exprs))
@@ -760,7 +760,7 @@ plot_genes_in_pseudotime <-function(cds_subset,
   Cell <- NA
   cds_subset = cds_subset[,is.finite(colData(cds_subset)$Pseudotime)]
 
-    cds_exprs <- assays(cds_subset)$exprs
+    cds_exprs <- counts(cds_subset)
     if (is.null(size_factors(cds_subset))) {
        stop("Error: to call this function, you must call estimate_size_factors() first")
     }
@@ -997,11 +997,11 @@ plot_genes_violin <- function (cds_subset,
   assertthat::assert_that(is.logical(log_scale))
 
   if (normalize) {
-    cds_exprs <- assays(cds_subset)$exprs
+    cds_exprs <- counts(cds_subset)
     cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds_subset))
     cds_exprs <- reshape2::melt(as.matrix(cds_exprs))
   } else {
-    cds_exprs <- assays(cds_subset)$exprs
+    cds_exprs <- counts(cds_subset)
     cds_exprs <- reshape2::melt(as.matrix(cds_exprs))
   }
   if (is.null(min_expr)) {
@@ -1142,7 +1142,7 @@ plot_percent_cells_positive <- function(cds_subset,
     min_expr <- metadata(cds_subset)$lower_detection_limit
   }
 
-  marker_exprs <- assays(cds_subset)$exprs
+  marker_exprs <- counts(cds_subset)
 
   if (normalize) {
     marker_exprs <- Matrix::t(Matrix::t(marker_exprs)/size_factors(cds_subset))

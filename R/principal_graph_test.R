@@ -33,7 +33,7 @@ principal_graph_test <- function(cds,
   if(verbose) {
     message("Performing Moran's I test: ...")
   }
-  exprs_mat <- assays(cds)$exprs[, attr(lw, "region.id")]
+  exprs_mat <- counts(cds)[, attr(lw, "region.id")]
   sz <- size_factors(cds)[attr(lw, "region.id")]
 
   wc <- spdep::spweights.constants(lw, zero.policy = TRUE, adjust.n = TRUE)
@@ -243,7 +243,7 @@ calculateLW <- function(cds, k = 25, return_sparse_matrix = FALSE,
     principal_g <-  igraph::get.adjacency(cds@principal_graph[[reduced_dimension]])[1:row(reducedDims(cds)$UMAP), 1:nrow(reducedDims(cds)$UMAP)]
   }
 
-  exprs_mat <- assays(cds)$exprs
+  exprs_mat <- counts(cds)
   if(cds@rge_method  == 'UMAP') {
     if(is.null(knn_res)) {
       cell_coords <- reducedDims(cds)$UMAP

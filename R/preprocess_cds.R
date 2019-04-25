@@ -161,7 +161,7 @@ normalize_expr_data <- function(cds,
   norm_method <- match.arg(norm_method)
   check_size_factors(cds)
 
-  FM <- assays(cds)$exprs
+  FM <- counts(cds)
 
   # If we're going to be using log, and the user hasn't given us a
   # pseudocount set it to 1 by default.
@@ -177,7 +177,7 @@ normalize_expr_data <- function(cds,
 
     FM <- Matrix::t(Matrix::t(FM)/size_factors(cds))
 
-    if (pseudo_count != 1 || is_sparse_matrix(assays(cds)$exprs) == FALSE){
+    if (pseudo_count != 1 || is_sparse_matrix(counts(cds)) == FALSE){
       FM <- FM + pseudo_count
       FM <- log2(FM)
     } else {

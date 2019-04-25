@@ -30,7 +30,7 @@ test_that("preprocessing stays the same", {
   expect_equal(ncol(reducedDims(cds)$normalized_data_projection), 179)
   expect_equal(nrow(reducedDims(cds)$normalized_data_projection), nrow(colData(cds)))
   expect_equal(reducedDims(cds)$normalized_data_projection["E11_A01_RT_467","ENSG00000228253.1"],
-               as.numeric(assays(cds)$exprs["ENSG00000228253.1","E11_A01_RT_467"]/colData(cds)["E11_A01_RT_467",]$Size_Factor))
+               as.numeric(counts(cds)["ENSG00000228253.1","E11_A01_RT_467"]/colData(cds)["E11_A01_RT_467",]$Size_Factor))
 
   cds <- preprocess_cds(cds, method = "tfidf", norm_method = "none", num_dim = 20)
   expect_equal(ncol(reducedDims(cds)$normalized_data_projection), 20)
