@@ -3,3 +3,5 @@ inst/doc
 .Rhistory
 .RData
 .Ruserdata
+_site
+.sass-cache
