@@ -465,19 +465,6 @@ detect_genes <- function(cds, min_expr=NULL){
   cds
 }
 
-#' Marks genes for clustering
-#' @description The function marks genes that will be used for clustering in subsequent calls to clusterCells.
-#' The list of selected genes can be altered at any time.
-#'
-#' @param cds the cell_data_set upon which to perform this operation
-#' @param ordering_genes a vector of feature ids (from the cell_data_set's featureData) used for ordering cells
-#' @return an updated cell_data_set object
-#' @export
-set_ordering_filter <- function(cds, ordering_genes){
-  rowData(cds)$use_for_ordering <- row.names(rowData(cds)) %in% ordering_genes
-  cds
-}
-
 #' Retrieve a table of values specifying the mean-variance relationship
 #'
 #' Calling estimate_dispersions computes a smooth function describing how variance
