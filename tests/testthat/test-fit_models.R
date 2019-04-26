@@ -9,7 +9,7 @@ test_that("fit_models() returns an error when Size_Factors are missing",{
 })
 
 test_that("fit_models() properly validates model formulae",{
-  ok_formula_model_fits <- fit_models(cds, model_formula_str = "~log_dose", expression_family <- 'negbinomial')
+  ok_formula_model_fits <- fit_models(cds, model_formula_str = "~log_dose", expression_family = 'negbinomial')
   num_failed = sum (unlist(lapply(ok_formula_model_fits$model, function(m) { class(m) })) == "logical" )
   expect_lt(num_failed, nrow(cds))
 
@@ -29,7 +29,7 @@ test_that("fit_models() returns correct output for negative binomial regression"
   test_cds = cds
 
   pos_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "ANGPTL4",]
-  pos_ctrl_gene_fit = fit_models(pos_ctrl_gene, model_formula_str = "~log_dose", expression_family <- 'negbinomial')
+  pos_ctrl_gene_fit = fit_models(pos_ctrl_gene, model_formula_str = "~log_dose", expression_family = 'negbinomial')
   expect_equal(pos_ctrl_gene_fit$status[[1]], "OK")
   pos_ctrl_coefs = coefficient_table(pos_ctrl_gene_fit)
   expect_equal(pos_ctrl_coefs$estimate, c(0.01078543, 0.24663124), tolerance=1e-1)
@@ -44,7 +44,7 @@ test_that("fit_models() returns correct output for negative binomial regression"
   expect_equal(unname(fitted_vals[1]), 0.25752373)
 
   neg_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "CCNE2",]
-  neg_ctrl_gene_fit = fit_models(neg_ctrl_gene, model_formula_str = "~log_dose", expression_family <- 'negbinomial')
+  neg_ctrl_gene_fit = fit_models(neg_ctrl_gene, model_formula_str = "~log_dose", expression_family = 'negbinomial')
   expect_equal(neg_ctrl_gene_fit$status[[1]], "OK")
   neg_ctrl_coefs = coefficient_table(neg_ctrl_gene_fit)
   expect_equal(neg_ctrl_coefs$estimate, c(-3.553921,  0.179926), tolerance=1e-1)

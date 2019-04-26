@@ -56,7 +56,7 @@ plot_cell_trajectory <- function(cds,
                                  state_number_size = 2.9,
                                  show_branch_points=TRUE,
                                  theta = 0,
-                                 alpha = NULL,
+                                 alpha = 1,
                                  min_expr=0.1,
                                  ...) {
 
@@ -157,6 +157,18 @@ plot_cell_trajectory <- function(cds,
     }
   } else {
     g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2))
+
+    # We don't want to force users to call order_cells before even being able to look at the trajectory,
+    # so check whether it's null and if so, just don't color the cells
+    if (color_by == "Pseudotime" & is.null(colData(cds)$Pseudotime)){
+      g <- g + geom_point(color=I("gray"), size=I(cell_size), na.rm = TRUE, alpha = I(alpha))
+      message("order_cells() has not been called yet, can't color cells by Pseudotime")
+    } else if (class(colData(cds)[,color_by]) == "numeric"){
+      g <- g + geom_point(aes_string(color = color_by), size=I(cell_size), na.rm = TRUE, alpha = alpha)
+      g <- g + viridis::scale_color_viridis(option="C")
+    } else {
+      g <- g + geom_point(aes_string(color = color_by), size=I(cell_size), na.rm = TRUE, alpha = alpha)
+    }
   }
   if (show_backbone){
     g <- g + geom_segment(aes_string(x="source_prin_graph_dim_1", y="source_prin_graph_dim_2", xend="target_prin_graph_dim_1", yend="target_prin_graph_dim_2"), size=cell_link_size, linetype="solid", na.rm=TRUE, data=edge_df)
@@ -1018,7 +1030,7 @@ plot_genes_violin <- function (cds_subset,
     monocle_theme_opts()
 
   cds_exprs[,grouping] <- as.factor(cds_exprs[,grouping])
-  q <- q + geom_violin(aes_string(fill = grouping), scale="width")
+  q <- q + geom_violin(aes_string(fill = grouping), scale="width") + guides(fill=FALSE)
 
   q <- q + facet_wrap(~feature_label, nrow = nrow,
                       ncol = ncol, scales = "free_y")
@@ -1029,7 +1041,6 @@ plot_genes_violin <- function (cds_subset,
   q <- q + ylab("Expression") + xlab(grouping)
 
   if (log_scale){
-
     q <- q + scale_y_log10()
   }
   q
