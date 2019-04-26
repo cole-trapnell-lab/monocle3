@@ -179,8 +179,8 @@ plot_cell_trajectory <- function(cds,
   if (label_branch_points){
     mst_branch_nodes <- branch_nodes(cds)
     branch_point_df <- ica_space_df %>%
-      dplyr::slice(match(names(mst_branch_nodes), sample_name)) %>%
-      dplyr::mutate(branch_point_idx = seq_len(n()))
+      dplyr::slice(match(mst_branch_nodes, sample_name)) %>%
+      dplyr::mutate(branch_point_idx = seq_len(dplyr::n()))
 
     g <- g +
       geom_point(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2"),
@@ -193,7 +193,7 @@ plot_cell_trajectory <- function(cds,
     mst_leaf_nodes <- leaf_nodes(cds)
     leaf_df <- ica_space_df %>%
       dplyr::slice(match(names(mst_leaf_nodes), sample_name)) %>%
-      dplyr::mutate(leaf_idx = seq_len(n()))
+      dplyr::mutate(leaf_idx = seq_len(dplyr::n()))
 
     g <- g +
       geom_point(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2"),
@@ -206,7 +206,7 @@ plot_cell_trajectory <- function(cds,
     mst_root_nodes <- root_nodes(cds)
     root_df <- ica_space_df %>%
       dplyr::slice(match(names(mst_root_nodes), sample_name)) %>%
-      dplyr::mutate(root_idx = seq_len(n()))
+      dplyr::mutate(root_idx = seq_len(dplyr::n()))
 
     g <- g +
       geom_point(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2"),
