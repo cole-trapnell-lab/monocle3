@@ -260,12 +260,16 @@ connectTips <- function(pd,
 #' @param num_roots Number of roots for the trajectory
 #' @param pch Size of the principal graph node
 #' @param ... Extra arguments to pass to function
-select_trajectory_roots <- function(cds, x=1, y=2, num_roots = NULL, pch = 19, reduction_method, ...)
+select_trajectory_roots <- function(cds, x=1, y=2,
+                                    num_roots = NULL,
+                                    pch = 19,
+                                    reduction_method,
+                                    ...)
 {
   #TODO: need to validate cds as ready for this plot (need mst, pseudotime, etc)
-  lib_info_with_pseudo <- pData(cds)
+  #lib_info_with_pseudo <- colData(cds)
 
-  reduced_dim_coords <- reducedDims(cds)[[reduction_method]]
+  reduced_dim_coords <- t(cds@principal_graph_aux[[reduction_method]]$dp_mst)
 
   ica_space_df <- as.data.frame(reduced_dim_coords)
   use_3d <- ncol(ica_space_df) >= 3
@@ -289,14 +293,32 @@ select_trajectory_roots <- function(cds, x=1, y=2, num_roots = NULL, pch = 19, r
     edge_df <- dp_mst %>%
       igraph::as_data_frame() %>%
       select_(source = "from", target = "to") %>%
-      left_join(ica_space_df %>% dplyr::select_(source="sample_name", source_prin_graph_dim_1="prin_graph_dim_1", source_prin_graph_dim_2="prin_graph_dim_2", source_prin_graph_dim_3="prin_graph_dim_3"), by = "source") %>%
-      left_join(ica_space_df %>% dplyr::select_(target="sample_name", target_prin_graph_dim_1="prin_graph_dim_1", target_prin_graph_dim_2="prin_graph_dim_2", target_prin_graph_dim_3="prin_graph_dim_3"), by = "target")
+      dplyr::left_join(ica_space_df %>%
+                         dplyr::select_(source="sample_name",
+                                        source_prin_graph_dim_1="prin_graph_dim_1",
+                                        source_prin_graph_dim_2="prin_graph_dim_2",
+                                        source_prin_graph_dim_3="prin_graph_dim_3"),
+                       by = "source") %>%
+      dplyr::left_join(ica_space_df %>%
+                         dplyr::select_(target="sample_name",
+                                        target_prin_graph_dim_1="prin_graph_dim_1",
+                                        target_prin_graph_dim_2="prin_graph_dim_2",
+                                        target_prin_graph_dim_3="prin_graph_dim_3"),
+                       by = "target")
   }else{
     edge_df <- dp_mst %>%
       igraph::as_data_frame() %>%
       dplyr::select_(source = "from", target = "to") %>%
-      left_join(ica_space_df %>% dplyr::select_(source="sample_name", source_prin_graph_dim_1="prin_graph_dim_1", source_prin_graph_dim_2="prin_graph_dim_2"), by = "source") %>%
-      left_join(ica_space_df %>% dplyr::select_(target="sample_name", target_prin_graph_dim_1="prin_graph_dim_1", target_prin_graph_dim_2="prin_graph_dim_2"), by = "target")
+      dplyr::left_join(ica_space_df %>%
+                         dplyr::select_(source="sample_name",
+                                        source_prin_graph_dim_1="prin_graph_dim_1",
+                                        source_prin_graph_dim_2="prin_graph_dim_2"),
+                       by = "source") %>%
+      dplyr::left_join(ica_space_df %>%
+                         dplyr::select_(target="sample_name",
+                                        target_prin_graph_dim_1="prin_graph_dim_1",
+                                        target_prin_graph_dim_2="prin_graph_dim_2"),
+                       by = "target")
   }
 
   if (is.null(num_roots)){
@@ -307,28 +329,89 @@ select_trajectory_roots <- function(cds, x=1, y=2, num_roots = NULL, pch = 19, r
 
   if (use_3d){
     open3d(windowRect=c(0,0,1024,1024))
-    segments3d(matrix(as.matrix(t(edge_df[,c(3,4,5,6,7,8)])), ncol=3, byrow=T), lwd=2,
-               col="black",
-               line_antialias=TRUE)
+    segments3d(matrix(as.matrix(t(edge_df[,c(3,4,5,6,7,8)])), ncol=3, byrow=T),
+               lwd=2, col="black", line_antialias=TRUE)
     points3d(Matrix::t(reduced_dim_coords[1:3,]), col="black")
     while(sum(sel) < num_roots) {
-      ans <- identify3d(Matrix::t(reduced_dim_coords[1:3,!sel]), labels = which(!sel), n = 1, buttons = c("right", "middle"), ...)
+      ans <- identify3d(Matrix::t(reduced_dim_coords[1:3,!sel]),
+                        labels = which(!sel), n = 1,
+                        buttons = c("right", "middle"), ...)
       if(!length(ans)) break
       ans <- which(!sel)[ans]
       #points3d(Matrix::t(reduced_dim_coords[1:3,ans]), col="red")
       sel[ans] <- TRUE
     }
-  }else{
-    plot(ica_space_df$prin_graph_dim_1[!sel], ica_space_df$prin_graph_dim_2[!sel], xlab="Component 1", ylab="Component 2");
-    segments(edge_df$source_prin_graph_dim_1, edge_df$source_prin_graph_dim_2, edge_df$target_prin_graph_dim_1, edge_df$target_prin_graph_dim_2)
+  } else {
+    ui <- fluidPage(
+      titlePanel("Choose your root nodes"),
 
-    while(sum(sel) < num_roots) {
-      ans <- identify(ica_space_df$prin_graph_dim_1[!sel], ica_space_df$prin_graph_dim_2[!sel], labels = which(!sel), n = 1, ...)
-      if(!length(ans)) break
-      ans <- which(!sel)[ans]
-      points(ica_space_df$prin_graph_dim_1[ans], ica_space_df$prin_graph_dim_2[ans], pch = pch)
-      sel[ans] <- TRUE
+      # Sidebar layout with input and output definitions ----
+      sidebarLayout(
+
+        # Sidebar panel for inputs ----
+        sidebarPanel(
+          # done button
+          actionButton("choose_toggle", "Choose/unchoose"),
+          # clear button
+          actionButton("reset", "Clear"),
+          # done button
+          actionButton("done", "Done")
+        ),
+
+        # Main panel for displaying outputs ----
+        mainPanel(
+          plotOutput("plot1", height = 350,
+                     click = "plot1_click",
+                     brush = brushOpts(id = "plot1_brush"))
+        )
+      )
+    )
+
+    server <- function(input, output) {
+
+      vals <- reactiveValues(
+        keeprows = rep(TRUE, nrow(ica_space_df))
+      )
+
+      output$plot1 <- renderPlot({
+        # Plot the kept and excluded points as two separate data sets
+        keep    <- ica_space_df[ vals$keeprows, , drop = FALSE]
+        exclude <- ica_space_df[!vals$keeprows, , drop = FALSE]
+
+        ggplot(keep, aes(prin_graph_dim_1, prin_graph_dim_2)) + geom_point(alpha = .7) +
+          geom_point(data = exclude, shape = 21, fill = NA, color = "blue") +
+          geom_segment(data = edge_df,  aes(x = source_prin_graph_dim_1,
+                                            xend = target_prin_graph_dim_1,
+                                            y = source_prin_graph_dim_2,
+                                            yend = target_prin_graph_dim_2)) +
+          labs(x="Component 1", y="Component 2") + monocle3:::monocle_theme_opts()
+      })
+
+      # Toggle points that are clicked
+      observeEvent(input$plot1_click, {
+        res <- nearPoints(ica_space_df, input$plot1_click, allRows = TRUE)
+
+        vals$keeprows <- xor(vals$keeprows, res$selected_)
+      })
+
+      # Toggle points that are brushed, when button is clicked
+      observeEvent(input$choose_toggle, {
+        res <- brushedPoints(ica_space_df, input$plot1_brush, allRows = TRUE)
+
+        vals$keeprows <- xor(vals$keeprows, res$selected_)
+      })
+
+      # Reset all points
+      observeEvent(input$reset, {
+        vals$keeprows <- rep(TRUE, nrow(ica_space_df))
+      })
+
+      observeEvent(input$done, {
+        stopApp(vals$keeprows)
+      })
+
     }
+    sel <- runApp(shinyApp(ui, server))
   }
   ## return indices of selected points
   as.character(ica_space_df$sample_name[which(sel)])

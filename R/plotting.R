@@ -166,7 +166,7 @@ plot_cell_trajectory <- function(cds,
     mst_branch_nodes <- cds@principal_graph_aux[[reduction_method]]$branch_points
     branch_point_df <- ica_space_df %>%
       dplyr::slice(match(mst_branch_nodes, sample_name)) %>%
-      dplyr::mutate(branch_point_idx = seq_len(n()))
+      dplyr::mutate(branch_point_idx = seq_len(dplyr::n()))
 
     g <- g +
       geom_point(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2"),
