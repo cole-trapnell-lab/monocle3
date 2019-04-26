@@ -22,7 +22,7 @@
 #' consider any clusters with p-value larger than 0.05 by default as not disconnected.
 #'
 #' @param cds the cell_data_set upon which to perform this operation
-#' @param reduced_dimension Which reduced dimension space should be partitioned?
+#' @param reduction_method Which reduced dimension space should be partitioned?
 #' @param k number of nearest neighbors used for Louvain clustering (pass to louvain_clustering function)
 #' @param weight whether or not to calculate the weight for each edge in the kNN graph (pass to louvain_clustering function)
 #' @param louvain_iter the number of iteraction for louvain clustering (pass to louvain_clustering function)
@@ -36,7 +36,7 @@
 #'
 #' @export
 partition_cells <- function(cds,
-                            reduced_dimension = c('UMAP', 'tSNE', 'PCA'),
+                            reduction_method = c('UMAP', 'tSNE', 'PCA'),
                             k = 20,
                             weight = F,
                             louvain_iter = 1,
@@ -45,10 +45,10 @@ partition_cells <- function(cds,
                             return_all = FALSE,
                             verbose = FALSE, ...){
   extra_arguments <- list(...)
-  reduced_dimension <- match.arg(reduced_dimension)
+  reduction_method <- match.arg(reduction_method)
 
   assertthat::assert_that(is(cds, "cell_data_set"))
-  assertthat::assert_that(is.character(reduced_dimension))
+  assertthat::assert_that(is.character(reduction_method))
   assertthat::assert_that(assertthat::is.count(k))
   assertthat::assert_that(is.logical(weight))
   assertthat::assert_that(assertthat::is.count(louvain_iter))
@@ -56,14 +56,14 @@ partition_cells <- function(cds,
   assertthat::assert_that(is.numeric(louvain_qval))
   assertthat::assert_that(is.logical(return_all))
   assertthat::assert_that(is.logical(verbose))
-  assertthat::assert_that(!is.null(reducedDims(cds)[[reduced_dimension]]),
+  assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
                           msg = paste("No dimensionality reduction for",
-                                      reduced_dimension, "calculated.",
+                                      reduction_method, "calculated.",
                                       "Please run reduce_dimensions with",
-                                      "reduction_method =", reduced_dimension,
+                                      "reduction_method =", reduction_method,
                                       "before running partition_cells."))
 
-  reduced_dim_res <- reducedDims(cds)[[reduced_dimension]]
+  reduced_dim_res <- reducedDims(cds)[[reduction_method]]
 
   if(verbose)
     message("Running louvain clustering algorithm ...")
@@ -89,7 +89,7 @@ partition_cells <- function(cds,
   louvain_component <- as.factor(louvain_component)
   colData(cds)$louvain_component <- louvain_component
 
-  cds@partitions[[reduced_dimension]] <- list(cluster_graph_res = cluster_graph_res,
+  cds@partitions[[reduction_method]] <- list(cluster_graph_res = cluster_graph_res,
                                               louvain_res = louvain_res)
 
   if(return_all) {

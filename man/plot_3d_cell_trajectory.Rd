@@ -4,7 +4,7 @@
 \alias{plot_3d_cell_trajectory}
 \title{Plot a dataset and trajectory in 3 dimensions}
 \usage{
-plot_3d_cell_trajectory(cds, reduced_dimension = "UMAP",
+plot_3d_cell_trajectory(cds, reduction_method = "UMAP",
   downsample_size = NULL, dim = c(1, 2, 3), color_by = NULL,
   palette = NULL, markers = NULL, markers_linear = FALSE,
   cell_size = 5, cell_alpha = 0.5,

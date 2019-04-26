@@ -39,7 +39,7 @@
 #' @export
 
 cluster_cells <- function(cds,
-                          reduced_dimension = c("UMAP", "tSNE", "PCA"),
+                          reduction_method = c("UMAP", "tSNE", "PCA"),
                           k = 20,
                           louvain_iter = 1,
                           weight = FALSE,
@@ -49,9 +49,9 @@ cluster_cells <- function(cds,
                           verbose = F,
                           ...) {
   method <- match.arg(method)
-  reduced_dimension <- match.arg(reduced_dimension)
+  reduction_method <- match.arg(reduction_method)
   if(method == 'louvain'){
-    data <- reducedDims(cds)[[reduced_dimension]]
+    data <- reducedDims(cds)[[reduction_method]]
 
     louvain_res <- louvain_clustering(data = data, pd = colData(cds), k = k,
                                       weight = weight,

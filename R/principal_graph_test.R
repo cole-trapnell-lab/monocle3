@@ -21,14 +21,14 @@
 #' @seealso \code{\link[spdep]{moran.test}} \code{\link[spdep]{geary.test}}
 #' @export
 principal_graph_test <- function(cds,
-                                 reduced_dimension = "UMAP",
+                                 reduction_method = "UMAP",
                                  k = 25,
                                  method = c('Moran_I'),
                                  alternative = 'greater',
                                  cores=1,
                                  interactive = FALSE,
                                  verbose=FALSE) {
-  lw <- calculateLW(cds, k = k, interactive = interactive, verbose = verbose, reduced_dimension)
+  lw <- calculateLW(cds, k = k, interactive = interactive, verbose = verbose, reduction_method)
 
   if(verbose) {
     message("Performing Moran's I test: ...")
@@ -228,7 +228,7 @@ my.geary.test <- function (x, listw, wc, randomisation = TRUE, alternative = "gr
 #'
 calculateLW <- function(cds, k = 25, return_sparse_matrix = FALSE,
                         interactive = FALSE, verbose = FALSE,
-                        reduced_dimension = "UMAP") {
+                        reduction_method = "UMAP") {
   if(verbose) {
     message("retrieve the matrices for Moran's I test...")
   }
@@ -240,7 +240,7 @@ calculateLW <- function(cds, k = 25, return_sparse_matrix = FALSE,
     knn_res <- RANN::nn2(cell_coords, cell_coords, min(k + 1, nrow(cell_coords)), searchtype = "standard")[[1]]
   } else if(cds@rge_method %in% c('SimplePPT')) {
     cell_coords <- reducedDims(cds)$UMAP
-    principal_g <-  igraph::get.adjacency(cds@principal_graph[[reduced_dimension]])[1:row(reducedDims(cds)$UMAP), 1:nrow(reducedDims(cds)$UMAP)]
+    principal_g <-  igraph::get.adjacency(cds@principal_graph[[reduction_method]])[1:row(reducedDims(cds)$UMAP), 1:nrow(reducedDims(cds)$UMAP)]
   }
 
   exprs_mat <- counts(cds)
@@ -289,7 +289,7 @@ calculateLW <- function(cds, k = 25, return_sparse_matrix = FALSE,
     knn_list <- lapply(points_selected, function(x) id_map[as.character(knn_res[x, -1])])
   }
   else {
-    cell2pp_map <- cds@principal_graph_aux[[reduced_dimension]]$pr_graph_cell_proj_closest_vertex # mapping from each cell to the principal points
+    cell2pp_map <- cds@principal_graph_aux[[reduction_method]]$pr_graph_cell_proj_closest_vertex # mapping from each cell to the principal points
     if(is.null(cell2pp_map)) {
       stop("Error: projection matrix for each cell to principal points doesn't exist, you may need to rerun learnGraph")
     }
