@@ -65,6 +65,12 @@ reduce_dimension <- function(cds,
                              max_components=2,
                              reduction_method=c("UMAP", 'tSNE', 'PCA'),
                              preprocess_method=c("PCA", "LSI"),
+                             umap.metric = "cosine",
+                             umap.min_dist = 0.1,
+                             umap.n_neighbors = 15L,
+                             umap.fast_sgd = TRUE,
+                             umap.nn_method = "annoy",
+                             cores=max(1, RcppParallel::defaultNumThreads()/2),
                              verbose=FALSE,
                              ...){
   extra_arguments <- list(...)
@@ -125,23 +131,32 @@ reduce_dimension <- function(cds,
     if (verbose)
       message("Running Uniform Manifold Approximation and Projection")
 
-    umap_args <- c(list(X = preprocess_mat,
-                        log = F,
-                        n_component = as.integer(max_components),
-                        verbose = verbose,
-                        return_all = T),
-                   extra_arguments[names(extra_arguments) %in%
-                                     c("python_home", "n_neighbors", "metric",
-                                       "n_epochs", "negative_sample_rate",
-                                       "learning_rate", "init", "min_dist",
-                                       "spread", 'set_op_mix_ratio',
-                                       'local_connectivity',
-                                       'repulsion_strength', 'a', 'b',
-                                       'random_state', 'metric_kwds',
-                                       'angular_rp_forest', 'verbose')])
-    tmp <- do.call(UMAP, umap_args)
+    # umap_args <- c(list(X = preprocess_mat,
+    #                     log = F,
+    #                     n_component = as.integer(max_components),
+    #                     verbose = verbose,
+    #                     return_all = T),
+    #                extra_arguments[names(extra_arguments) %in%
+    #                                  c("python_home", "n_neighbors", "metric",
+    #                                    "n_epochs", "negative_sample_rate",
+    #                                    "learning_rate", "init", "min_dist",
+    #                                    "spread", 'set_op_mix_ratio',
+    #                                    'local_connectivity',
+    #                                    'repulsion_strength', 'a', 'b',
+    #                                    'random_state', 'metric_kwds',
+    #                                    'angular_rp_forest', 'verbose')])
+    umap_res = uwot::umap(as.matrix(preprocess_mat),
+                          n_components = max_components,
+                          metric = umap.metric,
+                          min_dist = umap.min_dist,
+                          n_neighbors = umap.n_neighbors,
+                          fast_sgd = umap.fast_sgd,
+                          n_threads=cores,
+                          verbose=verbose,
+                          ...)
+    # tmp <- do.call(UMAP, umap_args)
     # normalize UMAP space
-    umap_res <- (tmp$embedding_-min(tmp$embedding_))/max(tmp$embedding_)
+    # umap_res <- (tmp-min(tmp))/max(tmp)
     row.names(umap_res) <- colnames(cds)
     reducedDims(cds)$UMAP <- umap_res
   }
