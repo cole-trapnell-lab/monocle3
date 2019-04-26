@@ -429,12 +429,12 @@ pruneTree_in_learnGraph <- function(stree_ori, stree_loop_clousre, minimal_branc
   vertex_top_keep <- NULL
 
   if(nrow(added_edges) > 0) {
-    edge_dists <- apply(added_edges, 1, function(x) distances(stree_ori, x[1], x[2]))
+    edge_dists <- apply(added_edges, 1, function(x) igraph::distances(stree_ori, x[1], x[2]))
     valid_edges <- added_edges[which(edge_dists >= minimal_branch_len), , drop = F]
     edges_to_remove_df <- added_edges[which(edge_dists < minimal_branch_len), , drop = F]
   }
   if(nrow(valid_edges) > 0) {
-    vertex_top_keep <- as.character(unlist(apply(valid_edges, 1, function(x) shortest_paths(stree_ori, x[1], x[2])$vpath[[1]]$name )))
+    vertex_top_keep <- as.character(unlist(apply(valid_edges, 1, function(x) igraph::shortest_paths(stree_ori, x[1], x[2])$vpath[[1]]$name )))
   }
 
   root_cell <- which(igraph::neighborhood.size(stree_ori) == 2)[1]

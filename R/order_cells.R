@@ -453,9 +453,9 @@ root_nodes <- function(cds, reduction_method="UMAP"){
 #' @importFrom igraph shortest.paths shortest_paths degree
 #' @keywords internal
 path_between_nodes <- function(g, start_pr_nodes, end_pr_nodes){
-  distance <- shortest.paths(g, v=start_pr_nodes, to=end_pr_nodes)
+  distance <- igraph::shortest.paths(g, v=start_pr_nodes, to=end_pr_nodes)
   branchPoints <- which(degree(g) == 3)
-  path <- shortest_paths(g, from = start_pr_nodes, end_pr_nodes)
+  path <- igraph::shortest_paths(g, from = start_pr_nodes, end_pr_nodes)
 
   return(list(shortest_path = path$vpath, distance = distance, branch_points = intersect(branchPoints, unlist(path$vpath))))
 }
