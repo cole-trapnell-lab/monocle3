@@ -54,7 +54,9 @@ plot_cell_trajectory <- function(cds,
                                  cell_link_size=0.75,
                                  cell_name_size=2,
                                  state_number_size = 2.9,
-                                 show_branch_points=TRUE,
+                                 label_branch_points=TRUE,
+                                 label_roots=TRUE,
+                                 label_leaves=TRUE,
                                  theta = 0,
                                  alpha = 1,
                                  min_expr=0.1,
@@ -174,18 +176,46 @@ plot_cell_trajectory <- function(cds,
     g <- g + geom_segment(aes_string(x="source_prin_graph_dim_1", y="source_prin_graph_dim_2", xend="target_prin_graph_dim_1", yend="target_prin_graph_dim_2"), size=cell_link_size, linetype="solid", na.rm=TRUE, data=edge_df)
   }
 
-  if (show_branch_points){
-    mst_branch_nodes <- cds@principal_graph_aux[[reduction_method]]$branch_points
+  if (label_branch_points){
+    mst_branch_nodes <- branch_nodes(cds)
     branch_point_df <- ica_space_df %>%
-      dplyr::slice(match(mst_branch_nodes, sample_name)) %>%
+      dplyr::slice(match(names(mst_branch_nodes), sample_name)) %>%
       dplyr::mutate(branch_point_idx = seq_len(n()))
 
     g <- g +
       geom_point(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2"),
-                 size=5, na.rm=TRUE, branch_point_df, alpha = alpha) +
+                 shape = 21, stroke=1, color="white", fill="black", size=5, na.rm=TRUE, branch_point_df, alpha = alpha) +
       geom_text(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2", label="branch_point_idx"),
                 size=4, color="white", na.rm=TRUE, branch_point_df)
   }
+
+  if (label_leaves){
+    mst_leaf_nodes <- leaf_nodes(cds)
+    leaf_df <- ica_space_df %>%
+      dplyr::slice(match(names(mst_leaf_nodes), sample_name)) %>%
+      dplyr::mutate(leaf_idx = seq_len(n()))
+
+    g <- g +
+      geom_point(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2"),
+                 shape = 21, stroke=1, color="black", fill="lightgray", size=5, na.rm=TRUE, leaf_df, alpha = alpha) +
+      geom_text(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2", label="leaf_idx"),
+                size=4, color="black", na.rm=TRUE, leaf_df)
+  }
+
+  if (label_roots){
+    mst_root_nodes <- root_nodes(cds)
+    root_df <- ica_space_df %>%
+      dplyr::slice(match(names(mst_root_nodes), sample_name)) %>%
+      dplyr::mutate(root_idx = seq_len(n()))
+
+    g <- g +
+      geom_point(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2"),
+                 shape = 21, stroke=1, color="black", fill="white", size=5, na.rm=TRUE, root_df, alpha = alpha) +
+      geom_text(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2", label="root_idx"),
+                size=4, color="black", na.rm=TRUE, root_df)
+  }
+
+
   if (show_cell_names){
     g <- g + geom_text(aes(label=sample_name), size=cell_name_size)
   }
@@ -204,9 +234,6 @@ plot_cell_trajectory <- function(cds,
     theme(panel.background = element_rect(fill='white'))
   g
 }
-
-
-
 
 
 #' Plot a dataset and trajectory in 3 dimensions
