@@ -4,7 +4,7 @@
 \alias{plot_cell_trajectory}
 \title{Plots the cells along with their trajectories.}
 \usage{
-plot_cell_trajectory(cds, x = 1, y = 2, reduced_dimension = "UMAP",
+plot_cell_trajectory(cds, x = 1, y = 2, reduction_method = "UMAP",
   color_by = "Pseudotime", show_backbone = TRUE,
   backbone_color = "black", markers = NULL, markers_linear = FALSE,
   show_cell_names = FALSE, show_state_number = FALSE, cell_size = 1,

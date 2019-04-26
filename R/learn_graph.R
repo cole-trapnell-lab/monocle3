@@ -54,7 +54,7 @@ learn_graph <- function(cds,
                         close_loop = FALSE,
                         learn_graph_control = NULL,
                         verbose = FALSE) {
-  reduced_dimension <- "UMAP"
+  reduction_method <- "UMAP"
   partition_group = 'louvain_component'
 
   if (!is.null(learn_graph_control)) {
@@ -104,18 +104,18 @@ learn_graph <- function(cds,
   assertthat::assert_that(is.numeric(L1.sigma))
   assertthat::assert_that(is.numeric(L1.sigma))
 
-  assertthat::assert_that(!is.null(reducedDims(cds)[[reduced_dimension]]),
+  assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
                           msg = paste("No dimensionality reduction for",
-                                      reduced_dimension, "calculated.",
+                                      reduction_method, "calculated.",
                                       "Please run reduce_dimensions with",
-                                      "reduction_method =", reduced_dimension,
+                                      "reduction_method =", reduction_method,
                                       "and partition_cells before running",
                                       "learn_graph."))
-  assertthat::assert_that(!is.null(cds@partitions[[reduced_dimension]]),
+  assertthat::assert_that(!is.null(cds@partitions[[reduction_method]]),
                           msg = paste("No cell partition for",
-                                      reduced_dimension, "calculated.",
+                                      reduction_method, "calculated.",
                                       "Please run partition_cells with",
-                                      "reduction_method =", reduced_dimension,
+                                      "reduction_method =", reduction_method,
                                       "before running learn_graph."))
 
   if (use_partition) {
@@ -125,9 +125,9 @@ learn_graph <- function(cds,
   }
 
   multi_tree_DDRTree_res <- multi_component_RGE(cds, scale = scale,
-                                                reduced_dimension = reduced_dimension,
+                                                reduction_method = reduction_method,
                                                 partition_list = partition_list,
-                                                irlba_pca_res = reducedDims(cds)[[reduced_dimension]],
+                                                irlba_pca_res = reducedDims(cds)[[reduction_method]],
                                                 max_components = max_components,
                                                 ncenter = ncenter,
                                                 maxiter = maxiter,
@@ -148,18 +148,18 @@ learn_graph <- function(cds,
   dp_mst <- multi_tree_DDRTree_res$dp_mst
 
 
-  principal_graph(cds)[[reduced_dimension]] <- dp_mst
-  cds@principal_graph_aux[[reduced_dimension]]$dp_mst <- rge_res_Y
+  principal_graph(cds)[[reduction_method]] <- dp_mst
+  cds@principal_graph_aux[[reduction_method]]$dp_mst <- rge_res_Y
 
   cds <- project2MST(cds, project_point_to_line_segment, orthogonal_proj_tip,
-                     verbose, reduced_dimension, rge_res_Y)
+                     verbose, reduction_method, rge_res_Y)
 
   cds
 }
 
 multi_component_RGE <- function(cds,
                                 scale = FALSE,
-                                reduced_dimension,
+                                reduction_method,
                                 partition_list,
                                 max_components,
                                 ncenter,
@@ -265,7 +265,7 @@ multi_component_RGE <- function(cds,
                                        R = rge_res$R,
                                        stree = stree,
                                        reducedDimK_old = rge_res$Y,
-                                       reducedDimS_old = t(reducedDims(cds)[[reduced_dimension]])[, partition_list == cur_comp],
+                                       reducedDimS_old = t(reducedDims(cds)[[reduction_method]])[, partition_list == cur_comp],
                                        kmean_res = kmean_res,
                                        euclidean_distance_ratio = euclidean_distance_ratio,
                                        geodesic_distance_ratio = geodesic_distance_ratio,
@@ -327,7 +327,7 @@ multi_component_RGE <- function(cds,
   row.names(pr_graph_cell_proj_closest_vertex) <- cell_name_vec
 
   ddrtree_res_W <- as.matrix(rge_res$W)
-  ddrtree_res_Z <- reducedDims(cds)[[reduced_dimension]]
+  ddrtree_res_Z <- reducedDims(cds)[[reduction_method]]
   ddrtree_res_Y <- reducedDimK_coord # ensure the order of column names matches that of the original name ids
   # correctly set up R, stree -- the mapping from each cell to the principal graph points
   R <- Matrix::sparseMatrix(i = 1, j = 1, x = 0, dims = c(ncol(cds), ncol(merge_rge_res$Y))) # use sparse matrix for large datasets
@@ -348,8 +348,8 @@ multi_component_RGE <- function(cds,
   row.names(R) <- R_row_names
   R <- R[colnames(cds), ] # reorder the colnames
 
-  cds@principal_graph_aux[[reduced_dimension]] <- list(stree = stree, Q = merge_rge_res$Q, R = R, objective_vals = merge_rge_res$objective_vals, history = merge_rge_res$history) # rge_res[c('stree', 'Q', 'R', 'objective_vals', 'history')] #
-  cds@principal_graph_aux[[reduced_dimension]]$pr_graph_cell_proj_closest_vertex <- as.data.frame(pr_graph_cell_proj_closest_vertex)[colnames(cds), , drop = F] # Ensure the row order matches up that of the column order of the cds
+  cds@principal_graph_aux[[reduction_method]] <- list(stree = stree, Q = merge_rge_res$Q, R = R, objective_vals = merge_rge_res$objective_vals, history = merge_rge_res$history) # rge_res[c('stree', 'Q', 'R', 'objective_vals', 'history')] #
+  cds@principal_graph_aux[[reduction_method]]$pr_graph_cell_proj_closest_vertex <- as.data.frame(pr_graph_cell_proj_closest_vertex)[colnames(cds), , drop = F] # Ensure the row order matches up that of the column order of the cds
 
   colnames(ddrtree_res_Y) <- paste0("Y_", 1:ncol(ddrtree_res_Y), sep = "")
 
@@ -505,13 +505,13 @@ pruneTree_in_learnGraph <- function(stree_ori, stree_loop_clousre, minimal_branc
   return(igraph::get.adjacency(stree_loop_clousre))
 }
 
-project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE, verbose, reduced_dimension, rge_res_Y){
-  dp_mst <- principal_graph(cds)[[reduced_dimension]]
-  Z <- t(reducedDims(cds)[[reduced_dimension]])
+project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE, verbose, reduction_method, rge_res_Y){
+  dp_mst <- principal_graph(cds)[[reduction_method]]
+  Z <- t(reducedDims(cds)[[reduction_method]])
   Y <- rge_res_Y
 
-  cds <- findNearestPointOnMST(cds, reduced_dimension, rge_res_Y)
-  closest_vertex <- cds@principal_graph_aux[[reduced_dimension]]$pr_graph_cell_proj_closest_vertex
+  cds <- findNearestPointOnMST(cds, reduction_method, rge_res_Y)
+  closest_vertex <- cds@principal_graph_aux[[reduction_method]]$pr_graph_cell_proj_closest_vertex
 
   closest_vertex_names <- colnames(Y)[closest_vertex[, 1]]
 
@@ -592,7 +592,7 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE, ver
         # colnames(data_df)[(ncol(data_df) - (nrow(cur_p) - 1)):ncol(data_df)] <- paste0('S_', 1:nrow(cur_p))
 
         # sort each cell's distance to the source in each principal edge group
-        data_df$distance_2_source <-  sqrt(colSums((cur_p - t(reducedDims(cds)[[reduced_dimension]])[,data_df[, 'source']])^2))
+        data_df$distance_2_source <-  sqrt(colSums((cur_p - t(reducedDims(cds)[[reduction_method]])[,data_df[, 'source']])^2))
         data_df <- data_df %>% tibble::rownames_to_column() %>% dplyr::mutate(group = paste(source, target, sep = '_')) %>%
           dplyr::arrange(group, desc(-distance_2_source))
 
@@ -642,19 +642,19 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE, ver
     }
   }
   dp_mst <- igraph::graph.data.frame(dp_mst_df, directed = FALSE)
-  cds@principal_graph_aux[[reduced_dimension]]$pr_graph_cell_proj_tree <- dp_mst
-  cds@principal_graph_aux[[reduced_dimension]]$pr_graph_cell_proj_dist <- P
+  cds@principal_graph_aux[[reduction_method]]$pr_graph_cell_proj_tree <- dp_mst
+  cds@principal_graph_aux[[reduction_method]]$pr_graph_cell_proj_dist <- P
 
   closest_vertex_df <- as.matrix(closest_vertex)
   row.names(closest_vertex_df) <- row.names(closest_vertex)
-  cds@principal_graph_aux[[reduced_dimension]]$pr_graph_cell_proj_closest_vertex <- closest_vertex_df
+  cds@principal_graph_aux[[reduction_method]]$pr_graph_cell_proj_closest_vertex <- closest_vertex_df
 
   cds
 }
 
 # Project each point to the nearest on the MST:
-findNearestPointOnMST <- function(cds, reduced_dimension, rge_res_Y){
-  dp_mst <- principal_graph(cds)[[reduced_dimension]]
+findNearestPointOnMST <- function(cds, reduction_method, rge_res_Y){
+  dp_mst <- principal_graph(cds)[[reduction_method]]
   dp_mst_list <- igraph::decompose.graph(dp_mst)
 
   if(length(unique(colData(cds)$louvain_component)) != length(dp_mst_list)) {
@@ -668,9 +668,9 @@ findNearestPointOnMST <- function(cds, reduced_dimension, rge_res_Y){
     cur_dp_mst <- dp_mst_list[[i]]
 
     if(length(dp_mst_list) == 1) {
-      Z <- t(reducedDims(cds)[[reduced_dimension]])
+      Z <- t(reducedDims(cds)[[reduction_method]])
     } else {
-      Z <- t(reducedDims(cds)[[reduced_dimension]])[, colData(cds)$louvain_component == i]
+      Z <- t(reducedDims(cds)[[reduction_method]])[, colData(cds)$louvain_component == i]
     }
     Y <- rge_res_Y[, igraph::V(cur_dp_mst)$name]
 
@@ -688,7 +688,7 @@ findNearestPointOnMST <- function(cds, reduced_dimension, rge_res_Y){
     cur_start_index <- cur_start_index + igraph::vcount(cur_dp_mst)
   }
   closest_vertex_df <- closest_vertex_df[colnames(cds), , drop = F]
-  cds@principal_graph_aux[[reduced_dimension]]$pr_graph_cell_proj_closest_vertex <- closest_vertex_df #as.matrix(closest_vertex)
+  cds@principal_graph_aux[[reduction_method]]$pr_graph_cell_proj_closest_vertex <- closest_vertex_df #as.matrix(closest_vertex)
   cds
 }
 

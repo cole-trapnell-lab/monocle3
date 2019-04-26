@@ -4,7 +4,7 @@
 \alias{order_cells}
 \title{Orders cells according to pseudotime.}
 \usage{
-order_cells(cds, root_pr_nodes = NULL, reduced_dimension = "UMAP",
+order_cells(cds, root_pr_nodes = NULL, reduction_method = "UMAP",
   root_cells = NULL, reverse = FALSE, orthogonal_proj_tip = FALSE,
   verbose = FALSE)
 }

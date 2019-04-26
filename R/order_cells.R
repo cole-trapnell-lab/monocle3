@@ -37,7 +37,7 @@
 #' @export
 order_cells <- function(cds,
                        root_pr_nodes=NULL,
-                       reduced_dimension = "UMAP",
+                       reduction_method = "UMAP",
                        root_cells=NULL,
                        reverse = FALSE,
                        orthogonal_proj_tip = FALSE,
@@ -65,7 +65,7 @@ order_cells <- function(cds,
   #}
   if (is.null(root_pr_nodes) & is.null(root_cells)){
     if (interactive()){
-      root_pr_nodes <- selectTrajectoryRoots(cds)
+      root_pr_nodes <- select_trajectory_roots(cds, reduction_method = reduction_method)
     }else{
       stop("Error: You must provide one or more root cells (or principal graph nodes) in non-interactive mode")
     }
@@ -74,10 +74,10 @@ order_cells <- function(cds,
     if (length(valid_root_cells) == 0){
       stop("Error: no such cell")
     }
-    closest_vertex = cds@principal_graph_aux[[reduced_dimension]]$pr_graph_cell_proj_closest_vertex
+    closest_vertex = cds@principal_graph_aux[[reduction_method]]$pr_graph_cell_proj_closest_vertex
     root_pr_nodes = closest_vertex[valid_root_cells,]
   }else{
-    if (length(intersect(root_pr_nodes, igraph::V(principal_graph(cds)[[reduced_dimension]])$name)) == 0){
+    if (length(intersect(root_pr_nodes, igraph::V(principal_graph(cds)[[reduction_method]])$name)) == 0){
       stop("Error: no such principal graph node")
     }
   }
@@ -87,9 +87,9 @@ order_cells <- function(cds,
   }
 
 
-  cds@principal_graph_aux[[reduced_dimension]]$root_pr_nodes <- root_pr_nodes
+  cds@principal_graph_aux[[reduction_method]]$root_pr_nodes <- root_pr_nodes
 
-  cc_ordering <- extract_general_graph_ordering(cds, root_pr_nodes, orthogonal_proj_tip, verbose, reduced_dimension)
+  cc_ordering <- extract_general_graph_ordering(cds, root_pr_nodes, orthogonal_proj_tip, verbose, reduction_method)
   colData(cds)$Pseudotime = cc_ordering[row.names(colData(cds)), ]$pseudo_time
   if(reverse) {
     finite_cells <- is.finite(colData(cds)$Pseudotime)
@@ -99,11 +99,11 @@ order_cells <- function(cds,
   cds
 }
 
-extract_general_graph_ordering <- function(cds, root_cell, orthogonal_proj_tip = FALSE, verbose=T, reduced_dimension)
+extract_general_graph_ordering <- function(cds, root_cell, orthogonal_proj_tip = FALSE, verbose=T, reduction_method)
 {
-  Z <- t(reducedDims(cds)[[reduced_dimension]])
-  Y <- cds@principal_graph_aux[[reduced_dimension]]$dp_mst
-  pr_graph <- principal_graph(cds)[[reduced_dimension]]
+  Z <- t(reducedDims(cds)[[reduction_method]])
+  Y <- cds@principal_graph_aux[[reduction_method]]$dp_mst
+  pr_graph <- principal_graph(cds)[[reduction_method]]
 
   res <- list(subtree = pr_graph, root = root_cell)
 
@@ -121,7 +121,7 @@ extract_general_graph_ordering <- function(cds, root_cell, orthogonal_proj_tip =
   closest_vertex <- findNearestVertex(Y[, root_cell, drop = F], Z)
   closest_vertex_id <- colnames(cds)[closest_vertex]
 
-  cell_wise_graph <- cds@principal_graph_aux[[reduced_dimension]]$pr_graph_cell_proj_tree
+  cell_wise_graph <- cds@principal_graph_aux[[reduction_method]]$pr_graph_cell_proj_tree
   cell_wise_distances <- igraph::distances(cell_wise_graph, v = closest_vertex_id)
 
   if (length(closest_vertex_id) > 1){
@@ -250,6 +250,88 @@ connectTips <- function(pd,
   close(pb4)
 
   list(stree = igraph::get.adjacency(mst_g), Y = reducedDimK_df, G = G)
+}
+
+
+#' Select the roots of the principal graph
+#' @param cds CellDataSet where roots will be selected from
+#' @param x The first dimension to plot
+#' @param y The number of dimension to plot
+#' @param num_roots Number of roots for the trajectory
+#' @param pch Size of the principal graph node
+#' @param ... Extra arguments to pass to function
+select_trajectory_roots <- function(cds, x=1, y=2, num_roots = NULL, pch = 19, reduction_method, ...)
+{
+  #TODO: need to validate cds as ready for this plot (need mst, pseudotime, etc)
+  lib_info_with_pseudo <- pData(cds)
+
+  reduced_dim_coords <- reducedDims(cds)[[reduction_method]]
+
+  ica_space_df <- as.data.frame(reduced_dim_coords)
+  use_3d <- ncol(ica_space_df) >= 3
+  if (use_3d){
+    colnames(ica_space_df) = c("prin_graph_dim_1", "prin_graph_dim_2", "prin_graph_dim_3")
+  }
+  else{
+    colnames(ica_space_df) = c("prin_graph_dim_1", "prin_graph_dim_2")
+  }
+
+  ica_space_df$sample_name <- row.names(ica_space_df)
+  ica_space_df$sample_state <- row.names(ica_space_df)
+
+  dp_mst <- principal_graph(cds)[[reduction_method]]
+
+  if (is.null(dp_mst)){
+    stop("You must first call orderCells() before using this function")
+  }
+
+  if (use_3d){
+    edge_df <- dp_mst %>%
+      igraph::as_data_frame() %>%
+      select_(source = "from", target = "to") %>%
+      left_join(ica_space_df %>% dplyr::select_(source="sample_name", source_prin_graph_dim_1="prin_graph_dim_1", source_prin_graph_dim_2="prin_graph_dim_2", source_prin_graph_dim_3="prin_graph_dim_3"), by = "source") %>%
+      left_join(ica_space_df %>% dplyr::select_(target="sample_name", target_prin_graph_dim_1="prin_graph_dim_1", target_prin_graph_dim_2="prin_graph_dim_2", target_prin_graph_dim_3="prin_graph_dim_3"), by = "target")
+  }else{
+    edge_df <- dp_mst %>%
+      igraph::as_data_frame() %>%
+      dplyr::select_(source = "from", target = "to") %>%
+      left_join(ica_space_df %>% dplyr::select_(source="sample_name", source_prin_graph_dim_1="prin_graph_dim_1", source_prin_graph_dim_2="prin_graph_dim_2"), by = "source") %>%
+      left_join(ica_space_df %>% dplyr::select_(target="sample_name", target_prin_graph_dim_1="prin_graph_dim_1", target_prin_graph_dim_2="prin_graph_dim_2"), by = "target")
+  }
+
+  if (is.null(num_roots)){
+    num_roots = nrow(ica_space_df)
+  }
+  #xy <- xy.coords(x, y); x <- xy$x; y <- xy$y
+  sel <- rep(FALSE, nrow(ica_space_df))
+
+  if (use_3d){
+    open3d(windowRect=c(0,0,1024,1024))
+    segments3d(matrix(as.matrix(t(edge_df[,c(3,4,5,6,7,8)])), ncol=3, byrow=T), lwd=2,
+               col="black",
+               line_antialias=TRUE)
+    points3d(Matrix::t(reduced_dim_coords[1:3,]), col="black")
+    while(sum(sel) < num_roots) {
+      ans <- identify3d(Matrix::t(reduced_dim_coords[1:3,!sel]), labels = which(!sel), n = 1, buttons = c("right", "middle"), ...)
+      if(!length(ans)) break
+      ans <- which(!sel)[ans]
+      #points3d(Matrix::t(reduced_dim_coords[1:3,ans]), col="red")
+      sel[ans] <- TRUE
+    }
+  }else{
+    plot(ica_space_df$prin_graph_dim_1[!sel], ica_space_df$prin_graph_dim_2[!sel], xlab="Component 1", ylab="Component 2");
+    segments(edge_df$source_prin_graph_dim_1, edge_df$source_prin_graph_dim_2, edge_df$target_prin_graph_dim_1, edge_df$target_prin_graph_dim_2)
+
+    while(sum(sel) < num_roots) {
+      ans <- identify(ica_space_df$prin_graph_dim_1[!sel], ica_space_df$prin_graph_dim_2[!sel], labels = which(!sel), n = 1, ...)
+      if(!length(ans)) break
+      ans <- which(!sel)[ans]
+      points(ica_space_df$prin_graph_dim_1[ans], ica_space_df$prin_graph_dim_2[ans], pch = pch)
+      sel[ans] <- TRUE
+    }
+  }
+  ## return indices of selected points
+  as.character(ica_space_df$sample_name[which(sel)])
 }
 
 

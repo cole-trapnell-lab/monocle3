@@ -42,7 +42,7 @@ monocle_theme_opts <- function()
 plot_cell_trajectory <- function(cds,
                                  x=1,
                                  y=2,
-                                 reduced_dimension = "UMAP",
+                                 reduction_method = "UMAP",
                                  color_by="Pseudotime",
                                  show_backbone=TRUE,
                                  backbone_color="black",
@@ -60,11 +60,11 @@ plot_cell_trajectory <- function(cds,
                                  min_expr=0.1,
                                  ...) {
 
-  assertthat::assert_that(!is.null(reducedDims(cds)[[reduced_dimension]]),
+  assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
                           msg = paste("No dimensionality reduction for",
-                                      reduced_dimension, "calculated.",
+                                      reduction_method, "calculated.",
                                       "Please run reduce_dimensions with",
-                                      "reduction_method =", reduced_dimension,
+                                      "reduction_method =", reduction_method,
                                       "before running plot_cell_trajectory"))
   #requireNamespace("igraph")
   gene_short_name <- NA
@@ -81,12 +81,12 @@ plot_cell_trajectory <- function(cds,
   #TODO: need to validate cds as ready for this plot (need mst, pseudotime, etc)
   lib_info_with_pseudo <- colData(cds)
 
-  ica_space_df <- t(cds@principal_graph_aux[[reduced_dimension]]$dp_mst) %>%
+  ica_space_df <- t(cds@principal_graph_aux[[reduction_method]]$dp_mst) %>%
     as.data.frame() %>%
     dplyr::select_(prin_graph_dim_1 = x, prin_graph_dim_2 = y) %>%
     dplyr::mutate(sample_name = rownames(.), sample_state = rownames(.))
 
-  dp_mst <- cds@principal_graph[[reduced_dimension]]
+  dp_mst <- cds@principal_graph[[reduction_method]]
 
   if (is.null(dp_mst)){
     stop("You must first call order_cells() before using this function")
@@ -175,7 +175,7 @@ plot_cell_trajectory <- function(cds,
   }
 
   if (show_branch_points){
-    mst_branch_nodes <- cds@principal_graph_aux[[reduced_dimension]]$branch_points
+    mst_branch_nodes <- cds@principal_graph_aux[[reduction_method]]$branch_points
     branch_point_df <- ica_space_df %>%
       dplyr::slice(match(mst_branch_nodes, sample_name)) %>%
       dplyr::mutate(branch_point_idx = seq_len(n()))
@@ -240,7 +240,7 @@ plot_cell_trajectory <- function(cds,
 #' }
 #'
 plot_3d_cell_trajectory <- function(cds,
-                                    reduced_dimension = "UMAP",
+                                    reduction_method = "UMAP",
                                     downsample_size = NULL,
                                     dim=c(1, 2, 3),
                                     color_by=NULL,
@@ -286,7 +286,7 @@ plot_3d_cell_trajectory <- function(cds,
   lib_info_with_pseudo <- colData(cds)[cell_sampled, ]
   sample_state <- colData(cds)$State[cell_sampled]
 
-  reduced_dim_coords <- cds@principal_graph_aux[[reduced_dimension]]$dp_mst
+  reduced_dim_coords <- cds@principal_graph_aux[[reduction_method]]$dp_mst
 
   if(length(dim) != 3)
     dim <- 1:3
@@ -298,7 +298,7 @@ plot_3d_cell_trajectory <- function(cds,
   ica_space_df$sample_state <- row.names(ica_space_df)
   #ica_space_with_state_df <- merge(ica_space_df, lib_info_with_pseudo, by.x="sample_name", by.y="row.names")
   #print(ica_space_with_state_df)
-  dp_mst <- principal_graph(cds)[[reduced_dimension]]
+  dp_mst <- principal_graph(cds)[[reduction_method]]
 
   if (is.null(dp_mst)){
     stop("You must first call orderCells() before using this function")
@@ -312,7 +312,7 @@ plot_3d_cell_trajectory <- function(cds,
   edge_df <- merge(edge_df, ica_space_df[,c("sample_name", "prin_graph_dim_1", "prin_graph_dim_2", "prin_graph_dim_3")], by.x="target", by.y="sample_name", all=F)
   edge_df <- plyr::rename(edge_df, c("prin_graph_dim_1"="target_prin_graph_dim_1", "prin_graph_dim_2"="target_prin_graph_dim_2", "prin_graph_dim_3"="target_prin_graph_dim_3"))
 
-  S_matrix <- reducedDims(cds)[[reduced_dimension]][cell_sampled,]
+  S_matrix <- reducedDims(cds)[[reduction_method]][cell_sampled,]
   data_df <- data.frame(S_matrix[,dim])
   #data_df <- cbind(data_df, sample_state)
   colnames(data_df) <- c("data_dim_1", "data_dim_2", "data_dim_3")
@@ -443,7 +443,7 @@ plot_3d_cell_trajectory <- function(cds,
   }
   branch_point_df <- NULL
   if (show_branch_points){
-    mst_branch_nodes <- cds@principal_graph_aux[[reduced_dimension]]$branch_points
+    mst_branch_nodes <- cds@principal_graph_aux[[reduction_method]]$branch_points
     branch_point_df_source <- edge_df %>%
       dplyr::slice(match(mst_branch_nodes, source)) %>%
       dplyr::mutate(branch_point_idx = which(mst_branch_nodes == source))
@@ -592,7 +592,7 @@ plot_3d_cell_trajectory <- function(cds,
 plot_cell_clusters <- function(cds,
                                x=1,
                                y=2,
-                               reduced_dimension = "UMAP",
+                               reduction_method = "UMAP",
                                color_by="Cluster",
                                expression_family,
                                markers=NULL,
@@ -614,7 +614,7 @@ plot_cell_clusters <- function(cds,
   if (length(colData(cds)$Cluster) == 0){
     stop("Error: Clustering is not performed yet. Please call clusterCells() before calling this function.")
   }
-  low_dim_coords <- reducedDims(cds)[[reduced_dimension]]
+  low_dim_coords <- reducedDims(cds)[[reduction_method]]
 
   gene_short_name <- NULL
   sample_name <- NULL
