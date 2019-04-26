@@ -334,6 +334,48 @@ select_trajectory_roots <- function(cds, x=1, y=2, num_roots = NULL, pch = 19, r
   as.character(ica_space_df$sample_name[which(sel)])
 }
 
+#' Return the names of principal graph nodes that are branches (excluding roots)
+#' @internal
+branch_nodes <- function(cds,reduction_method="UMAP"){
+  g = principal_graph(cds)[[reduction_method]]
+  branch_points <- which(igraph::degree(g) > 2)
+  branch_points = branch_points[branch_points %in% root_nodes(cds) == FALSE]
+  return(branch_points)
+}
+
+#' Return the names of principal graph nodes that are leaves (excluding roots)
+#' @internal
+leaf_nodes <- function(cds,reduction_method="UMAP"){
+  g = principal_graph(cds)[[reduction_method]]
+  leaves <- which(igraph::degree(g) == 1)
+  leaves = leaves[leaves %in% root_nodes(cds) == FALSE]
+  return(leaves)
+}
+
+#' Return the names of principal graph nodes that are roots
+#' @internal
+root_nodes <- function(cds, reduction_method="UMAP"){
+  g = principal_graph(cds)[[reduction_method]]
+  root_pr_nodes = which(names(igraph::V(g)) %in% cds@principal_graph_aux[[reduction_method]]$root_pr_nodes)
+  names(root_pr_nodes) = cds@principal_graph_aux[[reduction_method]]$root_pr_nodes
+  return(root_pr_nodes)
+}
+
+#' traverse from one cell to another cell
+#'
+#' @param g the tree graph learned from monocle 2 during trajectory reconstruction
+#' @param starting_cell the initial vertex for traversing on the graph
+#' @param end_cells the terminal vertex for traversing on the graph
+#' @return a list of shortest path from the initial cell and terminal cell, geodestic distance between initial cell and terminal cells and branch point passes through the shortest path
+#' @importFrom igraph shortest.paths shortest_paths degree
+#' @keywords internal
+path_between_nodes <- function(g, start_pr_nodes, end_pr_nodes){
+  distance <- shortest.paths(g, v=start_pr_nodes, to=end_pr_nodes)
+  branchPoints <- which(degree(g) == 3)
+  path <- shortest_paths(g, from = start_pr_nodes, end_pr_nodes)
+
+  return(list(shortest_path = path$vpath, distance = distance, branch_points = intersect(branchPoints, unlist(path$vpath))))
+}
 
 
 
