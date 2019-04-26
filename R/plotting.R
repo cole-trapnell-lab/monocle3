@@ -1018,7 +1018,7 @@ plot_genes_violin <- function (cds_subset,
     monocle_theme_opts()
 
   cds_exprs[,grouping] <- as.factor(cds_exprs[,grouping])
-  q <- q + geom_violin(aes_string(fill = grouping), scale="width")
+  q <- q + geom_violin(aes_string(fill = grouping), scale="width") + guides(fill=FALSE)
 
   q <- q + facet_wrap(~feature_label, nrow = nrow,
                       ncol = ncol, scales = "free_y")
@@ -1029,7 +1029,6 @@ plot_genes_violin <- function (cds_subset,
   q <- q + ylab("Expression") + xlab(grouping)
 
   if (log_scale){
-
     q <- q + scale_y_log10()
   }
   q
