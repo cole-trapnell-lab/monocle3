@@ -15,7 +15,8 @@ RoxygenNote: 6.1.1
 LinkingTo: 
     Rcpp
 Depends:
-    Biobase
+    Biobase, 
+    SingleCellExperiment
 Imports:
     assertthat,
     broom,
