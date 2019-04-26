@@ -3,7 +3,7 @@ rm(list = ls())  # Clear the environment
 library(monocle3) # Load Monocle
 library(tidymodels)
 
-#theme_set(theme_bw(base_size=12))
+theme_set(theme_gray(base_size = 18))
 
 # color_metadata = read.delim("/Users/coletrap/dropbox_lab/Analysis/worm-lineage/animations/ciliated_neurons_3D_umap_metadata.txt")
 # color_metadata = color_metadata %>% dplyr::select(plot.cell.type, color.for.movie) %>% distinct()
@@ -55,7 +55,7 @@ cds = order_cells(cds, root_pr_nodes=get_earliest_principal_node(cds))
 
 ## Step 5: Visualize the trajectory
 
-#png("worm-emb-ciliated-clusters.png", width=1600, height=1600)
+#png("worm-emb-ciliated-clusters.png", width=900, height=800)
 plot_cell_clusters(cds, color_by = "Cluster", show_group_id=TRUE)+ 
     ggplot2::theme(legend.position="none")
 #dev.off()
@@ -88,10 +88,11 @@ ciliated_genes = c("che-1",
                    "dmd-6",
                    "ceh-36",
                    "ham-1")
+cds_subset = cds[rowData(cds)$gene_short_name %in% ciliated_genes,]
 
 plot_cell_trajectory(cds, markers=ciliated_genes)
 
-plot_percent_cells_positive(cds[rowData(cds)$gene_short_name %in% ciliated_genes,], grouping="cell.type") + 
+plot_percent_cells_positive(cds_subset, grouping="cell.type") + 
     guides(fill=FALSE) + 
     theme(axis.text.x=element_text(angle=45, hjust=1))
 
@@ -99,11 +100,11 @@ plot_percent_cells_positive(cds[rowData(cds)$gene_short_name %in% ciliated_genes
 #     guides(fill=FALSE) + 
 #     theme(axis.text.x=element_text(angle=45, hjust=1))
 
-gene_fits = fit_models(cds[rowData(cds)$gene_short_name %in% ciliated_genes,], model_formula_str = "~embryo.time")
+### Basic differential expression:
+
+gene_fits = fit_models(cds_subset, model_formula_str = "~embryo.time")
 fit_coefs = coefficient_table(gene_fits)
-#emb_time_terms = fit_coefs %>% filter(term == "embryo.time")
-emb_terms = fit_coefs %>% group_by(term) %>% mutate(q_value = p.adjust(p_value))
-write.csv(emb_terms, "emb_terms.csv")
+write.csv(fit_coefs, "emb_terms.csv")
 
 emb_time_terms = emb_terms %>% filter(term == "embryo.time")
 write.csv(emb_time_terms, "emb_time_terms.csv")
@@ -111,11 +112,35 @@ write.csv(emb_time_terms, "emb_time_terms.csv")
 sig_emb_time_terms = emb_time_terms %>% filter (q_value < 0.05) %>% select(gene_short_name, term, q_value, estimate)
 write.csv(sig_emb_time_terms, "emb_time_sig_terms.csv")
 
+plot_genes_violin(cds_subset, grouping="embryo.time.bin") + 
+    theme(axis.text.x=element_text(angle=45, hjust=1))
+
+### Subtracting unwanted effects:
+
+gene_fits = fit_models(cds_subset, model_formula_str = "~embryo.time + batch")
+fit_coefs = coefficient_table(gene_fits)
+emb_terms = fit_coefs %>% filter(term != "(Intercept)")
+write.csv(emb_terms, "emb_plus_batch_terms.csv")
+
+### Evaluating fit
+
+fit_evals = evaluate_fits(gene_fits)
+write.csv(fit_evals, "emb_time_evals.csv")
+
 gene_fits = fit_models(cds[rowData(cds)$gene_short_name %in% ciliated_genes,], model_formula_str = "~embryo.time + batch")
 fit_coefs = coefficient_table(gene_fits)
 emb_time_terms = fit_coefs %>% filter(term == "embryo.time")
 emb_time_terms = emb_time_terms %>% mutate(q_value = p.adjust(p_value))
 emb_time_terms %>% filter (q_value < 0.05) %>% select(gene_short_name, term, q_value, estimate)
+
+### Comparing models
+
+time_models = fit_models(cds_subset, model_formula_str = "~embryo.time", expression_family="negbinomial")
+time_batch_models = fit_models(cds_subset, model_formula_str = "~embryo.time + batch", expression_family="negbinomial")
+
+emb_model_lr_test = compare_models(time_batch_models, time_models)
+write.csv(emb_model_lr_test, "emb_model_lr_test.csv")
+
 
 cds_subset = cds[rowData(cds)$gene_short_name %in% ciliated_genes,
                  is.finite(colData(cds)$Pseudotime)]
