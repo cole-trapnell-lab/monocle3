@@ -675,29 +675,126 @@ emb_time_terms %>% filter (q_value < 0.05) %>%
 
 <p>We can see that five of the six genes significantly vary as a function of time. </p>
 
-<strong>XXX COLE MARKER XXX</strong>
-
-<p> Monocle also provides some easy ways to plot the expression of a small set of genes grouped by the factors you use during differential analysis.  This helps you visualize the differences revealed by the tests above.  One type of plot is a "jitter" plot. </p>
-
+<p> Monocle also provides some easy ways to plot the expression of a small set of genes grouped by the factors you use during differential analysis.  This helps you visualize the differences revealed by the tests above.  One type of plot is a "violin" plot. </p>
 
 {% highlight R %}
-MYOG_ID1 <- HSMM_myo[row.names(subset(fData(HSMM_myo),
-    gene_short_name %in% c("MYOG", "CCNB2"))),]
-plot_genes_jitter(MYOG_ID1, grouping = "Media", ncol= 2)
+plot_genes_violin(cds_subset, grouping="embryo.time.bin") + 
+    theme(axis.text.x=element_text(angle=45, hjust=1))
 {% endhighlight %}
 
-<div class= "text-center">
-<img src= "{{site.baseurl}}/images/vignette/plot_myog_jitter-1.png" width= 500>
+<p><strong>XXX PUT IN EXAMPLE OF PERCENT POSITIVE PLOT? XXX</strong></p>
+
+<h3>Controlling for batch effects and other factors</h3>
+{% highlight R %}
+gene_fits = fit_models(cds_subset, model_formula_str = "~embryo.time + batch")
+fit_coefs = coefficient_table(gene_fits)
+fit_coefs %>% filter(term != "(Intercept)") %>%
+  select(gene_short_name, term, q_value, estimate)
+{% endhighlight %}
+
+<div style="height: 250px; width:750px; overflow: auto">
+  <table class= "table">
+    <thead>
+    <tr>
+    <th>gene_short_name</th>
+    <th>term</th>
+    <th>q_value</th>
+    <th>estimate</th>
+    </tr>
+    </thead>
+    <tbody>
+  {% for term in site.data.de_tests.emb_plus_batch_terms %}
+    <tr>
+    <td>{{ term.gene_short_name }}</td>
+    <td>{{ term.term }}</td>
+    <td>{{ term.q_value }}</td>
+    <td>{{ term.estimate }}</td>
+    </tr>
+    <tr>
+  {% endfor %}
+</table>
 </div>
 
-<p> Note that we can control how to layout the genes in the plot by specifying
-the number of rows and columns.  See the man page on
-<code><a href = "https://rdrr.io/bioc/monocle/man/plot_genes_jitter.html">plot_genes_jitter</a></code> for more details on controlling its layout. Most
-if not all of Monocle's plotting routines return a plot object from the
-<em>ggplot2</em> package.  This package uses a grammar of graphics to control
-various aspects of a plot, and makes it easy to customize how your data is
-presented.  See the <em>ggplot2</em> book <a href =
-"http://www.springer.com/us/book/9780387981413"> [5] </a> for more details. </p>
+<h3>Evaluating models of gene expression</h3>
+
+<p>How good are these models at "explaining" gene expression? We can evaluate the fits of each model using the <code>evaluate_fits()</code> function:</p>
+
+{% highlight R %}
+evaluate_fits(gene_fits)
+{% endhighlight %}
+
+<div style="width:750px; overflow: auto">
+  <table class= "table">
+    <thead>
+    <tr>
+    <th>id</th>
+    <th>gene_short_name</th>
+    <th>num_cells_expressed</th>
+    <th>status</th>
+    <th>null_deviance</th>
+    <th>df.null</th>
+    <th>logLik</th>
+    <th>AIC</th>
+    <th>BIC</th>
+    <th>deviance</th>
+    <th>df_residual</th>
+    </tr>
+    </thead>
+    <tbody>
+  {% for gene in site.data.de_tests.emb_time_evals %}
+    <tr>
+    <td>{{ gene.id }}</td>
+    <td>{{ gene.gene_short_name }}</td>
+    <td>{{ gene.num_cells_expressed }}</td>
+    <td>{{ gene.status }}</td>
+    <td>{{ gene.null_deviance }}</td>
+    <td>{{ gene.df_null }}</td>
+    <td>{{ gene.logLik }}</td>
+    <td>{{ gene.AIC }}</td>
+    <td>{{ gene.BIC }}</td>
+    <td>{{ gene.deviance }}</td>
+    <td>{{ gene.df_residual }}</td>
+    </tr>
+    <tr>
+  {% endfor %}
+    </tbody>
+</table> 
+</div>
+
+<p>Should we include the batch term in our model of gene expression or not? Monocle provides a function <code>compare_models()</code> that can help you decide. Compare models takes two models and returns the result of a <a href="https://en.wikipedia.org/wiki/Likelihood-ratio_test">likelihood ratio test</a> between them. Any time you add terms to a model, it will improve the fit. But we should always to use the simplest model we can to explain our data. The likelihood ratio test helps us decide whether the improvement in fit is large enough to justify the complexity our extra terms introduce. You run <code>compare_models()</code> like this:</p>
+  
+{% highlight R %}
+time_batch_models = fit_models(cds_subset, 
+                               model_formula_str = "~embryo.time + batch", 
+                               expression_family="negbinomial")
+time_models = fit_models(cds_subset, 
+                        model_formula_str = "~embryo.time", 
+                        expression_family="negbinomial")
+compare_models(time_batch_models, time_models) %>% select(gene_short_name, q_value)
+{% endhighlight %}
+
+<p>The first of the two models is called the <em>full</em> model. This model is essentially a way of predicting the expression value of each gene in a given cell knowing both what time it was collected and which batch of cells it came from. The second model, called the <em>reduced</em> model, does the same thing, but it only knows about the time each cell was collected.  Because the full model has more information about each cell, it will do a better job of predicting the expression of the gene in each cell. The question Monocle must answer for each gene is <em>how much better</em> the full model's prediction is than the reduced model's. The greater the improvement that comes from knowing the <em>batch</em> of each cell, the more significant the result of the likelihood ratio test.</p>
+
+<p>As we can see, all of the genes' likelihood ratio tests are significant, indicating that there are substantial batch effects in the data. We are therefore justified in adding the <code>batch</code> term to our model.</p>
+
+<div style="height: 250px; width:750px; overflow: auto">
+  <table class= "table">
+    <thead>
+    <tr>
+    <th>gene_short_name</th>
+    <th>p_value</th>
+    </tr>
+    </thead>
+    <tbody>
+  {% for gene in site.data.de_tests.emb_model_lr_test %}
+    <tr>
+    <td>{{ gene.gene_short_name }}</td>
+    <td>{{ gene.q_value }}</td>
+    </tr>
+    <tr>
+  {% endfor %}
+</table>
+</div>
 
 <!-- <h3 data-toc-text= "Choosing a distribution for your data">Choosing a distribution for your data <span class= "label label-danger">Required</span></h3>
 
@@ -764,10 +861,7 @@ This often leads to much more accurate results than using <code>tobit()</code>. 
 </div>
 </p> -->
 
-<h3>Finding Genes that Distinguish Cell Type or State </h3>
-
-
-<p> During a dynamic biological process such as differentiation, cells might assume distinct intermediate or final states.  Recall that earlier we distinguished myoblasts from contaminating fibroblasts on the basis of several key markers. Let's look at several other genes that should distinguish between fibroblasts and myoblasts. </p>
+<h3>Finding Genes that Distinguish Cell Types </h3>
 
 {%highlight R%}
 to_be_tested <- row.names(subset(fData(HSMM),
@@ -775,28 +869,11 @@ to_be_tested <- row.names(subset(fData(HSMM),
 cds_subset <- HSMM[to_be_tested,]
 {%endhighlight%}
 
-
-<p>To test the effects of <code>CellType</code> on gene expression, we simply
-call <code><a href = "https://rdrr.io/bioc/monocle/man/differentialGeneTest.html">differentialGeneTest</a></code> on the genes we've selected.
-
 <p>However, we have to specify a <em>model formula</em> in the call to tell
 Monocle that we care about genes with expression levels that depends on
 <em>CellType</em>. Monocle's differential expression analysis works essentially
 by fitting two models to the expression values for each gene, working through
-each gene independently. The first of the two models is called the <em>full</em>
-model. This model is essentially a way of predicting the expression value of
-each gene in a given cell knowing only whether that cell is a fibroblast or a
-myoblast. The second model, called the <em>reduced</em> model, does the same
-thing, but it doesn't know the <em>CellType</em> for each cell. It has to come
-up with a reasonable prediction of the expression value for the gene that will
-be used for <em>all</em> the cells. Because the full model has more information
-about each cell, it will do a better job of predicting the expression of the
-gene in each cell. The question Monocle must answer for each gene is <em>how
-much better</em> the full model's prediction is than the reduced model's. The
-greater the improvement that comes from knowing the <em>CellType</em> of each
-cell, the more significant the differential expression result. This is a common
-strategy in differential analysis, and we leave a detailed statistical
-exposition of such methods to others. </p>
+each gene independently. 
 
 <p> To set up the test based on <em>CellType</em>, we simply call <code><a href = "https://rdrr.io/bioc/monocle/man/differentialGeneTest.html">differentialGeneTest</a></code> with a string specifying <em>fullModelFormulaStr</em>.  We don't have to specify the reduced model in this case, because the default of <em>~1</em> is what we want here. </p>
 
@@ -833,17 +910,6 @@ could test for genes that change as a function of <em>Hours</em> to find
 time-varying genes, or <em>Media</em> to identify genes that are responsive to
 the serum switch. In general, model formulae can contain terms in the pData
 table of the <a href = "https://rdrr.io/bioc/monocle/man/cell_data_set.html">cell_data_set</a>. </p>
-
-The <code><a href = "https://rdrr.io/bioc/monocle/man/differentialGeneTest.html">differentialGeneTest</a></code> function is actually quite simple "under the hood".  The call above is equivalent to:
-{% highlight R %}
-full_model_fits <-
-fitModel(cds_subset,  modelFormulaStr = "~CellType")
-reduced_model_fits <- fitModel(cds_subset, modelFormulaStr = "~1")
-diff_test_res <- compareModels(full_model_fits, reduced_model_fits)
-diff_test_res
-{% endhighlight %}
-
-<p> Occassionally, as we'll see later, it's useful to be able to call <code><a href = "https://rdrr.io/bioc/monocle/man/fitModel.html">fitModel</a></code> directly. </p>
 
 The differential analysis procedure in Monocle is extremely flexible: the model formulae you use in your tests can include any term that exists as a column in the <code>pData</code> table, including those columns that are added by Monocle in other analysis steps. For example, if you use <code><a href = "https://rdrr.io/bioc/monocle/man/clusterCells.html">clusterCells</a></code>, you can test for genes that differ between clusters by using <em>Cluster</em> as your model formula.
 
