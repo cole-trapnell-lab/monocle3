@@ -341,8 +341,8 @@ coefficient_table <- function(model_tbl) {
 #' Compares goodness of fit for two ways of fitting a set of genes' expression
 #' @export
 compare_models <- function(model_tbl_full, model_tbl_reduced){
-  model_x_eval = evaluate_fits(model_tbl_x)
-  model_y_eval = evaluate_fits(model_tbl_y)
+  model_x_eval = evaluate_fits(model_tbl_full)
+  model_y_eval = evaluate_fits(model_tbl_reduced)
   joined_fits = dplyr::full_join(model_x_eval, model_y_eval, by=c("id", "gene_short_name", "num_cells_expressed"))
 
   joined_fits = joined_fits %>% dplyr::mutate(

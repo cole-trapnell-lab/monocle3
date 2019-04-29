@@ -53,6 +53,7 @@ Imports:
     spdep,
     speedglm,
     stringr,
+    uwot,
     tibble,
     tidyr,
     viridis

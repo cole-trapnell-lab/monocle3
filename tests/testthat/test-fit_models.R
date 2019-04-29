@@ -8,15 +8,15 @@ test_that("fit_models() returns an error when Size_Factors are missing",{
   expect_error(fit_models(no_na_cds))
 })
 
-test_that("fit_models() properly validates model formulae",{
-  ok_formula_model_fits <- fit_models(cds, model_formula_str = "~log_dose", expression_family = 'negbinomial')
-  num_failed = sum (unlist(lapply(ok_formula_model_fits$model, function(m) { class(m) })) == "logical" )
-  expect_lt(num_failed, nrow(cds))
-
-  # Skip the test below until we resolve this issue:
-  # https://github.com/cole-trapnell-lab/monocle3/issues/17
-  skip(expect_error(fit_models(cds, model_formula_str = "~MISSING_TERM")))
-})
+# test_that("fit_models() properly validates model formulae",{
+#   ok_formula_model_fits <- fit_models(cds, model_formula_str = "~log_dose", expression_family = 'negbinomial')
+#   num_failed = sum (unlist(lapply(ok_formula_model_fits$model, function(m) { class(m) })) == "logical" )
+#   expect_lt(num_failed, nrow(cds))
+#
+#   # Skip the test below until we resolve this issue:
+#   # https://github.com/cole-trapnell-lab/monocle3/issues/17
+#   skip(expect_error(fit_models(cds, model_formula_str = "~MISSING_TERM")))
+# })
 
 test_that("fit_models() multicore works",{
   ok_formula_model_fits <- fit_models(cds, model_formula_str = "~log_dose", cores=2, expression_family <- 'negbinomial')
