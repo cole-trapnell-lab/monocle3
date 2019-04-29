@@ -328,19 +328,65 @@ select_trajectory_roots <- function(cds, x=1, y=2,
   sel <- rep(FALSE, nrow(ica_space_df))
 
   if (use_3d){
-    open3d(windowRect=c(0,0,1024,1024))
-    segments3d(matrix(as.matrix(t(edge_df[,c(3,4,5,6,7,8)])), ncol=3, byrow=T),
-               lwd=2, col="black", line_antialias=TRUE)
-    points3d(Matrix::t(reduced_dim_coords[1:3,]), col="black")
-    while(sum(sel) < num_roots) {
-      ans <- identify3d(Matrix::t(reduced_dim_coords[1:3,!sel]),
-                        labels = which(!sel), n = 1,
-                        buttons = c("right", "middle"), ...)
-      if(!length(ans)) break
-      ans <- which(!sel)[ans]
-      #points3d(Matrix::t(reduced_dim_coords[1:3,ans]), col="red")
-      sel[ans] <- TRUE
+    ui <- fluidPage(
+      titlePanel("Choose your root nodes"),
+
+      # Sidebar layout with input and output definitions ----
+      sidebarLayout(
+
+        # Sidebar panel for inputs ----
+        sidebarPanel(
+          # clear button
+          actionButton("reset", "Clear"),
+          # done button
+          actionButton("done", "Done")
+        ),
+
+        # Main panel for displaying outputs ----
+        mainPanel(
+          plotlyOutput("plot1")
+        )
+      )
+    )
+
+    server <- function(input, output) {
+
+      vals <- reactiveValues(
+        keeprows = rep(TRUE, nrow(ica_space_df))
+      )
+
+      output$plot1 <- renderPlotly({
+        ica_space_df$keep <- FALSE
+        ica_space_df[ vals$keeprows,]$keep <- TRUE
+
+        plot_ly(x = ica_space_df$prin_graph_dim_1,
+                y = ica_space_df$prin_graph_dim_2,
+                z = ica_space_df$prin_graph_dim_3,
+                colors = c('blue', 'black'), key = ica_space_df$sample_name,
+                color = ica_space_df$keep, size = 1,
+                type = "scatter3d", mode="markers") %>%
+          layout(showlegend = FALSE)
+      })
+      # Toggle points that are clicked
+      observeEvent(event_data("plotly_click"), {
+        d <- event_data("plotly_click")
+        print(str(d))
+        new_keep <- rep(FALSE, nrow(ica_space_df))
+        new_keep[which(ica_space_df$sample_name == d$key)] <- TRUE
+        vals$keeprows <- xor(vals$keeprows, new_keep)
+      })
+
+      # Reset all points
+      observeEvent(input$reset, {
+        vals$keeprows <- rep(TRUE, nrow(ica_space_df))
+      })
+
+      observeEvent(input$done, {
+        stopApp(vals$keeprows)
+      })
+
     }
+    sel <- runApp(shinyApp(ui, server))
   } else {
     ui <- fluidPage(
       titlePanel("Choose your root nodes"),
@@ -414,7 +460,7 @@ select_trajectory_roots <- function(cds, x=1, y=2,
     sel <- runApp(shinyApp(ui, server))
   }
   ## return indices of selected points
-  as.character(ica_space_df$sample_name[which(sel)])
+  as.character(ica_space_df$sample_name[which(!sel)])
 }
 
 #' Return the names of principal graph nodes that are branches (excluding roots)
