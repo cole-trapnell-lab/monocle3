@@ -36,10 +36,10 @@ test_that("reduce_dimension runs", {
                2.4207391, tolerance = 1e-4)
 
   cds <- preprocess_cds(cds, num_dim = 20, method = "LSI")
-  cds <- reduce_dimension(cds, preprocess_method = "LSI")
+  cds <- reduce_dimension(cds, umap.fast_sgd=FALSE, cores=1, preprocess_method = "LSI")
   expect_equal(nrow(reducedDims(cds)$UMAP), nrow(colData(cds)))
   expect_equal(ncol(reducedDims(cds)$UMAP), 2)
-  expect_equal(as.numeric(reducedDims(cds)$UMAP[1,1]), 1.359459,
+  expect_equal(as.numeric(reducedDims(cds)$UMAP[1,1]), -0.9881196,
                tolerance = 1e-4)
 
   cds <- reduce_dimension(cds, reduction_method = "tSNE", preprocess_method = "LSI")
