@@ -5,9 +5,8 @@
 \title{Plot expression for one or more genes as a violin plot}
 \usage{
 plot_genes_violin(cds_subset, grouping = "State", min_expr = NULL,
-  nrow = NULL, ncol = 1, panel_order = NULL, color_by = NULL,
-  plot_trend = FALSE, label_by_short_name = TRUE, normalize = TRUE,
-  log_scale = TRUE)
+  nrow = NULL, ncol = 1, panel_order = NULL,
+  label_by_short_name = TRUE, normalize = TRUE, log_scale = TRUE)
 }
 \arguments{
 \item{cds_subset}{Subset cell_data_set to be plotted.}
@@ -27,12 +26,6 @@ plotted the genes. If \code{NULL},
 (left-to-right, top-to-bottom). Should be gene_short_name, if
 \code{label_by_short_name = TRUE} or gene ID if
 \code{label_by_short_name = FALSE}.}
-
-\item{color_by}{the cell attribute (e.g. the column of colData(cds)) to be
-used to color each cell.}
-
-\item{plot_trend}{whether to plot a trendline tracking the average
-expression across the horizontal axis.}
 
 \item{label_by_short_name}{label figure panels by gene_short_name (TRUE) or
 feature id (FALSE).}

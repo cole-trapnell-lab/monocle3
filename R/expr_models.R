@@ -110,7 +110,6 @@ clean_model_object = function(model) {
 #' @param verbose Whether to show VGAM errors and warnings. Only valid for cores = 1.
 #' @param ... test
 #' @name fit_model_helper
-#' @importFrom VGAM sm.ns
 #' @keywords internal
 fit_model_helper <- function(x,
                              model_formula_str,

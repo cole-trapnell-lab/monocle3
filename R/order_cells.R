@@ -506,11 +506,10 @@ root_nodes <- function(cds, reduction_method="UMAP"){
 #' @param starting_cell the initial vertex for traversing on the graph
 #' @param end_cells the terminal vertex for traversing on the graph
 #' @return a list of shortest path from the initial cell and terminal cell, geodestic distance between initial cell and terminal cells and branch point passes through the shortest path
-#' @importFrom igraph shortest.paths shortest_paths degree
 #' @keywords internal
 path_between_nodes <- function(g, start_pr_nodes, end_pr_nodes){
   distance <- igraph::shortest.paths(g, v=start_pr_nodes, to=end_pr_nodes)
-  branchPoints <- which(degree(g) == 3)
+  branchPoints <- which(igraph::degree(g) == 3)
   path <- igraph::shortest_paths(g, from = start_pr_nodes, end_pr_nodes)
 
   return(list(shortest_path = path$vpath, distance = distance, branch_points = intersect(branchPoints, unlist(path$vpath))))

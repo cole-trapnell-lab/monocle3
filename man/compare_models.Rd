@@ -4,7 +4,7 @@
 \alias{compare_models}
 \title{Compares goodness of fit for two ways of fitting a set of genes' expression}
 \usage{
-compare_models(model_tbl_x, model_tbl_y)
+compare_models(model_tbl_full, model_tbl_reduced)
 }
 \description{
 Compares goodness of fit for two ways of fitting a set of genes' expression
