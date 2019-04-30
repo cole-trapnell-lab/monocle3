@@ -2,10 +2,12 @@ context("test-reduce_dimension")
 
 cds <- load_a549()
 cds <- estimate_size_factors(cds)
-cds <- preprocess_cds(cds, num_dim = 20)
-
 
 test_that("reduce_dimension runs", {
+  expect_error(cds <- reduce_dimension(cds, umap.fast_sgd=FALSE, cores=1),
+               "Data has not been preprocessed with chosen method: PCA Please run preprocess_cds with method = PCA before running reduce_dimension.")
+  cds <- preprocess_cds(cds, num_dim = 20)
+
   cds <- reduce_dimension(cds, umap.fast_sgd=FALSE, cores=1)
   expect_equal(nrow(reducedDims(cds)$UMAP), nrow(colData(cds)))
   expect_equal(ncol(reducedDims(cds)$UMAP), 2)

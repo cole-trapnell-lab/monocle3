@@ -30,77 +30,87 @@
 #' @param root_pr_nodes The starting principal points. We learn a principal graph that passes through the middle of the data points and use it to represent the developmental process.
 #' @param root_cells The starting cells. Each cell corresponds to a principal point and multiple cells can correspond to the same principal point.
 #' @param reverse Whether to reverse the direction of the trajectory
-#' @param orthogonal_proj_tip Whether to perform orthogonal projection for cells corresponding to the tip principal points. Default to be FALSE
 #' @param verbose Whether to show running information for order_cells
 #'
 #' @return an updated cell_data_set object, in which phenoData contains values for State and Pseudotime for each cell
 #' @export
 order_cells <- function(cds,
-                       root_pr_nodes=NULL,
-                       reduction_method = "UMAP",
-                       root_cells=NULL,
-                       reverse = FALSE,
-                       orthogonal_proj_tip = FALSE,
-                       verbose = FALSE){
+                        reduction_method = "UMAP",
+                        root_pr_nodes=NULL,
+                        root_cells=NULL,
+                        verbose = FALSE){
 
   assertthat::assert_that(is(cds, "cell_data_set"))
-  # if (is.null(cds@dim_reduce_type)){
-  #  stop("Error: dimensionality not yet reduced. Please call reduce_dimension() and learnGraph() (for learning principal graph) before calling this function.")
-  #}
-  #if (is.null(cds@rge_method)){
-  #  stop("Error: principal graph has not learned yet. Please call learnGraph() before calling this function.")
-  #}
-  # reducedDimA, S, and K are not NULL in the cds
-  #if (length(cds@reducedDimS) == 0) {
-  #  stop("Error: dimension reduction didn't prodvide correct results. Please check your reduce_dimension() step and ensure correct dimension reduction are performed before calling this function.")
-  #}
-  #if (length(cds@reducedDimK) == 0) {
-  #  stop("Error: principal graph learning didn't prodvide correct results. Please check your learnGraph() step and ensure correct principal graph learning are performed before calling this function.")
-  #}
-  #if(igraph::vcount(principal_graph(cds)) > 10000) {
-  #  stop("order_cells doesn't support more than 10k centroids (cells)")
-  #}
-  #if (is.null(root_pr_nodes) == FALSE & is.null(root_cells) == FALSE){
-  #  stop("Error: please specify either root_pr_nodes or root_cells, not both")
-  #}
+  assertthat::assert_that(assertthat::are_equal("UMAP", reduction_method),
+                          msg = paste("Currently only 'UMAP' is accepted as a",
+                                      "reduction_method."))
+  assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
+                          msg = paste0("No dimensionality reduction for ",
+                                      reduction_method, " calculated. ",
+                                      "Please run reduce_dimensions with ",
+                                      "reduction_method = ", reduction_method,
+                                      ", partition_cells, and learn_graph ",
+                                      "before running order_cells."))
+  assertthat::assert_that(!is.null(cds@partitions[[reduction_method]]),
+                          msg = paste("No cell partition for",
+                                      reduction_method, "calculated.",
+                                      "Please run partition_cells with",
+                                      "reduction_method =", reduction_method,
+                                      "and run learn_graph before running",
+                                      "order_cells."))
+  assertthat::assert_that(!is.null(principal_graph(cds)[[reduction_method]]),
+                          msg = paste("No principal graph for",
+                                      reduction_method, "calculated.",
+                                      "Please run learn_graph with",
+                                      "reduction_method =", reduction_method,
+                                      "before running order_cells."))
+  assertthat::assert_that(igraph::vcount(principal_graph(cds)[[reduction_method]]) < 10000,
+                          msg = paste("principal graph is too large.",
+                                      "order_cells doesn't support more than",
+                                      "10 thousand centroids."))
+  if(!is.null(root_pr_nodes)) {
+    assertthat::assert_that(all(root_pr_nodes %in% igraph::V(principal_graph(cds)[[reduction_method]])$name),
+                            msg = paste("All provided root_pr_nodes must be",
+                                        "present in the principal graph."))
+  }
+
+  if(!is.null(root_cells)) {
+    assertthat::assert_that(all(root_cells %in% row.names(colData(cds))),
+                            msg = paste("All provided root_cells must be",
+                                        "present in the cell data set."))
+  }
+  if(is.null(root_cells) & is.null(root_pr_nodes)) {
+    assertthat::assert_that(interactive(),
+                            msg = paste("When not in interactive mode, either",
+                                        "root_pr_nodes or root_cells must be",
+                                        "provided."))
+  }
+  assertthat::assert_that(!all(c(!is.null(root_cells),
+                                 !is.null(root_pr_nodes))),
+                            msg = paste("Please specify either root_pr_nodes",
+                                        "or root_cells, not both."))
+
   if (is.null(root_pr_nodes) & is.null(root_cells)){
     if (interactive()){
       root_pr_nodes <- select_trajectory_roots(cds, reduction_method = reduction_method)
-    }else{
-      stop("Error: You must provide one or more root cells (or principal graph nodes) in non-interactive mode")
     }
-  }else if(is.null(root_pr_nodes)){
-    valid_root_cells <- intersect(root_cells, row.names(colData(cds)))
-    if (length(valid_root_cells) == 0){
-      stop("Error: no such cell")
-    }
-    closest_vertex = cds@principal_graph_aux[[reduction_method]]$pr_graph_cell_proj_closest_vertex
-    root_pr_nodes = closest_vertex[valid_root_cells,]
-  }else{
-    if (length(intersect(root_pr_nodes, igraph::V(principal_graph(cds)[[reduction_method]])$name)) == 0){
-      stop("Error: no such principal graph node")
-    }
+  } else if(!is.null(root_cells)){
+    closest_vertex <- cds@principal_graph_aux[[reduction_method]]$pr_graph_cell_proj_closest_vertex
+    root_pr_nodes <- paste("Y_", closest_vertex[root_cells,], sep="")
   }
-
-  if (is.null(root_pr_nodes) || length(root_pr_nodes) == 0){
-    stop("Error: no valid root principal graph nodes.")
-  }
-
 
   cds@principal_graph_aux[[reduction_method]]$root_pr_nodes <- root_pr_nodes
 
-  cc_ordering <- extract_general_graph_ordering(cds, root_pr_nodes, orthogonal_proj_tip, verbose, reduction_method)
-  colData(cds)$Pseudotime = cc_ordering[row.names(colData(cds)), ]$pseudo_time
-  if(reverse) {
-    finite_cells <- is.finite(colData(cds)$Pseudotime)
-    colData(cds)$Pseudotime[finite_cells] <- max(colData(cds)$Pseudotime[finite_cells]) - colData(cds)$Pseudotime[finite_cells]
-  }
+  cc_ordering <- extract_general_graph_ordering(cds, root_pr_nodes, verbose, reduction_method)
+  colData(cds)$Pseudotime <- cc_ordering[row.names(colData(cds)), ]$pseudo_time
 
   cds
 }
 
-extract_general_graph_ordering <- function(cds, root_cell, orthogonal_proj_tip = FALSE, verbose=T, reduction_method)
-{
+extract_general_graph_ordering <- function(cds,
+                                           root_cell,
+                                           verbose=T,
+                                           reduction_method) {
   Z <- t(reducedDims(cds)[[reduction_method]])
   Y <- cds@principal_graph_aux[[reduction_method]]$dp_mst
   pr_graph <- principal_graph(cds)[[reduction_method]]
@@ -496,11 +506,10 @@ root_nodes <- function(cds, reduction_method="UMAP"){
 #' @param starting_cell the initial vertex for traversing on the graph
 #' @param end_cells the terminal vertex for traversing on the graph
 #' @return a list of shortest path from the initial cell and terminal cell, geodestic distance between initial cell and terminal cells and branch point passes through the shortest path
-#' @importFrom igraph shortest.paths shortest_paths degree
 #' @keywords internal
 path_between_nodes <- function(g, start_pr_nodes, end_pr_nodes){
   distance <- igraph::shortest.paths(g, v=start_pr_nodes, to=end_pr_nodes)
-  branchPoints <- which(degree(g) == 3)
+  branchPoints <- which(igraph::degree(g) == 3)
   path <- igraph::shortest_paths(g, from = start_pr_nodes, end_pr_nodes)
 
   return(list(shortest_path = path$vpath, distance = distance, branch_points = intersect(branchPoints, unlist(path$vpath))))

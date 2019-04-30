@@ -112,7 +112,6 @@ partition_cells <- function(cds,
 #' @param verbose Whether to emit verbose output during dimensionality reduction
 #' @param ... extra arguments used to run louvain_R
 #' @useDynLib monocle3, .registration = TRUE
-#' @importFrom Rcpp sourceCpp
 #' @return a list with four elements (g (igraph object for the kNN graph), coord (coordinates of the graph with
 #' layout_component, if the number of cells is less than 3000), edge_links (the data frame to plot the edges of
 #' the igraph, if the number of cells is less than 3000) and optim_res (the louvain clustering result)).

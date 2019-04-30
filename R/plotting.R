@@ -1236,8 +1236,6 @@ plot_percent_cells_positive <- function(cds_subset,
 #' @param cores Number of cores to use when smoothing the expression curves shown in the heatmap.
 #' @return A list of heatmap_matrix (expression matrix for the branch committment), ph (pheatmap heatmap object),
 #' annotation_row (annotation data.frame for the row), annotation_col (annotation data.frame for the column).
-#' @import pheatmap
-#' @importFrom stats sd as.dist cor cutree
 #' @export
 #'
 plot_pseudotime_heatmap <- function(cds_subset,
@@ -1280,7 +1278,7 @@ plot_pseudotime_heatmap <- function(cds_subset,
   }
 
   # Row-center the data.
-  model_expectation=model_expectation[!apply(model_expectation,1,sd)==0,]
+  model_expectation=model_expectation[!apply(model_expectation,1,stats::sd)==0,]
   model_expectation=Matrix::t(scale(Matrix::t(model_expectation),center=TRUE))
   model_expectation=model_expectation[is.na(row.names(model_expectation)) == FALSE,]
   model_expectation[is.nan(model_expectation)] = 0
@@ -1289,7 +1287,7 @@ plot_pseudotime_heatmap <- function(cds_subset,
 
   heatmap_matrix <- model_expectation
 
-  row_dist <- as.dist((1 - cor(Matrix::t(heatmap_matrix)))/2)
+  row_dist <- stats::as.dist((1 - stats::cor(Matrix::t(heatmap_matrix)))/2)
   row_dist[is.na(row_dist)] <- 1
 
   if(is.null(hmcols)) {
@@ -1316,7 +1314,7 @@ plot_pseudotime_heatmap <- function(cds_subset,
                  color=hmcols)
 
   if(cluster_rows) {
-    annotation_row <- data.frame(Cluster=factor(cutree(ph$tree_row, num_clusters)))
+    annotation_row <- data.frame(Cluster=factor(stats::cutree(ph$tree_row, num_clusters)))
   } else {
     annotation_row <- NULL
   }

@@ -1,13 +1,70 @@
 context("test-order_cells")
 
 cds <- load_a549()
+
+test_that("order_cells error messages work", {
+  expect_error(order_cells(cds), "No dimensionality reduction for UMAP calculated. Please run reduce_dimensions with reduction_method = UMAP, partition_cells, and learn_graph before running order_cells." )
+  cds <- estimate_size_factors(cds)
+  cds <- preprocess_cds(cds, num_dim = 20)
+  cds <- reduce_dimension(cds)
+  expect_error(order_cells(cds), "No cell partition for UMAP calculated. Please run partition_cells with reduction_method = UMAP and run learn_graph before running order_cells.")
+  cds <- partition_cells(cds)
+  expect_error(order_cells(cds), "No principal graph for UMAP calculated. Please run learn_graph with reduction_method = UMAP before running order_cells.")
+  cds <- learn_graph(cds)
+  expect_error(order_cells(cds, root_cells = c("G07_B02_RT_587"), root_pr_nodes = c("Y_1")), "Please specify either root_pr_nodes or root_cells, not both.")
+  expect_error(order_cells(cds, root_cells = c("hannah")), "All provided root_cells must be present in the cell data set.")
+  expect_error(order_cells(cds, root_pr_nodes = c("hannah")), "All provided root_pr_nodes must be present in the principal graph.")
+  expect_error(order_cells(cds), paste("When not in interactive mode, either",
+                                       "root_pr_nodes or root_cells must be",
+                                       "provided."))
+  expect_error(order_cells(cds, reduction_method = "tSNE"), "Currently only 'UMAP' is accepted as a reduction_method.")
+})
+
 cds <- estimate_size_factors(cds)
 cds <- preprocess_cds(cds, num_dim = 20)
 cds <- reduce_dimension(cds)
 cds <- partition_cells(cds)
 cds <- learn_graph(cds)
 
-
-test_that("multiplication works", {
-  expect_equal(2 * 2, 4)
+test_that("order_cells works", {
+  cds <- order_cells(cds, root_pr_nodes = "Y_1")
+  expect_equal(max(colData(cds)$Pseudotime), 1.328651, tol = 1e-5)
+  expect_equal(min(colData(cds)$Pseudotime), 0)
+  expect_equal(colData(cds)$Pseudotime[1], 0.0959704022378585, tol = 1e-5)
+  cds <- order_cells(cds, root_pr_nodes = c("Y_1", "Y_10"))
+  expect_equal(max(colData(cds)$Pseudotime), 1.117285, tol = 1e-5)
+  expect_equal(min(colData(cds)$Pseudotime), 0)
+  expect_equal(colData(cds)$Pseudotime[1], 0.0959704022378585, tol = 1e-5)
+  cds <- order_cells(cds, root_cells = "G07_B02_RT_587")
+  expect_equal(max(colData(cds)$Pseudotime), 1.391948, tol = 1e-5)
+  expect_equal(min(colData(cds)$Pseudotime), 0)
+  expect_equal(colData(cds)$Pseudotime[1], 0.1592677, tol = 1e-5)
+  cds <- order_cells(cds, root_cells = c("G07_B02_RT_587", "F06_A01_RT_598"))
+  expect_equal(max(colData(cds)$Pseudotime), 1.106683, tol = 1e-5)
+  expect_equal(min(colData(cds)$Pseudotime), 0)
+  expect_equal(colData(cds)$Pseudotime[1], 0.1592677, tol = 1e-5)
 })
+
+cds <- reduce_dimension(cds, max_components = 3)
+cds <- partition_cells(cds)
+cds <- learn_graph(cds)
+
+test_that("order_cells works 3d", {
+  cds <- order_cells(cds, root_pr_nodes = "Y_1")
+  expect_equal(max(colData(cds)$Pseudotime), 2.972738, tol = 1e-5)
+  expect_equal(min(colData(cds)$Pseudotime), 0)
+  expect_equal(colData(cds)$Pseudotime[1], 0.006694363, tol = 1e-5)
+  cds <- order_cells(cds, root_pr_nodes = c("Y_1", "Y_10"))
+  expect_equal(max(colData(cds)$Pseudotime), 1.505669, tol = 1e-5)
+  expect_equal(min(colData(cds)$Pseudotime), 0)
+  expect_equal(colData(cds)$Pseudotime[1], 0.006694363, tol = 1e-5)
+  cds <- order_cells(cds, root_cells = "G07_B02_RT_587")
+  expect_equal(max(colData(cds)$Pseudotime), 2.767049, tol = 1e-5)
+  expect_equal(min(colData(cds)$Pseudotime), 0)
+  expect_equal(colData(cds)$Pseudotime[1], 0.2132838, tol = 1e-5)
+  cds <- order_cells(cds, root_cells = c("G07_B02_RT_587", "F06_A01_RT_598"))
+  expect_equal(max(colData(cds)$Pseudotime), 1.071817, tol = 1e-5)
+  expect_equal(min(colData(cds)$Pseudotime), 0)
+  expect_equal(colData(cds)$Pseudotime[1], 0.2132838, tol = 1e-5)
+})
+

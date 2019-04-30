@@ -4,9 +4,8 @@
 \alias{order_cells}
 \title{Orders cells according to pseudotime.}
 \usage{
-order_cells(cds, root_pr_nodes = NULL, reduction_method = "UMAP",
-  root_cells = NULL, reverse = FALSE, orthogonal_proj_tip = FALSE,
-  verbose = FALSE)
+order_cells(cds, reduction_method = "UMAP", root_pr_nodes = NULL,
+  root_cells = NULL, verbose = FALSE)
 }
 \arguments{
 \item{cds}{the cell_data_set upon which to perform this operation}
@@ -15,11 +14,9 @@ order_cells(cds, root_pr_nodes = NULL, reduction_method = "UMAP",
 
 \item{root_cells}{The starting cells. Each cell corresponds to a principal point and multiple cells can correspond to the same principal point.}
 
-\item{reverse}{Whether to reverse the direction of the trajectory}
-
-\item{orthogonal_proj_tip}{Whether to perform orthogonal projection for cells corresponding to the tip principal points. Default to be FALSE}
-
 \item{verbose}{Whether to show running information for order_cells}
+
+\item{reverse}{Whether to reverse the direction of the trajectory}
 }
 \value{
 an updated cell_data_set object, in which phenoData contains values for State and Pseudotime for each cell
