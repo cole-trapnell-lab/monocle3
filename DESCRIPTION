@@ -42,6 +42,7 @@ Imports:
     purrr (>= 0.3.2),
     RANN (>= 2.6.1),
     Rcpp (>= 1.0.1),
+    RcppParallel,
     reshape2 (>= 1.4.3),
     reticulate (>= 1.11.1),
     rgl (>= 0.100.19),

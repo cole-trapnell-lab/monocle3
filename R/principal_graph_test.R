@@ -21,14 +21,20 @@
 #' @seealso \code{\link[spdep]{moran.test}} \code{\link[spdep]{geary.test}}
 #' @export
 principal_graph_test <- function(cds,
+                                 neighbor_graph = c("principal_graph", "knn"),
                                  reduction_method = "UMAP",
-                                 k = 25,
+                                 k = 25, # FIXME: principal_graph_test should not be building knn's!
                                  method = c('Moran_I'),
                                  alternative = 'greater',
                                  cores=1,
                                  interactive = FALSE,
                                  verbose=FALSE) {
-  lw <- calculateLW(cds, k = k, interactive = interactive, verbose = verbose, reduction_method)
+  lw <- calculateLW(cds,
+                    k = k,
+                    interactive = interactive,
+                    verbose = verbose,
+                    neighbor_graph = neighbor_graph,
+                    reduction_method = reduction_method)
 
   if(verbose) {
     message("Performing Moran's I test: ...")
@@ -219,32 +225,34 @@ my.geary.test <- function (x, listw, wc, randomisation = TRUE, alternative = "gr
 #' @param  k The maximum number of nearest neighbors to compute
 #' @param verbose A logic flag that determines whether or not to print
 #' execution details
-#' @param return_sparse_matrix A logic flag that controls whether or not to
-#' return a sparse matrix
 #' @param interactive Whether or not to allow the user to choose a point or
 #' region in the scene, then to only identify genes spatially correlated for
 #' those selected cells.
 #' @keywords internal
 #'
-calculateLW <- function(cds, k = 25, return_sparse_matrix = FALSE,
-                        interactive = FALSE, verbose = FALSE,
-                        reduction_method = "UMAP") {
+calculateLW <- function(cds,
+                        k,
+                        neighbor_graph,
+                        reduction_method,
+                        interactive = FALSE,
+                        verbose = FALSE
+                        ) {
   if(verbose) {
     message("retrieve the matrices for Moran's I test...")
   }
   knn_res <- NULL
   principal_g <- NULL
 
-  if('UMAP' %in% reducedDimNames(cds)) {
+  if (neighbor_graph == "knn") {
     cell_coords <- reducedDims(cds)$UMAP
     knn_res <- RANN::nn2(cell_coords, cell_coords, min(k + 1, nrow(cell_coords)), searchtype = "standard")[[1]]
-  } else if(cds@rge_method %in% c('SimplePPT')) {
+  } else if(neighbor_graph == "principal_graph") {
     cell_coords <- reducedDims(cds)$UMAP
     principal_g <-  igraph::get.adjacency(cds@principal_graph[[reduction_method]])[1:row(reducedDims(cds)$UMAP), 1:nrow(reducedDims(cds)$UMAP)]
   }
 
   exprs_mat <- counts(cds)
-  if(cds@rge_method  == 'UMAP') {
+  if(neighbor_graph == "knn") {
     if(is.null(knn_res)) {
       cell_coords <- reducedDims(cds)$UMAP
       knn_res <- RANN::nn2(cell_coords, cell_coords, min(k + 1, nrow(cell_coords)), searchtype = "standard")[[1]]
@@ -279,16 +287,9 @@ calculateLW <- function(cds, k = 25, return_sparse_matrix = FALSE,
       points_selected <- 1:nrow(knn_res)
     }
 
-    if(return_sparse_matrix) {
-      tmp <- igraph::get.adjacency(knn_res_graph)
-      dimnames(tmp) <- list(colnames(cds), colnames(cds))
-
-      return(tmp)
-    }
-
     knn_list <- lapply(points_selected, function(x) id_map[as.character(knn_res[x, -1])])
   }
-  else {
+  else if (neighbor_graph == "principal_graph") {
     cell2pp_map <- cds@principal_graph_aux[[reduction_method]]$pr_graph_cell_proj_closest_vertex # mapping from each cell to the principal points
     if(is.null(cell2pp_map)) {
       stop("Error: projection matrix for each cell to principal points doesn't exist, you may need to rerun learnGraph")
@@ -377,16 +378,14 @@ calculateLW <- function(cds, k = 25, return_sparse_matrix = FALSE,
       names(id_map) <- id_map
     }
 
-    if(return_sparse_matrix) {
-      dimnames(tmp) <- list(colnames(cds), colnames(cds))
-      return(tmp)
-    }
     knn_list <- slam::rowapply_simple_triplet_matrix(slam::as.simple_triplet_matrix(tmp), function(x) {
       res <- which(as.numeric(x) > 0)
       if(length(res) == 0)
         res <- 0L
       res
     })
+  } else {
+    stop("Error: unrecognized neighbor_graph option")
   }
   # create the lw list for moran.test
   names(knn_list) <- id_map[names(knn_list)]
