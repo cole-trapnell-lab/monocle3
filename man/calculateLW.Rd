@@ -5,16 +5,13 @@
 \title{Function to calculate the neighbors list with spatial weights for the chosen
 coding scheme from a cell dataset object}
 \usage{
-calculateLW(cds, k = 25, return_sparse_matrix = FALSE,
-  interactive = FALSE, verbose = FALSE, reduction_method = "UMAP")
+calculateLW(cds, k, neighbor_graph, reduction_method,
+  interactive = FALSE, verbose = FALSE)
 }
 \arguments{
 \item{cds}{The cell_data_set object where the neighbors list is calculated from}
 
 \item{k}{The maximum number of nearest neighbors to compute}
-
-\item{return_sparse_matrix}{A logic flag that controls whether or not to
-return a sparse matrix}
 
 \item{interactive}{Whether or not to allow the user to choose a point or
 region in the scene, then to only identify genes spatially correlated for

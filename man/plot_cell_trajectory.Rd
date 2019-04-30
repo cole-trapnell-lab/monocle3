@@ -9,8 +9,8 @@ plot_cell_trajectory(cds, x = 1, y = 2, reduction_method = "UMAP",
   backbone_color = "black", markers = NULL, markers_linear = FALSE,
   show_cell_names = FALSE, show_state_number = FALSE, cell_size = 1,
   cell_link_size = 0.75, cell_name_size = 2, state_number_size = 2.9,
-  show_branch_points = TRUE, theta = 0, alpha = NULL,
-  min_expr = 0.1, ...)
+  label_branch_points = TRUE, label_roots = TRUE,
+  label_leaves = TRUE, theta = 0, alpha = 1, min_expr = 0.1, ...)
 }
 \arguments{
 \item{cds}{cell_data_set for the experiment}
@@ -41,13 +41,13 @@ plot_cell_trajectory(cds, x = 1, y = 2, reduction_method = "UMAP",
 
 \item{state_number_size}{the size of the state number}
 
-\item{show_branch_points}{Whether to show icons for each branch point (only available after running assign_cell_states)}
-
 \item{theta}{How many degrees you want to rotate the trajectory}
 
 \item{alpha}{The alpha aesthetics for the original cell points, useful to highlight the learned principal graph}
 
 \item{...}{Additional arguments passed into scale_color_viridis function}
+
+\item{show_branch_points}{Whether to show icons for each branch point (only available after running assign_cell_states)}
 }
 \value{
 a ggplot2 plot object

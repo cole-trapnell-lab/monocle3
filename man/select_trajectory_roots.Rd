@@ -5,7 +5,7 @@
 \title{Select the roots of the principal graph}
 \usage{
 select_trajectory_roots(cds, x = 1, y = 2, num_roots = NULL,
-  pch = 19, ...)
+  pch = 19, reduction_method, ...)
 }
 \arguments{
 \item{cds}{CellDataSet where roots will be selected from}
