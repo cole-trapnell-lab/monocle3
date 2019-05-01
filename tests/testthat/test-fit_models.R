@@ -19,6 +19,7 @@ test_that("fit_models() returns an error when Size_Factors are missing",{
 # })
 
 test_that("fit_models() multicore works",{
+  skip("R 3.6.0 - 'Planting of a Tree that doesn't work', broke the ability to makeCluster with type = FORK")
   ok_formula_model_fits <- fit_models(cds, model_formula_str = "~log_dose", cores=2, expression_family <- 'negbinomial')
   num_failed = sum (unlist(lapply(ok_formula_model_fits$model, function(m) { class(m) })) == "logical" )
   expect_lt(num_failed, nrow(cds))
