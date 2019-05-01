@@ -408,36 +408,6 @@ sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE, scale. = F
   ans
 }
 
-#' Build a cell_data_set from the data stored in inst/extdata directory.
-#' @export
-load_lung <- function(){
-  lung_phenotype_data <- NA
-  lung_feature_data <- NA
-  num_cells_expressed <- NA
-  baseLoc <- system.file(package="monocle3")
-  #baseLoc <- './inst'
-  extPath <- file.path(baseLoc, "extdata")
-  load(file.path(extPath, "lung_phenotype_data.RData"))
-  load(file.path(extPath, "lung_exprs_data.RData"))
-  load(file.path(extPath, "lung_feature_data.RData"))
-  lung_exprs_data <- lung_exprs_data[,row.names(lung_phenotype_data)]
-
-  pd <- new("AnnotatedDataFrame", data = lung_phenotype_data)
-  fd <- new("AnnotatedDataFrame", data = lung_feature_data)
-
-  # Now, make a new cell_data_set using the RNA counts
-  lung <- new_cell_data_set(lung_exprs_data,
-                         phenoData = pd,
-                         featureData = fd,
-                         lower_detection_limit=1,
-                         expression_family="negbinomial.size")
-
-  lung <- estimate_size_factors(lung)
-  lung <- estimate_dispersions(lung)
-
-  lung
-}
-
 
 #' Detects genes above minimum threshold.
 #'
