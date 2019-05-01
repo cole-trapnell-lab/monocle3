@@ -24,7 +24,7 @@ test_that("partition_cells works", {
   expect_equal(length(cds@partitions[["UMAP"]]), 2)
   expect_equal(length(cds@partitions[["UMAP"]]$louvain_res$optim_res$membership),
                nrow(colData(cds)))
-  expect_equal(cds@partitions[["UMAP"]]$louvain_res$optim_res$membership[1], 10)
+  expect_equal(cds@partitions[["UMAP"]]$louvain_res$optim_res$membership[1], 9)
 
   # non-standard opts
   cds <- partition_cells(cds, k=22, weight = T, louvain_iter = 2,
@@ -33,14 +33,14 @@ test_that("partition_cells works", {
   expect_equal(length(cds@partitions[["UMAP"]]), 2)
   expect_equal(length(cds@partitions[["UMAP"]]$louvain_res$optim_res$membership),
                nrow(colData(cds)))
-  expect_equal(cds@partitions[["UMAP"]]$louvain_res$optim_res$membership[1], 2)
+  expect_equal(cds@partitions[["UMAP"]]$louvain_res$optim_res$membership[1], 7)
 
   cds <- partition_cells(cds, reduction_method = "tSNE")
   expect_is(cds@partitions[["tSNE"]], "list")
   expect_equal(length(cds@partitions[["tSNE"]]), 2)
   expect_equal(length(cds@partitions[["tSNE"]]$louvain_res$optim_res$membership),
                nrow(colData(cds)))
-  expect_equal(cds@partitions[["tSNE"]]$louvain_res$optim_res$membership[1], 6)
+  expect_equal(cds@partitions[["tSNE"]]$louvain_res$optim_res$membership[1], 9)
 
   # non-standard opts
   cds <- partition_cells(cds, reduction_method = "tSNE", k=22, weight = T,
@@ -49,7 +49,7 @@ test_that("partition_cells works", {
   expect_equal(length(cds@partitions[["tSNE"]]), 2)
   expect_equal(length(cds@partitions[["tSNE"]]$louvain_res$optim_res$membership),
                nrow(colData(cds)))
-  expect_equal(cds@partitions[["tSNE"]]$louvain_res$optim_res$membership[1], 8)
+  expect_equal(cds@partitions[["tSNE"]]$louvain_res$optim_res$membership[1], 9)
 
   cds <- partition_cells(cds, reduction_method = "PCA")
   expect_is(cds@partitions[["PCA"]], "list")

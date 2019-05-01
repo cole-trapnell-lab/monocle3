@@ -10,13 +10,13 @@ test_that("plot_genes_violin works", {
   plot_genes_violin(cds_subset, grouping="culture_plate", min_expr = 10)
   plot_genes_violin(cds_subset, grouping="culture_plate", ncol=2)
   # TO DO
-  plot_genes_violin(cds_subset, grouping="culture_plate", color_by = "dose")
+#  plot_genes_violin(cds_subset, grouping="culture_plate", color_by = "dose")
   plot_genes_violin(cds_subset, grouping="culture_plate", normalize = FALSE)
   plot_genes_violin(cds_subset, grouping="culture_plate", log_scale = FALSE)
   plot_genes_violin(cds_subset, grouping="culture_plate",
                     label_by_short_name = FALSE)
-  plot_genes_violin(cds_subset, grouping="dose", plot_trend = TRUE,
-                    ncol = 3)
+#  plot_genes_violin(cds_subset, grouping="dose", plot_trend = TRUE,
+#                    ncol = 3)
 })
 
 test_that("plot_percent_cells_positive works", {
