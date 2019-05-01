@@ -89,7 +89,7 @@ cds <- preprocess_cds(cds, num_dim = 20)
 ```
 
 ```{r}
-plot_pc_variance_explained(cds)
+#plot_pc_variance_explained(cds)
 
 ```
 
@@ -167,14 +167,12 @@ cds <- cluster_cells(cds,
 ```{r}
 cds <- reduce_dimension(cds, max_components = 3,
                        reduction_method = 'UMAP',
-                       metric="cosine",
+                       umap.metric="cosine",
                        verbose = F)
 
 cds <- partition_cells(cds)
  
 cds <- learn_graph(cds,
-                   max_components = 3,
-                   partition_component = T,
                    verbose = F)
 
  cds <- order_cells(cds,

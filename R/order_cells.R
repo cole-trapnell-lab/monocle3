@@ -338,7 +338,7 @@ select_trajectory_roots <- function(cds, x=1, y=2,
   sel <- rep(FALSE, nrow(ica_space_df))
 
   if (use_3d){
-    ui <- fluidPage(
+    ui <- shiny::fluidPage(
       titlePanel("Choose your root nodes"),
 
       # Sidebar layout with input and output definitions ----
@@ -398,7 +398,7 @@ select_trajectory_roots <- function(cds, x=1, y=2,
     }
     sel <- runApp(shinyApp(ui, server))
   } else {
-    ui <- fluidPage(
+    ui <- shiny::fluidPage(
       titlePanel("Choose your root nodes"),
 
       # Sidebar layout with input and output definitions ----
