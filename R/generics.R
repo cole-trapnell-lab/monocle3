@@ -118,6 +118,7 @@ setMethod("exprs", "cell_data_set", function(x) {
   return(value)
 })
 
+
 #' @export
 setGeneric("pData", function(x, ...) standardGeneric("pData"))
 
@@ -136,10 +137,6 @@ setMethod("pData", "cell_data_set", function(x) {
 #' @export
 #' @importClassesFrom S4Vectors List
 setReplaceMethod("pData", "cell_data_set", function(x, value) {
-  value <- methods::as(value, "List")
-  if (is.null(names(value))) {
-    names(value) <- character(length(value))
-  }
   colData(x) <- value
   validObject(x)
   return(x)
@@ -163,10 +160,6 @@ setMethod("fData", "cell_data_set", function(x) {
 #' @export
 #' @importClassesFrom S4Vectors List
 setReplaceMethod("fData", "cell_data_set", function(x, value) {
-  value <- methods::as(value, "List")
-  if (is.null(names(value))) {
-    names(value) <- character(length(value))
-  }
   rowData(x) <- value
   validObject(x)
   return(x)
