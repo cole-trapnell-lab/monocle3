@@ -42,43 +42,152 @@ cluster_cells <- function(cds,
                           reduction_method = c("UMAP", "tSNE", "PCA"),
                           k = 20,
                           louvain_iter = 1,
+                          louvain_qval = 0.05,
                           weight = FALSE,
                           resolution = NULL,
-                          method = c('louvain'),
                           random_seed = 0L,
                           verbose = F,
                           ...) {
-  method <- match.arg(method)
+  method = 'louvain'
   reduction_method <- match.arg(reduction_method)
-  if(method == 'louvain'){
-    data <- reducedDims(cds)[[reduction_method]]
 
-    louvain_res <- louvain_clustering(data = data, pd = colData(cds), k = k,
-                                      weight = weight,
-                                      louvain_iter = louvain_iter,
-                                      resolution = resolution,
-                                      random_seed = random_seed,
-                                      verbose = verbose, ...)
+  assertthat::assert_that(is(cds, "cell_data_set"))
+  assertthat::assert_that(is.character(reduction_method))
+  assertthat::assert_that(assertthat::is.count(k))
+  assertthat::assert_that(is.logical(weight))
+  assertthat::assert_that(assertthat::is.count(louvain_iter))
+  ## TO DO what is resolution?
+  assertthat::assert_that(is.numeric(louvain_qval))
+  assertthat::assert_that(is.logical(verbose))
+  assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
+                          msg = paste("No dimensionality reduction for",
+                                      reduction_method, "calculated.",
+                                      "Please run reduce_dimensions with",
+                                      "reduction_method =", reduction_method,
+                                      "before running cluster_cells"))
 
-    cluster_graph_res <- compute_louvain_connected_components(louvain_res$g,
-                                                              louvain_res$optim_res,
-                                                              verbose = verbose)
-    louvain_component <-  igraph::components(cluster_graph_res$cluster_g)$membership[louvain_res$optim_res$membership]
-    names(louvain_component) <- igraph::V(louvain_res$g)$name
-    louvain_component <- as.factor(louvain_component)
-    colData(cds)$louvain_component <- louvain_component
+  reduced_dim_res <- reducedDims(cds)[[reduction_method]]
 
-    colData(cds)$Cluster <- factor(igraph::membership(louvain_res$optim_res))
+  if(verbose)
+    message("Running louvain clustering algorithm ...")
 
-    return(cds)
+  louvain_res <- louvain_clustering(data = reduced_dim_res,
+                                    pd = colData(cds),
+                                    k = k,
+                                    weight = weight,
+                                    louvain_iter = louvain_iter,
+                                    resolution = resolution,
+                                    random_seed = random_seed,
+                                    verbose = verbose, ...)
+
+  #if(length(unique(louvain_res$optim_res$membership)) == 1) {
+  #  colData(cds)$louvain_component <- 1
+  #  return(cds)
+  #}
+
+  cluster_graph_res <- compute_louvain_connected_components(louvain_res$g,
+                                                            louvain_res$optim_res,
+                                                            louvain_qval, verbose)
+  louvain_component <- igraph::components(cluster_graph_res$cluster_g)$membership[louvain_res$optim_res$membership]
+  names(louvain_component) <- row.names(reduced_dim_res)
+  louvain_component <- as.factor(louvain_component)
+
+  cds@clusters[[reduction_method]] <- list(cluster_graph_res = cluster_graph_res,
+                                             louvain_res = louvain_res,
+                                             louvain_component = louvain_component,
+                                             clusters = factor(igraph::membership(louvain_res$optim_res)))
+  return(cds)
+}
+
+
+
+
+#' Cluster cells based on louvain community detection algorithm.
+#'
+#' @description This function is a wrapper of the louvain function from the python package (louvain-igraph, https://github.com/vtraag/louvain-igraph)
+#' The following description is from the original package "This package implements the louvain algorithm in C++ and exposes it to python. It relies on (python-)igraph for it to function.
+#' Besides the relative flexibility of the implementation, it also scales well, and can be run on graphs of millions of nodes (as long as they
+#' can fit in memory). The core function is find_partition which finds the optimal partition using the louvain algorithm [1] for a number of
+#' different methods. The methods currently implemented are (1) modularity [2], (2) Reichardt and Bornholdt's model using the configuration null
+#' model and the Erdös-Rényi null model [3], (3) the constant Potts model (CPM) [4], (4) Significance [5], and finally (5) Surprise [6]. In
+#' addition, it supports multiplex partition optimisation allowing community detection on for example negative links [7] or multiple time slices
+#' [8]. It also provides some support for community detection on bipartite graphs. See the documentation for more information." Please see the github
+#' above for the citations. Right now we only support CPMVertexPartition, RBConfigurationVertexPartition, RBERVertexPartition, ModularityVertexPartition
+#' SignificanceVertexPartition and SurpriseVertexPartition partition methods.
+#'
+#' @param X the dataset upon which to perform umap dimension reduction
+#' @param python_home The python home directory where umap is installed
+#' @param partition_method character - either the default "CPMVertexPartition" or  "RBConfigurationVertexPartition" / "RBERVertexPartition".
+#' @param initial_membership (list of int) – Initial membership for the partition. If None then defaults to a singleton partition.
+#' @param weights (list of double, or edge attribute) – Weights of edges. Can be either an iterable or an edge attribute.
+#' @param res (double) – Resolution parameter.
+#' @param node_sizes  (list of int, or vertex attribute) – Sizes of nodes are necessary to know the size of communities in aggregate graphs. Usually this is set to 1 for all nodes, but in specific cases this could be changed.
+#' @param random_seed  the seed used by the random number generator in louvain-igraph package
+#' @param verbose bool (optional, default False)
+#' @param return_all Whether to return all slots after louvain
+#' @return The cluster id if return_all set to be FALSE, otherwise all slots from the louvain function
+#' @encoding UTF-8
+#'
+louvain_R <- function(X, python_home = system('which python', intern = TRUE),
+                      partition_method = 'CPMVertexPartition',
+                      initial_membership = NULL,
+                      weights = NULL,
+                      res = 0.6,
+                      node_sizes = NULL,
+                      random_seed = 0L,
+                      verbose = FALSE,
+                      return_all = FALSE) {
+
+  reticulate::use_python(python_home)
+
+  tryCatch({
+    reticulate::import("louvain")
+  }, warning = function(w) {
+  }, error = function(e) {
+    print (e)
+    stop('please pass the python home directory where louvain is installed with python_home argument!')
+  }, finally = {
+  })
+
+  reticulate::source_python(paste(system.file(package="monocle3"), "louvain.py", sep="/"))
+  # X <- Matrix::t(X)
+  if(length(grep('Matrix', class(X))) == 0){
+    X <- as(as.matrix(X), 'TsparseMatrix')
+  } else {
+    X <- as(X, 'TsparseMatrix')
   }
-  else {
-    stop('Cluster method ', method, ' is not implemented')
+
+  i <- as.integer(X@i)
+  j <- as.integer(X@j)
+  val <- X@x
+
+  dim <- as.integer(X@Dim)
+
+  if(is.null(partition_method) == F) {
+    partition_method <- as.character(partition_method)
+  }
+  if(!is.null(random_seed)) {
+    random_seed <- as.integer(random_seed)
+  }
+
+  louvain_res <- louvain(i, j, val, dim,
+                         as.character(partition_method),
+                         initial_membership,
+                         weights,
+                         as.numeric(res),
+                         node_sizes,
+                         random_seed,
+                         as.logical(verbose))
+
+  if(return_all) {
+    return(louvain_res)
+  } else {
+    list(membership = louvain_res$membership + 1, modularity = louvain_res$modularity)
   }
 }
 
 
-#' function to run louvain clustering algorithm
+#' Function to run louvain clustering algorithm
 #'
 #' @param data low dimensional space used to perform graph clustering
 #' @param pd the dataframe of the phenotype from the cell dataset (colData(cds))
@@ -90,13 +199,11 @@ cluster_cells <- function(cds,
 #' @param random_seed  the seed used by the random number generator in louvain-igraph package
 #' @param verbose Whether to emit verbose output during dimensionality reduction
 #' @param ... extra arguments used to run louvain_R
+#' @useDynLib monocle3, .registration = TRUE
 #' @return a list with four elements (g (igraph object for the kNN graph), coord (coordinates of the graph with
 #' layout_component, if the number of cells is less than 3000), edge_links (the data frame to plot the edges of
 #' the igraph, if the number of cells is less than 3000) and optim_res (the louvain clustering result)).
-#'
-louvain_clustering <- function(data, pd, k = 20, weight = F,
-                               louvain_iter = 1, resolution = NULL,
-                               random_seed = 0L, verbose = F, ...) {
+louvain_clustering <- function(data, pd, k = 20, weight = F, louvain_iter = 1, resolution = NULL, random_seed = 0L, verbose = F, ...) {
   extra_arguments <- list(...)
   cell_names <- row.names(pd)
   if(!identical(cell_names, row.names(pd)))
@@ -197,6 +304,7 @@ louvain_clustering <- function(data, pd, k = 20, weight = F,
   }
 
   if(igraph::vcount(g) < 3000) {
+
     coord <- NULL
     edge_links <- NULL
   } else {
@@ -208,86 +316,59 @@ louvain_clustering <- function(data, pd, k = 20, weight = F,
   return(list(g = g, relations = relations, distMatrix = distMatrix, coord = coord, edge_links = edge_links, optim_res = optim_res))
 }
 
-#' Cluster cells based on louvain community detection algorithm.
-#'
-#' @description This function is a wrapper of the louvain function from the python package (louvain-igraph, https://github.com/vtraag/louvain-igraph)
-#' The following description is from the original package "This package implements the louvain algorithm in C++ and exposes it to python. It relies on (python-)igraph for it to function.
-#' Besides the relative flexibility of the implementation, it also scales well, and can be run on graphs of millions of nodes (as long as they
-#' can fit in memory). The core function is find_partition which finds the optimal partition using the louvain algorithm [1] for a number of
-#' different methods. The methods currently implemented are (1) modularity [2], (2) Reichardt and Bornholdt's model using the configuration null
-#' model and the Erdös-Rényi null model [3], (3) the constant Potts model (CPM) [4], (4) Significance [5], and finally (5) Surprise [6]. In
-#' addition, it supports multiplex partition optimisation allowing community detection on for example negative links [7] or multiple time slices
-#' [8]. It also provides some support for community detection on bipartite graphs. See the documentation for more information." Please see the github
-#' above for the citations. Right now we only support CPMVertexPartition, RBConfigurationVertexPartition, RBERVertexPartition, ModularityVertexPartition
-#' SignificanceVertexPartition and SurpriseVertexPartition partition methods.
-#'
-#' @param X the dataset upon which to perform umap dimension reduction
-#' @param python_home The python home directory where umap is installed
-#' @param partition_method character - either the default "CPMVertexPartition" or  "RBConfigurationVertexPartition" / "RBERVertexPartition".
-#' @param initial_membership (list of int) – Initial membership for the partition. If None then defaults to a singleton partition.
-#' @param weights (list of double, or edge attribute) – Weights of edges. Can be either an iterable or an edge attribute.
-#' @param res (double) – Resolution parameter.
-#' @param node_sizes  (list of int, or vertex attribute) – Sizes of nodes are necessary to know the size of communities in aggregate graphs. Usually this is set to 1 for all nodes, but in specific cases this could be changed.
-#' @param random_seed  the seed used by the random number generator in louvain-igraph package
-#' @param verbose bool (optional, default False)
-#' @param return_all Whether to return all slots after louvain
-#' @return The cluster id if return_all set to be FALSE, otherwise all slots from the louvain function
-#' @encoding UTF-8
-#'
-louvain_R <- function(X, python_home = system('which python', intern = TRUE),
-                      partition_method = 'CPMVertexPartition',
-                      initial_membership = NULL,
-                      weights = NULL,
-                      res = 0.6,
-                      node_sizes = NULL,
-                      random_seed = 0L,
-                      verbose = FALSE,
-                      return_all = FALSE) {
+compute_louvain_connected_components <- function(g, optim_res, qval_thresh=0.05, verbose = FALSE){
+  cell_membership <- as.factor(igraph::membership(optim_res))
+  membership_matrix = Matrix::sparse.model.matrix( ~ cell_membership + 0)
+  num_links = Matrix::t(membership_matrix) %*% igraph::as_adjacency_matrix(g) %*% membership_matrix
+  diag(num_links) = 0
+  louvain_modules = levels(cell_membership)
 
-  reticulate::use_python(python_home)
+  cluster_mat <- matrix(0, nrow = length(louvain_modules), ncol = length(louvain_modules)) # a matrix storing the overlapping clusters between louvain clusters which is based on the spanning tree
+  enrichment_mat <- matrix(0, nrow = length(louvain_modules), ncol = length(louvain_modules)) # a matrix storing the overlapping clusters between louvain clusters which is based on the spanning tree
 
-  tryCatch({
-    reticulate::import("louvain")
-  }, warning = function(w) {
-  }, error = function(e) {
-    print (e)
-    stop('please pass the python home directory where louvain is installed with python_home argument!')
-  }, finally = {
-  })
+  overlapping_threshold <- 1e-5
 
-  reticulate::source_python(paste(system.file(package="monocle3"), "louvain.py", sep="/"))
-  # X <- Matrix::t(X)
-  if(length(grep('Matrix', class(X))) == 0){
-    X <- as(as.matrix(X), 'TsparseMatrix')
-  } else {
-    X <- as(X, 'TsparseMatrix')
+  edges_per_module = Matrix::rowSums(num_links)
+  total_edges = sum(num_links)
+
+  theta <- (as.matrix(edges_per_module) / total_edges) %*% Matrix::t(edges_per_module / total_edges)
+  var_null_num_links <- theta * (1 - theta) / total_edges
+  num_links_ij <- num_links / total_edges - theta
+  cluster_mat <- pnorm_over_mat(as.matrix(num_links_ij), var_null_num_links) # much faster c++ version
+
+  enrichment_mat <- num_links_ij
+  num_links <- num_links_ij / total_edges
+
+  cluster_mat = matrix(stats::p.adjust(cluster_mat), nrow=length(louvain_modules), ncol=length(louvain_modules))
+
+  sig_links <- as.matrix(num_links)
+  sig_links[cluster_mat > qval_thresh] = 0
+  diag(sig_links) = 0
+
+  cluster_g <- igraph::graph_from_adjacency_matrix(sig_links, weighted = T, mode = 'undirected')
+  louvain_modules <- igraph::cluster_louvain(cluster_g)
+
+  # return also the layout coordinates and the edges link for the graph of clusters
+
+  coord <- igraph::layout_components(cluster_g)
+  coord <- as.data.frame(coord)
+  colnames(coord) <- c('x', 'y')
+  row.names(coord) <- 1:nrow(coord)
+  coord$Cluster <- 1:nrow(coord)
+  coord$louvain_cluster <- as.character(igraph::membership(louvain_modules))
+
+  edge_links <- NULL
+  if(length(igraph::E(cluster_g)) > 0) { # run this only when there is edges
+    edge <- igraph::get.data.frame(cluster_g)
+    edge <- as.data.frame(edge)
+    colnames(edge) <- c('start', 'end', 'weight')
+    edge_links <- cbind(coord[edge$start, 1:2], coord[edge$end, 1:2])
+    edge_links <- as.data.frame(edge_links)
+    colnames(edge_links) <- c('x_start', 'x_end', 'y_start', 'y_end')
+    edge_links$weight <- edge[, 3]
   }
 
-  i <- as.integer(X@i)
-  j <- as.integer(X@j)
-  val <- X@x
-
-  dim <- as.integer(X@Dim)
-
-  if(is.null(partition_method) == F) {
-    partition_method <- as.character(partition_method)
-  }
-  if(!is.null(random_seed)) {
-    random_seed <- as.integer(random_seed)
-  }
-
-  louvain_res <- louvain(i, j, val, dim,
-                         as.character(partition_method),
-                         initial_membership,
-                         weights,
-                         as.numeric(res),
-                         node_sizes,
-                         random_seed,
-                         as.logical(verbose))
-
-  if(return_all) {
-    return(louvain_res)
-  } else {
-    list(membership = louvain_res$membership + 1, modularity = louvain_res$modularity)
-  }
+  list(cluster_g = cluster_g, cluster_optim_res = optim_res, num_links = num_links, cluster_mat = cluster_mat, enrichment_mat = enrichment_mat, cluster_coord = coord, edge_links = edge_links)
 }
+
+

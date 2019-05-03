@@ -109,17 +109,17 @@ learn_graph <- function(cds,
                                       reduction_method, "calculated.",
                                       "Please run reduce_dimensions with",
                                       "reduction_method =", reduction_method,
-                                      "and partition_cells before running",
+                                      "and cluster_cells before running",
                                       "learn_graph."))
-  assertthat::assert_that(!is.null(cds@partitions[[reduction_method]]),
-                          msg = paste("No cell partition for",
+  assertthat::assert_that(!is.null(cds@clusters[[reduction_method]]),
+                          msg = paste("No cell clusters for",
                                       reduction_method, "calculated.",
-                                      "Please run partition_cells with",
+                                      "Please run cluster_cells with",
                                       "reduction_method =", reduction_method,
                                       "before running learn_graph."))
 
   if (use_partition) {
-    partition_list <- colData(cds)[, "louvain_component"]
+    partition_list <- cds@clusters[[reduction_method]]$louvain_component
   } else {
     partition_list <- rep(1, nrow(colData(cds)))
   }
@@ -564,7 +564,7 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE, ver
 
   dp_mst_list <- igraph::decompose.graph(dp_mst)
   dp_mst_df <- NULL
-  louvain_component <- colData(cds)$louvain_component
+  louvain_component <- cds@clusters[[reduction_method]]$louvain_component
 
   if(length(dp_mst_list) == 1 & length(unique(louvain_component)) > 1) {
     louvain_component <- 1
@@ -578,7 +578,7 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE, ver
         message('\nProjecting cells to principal points for louvain component: ', cur_louvain_comp)
       }
 
-      subset_cds_col_names <- colnames(cds)[colData(cds)$louvain_component == cur_louvain_comp]
+      subset_cds_col_names <- colnames(cds)[cds@clusters[[reduction_method]]$louvain_component == cur_louvain_comp]
       cur_z <- Z[, subset_cds_col_names]
       cur_p <- P[, subset_cds_col_names]
 
@@ -657,7 +657,7 @@ findNearestPointOnMST <- function(cds, reduction_method, rge_res_Y){
   dp_mst <- principal_graph(cds)[[reduction_method]]
   dp_mst_list <- igraph::decompose.graph(dp_mst)
 
-  if(length(unique(colData(cds)$louvain_component)) != length(dp_mst_list)) {
+  if(length(unique(cds@clusters[[reduction_method]]$louvain_component)) != length(dp_mst_list)) {
     dp_mst_list <- list(dp_mst)
   }
 
@@ -670,7 +670,7 @@ findNearestPointOnMST <- function(cds, reduction_method, rge_res_Y){
     if(length(dp_mst_list) == 1) {
       Z <- t(reducedDims(cds)[[reduction_method]])
     } else {
-      Z <- t(reducedDims(cds)[[reduction_method]])[, colData(cds)$louvain_component == i]
+      Z <- t(reducedDims(cds)[[reduction_method]])[, cds@clusters[[reduction_method]]$louvain_component == i]
     }
     Y <- rge_res_Y[, igraph::V(cur_dp_mst)$name]
 

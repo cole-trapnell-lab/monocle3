@@ -5,8 +5,8 @@
 \title{Cluster cells into a specified number of groups based on .}
 \usage{
 cluster_cells(cds, reduction_method = c("UMAP", "tSNE", "PCA"), k = 20,
-  louvain_iter = 1, weight = FALSE, resolution = NULL,
-  method = c("louvain"), random_seed = 0L, verbose = F, ...)
+  louvain_iter = 1, louvain_qval = 0.05, weight = FALSE,
+  resolution = NULL, random_seed = 0L, verbose = F, ...)
 }
 \arguments{
 \item{cds}{the cell_data_set upon which to perform this operation}
@@ -17,8 +17,6 @@ cluster_cells(cds, reduction_method = c("UMAP", "tSNE", "PCA"), k = 20,
 
 \item{weight}{A logic argument to determine whether or not we will use Jaccard coefficent for two nearest neighbors (based on the overlapping of their kNN) as the weight used for Louvain clustering. Default to be FALSE.}
 
-\item{method}{method for clustering cells. Three methods are available, including densityPeak, louvian and DDRTree. By default, we use density peak clustering algorithm for clustering. For big datasets (like data with 50 k cells or so), we recommend using the louvain clustering algorithm.}
-
 \item{random_seed}{the seed used by the random number generator in louvain-igraph package. This argument will be ignored if louvain_iter is larger than 1.}
 
 \item{verbose}{Verbose A logic flag to determine whether or not we should print the running details.}
@@ -28,6 +26,8 @@ cluster_cells(cds, reduction_method = c("UMAP", "tSNE", "PCA"), k = 20,
 \item{use_pca}{Whether or not to cluster cells based on top PCA component. Default to be FALSE.}
 
 \item{res}{Resolution parameter for the louvain clustering. Values between 0 and 1e-2 are good, bigger values give you more clusters. Default is set to be \code{seq(0, 1e-4, length.out = 5)}.}
+
+\item{method}{method for clustering cells. Three methods are available, including densityPeak, louvian and DDRTree. By default, we use density peak clustering algorithm for clustering. For big datasets (like data with 50 k cells or so), we recommend using the louvain clustering algorithm.}
 
 \item{cores}{number of cores computer should use to execute function}
 }

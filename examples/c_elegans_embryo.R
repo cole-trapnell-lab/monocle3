@@ -8,7 +8,7 @@ theme_set(theme_gray(base_size = 18))
 # color_metadata = read.delim("/Users/coletrap/dropbox_lab/Analysis/worm-lineage/animations/ciliated_neurons_3D_umap_metadata.txt")
 # color_metadata = color_metadata %>% dplyr::select(plot.cell.type, color.for.movie) %>% distinct()
 # color_map = as.character(color_metadata$color.for.movie)
-# names(color_map) = as.character(color_metadata$plot.cell.type) 
+# names(color_map) = as.character(color_metadata$plot.cell.type)
 
 # expression_matrix = readRDS("for-cole.ciliated.amphid.neurons.exprs.rds")
 # cell_metadata = readRDS("for-cole.ciliated.amphid.neurons.pData.rds")
@@ -34,7 +34,7 @@ cds <- reduce_dimension(cds, reduction_method = 'UMAP', verbose=TRUE)
 cds <- cluster_cells(cds)
 
 ## Step 4: Learn cell trajectories
-cds <- partition_cells(cds)
+cds <- cluster_cells(cds)
 cds <- learn_graph(cds, learn_graph_control=list(ncenter=1000), close_loop=TRUE, verbose=TRUE)
 
 # a helper function to identify the root principal points:
@@ -56,27 +56,27 @@ cds = order_cells(cds, root_pr_nodes=get_earliest_principal_node(cds))
 ## Step 5: Visualize the trajectory
 
 #png("worm-emb-ciliated-clusters.png", width=900, height=800)
-plot_cell_clusters(cds, color_by = "Cluster", show_group_id=TRUE)+ 
+plot_cell_clusters(cds, color_by = "Cluster", show_group_id=TRUE)+
     ggplot2::theme(legend.position="none")
 #dev.off()
 
-plot_cell_clusters(cds, color_by = "louvain_component", show_group_id=TRUE)+ 
+plot_cell_clusters(cds, color_by = "louvain_component", show_group_id=TRUE)+
     ggplot2::theme(legend.position="none")
 
-plot_cell_trajectory(cds, color_by = "cell.type", cell_size=0.1) + 
-    #ggplot2::scale_color_manual(values=color_map) + 
+plot_cell_trajectory(cds, color_by = "cell.type", cell_size=0.1) +
+    #ggplot2::scale_color_manual(values=color_map) +
     ggplot2::theme(legend.position="right")
 
-plot_cell_trajectory(cds, color_by = "embryo.time.bin", cell_size=0.1) + 
-    #ggplot2::scale_color_manual(values=color_map) + 
+plot_cell_trajectory(cds, color_by = "embryo.time.bin", cell_size=0.1) +
+    #ggplot2::scale_color_manual(values=color_map) +
     ggplot2::theme(legend.position="right")
 
-plot_cell_trajectory(cds, color_by = "Pseudotime", cell_size=0.1) + 
-    #ggplot2::scale_color_manual(values=color_map) + 
+plot_cell_trajectory(cds, color_by = "Pseudotime", cell_size=0.1) +
+    #ggplot2::scale_color_manual(values=color_map) +
     ggplot2::theme(legend.position="right")
 
-plot_cell_trajectory(cds, color_by = "batch") + 
-    #ggplot2::scale_color_manual(values=color_map) + 
+plot_cell_trajectory(cds, color_by = "batch") +
+    #ggplot2::scale_color_manual(values=color_map) +
     ggplot2::theme(legend.position="right")
 
 plot_cell_trajectory(cds, markers=c("egl-21", "egl-1"))
@@ -92,12 +92,12 @@ cds_subset = cds[rowData(cds)$gene_short_name %in% ciliated_genes,]
 
 plot_cell_trajectory(cds, markers=ciliated_genes)
 
-plot_percent_cells_positive(cds_subset, grouping="cell.type") + 
-    guides(fill=FALSE) + 
+plot_percent_cells_positive(cds_subset, grouping="cell.type") +
+    guides(fill=FALSE) +
     theme(axis.text.x=element_text(angle=45, hjust=1))
 
-# plot_genes_violin(cds[rowData(cds)$gene_short_name %in% ciliated_genes,], grouping="cell.type") + 
-#     guides(fill=FALSE) + 
+# plot_genes_violin(cds[rowData(cds)$gene_short_name %in% ciliated_genes,], grouping="cell.type") +
+#     guides(fill=FALSE) +
 #     theme(axis.text.x=element_text(angle=45, hjust=1))
 
 ### Basic differential expression:
@@ -112,7 +112,7 @@ write.csv(emb_time_terms, "emb_time_terms.csv")
 sig_emb_time_terms = emb_time_terms %>% filter (q_value < 0.05) %>% select(gene_short_name, term, q_value, estimate)
 write.csv(sig_emb_time_terms, "emb_time_sig_terms.csv")
 
-plot_genes_violin(cds_subset, grouping="embryo.time.bin") + 
+plot_genes_violin(cds_subset, grouping="embryo.time.bin") +
     theme(axis.text.x=element_text(angle=45, hjust=1))
 
 ### Subtracting unwanted effects:

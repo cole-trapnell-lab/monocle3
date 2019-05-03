@@ -1,51 +1,58 @@
 #' @export
-setGeneric("partitions", function(x, ...) standardGeneric("partitions"))
+setGeneric("get_clusters", function(x, reduction_method = "UMAP", ...) standardGeneric("get_clusters"))
 
 #' @export
-setGeneric("partitions<-", function(x, value) standardGeneric("partitions<-"))
+setMethod("get_clusters", "cell_data_set", function(x, reduction_method = "UMAP") {
+  value <- x@clusters[[reduction_method]]$clusters
+  return(value)
+})
 
 #' @export
-setGeneric("partitionNames", function(x) standardGeneric("partitionNames"))
+setGeneric("clusters", function(x, ...) standardGeneric("clusters"))
 
 #' @export
-setGeneric("partitionNames<-", function(x, value) standardGeneric("partitionNames<-"))
+setGeneric("clusters<-", function(x, value) standardGeneric("clusters<-"))
 
-# Getter/setter functions for partitions
+#' @export
+setGeneric("clusterNames", function(x) standardGeneric("clusterNames"))
+
+#' @export
+setGeneric("clusterNames<-", function(x, value) standardGeneric("clusterNames<-"))
+
+# Getter/setter functions for clusters
 # Copied from reduceDims functions from SingleCellExperiment
 
 #' @export
-setMethod("partitions", "cell_data_set", function(x) {
-  value <- x@partitions
+setMethod("clusters", "cell_data_set", function(x) {
+  value <- x@clusters
   return(value)
 })
 
 #' @export
 #' @importClassesFrom S4Vectors List
-setReplaceMethod("partitions", "cell_data_set", function(x, value) {
+setReplaceMethod("clusters", "cell_data_set", function(x, value) {
   value <- methods::as(value, "List")
   if (is.null(names(value))) {
     names(value) <- character(length(value))
   }
-  x@partitions <- value
+  x@clusters <- value
   validObject(x)
   return(x)
 })
 
 #' @export
-setMethod("partitionNames", "cell_data_set", function(x) {
-  names(partitions(x))
+setMethod("clusterNames", "cell_data_set", function(x) {
+  names(clusters(x))
 })
 
 
 #' @export
-setReplaceMethod("partitionNames", c("cell_data_set", "character"), function(x, value) {
-  out <- partitions(x)
+setReplaceMethod("clusterNames", c("cell_data_set", "character"), function(x, value) {
+  out <- clusters(x)
   names(out) <- value
-  x@partitions <- out
+  x@clusters <- out
   return(x)
 })
-
-
 
 
 
@@ -56,8 +63,6 @@ setGeneric("principal_graph", function(x, ...) standardGeneric("principal_graph"
 #' @export
 setGeneric("principal_graph<-", function(x, value) standardGeneric("principal_graph<-"))
 
-# Getter/setter functions for partitions
-# Copied from reduceDims functions from SingleCellExperiment
 
 #' @export
 setMethod("principal_graph", "cell_data_set", function(x) {
@@ -84,9 +89,6 @@ setGeneric("principal_graph_aux", function(x, ...) standardGeneric("principal_gr
 #' @export
 setGeneric("principal_graph_aux<-", function(x, value) standardGeneric("principal_graph_aux<-"))
 
-
-# Getter/setter functions for partitions
-# Copied from reduceDims functions from SingleCellExperiment
 
 #' @export
 setMethod("principal_graph_aux", "cell_data_set", function(x) {
