@@ -96,7 +96,9 @@ ciliated_genes = c("che-1",
                    "ham-1")
 cds_subset = cds[rowData(cds)$gene_short_name %in% ciliated_genes,]
 
-plot_cell_trajectory(cds, markers=ciliated_genes)
+plot_cell_trajectory(cds, markers=ciliated_genes, label_branch_points=FALSE, label_roots=FALSE, label_leaves=FALSE)
+
+principal_graph_test(cds_subset)
 
 plot_percent_cells_positive(cds_subset, grouping="cell.type") + 
     guides(fill=FALSE) + 
@@ -156,3 +158,11 @@ fit_coefs = coefficient_table(gene_fits)
 emb_time_terms = fit_coefs %>% filter(grepl("Pseudotime", term))
 emb_time_terms = emb_time_terms %>% mutate(q_value = p.adjust(p_value))
 emb_time_terms %>% filter (q_value < 0.05) %>% select(gene_short_name, term, q_value, estimate)
+
+
+# Principal graph test:
+
+ciliated_cds_pr_test_res = principal_graph_test(cds)
+plot_cell_trajectory(cds, markers=c("ctc-3", "nduo-4", "T05C7.4", "atp-6", "cutl-24"), label_branch_points=FALSE, label_roots=FALSE, label_leaves=FALSE)
+
+plot_cell_trajectory(cds, markers=c("F29C4.2", "grld-1", "csn-5", "vamp-7"), label_branch_points=FALSE, label_roots=FALSE, label_leaves=FALSE)

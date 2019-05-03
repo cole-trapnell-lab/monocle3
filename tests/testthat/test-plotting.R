@@ -45,5 +45,5 @@ cds <- estimate_size_factors(cds)
 #                                    color_by = "cell_type2"), "No normalized data projection calculated. Please run preprocess_cds before running plot_cell_trajectory")
 #  cds <- preprocess_cds(cds, num_dim = 20)
 #  expect_error(plot_cell_trajectory(cds,
-#                                    color_by = "cell_type2"), "No dimensionality reduction for UMAP calculated. Please run reduce_dimensions with reduction_method = UMAP before running partition_cells.")
+#                                    color_by = "cell_type2"), "No dimensionality reduction for UMAP calculated. Please run reduce_dimensions with reduction_method = UMAP before running cluster_cells")
 #})

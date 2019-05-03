@@ -25,7 +25,7 @@
 #' 2. run \code{reduce_dimension} to further project the PCA space into much
 #' lower dimension space with non-linear dimension reduction techniques,
 #' including tSNE, UMAP.
-#' 3. run \code{partition_cells} to partition cells into different graphs based
+#' 3. run \code{cluster_cells} to partition cells into different graphs based
 #' on a similar approach proposed by Alex Wolf and colleagues. We then
 #' reconstruct the trajectory in each partition with the \code{learn_graph}
 #' function.

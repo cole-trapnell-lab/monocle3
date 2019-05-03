@@ -110,7 +110,7 @@ cds <- cluster_cells(cds,
 
 
 ```{r}
-cds <- partition_cells(cds)
+cds <- cluster_cells(cds)
 ```
 
 ```{r}
@@ -170,7 +170,7 @@ cds <- reduce_dimension(cds, max_components = 3,
                        umap.metric="cosine",
                        verbose = F)
 
-cds <- partition_cells(cds)
+cds <- cluster_cells(cds)
  
 cds <- learn_graph(cds,
                    verbose = F)

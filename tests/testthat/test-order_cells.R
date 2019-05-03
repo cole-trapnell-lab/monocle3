@@ -3,12 +3,12 @@ context("test-order_cells")
 cds <- load_a549()
 
 test_that("order_cells error messages work", {
-  expect_error(order_cells(cds), "No dimensionality reduction for UMAP calculated. Please run reduce_dimensions with reduction_method = UMAP, partition_cells, and learn_graph before running order_cells." )
+  expect_error(order_cells(cds), "No dimensionality reduction for UMAP calculated. Please run reduce_dimensions with reduction_method = UMAP, cluster_cells, and learn_graph before running order_cells." )
   cds <- estimate_size_factors(cds)
   cds <- preprocess_cds(cds, num_dim = 20)
   cds <- reduce_dimension(cds)
-  expect_error(order_cells(cds), "No cell partition for UMAP calculated. Please run partition_cells with reduction_method = UMAP and run learn_graph before running order_cells.")
-  cds <- partition_cells(cds)
+  expect_error(order_cells(cds), "No cell clusters for UMAP calculated. Please run cluster_cells with reduction_method = UMAP and run learn_graph before running order_cells.")
+  cds <- cluster_cells(cds)
   expect_error(order_cells(cds), "No principal graph for UMAP calculated. Please run learn_graph with reduction_method = UMAP before running order_cells.")
   cds <- learn_graph(cds)
   expect_error(order_cells(cds, root_cells = c("G07_B02_RT_587"), root_pr_nodes = c("Y_1")), "Please specify either root_pr_nodes or root_cells, not both.")
@@ -23,7 +23,7 @@ test_that("order_cells error messages work", {
 cds <- estimate_size_factors(cds)
 cds <- preprocess_cds(cds, num_dim = 20)
 cds <- reduce_dimension(cds, umap.fast_sgd=FALSE)
-cds <- partition_cells(cds)
+cds <- cluster_cells(cds)
 cds <- learn_graph(cds)
 
 test_that("order_cells works", {
@@ -46,7 +46,7 @@ test_that("order_cells works", {
 })
 
 cds <- reduce_dimension(cds, max_components = 3, umap.fast_sgd=FALSE)
-cds <- partition_cells(cds)
+cds <- cluster_cells(cds)
 cds <- learn_graph(cds)
 
 test_that("order_cells works 3d", {

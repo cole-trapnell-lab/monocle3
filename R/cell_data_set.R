@@ -10,7 +10,7 @@ setOldClass(c("igraph"), prototype=structure(list(), class="igraph"))
 #'
 #' @field principal_graph_aux
 #' @field principal_graph
-#' @field partitions
+#' @field clusters
 #' @name cell_data_set
 #' @rdname cell_data_set
 #' @aliases cell_data_set-class
@@ -24,7 +24,7 @@ setClass( "cell_data_set",
           contains = c("SingleCellExperiment"),
           slots = c(principal_graph_aux="SimpleList",
                     principal_graph = "SimpleList",
-                    partitions = "SimpleList")
+                    clusters = "SimpleList")
 )
 
 
@@ -82,6 +82,6 @@ new_cell_data_set <- function(expression_data,
 
   metadata(cds)$lower_detection_limit <- lower_detection_limit
   metadata(cds)$cds_version <- Biobase::package.version("monocle3")
-  partitions <- setNames(SimpleList(), character(0))
+  clusters <- setNames(SimpleList(), character(0))
   cds
 }
