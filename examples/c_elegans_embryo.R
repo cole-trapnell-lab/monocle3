@@ -3,7 +3,7 @@ rm(list = ls())  # Clear the environment
 library(monocle3) # Load Monocle
 library(tidymodels)
 
-theme_set(theme_gray(base_size = 18))
+theme_set(theme_gray(base_size = 6))
 
 # color_metadata = read.delim("/Users/coletrap/dropbox_lab/Analysis/worm-lineage/animations/ciliated_neurons_3D_umap_metadata.txt")
 # color_metadata = color_metadata %>% dplyr::select(plot.cell.type, color.for.movie) %>% distinct()
@@ -27,8 +27,11 @@ cds <- new_cell_data_set(expression_matrix,
 cds <- estimate_size_factors(cds)
 cds <- preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
 
+set.seed(42)
 ## Step 2: Reduce the dimensionality of the data
-cds <- reduce_dimension(cds, reduction_method = 'UMAP', verbose=TRUE)
+cds <- reduce_dimension(cds, reduction_method = 'UMAP', umap.metric="euclidean", umap.fast_sgd=TRUE, verbose=TRUE, cores=8)
+plot_cell_clusters(cds, color_by = "cell.type") +
+    ggplot2::theme(legend.position="right")
 
 ## Step 3: (Optional) Cluster cells
 cds <- cluster_cells(cds)
@@ -59,6 +62,9 @@ cds = order_cells(cds, root_pr_nodes=get_earliest_principal_node(cds))
 plot_cell_clusters(cds, color_by = "Cluster", show_group_id=TRUE)+ 
     ggplot2::theme(legend.position="none")
 #dev.off()
+
+plot_cell_clusters(cds, color_by = "cell.type") +
+    ggplot2::theme(legend.position="right")
 
 plot_cell_clusters(cds, color_by = "louvain_component", show_group_id=TRUE)+ 
     ggplot2::theme(legend.position="none")
