@@ -26,6 +26,7 @@ principal_graph_test <- function(cds,
                                  k = 25, # FIXME: principal_graph_test should not be building knn's!
                                  method = c('Moran_I'),
                                  alternative = 'greater',
+                                 expression_family="quasipoisson",
                                  cores=1,
                                  interactive = FALSE,
                                  verbose=FALSE) {
@@ -39,14 +40,14 @@ principal_graph_test <- function(cds,
   if(verbose) {
     message("Performing Moran's I test: ...")
   }
-  exprs_mat <- counts(cds)[, attr(lw, "region.id")]
+  exprs_mat <- counts(cds)[, attr(lw, "region.id"), drop=FALSE]
   sz <- size_factors(cds)[attr(lw, "region.id")]
 
   wc <- spdep::spweights.constants(lw, zero.policy = TRUE, adjust.n = TRUE)
-  test_res <- pbmcapply::pbmclapply(row.names(exprs_mat), FUN = function(x, sz, alternative, method) {
+  test_res <- pbmcapply::pbmclapply(row.names(exprs_mat), FUN = function(x, sz, alternative, method, expression_family) {
     exprs_val <- exprs_mat[x, ]
 
-    if (metadata(cds)$expression_family %in% c("uninormal", "binomialff")){
+    if (expression_family %in% c("uninormal", "binomialff")){
       exprs_val <- exprs_val
     }else{
         exprs_val <- log10(exprs_val / sz + 0.1)
@@ -55,16 +56,16 @@ principal_graph_test <- function(cds,
     test_res <- tryCatch({
       if(method == "Moran_I") {
         mt <- my.moran.test(exprs_val, lw, wc, alternative = alternative)
-        data.frame(status = 'OK', pval = mt$p.value, morans_test_statistic = mt$statistic, morans_I = mt$estimate[["Moran I statistic"]])
+        data.frame(status = 'OK', p_value = mt$p.value, morans_test_statistic = mt$statistic, morans_I = mt$estimate[["Moran I statistic"]])
       } else if(method == 'Geary_C') {
         gt <- my.geary.test(exprs_val, lw, wc, alternative = alternative)
-        data.frame(status = 'OK', pval = gt$p.value, geary_test_statistic = gt$statistic, geary_C = gt$estimate[["Geary C statistic"]])
+        data.frame(status = 'OK', p_value = gt$p.value, geary_test_statistic = gt$statistic, geary_C = gt$estimate[["Geary C statistic"]])
       }
     },
     error = function(e) {
-      data.frame(status = 'FAIL', pval = NA, morans_test_statistic = NA, morans_I = NA)
+      data.frame(status = 'FAIL', p_value = NA, morans_test_statistic = NA, morans_I = NA)
     })
-  }, sz = sz, alternative = alternative, method = method, mc.cores = cores, ignore.interactive = TRUE)
+  }, sz = sz, alternative = alternative, method = method, expression_family = expression_family, mc.cores=cores, ignore.interactive = TRUE)
 
   if(verbose) {
     message("returning results: ...")
@@ -75,8 +76,9 @@ principal_graph_test <- function(cds,
   test_res <- merge(test_res, rowData(cds), by="row.names")
   row.names(test_res) <- test_res[, 1] #remove the first column and set the row names to the first column
   test_res[, 1] <- NULL
-  test_res$qval <- 1
-  test_res$qval[which(test_res$status == 'OK')] <- stats::p.adjust(subset(test_res, status == 'OK')[, 'pval'], method="BH")
+  test_res$q_value <- 1
+  test_res$q_value[which(test_res$status == 'OK')] <- stats::p.adjust(subset(test_res, status == 'OK')[, 'p_value'], method="BH")
+  test_res$status = as.character(test_res$status)
   test_res[row.names(cds), ] # make sure gene name ordering in the DEG test result is the same as the CDS
 }
 
@@ -243,12 +245,12 @@ calculateLW <- function(cds,
   knn_res <- NULL
   principal_g <- NULL
 
+  cell_coords <- reducedDims(cds)$UMAP
   if (neighbor_graph == "knn") {
-    cell_coords <- reducedDims(cds)$UMAP
     knn_res <- RANN::nn2(cell_coords, cell_coords, min(k + 1, nrow(cell_coords)), searchtype = "standard")[[1]]
   } else if(neighbor_graph == "principal_graph") {
-    cell_coords <- reducedDims(cds)$UMAP
-    principal_g <-  igraph::get.adjacency(cds@principal_graph[[reduction_method]])[1:row(reducedDims(cds)$UMAP), 1:nrow(reducedDims(cds)$UMAP)]
+    pr_graph_node_coords <- cds@principal_graph_aux[[reduction_method]]$dp_mst
+    principal_g <-  igraph::get.adjacency(cds@principal_graph[[reduction_method]])[colnames(pr_graph_node_coords), colnames(pr_graph_node_coords)]
   }
 
   exprs_mat <- counts(cds)
@@ -315,7 +317,7 @@ calculateLW <- function(cds,
     membership_matrix <- Matrix::sparse.model.matrix( ~ cell_membership + 0)
     colnames(membership_matrix) <- levels(uniq_member)
     # sparse matrix multiplication for calculating the feasible space
-    feasible_space <- membership_matrix %*% tcrossprod(principal_g_tmp[as.numeric(levels(uniq_member)), as.numeric(levels(uniq_member))], membership_matrix)
+    feasible_space <- membership_matrix %*% Matrix::tcrossprod(principal_g_tmp[as.numeric(levels(uniq_member)), as.numeric(levels(uniq_member))], membership_matrix)
 
     links <- jaccard_coeff(knn_res[, -1], F)
     links <- links[links[, 1] > 0, ]
@@ -331,7 +333,7 @@ calculateLW <- function(cds,
       message('start calculating valid kNN graph ...')
     }
 
-    pb_feasible_knn <- utils::txtProgressBar(max = num_blocks, file = "", style = 3, min = 0)
+    #pb_feasible_knn <- utils::txtProgressBar(max = num_blocks, file = "", style = 3, min = 0)
     tmp <- NULL
 
     for (j in 1:num_blocks){
@@ -350,10 +352,10 @@ calculateLW <- function(cds,
       } else {
         tmp <- rBind(tmp, cur_tmp)
       }
-      utils::setTxtProgressBar(pb = pb_feasible_knn, value = pb_feasible_knn$getVal() + 1)
+      #utils::setTxtProgressBar(pb = pb_feasible_knn, value = pb_feasible_knn$getVal() + 1)
     }
 
-    close(pb_feasible_knn)
+    #close(pb_feasible_knn)
     if(verbose) {
       message('Calculating valid kNN graph, done ...')
     }
