@@ -3,10 +3,10 @@ setOldClass(c("igraph"), prototype=structure(list(), class="igraph"))
 #' The cell_data_set class
 #'
 #' The main class used by Monocle3 to hold single cell expression data.
-#' cell_data_set extends the basic Bioconductor SingleCellExperiment class.
+#' cell_data_set extends the Bioconductor SingleCellExperiment class.
 #'
-#' This class is initialized from a matrix of expression values Methods that
-#' operate on cell_data_set objects constitute the basic Monocle workflow.
+#' This class is initialized from a matrix of expression values along with cell
+#' and feature metadata.
 #'
 #' @field principal_graph_aux
 #' @field principal_graph
