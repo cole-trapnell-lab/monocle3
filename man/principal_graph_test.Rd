@@ -6,8 +6,8 @@
 \usage{
 principal_graph_test(cds, neighbor_graph = c("principal_graph", "knn"),
   reduction_method = "UMAP", k = 25, method = c("Moran_I"),
-  alternative = "greater", cores = 1, interactive = FALSE,
-  verbose = FALSE)
+  alternative = "greater", expression_family = "quasipoisson",
+  cores = 1, interactive = FALSE, verbose = FALSE)
 }
 \arguments{
 \item{cds}{a cell_data_set object upon which to perform this operation}

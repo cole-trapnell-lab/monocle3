@@ -21,7 +21,7 @@ cluster_cells(cds, reduction_method = c("UMAP", "tSNE", "PCA"), k = 20,
 
 \item{verbose}{Verbose A logic flag to determine whether or not we should print the running details.}
 
-\item{...}{Additional arguments passed to \code{\link{densityClust}()}}
+\item{...}{Additional arguments passed to \code{\link{louvain_clustering}()}}
 
 \item{use_pca}{Whether or not to cluster cells based on top PCA component. Default to be FALSE.}
 

@@ -46,13 +46,3 @@ size_factors <- function( cds, value ) {
   sf
 }
 
-check_size_factors <- function(cds) {
-    if (is.null(size_factors(cds))){
-      stop(paste("Error: you must call estimate_size_factors() before calling",
-                 "this function."))
-    }
-    if (sum(is.na(size_factors(cds))) > 0){
-      stop("Error: one or more cells has a size factor of NA.")
-    }
-}
-

@@ -253,23 +253,16 @@ smart_es_apply <- function(cds, MARGIN, FUN, convert_to_dense, ...) {
 
 
 #' Build a cell_data_set from the data stored in inst/extdata directory.
-#' @keywords internal
+#' @export
 load_a549 <- function(){
   small_a549_colData_df <- readRDS(system.file("extdata", "small_a549_dex_pdata.rda", package = "monocle3"))
   small_a549_rowData_df <- readRDS(system.file("extdata", "small_a549_dex_fdata.rda", package = "monocle3"))
   small_a549_exprs <- readRDS(system.file("extdata", "small_a549_dex_exprs.rda", package = "monocle3"))
   small_a549_exprs <- small_a549_exprs[,row.names(small_a549_colData_df)]
 
-  pd <- methods::new("AnnotatedDataFrame", data = small_a549_colData_df)
-  fd <- methods::new("AnnotatedDataFrame", data = small_a549_rowData_df)
-
-  # Now, make a new cell_data_set using the RNA counts
   cds <- new_cell_data_set(expression_data = small_a549_exprs,
                            cell_metadata = small_a549_colData_df,
-                           gene_metadata = small_a549_rowData_df,
-                           lower_detection_limit = 1)
-  colData(cds)$Size_Factor = small_a549_colData_df$Size_Factor
-
+                           gene_metadata = small_a549_rowData_df)
   cds
 }
 
@@ -441,15 +434,10 @@ sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE, scale. = F
 #' \dontrun{
 #' HSMM <- detect_genes(HSMM, min_expr=0.1)
 #' }
-detect_genes <- function(cds, min_expr=NULL){
+detect_genes <- function(cds, min_expr=0){
   assertthat::assert_that(is(cds, "cell_data_set"))
-  if(!is.null(min_expr)) {
     assertthat::assert_that(is.numeric(min_expr))
-  }
 
-  if (is.null(min_expr)) {
-    min_expr <- metadata(cds)$lower_detection_limit
-  }
   rowData(cds)$num_cells_expressed <- Matrix::rowSums(counts(cds) > min_expr)
   colData(cds)$num_genes_expressed <- Matrix::colSums(counts(cds) > min_expr)
 

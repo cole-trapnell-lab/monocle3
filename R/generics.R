@@ -1,14 +1,24 @@
+#' Generic to extract clusters from CDS object
+#'
+#' @param x CDS object
+#' @param reduction_method Reduced dimension to extract clusters for.
+#'
 #' @export
-setGeneric("get_clusters", function(x, reduction_method = "UMAP", ...) standardGeneric("get_clusters"))
+setGeneric("get_clusters", function(x, reduction_method = "UMAP")
+  standardGeneric("get_clusters"))
 
+#' Method to extract clusters from CDS object
+#' @param cell_data_set CDS object
+#'
 #' @export
-setMethod("get_clusters", "cell_data_set", function(x, reduction_method = "UMAP") {
+setMethod("get_clusters", "cell_data_set",
+          function(x, reduction_method = "UMAP") {
   value <- x@clusters[[reduction_method]]$clusters
   return(value)
 })
 
 #' @export
-setGeneric("clusters", function(x, ...) standardGeneric("clusters"))
+setGeneric("clusters", function(x) standardGeneric("clusters"))
 
 #' @export
 setGeneric("clusters<-", function(x, value) standardGeneric("clusters<-"))
@@ -17,7 +27,8 @@ setGeneric("clusters<-", function(x, value) standardGeneric("clusters<-"))
 setGeneric("clusterNames", function(x) standardGeneric("clusterNames"))
 
 #' @export
-setGeneric("clusterNames<-", function(x, value) standardGeneric("clusterNames<-"))
+setGeneric("clusterNames<-", function(x, value)
+  standardGeneric("clusterNames<-"))
 
 # Getter/setter functions for clusters
 # Copied from reduceDims functions from SingleCellExperiment
@@ -47,21 +58,21 @@ setMethod("clusterNames", "cell_data_set", function(x) {
 
 
 #' @export
-setReplaceMethod("clusterNames", c("cell_data_set", "character"), function(x, value) {
+setReplaceMethod("clusterNames", c("cell_data_set", "character"),
+                 function(x, value) {
   out <- clusters(x)
   names(out) <- value
   x@clusters <- out
   return(x)
 })
 
-
-
+#' @export
+setGeneric("principal_graph", function(x)
+  standardGeneric("principal_graph"))
 
 #' @export
-setGeneric("principal_graph", function(x, ...) standardGeneric("principal_graph"))
-
-#' @export
-setGeneric("principal_graph<-", function(x, value) standardGeneric("principal_graph<-"))
+setGeneric("principal_graph<-", function(x, value)
+  standardGeneric("principal_graph<-"))
 
 
 #' @export
@@ -84,10 +95,12 @@ setReplaceMethod("principal_graph", "cell_data_set", function(x, value) {
 
 
 #' @export
-setGeneric("principal_graph_aux", function(x, ...) standardGeneric("principal_graph_aux"))
+setGeneric("principal_graph_aux", function(x)
+  standardGeneric("principal_graph_aux"))
 
 #' @export
-setGeneric("principal_graph_aux<-", function(x, value) standardGeneric("principal_graph_aux<-"))
+setGeneric("principal_graph_aux<-", function(x, value)
+  standardGeneric("principal_graph_aux<-"))
 
 
 #' @export
@@ -109,7 +122,7 @@ setReplaceMethod("principal_graph_aux", "cell_data_set", function(x, value) {
 })
 
 #' @export
-setGeneric("exprs", function(x, ...) standardGeneric("exprs"))
+setGeneric("exprs", function(x) standardGeneric("exprs"))
 
 # Getter/setter wrappers for exprs
 # Copied from reduceDims functions from SingleCellExperiment
@@ -122,7 +135,7 @@ setMethod("exprs", "cell_data_set", function(x) {
 
 
 #' @export
-setGeneric("pData", function(x, ...) standardGeneric("pData"))
+setGeneric("pData", function(x) standardGeneric("pData"))
 
 #' @export
 setGeneric("pData<-", function(x, value) standardGeneric("pData<-"))
@@ -145,7 +158,7 @@ setReplaceMethod("pData", "cell_data_set", function(x, value) {
 })
 
 #' @export
-setGeneric("fData", function(x, ...) standardGeneric("fData"))
+setGeneric("fData", function(x) standardGeneric("fData"))
 
 #' @export
 setGeneric("fData<-", function(x, value) standardGeneric("fData<-"))

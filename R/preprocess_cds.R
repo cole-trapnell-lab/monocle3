@@ -100,6 +100,12 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
                             msg = paste("use_genes must be NULL, or all must",
                             "be present in the row.names of rowData(cds)"))
   }
+  assertthat::assert_that(!is.null(size_factors(cds)),
+             msg = paste("You must call estimate_size_factors before calling",
+                         "preprocess_cds."))
+  assertthat::assert_that(sum(is.na(size_factors(cds))) == 0,
+                          msg = paste("One or more cells has a size factor of",
+                                      "NA."))
 
   method <- match.arg(method)
   norm_method <- match.arg(norm_method)
@@ -170,7 +176,6 @@ normalize_expr_data <- function(cds,
                                 norm_method = c("log", "size_only"),
                                 pseudo_count = NULL) {
   norm_method <- match.arg(norm_method)
-  check_size_factors(cds)
 
   FM <- counts(cds)
 

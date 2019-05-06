@@ -8,9 +8,10 @@ setOldClass(c("igraph"), prototype=structure(list(), class="igraph"))
 #' This class is initialized from a matrix of expression values along with cell
 #' and feature metadata.
 #'
-#' @field principal_graph_aux
-#' @field principal_graph
-#' @field clusters
+#' @field principal_graph_aux Auxilliary information from principal graph
+#'   construction
+#' @field principal_graph Principal graph
+#' @field clusters Cluster data
 #' @name cell_data_set
 #' @rdname cell_data_set
 #' @aliases cell_data_set-class
@@ -20,7 +21,7 @@ setOldClass(c("igraph"), prototype=structure(list(), class="igraph"))
 #' @importFrom SingleCellExperiment reducedDims
 #' @importFrom SummarizedExperiment Assays colData<- rowData<- assays assays<-
 #' @importFrom S4Vectors metadata metadata<- SimpleList
-setClass( "cell_data_set",
+setClass("cell_data_set",
           contains = c("SingleCellExperiment"),
           slots = c(principal_graph_aux="SimpleList",
                     principal_graph = "SimpleList",
@@ -30,40 +31,44 @@ setClass( "cell_data_set",
 
 #' Creates a new cell_data_set object.
 #'
-#' @param expression_data expression data matrix for an experiment
-#' @param cell_metadata data frame containing attributes of individual cells
-#' @param gene_metadata data frame containing attributes of features (e.g. genes)
-#' @param lower_detection_limit the minimum expression level that consistitutes
-#'   true expression
+#' @param expression_data expression data matrix for an experiment, can be a
+#'   sparseMatrix.
+#' @param cell_metadata data frame containing attributes of individual cells,
+#'  where row.names(cell_metadata) = colnames(expression_data).
+#' @param gene_metadata data frame containing attributes of features
+#' nn(e.g. genes), where row.names(gene_metadata) = row.names(expression_data).
 #' @return a new cell_data_set object
 #' @export
 #' @examples
-#' \dontrun{
-#' sample_sheet_small <- read.delim("../data/sample_sheet_small.txt",
-#'                                  row.names=1)
-#' sample_sheet_small$Time <- as.factor(sample_sheet_small$Time)
-#' gene_annotations_small <- read.delim("../data/gene_annotations_small.txt",
-#'                                       row.names=1)
-#' fpkm_matrix_small <- read.delim("../data/fpkm_matrix_small.txt")
-#' pd <- new("AnnotatedDataFrame", data = sample_sheet_small)
-#' fd <- new("AnnotatedDataFrame", data = gene_annotations_small)
-#' HSMM <- new("cell_data_set", exprs = as.matrix(fpkm_matrix_small),
-#'             phenoData = pd, featureData = fd)
-#' }
+#' small_a549_colData_df <- readRDS(system.file("extdata",
+#'                                              "small_a549_dex_pdata.rda",
+#'                                              package = "monocle3"))
+#' small_a549_rowData_df <- readRDS(system.file("extdata",
+#'                                              "small_a549_dex_fdata.rda",
+#'                                              package = "monocle3"))
+#' small_a549_exprs <- readRDS(system.file("extdata",
+#'                                         "small_a549_dex_exprs.rda",
+#'                                         package = "monocle3"))
+#' small_a549_exprs <- small_a549_exprs[,row.names(small_a549_colData_df)]
+#'
+#' cds <- new_cell_data_set(expression_data = small_a549_exprs,
+#'                          cell_metadata = small_a549_colData_df,
+#'                          gene_metadata = small_a549_rowData_df)
+#'
 new_cell_data_set <- function(expression_data,
                               cell_metadata = NULL,
-                              gene_metadata = NULL,
-                              lower_detection_limit = 0.1) {
+                              gene_metadata = NULL) {
 
   if(!('gene_short_name' %in% colnames(gene_metadata))) {
     warning(paste("Warning: gene_metadata must contain a column verbatim named",
-                  "'gene_short_name' for certain functions"))
+                  "'gene_short_name' for certain functions."))
   }
 
-  if (class(expression_data) != "matrix" && is_sparse_matrix(expression_data) == FALSE){
-    stop(paste("Error: argument expression_data must be a matrix (either sparse from",
-               "the Matrix package or dense)"))
-  }
+  assertthat::assert_that(class(expression_data) == "matrix" ||
+                            is_sparse_matrix(expression_data),
+                          msg = paste("Argument expression_data must be a",
+                                      "matrix (either sparse from the Matrix",
+                                      "package or dense)."))
 
   sce <- SingleCellExperiment(list(counts=expression_data),
                               rowData = gene_metadata,
@@ -80,7 +85,6 @@ new_cell_data_set <- function(expression_data,
              elementMetadata = sce@elementMetadata,
              rowRanges = sce@rowRanges)
 
-  metadata(cds)$lower_detection_limit <- lower_detection_limit
   metadata(cds)$cds_version <- Biobase::package.version("monocle3")
   clusters <- setNames(SimpleList(), character(0))
   cds

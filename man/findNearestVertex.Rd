@@ -6,9 +6,6 @@
 \usage{
 findNearestVertex(data_matrix, target_points, block_size = 50000,
   process_targets_in_blocks = FALSE)
-
-findNearestVertex(data_matrix, target_points, block_size = 50000,
-  process_targets_in_blocks = FALSE)
 }
 \arguments{
 \item{data_matrix}{the input matrix}
@@ -18,18 +15,8 @@ findNearestVertex(data_matrix, target_points, block_size = 50000,
 \item{block_size}{the number of input matrix rows to process per bloclk}
 
 \item{process_targets_in_blocks}{whether to process the targets points in blocks instead}
-
-\item{data_matrix}{the input matrix}
-
-\item{target_points}{the target points}
-
-\item{block_size}{the number of input matrix rows to process per bloclk}
-
-\item{process_targets_in_blocks}{whether to process the targets points in blocks instead}
 }
 \description{
-Finds the nearest principal graph node
-
 Finds the nearest principal graph node
 }
 \keyword{internal}

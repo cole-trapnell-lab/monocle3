@@ -808,7 +808,7 @@ plot_genes_in_pseudotime <-function(cds_subset,
     cds_exprs <- reshape2::melt(round(as.matrix(cds_exprs)))
 
   if (is.null(min_expr)) {
-    min_expr <- metadata(cds_subset)$lower_detection_limit
+    min_expr <- 0
   }
   colnames(cds_exprs) <- c("f_id", "Cell", "expression")
   cds_colData <- colData(cds_subset)
@@ -975,7 +975,7 @@ plot_pc_variance_explained <- function(cds,
 #'   group cells by on the horizontal axis.
 #' @param min_expr the minimum (untransformed) expression level to use when
 #'   plotted the genes. If \code{NULL},
-#'   \code{metadata(cds_subset)$lower_detection_limit} is used.
+#'   zero is used.
 #' @param nrow the number of panels per row in the figure.
 #' @param ncol the number of panels per column in the figure.
 #' @param panel_order the order in which genes should be layed out
@@ -1034,7 +1034,7 @@ plot_genes_violin <- function (cds_subset,
     cds_exprs <- reshape2::melt(as.matrix(cds_exprs))
   }
   if (is.null(min_expr)) {
-    min_expr <- metadata(cds_subset)$lower_detection_limit
+    min_expr <- 0
   }
   colnames(cds_exprs) <- c("f_id", "Cell", "expression")
   cds_exprs$expression[cds_exprs$expression < min_expr] <- min_expr
@@ -1103,7 +1103,7 @@ plot_genes_violin <- function (cds_subset,
 #'   group cells by on the horizontal axis
 #' @param min_expr the minimum (untransformed) expression level to consider the
 #'   gene 'expressed'. If \code{NULL},
-#'   \code{metadata(cds_subset)$lower_detection_limit} is used.
+#'  zero is used.
 #' @param nrow the number of panels per row in the figure.
 #' @param ncol the number of panels per column in the figure.
 #' @param panel_order the order in which genes should be layed out
@@ -1155,7 +1155,7 @@ plot_percent_cells_positive <- function(cds_subset,
   assertthat::assert_that(is.logical(normalize))
 
   if (is.null(min_expr)) {
-    min_expr <- metadata(cds_subset)$lower_detection_limit
+    min_expr <- 0
   }
 
   marker_exprs <- counts(cds_subset)
