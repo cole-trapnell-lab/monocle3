@@ -411,22 +411,27 @@ sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE, scale. = F
 
 #' Detects genes above minimum threshold.
 #'
-#' @description Sets the global expression detection threshold to be used with this cell_data_set
-#' Counts how many cells each feature in a cell_data_set object that are detectably expressed
-#' above a minimum threshold. Also counts the number of genes above this threshold are
-#' detectable in each cell.
+#' @description For each feature in a cell_data_set object, detect_genes counts
+#' how many cells are expressed above a minimum threshold. In addition, for
+#' each cell, detect_genes counts the number of genes above this threshold are
+#' detectable. Results are added as columns num_cells_expressed and
+#' num_genes_expressed in the rowData and colData tables respectively.
 #'
-#' @param cds the cell_data_set upon which to perform this operation
-#' @param min_expr the expression threshold
-#' @return an updated cell_data_set object
+#' @param cds Input cell_data_set object.
+#' @param min_expr Expression threshold
+#' @return Updated cell_data_set object
 #' @export
 #' @examples
 #' \dontrun{
 #' HSMM <- detect_genes(HSMM, min_expr=0.1)
 #' }
 detect_genes <- function(cds, min_expr=NULL){
-  if (is.null(min_expr))
-  {
+  assertthat::assert_that(is(cds, "cell_data_set"))
+  if(!is.null(min_expr)) {
+    assertthat::assert_that(is.numeric(min_expr))
+  }
+
+  if (is.null(min_expr)) {
     min_expr <- metadata(cds)$lower_detection_limit
   }
   rowData(cds)$num_cells_expressed <- Matrix::rowSums(counts(cds) > min_expr)
