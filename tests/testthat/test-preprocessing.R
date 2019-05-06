@@ -41,6 +41,13 @@ test_that("preprocessing stays the same", {
   expect_equal(reducedDims(cds)$PCA[2,1], 2.274213, tol = 1e-5)
 
 
+  # with use_genes
+  cds <- preprocess_cds(cds, method = "PCA", num_dim = 20,
+                        use_genes = c(row.names(rowData(cds))[1:100]))
+  expect_equal(ncol(reducedDims(cds)$PCA), 20)
+  expect_equal(nrow(reducedDims(cds)$PCA), nrow(colData(cds)))
+  expect_equal(reducedDims(cds)$PCA[2,1], -0.5347819, tol = 1e-5)
+
 })
 
 
