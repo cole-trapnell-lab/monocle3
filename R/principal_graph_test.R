@@ -40,7 +40,7 @@ principal_graph_test <- function(cds,
   if(verbose) {
     message("Performing Moran's I test: ...")
   }
-  exprs_mat <- counts(cds)[, attr(lw, "region.id")]
+  exprs_mat <- counts(cds)[, attr(lw, "region.id"), drop=FALSE]
   sz <- size_factors(cds)[attr(lw, "region.id")]
 
   wc <- spdep::spweights.constants(lw, zero.policy = TRUE, adjust.n = TRUE)
@@ -56,14 +56,14 @@ principal_graph_test <- function(cds,
     test_res <- tryCatch({
       if(method == "Moran_I") {
         mt <- my.moran.test(exprs_val, lw, wc, alternative = alternative)
-        data.frame(status = 'OK', pval = mt$p.value, morans_test_statistic = mt$statistic, morans_I = mt$estimate[["Moran I statistic"]])
+        data.frame(status = 'OK', p_value = mt$p.value, morans_test_statistic = mt$statistic, morans_I = mt$estimate[["Moran I statistic"]])
       } else if(method == 'Geary_C') {
         gt <- my.geary.test(exprs_val, lw, wc, alternative = alternative)
-        data.frame(status = 'OK', pval = gt$p.value, geary_test_statistic = gt$statistic, geary_C = gt$estimate[["Geary C statistic"]])
+        data.frame(status = 'OK', p_value = gt$p.value, geary_test_statistic = gt$statistic, geary_C = gt$estimate[["Geary C statistic"]])
       }
     },
     error = function(e) {
-      data.frame(status = 'FAIL', pval = NA, morans_test_statistic = NA, morans_I = NA)
+      data.frame(status = 'FAIL', p_value = NA, morans_test_statistic = NA, morans_I = NA)
     })
   }, sz = sz, alternative = alternative, method = method, expression_family = expression_family, mc.cores=cores, ignore.interactive = TRUE)
 
@@ -76,8 +76,9 @@ principal_graph_test <- function(cds,
   test_res <- merge(test_res, rowData(cds), by="row.names")
   row.names(test_res) <- test_res[, 1] #remove the first column and set the row names to the first column
   test_res[, 1] <- NULL
-  test_res$qval <- 1
-  test_res$qval[which(test_res$status == 'OK')] <- stats::p.adjust(subset(test_res, status == 'OK')[, 'pval'], method="BH")
+  test_res$q_value <- 1
+  test_res$q_value[which(test_res$status == 'OK')] <- stats::p.adjust(subset(test_res, status == 'OK')[, 'p_value'], method="BH")
+  test_res$status = as.character(test_res$status)
   test_res[row.names(cds), ] # make sure gene name ordering in the DEG test result is the same as the CDS
 }
 

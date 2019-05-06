@@ -253,7 +253,7 @@ smart_es_apply <- function(cds, MARGIN, FUN, convert_to_dense, ...) {
 
 
 #' Build a cell_data_set from the data stored in inst/extdata directory.
-#' @export
+#' @keywords internal
 load_a549 <- function(){
   small_a549_colData_df <- readRDS(system.file("extdata", "small_a549_dex_pdata.rda", package = "monocle3"))
   small_a549_rowData_df <- readRDS(system.file("extdata", "small_a549_dex_fdata.rda", package = "monocle3"))
@@ -272,6 +272,22 @@ load_a549 <- function(){
 
   cds
 }
+
+#' Build a cell_data_set from the data stored in inst/extdata directory.
+#' @keywords internal
+load_worm_embryo <- function(){
+  expression_matrix = readRDS(url("http://jpacker-data.s3.amazonaws.com/for-cole/for-cole.ciliated.amphid.neurons.exprs.rds"))
+  cell_metadata = readRDS(url("http://jpacker-data.s3.amazonaws.com/for-cole/for-cole.ciliated.amphid.neurons.pData.rds"))
+  gene_annotation = readRDS(url("http://jpacker-data.s3.amazonaws.com/for-cole/for-cole.ciliated.amphid.neurons.fData.rds"))
+  gene_annotation$use_for_ordering = NULL
+
+  cds <- new_cell_data_set(expression_matrix,
+                           cell_metadata = cell_metadata,
+                           gene_metadata = gene_annotation)
+  cds <- estimate_size_factors(cds)
+  cds
+}
+
 
 # Test whether a matrix is one of our supported sparse matrices
 is_sparse_matrix <- function(x){
