@@ -22,7 +22,9 @@ setOldClass(c("igraph"), prototype=structure(list(), class="igraph"))
 #' @importFrom S4Vectors metadata metadata<- SimpleList
 setClass( "cell_data_set",
           contains = c("SingleCellExperiment"),
-          slots = c(principal_graph_aux="SimpleList",
+          slots = c(preprocess_aux = "SimpleList",
+                    reduce_dim_aux = "SimpleList",
+                    principal_graph_aux="SimpleList",
                     principal_graph = "SimpleList",
                     clusters = "SimpleList")
 )
