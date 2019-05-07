@@ -7,9 +7,20 @@
 \title{The cell_data_set class}
 \description{
 The main class used by Monocle3 to hold single cell expression data.
-cell_data_set extends the basic Bioconductor SingleCellExperiment class.
+cell_data_set extends the Bioconductor SingleCellExperiment class.
 }
 \details{
-This class is initialized from a matrix of expression values Methods that
-operate on cell_data_set objects constitute the basic Monocle workflow.
+This class is initialized from a matrix of expression values along with cell
+and feature metadata.
 }
+\section{Fields}{
+
+\describe{
+\item{\code{principal_graph_aux}}{Auxilliary information from principal graph
+construction}
+
+\item{\code{principal_graph}}{Principal graph}
+
+\item{\code{clusters}}{Cluster data}
+}}
+

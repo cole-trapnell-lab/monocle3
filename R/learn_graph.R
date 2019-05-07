@@ -614,22 +614,6 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE, ver
         # add the minimal positive distance between any points to the distance matrix
         data_df$weight <- data_df$weight + min(data_df$weight[data_df$weight > 0])
 
-        # create the graph
-        # cur_dp_mst <- igraph::graph.data.frame(data_df[, c("new_source", "new_target", 'weight')], directed = FALSE)
-        # union with the principal graph
-
-        # code to get the get.edgelist with weight
-        ## the trick is that we might need to swap the columns of the
-        ## edge lists, because they are ordered according to numeric
-        ## vertex ids and not names
-        reordel <- function(graph) {
-          el <- cbind(as.data.frame(igraph::get.edgelist(graph), stringsAsFactors=FALSE),
-                      E(graph)$weight)
-          swap <- which(el[,1] > el[,2])
-          if (length(swap) > 0) { el[swap,1:2] <- cbind(el[swap,2], el[swap,1]) }
-          el
-        }
-
         # Calculate distance between two connected nodes directly from the original graph
         edge_list <- as.data.frame(igraph::get.edgelist(dp_mst_list[[as.numeric(cur_louvain_comp)]]), stringsAsFactors=FALSE)
         dp <- as.matrix(dist(t(rge_res_Y)[cur_centroid_name,]))
@@ -690,50 +674,6 @@ findNearestPointOnMST <- function(cds, reduction_method, rge_res_Y){
   closest_vertex_df <- closest_vertex_df[colnames(cds), , drop = F]
   cds@principal_graph_aux[[reduction_method]]$pr_graph_cell_proj_closest_vertex <- closest_vertex_df #as.matrix(closest_vertex)
   cds
-}
-
-#' Finds the nearest principal graph node
-#' @param data_matrix the input matrix
-#' @param target_points the target points
-#' @param block_size the number of input matrix rows to process per bloclk
-#' @param process_targets_in_blocks whether to process the targets points in blocks instead
-#' @keywords internal
-findNearestVertex = function(data_matrix, target_points, block_size=50000, process_targets_in_blocks=FALSE){
-  closest_vertex = c()
-  if (process_targets_in_blocks == FALSE){
-    num_blocks = ceiling(ncol(data_matrix) / block_size)
-    for (i in 1:num_blocks){
-      if (i < num_blocks){
-        block = data_matrix[,((((i-1) * block_size)+1):(i*block_size))]
-      }else{
-        block = data_matrix[,((((i-1) * block_size)+1):(ncol(data_matrix)))]
-      }
-      distances_Z_to_Y <- proxy::dist(t(block), t(target_points))
-      closest_vertex_for_block <- apply(distances_Z_to_Y, 1, function(z) { which.min(z) } )
-      closest_vertex = append(closest_vertex, closest_vertex_for_block)
-    }
-  }else{
-    num_blocks = ceiling(ncol(target_points) / block_size)
-    dist_to_closest_vertex = rep(Inf, length(ncol(data_matrix)))
-    closest_vertex = rep(NA, length(ncol(data_matrix)))
-    for (i in 1:num_blocks){
-      if (i < num_blocks){
-        block = target_points[,((((i-1) * block_size)+1):(i*block_size))]
-      }else{
-        block = target_points[,((((i-1) * block_size)+1):(ncol(target_points)))]
-      }
-      distances_Z_to_Y <- proxy::dist(t(data_matrix), t(block))
-      closest_vertex_for_block <- apply(distances_Z_to_Y, 1, function(z) { which.min(z) } )
-      new_block_distances = distances_Z_to_Y[cbind(1:nrow(distances_Z_to_Y), closest_vertex_for_block)]
-      updated_nearest_idx = which(new_block_distances < dist_to_closest_vertex)
-      closest_vertex[updated_nearest_idx] = closest_vertex_for_block[updated_nearest_idx] + (i-1) * block_size
-      dist_to_closest_vertex[updated_nearest_idx] = new_block_distances[updated_nearest_idx]
-      #closest_vertex = append(closest_vertex, closest_vertex_for_block)
-    }
-  }
-  stopifnot(length(closest_vertex) == ncol(data_matrix))
-  #closest_vertex <- which(distance_to_closest == min(distance_to_closest))
-  return (closest_vertex)
 }
 
 # Project point to line segment (in >= 2 dimensions)

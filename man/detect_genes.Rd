@@ -4,21 +4,22 @@
 \alias{detect_genes}
 \title{Detects genes above minimum threshold.}
 \usage{
-detect_genes(cds, min_expr = NULL)
+detect_genes(cds, min_expr = 0)
 }
 \arguments{
-\item{cds}{the cell_data_set upon which to perform this operation}
+\item{cds}{Input cell_data_set object.}
 
-\item{min_expr}{the expression threshold}
+\item{min_expr}{Expression threshold}
 }
 \value{
-an updated cell_data_set object
+Updated cell_data_set object
 }
 \description{
-Sets the global expression detection threshold to be used with this cell_data_set
-Counts how many cells each feature in a cell_data_set object that are detectably expressed
-above a minimum threshold. Also counts the number of genes above this threshold are
-detectable in each cell.
+For each feature in a cell_data_set object, detect_genes counts
+how many cells are expressed above a minimum threshold. In addition, for
+each cell, detect_genes counts the number of genes above this threshold are
+detectable. Results are added as columns num_cells_expressed and
+num_genes_expressed in the rowData and colData tables respectively.
 }
 \examples{
 \dontrun{

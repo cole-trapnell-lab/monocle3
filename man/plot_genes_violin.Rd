@@ -16,7 +16,7 @@ group cells by on the horizontal axis.}
 
 \item{min_expr}{the minimum (untransformed) expression level to use when
 plotted the genes. If \code{NULL},
-\code{metadata(cds_subset)$lower_detection_limit} is used.}
+zero is used.}
 
 \item{nrow}{the number of panels per row in the figure.}
 

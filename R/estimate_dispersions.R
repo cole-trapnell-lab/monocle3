@@ -9,7 +9,8 @@
 estimate_dispersions <- function(cds, modelFormulaStr="~ 1",
                                  expression_family,
                                  min_cells_detected=1,
-                                 cores=1,...) {
+                                 min_expr = 0,
+                                 cores=1) {
   dispModelName="blind"
   stopifnot( is( cds, "cell_data_set" ) )
 
@@ -19,9 +20,6 @@ estimate_dispersions <- function(cds, modelFormulaStr="~ 1",
 
   if( any( is.na( size_factors(cds) ) ) )
     stop( "NAs found in size factors. Have you called 'estimate_size_factors'?" )
-
-  if( length(list(...)) != 0 )
-    warning( "in estimate_dispersions: Ignoring extra argument(s)." )
 
   # Remove results from previous fits
   cds@disp_fit_info = new.env( hash=TRUE )
@@ -41,10 +39,10 @@ estimate_dispersions <- function(cds, modelFormulaStr="~ 1",
   if (expression_family %in% c("negbinomial", "negbinomial.size")){
     if (length(model_terms) > 1 || (length(model_terms) == 1 && model_terms[1] != "1")){
       cds_colData <- dplyr::group_by_(dplyr::select_(tibble::rownames_to_column(colData(cds)), "rowname", .dots=model_terms), .dots=model_terms)
-      disp_table <- as.data.frame(cds_colData %>% do(disp_calc_helper_NB(cds[,.$rowname], min_cells_detected)))
+      disp_table <- as.data.frame(cds_colData %>% do(disp_calc_helper_NB(cds[,.$rowname], min_cells_detected, min_expr)))
     }else{
       cds_colData <- dplyr::group_by_(dplyr::select_(tibble::rownames_to_column(as.data.frame(colData(cds))), "rowname"))
-      disp_table <- as.data.frame(disp_calc_helper_NB(cds, min_cells_detected))
+      disp_table <- as.data.frame(disp_calc_helper_NB(cds, min_cells_detected, min_expr))
       #disp_table <- data.frame(rowname = row.names(type_res), CellType = type_res)
     }
 
@@ -80,9 +78,9 @@ estimate_dispersions <- function(cds, modelFormulaStr="~ 1",
 }
 
 
-disp_calc_helper_NB <- function(cds, min_cells_detected) {
+disp_calc_helper_NB <- function(cds, min_cells_detected, min_expr) {
   rounded <- round(counts(cds))
-  nzGenes <- Matrix::rowSums(rounded > metadata(cds)$lower_detection_limit)
+  nzGenes <- Matrix::rowSums(rounded > min_expr)
   nzGenes <- names(nzGenes[nzGenes > min_cells_detected])
 
   # Note: we do these operations as DelayedArray ops because standard operations will trigger a conversion
@@ -172,6 +170,7 @@ estimate_dispersion_function <- function(cds,
                                          modelFormulaStr="~ 1",
                                          min_cells_detected=1,
                                          remove_outliers=TRUE,
+                                         min_expr = 0,
                                          cores=1) {
   stopifnot( is( cds, "cell_data_set" ) )
 
@@ -185,10 +184,10 @@ estimate_dispersion_function <- function(cds,
 
     if (length(model_terms) > 1 || (length(model_terms) == 1 && model_terms[1] != "1")){
       cds_colData <- dplyr::group_by_(dplyr::select_(tibble::rownames_to_column(colData(cds)), "rowname", .dots=model_terms), .dots=model_terms)
-      disp_table <- as.data.frame(cds_colData %>% do(disp_calc_helper_NB(cds[,.$rowname], min_cells_detected)))
+      disp_table <- as.data.frame(cds_colData %>% do(disp_calc_helper_NB(cds[,.$rowname], min_cells_detected, min_expr)))
     }else{
       cds_colData <- dplyr::group_by_(dplyr::select_(tibble::rownames_to_column(as.data.frame(colData(cds))), "rowname"))
-      disp_table <- as.data.frame(disp_calc_helper_NB(cds, min_cells_detected))
+      disp_table <- as.data.frame(disp_calc_helper_NB(cds, min_cells_detected, min_expr))
     }
 
     if(!is.list(disp_table))

@@ -29,7 +29,7 @@
 #' @param random_seed  the seed used by the random number generator in louvain-igraph package. This argument will be ignored if louvain_iter is larger than 1.
 #' @param verbose Verbose A logic flag to determine whether or not we should print the running details.
 #' @param cores number of cores computer should use to execute function
-#' @param ... Additional arguments passed to \code{\link{densityClust}()}
+#' @param ... Additional arguments passed to \code{\link{louvain_clustering}()}
 #' @return an updated cell_data_set object, in which phenoData contains values for Cluster for each cell
 #' @references Rodriguez, A., & Laio, A. (2014). Clustering by fast search and find of density peaks. Science, 344(6191), 1492-1496. doi:10.1126/science.1242072
 #' @references Vincent D. Blondel, Jean-Loup Guillaume, Renaud Lambiotte, Etienne Lefebvre: Fast unfolding of communities in large networks. J. Stat. Mech. (2008) P10008
@@ -80,20 +80,19 @@ cluster_cells <- function(cds,
                                     random_seed = random_seed,
                                     verbose = verbose, ...)
 
-  #if(length(unique(louvain_res$optim_res$membership)) == 1) {
-  #  colData(cds)$louvain_component <- 1
-  #  return(cds)
-  #}
+  if(length(unique(louvain_res$optim_res$membership)) > 1) {
+    cluster_graph_res <- compute_louvain_connected_components(louvain_res$g,
+                                                              louvain_res$optim_res,
+                                                              louvain_qval, verbose)
+    louvain_component <- igraph::components(cluster_graph_res$cluster_g)$membership[louvain_res$optim_res$membership]
+    names(louvain_component) <- row.names(reduced_dim_res)
+    louvain_component <- as.factor(louvain_component)
+  } else {
+    louvain_component <- rep(1, nrow(colData(cds)))
 
-  cluster_graph_res <- compute_louvain_connected_components(louvain_res$g,
-                                                            louvain_res$optim_res,
-                                                            louvain_qval, verbose)
-  louvain_component <- igraph::components(cluster_graph_res$cluster_g)$membership[louvain_res$optim_res$membership]
-  names(louvain_component) <- row.names(reduced_dim_res)
-  louvain_component <- as.factor(louvain_component)
+  }
 
-  cds@clusters[[reduction_method]] <- list(cluster_graph_res = cluster_graph_res,
-                                             louvain_res = louvain_res,
+  cds@clusters[[reduction_method]] <- list(louvain_res = louvain_res,
                                              louvain_component = louvain_component,
                                              clusters = factor(igraph::membership(louvain_res$optim_res)))
   return(cds)
@@ -318,57 +317,33 @@ louvain_clustering <- function(data, pd, k = 20, weight = F, louvain_iter = 1, r
 
 compute_louvain_connected_components <- function(g, optim_res, qval_thresh=0.05, verbose = FALSE){
   cell_membership <- as.factor(igraph::membership(optim_res))
-  membership_matrix = Matrix::sparse.model.matrix( ~ cell_membership + 0)
-  num_links = Matrix::t(membership_matrix) %*% igraph::as_adjacency_matrix(g) %*% membership_matrix
-  diag(num_links) = 0
-  louvain_modules = levels(cell_membership)
+  membership_matrix <- Matrix::sparse.model.matrix( ~ cell_membership + 0)
+  num_links <- Matrix::t(membership_matrix) %*% igraph::as_adjacency_matrix(g) %*% membership_matrix
+  diag(num_links) <- 0
+  louvain_modules <- levels(cell_membership)
 
-  cluster_mat <- matrix(0, nrow = length(louvain_modules), ncol = length(louvain_modules)) # a matrix storing the overlapping clusters between louvain clusters which is based on the spanning tree
-  enrichment_mat <- matrix(0, nrow = length(louvain_modules), ncol = length(louvain_modules)) # a matrix storing the overlapping clusters between louvain clusters which is based on the spanning tree
-
-  overlapping_threshold <- 1e-5
-
-  edges_per_module = Matrix::rowSums(num_links)
-  total_edges = sum(num_links)
+  edges_per_module <- Matrix::rowSums(num_links)
+  total_edges <- sum(num_links)
 
   theta <- (as.matrix(edges_per_module) / total_edges) %*% Matrix::t(edges_per_module / total_edges)
   var_null_num_links <- theta * (1 - theta) / total_edges
   num_links_ij <- num_links / total_edges - theta
-  cluster_mat <- pnorm_over_mat(as.matrix(num_links_ij), var_null_num_links) # much faster c++ version
+  cluster_mat <- pnorm_over_mat(as.matrix(num_links_ij), var_null_num_links)
 
-  enrichment_mat <- num_links_ij
   num_links <- num_links_ij / total_edges
 
-  cluster_mat = matrix(stats::p.adjust(cluster_mat), nrow=length(louvain_modules), ncol=length(louvain_modules))
+  cluster_mat <- matrix(stats::p.adjust(cluster_mat),
+                        nrow=length(louvain_modules),
+                        ncol=length(louvain_modules))
 
   sig_links <- as.matrix(num_links)
   sig_links[cluster_mat > qval_thresh] = 0
-  diag(sig_links) = 0
+  diag(sig_links) <- 0
 
-  cluster_g <- igraph::graph_from_adjacency_matrix(sig_links, weighted = T, mode = 'undirected')
-  louvain_modules <- igraph::cluster_louvain(cluster_g)
+  cluster_g <- igraph::graph_from_adjacency_matrix(sig_links, weighted = T,
+                                                   mode = 'undirected')
 
-  # return also the layout coordinates and the edges link for the graph of clusters
-
-  coord <- igraph::layout_components(cluster_g)
-  coord <- as.data.frame(coord)
-  colnames(coord) <- c('x', 'y')
-  row.names(coord) <- 1:nrow(coord)
-  coord$Cluster <- 1:nrow(coord)
-  coord$louvain_cluster <- as.character(igraph::membership(louvain_modules))
-
-  edge_links <- NULL
-  if(length(igraph::E(cluster_g)) > 0) { # run this only when there is edges
-    edge <- igraph::get.data.frame(cluster_g)
-    edge <- as.data.frame(edge)
-    colnames(edge) <- c('start', 'end', 'weight')
-    edge_links <- cbind(coord[edge$start, 1:2], coord[edge$end, 1:2])
-    edge_links <- as.data.frame(edge_links)
-    colnames(edge_links) <- c('x_start', 'x_end', 'y_start', 'y_end')
-    edge_links$weight <- edge[, 3]
-  }
-
-  list(cluster_g = cluster_g, cluster_optim_res = optim_res, num_links = num_links, cluster_mat = cluster_mat, enrichment_mat = enrichment_mat, cluster_coord = coord, edge_links = edge_links)
+  list(cluster_g = cluster_g, num_links = num_links, cluster_mat = cluster_mat)
 }
 
 

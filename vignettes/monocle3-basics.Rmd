@@ -212,8 +212,7 @@ gene_ann <- data.frame(gene_short_name = row.names(MCA), row.names = row.names(M
 pd <- new("AnnotatedDataFrame",data=cell.meta.data[overlapping_cells, ])
 fd <- new("AnnotatedDataFrame",data=gene_ann)
 
-MCA_cds <- new_cell_data_set(MCA[, overlapping_cells], phenoData = pd,featureData =fd,
-                          lower_detection_limit=1)
+MCA_cds <- new_cell_data_set(MCA[, overlapping_cells], phenoData = pd,featureData =fd)
     
 ```
 

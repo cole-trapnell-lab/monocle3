@@ -364,7 +364,6 @@ select_trajectory_roots <- function(cds, x=1, y=2,
 }
 
 #' Return the names of principal graph nodes that are branches (excluding roots)
-#' @internal
 branch_nodes <- function(cds,reduction_method="UMAP"){
   g = principal_graph(cds)[[reduction_method]]
   branch_points <- which(igraph::degree(g) > 2)
@@ -373,7 +372,6 @@ branch_nodes <- function(cds,reduction_method="UMAP"){
 }
 
 #' Return the names of principal graph nodes that are leaves (excluding roots)
-#' @internal
 leaf_nodes <- function(cds,reduction_method="UMAP"){
   g = principal_graph(cds)[[reduction_method]]
   leaves <- which(igraph::degree(g) == 1)
@@ -382,10 +380,10 @@ leaf_nodes <- function(cds,reduction_method="UMAP"){
 }
 
 #' Return the names of principal graph nodes that are roots
-#' @internal
 root_nodes <- function(cds, reduction_method="UMAP"){
   g = principal_graph(cds)[[reduction_method]]
-  root_pr_nodes = which(names(igraph::V(g)) %in% cds@principal_graph_aux[[reduction_method]]$root_pr_nodes)
+  root_pr_nodes = which(names(igraph::V(g)) %in%
+                          cds@principal_graph_aux[[reduction_method]]$root_pr_nodes)
   names(root_pr_nodes) = cds@principal_graph_aux[[reduction_method]]$root_pr_nodes
   return(root_pr_nodes)
 }

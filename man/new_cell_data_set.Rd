@@ -5,17 +5,17 @@
 \title{Creates a new cell_data_set object.}
 \usage{
 new_cell_data_set(expression_data, cell_metadata = NULL,
-  gene_metadata = NULL, lower_detection_limit = 0.1)
+  gene_metadata = NULL)
 }
 \arguments{
-\item{expression_data}{expression data matrix for an experiment}
+\item{expression_data}{expression data matrix for an experiment, can be a
+sparseMatrix.}
 
-\item{cell_metadata}{data frame containing attributes of individual cells}
+\item{cell_metadata}{data frame containing attributes of individual cells,
+where row.names(cell_metadata) = colnames(expression_data).}
 
-\item{gene_metadata}{data frame containing attributes of features (e.g. genes)}
-
-\item{lower_detection_limit}{the minimum expression level that consistitutes
-true expression}
+\item{gene_metadata}{data frame containing attributes of features
+nn(e.g. genes), where row.names(gene_metadata) = row.names(expression_data).}
 }
 \value{
 a new cell_data_set object
@@ -24,16 +24,19 @@ a new cell_data_set object
 Creates a new cell_data_set object.
 }
 \examples{
-\dontrun{
-sample_sheet_small <- read.delim("../data/sample_sheet_small.txt",
-                                 row.names=1)
-sample_sheet_small$Time <- as.factor(sample_sheet_small$Time)
-gene_annotations_small <- read.delim("../data/gene_annotations_small.txt",
-                                      row.names=1)
-fpkm_matrix_small <- read.delim("../data/fpkm_matrix_small.txt")
-pd <- new("AnnotatedDataFrame", data = sample_sheet_small)
-fd <- new("AnnotatedDataFrame", data = gene_annotations_small)
-HSMM <- new("cell_data_set", exprs = as.matrix(fpkm_matrix_small),
-            phenoData = pd, featureData = fd)
-}
+small_a549_colData_df <- readRDS(system.file("extdata",
+                                             "small_a549_dex_pdata.rda",
+                                             package = "monocle3"))
+small_a549_rowData_df <- readRDS(system.file("extdata",
+                                             "small_a549_dex_fdata.rda",
+                                             package = "monocle3"))
+small_a549_exprs <- readRDS(system.file("extdata",
+                                        "small_a549_dex_exprs.rda",
+                                        package = "monocle3"))
+small_a549_exprs <- small_a549_exprs[,row.names(small_a549_colData_df)]
+
+cds <- new_cell_data_set(expression_data = small_a549_exprs,
+                         cell_metadata = small_a549_colData_df,
+                         gene_metadata = small_a549_rowData_df)
+
 }

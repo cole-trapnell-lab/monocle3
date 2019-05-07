@@ -620,28 +620,48 @@ plot_cell_clusters <- function(cds,
                                x=1,
                                y=2,
                                reduction_method = "UMAP",
-                               color_by="Cluster",
-                               expression_family,
+                               color_by=NULL,
                                markers=NULL,
+                               size_factor_normalize = TRUE,
                                show_cell_names=FALSE,
                                cell_size=1.5,
                                cell_name_size=2,
                                min_expr=0.1,
                                show_group_id = FALSE,
+                               rasterize = FALSE,
                                nrow = NULL,
-                               ncol = NULL,
-                               ...){
+                               ncol = NULL){
 
-  if (require("ggrastr",character.only = TRUE)){
-    plotting_func = ggrastr::geom_point_rast
-  }else{
-    plotting_func = ggplot2::geom_point
+  assertthat::assert_that(is(cds, "cell_data_set"))
+  assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
+                          msg = paste("No dimensionality reduction for",
+                                      reduction_method, "calculated.",
+                                      "Please run reduce_dimensions with",
+                                      "reduction_method =", reduction_method,
+                                      "before attempting to plot."))
+  low_dim_coords <- reducedDims(cds)[[reduction_method]]
+  assertthat::assert_that(ncol(low_dim_coords) >=max(x,y),
+                          msg = paste("x and/or y is too large. x and y must",
+                                      "be dimensions in reduced dimension",
+                                      "space."))
+  if(!is.null(color_by)) {
+    assertthat::assert_that(color_by %in% names(colData(cds)),
+                            msg = paste("color_by must be a column in the",
+                                        "colData table."))
   }
+  assertthat::assert_that(is.null(color_by) || !is.null(markers),
+                          msg = paste("Either color_by or markers must be",
+                                      "NULL, cannot color by both!"))
+  assertthat::assert_that(is.logical(size_factor_normalize))
 
   if (color_by == "Cluster" & length(get_clusters(cds, reduction_method = reduction_method)) == 0){
     stop("Error: Clustering is not performed yet. Please call clusterCells() before calling this function.")
+  if (rasterize) {
+    require("ggrastr",character.only = TRUE)
+    plotting_func = ggrastr::geom_point_rast
+  } else {
+    plotting_func = ggplot2::geom_point
   }
-  low_dim_coords <- reducedDims(cds)[[reduction_method]]
 
   gene_short_name <- NULL
   sample_name <- NULL
@@ -658,34 +678,24 @@ plot_cell_clusters <- function(cds,
   data_df <- merge(data_df, lib_info, by.x="sample_name", by.y="row.names")
 
   markers_exprs <- NULL
-  if (is.null(markers) == FALSE){
+  if (!is.null(markers)) {
     markers_rowData <- subset(rowData(cds), gene_short_name %in% markers)
-    if (nrow(markers_rowData) >= 1){
+    if (nrow(markers_rowData) >= 1) {
       cds_subset <- cds[row.names(markers_rowData),]
-      if (expression_family %in% c("quasipoisson", "poisson", "zipoisson", "negbinomial", "zinegbinomial")) {
-        integer_expression <- TRUE
-      }
-      else {
-        integer_expression <- FALSE
-      }
-      if (integer_expression) {
-        cds_exprs <- counts(cds_subset)
+      if (size_factor_normalize) {
+        markers_exprs <- counts(cds_subset)
 
         if (is.null(size_factors(cds_subset))) {
           stop("Error: to call this function you must call estimate_size_factors() first")
         }
-        cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds_subset))
+        markers_exprs <- Matrix::t(Matrix::t(markers_exprs)/size_factors(cds_subset))
 
-        cds_exprs <- reshape2::melt(round(as.matrix(cds_exprs)))
+        markers_exprs <- reshape2::melt(round(as.matrix(markers_exprs)))
+      } else {
+        markers_exprs <- reshape2::melt(as.matrix(counts(cds_subset)))
       }
-      else {
-        cds_exprs <- reshape2::melt(as.matrix(counts(cds_subset)))
-      }
-      markers_exprs <- cds_exprs
-      #markers_exprs <- reshape2::melt(as.matrix(cds_exprs))
       colnames(markers_exprs)[1:2] <- c('feature_id','cell_id')
       markers_exprs <- merge(markers_exprs, markers_rowData, by.x = "feature_id", by.y="row.names")
-      #print (head( markers_exprs[is.na(markers_exprs$gene_short_name) == FALSE,]))
       markers_exprs$feature_label <- as.character(markers_exprs$gene_short_name)
       markers_exprs$feature_label[is.na(markers_exprs$feature_label)] <- markers_exprs$Var1
       markers_exprs$feature_label <- factor(markers_exprs$feature_label,
@@ -718,7 +728,7 @@ plot_cell_clusters <- function(cds,
   # Don't do it!
   if (is.null(markers_exprs) == FALSE && nrow(markers_exprs) > 0){
 
-    if (expression_family %in% c("quasipoisson", "poisson", "zipoisson", "negbinomial", "zinegbinomial")){
+    if (size_factor_normalize){
       g <- g + plotting_func(aes(color=log10(value + min_expr), alpha = ifelse(!is.na(value), "2", "1")), size=I(cell_size), stroke = I(cell_size / 2), na.rm = TRUE) +
         viridis::scale_color_viridis(option = "viridis", name = "log10(values + 0.1)", na.value = "grey80", end = 0.8) +
         guides(alpha = FALSE) + facet_wrap(~feature_label, nrow = nrow, ncol = ncol)
@@ -1051,7 +1061,7 @@ plot_genes_in_pseudotime <-function(cds_subset,
     cds_exprs <- reshape2::melt(round(as.matrix(cds_exprs)))
 
   if (is.null(min_expr)) {
-    min_expr <- metadata(cds_subset)$lower_detection_limit
+    min_expr <- 0
   }
   colnames(cds_exprs) <- c("f_id", "Cell", "expression")
   cds_colData <- colData(cds_subset)
@@ -1218,7 +1228,7 @@ plot_pc_variance_explained <- function(cds,
 #'   group cells by on the horizontal axis.
 #' @param min_expr the minimum (untransformed) expression level to use when
 #'   plotted the genes. If \code{NULL},
-#'   \code{metadata(cds_subset)$lower_detection_limit} is used.
+#'   zero is used.
 #' @param nrow the number of panels per row in the figure.
 #' @param ncol the number of panels per column in the figure.
 #' @param panel_order the order in which genes should be layed out
@@ -1277,7 +1287,7 @@ plot_genes_violin <- function (cds_subset,
     cds_exprs <- reshape2::melt(as.matrix(cds_exprs))
   }
   if (is.null(min_expr)) {
-    min_expr <- metadata(cds_subset)$lower_detection_limit
+    min_expr <- 0
   }
   colnames(cds_exprs) <- c("f_id", "Cell", "expression")
   cds_exprs$expression[cds_exprs$expression < min_expr] <- min_expr
@@ -1346,7 +1356,7 @@ plot_genes_violin <- function (cds_subset,
 #'   group cells by on the horizontal axis
 #' @param min_expr the minimum (untransformed) expression level to consider the
 #'   gene 'expressed'. If \code{NULL},
-#'   \code{metadata(cds_subset)$lower_detection_limit} is used.
+#'  zero is used.
 #' @param nrow the number of panels per row in the figure.
 #' @param ncol the number of panels per column in the figure.
 #' @param panel_order the order in which genes should be layed out
@@ -1398,7 +1408,7 @@ plot_percent_cells_positive <- function(cds_subset,
   assertthat::assert_that(is.logical(normalize))
 
   if (is.null(min_expr)) {
-    min_expr <- metadata(cds_subset)$lower_detection_limit
+    min_expr <- 0
   }
 
   marker_exprs <- counts(cds_subset)
