@@ -656,6 +656,7 @@ plot_cell_clusters <- function(cds,
 
   if (color_by == "Cluster" & length(get_clusters(cds, reduction_method = reduction_method)) == 0){
     stop("Error: Clustering is not performed yet. Please call clusterCells() before calling this function.")
+  }
   if (rasterize) {
     require("ggrastr",character.only = TRUE)
     plotting_func = ggrastr::geom_point_rast
