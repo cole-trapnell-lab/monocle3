@@ -645,16 +645,16 @@ plot_cell_clusters <- function(cds,
                                       "be dimensions in reduced dimension",
                                       "space."))
   if(!is.null(color_by)) {
-    assertthat::assert_that(color_by %in% names(colData(cds)),
+    assertthat::assert_that(color_by == "Cluster" | color_by %in% names(colData(cds)),
                             msg = paste("color_by must be a column in the",
                                         "colData table."))
   }
-  assertthat::assert_that(is.null(color_by) || !is.null(markers),
+  assertthat::assert_that(!is.null(color_by) || !is.null(markers),
                           msg = paste("Either color_by or markers must be",
                                       "NULL, cannot color by both!"))
   assertthat::assert_that(is.logical(size_factor_normalize))
 
-  if (color_by == "Cluster" & length(get_clusters(cds, reduction_method = reduction_method)) == 0){
+  if (!is.null(color_by) && color_by == "Cluster" && length(get_clusters(cds, reduction_method = reduction_method)) == 0){
     stop("Error: Clustering is not performed yet. Please call clusterCells() before calling this function.")
   }
   if (rasterize) {
@@ -740,7 +740,7 @@ plot_cell_clusters <- function(cds,
     }
   }else {
     # g <- g + geom_point(aes_string(color = color_by), size=I(cell_size), stroke = I(cell_size / 2), na.rm = TRUE, ...)
-    g <- g + plotting_func(aes_string(color = color_by), size=I(cell_size), stroke = I(cell_size / 2), na.rm = TRUE, ...)
+    g <- g + plotting_func(aes_string(color = color_by), size=I(cell_size), stroke = I(cell_size / 2), na.rm = TRUE)
 
     if(show_group_id) {
       g <- g + geom_text(data = text_df, mapping = aes_string(x = "text_x", y = "text_y", label = "label"), size = 4)
