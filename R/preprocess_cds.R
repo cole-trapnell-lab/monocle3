@@ -118,9 +118,6 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
     stop("Error: all rows have standard deviation zero")
   }
 
-  # If the user has selected a subset of genes for use in ordering the cells
-  # via set_ordering_filter(), subset the expression matrix.
-  # TO DO
   if (!is.null(use_genes)) {
     FM <- FM[use_genes, ]
   }
@@ -137,16 +134,32 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
     preproc_res <- irlba_res$x
     row.names(preproc_res) <- colnames(cds)
 
+    irlba_rotation = irlba_res$rotation
+    row.names(irlba_rotation) = rownames(FM)
+    cds@preprocess_aux$gene_loadings = irlba_rotation
+
   } else if(method == "LSI") {
+    # preproc_res <- tfidf(FM)
+    # do_svd <- function(tf_idf_counts, dims=50) {
+    #   pca.results = irlba::irlba(Matrix::t(tf_idf_counts), nv=dims)
+    #   final_result = pca.results$u %*% diag(pca.results$d)
+    #   rownames(final_result) = colnames(tf_idf_counts)
+    #   colnames(final_result) = paste0('C_', 1:dims)
+    #   return(final_result)
+    # }
+    # preproc_res <- do_svd(preproc_res, num_dim)
+
     preproc_res <- tfidf(FM)
-    do_svd <- function(tf_idf_counts, dims=50) {
-      pca.results = irlba::irlba(Matrix::t(tf_idf_counts), nv=dims)
-      final_result = pca.results$u %*% diag(pca.results$d)
-      rownames(final_result) = colnames(tf_idf_counts)
-      colnames(final_result) = paste0('C_', 1:dims)
-      return(final_result)
-    }
-    preproc_res <- do_svd(preproc_res, num_dim)
+    irlba_res <- irlba::irlba(Matrix::t(preproc_res),
+                              nv = min(num_dim,min(dim(FM)) - 1))
+
+    preproc_res <- irlba_res$u %*% diag(irlba_res$d)
+    row.names(preproc_res) <- colnames(cds)
+
+    irlba_rotation = irlba_res$v
+    row.names(irlba_rotation) = rownames(FM)
+    cds@preprocess_aux$gene_loadings = irlba_rotation
+
   }
 
   row.names(preproc_res) <- colnames(cds)

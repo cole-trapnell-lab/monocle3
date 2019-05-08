@@ -29,7 +29,7 @@ cds <- preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ bg.300
 
 set.seed(42)
 ## Step 2: Reduce the dimensionality of the data
-cds <- reduce_dimension(cds, reduction_method = 'UMAP', umap.metric="euclidean", umap.fast_sgd=TRUE, verbose=TRUE, cores=8)
+cds <- reduce_dimension(cds)
 plot_cell_clusters(cds, color_by = "cell.type") +
     ggplot2::theme(legend.position="right")
 
@@ -37,7 +37,6 @@ plot_cell_clusters(cds, color_by = "cell.type") +
 cds <- cluster_cells(cds)
 
 ## Step 4: Learn cell trajectories
-cds <- partition_cells(cds)
 cds <- learn_graph(cds, learn_graph_control=list(ncenter=1000), close_loop=TRUE, verbose=TRUE)
 
 # a helper function to identify the root principal points:
