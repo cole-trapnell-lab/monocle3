@@ -88,7 +88,7 @@ cluster_genes <- function(cds,
     message("Running louvain clustering algorithm ...")
 
   louvain_res <- louvain_clustering(data = reduced_dim_res,
-                                    pd = rowData(cds)[row.names(reduced_dim_res),],
+                                    pd = rowData(cds)[row.names(reduced_dim_res),,drop=FALSE],
                                     k = k,
                                     weight = weight,
                                     louvain_iter = louvain_iter,
@@ -109,7 +109,7 @@ cluster_genes <- function(cds,
   louvain_component <- as.factor(louvain_component)
 
   gene_cluster_df = tibble::tibble(id = row.names(preprocess_mat),
-                                   cluster = factor(igraph::membership(louvain_res$optim_res))[id],
+                                   cluster = factor(igraph::membership(louvain_res$optim_res)),
                                    supercluster = louvain_component)
   gene_cluster_df = tibble::as_tibble(cbind(gene_cluster_df, umap_res))
   # gene_clusters =  list(cluster_graph_res = cluster_graph_res,

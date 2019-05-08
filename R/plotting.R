@@ -713,11 +713,14 @@ plot_cell_clusters <- function(cds,
     text_df <- data_df %>% dplyr::group_by_(color_by) %>% dplyr::summarize(text_x = median(x = data_dim_1),
                                                                            text_y = median(x = data_dim_2))
   if(color_by != "Cluster" & !is.numeric(data_df[, color_by]) & !is.factor(data_df[, color_by])) {
-      text_df$label <- paste0(1:nrow(text_df))
-      text_df$process_label <- paste0(1:nrow(text_df), '_', as.character(as.matrix(text_df[, 1])))
-      process_label <- text_df$process_label
-      names(process_label) <- as.character(as.matrix(text_df[, 1]))
-      data_df[, color_by] <- process_label[as.character(data_df[, color_by])]
+      text_df$label = text_df %>% dplyr::pull(color_by)
+      # I feel like there's probably a good reason for the bit below, but I hate it and I'm killing it for now.
+      # text_df$label <- paste0(1:nrow(text_df))
+      # text_df$process_label <- paste0(1:nrow(text_df), '_', as.character(as.matrix(text_df[, 1])))
+      # process_label <- text_df$process_label
+      # names(process_label) <- as.character(as.matrix(text_df[, 1]))
+      # data_df[, color_by] <- process_label[as.character(data_df[, color_by])]
+      # text_df$label = process_label
     } else {
       text_df$label <- as.character(as.matrix(text_df[, 1]))
     }
@@ -743,7 +746,7 @@ plot_cell_clusters <- function(cds,
     g <- g + plotting_func(aes_string(color = color_by), size=I(cell_size), stroke = I(cell_size / 2), na.rm = TRUE)
 
     if(show_group_id) {
-      g <- g + geom_text(data = text_df, mapping = aes_string(x = "text_x", y = "text_y", label = "label"), size = 4)
+      g <- g + geom_text(data = text_df, mapping = aes_string(x = "text_x", y = "text_y", label = "label"))
     }
   }
 
@@ -755,8 +758,7 @@ plot_cell_clusters <- function(cds,
     theme(legend.position="top", legend.key.height=grid::unit(0.35, "in")) +
     #guides(color = guide_legend(label.position = "top")) +
     theme(legend.key = element_blank()) +
-    theme(panel.background = element_rect(fill='white')) +
-    theme(text = element_text(size = 15))
+    theme(panel.background = element_rect(fill='white'))
   g
 }
 
@@ -831,25 +833,29 @@ plot_cells <- function(cds,
     plotting_func = ggplot2::geom_point
   }
 
-  #TODO: need to validate cds as ready for this plot (need mst, pseudotime, etc)
   lib_info_with_pseudo <- colData(cds)
 
-  ica_space_df <- t(cds@principal_graph_aux[[reduction_method]]$dp_mst) %>%
-    as.data.frame() %>%
-    dplyr::select_(prin_graph_dim_1 = x, prin_graph_dim_2 = y) %>%
-    dplyr::mutate(sample_name = rownames(.), sample_state = rownames(.))
+  if (show_backbone){
+    #TODO: need to validate cds as ready for this plot (need mst, pseudotime, etc)
 
-  dp_mst <- cds@principal_graph[[reduction_method]]
+    ica_space_df <- t(cds@principal_graph_aux[[reduction_method]]$dp_mst) %>%
+      as.data.frame() %>%
+      dplyr::select_(prin_graph_dim_1 = x, prin_graph_dim_2 = y) %>%
+      dplyr::mutate(sample_name = rownames(.), sample_state = rownames(.))
 
-  if (is.null(dp_mst)){
-    stop("You must first call order_cells() before using this function")
+    dp_mst <- cds@principal_graph[[reduction_method]]
+
+    if (is.null(dp_mst)){
+      stop("You must first call order_cells() before using this function")
+    }
+    edge_df <- dp_mst %>%
+      igraph::as_data_frame() %>%
+      dplyr::select_(source = "from", target = "to") %>%
+      dplyr::left_join(ica_space_df %>% dplyr::select_(source="sample_name", source_prin_graph_dim_1="prin_graph_dim_1", source_prin_graph_dim_2="prin_graph_dim_2"), by = "source") %>%
+      dplyr::left_join(ica_space_df %>% dplyr::select_(target="sample_name", target_prin_graph_dim_1="prin_graph_dim_1", target_prin_graph_dim_2="prin_graph_dim_2"), by = "target")
+
   }
 
-  edge_df <- dp_mst %>%
-    igraph::as_data_frame() %>%
-    dplyr::select_(source = "from", target = "to") %>%
-    dplyr::left_join(ica_space_df %>% dplyr::select_(source="sample_name", source_prin_graph_dim_1="prin_graph_dim_1", source_prin_graph_dim_2="prin_graph_dim_2"), by = "source") %>%
-    dplyr::left_join(ica_space_df %>% dplyr::select_(target="sample_name", target_prin_graph_dim_1="prin_graph_dim_1", target_prin_graph_dim_2="prin_graph_dim_2"), by = "target")
 
   S_matrix <-
     reducedDims(cds)$UMAP
@@ -857,6 +863,7 @@ plot_cells <- function(cds,
   #data_df <- cbind(data_df, sample_state)
   colnames(data_df) <- c("data_dim_1", "data_dim_2")
   data_df$sample_name <- row.names(data_df)
+
   data_df <- merge(data_df, lib_info_with_pseudo, by.x="sample_name", by.y="row.names")
 
   return_rotation_mat <- function(theta) {
@@ -865,12 +872,14 @@ plot_cells <- function(cds,
   }
   rot_mat <- return_rotation_mat(theta)
 
-  cn1 <- c("data_dim_1", "data_dim_2")
-  cn2 <- c("source_prin_graph_dim_1", "source_prin_graph_dim_2")
-  cn3 <- c("target_prin_graph_dim_1", "target_prin_graph_dim_2")
-  data_df[, cn1] <- as.matrix(data_df[, cn1]) %*% t(rot_mat)
-  edge_df[, cn2] <- as.matrix(edge_df[, cn2]) %*% t(rot_mat)
-  edge_df[, cn3] <- as.matrix(edge_df[, cn3]) %*% t(rot_mat)
+  if (show_backbone){
+    cn1 <- c("data_dim_1", "data_dim_2")
+    cn2 <- c("source_prin_graph_dim_1", "source_prin_graph_dim_2")
+    cn3 <- c("target_prin_graph_dim_1", "target_prin_graph_dim_2")
+    data_df[, cn1] <- as.matrix(data_df[, cn1]) %*% t(rot_mat)
+    edge_df[, cn2] <- as.matrix(edge_df[, cn2]) %*% t(rot_mat)
+    edge_df[, cn3] <- as.matrix(edge_df[, cn3]) %*% t(rot_mat)
+  }
 
   markers_exprs <- NULL
   if (is.null(genes) == FALSE) {
@@ -879,7 +888,7 @@ plot_cells <- function(cds,
     }else{
       markers = genes
     }
-    markers_rowData <- subset(rowData(cds), gene_short_name %in% markers | id %in% markers)
+    markers_rowData <- subset(rowData(cds), gene_short_name %in% markers | rownames(rowData(cds)) %in% markers)
     if (nrow(markers_rowData) >= 1) {
       cds_exprs <- counts(cds)[row.names(markers_rowData),]
       cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds))

@@ -177,7 +177,6 @@ louvain_R <- function(X, python_home = system('which python', intern = TRUE),
                          node_sizes,
                          random_seed,
                          as.logical(verbose))
-
   if(return_all) {
     return(louvain_res)
   } else {
