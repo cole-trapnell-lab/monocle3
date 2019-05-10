@@ -30,10 +30,9 @@ cds <- preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ bg.300
 set.seed(42)
 ## Step 2: Reduce the dimensionality of the data
 cds <- reduce_dimension(cds)
-plot_cell_clusters(cds, color_by = "cell.type") +
-    ggplot2::theme(legend.position="right")
+plot_cells(cds, color_by = "cell.type")
 
-## Step 3: (Optional) Cluster cells
+## Step 3: Cluster cells
 cds <- cluster_cells(cds)
 
 ## Step 4: Learn cell trajectories
@@ -58,33 +57,21 @@ cds = order_cells(cds, root_pr_nodes=get_earliest_principal_node(cds))
 ## Step 5: Visualize the trajectory
 
 #png("worm-emb-ciliated-clusters.png", width=900, height=800)
-plot_cell_clusters(cds, color_by = "Cluster", show_group_id=TRUE)+ 
-    ggplot2::theme(legend.position="none")
+plot_cells(cds, color_by = "Cluster")
+
 #dev.off()
 
-plot_cell_clusters(cds, color_by = "cell.type") +
-    ggplot2::theme(legend.position="right")
+plot_cells(cds, color_by = "cell.type")
 
-plot_cell_clusters(cds, color_by = "louvain_component", show_group_id=TRUE)+ 
-    ggplot2::theme(legend.position="none")
+#plot_cells(cds, color_by = "louvain_component")
 
-plot_cell_trajectory(cds, color_by = "cell.type", cell_size=0.1) + 
-    #ggplot2::scale_color_manual(values=color_map) + 
-    ggplot2::theme(legend.position="right")
+plot_cells(cds, color_by = "embryo.time.bin", label_cell_groups=FALSE)
 
-plot_cell_trajectory(cds, color_by = "embryo.time.bin", cell_size=0.1) + 
-    #ggplot2::scale_color_manual(values=color_map) + 
-    ggplot2::theme(legend.position="right")
+plot_cells(cds, color_by = "Pseudotime")
 
-plot_cell_trajectory(cds, color_by = "Pseudotime", cell_size=0.1) + 
-    #ggplot2::scale_color_manual(values=color_map) + 
-    ggplot2::theme(legend.position="right")
+plot_cells(cds, color_by = "batch", , label_cell_groups=FALSE)
 
-plot_cell_trajectory(cds, color_by = "batch") + 
-    #ggplot2::scale_color_manual(values=color_map) + 
-    ggplot2::theme(legend.position="right")
-
-plot_cell_trajectory(cds, markers=c("egl-21", "egl-1"))
+plot_cells(cds, genes=c("egl-21", "egl-1"))
 plot_genes_in_pseudotime(cds[rowData(cds)$gene_short_name %in% c("egl-21", "egl-1"),])
 
 ciliated_genes = c("che-1",
@@ -161,7 +148,7 @@ emb_time_terms %>% filter (q_value < 0.05) %>% select(gene_short_name, term, q_v
 
 # Principal graph test:
 
-ciliated_cds_pr_test_res = principal_graph_test(cds)
+ciliated_cds_pr_test_res = principal_graph_test(cds, cores=4)
 plot_cell_trajectory(cds, markers=c("ctc-3", "nduo-4", "T05C7.4", "atp-6", "cutl-24"), label_branch_points=FALSE, label_roots=FALSE, label_leaves=FALSE)
 
 plot_cell_trajectory(cds, markers=c("F29C4.2", "grld-1", "csn-5", "vamp-7"), label_branch_points=FALSE, label_roots=FALSE, label_leaves=FALSE)
