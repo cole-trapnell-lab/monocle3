@@ -899,7 +899,7 @@ plot_cells <- function(cds,
     }
     markers_rowData <- as.data.frame(subset(rowData(cds), gene_short_name %in% markers | rownames(rowData(cds)) %in% markers))
     if (nrow(markers_rowData) >= 1) {
-      cds_exprs <- counts(cds)[row.names(markers_rowData),]
+      cds_exprs <- counts(cds)[row.names(markers_rowData), ,drop=FALSE]
       cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds))
 
       if ((is.null(dim(genes)) == FALSE) && dim(genes) >= 2){
