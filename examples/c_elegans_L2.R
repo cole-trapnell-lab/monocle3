@@ -40,7 +40,7 @@ cds <- classify_cells(cds, ceWhole,
 
 plot_cells(cds, color_by="cluster_ext_type")
 
-pr_graph_test_res = principal_graph_test(cds, neighbor_graph="knn")
+pr_graph_test_res = graph_test(cds, neighbor_graph="knn")
 pr_deg_ids = row.names(subset(pr_graph_test_res, q_value < 0.05))
 gene_cluster_df = monocle3:::cluster_genes(cds[pr_deg_ids,], resolution=0.001)
 
