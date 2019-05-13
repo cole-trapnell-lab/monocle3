@@ -10,7 +10,7 @@ cds <- learn_graph(cds, learn_graph_control=list(ncenter=1000), close_loop=TRUE)
 plot_cell_trajectory(cds, color_by="cell.type")
 
 test_cds = cds
-pr_graph_test_res = principal_graph_test(test_cds)
+pr_graph_test_res = graph_test(test_cds)
 pr_deg_ids = subset(pr_graph_test_res, q_value < 0.05)$id
 gene_cluster_df = monocle3:::cluster_genes(test_cds[pr_deg_ids,], resolution=0.001)
 
