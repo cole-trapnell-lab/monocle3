@@ -180,7 +180,9 @@ louvain_R <- function(X, python_home = system('which python', intern = TRUE),
   if(return_all) {
     return(louvain_res)
   } else {
-    list(membership = louvain_res$membership + 1, modularity = louvain_res$modularity)
+    res = list(membership = louvain_res$membership + 1, modularity = louvain_res$modularity)
+    names(res$membership) = colnames(X)
+    return(res)
   }
 }
 
