@@ -160,7 +160,7 @@ extract_general_graph_ordering <- function(cds,
 #' @param num_roots Number of roots for the trajectory
 #' @param pch Size of the principal graph node
 #' @param ... Extra arguments to pass to function
-select_trajectory_roots <- function(cds, x=1, y=2,
+select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
                                     num_roots = NULL,
                                     pch = 19,
                                     reduction_method,
@@ -361,7 +361,7 @@ select_trajectory_roots <- function(cds, x=1, y=2,
   }
   ## return indices of selected points
   as.character(ica_space_df$sample_name[which(!sel)])
-}
+} # nocov end
 
 #' Return the names of principal graph nodes that are branches (excluding roots)
 branch_nodes <- function(cds,reduction_method="UMAP"){
