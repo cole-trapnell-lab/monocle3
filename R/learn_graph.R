@@ -51,7 +51,7 @@
 #' @export
 learn_graph <- function(cds,
                         use_partition = TRUE,
-                        close_loop = FALSE,
+                        close_loop = TRUE,
                         learn_graph_control = NULL,
                         verbose = FALSE) {
   reduction_method <- "UMAP"
@@ -361,7 +361,7 @@ multi_component_RGE <- function(cds,
 }
 
 # Function to decide a good number of centers for running DDRTree on big datasets
-cal_ncenter <- function(ncells, ncells_limit = 100){
+cal_ncenter <- function(ncells, ncells_limit = 1000){
   if(ncells <= ncells_limit) {
     return(NULL)
   }
