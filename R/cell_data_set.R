@@ -66,11 +66,11 @@ new_cell_data_set <- function(expression_data,
                   "'gene_short_name' for certain functions."))
   }
 
-  assertthat::assert_that(class(expression_data) == "matrix" ||
-                            is_sparse_matrix(expression_data),
-                          msg = paste("Argument expression_data must be a",
-                                      "matrix (either sparse from the Matrix",
-                                      "package or dense)."))
+ # assertthat::assert_that(class(expression_data) == "matrix" ||
+#                            is_sparse_matrix(expression_data),
+#                          msg = paste("Argument expression_data must be a",
+#                                      "matrix (either sparse from the Matrix",
+#                                      "package or dense)."))
 
   sce <- SingleCellExperiment(list(counts=expression_data),
                               rowData = gene_metadata,

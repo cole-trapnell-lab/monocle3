@@ -846,7 +846,7 @@ plot_cells <- function(cds,
   sample_state <- colData(cds)$State
   data_dim_1 <- NA
   data_dim_2 <- NA
-  if (rasterize && suppressMessages(require("ggrastr",character.only = TRUE))){
+  if (rasterize){
     plotting_func = ggrastr::geom_point_rast
   }else{
     plotting_func = ggplot2::geom_point
@@ -945,19 +945,19 @@ plot_cells <- function(cds,
           #text_df = data_df %>% dplyr::color_by_("Cluster", color_by)
           text_df = data_df %>%
             dplyr::group_by_("Cluster") %>%
-            mutate(cells_in_cluster= n()) %>%
-            group_by_(color_by, add=TRUE) %>%
-            mutate(per=n()/cells_in_cluster)
+            dplyr::mutate(cells_in_cluster= dplyr::n()) %>%
+            dplyr::group_by_(color_by, add=TRUE) %>%
+            dplyr::mutate(per=dplyr::n()/cells_in_cluster)
         } else {
-          text_df = data_df %>% dplyr::group_by_(color_by) %>% mutate(per=1)
+          text_df = data_df %>% dplyr::group_by_(color_by) %>% dplyr::mutate(per=1)
         }
 
         median_coord_df = text_df %>% dplyr::summarize(fraction_of_group = n(),
                                                text_x = median(x = data_dim_1),
                                                text_y = median(x = data_dim_2))
-        text_df = text_df %>% dplyr::select(per) %>% distinct()
-        text_df = inner_join(text_df, median_coord_df)
-        text_df = text_df %>% group_by(Cluster) %>% top_n(labels_per_group, per)
+        text_df = text_df %>% dplyr::select(per) %>% dplyr::distinct()
+        text_df = dplyr::inner_join(text_df, median_coord_df)
+        text_df = text_df %>% dplyr::group_by(Cluster) %>% dplyr::top_n(labels_per_group, per)
 
         text_df$label = as.character(text_df %>% dplyr::pull(color_by))
         # I feel like there's probably a good reason for the bit below, but I hate it and I'm killing it for now.
