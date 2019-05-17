@@ -31,12 +31,22 @@ set.seed(42)
 ## Step 2: Reduce the dimensionality of the data
 cds <- reduce_dimension(cds)
 plot_cells(cds, color_by = "cell.type")
+plot_cells(cds, color_by = "batch", label_cell_groups=FALSE)
 
 ## Step 3: Cluster cells
+#cds <- cluster_cells(cds, resolution=c(0, 1e-5, 1e-4, 1e-3, 1e-2))
 cds <- cluster_cells(cds)
+plot_cells(cds, color_by = "Cluster")
 
 ## Step 4: Learn cell trajectories
-cds <- learn_graph(cds, learn_graph_control=list(ncenter=1000), close_loop=TRUE, verbose=TRUE)
+cds <- learn_graph(cds)
+plot_cells(cds, color_by = "cell.type")
+
+plot_cells(cds, color_by = "embryo.time.bin", label_cell_groups=FALSE)
+
+
+cds = order_cells(cds)
+plot_cells(cds, color_by = "Pseudotime")
 
 # a helper function to identify the root principal points:
 get_earliest_principal_node <- function(cds, time_bin="130-170"){
@@ -54,25 +64,15 @@ get_earliest_principal_node <- function(cds, time_bin="130-170"){
 
 cds = order_cells(cds, root_pr_nodes=get_earliest_principal_node(cds))
 
+plot_cells(cds, color_by = "Pseudotime")
+
 ## Step 5: Visualize the trajectory
-
-#png("worm-emb-ciliated-clusters.png", width=900, height=800)
-plot_cells(cds, color_by = "Cluster")
-
-#dev.off()
-
-plot_cells(cds, color_by = "cell.type")
-
-#plot_cells(cds, color_by = "louvain_component")
 
 plot_cells(cds, color_by = "embryo.time.bin", label_cell_groups=FALSE)
 
-plot_cells(cds, color_by = "Pseudotime")
 
-plot_cells(cds, color_by = "batch", , label_cell_groups=FALSE)
-
-plot_cells(cds, genes=c("egl-21", "egl-1"))
-plot_genes_in_pseudotime(cds[rowData(cds)$gene_short_name %in% c("egl-21", "egl-1"),])
+#plot_cells(cds, genes=c("egl-21", "egl-1"))
+#plot_genes_in_pseudotime(cds[rowData(cds)$gene_short_name %in% c("egl-21", "egl-1"),])
 
 ciliated_genes = c("che-1",
                    "hlh-17",
@@ -82,15 +82,15 @@ ciliated_genes = c("che-1",
                    "ham-1")
 cds_subset = cds[rowData(cds)$gene_short_name %in% ciliated_genes,]
 
-plot_cell_trajectory(cds, markers=ciliated_genes, label_branch_points=FALSE, label_roots=FALSE, label_leaves=FALSE)
+plot_cells(cds, genes=ciliated_genes, show_trajectory_graph=FALSE)
 
-graph_test(cds_subset)
+#graph_test(cds_subset)
 
-plot_percent_cells_positive(cds_subset, grouping="cell.type") + 
-    guides(fill=FALSE) + 
-    theme(axis.text.x=element_text(angle=45, hjust=1))
+# plot_percent_cells_positive(cds_subset, color_by="cell.type") + 
+#     guides(fill=FALSE) + 
+#     theme(axis.text.x=element_text(angle=45, hjust=1))
 
-# plot_genes_violin(cds[rowData(cds)$gene_short_name %in% ciliated_genes,], grouping="cell.type") + 
+# plot_genes_violin(cds[rowData(cds)$gene_short_name %in% ciliated_genes,], color_by="cell.type") + 
 #     guides(fill=FALSE) + 
 #     theme(axis.text.x=element_text(angle=45, hjust=1))
 
@@ -106,7 +106,7 @@ write.csv(emb_time_terms, "emb_time_terms.csv")
 sig_emb_time_terms = emb_time_terms %>% filter (q_value < 0.05) %>% select(gene_short_name, term, q_value, estimate)
 write.csv(sig_emb_time_terms, "emb_time_sig_terms.csv")
 
-plot_genes_violin(cds_subset, grouping="embryo.time.bin") + 
+plot_genes_violin(cds_subset, color_by="embryo.time.bin") + 
     theme(axis.text.x=element_text(angle=45, hjust=1))
 
 ### Subtracting unwanted effects:
@@ -145,10 +145,20 @@ emb_time_terms = fit_coefs %>% filter(grepl("Pseudotime", term))
 emb_time_terms = emb_time_terms %>% mutate(q_value = p.adjust(p_value))
 emb_time_terms %>% filter (q_value < 0.05) %>% select(gene_short_name, term, q_value, estimate)
 
-
 # Principal graph test:
 
 ciliated_cds_pr_test_res = graph_test(cds, cores=4)
-plot_cell_trajectory(cds, markers=c("ctc-3", "nduo-4", "T05C7.4", "atp-6", "cutl-24"), label_branch_points=FALSE, label_roots=FALSE, label_leaves=FALSE)
+pr_deg_ids = row.names(subset(ciliated_cds_pr_test_res, q_value < 0.05))
 
-plot_cell_trajectory(cds, markers=c("F29C4.2", "grld-1", "csn-5", "vamp-7"), label_branch_points=FALSE, label_roots=FALSE, label_leaves=FALSE)
+gene_cluster_df = monocle3:::cluster_genes(cds[pr_deg_ids,], resolution=c(0,10^seq(-6,-1)))
+cell_group_df = tibble::tibble(cell=row.names(colData(cds)), cell_group=colData(cds)$cell.type)
+pheatmap::pheatmap(aggregate_gene_expression(cds, gene_cluster_df, cell_group_df), 
+                    scale="column", clustering_method="ward.D2")
+
+fData(cds)[gene_cluster_df %>% filter(cluster == 2) %>% pull(id),]
+
+plot_cells(cds, genes=gene_cluster_df, color_by="cell.type", show_trajectory_graph=FALSE)
+
+plot_cells(cds, genes=c("ctc-3", "nduo-4", "T05C7.4", "atp-6", "cutl-24"), label_branch_points=FALSE, label_roots=FALSE, label_leaves=FALSE)
+
+plot_cells(cds, genes=c("F29C4.2", "grld-1", "csn-5", "vamp-7"), label_branch_points=FALSE, label_roots=FALSE, label_leaves=FALSE)

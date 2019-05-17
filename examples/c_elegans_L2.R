@@ -14,16 +14,14 @@ cds <- new_cell_data_set(expression_matrix,
 
 
 ## Step 1: Normalize and pre-process the data
-cds <- estimate_size_factors(cds)
 cds <- preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ plate")
 
-set.seed(42)
 ## Step 2: Reduce the dimensionality of the data
 cds <- reduce_dimension(cds)
-plot_cells(cds, cell_size=I(0.35), color_by = "cao_cell_type")
+plot_cells(cds, cell_size=0.35, color_by = "cao_cell_type")
 
 ## Step 3: (Optional) Cluster cells
-cds <- cluster_cells(cds, resolution=0.00001)
+cds <- cluster_cells(cds, resolution=c(10^seq(-6,-1)), verbose=TRUE)
 
 plot_cells(cds)
 
