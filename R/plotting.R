@@ -804,7 +804,7 @@ plot_cells <- function(cds,
                        norm_method = c("log", "size_only"),
                        label_cell_groups = TRUE,
                        group_label_size=2,
-                       labels_per_group=2,
+                       labels_per_group=1,
                        label_branch_points=TRUE,
                        label_roots=TRUE,
                        label_leaves=TRUE,
@@ -812,8 +812,7 @@ plot_cells <- function(cds,
                        cell_size=1,
                        alpha = 1,
                        min_expr=0.1,
-                       rasterize=TRUE,
-                       ...) {
+                       rasterize=TRUE) {
 
   assertthat::assert_that(is(cds, "cell_data_set"))
   assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
@@ -906,7 +905,7 @@ plot_cells <- function(cds,
         genes = as.data.frame(genes)
         row.names(genes) = genes[,1]
         genes = genes[row.names(cds_exprs),]
-        agg_mat = as.matrix(Matrix.utils::aggregate.Matrix(cds_exprs, as.factor(genes[,2]), fun="mean"))
+        agg_mat = as.matrix(Matrix.utils::aggregate.Matrix(cds_exprs, as.factor(genes[,2]), fun="sum"))
         agg_mat = t(scale(t(log10(agg_mat + 1))))
         agg_mat[agg_mat < -2] = -2
         agg_mat[agg_mat > 2] = 2
@@ -943,7 +942,7 @@ plot_cells <- function(cds,
       if(is.character(data_df[, color_by]) || is.factor(data_df[, color_by])) {
 
         if ("Cluster" %in% colnames(data_df)){
-          #text_df = data_df %>% dplyr::group_by_("Cluster", color_by)
+          #text_df = data_df %>% dplyr::color_by_("Cluster", color_by)
           text_df = data_df %>%
             dplyr::group_by_("Cluster") %>%
             mutate(cells_in_cluster= n()) %>%
@@ -966,7 +965,7 @@ plot_cells <- function(cds,
         # text_df$process_label <- paste0(1:nrow(text_df), '_', as.character(as.matrix(text_df[, 1])))
         # process_label <- text_df$process_label
         # names(process_label) <- as.character(as.matrix(text_df[, 1]))
-        # data_df[, color_by] <- process_label[as.character(data_df[, color_by])]
+        # data_df[, group_by] <- process_label[as.character(data_df[, group_by])]
         # text_df$label = process_label
       }else{
         message("Cells aren't colored in a way that allows them to be grouped.")
