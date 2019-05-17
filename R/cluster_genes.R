@@ -119,3 +119,31 @@ cluster_genes <- function(cds,
 
   return(gene_cluster_df)
 }
+
+#' Creates a matrix with aggregated expression values for arbitrary groups of genes
+#' @export
+aggregate_gene_expression <- function(cds,
+                                      gene_group_df,
+                                      cell_group_df,
+                                      norm_method=c("log", "size_only"),
+                                      scale_agg_values=TRUE,
+                                      max_agg_value=3,
+                                      min_agg_value=-3){
+  gene_group_df = as.data.frame(gene_group_df)
+  gene_group_df = gene_group_df[gene_group_df[,1] %in% fData(cds)$gene_short_name | gene_group_df[,1] %in% row.names(fData(cds)),,drop=FALSE]
+
+  # gene_group_df = gene_group_df[row.names(fData(cds)),]
+  # FIXME: this should allow genes to be part of multiple groups. group_by over the second column with a call to colSum should do it.
+  agg_mat = as.matrix(Matrix.utils::aggregate.Matrix(exprs(cds)[gene_group_df[,1],], as.factor(gene_group_df[,2]), fun="sum"))
+  agg_mat = t(t(agg_mat / size_factors(cds)))
+  agg_mat = t(scale(t(log10(agg_mat + 0.1))))
+
+  agg_mat[agg_mat < min_agg_value] = min_agg_value
+  agg_mat[agg_mat > max_agg_value] = max_agg_value
+
+  cell_group_df = as.data.frame(cell_group_df)
+  cell_group_df = cell_group_df[cell_group_df[,1] %in% row.names(pData(cds)),,drop=FALSE]
+
+  agg_mat = t(as.matrix(Matrix.utils::aggregate.Matrix(t(agg_mat[,cell_group_df[,1]]), as.factor(cell_group_df[,2]), fun="mean")))
+  return(agg_mat)
+}
