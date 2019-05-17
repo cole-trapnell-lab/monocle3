@@ -229,21 +229,21 @@ select_trajectory_roots <- function(cds, x=1, y=2,
 
   if (use_3d){
     ui <- shiny::fluidPage(
-      titlePanel("Choose your root nodes"),
+      shiny::titlePanel("Choose your root nodes"),
 
       # Sidebar layout with input and output definitions ----
-      sidebarLayout(
+      shiny::sidebarLayout(
 
         # Sidebar panel for inputs ----
-        sidebarPanel(
+        shiny::sidebarPanel(
           # clear button
-          actionButton("reset", "Clear"),
+          shiny::actionButton("reset", "Clear"),
           # done button
-          actionButton("done", "Done")
+          shiny::actionButton("done", "Done")
         ),
 
         # Main panel for displaying outputs ----
-        mainPanel(
+        shiny::mainPanel(
           plotlyOutput("plot1")
         )
       )
@@ -251,11 +251,11 @@ select_trajectory_roots <- function(cds, x=1, y=2,
 
     server <- function(input, output) {
 
-      vals <- reactiveValues(
+      vals <- shiny::reactiveValues(
         keeprows = rep(TRUE, nrow(ica_space_df))
       )
 
-      output$plot1 <- renderPlotly({
+      output$plot1 <- plotly::renderPlotly({
         ica_space_df$keep <- FALSE
         ica_space_df[ vals$keeprows,]$keep <- TRUE
 
@@ -268,7 +268,7 @@ select_trajectory_roots <- function(cds, x=1, y=2,
           layout(showlegend = FALSE)
       })
       # Toggle points that are clicked
-      observeEvent(event_data("plotly_click"), {
+      shiny::observeEvent(event_data("plotly_click"), {
         d <- event_data("plotly_click")
         print(str(d))
         new_keep <- rep(FALSE, nrow(ica_space_df))
@@ -277,49 +277,49 @@ select_trajectory_roots <- function(cds, x=1, y=2,
       })
 
       # Reset all points
-      observeEvent(input$reset, {
+      shiny::observeEvent(input$reset, {
         vals$keeprows <- rep(TRUE, nrow(ica_space_df))
       })
 
-      observeEvent(input$done, {
+      shiny::observeEvent(input$done, {
         stopApp(vals$keeprows)
       })
 
     }
-    sel <- runApp(shinyApp(ui, server))
+    sel <- shiny::runApp(shiny::shinyApp(ui, server))
   } else {
     ui <- shiny::fluidPage(
-      titlePanel("Choose your root nodes"),
+      shiny::titlePanel("Choose your root nodes"),
 
       # Sidebar layout with input and output definitions ----
-      sidebarLayout(
+      shiny::sidebarLayout(
 
         # Sidebar panel for inputs ----
-        sidebarPanel(
+        shiny::sidebarPanel(
           # done button
-          actionButton("choose_toggle", "Choose/unchoose"),
+          shiny::actionButton("choose_toggle", "Choose/unchoose"),
           # clear button
-          actionButton("reset", "Clear"),
+          shiny::actionButton("reset", "Clear"),
           # done button
-          actionButton("done", "Done")
+          shiny::actionButton("done", "Done")
         ),
 
         # Main panel for displaying outputs ----
-        mainPanel(
-          plotOutput("plot1", height = 350,
+        shiny::mainPanel(
+          shiny::plotOutput("plot1", height = 350,
                      click = "plot1_click",
-                     brush = brushOpts(id = "plot1_brush"))
+                     brush = shiny::brushOpts(id = "plot1_brush"))
         )
       )
     )
 
     server <- function(input, output) {
 
-      vals <- reactiveValues(
+      vals <- shiny::reactiveValues(
         keeprows = rep(TRUE, nrow(ica_space_df))
       )
 
-      output$plot1 <- renderPlot({
+      output$plot1 <- shiny::renderPlot({
         # Plot the kept and excluded points as two separate data sets
         keep    <- ica_space_df[ vals$keeprows, , drop = FALSE]
         exclude <- ica_space_df[!vals$keeprows, , drop = FALSE]
@@ -334,30 +334,30 @@ select_trajectory_roots <- function(cds, x=1, y=2,
       })
 
       # Toggle points that are clicked
-      observeEvent(input$plot1_click, {
-        res <- nearPoints(ica_space_df, input$plot1_click, allRows = TRUE)
+      shiny::observeEvent(input$plot1_click, {
+        res <- shiny::nearPoints(ica_space_df, input$plot1_click, allRows = TRUE)
 
         vals$keeprows <- xor(vals$keeprows, res$selected_)
       })
 
       # Toggle points that are brushed, when button is clicked
-      observeEvent(input$choose_toggle, {
-        res <- brushedPoints(ica_space_df, input$plot1_brush, allRows = TRUE)
+      shiny::observeEvent(input$choose_toggle, {
+        res <- shiny::brushedPoints(ica_space_df, input$plot1_brush, allRows = TRUE)
 
         vals$keeprows <- xor(vals$keeprows, res$selected_)
       })
 
       # Reset all points
-      observeEvent(input$reset, {
+      shiny::observeEvent(input$reset, {
         vals$keeprows <- rep(TRUE, nrow(ica_space_df))
       })
 
-      observeEvent(input$done, {
+      shiny::observeEvent(input$done, {
         stopApp(vals$keeprows)
       })
 
     }
-    sel <- runApp(shinyApp(ui, server))
+    sel <- shiny::runApp(shiny::shinyApp(ui, server))
   }
   ## return indices of selected points
   as.character(ica_space_df$sample_name[which(!sel)])
