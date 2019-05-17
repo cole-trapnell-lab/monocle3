@@ -23,7 +23,7 @@
 graph_test <- function(cds,
                                  neighbor_graph = c("principal_graph", "knn"),
                                  reduction_method = "UMAP",
-                                 k = 25, # FIXME: graph_test should not be building knn's!
+                                 k = 25,
                                  method = c('Moran_I'),
                                  alternative = 'greater',
                                  expression_family="quasipoisson",
