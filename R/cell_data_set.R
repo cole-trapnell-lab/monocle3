@@ -8,10 +8,13 @@ setOldClass(c("igraph"), prototype=structure(list(), class="igraph"))
 #' This class is initialized from a matrix of expression values along with cell
 #' and feature metadata.
 #'
-#' @field principal_graph_aux Auxilliary information from principal graph
-#'   construction
-#' @field principal_graph Principal graph
-#' @field clusters Cluster data
+#' @field preprocess_aux SimpleList, auxilliary information from preprocessing.
+#' @field reduce_dim_aux SimpleList, auxilliary information from reduced
+#'   dimension.
+#' @field principal_graph_aux SimpleList, auxilliary information from principal
+#'   graph construction
+#' @field principal_graph SimpleList of igraph objects containing principal
+#'   graphs for different dimensionality reduction.
 #' @name cell_data_set
 #' @rdname cell_data_set
 #' @aliases cell_data_set-class
@@ -36,9 +39,10 @@ setClass("cell_data_set",
 #' @param expression_data expression data matrix for an experiment, can be a
 #'   sparseMatrix.
 #' @param cell_metadata data frame containing attributes of individual cells,
-#'  where row.names(cell_metadata) = colnames(expression_data).
+#'  where \code{row.names(cell_metadata) = colnames(expression_data)}.
 #' @param gene_metadata data frame containing attributes of features
-#' nn(e.g. genes), where row.names(gene_metadata) = row.names(expression_data).
+#'   (e.g. genes), where
+#'   \code{row.names(gene_metadata) = row.names(expression_data)}.
 #' @return a new cell_data_set object
 #' @export
 #' @examples
@@ -61,16 +65,41 @@ new_cell_data_set <- function(expression_data,
                               cell_metadata = NULL,
                               gene_metadata = NULL) {
 
+  assertthat::assert_that(class(expression_data) == "matrix" ||
+                            is_sparse_matrix(expression_data),
+                          msg = paste("Argument expression_data must be a",
+                                      "matrix - either sparse from the",
+                                      "Matrix package or dense"))
+  if (!is.null(cell_metadata)) {
+    assertthat::assert_that(nrow(cell_metadata) == ncol(expression_data),
+                            msg = paste("cell_metadata must be NULL or have",
+                                        "the same number of rows as columns",
+                                        "in expression_data"))
+    assertthat::assert_that(all(row.names(cell_metadata) == colnames(expression_data)),
+                            msg = paste("row.names of cell_metadata must be",
+                                        "equal to colnames of expression_data"))
+  }
+
+  if (!is.null(gene_metadata)) {
+    assertthat::assert_that(nrow(gene_metadata) == nrow(expression_data),
+                            msg = paste("gene_metadata must be NULL or have",
+                                        "the same number of rows as rows",
+                                        "in expression_data"))
+    assertthat::assert_that(all(row.names(gene_metadata) == row.names(expression_data)),
+                            msg = paste("row.names of gene_metadata must be",
+                                        "equal to row.names of",
+                                        "expression_data"))
+  }
+
+  if (is.null(cell_metadata)) {
+    cell_metadata <- data.frame(cell = colnames(expression_data),
+                                row.names = colnames(expression_data))
+  }
+
   if(!('gene_short_name' %in% colnames(gene_metadata))) {
     warning(paste("Warning: gene_metadata must contain a column verbatim named",
                   "'gene_short_name' for certain functions."))
   }
-
- # assertthat::assert_that(class(expression_data) == "matrix" ||
-#                            is_sparse_matrix(expression_data),
-#                          msg = paste("Argument expression_data must be a",
-#                                      "matrix (either sparse from the Matrix",
-#                                      "package or dense)."))
 
   sce <- SingleCellExperiment(list(counts=expression_data),
                               rowData = gene_metadata,

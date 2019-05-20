@@ -12,10 +12,11 @@ new_cell_data_set(expression_data, cell_metadata = NULL,
 sparseMatrix.}
 
 \item{cell_metadata}{data frame containing attributes of individual cells,
-where row.names(cell_metadata) = colnames(expression_data).}
+where \code{row.names(cell_metadata) = colnames(expression_data)}.}
 
 \item{gene_metadata}{data frame containing attributes of features
-nn(e.g. genes), where row.names(gene_metadata) = row.names(expression_data).}
+(e.g. genes), where
+\code{row.names(gene_metadata) = row.names(expression_data)}.}
 }
 \value{
 a new cell_data_set object

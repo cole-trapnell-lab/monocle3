@@ -1,11 +1,14 @@
-#' Cluster cells into a specified number of groups based on .
+#' Cluster cells using Louvain community detection
 #'
 #' Unsupervised clustering of cells is a common step in many single-cell
 #' expression workflows. In an experiment containing a mixture of cell types,
-#' each cluster might
-#' correspond to a different cell type. This method takes a cell_data_set as input
-#' along with a requested number of clusters, clusters them with an unsupervised
-#' algorithm (by default, density peak clustering), and then returns the cell_data_set with the
+#' each cluster might correspond to a different cell type. This method takes a
+#' cell_data_set as input and clusters them using Louvain community detection,
+#' and returns a cell_data_set with cluster assignments and Louvain partitions.
+#' Cluster assignments can then be returned using the \code{get_clusters}
+#' function and partition assignments can be returned using the
+#' \code{get_partitions} function.
+#'
 #' cluster assignments stored in the colData table. When number of clusters is set
 #' to NULL (num_clusters = NULL), the decision plot as introduced in the reference
 #' will be plotted and the users are required to check the decision plot to select
@@ -20,16 +23,16 @@
 #' from python. With different res values, the users can obtain different granularity of the data.
 #'
 #' @param cds the cell_data_set upon which to perform this operation
-#' @param use_pca Whether or not to cluster cells based on top PCA component. Default to be FALSE.
+#' @param reduction_method
 #' @param k number of kNN used in creating the k nearest neighbor graph for Louvain clustering. The number of kNN is related to the resolution of the clustering result, bigger number of kNN gives low resolution and vice versa. Default to be 20
 #' @param louvain_iter Integer number of iterations used for Louvain clustering. The clustering result gives the largest modularity score will be used as the final clustering result.  Default to be 1. Note that if louvain_iter is large than 1, the `seed` argument will be ignored.
+#' @param louvain_qval
 #' @param weight A logic argument to determine whether or not we will use Jaccard coefficent for two nearest neighbors (based on the overlapping of their kNN) as the weight used for Louvain clustering. Default to be FALSE.
-#' @param res Resolution parameter for the louvain clustering. Values between 0 and 1e-2 are good, bigger values give you more clusters. Default is set to be `seq(0, 1e-4, length.out = 5)`.
-#' @param method method for clustering cells. Three methods are available, including densityPeak, louvian and DDRTree. By default, we use density peak clustering algorithm for clustering. For big datasets (like data with 50 k cells or so), we recommend using the louvain clustering algorithm.
+#' @param resolution
 #' @param random_seed  the seed used by the random number generator in louvain-igraph package. This argument will be ignored if louvain_iter is larger than 1.
 #' @param verbose Verbose A logic flag to determine whether or not we should print the running details.
-#' @param cores number of cores computer should use to execute function
 #' @param ... Additional arguments passed to \code{\link{louvain_clustering}()}
+#'
 #' @return an updated cell_data_set object, in which phenoData contains values for Cluster for each cell
 #' @references Rodriguez, A., & Laio, A. (2014). Clustering by fast search and find of density peaks. Science, 344(6191), 1492-1496. doi:10.1126/science.1242072
 #' @references Vincent D. Blondel, Jean-Loup Guillaume, Renaud Lambiotte, Etienne Lefebvre: Fast unfolding of communities in large networks. J. Stat. Mech. (2008) P10008
@@ -203,7 +206,13 @@ louvain_R <- function(X, python_home = system('which python', intern = TRUE),
 #' @return a list with four elements (g (igraph object for the kNN graph), coord (coordinates of the graph with
 #' layout_component, if the number of cells is less than 3000), edge_links (the data frame to plot the edges of
 #' the igraph, if the number of cells is less than 3000) and optim_res (the louvain clustering result)).
-louvain_clustering <- function(data, pd, k = 20, weight = F, louvain_iter = 1, resolution = NULL, random_seed = 0L, verbose = F, ...) {
+louvain_clustering <- function(data,
+                               pd,
+                               k = 20,
+                               weight = F,
+                               louvain_iter = 1,
+                               resolution = NULL, random_seed = 0L,
+                               verbose = F, ...) {
   extra_arguments <- list(...)
   cell_names <- row.names(pd)
   if(!identical(cell_names, row.names(pd)))

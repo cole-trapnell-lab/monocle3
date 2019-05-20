@@ -66,6 +66,28 @@ setReplaceMethod("clusterNames", c("cell_data_set", "character"),
   return(x)
 })
 
+#' Generic to extract partitions from CDS object
+#'
+#' @param x CDS object
+#' @param reduction_method Reduced dimension to extract clusters for.
+#'
+#' @export
+setGeneric("get_partitions", function(x, reduction_method = "UMAP")
+  standardGeneric("get_partitions"))
+
+#' Method to extract partitions from CDS object
+#' @param cell_data_set CDS object
+#'
+#' @export
+setMethod("get_partitions", "cell_data_set",
+          function(x, reduction_method = "UMAP") {
+            value <- x@clusters[[reduction_method]]$louvain_component
+            return(value)
+          })
+
+#' @export
+setGeneric("partitions", function(x) standardGeneric("partitions"))
+
 #' @export
 setGeneric("principal_graph", function(x)
   standardGeneric("principal_graph"))

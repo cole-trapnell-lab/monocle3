@@ -2,7 +2,7 @@
 % Please edit documentation in R/cluster_cells.R
 \name{cluster_cells}
 \alias{cluster_cells}
-\title{Cluster cells into a specified number of groups based on .}
+\title{Cluster cells using Louvain community detection}
 \usage{
 cluster_cells(cds, reduction_method = c("UMAP", "tSNE", "PCA"), k = 20,
   louvain_iter = 1, louvain_qval = 0.05, weight = FALSE,
@@ -22,14 +22,6 @@ cluster_cells(cds, reduction_method = c("UMAP", "tSNE", "PCA"), k = 20,
 \item{verbose}{Verbose A logic flag to determine whether or not we should print the running details.}
 
 \item{...}{Additional arguments passed to \code{\link{louvain_clustering}()}}
-
-\item{use_pca}{Whether or not to cluster cells based on top PCA component. Default to be FALSE.}
-
-\item{res}{Resolution parameter for the louvain clustering. Values between 0 and 1e-2 are good, bigger values give you more clusters. Default is set to be \code{seq(0, 1e-4, length.out = 5)}.}
-
-\item{method}{method for clustering cells. Three methods are available, including densityPeak, louvian and DDRTree. By default, we use density peak clustering algorithm for clustering. For big datasets (like data with 50 k cells or so), we recommend using the louvain clustering algorithm.}
-
-\item{cores}{number of cores computer should use to execute function}
 }
 \value{
 an updated cell_data_set object, in which phenoData contains values for Cluster for each cell
@@ -37,10 +29,14 @@ an updated cell_data_set object, in which phenoData contains values for Cluster 
 \description{
 Unsupervised clustering of cells is a common step in many single-cell
 expression workflows. In an experiment containing a mixture of cell types,
-each cluster might
-correspond to a different cell type. This method takes a cell_data_set as input
-along with a requested number of clusters, clusters them with an unsupervised
-algorithm (by default, density peak clustering), and then returns the cell_data_set with the
+each cluster might correspond to a different cell type. This method takes a
+cell_data_set as input and clusters them using Louvain community detection,
+and returns a cell_data_set with cluster assignments and Louvain partitions.
+Cluster assignments can then be returned using the \code{get_clusters}
+function and partition assignments can be returned using the
+\code{get_partitions} function.
+}
+\details{
 cluster assignments stored in the colData table. When number of clusters is set
 to NULL (num_clusters = NULL), the decision plot as introduced in the reference
 will be plotted and the users are required to check the decision plot to select

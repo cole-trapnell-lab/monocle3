@@ -37,16 +37,17 @@ need to be satisfied to introduce the edge for loop closure.)}
 an updated cell_data_set object
 }
 \description{
-Monocle aims to learn how cells transition through a biological program of
-gene expression changes in an experiment. Each cell can be viewed as a point
-in a high-dimensional space, where each dimension describes the expression of
-a different gene in the genome. Identifying the program of gene expression
-changes is equivalent to learning a \emph{trajectory} that the cells follow
-through this space. However, the more dimensions there are in the analysis,
-the harder the trajectory is to learn. Fortunately, many genes typically
-co-vary with one another, and so the dimensionality of the data can be
-reduced with a wide variety of different algorithms. Monocle provides two
-different algorithms for dimensionality reduction via \code{reduce_dimension}.
+Monocle3 aims to learn how cells transition through a
+biological program of gene expression changes in an experiment. Each cell
+can be viewed as a point in a high-dimensional space, where each dimension
+describes the expression of a different gene. Identifying the program of
+gene expression changes is equivalent to learning a \emph{trajectory} that
+the cells follow through this space. However, the more dimensions there are
+in the analysis, the harder the trajectory is to learn. Fortunately, many
+genes typically co-vary with one another, and so the dimensionality of the
+data can be reduced with a wide variety of different algorithms. Monocle3
+provides two different algorithms for dimensionality reduction via
+\code{reduce_dimension}.
 Both take a cell_data_set object and a number of dimensions allowed for the
 reduced space. You can also provide a model formula indicating some variables
 (e.g. batch ID or other technical factors) to "subtract" from the data so it

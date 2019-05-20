@@ -16,11 +16,15 @@ and feature metadata.
 \section{Fields}{
 
 \describe{
-\item{\code{principal_graph_aux}}{Auxilliary information from principal graph
-construction}
+\item{\code{preprocess_aux}}{SimpleList, auxilliary information from preprocessing.}
 
-\item{\code{principal_graph}}{Principal graph}
+\item{\code{reduce_dim_aux}}{SimpleList, auxilliary information from reduced
+dimension.}
 
-\item{\code{clusters}}{Cluster data}
+\item{\code{principal_graph_aux}}{SimpleList, auxilliary information from principal
+graph construction}
+
+\item{\code{principal_graph}}{SimpleList of igraph objects containing principal
+graphs for different dimensionality reduction.}
 }}
 

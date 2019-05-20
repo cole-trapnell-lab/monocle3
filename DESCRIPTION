@@ -57,7 +57,7 @@ Imports:
     tidyr (>= 0.8.3),
     viridis (>= 0.5.1)
 Suggests: 
-    testthat,
+    testthat (>= 2.1.0),
     knitr,
     rmarkdown,
     spelling

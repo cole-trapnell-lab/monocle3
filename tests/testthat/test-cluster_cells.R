@@ -73,7 +73,7 @@ test_that("cluster_cells works", {
   expect_equal(length(cds@clusters[["PCA"]]), 3)
   expect_equal(length(cds@clusters[["PCA"]]$louvain_res$optim_res$membership),
                nrow(colData(cds)))
-  expect_equal(cds@clusters[["PCA"]]$louvain_res$optim_res$membership[1], 1)
+  expect_equal(as.numeric(cds@clusters[["PCA"]]$louvain_res$optim_res$membership[1]), 1)
   expect_equal(length(unique(get_clusters(cds, reduction_method = "PCA"))), 5)
 
   cds <- cluster_cells(cds, reduction_method = "PCA", k=22, weight = T,
