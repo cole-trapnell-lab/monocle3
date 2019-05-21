@@ -654,7 +654,7 @@ plot_cell_clusters <- function(cds,
                                       "NULL, cannot color by both!"))
   assertthat::assert_that(is.logical(size_factor_normalize))
 
-  if (!is.null(color_by) && color_by == "Cluster" && length(get_clusters(cds, reduction_method = reduction_method)) == 0){
+  if (!is.null(color_by) && color_by == "Cluster" && length(clusters(cds, reduction_method = reduction_method)) == 0){
     stop("Error: Clustering is not performed yet. Please call clusterCells() before calling this function.")
   }
   if (rasterize) {
@@ -675,7 +675,7 @@ plot_cell_clusters <- function(cds,
   data_df <- data.frame(low_dim_coords[,c(x,y)])
   colnames(data_df) <- c("data_dim_1", "data_dim_2")
   data_df$sample_name <- colnames(cds)
-  data_df$Cluster = get_clusters(cds, reduction_method = reduction_method)
+  data_df$Cluster = clusters(cds, reduction_method = reduction_method)
   data_df <- merge(data_df, lib_info, by.x="sample_name", by.y="row.names")
 
   markers_exprs <- NULL
@@ -836,7 +836,7 @@ plot_cells <- function(cds,
                           msg = paste("Either color_by or markers must be",
                                       "NULL, cannot color by both!"))
 
-  #if (!is.null(color_by) && color_by == "Cluster" && length(get_clusters(cds, reduction_method = reduction_method)) == 0){
+  #if (!is.null(color_by) && color_by == "Cluster" && length(clusters(cds, reduction_method = reduction_method)) == 0){
   #  stop("Error: Clustering is not performed yet. Please call clusterCells() before calling this function.")
   #}
   norm_method = match.arg(norm_method)
@@ -863,7 +863,7 @@ plot_cells <- function(cds,
   data_df$sample_name <- row.names(data_df)
 
   data_df <- merge(data_df, lib_info_with_pseudo, by.x="sample_name", by.y="row.names")
-  data_df$Cluster = get_clusters(cds, reduction_method = reduction_method)[data_df$sample_name]
+  data_df$Cluster = clusters(cds, reduction_method = reduction_method)[data_df$sample_name]
 
   if (show_trajectory_graph){
     #TODO: need to validate cds as ready for this plot (need mst, pseudotime, etc)

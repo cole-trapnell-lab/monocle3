@@ -8,8 +8,8 @@
 #' assignments. In addition to clusters this function calculates partitions,
 #' which represent superclusters of the Louvain communities that are found
 #' using a KNN pruning method. Cluster assignments can be accessed using the
-#' \code{\link{get_clusters}} function and partition assignments can be
-#' accessed using the \code{\link{get_partitions}} function.
+#' \code{\link{clusters}} function and partition assignments can be
+#' accessed using the \code{\link{partitions}} function.
 #'
 #' @param cds The cell_data_set upon which to perform clustering.
 #' @param reduction_method The dimensionality reduction method upon which to
@@ -38,7 +38,7 @@
 #'
 #' @return an updated cell_data_set object, with cluster and partition
 #'   information stored internally and accessible using
-#'   \code{\link{get_clusters}} and \code{\link{get_partitions}}
+#'   \code{\link{clusters}} and \code{\link{partitions}}
 #' @references Rodriguez, A., & Laio, A. (2014). Clustering by fast search and
 #'   find of density peaks. Science, 344(6191), 1492-1496.
 #'   doi:10.1126/science.1242072
@@ -69,7 +69,9 @@ cluster_cells <- function(cds,
   assertthat::assert_that(assertthat::is.count(k))
   assertthat::assert_that(is.logical(weight))
   assertthat::assert_that(assertthat::is.count(louvain_iter))
-  assertthat::assert_that(is.numeric(resolution))
+  if(!is.null(resolution)) {
+    assertthat::assert_that(is.numeric(resolution))
+  }
   assertthat::assert_that(is.numeric(partition_qval))
   assertthat::assert_that(is.logical(verbose))
   assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),

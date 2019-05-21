@@ -37,7 +37,7 @@ plot_cells(cds, color_by="plate", label_cell_groups=FALSE) + ggsave("L2_umap_cor
 cds <- cluster_cells(cds, resolution=c(10^seq(-6,-1)))
 plot_cells(cds) + ggsave("L2_umap_color_by_cluster.png", width=5, height=4, dpi = 600)
 
-pheatmap::pheatmap(log(table(get_clusters(cds), colData(cds)$cao_cell_type)+1),
+pheatmap::pheatmap(log(table(clusters(cds), colData(cds)$cao_cell_type)+1),
                    clustering_method="ward.D2",
                    fontsize=6, width=5, height=8, filename="L2_cell_type_by_cluster.png")
 
@@ -53,7 +53,7 @@ library(org.Ce.eg.db)
 library(garnett)
 load(url("https://cole-trapnell-lab.github.io/garnett/classifiers/ceWhole"))
 
-colData(cds)$garnett_cluster = get_clusters(cds)
+colData(cds)$garnett_cluster = clusters(cds)
 cds <- classify_cells(cds, ceWhole,
                            db = org.Ce.eg.db,
                            cluster_extend = TRUE,
@@ -71,7 +71,7 @@ gene_cluster_df = cluster_genes(cds[pr_deg_ids,], resolution=0.001)
 #   ggplot2::geom_text(data=text_df, mapping = ggplot2::aes_string(x = "text_x", y = "text_y", label = "cluster"), color=I("black"),  size = 4)
 
 gene_cluster_df = cluster_genes(cds[pr_deg_ids,], resolution=c(0,10^seq(-6,-1)))
-cell_group_df = tibble::tibble(cell=row.names(colData(cds)), cell_group=get_clusters(cds))
+cell_group_df = tibble::tibble(cell=row.names(colData(cds)), cell_group=clusters(cds))
 agg_mat = aggregate_gene_expression(cds, gene_cluster_df, cell_group_df)
 #agg_mat
 pheatmap::pheatmap(agg_mat, cluster_rows=TRUE, cluster_cols=TRUE,
@@ -84,7 +84,7 @@ dev.off()
 
 
 
-######## 
+########
 # Look at a specific set of clusters
 
 cds_subset = choose_cells(cds)
@@ -93,7 +93,7 @@ pr_graph_test_res = graph_test(cds_subset, neighbor_graph="knn", cores=8)
 pr_deg_ids = row.names(subset(pr_graph_test_res, q_value < 0.05))
 
 gene_cluster_df = monocle3:::cluster_genes(cds[pr_deg_ids,], resolution=c(0,10^seq(-6,-1)), verbose=TRUE)
-cell_group_df = tibble::tibble(cell=row.names(colData(cds)), cell_group=get_clusters(cds))
+cell_group_df = tibble::tibble(cell=row.names(colData(cds)), cell_group=clusters(cds))
 agg_mat = aggregate_gene_expression(cds, gene_cluster_df, cell_group_df)
 #agg_mat
 pheatmap::pheatmap(agg_mat, cluster_rows=TRUE, cluster_cols=TRUE,

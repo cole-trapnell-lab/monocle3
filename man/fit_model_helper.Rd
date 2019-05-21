@@ -10,13 +10,16 @@ fit_model_helper(x, model_formula_str, expression_family,
 \arguments{
 \item{x}{test}
 
-\item{model_formula_str}{a formula string specifying the model to fit for the genes.}
+\item{model_formula_str}{a formula string specifying the model to fit for
+the genes.}
 
-\item{expression_family}{specifies the family function used for expression responses}
+\item{expression_family}{specifies the family function used for expression
+responses}
 
 \item{disp_func}{test}
 
-\item{verbose}{Whether to show VGAM errors and warnings. Only valid for cores = 1.}
+\item{verbose}{Whether to show VGAM errors and warnings. Only valid for
+cores = 1.}
 
 \item{...}{test}
 }

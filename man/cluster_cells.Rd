@@ -46,7 +46,7 @@ run details.}
 \value{
 an updated cell_data_set object, with cluster and partition
 information stored internally and accessible using
-\code{\link{get_clusters}} and \code{\link{get_partitions}}
+\code{\link{clusters}} and \code{\link{partitions}}
 }
 \description{
 Unsupervised clustering of cells is a common step in many single-cell
@@ -57,8 +57,8 @@ detection, and returns a cell_data_set with internally stored cluster
 assignments. In addition to clusters this function calculates partitions,
 which represent superclusters of the Louvain communities that are found
 using a KNN pruning method. Cluster assignments can be accessed using the
-\code{\link{get_clusters}} function and partition assignments can be
-accessed using the \code{\link{get_partitions}} function.
+\code{\link{clusters}} function and partition assignments can be
+accessed using the \code{\link{partitions}} function.
 }
 \references{
 Rodriguez, A., & Laio, A. (2014). Clustering by fast search and

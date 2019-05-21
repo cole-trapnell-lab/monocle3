@@ -1,35 +1,55 @@
-#' @title Test genes for differential expression based on the low dimensional embedding and the principal graph
+#' @title Test genes for differential expression based on the low dimensional
+#' embedding and the principal graph
 #'
-#' @description We are often interested in finding genes that are differentially expressed across a single-cell trajectory.
-#' Monocle 3 introduces a new approach for finding such genes that draws on a powerful technique in spatial
-#' correlation analysis, the Moran’s I test. Moran’s I is a measure of multi-directional and multi-dimensional
-#' spatial autocorrelation. The statistic tells you whether cells at nearby positions on a trajectory will have
-#' similar (or dissimilar) expression levels for the gene being tested. Although both Pearson correlation and
-#' Moran’s I ranges from -1 to 1, the interpretation of Moran’s I is slightly different: +1 means that nearby
-#' cells will have perfectly similar expression; 0 represents no correlation,
-#' and -1 means that neighboring cells will be *anti-correlated*.
+#' @description We are often interested in finding genes that are
+#' differentially expressed across a single-cell trajectory. Monocle3
+#' introduces a new approach for finding such genes that draws on a powerful
+#' technique in spatial correlation analysis, the Moran’s I test. Moran’s I is
+#' a measure of multi-directional and multi-dimensional spatial
+#' autocorrelation. The statistic tells you whether cells at nearby positions
+#' on a trajectory will have similar (or dissimilar) expression levels for the
+#' gene being tested. Although both Pearson correlation and Moran’s I ranges
+#' from -1 to 1, the interpretation of Moran’s I is slightly different: +1
+#' means that nearby cells will have perfectly similar expression; 0 represents
+#' no correlation, and -1 means that neighboring cells will be
+#' *anti-correlated*.
 #'
 #' @param cds a cell_data_set object upon which to perform this operation
-# #' @param landmark_num Number of landmark cells selected for performing aggregate Moran's I test, default is NULL (no landmark selection and all cells are used)
-#' @param k Number of nearest neighbors used for building the kNN graph which is passed to knn2nb function during the Moran's I (Geary's C) test procedure.
-#' @param method a character string specifying the method (the default 'Moran_I' or 'Geary_C') for detecting significant genes showing correlated genes along the principal graph embedded in the low dimensional space.
-#' @param alternative a character string specifying the alternative hypothesis, must be one of greater (default), less or two.sided.
-#' @param cores the number of cores to be used while testing each gene for differential expression.
-#' @param interactive Whether or not to allow the user to choose a point or region in the scene, then to only identify genes spatially correlated for those selected cells.
-#' @param verbose Whether to show spatial test (Moran's I or Gearys' C test) errors and warnings. Only valid for cores = 1.
-#' @return a data frame containing the p values and q-values from the Moran's I test on the parallel arrays of models.
+#' @param neighbor_graph
+#' @param reduction_method character, the method used to reduce dimension.
+#'   Currently only supported for "UMAP".
+#' @param k Number of nearest neighbors used for building the kNN graph which
+#'   is passed to knn2nb function during the Moran's I (Geary's C) test
+#'   procedure.
+#' @param method a character string specifying the method (currently only
+#'   'Moran_I' is supported) for detecting significant genes showing
+#'   correlation along the principal graph embedded in the low dimensional
+#'   space.
+#' @param alternative a character string specifying the alternative hypothesis,
+#'   must be one of greater (default), less or two.sided.
+#' @param expression_family a character string specifying the expression family
+#'   function used for the test.
+#' @param cores the number of cores to be used while testing each gene for
+#'   differential expression.
+#' @param interactive Whether or not to allow the user to choose a point or
+#'   region in the scene, then to only identify genes spatially correlated for
+#'   those selected cells.
+#' @param verbose Whether to show spatial test (Moran's I) errors and warnings.
+#'   Only valid for cores = 1.
+#' @return a data frame containing the p values and q-values from the Moran's I
+#'   test on the parallel arrays of models.
 #' @seealso \code{\link[spdep]{moran.test}} \code{\link[spdep]{geary.test}}
 #' @export
 graph_test <- function(cds,
-                                 neighbor_graph = c("principal_graph", "knn"),
-                                 reduction_method = "UMAP",
-                                 k = 25,
-                                 method = c('Moran_I'),
-                                 alternative = 'greater',
-                                 expression_family="quasipoisson",
-                                 cores=1,
-                                 interactive = FALSE,
-                                 verbose=FALSE) {
+                       neighbor_graph = c("principal_graph", "knn"),
+                       reduction_method = "UMAP",
+                       k = 25,
+                       method = c('Moran_I'),
+                       alternative = 'greater',
+                       expression_family="quasipoisson",
+                       cores=1,
+                       interactive = FALSE,
+                       verbose=FALSE) {
   lw <- calculateLW(cds,
                     k = k,
                     interactive = interactive,
@@ -44,28 +64,37 @@ graph_test <- function(cds,
   sz <- size_factors(cds)[attr(lw, "region.id")]
 
   wc <- spdep::spweights.constants(lw, zero.policy = TRUE, adjust.n = TRUE)
-  test_res <- pbmcapply::pbmclapply(row.names(exprs_mat), FUN = function(x, sz, alternative, method, expression_family) {
+  test_res <- pbmcapply::pbmclapply(row.names(exprs_mat),
+                                    FUN = function(x, sz, alternative,
+                                                   method, expression_family) {
     exprs_val <- exprs_mat[x, ]
 
     if (expression_family %in% c("uninormal", "binomialff")){
       exprs_val <- exprs_val
     }else{
-        exprs_val <- log10(exprs_val / sz + 0.1)
+      exprs_val <- log10(exprs_val / sz + 0.1)
     }
 
     test_res <- tryCatch({
       if(method == "Moran_I") {
         mt <- my.moran.test(exprs_val, lw, wc, alternative = alternative)
-        data.frame(status = 'OK', p_value = mt$p.value, morans_test_statistic = mt$statistic, morans_I = mt$estimate[["Moran I statistic"]])
+        data.frame(status = 'OK', p_value = mt$p.value,
+                   morans_test_statistic = mt$statistic,
+                   morans_I = mt$estimate[["Moran I statistic"]])
       } else if(method == 'Geary_C') {
         gt <- my.geary.test(exprs_val, lw, wc, alternative = alternative)
-        data.frame(status = 'OK', p_value = gt$p.value, geary_test_statistic = gt$statistic, geary_C = gt$estimate[["Geary C statistic"]])
+        data.frame(status = 'OK', p_value = gt$p.value,
+                   geary_test_statistic = gt$statistic,
+                   geary_C = gt$estimate[["Geary C statistic"]])
       }
     },
     error = function(e) {
-      data.frame(status = 'FAIL', p_value = NA, morans_test_statistic = NA, morans_I = NA)
+      data.frame(status = 'FAIL', p_value = NA, morans_test_statistic = NA,
+                 morans_I = NA)
     })
-  }, sz = sz, alternative = alternative, method = method, expression_family = expression_family, mc.cores=cores, ignore.interactive = TRUE)
+  }, sz = sz, alternative = alternative, method = method,
+  expression_family = expression_family, mc.cores=cores,
+  ignore.interactive = TRUE)
 
   if(verbose) {
     message("returning results: ...")
@@ -77,12 +106,14 @@ graph_test <- function(cds,
   row.names(test_res) <- test_res[, 1] #remove the first column and set the row names to the first column
   test_res[, 1] <- NULL
   test_res$q_value <- 1
-  test_res$q_value[which(test_res$status == 'OK')] <- stats::p.adjust(subset(test_res, status == 'OK')[, 'p_value'], method="BH")
+  test_res$q_value[which(test_res$status == 'OK')] <-
+    stats::p.adjust(subset(test_res, status == 'OK')[, 'p_value'], method="BH")
   test_res$status = as.character(test_res$status)
   test_res[row.names(cds), ] # make sure gene name ordering in the DEG test result is the same as the CDS
 }
 
-my.moran.test <- function (x, listw, wc, alternative = "greater", randomisation = TRUE) {
+my.moran.test <- function (x, listw, wc, alternative = "greater",
+                           randomisation = TRUE) {
   zero.policy = TRUE
   adjust.n = TRUE
   na.action = stats::na.fail
@@ -113,12 +144,14 @@ my.moran.test <- function (x, listw, wc, alternative = "greater", randomisation 
     tmp <- K * (wc$S1 * (wc$nn - wc$n) - 2 * wc$n * wc$S2 +
                   6 * S02)
     if (tmp > VI)
-      warning("Kurtosis overflow,\ndistribution of variable does not meet test assumptions")
+      warning(paste0("Kurtosis overflow,\ndistribution of variable does ",
+                     "not meet test assumptions"))
     VI <- (VI - tmp)/(wc$n1 * wc$n2 * wc$n3 * S02)
     if (!drop.EI2)
       VI <- (VI - EI^2)
     if (VI < 0)
-      warning("Negative variance,\ndistribution of variable does not meet test assumptions")
+      warning(paste0("Negative variance,\ndistribution of variable does ",
+                     "not meet test assumptions"))
   }
   else {
     VI <- (wc$nn * wc$S1 - wc$n * wc$S2 + 3 * S02)/(S02 *
@@ -126,7 +159,8 @@ my.moran.test <- function (x, listw, wc, alternative = "greater", randomisation 
     if (!drop.EI2)
       VI <- (VI - EI^2)
     if (VI < 0)
-      warning("Negative variance,\ndistribution of variable does not meet test assumptions")
+      warning(paste0("Negative variance,\ndistribution of variable does ",
+                     "not meet test assumptions"))
   }
   ZI <- (I - EI)/sqrt(VI)
   statistic <- ZI
@@ -150,7 +184,8 @@ my.moran.test <- function (x, listw, wc, alternative = "greater", randomisation 
   res
 }
 
-my.geary.test <- function (x, listw, wc, randomisation = TRUE, alternative = "greater")
+my.geary.test <- function (x, listw, wc, randomisation = TRUE,
+                           alternative = "greater")
 {
   zero.policy = TRUE
   adjust.n = TRUE
@@ -209,7 +244,8 @@ my.geary.test <- function (x, listw, wc, randomisation = TRUE, alternative = "gr
                      deparse(substitute(listw)), "\n")
   res <- list(statistic = statistic, p.value = PrC, estimate = vec,
               alternative = ifelse(alternative == "two.sided", alternative,
-                                   paste("Expectation", alternative, "than statistic")),
+                                   paste("Expectation", alternative,
+                                         "than statistic")),
               method = method, data.name = data.name)
   class(res) <- "htest"
   res
@@ -223,7 +259,8 @@ my.geary.test <- function (x, listw, wc, randomisation = TRUE, alternative = "gr
 #' and removes edges that connected between groups that disconnected in the
 #' corresponding principal graph and finally uses this kNN graph to calculate a
 #' global Moran's I and get the p-value
-#' @param cds The cell_data_set object where the neighbors list is calculated from
+#' @param cds The cell_data_set object where the neighbors list is calculated
+#'   from
 #' @param  k The maximum number of nearest neighbors to compute
 #' @param verbose A logic flag that determines whether or not to print
 #' execution details
@@ -238,7 +275,7 @@ calculateLW <- function(cds,
                         reduction_method,
                         interactive = FALSE,
                         verbose = FALSE
-                        ) {
+) {
   if(verbose) {
     message("retrieve the matrices for Moran's I test...")
   }
@@ -247,17 +284,24 @@ calculateLW <- function(cds,
 
   cell_coords <- reducedDims(cds)$UMAP
   if (neighbor_graph == "knn") {
-    knn_res <- RANN::nn2(cell_coords, cell_coords, min(k + 1, nrow(cell_coords)), searchtype = "standard")[[1]]
+    knn_res <- RANN::nn2(cell_coords, cell_coords,
+                         min(k + 1, nrow(cell_coords)),
+                         searchtype = "standard")[[1]]
   } else if(neighbor_graph == "principal_graph") {
     pr_graph_node_coords <- cds@principal_graph_aux[[reduction_method]]$dp_mst
-    principal_g <-  igraph::get.adjacency(cds@principal_graph[[reduction_method]])[colnames(pr_graph_node_coords), colnames(pr_graph_node_coords)]
+    principal_g <-
+      igraph::get.adjacency(
+        cds@principal_graph[[reduction_method]])[colnames(pr_graph_node_coords),
+                                                 colnames(pr_graph_node_coords)]
   }
 
   exprs_mat <- counts(cds)
   if(neighbor_graph == "knn") {
     if(is.null(knn_res)) {
       cell_coords <- reducedDims(cds)$UMAP
-      knn_res <- RANN::nn2(cell_coords, cell_coords, min(k + 1, nrow(cell_coords)), searchtype = "standard")[[1]]
+      knn_res <- RANN::nn2(cell_coords, cell_coords,
+                           min(k + 1, nrow(cell_coords)),
+                           searchtype = "standard")[[1]]
     }
     links <- jaccard_coeff(knn_res[, -1], F)
     links <- links[links[, 1] > 0, ]
@@ -273,7 +317,9 @@ calculateLW <- function(cds,
         cat("Press <Esc> in the rgl screen to exit \n")
         points_selected <- sort(select_cells(cds))
       }
-      knn_list <- lapply(points_selected, function(x) intersect(knn_res[x, -1], points_selected))
+      knn_list <- lapply(points_selected,
+                         function(x) intersect(knn_res[x, -1],
+                                               points_selected))
       knn_res_graph <- knn_res_graph[points_selected, points_selected]
       region_id_names <- colnames(cds)[points_selected]
 
@@ -289,24 +335,30 @@ calculateLW <- function(cds,
       points_selected <- 1:nrow(knn_res)
     }
 
-    knn_list <- lapply(points_selected, function(x) id_map[as.character(knn_res[x, -1])])
+    knn_list <- lapply(points_selected,
+                       function(x) id_map[as.character(knn_res[x, -1])])
   }
   else if (neighbor_graph == "principal_graph") {
-    cell2pp_map <- cds@principal_graph_aux[[reduction_method]]$pr_graph_cell_proj_closest_vertex # mapping from each cell to the principal points
+    cell2pp_map <-
+      cds@principal_graph_aux[[reduction_method]]$pr_graph_cell_proj_closest_vertex # mapping from each cell to the principal points
     if(is.null(cell2pp_map)) {
-      stop("Error: projection matrix for each cell to principal points doesn't exist, you may need to rerun learnGraph")
+      stop(paste("Error: projection matrix for each cell to principal",
+                 "points doesn't exist, you may need to rerun learn_graph"))
     }
 
     # This cds object might be a subset of the one on which ordering was performed,
     # so we may need to subset the nearest vertex and low-dim coordinate matrices:
-    cell2pp_map <-  cell2pp_map[row.names(cell2pp_map) %in% row.names(colData(cds)),, drop=FALSE]
+    cell2pp_map <-  cell2pp_map[row.names(cell2pp_map) %in%
+                                  row.names(colData(cds)),, drop=FALSE]
     cell2pp_map <- cell2pp_map[colnames(cds), ]
 
     if(verbose) {
       message("Identify connecting principal point pairs ...")
     }
     # an alternative approach to make the kNN graph based on the principal graph
-    knn_res <- RANN::nn2(cell_coords, cell_coords, min(k + 1, nrow(cell_coords)), searchtype = "standard")[[1]]
+    knn_res <- RANN::nn2(cell_coords, cell_coords,
+                         min(k + 1, nrow(cell_coords)),
+                         searchtype = "standard")[[1]]
     # kNN_res_pp_map <- matrix(cell2pp_map[knn_res], ncol = k + 1, byrow = F) # convert the matrix of knn graph from the cell IDs into a matrix of principal points IDs
 
     principal_g_tmp <- principal_g # kNN can be built within group of cells corresponding to each principal points
@@ -317,7 +369,10 @@ calculateLW <- function(cds,
     membership_matrix <- Matrix::sparse.model.matrix( ~ cell_membership + 0)
     colnames(membership_matrix) <- levels(uniq_member)
     # sparse matrix multiplication for calculating the feasible space
-    feasible_space <- membership_matrix %*% Matrix::tcrossprod(principal_g_tmp[as.numeric(levels(uniq_member)), as.numeric(levels(uniq_member))], membership_matrix)
+    feasible_space <- membership_matrix %*%
+      Matrix::tcrossprod(principal_g_tmp[as.numeric(levels(uniq_member)),
+                                         as.numeric(levels(uniq_member))],
+                         membership_matrix)
 
     links <- jaccard_coeff(knn_res[, -1], F)
     links <- links[links[, 1] > 0, ]
@@ -380,12 +435,14 @@ calculateLW <- function(cds,
       names(id_map) <- id_map
     }
 
-    knn_list <- slam::rowapply_simple_triplet_matrix(slam::as.simple_triplet_matrix(tmp), function(x) {
-      res <- which(as.numeric(x) > 0)
-      if(length(res) == 0)
-        res <- 0L
-      res
-    })
+    knn_list <-
+      slam::rowapply_simple_triplet_matrix(slam::as.simple_triplet_matrix(tmp),
+                                           function(x) {
+                                             res <- which(as.numeric(x) > 0)
+                                             if(length(res) == 0)
+                                               res <- 0L
+                                             res
+                                           })
   } else {
     stop("Error: unrecognized neighbor_graph option")
   }

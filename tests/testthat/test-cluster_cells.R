@@ -74,14 +74,14 @@ test_that("cluster_cells works", {
   expect_equal(length(cds@clusters[["PCA"]]$louvain_res$optim_res$membership),
                nrow(colData(cds)))
   expect_equal(as.numeric(cds@clusters[["PCA"]]$louvain_res$optim_res$membership[1]), 1)
-  expect_equal(length(unique(get_clusters(cds, reduction_method = "PCA"))), 5)
+  expect_equal(length(unique(clusters(cds, reduction_method = "PCA"))), 5)
 
   cds <- cluster_cells(cds, reduction_method = "PCA", k=22, weight = T,
                        louvain_iter = 2, partition_qval = .1, resolution = .01)
-  expect_equal(length(unique(get_clusters(cds, reduction_method = "PCA"))), 1)
+  expect_equal(length(unique(clusters(cds, reduction_method = "PCA"))), 1)
   cds <- cluster_cells(cds, reduction_method = "PCA", k=22, weight = T,
                        louvain_iter = 2, partition_qval = .1, resolution = 20)
-  expect_equal(length(unique(get_clusters(cds, reduction_method = "PCA"))), 500)
+  expect_equal(length(unique(clusters(cds, reduction_method = "PCA"))), 500)
 })
 
 cds <- load_a549()
@@ -91,7 +91,7 @@ cds <- reduce_dimension(cds, umap.fast_sgd=FALSE, cores=1)
 
 test_that("cluster_cells works", {
   cds <- cluster_cells(cds)
-  expect_equal(sum(get_clusters(cds) == 9), 85)
-  expect_equal(sum(get_clusters(cds) == 1), 33)
-  expect_equal(as.character(get_clusters(cds)[1]), "9")
+  expect_equal(sum(clusters(cds) == 9), 85)
+  expect_equal(sum(clusters(cds) == 1), 33)
+  expect_equal(as.character(clusters(cds)[1]), "9")
 })

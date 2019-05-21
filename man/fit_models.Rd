@@ -10,17 +10,19 @@ fit_models(cds, model_formula_str, expression_family = "quasipoisson",
 \arguments{
 \item{cds}{the cell_data_set upon which to perform this operation}
 
-\item{model_formula_str}{a formula string specifying the model to fit for the genes.}
+\item{model_formula_str}{a formula string specifying the model to fit for
+the genes.}
 
-\item{expression_family}{specifies the family function used for expression responses.}
+\item{expression_family}{specifies the family function used for expression
+responses. Default is "quasipoisson"}
 
-\item{cores}{the number of processor cores to be used during fitting.}
+\item{cores}{the number of processor cores use during fitting.}
 }
 \value{
 a tibble containing model objects
 }
 \description{
-This function fits a generalized linear model for each gene in a cell_data_set.
-Formulae can be provided to account for
-additional covariates (e.g. day collected, genotype of cells, media conditions, etc).
+This function fits a generalized linear model for each gene in a
+cell_data_set. Formulae can be provided to account for additional covariates
+(e.g. day collected, genotype of cells, media conditions, etc).
 }
