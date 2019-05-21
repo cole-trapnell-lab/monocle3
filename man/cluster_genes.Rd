@@ -5,11 +5,10 @@
 \title{Cluster genes into a specified number of groups based on .}
 \usage{
 cluster_genes(cds, reduction_method = c("UMAP", "tSNE", "PCA"),
-  preprocess_method = c("PCA", "LSI"), max_components = 2,
-  umap.metric = "cosine", umap.min_dist = 0.1,
+  max_components = 2, umap.metric = "cosine", umap.min_dist = 0.1,
   umap.n_neighbors = 15L, umap.fast_sgd = TRUE,
   umap.nn_method = "annoy", k = 20, louvain_iter = 1,
-  louvain_qval = 0.05, weight = FALSE, resolution = NULL,
+  partition_qval = 0.05, weight = FALSE, resolution = NULL,
   random_seed = 0L, cores = 1, verbose = F, ...)
 }
 \arguments{

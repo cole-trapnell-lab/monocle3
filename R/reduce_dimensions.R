@@ -153,6 +153,7 @@ reduce_dimension <- function(cds,
                           fast_sgd = umap.fast_sgd,
                           n_threads=cores,
                           verbose=verbose,
+                          nn_method = umap.nn_method,
                           ...)
     # tmp <- do.call(UMAP, umap_args)
     # normalize UMAP space

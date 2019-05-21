@@ -5,55 +5,71 @@
 \title{Cluster cells using Louvain community detection}
 \usage{
 cluster_cells(cds, reduction_method = c("UMAP", "tSNE", "PCA"), k = 20,
-  louvain_iter = 1, louvain_qval = 0.05, weight = FALSE,
+  louvain_iter = 1, partition_qval = 0.05, weight = FALSE,
   resolution = NULL, random_seed = 0L, verbose = F, ...)
 }
 \arguments{
-\item{cds}{the cell_data_set upon which to perform this operation}
+\item{cds}{The cell_data_set upon which to perform clustering.}
 
-\item{k}{number of kNN used in creating the k nearest neighbor graph for Louvain clustering. The number of kNN is related to the resolution of the clustering result, bigger number of kNN gives low resolution and vice versa. Default to be 20}
+\item{reduction_method}{The dimensionality reduction method upon which to
+base clustering. Options are "UMAP", "tSNE" and "PCA".}
 
-\item{louvain_iter}{Integer number of iterations used for Louvain clustering. The clustering result gives the largest modularity score will be used as the final clustering result.  Default to be 1. Note that if louvain_iter is large than 1, the \code{seed} argument will be ignored.}
+\item{k}{Integer number of nearest neighbors to use when creating the k
+nearest neighbor graph for Louvain clustering. k is related to the
+resolution of the clustering result, a bigger k will result in lower
+resolution and vice versa. Default is 20.}
 
-\item{weight}{A logic argument to determine whether or not we will use Jaccard coefficent for two nearest neighbors (based on the overlapping of their kNN) as the weight used for Louvain clustering. Default to be FALSE.}
+\item{louvain_iter}{Integer number of iterations used for Louvain
+clustering. The clustering result giving the largest modularity score will
+be used as the final clustering result. Default is 1. Note that if
+louvain_iter is greater than 1, the random_seed argument will be ignored.}
 
-\item{random_seed}{the seed used by the random number generator in louvain-igraph package. This argument will be ignored if louvain_iter is larger than 1.}
+\item{partition_qval}{Numeric, the q-value cutoff to determine when to
+partition. Default is 0.05.}
 
-\item{verbose}{Verbose A logic flag to determine whether or not we should print the running details.}
+\item{weight}{A logical argument to determine whether or not to use Jaccard
+coefficents for two nearest neighbors (based on the overlapping of their
+kNN) as the weight used for Louvain clustering. Default is FALSE.}
 
-\item{...}{Additional arguments passed to \code{\link{louvain_clustering}()}}
+\item{resolution}{Parameter that controls the resolution of clustering. If
+NULL (Default), the parameter is determined automatically.}
+
+\item{random_seed}{The seed used by the random number generator in
+louvain-igraph package. This argument will be ignored if louvain_iter is
+larger than 1.}
+
+\item{verbose}{A logic flag to determine whether or not we should print the
+run details.}
+
+\item{...}{Additional arguments passed to louvain-igraph Python package.}
 }
 \value{
-an updated cell_data_set object, in which phenoData contains values for Cluster for each cell
+an updated cell_data_set object, with cluster and partition
+information stored internally and accessible using
+\code{\link{get_clusters}} and \code{\link{get_partitions}}
 }
 \description{
 Unsupervised clustering of cells is a common step in many single-cell
 expression workflows. In an experiment containing a mixture of cell types,
-each cluster might correspond to a different cell type. This method takes a
-cell_data_set as input and clusters them using Louvain community detection,
-and returns a cell_data_set with cluster assignments and Louvain partitions.
-Cluster assignments can then be returned using the \code{get_clusters}
-function and partition assignments can be returned using the
-\code{get_partitions} function.
-}
-\details{
-cluster assignments stored in the colData table. When number of clusters is set
-to NULL (num_clusters = NULL), the decision plot as introduced in the reference
-will be plotted and the users are required to check the decision plot to select
-the rho and delta to determine the number of clusters to cluster. When the dataset
-is big, for example > 50 k, we recommend the user to use the Louvain clustering
-algorithm which is inspired from phenograph paper. Note Louvain doesn't support the
-num_cluster argument but the k (number of k-nearest neighbors) is relevant to the final
-clustering number. The deafult implementation of Louvain clustering (when res is set to be NULL)
-is based on the Rphenograph package but updated based on our requirement (for example,
-changed the jaccard_coeff function as well as adding louvain_iter argument, etc.). We also
-support setting resolutioin parameter when performing louvain clustering using the louvain package
-from python. With different res values, the users can obtain different granularity of the data.
+each cluster might correspond to a different cell type. This function takes
+a cell_data_set as input, clusters the cells using Louvain community
+detection, and returns a cell_data_set with internally stored cluster
+assignments. In addition to clusters this function calculates partitions,
+which represent superclusters of the Louvain communities that are found
+using a KNN pruning method. Cluster assignments can be accessed using the
+\code{\link{get_clusters}} function and partition assignments can be
+accessed using the \code{\link{get_partitions}} function.
 }
 \references{
-Rodriguez, A., & Laio, A. (2014). Clustering by fast search and find of density peaks. Science, 344(6191), 1492-1496. doi:10.1126/science.1242072
+Rodriguez, A., & Laio, A. (2014). Clustering by fast search and
+find of density peaks. Science, 344(6191), 1492-1496.
+doi:10.1126/science.1242072
 
-Vincent D. Blondel, Jean-Loup Guillaume, Renaud Lambiotte, Etienne Lefebvre: Fast unfolding of communities in large networks. J. Stat. Mech. (2008) P10008
+Vincent D. Blondel, Jean-Loup Guillaume, Renaud Lambiotte,
+Etienne Lefebvre: Fast unfolding of communities in large networks.
+J. Stat. Mech. (2008) P10008
 
-Jacob H. Levine and et.al. Data-Driven Phenotypic Dissection of AML Reveals Progenitor-like Cells that Correlate with Prognosis. Cell, 2015.
+Jacob H. Levine and et.al. Data-Driven Phenotypic Dissection of
+AML Reveals Progenitor-like Cells that Correlate with Prognosis.
+Cell, 2015.
 }

@@ -56,7 +56,6 @@ learn_graph <- function(cds,
                         learn_graph_control = NULL,
                         verbose = FALSE) {
   reduction_method <- "UMAP"
-  partition_group = 'louvain_component'
 
   if (!is.null(learn_graph_control)) {
     assertthat::assert_that(is(learn_graph_control, "list"))
@@ -120,7 +119,7 @@ learn_graph <- function(cds,
                                       "before running learn_graph."))
 
   if (use_partition) {
-    partition_list <- cds@clusters[[reduction_method]]$louvain_component
+    partition_list <- cds@clusters[[reduction_method]]$partitions
   } else {
     partition_list <- rep(1, nrow(colData(cds)))
   }
@@ -190,7 +189,7 @@ multi_component_RGE <- function(cds,
     }
 
     X_subset <- X[, partition_list == cur_comp]
-    if(verbose) message('Current louvain_component is ', cur_comp)
+    if(verbose) message('Current partition is ', cur_comp)
 
     #add other parameters...
     if(scale) {
@@ -565,26 +564,26 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE, ver
 
   dp_mst_list <- igraph::decompose.graph(dp_mst)
   dp_mst_df <- NULL
-  louvain_component <- cds@clusters[[reduction_method]]$louvain_component
+  partitions <- cds@clusters[[reduction_method]]$partitions
 
-  if(length(dp_mst_list) == 1 & length(unique(louvain_component)) > 1) {
-    louvain_component <- 1
+  if(length(dp_mst_list) == 1 & length(unique(partitions)) > 1) {
+    partitions <- 1
   }
 
-  if(!is.null(louvain_component)) {
-    for(cur_louvain_comp in sort(unique(louvain_component))) {
+  if(!is.null(partitions)) {
+    for(cur_partition in sort(unique(partitions))) {
       data_df <- NULL
 
       if(verbose) {
-        message('\nProjecting cells to principal points for louvain component: ', cur_louvain_comp)
+        message('\nProjecting cells to principal points for partition: ', cur_partition)
       }
 
-      subset_cds_col_names <- colnames(cds)[cds@clusters[[reduction_method]]$louvain_component == cur_louvain_comp]
+      subset_cds_col_names <- colnames(cds)[cds@clusters[[reduction_method]]$partitions == cur_partition]
       cur_z <- Z[, subset_cds_col_names]
       cur_p <- P[, subset_cds_col_names]
 
       if (ncol(cur_p) > 0 && nrow(cur_p) > 0){
-        cur_centroid_name <- igraph::V(dp_mst_list[[as.numeric(cur_louvain_comp)]])$name
+        cur_centroid_name <- igraph::V(dp_mst_list[[as.numeric(cur_partition)]])$name
 
         cur_nearest_edges <- nearest_edges[subset_cds_col_names, ] # the nearest edge for each cell
         data_df <- cbind(as.data.frame(t(cur_p)), apply(cur_nearest_edges, 1, sort) %>% t()) # cell by coord + edge (sorted)
@@ -616,7 +615,7 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE, ver
         data_df$weight <- data_df$weight + min(data_df$weight[data_df$weight > 0])
 
         # Calculate distance between two connected nodes directly from the original graph
-        edge_list <- as.data.frame(igraph::get.edgelist(dp_mst_list[[as.numeric(cur_louvain_comp)]]), stringsAsFactors=FALSE)
+        edge_list <- as.data.frame(igraph::get.edgelist(dp_mst_list[[as.numeric(cur_partition)]]), stringsAsFactors=FALSE)
         dp <- as.matrix(dist(t(rge_res_Y)[cur_centroid_name,]))
         edge_list$weight <- dp[cbind(edge_list[, 1], edge_list[, 2])]
         colnames(edge_list) <- c("new_source", "new_target", 'weight')
@@ -642,7 +641,7 @@ findNearestPointOnMST <- function(cds, reduction_method, rge_res_Y){
   dp_mst <- principal_graph(cds)[[reduction_method]]
   dp_mst_list <- igraph::decompose.graph(dp_mst)
 
-  if(length(unique(cds@clusters[[reduction_method]]$louvain_component)) != length(dp_mst_list)) {
+  if(length(unique(cds@clusters[[reduction_method]]$partitions)) != length(dp_mst_list)) {
     dp_mst_list <- list(dp_mst)
   }
 
@@ -655,7 +654,7 @@ findNearestPointOnMST <- function(cds, reduction_method, rge_res_Y){
     if(length(dp_mst_list) == 1) {
       Z <- t(reducedDims(cds)[[reduction_method]])
     } else {
-      Z <- t(reducedDims(cds)[[reduction_method]])[, cds@clusters[[reduction_method]]$louvain_component == i]
+      Z <- t(reducedDims(cds)[[reduction_method]])[, cds@clusters[[reduction_method]]$partitions == i]
     }
     Y <- rge_res_Y[, igraph::V(cur_dp_mst)$name]
 
@@ -903,7 +902,7 @@ connect_tips <- function(pd,
   }
 
   # identify edges between only tip cells
-  cluster_graph_res <- compute_louvain_connected_components(louvain_res$g, louvain_res$optim_res, qval_thresh=qval_thresh, verbose = verbose)
+  cluster_graph_res <- compute_partitions(louvain_res$g, louvain_res$optim_res, qval_thresh=qval_thresh, verbose = verbose)
   dimnames(cluster_graph_res$cluster_mat) <- dimnames(cluster_graph_res$num_links)
   valid_connection <- which(cluster_graph_res$cluster_mat < qval_thresh, arr.ind = T)
   valid_connection <- valid_connection[apply(valid_connection, 1, function(x) all(x %in% tip_pc_points)), ] # only the tip cells

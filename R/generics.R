@@ -81,7 +81,7 @@ setGeneric("get_partitions", function(x, reduction_method = "UMAP")
 #' @export
 setMethod("get_partitions", "cell_data_set",
           function(x, reduction_method = "UMAP") {
-            value <- x@clusters[[reduction_method]]$louvain_component
+            value <- x@clusters[[reduction_method]]$partitions
             return(value)
           })
 

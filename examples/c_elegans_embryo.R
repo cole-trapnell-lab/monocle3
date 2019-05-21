@@ -8,7 +8,7 @@ theme_set(theme_gray(base_size = 6))
 # color_metadata = read.delim("/Users/coletrap/dropbox_lab/Analysis/worm-lineage/animations/ciliated_neurons_3D_umap_metadata.txt")
 # color_metadata = color_metadata %>% dplyr::select(plot.cell.type, color.for.movie) %>% distinct()
 # color_map = as.character(color_metadata$color.for.movie)
-# names(color_map) = as.character(color_metadata$plot.cell.type) 
+# names(color_map) = as.character(color_metadata$plot.cell.type)
 
 # expression_matrix = readRDS("for-cole.ciliated.amphid.neurons.exprs.rds")
 # cell_metadata = readRDS("for-cole.ciliated.amphid.neurons.pData.rds")
@@ -63,7 +63,7 @@ plot_cells(cds, color_by = "Cluster")
 
 plot_cells(cds, color_by = "cell.type")
 
-#plot_cells(cds, color_by = "louvain_component")
+#plot_cells(cds, color_by = "partitions")
 
 plot_cells(cds, color_by = "embryo.time.bin", label_cell_groups=FALSE)
 
@@ -86,12 +86,12 @@ plot_cell_trajectory(cds, markers=ciliated_genes, label_branch_points=FALSE, lab
 
 principal_graph_test(cds_subset)
 
-plot_percent_cells_positive(cds_subset, grouping="cell.type") + 
-    guides(fill=FALSE) + 
+plot_percent_cells_positive(cds_subset, grouping="cell.type") +
+    guides(fill=FALSE) +
     theme(axis.text.x=element_text(angle=45, hjust=1))
 
-# plot_genes_violin(cds[rowData(cds)$gene_short_name %in% ciliated_genes,], grouping="cell.type") + 
-#     guides(fill=FALSE) + 
+# plot_genes_violin(cds[rowData(cds)$gene_short_name %in% ciliated_genes,], grouping="cell.type") +
+#     guides(fill=FALSE) +
 #     theme(axis.text.x=element_text(angle=45, hjust=1))
 
 ### Basic differential expression:
@@ -106,7 +106,7 @@ write.csv(emb_time_terms, "emb_time_terms.csv")
 sig_emb_time_terms = emb_time_terms %>% filter (q_value < 0.05) %>% select(gene_short_name, term, q_value, estimate)
 write.csv(sig_emb_time_terms, "emb_time_sig_terms.csv")
 
-plot_genes_violin(cds_subset, grouping="embryo.time.bin") + 
+plot_genes_violin(cds_subset, grouping="embryo.time.bin") +
     theme(axis.text.x=element_text(angle=45, hjust=1))
 
 ### Subtracting unwanted effects:

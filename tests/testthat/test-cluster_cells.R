@@ -28,7 +28,7 @@ test_that("cluster_cells works", {
 
   # non-standard opts
   cds <- cluster_cells(cds, k=22, weight = T, louvain_iter = 2,
-                         louvain_qval = .1)
+                         partition_qval = .1)
   expect_is(cds@clusters[["UMAP"]], "list")
   expect_equal(length(cds@clusters[["UMAP"]]), 3)
   expect_equal(length(cds@clusters[["UMAP"]]$louvain_res$optim_res$membership),
@@ -44,7 +44,7 @@ test_that("cluster_cells works", {
 
   # non-standard opts
   cds <- cluster_cells(cds, reduction_method = "tSNE", k=22, weight = T,
-                         louvain_iter = 2, louvain_qval = .1)
+                         louvain_iter = 2, partition_qval = .1)
   expect_is(cds@clusters[["tSNE"]], "list")
   expect_equal(length(cds@clusters[["tSNE"]]), 3)
   expect_equal(length(cds@clusters[["tSNE"]]$louvain_res$optim_res$membership),
@@ -60,7 +60,7 @@ test_that("cluster_cells works", {
 
   # non-standard opts
   cds <- cluster_cells(cds, reduction_method = "PCA", k=22, weight = T,
-                         louvain_iter = 2, louvain_qval = .1)
+                         louvain_iter = 2, partition_qval = .1)
   expect_is(cds@clusters[["PCA"]], "list")
   expect_equal(length(cds@clusters[["PCA"]]), 3)
   expect_equal(length(cds@clusters[["PCA"]]$louvain_res$optim_res$membership),
@@ -68,7 +68,7 @@ test_that("cluster_cells works", {
   expect_equal(cds@clusters[["PCA"]]$louvain_res$optim_res$membership[1], 4)
 
   cds <- cluster_cells(cds, reduction_method = "PCA", k=22, weight = T,
-                       louvain_iter = 2, louvain_qval = .1, resolution = .1)
+                       louvain_iter = 2, partition_qval = .1, resolution = .1)
   expect_is(cds@clusters[["PCA"]], "list")
   expect_equal(length(cds@clusters[["PCA"]]), 3)
   expect_equal(length(cds@clusters[["PCA"]]$louvain_res$optim_res$membership),
@@ -77,10 +77,10 @@ test_that("cluster_cells works", {
   expect_equal(length(unique(get_clusters(cds, reduction_method = "PCA"))), 5)
 
   cds <- cluster_cells(cds, reduction_method = "PCA", k=22, weight = T,
-                       louvain_iter = 2, louvain_qval = .1, resolution = .01)
+                       louvain_iter = 2, partition_qval = .1, resolution = .01)
   expect_equal(length(unique(get_clusters(cds, reduction_method = "PCA"))), 1)
   cds <- cluster_cells(cds, reduction_method = "PCA", k=22, weight = T,
-                       louvain_iter = 2, louvain_qval = .1, resolution = 20)
+                       louvain_iter = 2, partition_qval = .1, resolution = 20)
   expect_equal(length(unique(get_clusters(cds, reduction_method = "PCA"))), 500)
 })
 

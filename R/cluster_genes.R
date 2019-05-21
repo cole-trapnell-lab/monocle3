@@ -18,7 +18,6 @@
 
 cluster_genes <- function(cds,
                           reduction_method = c("UMAP", "tSNE", "PCA"),
-                          preprocess_method=c("PCA", "LSI"),
                           max_components = 2,
                           umap.metric = "cosine",
                           umap.min_dist = 0.1,
@@ -27,7 +26,7 @@ cluster_genes <- function(cds,
                           umap.nn_method = "annoy",
                           k = 20,
                           louvain_iter = 1,
-                          louvain_qval = 0.05,
+                          partition_qval = 0.05,
                           weight = FALSE,
                           resolution = NULL,
                           random_seed = 0L,
@@ -40,13 +39,7 @@ cluster_genes <- function(cds,
              error = function(e) FALSE),
     msg = "reduction_method must be one of 'UMAP', 'PCA' or 'tSNE'")
 
-  assertthat::assert_that(
-    tryCatch(expr = ifelse(match.arg(preprocess_method) == "",TRUE, TRUE),
-             error = function(e) FALSE),
-    msg = "preprocess_method must be one of 'PCA' or 'LSI'")
-
   reduction_method <- match.arg(reduction_method)
-  preprocess_method <- match.arg(preprocess_method)
 
   assertthat::assert_that(is(cds, "cell_data_set"))
   assertthat::assert_that(is.character(reduction_method))
@@ -54,7 +47,7 @@ cluster_genes <- function(cds,
   assertthat::assert_that(is.logical(weight))
   assertthat::assert_that(assertthat::is.count(louvain_iter))
   ## TO DO what is resolution?
-  assertthat::assert_that(is.numeric(louvain_qval))
+  assertthat::assert_that(is.numeric(partition_qval))
   assertthat::assert_that(is.logical(verbose))
   assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
                           msg = paste("No dimensionality reduction for",
@@ -74,15 +67,12 @@ cluster_genes <- function(cds,
                         fast_sgd = umap.fast_sgd,
                         n_threads=cores,
                         verbose=verbose,
+                        nn_method= umap.nn_method,
                         ...)
-  # tmp <- do.call(UMAP, umap_args)
-  # normalize UMAP space
-  # umap_res <- (tmp-min(tmp))/max(tmp)
+
   row.names(umap_res) <- row.names(preprocess_mat)
   colnames(umap_res) = paste0('dim_', 1:ncol(umap_res))
   reduced_dim_res <- umap_res
-
-  #reduced_dim_res <- reducedDims(cds)[[reduction_method]]
 
   if(verbose)
     message("Running louvain clustering algorithm ...")
@@ -96,26 +86,17 @@ cluster_genes <- function(cds,
                                     random_seed = random_seed,
                                     verbose = verbose, ...)
 
-  #if(length(unique(louvain_res$optim_res$membership)) == 1) {
-  #  colData(cds)$louvain_component <- 1
-  #  return(cds)
-  #}
-
-  cluster_graph_res <- compute_louvain_connected_components(louvain_res$g,
-                                                            louvain_res$optim_res,
-                                                            louvain_qval, verbose)
-  louvain_component <- igraph::components(cluster_graph_res$cluster_g)$membership[louvain_res$optim_res$membership]
-  names(louvain_component) <- row.names(reduced_dim_res)
-  louvain_component <- as.factor(louvain_component)
+  cluster_graph_res <- compute_partitions(louvain_res$g,
+                                          louvain_res$optim_res,
+                                          partition_qval, verbose)
+  partitions <- igraph::components(cluster_graph_res$cluster_g)$membership[louvain_res$optim_res$membership]
+  names(partitions) <- row.names(reduced_dim_res)
+  partitions <- as.factor(partitions)
 
   gene_cluster_df = tibble::tibble(id = row.names(preprocess_mat),
                                    cluster = factor(igraph::membership(louvain_res$optim_res)),
-                                   supercluster = louvain_component)
+                                   supercluster = partitions)
   gene_cluster_df = tibble::as_tibble(cbind(gene_cluster_df, umap_res))
-  # gene_clusters =  list(cluster_graph_res = cluster_graph_res,
-  #                                          louvain_res = louvain_res,
-  #                                          louvain_component = louvain_component,
-  #                                          clusters = factor(igraph::membership(louvain_res$optim_res)))
 
   return(gene_cluster_df)
 }
