@@ -863,7 +863,7 @@ plot_cells <- function(cds,
   data_df$sample_name <- row.names(data_df)
 
   data_df <- merge(data_df, lib_info_with_pseudo, by.x="sample_name", by.y="row.names")
-  data_df$Cluster = clusters(cds, reduction_method = reduction_method)[data_df$sample_name]
+  data_df$Cluster = tryCatch({clusters(cds, reduction_method = reduction_method)[data_df$sample_name]}, error = function(e) {NULL})
 
   if (show_trajectory_graph){
     #TODO: need to validate cds as ready for this plot (need mst, pseudotime, etc)
