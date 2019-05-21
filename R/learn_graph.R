@@ -366,7 +366,7 @@ cal_ncenter <- function(ncells, ncells_limit = 1000){
     return(NULL)
   }
 
-  round(2 * ncells_limit * log(ncells)/ (log(ncells) + log(ncells_limit)))
+  round(5 * ncells_limit * log(ncells)/ (log(ncells) + log(ncells_limit)))
 }
 
 #' Finds the nearest principal graph node
