@@ -198,7 +198,7 @@ multi_component_RGE <- function(cds,
 
     if(is.null(ncenter)) {
       ncenter <- cal_ncenter(ncol(X_subset))
-      if(is.null(ncenter)) {
+      if(is.null(ncenter) | ncenter >= ncol(X_subset)) {
         ncenter <- ncol(X_subset) - 1
       }
     } else {
