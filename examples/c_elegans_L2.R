@@ -13,59 +13,44 @@ gene_annotation = readRDS("L2_gene_metadata.rda")
 # cell_metadata  = read.delim(url("http://jpacker-data.s3.amazonaws.com/public/worm/L2/Cao_et_al_2017_data_2019_update.pData.tsv"))
 
 
-cds <- new_cell_data_set(expression_matrix,
+cds = new_cell_data_set(expression_matrix,
                          cell_metadata = cell_metadata,
                          gene_metadata = gene_annotation)
 
 
 ## Step 1: Normalize and pre-process the data
-cds <- preprocess_cds(cds, num_dim = 100)
+cds = preprocess_cds(cds, num_dim = 100)
 
 ## Step 2: Reduce the dimensionality of the data
 #### Without batch correction:
-cds <- reduce_dimension(cds)
+cds = reduce_dimension(cds)
 plot_cells(cds) + ggsave("L2_umap_no_color.png", width=5, height=4, dpi = 600)
-plot_cells(cds, color_by="cao_cell_type") + ggsave("L2_umap_color_by_cao_type.png", width=5, height=4, dpi = 600)
-plot_cells(cds, color_by="plate", label_cell_groups=FALSE) + ggsave("L2_umap_plate.png", width=5, height=4, dpi = 600)
+plot_cells(cds, color_cells_by="cao_cell_type") + ggsave("L2_umap_color_cells_by_cao_type.png", width=5, height=4, dpi = 600)
+plot_cells(cds, color_cells_by="plate", label_cell_groups=FALSE) + ggsave("L2_umap_plate.png", width=5, height=4, dpi = 600)
 
 #### With batch correction:
-cds <- preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ plate")
-cds <- reduce_dimension(cds)
-plot_cells(cds, color_by="plate", label_cell_groups=FALSE) + ggsave("L2_umap_corrected_plate.png", width=5, height=4, dpi = 600)
+cds = preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ plate")
+cds = reduce_dimension(cds)
+plot_cells(cds, color_cells_by="plate", label_cell_groups=FALSE) + ggsave("L2_umap_corrected_plate.png", width=5, height=4, dpi = 600)
 
 ## Step 3: (Optional) Cluster cells
-cds <- cluster_cells(cds, resolution=c(10^seq(-6,-1)))
-plot_cells(cds) + ggsave("L2_umap_color_by_cluster.png", width=5, height=4, dpi = 600)
+cds = cluster_cells(cds, resolution=c(10^seq(-6,-1)))
+plot_cells(cds) + ggsave("L2_umap_color_cells_by_cluster.png", width=5, height=4, dpi = 600)
+plot_cells(cds, color_cells_by="partition", group_cells_by="partition") + ggsave("L2_umap_color_cells_by_partition.png", width=5, height=4, dpi = 600)
 
 pheatmap::pheatmap(log(table(clusters(cds), colData(cds)$cao_cell_type)+1),
                    clustering_method="ward.D2",
                    fontsize=6, width=5, height=8, filename="L2_cell_type_by_cluster.png")
 
-plot_cells(cds, color_by="cao_cell_type")  + ggsave("L2_umap_corrected_cao_type.png", width=5, height=4, dpi = 600)
-plot_cells(cds, color_by="cao_cell_type", label_groups_by_cluster=FALSE)  + ggsave("L2_umap_corrected_cao_type_no_cluster_label.png", width=5, height=4, dpi = 600)
+plot_cells(cds, color_cells_by="cao_cell_type")  + ggsave("L2_umap_corrected_cao_type.png", width=5, height=4, dpi = 600)
+plot_cells(cds, color_cells_by="cao_cell_type", label_groups_by_cluster=FALSE)  + ggsave("L2_umap_corrected_cao_type_no_cluster_label.png", width=5, height=4, dpi = 600)
 
-## Step 4: Annotate cells by type:
-
-plot_cells(cds, cell_size=0.35, color_by = "cell.type") + ggsave("L2_umap_color_by_cell_type.png", width=5, height=4, dpi = 600)
-
-#ceModel = readRDS(url("https://cole-trapnell-lab.github.io/garnett/classifiers/ceWhole"))
-library(org.Ce.eg.db)
-library(garnett)
-load(url("https://cole-trapnell-lab.github.io/garnett/classifiers/ceWhole"))
-
-colData(cds)$garnett_cluster = clusters(cds)
-cds <- classify_cells(cds, ceWhole,
-                           db = org.Ce.eg.db,
-                           cluster_extend = TRUE,
-                           cds_gene_id_type = "ENSEMBL")
-
-plot_cells(cds, color_by="cluster_ext_type")
-
+## Step 4: Find genes expressed in each cluster or cell type
 pr_graph_test_res = graph_test(cds, neighbor_graph="knn", cores=8)
 pr_deg_ids = row.names(subset(pr_graph_test_res, q_value < 0.05))
 gene_cluster_df = cluster_genes(cds[pr_deg_ids,], resolution=0.001)
 
-# text_df <- gene_cluster_df %>% dplyr::group_by(cluster) %>% dplyr::summarize(text_x = median(x = dim_1),
+# text_df = gene_cluster_df %>% dplyr::group_by(cluster) %>% dplyr::summarize(text_x = median(x = dim_1),
 #                                                                              text_y = median(x = dim_2))
 # ggplot2::qplot(dim_1, dim_2, color=cluster, data=gene_cluster_df) +
 #   ggplot2::geom_text(data=text_df, mapping = ggplot2::aes_string(x = "text_x", y = "text_y", label = "cluster"), color=I("black"),  size = 4)
@@ -83,6 +68,21 @@ plot_cells(cds, genes=gene_cluster_df, cell_size=0.5, show_backbone=FALSE, label
 dev.off()
 
 
+
+
+## Step 5: Annotate cells by type:
+#ceModel = readRDS(url("https://cole-trapnell-lab.github.io/garnett/classifiers/ceWhole"))
+#library(org.Ce.eg.db)
+library(garnett)
+load(url("https://cole-trapnell-lab.github.io/garnett/classifiers/ceWhole"))
+
+colData(cds)$garnett_cluster = clusters(cds)
+cds = classify_cells(cds, ceWhole,
+                           db = org.Ce.eg.db::org.Ce.eg.db,
+                           cluster_extend = TRUE,
+                           cds_gene_id_type = "ENSEMBL")
+
+plot_cells(cds, group_cells_by="partition", color_cells_by="cluster_ext_type") + ggsave("L2_umap_corrected_garnett_ext_type.png", width=5, height=4, dpi = 600)
 
 ########
 # Look at a specific set of clusters
