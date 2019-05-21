@@ -9,7 +9,8 @@ calculateLW(cds, k, neighbor_graph, reduction_method,
   interactive = FALSE, verbose = FALSE)
 }
 \arguments{
-\item{cds}{The cell_data_set object where the neighbors list is calculated from}
+\item{cds}{The cell_data_set object where the neighbors list is calculated
+from}
 
 \item{k}{The maximum number of nearest neighbors to compute}
 

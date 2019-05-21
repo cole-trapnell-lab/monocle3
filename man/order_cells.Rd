@@ -10,9 +10,15 @@ order_cells(cds, reduction_method = "UMAP", root_pr_nodes = NULL,
 \arguments{
 \item{cds}{the cell_data_set upon which to perform this operation}
 
-\item{root_pr_nodes}{The starting principal points. We learn a principal graph that passes through the middle of the data points and use it to represent the developmental process.}
+\item{reduction_method}{a string specifying the reduced dimension method to
+use when ordering cells. Currently only "UMAP" is supported.}
 
-\item{root_cells}{The starting cells. Each cell corresponds to a principal point and multiple cells can correspond to the same principal point.}
+\item{root_pr_nodes}{NULL or a vector of starting principal points. If
+provided, Pseudotime will start (i.e. be zero) at these graph nodes. Both
+\code{root_pr_nodes} and \code{root_cells} cannot be provided.}
+
+\item{root_cells}{Null or a vector of starting cells. If provided,
+Pseudotime will start (i.e. be zero) at these cells.}
 
 \item{verbose}{Whether to show running information for order_cells}
 
@@ -24,27 +30,12 @@ an updated cell_data_set object, in which phenoData contains values for State an
 \description{
 Learns a "trajectory" describing the biological process the cells are
 going through, and calculates where each cell falls within that trajectory.
-Monocle learns trajectories in two steps. The first step is reducing the dimensionality
-of the data with \code{\link{reduce_dimension}()}. The second is this function.
-function. This function takes as input a cell_data_set and returns it with
+This function takes as input a cell_data_set and returns it with
 two new columns: \code{Pseudotime} and \code{State}, which together encode
-where each cell maps to the trajectory. \code{order_cells()} optionally takes
-a "root" state, which you can use to specify the start of the trajectory. If
-you don't provide a root state, one is selected arbitrarily.
-}
-\details{
-The \code{reduction_method} argument to \code{\link{reduce_dimension}()}
-determines which algorithm is used by \code{order_cells()} to learn the trajectory.
-If \code{reduction_method == "ICA"}, this function uses \emph{polygonal reconstruction}
-to learn the underlying trajectory. If \code{reduction_method == "DDRTree"},
-the trajectory is specified by the principal graph learned by the
-\code{\link[DDRTree]{DDRTree}()} function.
-
-Whichever algorithm you use, the trajectory will be composed of segments.
-The cells from a segment will share the same value of \code{State}. One of
-these segments will be selected as the root of the trajectory arbitrarily.
-The most distal cell on that segment will be chosen as the "first" cell in the
-trajectory, and will have a Pseudotime value of zero. \code{order_cells()} will
-then "walk" along the trajectory, and as it encounters additional cells, it
-will assign them increasingly large values of Pseudotime.
+where each cell maps to the trajectory. \code{order_cells()} optionally
+takes "root" state(s), which you can use to specify the start of the
+trajectory. If you don't provide a root state, an plot will be generated
+where you can choose the root state(s) interactively. The trajectory will be
+composed of segments. The cells from a segment will share the same value of
+\code{State}.
 }

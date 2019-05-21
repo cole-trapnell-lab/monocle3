@@ -2,7 +2,8 @@
 % Please edit documentation in R/graph_test.R
 \name{graph_test}
 \alias{graph_test}
-\title{Test genes for differential expression based on the low dimensional embedding and the principal graph}
+\title{Test genes for differential expression based on the low dimensional
+embedding and the principal graph}
 \usage{
 graph_test(cds, neighbor_graph = c("principal_graph", "knn"),
   reduction_method = "UMAP", k = 25, method = c("Moran_I"),
@@ -12,30 +13,51 @@ graph_test(cds, neighbor_graph = c("principal_graph", "knn"),
 \arguments{
 \item{cds}{a cell_data_set object upon which to perform this operation}
 
-\item{k}{Number of nearest neighbors used for building the kNN graph which is passed to knn2nb function during the Moran's I (Geary's C) test procedure.}
+\item{reduction_method}{character, the method used to reduce dimension.
+Currently only supported for "UMAP".}
 
-\item{method}{a character string specifying the method (the default 'Moran_I' or 'Geary_C') for detecting significant genes showing correlated genes along the principal graph embedded in the low dimensional space.}
+\item{k}{Number of nearest neighbors used for building the kNN graph which
+is passed to knn2nb function during the Moran's I (Geary's C) test
+procedure.}
 
-\item{alternative}{a character string specifying the alternative hypothesis, must be one of greater (default), less or two.sided.}
+\item{method}{a character string specifying the method (currently only
+'Moran_I' is supported) for detecting significant genes showing
+correlation along the principal graph embedded in the low dimensional
+space.}
 
-\item{cores}{the number of cores to be used while testing each gene for differential expression.}
+\item{alternative}{a character string specifying the alternative hypothesis,
+must be one of greater (default), less or two.sided.}
 
-\item{interactive}{Whether or not to allow the user to choose a point or region in the scene, then to only identify genes spatially correlated for those selected cells.}
+\item{expression_family}{a character string specifying the expression family
+function used for the test.}
 
-\item{verbose}{Whether to show spatial test (Moran's I or Gearys' C test) errors and warnings. Only valid for cores = 1.}
+\item{cores}{the number of cores to be used while testing each gene for
+differential expression.}
+
+\item{interactive}{Whether or not to allow the user to choose a point or
+region in the scene, then to only identify genes spatially correlated for
+those selected cells.}
+
+\item{verbose}{Whether to show spatial test (Moran's I) errors and warnings.
+Only valid for cores = 1.}
 }
 \value{
-a data frame containing the p values and q-values from the Moran's I test on the parallel arrays of models.
+a data frame containing the p values and q-values from the Moran's I
+test on the parallel arrays of models.
 }
 \description{
-We are often interested in finding genes that are differentially expressed across a single-cell trajectory.
-Monocle 3 introduces a new approach for finding such genes that draws on a powerful technique in spatial
-correlation analysis, the Moran’s I test. Moran’s I is a measure of multi-directional and multi-dimensional
-spatial autocorrelation. The statistic tells you whether cells at nearby positions on a trajectory will have
-similar (or dissimilar) expression levels for the gene being tested. Although both Pearson correlation and
-Moran’s I ranges from -1 to 1, the interpretation of Moran’s I is slightly different: +1 means that nearby
-cells will have perfectly similar expression; 0 represents no correlation,
-and -1 means that neighboring cells will be \emph{anti-correlated}.
+We are often interested in finding genes that are
+differentially expressed across a single-cell trajectory. Monocle3
+introduces a new approach for finding such genes that draws on a powerful
+technique in spatial correlation analysis, the Moran’s I test. Moran’s I is
+a measure of multi-directional and multi-dimensional spatial
+autocorrelation. The statistic tells you whether cells at nearby positions
+on a trajectory will have similar (or dissimilar) expression levels for the
+gene being tested. Although both Pearson correlation and Moran’s I ranges
+from -1 to 1, the interpretation of Moran’s I is slightly different: +1
+means that nearby cells will have perfectly similar expression; 0 represents
+no correlation, and -1 means that neighboring cells will be
+\emph{anti-correlated}.
 }
 \seealso{
 \code{\link[spdep]{moran.test}} \code{\link[spdep]{geary.test}}
