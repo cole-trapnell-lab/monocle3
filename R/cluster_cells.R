@@ -217,7 +217,7 @@ louvain_R <- function(X, python_home = system('which python', intern = TRUE),
     return(louvain_res)
   } else {
     res = list(membership = louvain_res$membership + 1,
-               odularity = louvain_res$modularity)
+               modularity = louvain_res$modularity)
     names(res$membership) = colnames(X)
     return(res)
   }
