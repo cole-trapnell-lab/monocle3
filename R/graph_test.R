@@ -20,10 +20,10 @@
 #' @return a data frame containing the p values and q-values from the Moran's I test on the parallel arrays of models.
 #' @seealso \code{\link[spdep]{moran.test}} \code{\link[spdep]{geary.test}}
 #' @export
-principal_graph_test <- function(cds,
+graph_test <- function(cds,
                                  neighbor_graph = c("principal_graph", "knn"),
                                  reduction_method = "UMAP",
-                                 k = 25, # FIXME: principal_graph_test should not be building knn's!
+                                 k = 25,
                                  method = c('Moran_I'),
                                  alternative = 'greater',
                                  expression_family="quasipoisson",

@@ -8,10 +8,11 @@ plot_cells(cds, x = 1, y = 2, reduction_method = "UMAP",
   color_by = "Cluster", genes = NULL, show_trajectory_graph = TRUE,
   trajectory_graph_color = "black",
   trajectory_graph_segment_size = 0.75, norm_method = c("log",
-  "size_only"), label_cell_groups = TRUE, group_label_size = 2,
-  labels_per_group = 2, label_branch_points = TRUE,
+  "size_only"), label_cell_groups = TRUE,
+  label_groups_by_cluster = TRUE, group_label_size = 2,
+  labels_per_group = 1, label_branch_points = TRUE,
   label_roots = TRUE, label_leaves = TRUE, graph_label_size = 2,
-  cell_size = 1, alpha = 1, min_expr = 0.1, rasterize = TRUE, ...)
+  cell_size = 0.35, alpha = 1, min_expr = 0.1, rasterize = TRUE)
 }
 \arguments{
 \item{cds}{cell_data_set for the experiment}
@@ -25,8 +26,6 @@ plot_cells(cds, x = 1, y = 2, reduction_method = "UMAP",
 \item{cell_size}{The size of the point for each cell}
 
 \item{alpha}{The alpha aesthetics for the original cell points, useful to highlight the learned principal graph}
-
-\item{...}{Additional arguments passed into scale_color_viridis function}
 
 \item{show_backbone}{whether to show the diameter path of the MST used to order the cells}
 
@@ -49,6 +48,8 @@ plot_cells(cds, x = 1, y = 2, reduction_method = "UMAP",
 \item{show_branch_points}{Whether to show icons for each branch point (only available after running assign_cell_states)}
 
 \item{theta}{How many degrees you want to rotate the trajectory}
+
+\item{...}{Additional arguments passed into scale_color_viridis function}
 }
 \value{
 a ggplot2 plot object

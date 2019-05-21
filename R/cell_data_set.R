@@ -118,5 +118,6 @@ new_cell_data_set <- function(expression_data,
 
   metadata(cds)$cds_version <- Biobase::package.version("monocle3")
   clusters <- setNames(SimpleList(), character(0))
+  cds <- estimate_size_factors(cds)
   cds
 }

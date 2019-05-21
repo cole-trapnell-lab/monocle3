@@ -803,17 +803,17 @@ plot_cells <- function(cds,
                        trajectory_graph_segment_size=0.75,
                        norm_method = c("log", "size_only"),
                        label_cell_groups = TRUE,
+                       label_groups_by_cluster=TRUE,
                        group_label_size=2,
-                       labels_per_group=2,
+                       labels_per_group=1,
                        label_branch_points=TRUE,
                        label_roots=TRUE,
                        label_leaves=TRUE,
                        graph_label_size=2,
-                       cell_size=1,
+                       cell_size=0.35,
                        alpha = 1,
                        min_expr=0.1,
-                       rasterize=TRUE,
-                       ...) {
+                       rasterize=TRUE) {
 
   assertthat::assert_that(is(cds, "cell_data_set"))
   assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
@@ -899,14 +899,14 @@ plot_cells <- function(cds,
     }
     markers_rowData <- as.data.frame(subset(rowData(cds), gene_short_name %in% markers | rownames(rowData(cds)) %in% markers))
     if (nrow(markers_rowData) >= 1) {
-      cds_exprs <- counts(cds)[row.names(markers_rowData),]
+      cds_exprs <- counts(cds)[row.names(markers_rowData), ,drop=FALSE]
       cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds))
 
       if ((is.null(dim(genes)) == FALSE) && dim(genes) >= 2){
         genes = as.data.frame(genes)
         row.names(genes) = genes[,1]
         genes = genes[row.names(cds_exprs),]
-        agg_mat = as.matrix(Matrix.utils::aggregate.Matrix(cds_exprs, as.factor(genes[,2]), fun="mean"))
+        agg_mat = as.matrix(Matrix.utils::aggregate.Matrix(cds_exprs, as.factor(genes[,2]), fun="sum"))
         agg_mat = t(scale(t(log10(agg_mat + 1))))
         agg_mat[agg_mat < -2] = -2
         agg_mat[agg_mat > 2] = 2
@@ -942,23 +942,28 @@ plot_cells <- function(cds,
     }else{
       if(is.character(data_df[, color_by]) || is.factor(data_df[, color_by])) {
 
-        if ("Cluster" %in% colnames(data_df)){
-          #text_df = data_df %>% dplyr::group_by_("Cluster", color_by)
+        if (label_groups_by_cluster && "Cluster" %in% colnames(data_df)){
+          #text_df = data_df %>% dplyr::color_by_("Cluster", color_by)
           text_df = data_df %>%
             dplyr::group_by_("Cluster") %>%
             dplyr::mutate(cells_in_cluster= dplyr::n()) %>%
             dplyr::group_by_(color_by, add=TRUE) %>%
             dplyr::mutate(per=dplyr::n()/cells_in_cluster)
+          median_coord_df = text_df %>% dplyr::summarize(fraction_of_group = n(),
+                                                         text_x = median(x = data_dim_1),
+                                                         text_y = median(x = data_dim_2))
+          text_df = text_df %>% dplyr::select(per) %>% dplyr::distinct()
+          text_df = dplyr::inner_join(text_df, median_coord_df)
+          text_df = text_df %>% dplyr::group_by(Cluster) %>% dplyr::top_n(labels_per_group, per)
         } else {
           text_df = data_df %>% dplyr::group_by_(color_by) %>% dplyr::mutate(per=1)
+          median_coord_df = text_df %>% dplyr::summarize(fraction_of_group = n(),
+                                                         text_x = median(x = data_dim_1),
+                                                         text_y = median(x = data_dim_2))
+          text_df = text_df %>% dplyr::select(per) %>% dplyr::distinct()
+          text_df = dplyr::inner_join(text_df, median_coord_df)
+          text_df = text_df %>% dplyr::group_by_(color_by) %>% dplyr::top_n(labels_per_group, per)
         }
-
-        median_coord_df = text_df %>% dplyr::summarize(fraction_of_group = n(),
-                                               text_x = median(x = data_dim_1),
-                                               text_y = median(x = data_dim_2))
-        text_df = text_df %>% dplyr::select(per) %>% dplyr::distinct()
-        text_df = dplyr::inner_join(text_df, median_coord_df)
-        text_df = text_df %>% dplyr::group_by(Cluster) %>% dplyr::top_n(labels_per_group, per)
 
         text_df$label = as.character(text_df %>% dplyr::pull(color_by))
         # I feel like there's probably a good reason for the bit below, but I hate it and I'm killing it for now.
@@ -966,7 +971,7 @@ plot_cells <- function(cds,
         # text_df$process_label <- paste0(1:nrow(text_df), '_', as.character(as.matrix(text_df[, 1])))
         # process_label <- text_df$process_label
         # names(process_label) <- as.character(as.matrix(text_df[, 1]))
-        # data_df[, color_by] <- process_label[as.character(data_df[, color_by])]
+        # data_df[, group_by] <- process_label[as.character(data_df[, group_by])]
         # text_df$label = process_label
       }else{
         message("Cells aren't colored in a way that allows them to be grouped.")
@@ -1084,8 +1089,8 @@ plot_cells <- function(cds,
   g <- g +
     #scale_color_brewer(palette="Set1") +
     monocle_theme_opts() +
-    xlab(paste("Component", x)) +
-    ylab(paste("Component", y)) +
+    xlab(paste(reduction_method, x)) +
+    ylab(paste(reduction_method, y)) +
     #guides(color = guide_legend(label.position = "top")) +
     theme(legend.key = element_blank()) +
     theme(panel.background = element_rect(fill='white'))

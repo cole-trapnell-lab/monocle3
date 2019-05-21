@@ -4,7 +4,7 @@
 \alias{learn_graph}
 \title{Learn principal graph from the reduced space using reversed graph embedding}
 \usage{
-learn_graph(cds, use_partition = TRUE, close_loop = FALSE,
+learn_graph(cds, use_partition = TRUE, close_loop = TRUE,
   learn_graph_control = NULL, verbose = FALSE)
 }
 \arguments{
