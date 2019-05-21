@@ -24,12 +24,12 @@ cds <- new_cell_data_set(expression_matrix,
                          gene_metadata = gene_annotation)
 
 ## Step 1: Normalize and pre-process the data
-cds <- estimate_size_factors(cds)
-cds <- preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+#cds <- estimate_size_factors(cds)
+cds <- preprocess_cds(cds, num_dim = 75, residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
 
 set.seed(42)
 ## Step 2: Reduce the dimensionality of the data
-cds <- reduce_dimension(cds)
+cds <- reduce_dimension(cds, umap.fast_sgd = FALSE, cores=1)
 plot_cells(cds, color_by = "cell.type")
 plot_cells(cds, color_by = "batch", label_cell_groups=FALSE)
 
@@ -39,6 +39,7 @@ cds <- cluster_cells(cds)
 plot_cells(cds, color_by = "Cluster")
 
 ## Step 4: Learn cell trajectories
+#cds <- learn_graph(cds, learn_graph_control=list(ncenter=1000))
 cds <- learn_graph(cds)
 plot_cells(cds, color_by = "cell.type")
 
@@ -162,3 +163,16 @@ plot_cells(cds, genes=gene_cluster_df, color_by="cell.type", show_trajectory_gra
 plot_cells(cds, genes=c("ctc-3", "nduo-4", "T05C7.4", "atp-6", "cutl-24"), label_branch_points=FALSE, label_roots=FALSE, label_leaves=FALSE)
 
 plot_cells(cds, genes=c("F29C4.2", "grld-1", "csn-5", "vamp-7"), label_branch_points=FALSE, label_roots=FALSE, label_leaves=FALSE)
+
+
+######## Branch analysis:
+
+cds_subset = choose_cells(cds)
+
+subset_pr_test_res = graph_test(cds_subset, cores=4)
+pr_deg_ids = row.names(subset(subset_pr_test_res, q_value < 0.05))
+
+gene_cluster_df = monocle3:::cluster_genes(cds_subset[pr_deg_ids,], resolution=c(0,10^seq(-6,-1)))
+png("branch_modules.png", res=600, width=6, height=6, units="in")
+plot_cells(cds_subset, genes=gene_cluster_df, show_trajectory_graph=FALSE, color_by="cell.type")
+dev.off()
