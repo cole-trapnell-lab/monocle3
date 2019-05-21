@@ -56,7 +56,7 @@ analysis workflow with Monocle. Monocle was originally developed to analyze
 dynamic biological processes such as cell differentiation, although it also
 supports other experimental settings.</p>
 
-<p><strong>Monocle 2</strong> includes new and improved algorithms for classifying
+<p><strong>Monocle </strong> includes new and improved algorithms for classifying
 and counting cells, performing differential expression analysis between
 subpopulations of cells, and reconstructing cellular trajectories. Monocle 2 has
 also been re-engineered to work well with very large single-cell RNA-Seq
@@ -83,7 +83,7 @@ version 3.5, and monocle 3.0.0 or higher to have access to the latest features.
 To install monocle 3 through the cole-trapnell-lab GitHub, execute:
 
 {% highlight R %}
-  git clone 'XXX PLACE REPO CONTAINING MONOCLE 3 RELEASE HERE XXX '
+devtools::install_github('cole-trapnell-lab/monocle3')
 {% endhighlight %}
 
 <h3> Testing the installation </h3>
@@ -92,7 +92,7 @@ To install monocle 3 through the cole-trapnell-lab GitHub, execute:
 </p>
 
 {% highlight R %}
-library(monocle)
+library(monocle3)
 {% endhighlight %}
 
 <h2>Getting Help</h2>
@@ -137,16 +137,15 @@ The first step in working with Monocle is to load up your data into Monocle's
 main class, <code><a href = "https://rdrr.io/bioc/monocle/man/cell_data_set.html">cell_data_set</a></code>:
 
 {% highlight R %}
-expression_matrix = readRDS(url("http://jpacker-data.s3.amazonaws.com/for-cole/for-cole.ciliated.amphid.neurons.exprs.rds"))
-cell_metadata = readRDS(url("http://jpacker-data.s3.amazonaws.com/for-cole/for-cole.ciliated.amphid.neurons.pData.rds"))
-gene_annotation = readRDS(url("http://jpacker-data.s3.amazonaws.com/for-cole/for-cole.ciliated.amphid.neurons.fData.rds"))
+expression_matrix = readMM(url("http://jpacker-data.s3.amazonaws.com/public/worm/L2/Cao_et_al_2017_data_2019_update.exprs.mm.gz"))
+cell_metadata = read.delim(url("http://jpacker-data.s3.amazonaws.com/public/worm/L2/Cao_et_al_2017_data_2019_update.fData.tsv"))
+gene_annotation = read.delim(url("http://jpacker-data.s3.amazonaws.com/public/worm/L2/Cao_et_al_2017_data_2019_update.pData.tsv"))
 gene_annotation$use_for_ordering = NULL
 
 cds <- new_cell_data_set(expression_matrix,
                 cell_metadata = cell_metadata,
                 gene_metadata = gene_annotation)
 ## Step 1: Normalize and pre-process the data
-cds <- estimate_size_factors(cds)
 cds <- preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ batch")
 
 {% endhighlight %}
@@ -180,10 +179,9 @@ Now, put your cells in order by how much progress they've made through whatever 
 reprogramming, or an immune response.
 
 {% highlight R %}
-cds = partition_cells(cds)
-cds = learn_graph(cds, learn_graph_control=list(ncenter=1000), close_loop=TRUE, verbose=TRUE)
+cds = learn_graph(cds)
 cds = order_cells(cds)
-plot_cell_trajectory(cds)
+plot_cells(cds)
 {% endhighlight %}
 
 <h4><a href= "{{ site.baseurl }}/docs/#differential-expression-analysis">Perform differential expression analysis</a></h4>
@@ -278,6 +276,8 @@ Normalizing it yourself risks breaking some of Monocle's key steps.
 </div>
 </p> -->
 
+<!-- FIXME: UPDATE THE DESCRIPTION BELOW WHEN WE HAVE EXPORT IMPORT FUNCTIONS  -->
+<!-- 
 <h3>Importing & exporting data with other packages</h3>
 
 <strong>XXX NEED TO UPDATE XXX</strong>
@@ -309,10 +309,10 @@ function <code>exportCDS()</code>:
 {% highlight R %}
 lung <- load_lung()
 
-# To convert to Seuxrat object
+# To convert to Seurat object
 lung_seurat <- exportCDS(lung, 'Seurat')
 
-{% endhighlight %}
+{% endhighlight %} -->
 
 <h3 data-toc-text= "Working with large data sets">Working with large data sets <span class= "label label-info">Recommended</span></h3>
 
@@ -329,9 +329,7 @@ We generally recommend the use of sparseMatrices for most users, as it speeds up
 {% highlight R %}
 cds <- new_cell_data_set(as(umi_matrix, "sparseMatrix"),
       cell_metadata = pd,
-      gene_metadata = fd,
-      lowerDetectionLimit = 0.5,
-      expressionFamily = negbinomial.size())
+      gene_metadata = fd)
 {% endhighlight %}
 </p>
 
@@ -372,7 +370,7 @@ gbm_cds <- new_cell_data_set(exprs(gbm),
 
 Monocle's sparse matrix support is provided by the <code>Matrix</code> package.
 Other sparse matrix packages, such as <code>slam</code> or <code>SparseM</code> are not supported.
-
+<!-- 
 <h3 data-toc-text= "Estimate size factors">Estimate size factors<span class= "label label-danger">Required</span></h3>
 
 <p> Finally, we'll also call a function that pre-calculates some information about the data.
@@ -382,12 +380,138 @@ Size factors help us normalize for differences in mRNA recovered across cells. <
 {% highlight R %}
 cds <- estimate_size_factors(cell_data_set)
 {% endhighlight %}
+ -->
 
-<p>We're now ready to start using the <code>HSMM</code> object in our analysis.
+<!-- <h2 data-toc-text= "Quality control">Quality control <span class= "label label-info">Recommended</span></h2> -->
 
-<h2 data-toc-text= "Quality control">Quality control <span class= "label label-info">Recommended</span></h2>
 
-<h2>Annotating your cells according to type</h2>
+{% highlight R %}
+### FIXME: Put these files on the web so they're accessible to others:
+expression_matrix = readRDS("L2_expression.rda")
+cell_metadata = readRDS("L2_cell_metadata.rda")
+gene_annotation = readRDS("L2_gene_metadata.rda")
+
+cds = new_cell_data_set(expression_matrix,
+                         cell_metadata = cell_metadata,
+                         gene_metadata = gene_annotation)
+
+{% endhighlight %}
+
+
+<h2>Cluster your cells</h2>
+<h3>Pre-process the data</h3>
+{% highlight R %}
+cds = preprocess_cds(cds, num_dim = 100)
+{% endhighlight %}
+
+<h3>Reduce dimensionality and visualize the cells</h3>
+{% highlight R %}
+cds = reduce_dimension(cds)
+{% endhighlight %}
+
+{% highlight R %}
+plot_cells(cds)
+{% endhighlight %}
+
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/L2_umap_no_color.png" width= 760>
+</div>
+
+{% highlight R %}
+plot_cells(cds, color_cells_by="cao_cell_type")
+{% endhighlight %}
+
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/L2_umap_color_by_cao_type.png" width= 760>
+</div>
+
+<h3>Check for and remove batch effects</h3>
+{% highlight R %}
+plot_cells(cds, color_cells_by="plate", label_cell_groups=FALSE)
+{% endhighlight %}
+  
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/L2_umap_plate.png" width= 760>
+</div>
+
+{% highlight R %}
+cds = preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ plate")
+cds = reduce_dimension(cds)
+plot_cells(cds, color_cells_by="plate", label_cell_groups=FALSE)
+{% endhighlight %}
+  
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/L2_umap_corrected_plate.png" width= 760>
+</div>
+
+<h3>Group cells into clusters</h3>
+
+{% highlight R %}
+cds = cluster_cells(cds, resolution=c(10^seq(-6,-1)))
+plot_cells(cds)
+{% endhighlight %}
+
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/L2_umap_color_by_cluster.png" width= 760>
+</div>
+
+{% highlight R %}
+plot_cells(cds, color_cells_by="partition", group_cells_by="partition")
+{% endhighlight %}
+
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/L2_umap_color_cells_by_partition.png" width= 760>
+</div>
+
+{% highlight R %}
+plot_cells(cds, color_cells_by="cao_cell_type") 
+{% endhighlight %}
+
+
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/L2_umap_corrected_cao_type.png" width= 760>
+</div>
+
+{% highlight R %}
+plot_cells(cds, color_cells_by="cao_cell_type", label_groups_by_cluster=FALSE)
+{% endhighlight %}
+
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/L2_umap_corrected_cao_type_no_cluster_label.png" width= 760>
+</div>
+
+
+{% highlight R %}
+pheatmap::pheatmap(log(table(clusters(cds), colData(cds)$cao_cell_type)+1),
+                   clustering_method="ward.D2",
+                   fontsize=6)
+{% endhighlight %}
+
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/L2_cell_type_by_cluster.png" width= 760>
+</div>
+
+<h3>Find marker genes expressed by each cluster</h2>
+
+<h2>Annotate your cells according to type</h2>
+
+{% highlight R %}
+library(org.Ce.eg.db)
+library(garnett)
+load(url("https://cole-trapnell-lab.github.io/garnett/classifiers/ceWhole"))
+{% endhighlight %}
+
+{% highlight R %}
+colData(cds)$garnett_cluster = clusters(cds)
+cds = classify_cells(cds, ceWhole,
+                           db = org.Ce.eg.db,
+                           cluster_extend = TRUE,
+                           cds_gene_id_type = "ENSEMBL")
+{% endhighlight %}
+
+{% highlight R %}
+plot_cells(cds, color_cells_by="cluster_ext_type")
+{% endhighlight %}
 
 <h2>Constructing Single Cell Trajectories </h2>
 
@@ -861,6 +985,8 @@ This often leads to much more accurate results than using <code>tobit()</code>. 
 </div>
 </p> -->
 
+<!-- 
+  FIXME: Put this back when we have resolved https://github.com/cole-trapnell-lab/monocle3/issues/31
 <h3>Finding Genes that Distinguish Cell Types </h3>
 
 {%highlight R%}
@@ -897,7 +1023,7 @@ plot_genes_jitter(cds_subset,
         nrow= 1,
         ncol = NULL,
         plot_trend = TRUE)
-{%endhighlight%}
+{%endhighlight%} -->
 
 <div class= "text-center">
 <img src= "{{site.baseurl}}/images/vignette/jitter_plot_diff_res-1.png" width= 760>
