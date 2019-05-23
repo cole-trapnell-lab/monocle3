@@ -2,10 +2,10 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 jaccard_coeff <- function(R_idx, R_weight) {
-    .Call('_monocle3_jaccard_coeff', PACKAGE = 'monocle3', R_idx, R_weight)
+    .Call(`_monocle3_jaccard_coeff`, R_idx, R_weight)
 }
 
 pnorm_over_mat <- function(R_num_links_ij, R_var_null_num_links) {
-    .Call('_monocle3_pnorm_over_mat', PACKAGE = 'monocle3', R_num_links_ij, R_var_null_num_links)
+    .Call(`_monocle3_pnorm_over_mat`, R_num_links_ij, R_var_null_num_links)
 }
 

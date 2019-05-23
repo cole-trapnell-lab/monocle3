@@ -60,8 +60,8 @@ Plots the cells along with their trajectories.
 \examples{
 \dontrun{
 lung <- load_lung()
-plot_cell_trajectory(lung)
-plot_cell_trajectory(lung, color_by="Pseudotime", show_backbone=FALSE)
-plot_cell_trajectory(lung, markers="MYH3")
+plot_cells(lung)
+plot_cells(lung, color_by="Pseudotime", show_backbone=FALSE)
+plot_cells(lung, markers="MYH3")
 }
 }
