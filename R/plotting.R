@@ -413,7 +413,7 @@ plot_cells <- function(cds,
                        cell_size=0.35,
                        alpha = 1,
                        min_expr=0.1,
-                       rasterize=TRUE) {
+                       rasterize=FALSE) {
 
   assertthat::assert_that(is(cds, "cell_data_set"))
   assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
@@ -436,42 +436,34 @@ plot_cells <- function(cds,
                           msg = paste("Either color_by or markers must be",
                                       "NULL, cannot color by both!"))
 
-  #if (!is.null(color_by) && color_by == "Cluster" && length(clusters(cds, reduction_method = reduction_method)) == 0){
-  #  stop("Error: Clustering is not performed yet. Please call clusterCells() before calling this function.")
-  #}
-  norm_method = match.arg(norm_method)
+  norm_method <- match.arg(norm_method)
 
-  #requireNamespace("igraph")
   gene_short_name <- NA
   sample_name <- NA
   sample_state <- colData(cds)$State
   data_dim_1 <- NA
   data_dim_2 <- NA
   if (rasterize){
-    plotting_func = ggrastr::geom_point_rast
+    plotting_func <- ggrastr::geom_point_rast
   }else{
-    plotting_func = ggplot2::geom_point
+    plotting_func <- ggplot2::geom_point
   }
 
-  lib_info_with_pseudo <- colData(cds)
-
-  S_matrix <-
-    reducedDims(cds)$UMAP
+  S_matrix <- reducedDims(cds)[[reduction_method]]
   data_df <- data.frame(S_matrix[,c(x,y)])
-  #data_df <- cbind(data_df, sample_state)
+
   colnames(data_df) <- c("data_dim_1", "data_dim_2")
   data_df$sample_name <- row.names(data_df)
 
-  data_df <- merge(data_df, lib_info_with_pseudo, by.x="sample_name", by.y="row.names")
-  data_df$Cluster = clusters(cds, reduction_method = reduction_method)[data_df$sample_name]
+  data_df <- as.data.frame(cbind(data_df, colData(cds)))
+  data_df$Cluster <- clusters(cds, reduction_method = reduction_method)[data_df$sample_name]
 
   if (show_trajectory_graph){
-    #TODO: need to validate cds as ready for this plot (need mst, pseudotime, etc)
 
     if (is.null(principal_graph(cds)[[reduction_method]])){
       message("No trajectory to plot. Has learn_graph() been called yet?")
       show_trajectory_graph = FALSE
-    }else{
+    } else {
     ica_space_df <- t(cds@principal_graph_aux[[reduction_method]]$dp_mst) %>%
       as.data.frame() %>%
       dplyr::select_(prin_graph_dim_1 = x, prin_graph_dim_2 = y) %>%
@@ -479,14 +471,19 @@ plot_cells <- function(cds,
 
     dp_mst <- cds@principal_graph[[reduction_method]]
 
-    if (is.null(dp_mst)){
-      stop("You must first call order_cells() before using this function")
-    }
     edge_df <- dp_mst %>%
       igraph::as_data_frame() %>%
       dplyr::select_(source = "from", target = "to") %>%
-      dplyr::left_join(ica_space_df %>% dplyr::select_(source="sample_name", source_prin_graph_dim_1="prin_graph_dim_1", source_prin_graph_dim_2="prin_graph_dim_2"), by = "source") %>%
-      dplyr::left_join(ica_space_df %>% dplyr::select_(target="sample_name", target_prin_graph_dim_1="prin_graph_dim_1", target_prin_graph_dim_2="prin_graph_dim_2"), by = "target")
+      dplyr::left_join(ica_space_df %>%
+                         dplyr::select_(source="sample_name",
+                                        source_prin_graph_dim_1="prin_graph_dim_1",
+                                        source_prin_graph_dim_2="prin_graph_dim_2"),
+                       by = "source") %>%
+      dplyr::left_join(ica_space_df %>%
+                         dplyr::select_(target="sample_name",
+                                        target_prin_graph_dim_1="prin_graph_dim_1",
+                                        target_prin_graph_dim_2="prin_graph_dim_2"),
+                       by = "target")
     }
   }
 

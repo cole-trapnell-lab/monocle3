@@ -118,9 +118,9 @@ cds <- learn_graph(cds)
 ```
 
 ```{r}
-plot_cell_trajectory(cds,
-                     color_by = "cell_type2") +
-                     ggplot2::scale_color_manual(values = cell_type_color)
+plot_cells(cds,
+           color_by = "cell_type2") +
+  ggplot2::scale_color_manual(values = cell_type_color)
 ```
 
 
@@ -145,7 +145,7 @@ MPP_node_ids = get_correct_root_state(cds,
                                       cell_phenotype =
                                         'cell_type2', "Multipotent progenitors")
 cds <- order_cells(cds, root_pr_nodes = MPP_node_ids)
-plot_cell_trajectory(cds)
+plot_cells(cds)
 ```
 
 
@@ -302,10 +302,10 @@ col_vector <-
 names(col_vector) <- unique(as.character(colData(MCA_cds)$Tissue))
 options(repr.plot.width = 11)
 options(repr.plot.height = 8)
-plot_cell_clusters(MCA_cds,
-                   color_by = 'Tissue',
-                   cell_size = 0.1,
-                   show_group_id = T)  +
+plot_cells(MCA_cds,
+           color_by = 'Tissue',
+           cell_size = 0.1,
+           show_group_id = T)  +
   theme(legend.text=element_text(size=6)) + #set the size of the text
   theme(legend.position="right") #put the color legend on the right
 ```
@@ -318,11 +318,11 @@ options(repr.plot.height = 8)
 cluster_col_vector <-
   col_vector_origin[1:length(unique(as.character(colData(MCA_cds)$Cluster)))]
 names(cluster_col_vector) <- unique(as.character(colData(MCA_cds)$Cluster))
-plot_cell_clusters(MCA_cds,
-                   color_by = 'Cluster',
-                   cell_size = 0.1,
-                   show_group_id = T) +
-    scale_color_manual(values = cluster_col_vector) +
+plot_cells(MCA_cds,
+           color_by = 'Cluster',
+           cell_size = 0.1,
+           show_group_id = T) +
+  scale_color_manual(values = cluster_col_vector) +
     theme(legend.text=element_text(size=6)) + #set the size of the text
     theme(legend.position="right") #put the color legend on the right
 ```
@@ -407,10 +407,10 @@ cluster_col_vector <-
 names(cluster_col_vector) <-
   unique(as.character(colData(MCA_cds_res_resolution)$Cluster))
 
-plot_cell_clusters(MCA_cds_res_resolution,
-                   color_by = 'Cluster',
-                   cell_size = 0.1,
-                   show_group_id = T) +
+plot_cells(MCA_cds_res_resolution,
+           color_by = 'Cluster',
+           cell_size = 0.1,
+           show_group_id = T) +
   theme(legend.text=element_text(size=6)) + #set the size of the text
   theme(legend.position="right") #put the color legend on the right
 ```
@@ -430,10 +430,10 @@ cluster_col_vector <-
 names(cluster_col_vector) <-
   unique(as.character(colData(MCA_cds_res_resolution)$Cluster))
 
-plot_cell_clusters(MCA_cds_res_resolution,
-                   color_by = 'Cluster',
-                   cell_size = 0.1,
-                   show_group_id = T) +
+plot_cells(MCA_cds_res_resolution,
+           color_by = 'Cluster',
+           cell_size = 0.1,
+           show_group_id = T) +
   theme(legend.text=element_text(size=6)) + #set the size of the text
   theme(legend.position="right") #put the color legend on the right
 ```
@@ -496,9 +496,9 @@ top_4_genes
 options(repr.plot.width = 8)
 options(repr.plot.height = 9)
 marker_genes <- top_4_genes$Gene
-plot_cell_clusters(MCA_cds,
-                   markers = as.character(marker_genes),
-                   show_group_id = T, cell_size = 0.1)
+plot_cells(MCA_cds,
+           markers = as.character(marker_genes),
+           show_group_id = T, cell_size = 0.1)
 ```
 
 ```{r}
@@ -506,9 +506,9 @@ cluster_marker_res %>%
   dplyr::filter(gene_short_name %in% c('Csn3', 'Csn1s1'), Group == 7)
 options(repr.plot.width = 8)
 options(repr.plot.height = 5.5)
-plot_cell_clusters(MCA_cds,
-                   markers = c('Csn3', 'Csn1s1'),
-                   show_group_id = T, cell_size = 0.1)
+plot_cells(MCA_cds,
+           markers = c('Csn3', 'Csn1s1'),
+           show_group_id = T, cell_size = 0.1)
 ```
 
 

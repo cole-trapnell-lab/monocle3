@@ -10,11 +10,9 @@
 #' in the analysis, the harder the trajectory is to learn. Fortunately, many
 #' genes typically co-vary with one another, and so the dimensionality of the
 #' data can be reduced with a wide variety of different algorithms. Monocle
-#' provides two different algorithms for dimensionality reduction via
-#' \code{reduce_dimension}. Both take a cell_data_set object and a number of
-#' dimensions allowed for the reduced space. You can also provide a model
-#' formula indicating some variables (e.g. batch ID or other technical factors)
-#' to "subtract" from the data so it doesn't contribute to the trajectory.
+#' provides three different algorithms for dimensionality reduction via
+#' \code{reduce_dimension}. All take a cell_data_set object and a number of
+#' dimensions allowed for the reduced space.
 #'
 #' @details You can choose a few different reduction algorithms: Independent
 #' Component Analysis (ICA) and Discriminative Dimensionality Reduction with
@@ -131,20 +129,6 @@ reduce_dimension <- function(cds,
     if (verbose)
       message("Running Uniform Manifold Approximation and Projection")
 
-    # umap_args <- c(list(X = preprocess_mat,
-    #                     log = F,
-    #                     n_component = as.integer(max_components),
-    #                     verbose = verbose,
-    #                     return_all = T),
-    #                extra_arguments[names(extra_arguments) %in%
-    #                                  c("python_home", "n_neighbors", "metric",
-    #                                    "n_epochs", "negative_sample_rate",
-    #                                    "learning_rate", "init", "min_dist",
-    #                                    "spread", 'set_op_mix_ratio',
-    #                                    'local_connectivity',
-    #                                    'repulsion_strength', 'a', 'b',
-    #                                    'random_state', 'metric_kwds',
-    #                                    'angular_rp_forest', 'verbose')])
     umap_res = uwot::umap(as.matrix(preprocess_mat),
                           n_components = max_components,
                           metric = umap.metric,
@@ -155,9 +139,7 @@ reduce_dimension <- function(cds,
                           verbose=verbose,
                           nn_method = umap.nn_method,
                           ...)
-    # tmp <- do.call(UMAP, umap_args)
-    # normalize UMAP space
-    # umap_res <- (tmp-min(tmp))/max(tmp)
+
     row.names(umap_res) <- colnames(cds)
     reducedDims(cds)$UMAP <- umap_res
   }

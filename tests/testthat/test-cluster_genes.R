@@ -7,7 +7,7 @@ cds <- preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ bg.300
 cds <- reduce_dimension(cds, umap.fast_sgd=FALSE, cores=1)
 cds <- cluster_cells(cds)
 cds <- learn_graph(cds, learn_graph_control=list(ncenter=1000), close_loop=TRUE)
-plot_cell_trajectory(cds, color_by="cell.type")
+plot_cells(cds, color_by="cell.type")
 
 test_cds = cds
 pr_graph_test_res = graph_test(test_cds)
