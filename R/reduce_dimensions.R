@@ -144,6 +144,13 @@ reduce_dimension <- function(cds,
     reducedDims(cds)$UMAP <- umap_res
   }
 
+
+
+  ## Clear out any old graphs:
+  cds@principal_graph_aux[[reduction_method]] <- NULL
+  cds@principal_graph[[reduction_method]] <- NULL
+  cds@clusters[[reduction_method]] <- NULL
+
   cds
 }
 
