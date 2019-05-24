@@ -443,8 +443,8 @@ plot_cells <- function(cds,
   #}
   norm_method = match.arg(norm_method)
   group_cells_by=match.arg(group_cells_by)
-  assertthat::assert_that(!is.null(color_by) || !is.null(genes),
-                          msg = paste("Either color_by or genes must be",
+  assertthat::assert_that(!is.null(color_cells_by) || !is.null(genes),
+                          msg = paste("Either color_cells_by or genes must be",
                                       "NULL, cannot color by both!"))
 
   if (show_trajectory_graph && is.null(principal_graph(cds)[[reduction_method]])) {
