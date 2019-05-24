@@ -3,7 +3,7 @@ context("test-plotting")
 cds <- load_a549()
 cds <- estimate_size_factors(cds)
 
-test_that("plot_genes_violin works", {
+test_that("plot_genes_violin doesn't error", {
   cds_subset <- cds[c("ENSG00000228253.1", "ENSG00000103034.14",
                       "ENSG00000223519.8"),]
   plot_genes_violin(cds_subset, grouping="culture_plate")
@@ -17,9 +17,10 @@ test_that("plot_genes_violin works", {
                     label_by_short_name = FALSE)
 #  plot_genes_violin(cds_subset, grouping="dose", plot_trend = TRUE,
 #                    ncol = 3)
+  expect_equal(1, 1)
 })
 
-test_that("plot_percent_cells_positive works", {
+test_that("plot_percent_cells_positive doesn't error", {
   cds_subset <- cds[c("ENSG00000228253.1", "ENSG00000103034.14",
                       "ENSG00000223519.8"),]
   plot_percent_cells_positive(cds_subset, grouping="culture_plate")
@@ -34,7 +35,18 @@ test_that("plot_percent_cells_positive works", {
                     label_by_short_name = FALSE)
   plot_percent_cells_positive(cds_subset, grouping="culture_plate",
                               plot_limits = c(0,200))
+  expect_equal(1, 1)
 })
 
 cds <- load_a549()
 cds <- estimate_size_factors(cds)
+
+test_that("plot_percent_cells_positive doesn't error", {
+
+
+
+
+  expect_equal(1, 1)
+  })
+
+
