@@ -9,8 +9,19 @@
 #'
 #' @examples
 choose_cells <- function(cds,
-                         reduction_method = "UMAP",
+                         reduction_method = c("UMAP", "tSNE"),
                          return_list = FALSE) {
+  reduction_method <- match.arg(reduction_method)
+  assertthat::assert_that(is(cds, "cell_data_set"))
+  assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
+                          msg = paste0("No dimensionality reduction for ",
+                                       reduction_method, " calculated. ",
+                                       "Please run reduce_dimensions with ",
+                                       "reduction_method = ", reduction_method,
+                                       ", cluster_cells, and learn_graph ",
+                                       "before running choose_cells"))
+  assertthat::assert_that(is.logical(return_list))
+
   ui <- shiny::fluidPage(
     shiny::titlePanel("Choose cells for a subset"),
 
@@ -58,7 +69,7 @@ choose_cells <- function(cds,
       # Plot the kept and excluded points as two separate data sets
       colData(cds)$keep <- vals$keeprows
 
-      suppressMessages(plot_cells(cds, cell_size = 1, label_cell_groups = FALSE) + geom_point(alpha = colData(cds)$keep))
+      suppressMessages(plot_cells(cds, reduction_method = reduction_method, cell_size = 1, label_cell_groups = FALSE) + geom_point(alpha = colData(cds)$keep))
     }, height = function() {
       session$clientData$output_plot1_width
     })
@@ -109,6 +120,32 @@ choose_graph_segments <- function(cds,
                                  reduction_method = "UMAP",
                                  return_list = FALSE) {
 
+  assertthat::assert_that(is(cds, "cell_data_set"))
+  assertthat::assert_that(assertthat::are_equal("UMAP", reduction_method),
+                          msg = paste("Currently only 'UMAP' is accepted as a",
+                                      "reduction_method."))
+  assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
+                          msg = paste0("No dimensionality reduction for ",
+                                       reduction_method, " calculated. ",
+                                       "Please run reduce_dimensions with ",
+                                       "reduction_method = ", reduction_method,
+                                       ", cluster_cells, and learn_graph ",
+                                       "before running choose_graph_segments."))
+  assertthat::assert_that(!is.null(cds@clusters[[reduction_method]]),
+                          msg = paste("No cell clusters for",
+                                      reduction_method, "calculated.",
+                                      "Please run cluster_cells with",
+                                      "reduction_method =", reduction_method,
+                                      "and run learn_graph before running",
+                                      "choose_graph_segments."))
+  assertthat::assert_that(!is.null(principal_graph(cds)[[reduction_method]]),
+                          msg = paste("No principal graph for",
+                                      reduction_method, "calculated.",
+                                      "Please run learn_graph with",
+                                      "reduction_method =", reduction_method,
+                                      "before running choose_graph_segments."))
+  assertthat::assert_that(is.logical(return_list))
+
   dp_mst <- cds@principal_graph[[reduction_method]]
 
   princ_points <- t(cds@principal_graph_aux[[reduction_method]]$dp_mst) %>%
@@ -138,9 +175,10 @@ choose_graph_segments <- function(cds,
 
   data_df <- as.data.frame(cbind(data_df, colData(cds)))
 
-  data_df$cell_color = tryCatch({partitions(cds, reduction_method = reduction_method)[data_df$sample_name]}, error = function(e) {NULL})
+  data_df$cell_color = tryCatch({
+    partitions(cds, reduction_method = reduction_method)[data_df$sample_name]},
+    error = function(e) {NULL})
   data_df$chosen_cells <- FALSE
-
 
   ui <- shiny::fluidPage(
     shiny::titlePanel("Choose cells along a graph path"),
@@ -201,26 +239,34 @@ choose_graph_segments <- function(cds,
       princ_points$chosen[vals$chosen] <- "Chosen"
       data_df$chosen_cells <- "gray"
       data_df$chosen_cells[vals$chosen_cells] <- "purple"
-      suppressMessages(plot_principal_graph(data_df, princ_points, label_branch_points = F, label_leaves = FALSE, label_roots = FALSE))# +
-                         #geom_point(alpha = colData(cds)$keep))
+      suppressMessages(plot_principal_graph(data_df, princ_points,
+                                            label_branch_points = F,
+                                            label_leaves = FALSE,
+                                            label_roots = FALSE))
     }, height = function() {
       session$clientData$output_plot1_width
     })
 
     # Toggle points that are brushed, when button is clicked
     shiny::observeEvent(input$choose_start, {
-      res <- shiny::brushedPoints(princ_points, xvar = "x", yvar = "y", input$plot1_brush, allRows = TRUE)
+      res <- shiny::brushedPoints(princ_points, xvar = "x", yvar = "y",
+                                  input$plot1_brush, allRows = TRUE)
       vals$start <- res$selected_
     })
 
     # Toggle points that are brushed, when button is clicked
     shiny::observeEvent(input$choose_end, {
-      res <- shiny::brushedPoints(princ_points, xvar = "x", yvar = "y", input$plot1_brush, allRows = TRUE)
+      res <- shiny::brushedPoints(princ_points, xvar = "x", yvar = "y",
+                                  input$plot1_brush, allRows = TRUE)
       vals$end <- vals$end | res$selected_
     })
 
     shiny::observeEvent(input$connect, {
-      chosen <- tryCatch(get_principal_path(cds, reduction_method, starting_cell = row.names(princ_points)[vals$start], end_cells = row.names(princ_points)[vals$end]), error = function(e) print(e))
+      chosen <- tryCatch(
+        get_principal_path(cds, reduction_method,
+                           starting_cell = row.names(princ_points)[vals$start],
+                           end_cells = row.names(princ_points)[vals$end]),
+        error = function(e) print(e))
       vals$chosen <- vals$chosen | row.names(princ_points) %in% chosen$nodes
       vals$chosen_cells <- vals$chosen_cells | row.names(pData(cds)) %in% chosen$cells
       vals$start = rep(FALSE, nrow(princ_points))
@@ -236,7 +282,8 @@ choose_graph_segments <- function(cds,
     })
 
     shiny::observeEvent(input$done, {
-      shiny::stopApp(list(nodes = row.names(princ_points)[vals$chosen], cells = row.names(data_df)[vals$chosen_cells]))
+      shiny::stopApp(list(nodes = row.names(princ_points)[vals$chosen],
+                          cells = row.names(data_df)[vals$chosen_cells]))
     })
 
   }
@@ -285,22 +332,20 @@ traverse_graph <- function(g, starting_cell, end_cells){
 
 plot_principal_graph <- function(data_df,
                                  princ_points,
-                       x=1,
-                       y=2,
-                       reduction_method = "UMAP",
-                       trajectory_graph_color="black",
-                       trajectory_graph_segment_size=0.75,
-                       label_groups_by_cluster=TRUE,
-                       group_label_size=2,
-                       labels_per_group=1,
-                       label_branch_points=TRUE,
-                       label_roots=TRUE,
-                       label_leaves=TRUE,
-                       graph_label_size=2,
-                       cell_size=0.35,
-                       alpha = 1,
-                       min_expr=0.1,
-                       rasterize=FALSE) {
+                                 reduction_method = "UMAP",
+                                 trajectory_graph_color="black",
+                                 trajectory_graph_segment_size=0.75,
+                                 label_groups_by_cluster=TRUE,
+                                 group_label_size=2,
+                                 labels_per_group=1,
+                                 label_branch_points=TRUE,
+                                 label_roots=TRUE,
+                                 label_leaves=TRUE,
+                                 graph_label_size=2,
+                                 cell_size=0.35,
+                                 alpha = 1,
+                                 min_expr=0.1,
+                                 rasterize=FALSE) {
 
   gene_short_name <- NA
   sample_name <- NA
@@ -316,99 +361,97 @@ plot_principal_graph <- function(data_df,
 
   ## Graph info
 
-    ica_space_df <- t(cds@principal_graph_aux[[reduction_method]]$dp_mst) %>%
-      as.data.frame() %>%
-      dplyr::select_(prin_graph_dim_1 = x, prin_graph_dim_2 = y) %>%
-      dplyr::mutate(sample_name = rownames(.), sample_state = rownames(.))
+  ica_space_df <- t(cds@principal_graph_aux[[reduction_method]]$dp_mst) %>%
+    as.data.frame() %>%
+    dplyr::select_(prin_graph_dim_1 = x, prin_graph_dim_2 = y) %>%
+    dplyr::mutate(sample_name = rownames(.), sample_state = rownames(.))
 
-    dp_mst <- cds@principal_graph[[reduction_method]]
+  dp_mst <- cds@principal_graph[[reduction_method]]
 
-    edge_df <- dp_mst %>%
-      igraph::as_data_frame() %>%
-      dplyr::select_(source = "from", target = "to") %>%
-      dplyr::left_join(ica_space_df %>%
-                         dplyr::select_(source="sample_name",
-                                        source_prin_graph_dim_1="prin_graph_dim_1",
-                                        source_prin_graph_dim_2="prin_graph_dim_2"),
-                       by = "source") %>%
-      dplyr::left_join(ica_space_df %>%
-                         dplyr::select_(target="sample_name",
-                                        target_prin_graph_dim_1="prin_graph_dim_1",
-                                        target_prin_graph_dim_2="prin_graph_dim_2"),
-                       by = "target")
+  edge_df <- dp_mst %>%
+    igraph::as_data_frame() %>%
+    dplyr::select_(source = "from", target = "to") %>%
+    dplyr::left_join(ica_space_df %>%
+                       dplyr::select_(source="sample_name",
+                                      source_prin_graph_dim_1="prin_graph_dim_1",
+                                      source_prin_graph_dim_2="prin_graph_dim_2"),
+                     by = "source") %>%
+    dplyr::left_join(ica_space_df %>%
+                       dplyr::select_(target="sample_name",
+                                      target_prin_graph_dim_1="prin_graph_dim_1",
+                                      target_prin_graph_dim_2="prin_graph_dim_2"),
+                     by = "target")
 
-    g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2))
+  g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2))
 
-    # We don't want to force users to call order_cells before even being able to look at the trajectory,
-    # so check whether it's null and if so, just don't color the cells
-        g <- g + geom_point(color=data_df$chosen_cells, size=I(cell_size), na.rm = TRUE, alpha = I(alpha))
-        message("cluster_cells() has not been called yet, can't color cells by cluster")
+  g <- g + geom_point(color=data_df$chosen_cells, size=I(cell_size), na.rm = TRUE, alpha = I(alpha))
+  message("cluster_cells() has not been called yet, can't color cells by cluster")
 
-    g <- g + geom_point(aes(x = x, y = y, color = chosen), data=princ_points) +
-      scale_color_manual(values = c("Start" = "green", "End" = "blue",
-                                    "Unchosen" = "black", "Chosen" = "purple"))
-    g <- g + geom_segment(aes_string(x="source_prin_graph_dim_1",
-                                     y="source_prin_graph_dim_2",
-                                     xend="target_prin_graph_dim_1",
-                                     yend="target_prin_graph_dim_2"),
-                          size=trajectory_graph_segment_size,
-                          linetype="solid",
-                          na.rm=TRUE,
-                          data=edge_df)
+  g <- g + geom_point(aes(x = x, y = y, color = chosen), data=princ_points) +
+    scale_color_manual(values = c("Start" = "green", "End" = "blue",
+                                  "Unchosen" = "black", "Chosen" = "purple"))
+  g <- g + geom_segment(aes_string(x="source_prin_graph_dim_1",
+                                   y="source_prin_graph_dim_2",
+                                   xend="target_prin_graph_dim_1",
+                                   yend="target_prin_graph_dim_2"),
+                        size=trajectory_graph_segment_size,
+                        linetype="solid",
+                        na.rm=TRUE,
+                        data=edge_df)
 
 
-    if (label_branch_points){
-      mst_branch_nodes <- branch_nodes(cds)
-      branch_point_df <- ica_space_df %>%
-        dplyr::slice(match(names(mst_branch_nodes), sample_name)) %>%
-        dplyr::mutate(branch_point_idx = seq_len(dplyr::n()))
+  if (label_branch_points){
+    mst_branch_nodes <- branch_nodes(cds)
+    branch_point_df <- ica_space_df %>%
+      dplyr::slice(match(names(mst_branch_nodes), sample_name)) %>%
+      dplyr::mutate(branch_point_idx = seq_len(dplyr::n()))
 
-      g <- g +
-        geom_point(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2"),
-                   shape = 21, stroke=I(trajectory_graph_segment_size),
-                   color="white",
-                   fill="black",
-                   size=I(graph_label_size * 1.5),
-                   na.rm=TRUE, branch_point_df) +
-        geom_text(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2", label="branch_point_idx"),
-                  size=I(graph_label_size), color="white", na.rm=TRUE, branch_point_df)
-    }
+    g <- g +
+      geom_point(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2"),
+                 shape = 21, stroke=I(trajectory_graph_segment_size),
+                 color="white",
+                 fill="black",
+                 size=I(graph_label_size * 1.5),
+                 na.rm=TRUE, branch_point_df) +
+      geom_text(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2", label="branch_point_idx"),
+                size=I(graph_label_size), color="white", na.rm=TRUE, branch_point_df)
+  }
 
-    if (label_leaves){
-      mst_leaf_nodes <- leaf_nodes(cds)
-      leaf_df <- ica_space_df %>%
-        dplyr::slice(match(names(mst_leaf_nodes), sample_name)) %>%
-        dplyr::mutate(leaf_idx = seq_len(dplyr::n()))
+  if (label_leaves){
+    mst_leaf_nodes <- leaf_nodes(cds)
+    leaf_df <- ica_space_df %>%
+      dplyr::slice(match(names(mst_leaf_nodes), sample_name)) %>%
+      dplyr::mutate(leaf_idx = seq_len(dplyr::n()))
 
-      g <- g +
-        geom_point(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2"),
-                   shape = 21, stroke=I(trajectory_graph_segment_size),
-                   color="black",
-                   fill="lightgray",
-                   size=I(graph_label_size * 1.5),
-                   na.rm=TRUE,
-                   leaf_df) +
-        geom_text(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2", label="leaf_idx"),
-                  size=I(graph_label_size), color="black", na.rm=TRUE, leaf_df)
-    }
+    g <- g +
+      geom_point(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2"),
+                 shape = 21, stroke=I(trajectory_graph_segment_size),
+                 color="black",
+                 fill="lightgray",
+                 size=I(graph_label_size * 1.5),
+                 na.rm=TRUE,
+                 leaf_df) +
+      geom_text(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2", label="leaf_idx"),
+                size=I(graph_label_size), color="black", na.rm=TRUE, leaf_df)
+  }
 
-    if (label_roots){
-      mst_root_nodes <- root_nodes(cds)
-      root_df <- ica_space_df %>%
-        dplyr::slice(match(names(mst_root_nodes), sample_name)) %>%
-        dplyr::mutate(root_idx = seq_len(dplyr::n()))
+  if (label_roots){
+    mst_root_nodes <- root_nodes(cds)
+    root_df <- ica_space_df %>%
+      dplyr::slice(match(names(mst_root_nodes), sample_name)) %>%
+      dplyr::mutate(root_idx = seq_len(dplyr::n()))
 
-      g <- g +
-        geom_point(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2"),
-                   shape = 21, stroke=I(trajectory_graph_segment_size),
-                   color="black",
-                   fill="white",
-                   size=I(graph_label_size * 1.5),
-                   na.rm=TRUE,
-                   root_df) +
-        geom_text(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2", label="root_idx"),
-                  size=I(graph_label_size), color="black", na.rm=TRUE, root_df)
-    }
+    g <- g +
+      geom_point(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2"),
+                 shape = 21, stroke=I(trajectory_graph_segment_size),
+                 color="black",
+                 fill="white",
+                 size=I(graph_label_size * 1.5),
+                 na.rm=TRUE,
+                 root_df) +
+      geom_text(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2", label="root_idx"),
+                size=I(graph_label_size), color="black", na.rm=TRUE, root_df)
+  }
 
 
   g <- g +

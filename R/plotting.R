@@ -395,7 +395,7 @@ plot_cells_3d <- function(cds,
 plot_cells <- function(cds,
                        x=1,
                        y=2,
-                       reduction_method = "UMAP",
+                       reduction_method = c("UMAP", "tSNE"),
                        color_cells_by="cluster",
                        group_cells_by=c("cluster", "partition"),
                        genes=NULL,
@@ -415,7 +415,7 @@ plot_cells <- function(cds,
                        alpha = 1,
                        min_expr=0.1,
                        rasterize=FALSE) {
-
+  reduction_method <- match.arg(reduction_method)
   assertthat::assert_that(is(cds, "cell_data_set"))
   assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
                           msg = paste("No dimensionality reduction for",
@@ -429,7 +429,8 @@ plot_cells <- function(cds,
                                       "be dimensions in reduced dimension",
                                       "space."))
   if(!is.null(color_cells_by)) {
-    assertthat::assert_that(color_cells_by %in% c("cluster", "partition") | color_cells_by %in% names(colData(cds)),
+    assertthat::assert_that(color_cells_by %in% c("cluster", "partition") |
+                              color_cells_by %in% names(colData(cds)),
                             msg = paste("color_cells_by must be a column in the",
                                         "colData table."))
   }
@@ -519,7 +520,9 @@ plot_cells <- function(cds,
     } else {
       markers = genes
     }
-    markers_rowData <- as.data.frame(subset(rowData(cds), gene_short_name %in% markers | rownames(rowData(cds)) %in% markers))
+    markers_rowData <- as.data.frame(subset(rowData(cds),
+                                            gene_short_name %in% markers |
+                                              rownames(rowData(cds)) %in% markers))
     if (nrow(markers_rowData) >= 1) {
       cds_exprs <- counts(cds)[row.names(markers_rowData), ,drop=FALSE]
       cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds))
