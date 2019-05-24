@@ -470,3 +470,26 @@ dispersion_table <- function(cds){
   return(disp_df)
 }
 
+#' Return a size-factor normalized and (optionally) log-transformed expression matrix
+#' @export
+normalized_counts <- function(cds, norm_method=c("log", "size_only"), pseudocount=1){
+  norm_method = match.arg(norm_method)
+  norm_mat = counts(cds)
+  if (is_sparse_matrix(norm_mat)){
+    norm_mat@x = norm_mat@x / rep.int(size_factors(cds), diff(norm_mat@p))
+    if (norm_method == "log"){
+      if (pseudocount == 1){
+        norm_mat@x = log10(norm_mat@x + pseudocount)
+      }else{
+        stop("Pseudocount must equal 1 with sparse expression matrices")
+      }
+    }
+  }else{
+      norm_mat = Matrix::t(Matrix::t(norm_mat) / size_factors(cds))
+      if (norm_method == "log"){
+          norm_mat@x = log10(norm_mat + pseudocount)
+      }
+  }
+  return(norm_mat)
+}
+
