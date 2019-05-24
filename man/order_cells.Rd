@@ -25,7 +25,8 @@ Pseudotime will start (i.e. be zero) at these cells.}
 \item{reverse}{Whether to reverse the direction of the trajectory}
 }
 \value{
-an updated cell_data_set object, in which phenoData contains values for State and Pseudotime for each cell
+an updated cell_data_set object, in which colData contains values
+for State and Pseudotime for each cell
 }
 \description{
 Learns a "trajectory" describing the biological process the cells are

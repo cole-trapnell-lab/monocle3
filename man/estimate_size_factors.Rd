@@ -5,19 +5,22 @@
 \title{Function to calculate the size factor for the single-cell RNA-seq data}
 \usage{
 estimate_size_factors(cds, locfunc = stats::median, round_exprs = TRUE,
-  method = "mean-geometric-mean-total")
+  method = c("mean-geometric-mean-total",
+  "mean-geometric-mean-log-total"))
 }
 \arguments{
 \item{cds}{The cell_data_set}
 
-\item{locfunc}{The location function used to find the representive value}
-
 \item{round_exprs}{A logic flag to determine whether or not the expression
 value should be rounded}
 
-\item{method}{A character to specify the size factor calculation appraoches.
-It can be either "mean-geometric-mean-total" (default), "weighted-median",
-"median-geometric-mean", "median", "mode", "geometric-mean-total".}
+\item{method}{A string to specify the size factor calculation approach.
+Options are "mean-geometric-mean-total" (default),
+"mean-geometric-mean-log-total".}
+}
+\value{
+Updated cell_data_set object with a new colData column called
+'Size_Factor'.
 }
 \description{
 Function to calculate the size factor for the single-cell RNA-seq data

@@ -17,8 +17,8 @@ Updated cell_data_set object
 \description{
 For each feature in a cell_data_set object, detect_genes counts
 how many cells are expressed above a minimum threshold. In addition, for
-each cell, detect_genes counts the number of genes above this threshold are
-detectable. Results are added as columns num_cells_expressed and
+each cell, detect_genes counts the number of genes above this threshold that
+are detectable. Results are added as columns num_cells_expressed and
 num_genes_expressed in the rowData and colData tables respectively.
 }
 \examples{
