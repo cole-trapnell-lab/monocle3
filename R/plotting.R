@@ -433,7 +433,7 @@ plot_cells <- function(cds,
                             msg = paste("color_cells_by must be a column in the",
                                         "colData table."))
   }
-<<<<<<< HEAD
+
   assertthat::assert_that(!is.null(color_cells_by) || !is.null(markers),
                           msg = paste("Either color_cells_by or markers must be",
                                       "NULL, cannot color by both!"))
@@ -443,7 +443,6 @@ plot_cells <- function(cds,
   #}
   norm_method = match.arg(norm_method)
   group_cells_by=match.arg(group_cells_by)
-=======
   assertthat::assert_that(!is.null(color_by) || !is.null(genes),
                           msg = paste("Either color_by or genes must be",
                                       "NULL, cannot color by both!"))
@@ -452,13 +451,6 @@ plot_cells <- function(cds,
     message("No trajectory to plot. Has learn_graph() been called yet?")
     show_trajectory_graph = FALSE
   }
-
-
-
-
-
-  norm_method <- match.arg(norm_method)
->>>>>>> 7366bcf3164e0c00d14ae754fb69c5d4ab0b21eb
 
   gene_short_name <- NA
   sample_name <- NA
@@ -477,9 +469,7 @@ plot_cells <- function(cds,
   colnames(data_df) <- c("data_dim_1", "data_dim_2")
   data_df$sample_name <- row.names(data_df)
 
-<<<<<<< HEAD
-  data_df <- merge(data_df, lib_info_with_pseudo, by.x="sample_name", by.y="row.names")
-
+  data_df <- as.data.frame(cbind(data_df, colData(cds)))
   if (group_cells_by == "cluster"){
     data_df$cell_group = tryCatch({clusters(cds, reduction_method = reduction_method)[data_df$sample_name]}, error = function(e) {NULL})
   } else if (group_cells_by == "partition") {
@@ -495,10 +485,6 @@ plot_cells <- function(cds,
   } else{
     data_df$cell_color = colData(cds)[data_df$sample_name,color_cells_by]
   }
-=======
-  data_df <- as.data.frame(cbind(data_df, colData(cds)))
-  data_df$Cluster <- clusters(cds, reduction_method = reduction_method)[data_df$sample_name]
->>>>>>> 7366bcf3164e0c00d14ae754fb69c5d4ab0b21eb
 
   ## Graph info
   if (show_trajectory_graph) {
@@ -570,7 +556,6 @@ plot_cells <- function(cds,
     }
   }
 
-<<<<<<< HEAD
   if (label_cell_groups && is.null(color_cells_by) == FALSE){
     if (is.null(data_df$cell_color)){
       message(paste(color_cells_by, "not found in colData(cds), cells will not be colored"))
@@ -581,18 +566,6 @@ plot_cells <- function(cds,
 
         if (label_groups_by_cluster && is.null(data_df$cell_group) == FALSE){
           #text_df = data_df %>% dplyr::color_cells_by_("cluster", color_cells_by)
-=======
-
-  if (label_cell_groups && is.null(color_by) == FALSE){
-    if (color_by %in% colnames(data_df) == FALSE){
-      message(paste(color_by, "not found in colData(cds), cells will not be colored"))
-      text_df = NULL
-      label_cell_groups = FALSE
-    } else {
-      if(is.character(data_df[, color_by]) || is.factor(data_df[, color_by])) {
-
-        if (label_groups_by_cluster && "Cluster" %in% colnames(data_df)){
->>>>>>> 7366bcf3164e0c00d14ae754fb69c5d4ab0b21eb
           text_df = data_df %>%
             dplyr::group_by(cell_group) %>%
             dplyr::mutate(cells_in_cluster= dplyr::n()) %>%
