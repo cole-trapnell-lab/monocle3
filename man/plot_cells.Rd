@@ -12,7 +12,7 @@ plot_cells(cds, x = 1, y = 2, reduction_method = "UMAP",
   label_groups_by_cluster = TRUE, group_label_size = 2,
   labels_per_group = 1, label_branch_points = TRUE,
   label_roots = TRUE, label_leaves = TRUE, graph_label_size = 2,
-  cell_size = 0.35, alpha = 1, min_expr = 0.1, rasterize = TRUE)
+  cell_size = 0.35, alpha = 1, min_expr = 0.1, rasterize = FALSE)
 }
 \arguments{
 \item{cds}{cell_data_set for the experiment}
@@ -60,8 +60,8 @@ Plots the cells along with their trajectories.
 \examples{
 \dontrun{
 lung <- load_lung()
-plot_cell_trajectory(lung)
-plot_cell_trajectory(lung, color_by="Pseudotime", show_backbone=FALSE)
-plot_cell_trajectory(lung, markers="MYH3")
+plot_cells(lung)
+plot_cells(lung, color_by="Pseudotime", show_backbone=FALSE)
+plot_cells(lung, markers="MYH3")
 }
 }

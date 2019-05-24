@@ -23,7 +23,8 @@
 #' @param reverse Whether to reverse the direction of the trajectory
 #' @param verbose Whether to show running information for order_cells
 #'
-#' @return an updated cell_data_set object, in which phenoData contains values for State and Pseudotime for each cell
+#' @return an updated cell_data_set object, in which colData contains values
+#'   for State and Pseudotime for each cell
 #' @export
 order_cells <- function(cds,
                         reduction_method = "UMAP",

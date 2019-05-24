@@ -10,232 +10,6 @@ monocle_theme_opts <- function()
     theme(legend.key=element_blank())
 }
 
-#' Plots the cells along with their trajectories.
-#'
-#' @param cds cell_data_set for the experiment
-#' @param x the column of reducedDimS(cds) to plot on the horizontal axis
-#' @param y the column of reducedDimS(cds) to plot on the vertical axis
-#' @param color_by the cell attribute (e.g. the column of colData(cds)) to map to each cell's color
-#' @param show_backbone whether to show the diameter path of the MST used to order the cells
-#' @param backbone_color the color used to render the backbone.
-#' @param markers a gene name or gene id to use for setting the size of each cell in the plot
-#' @param markers_linear a boolean used to indicate whether you want to scale the markers logarithimically or linearly
-#' @param show_cell_names draw the name of each cell in the plot
-#' @param show_state_number show state number
-#' @param cell_size The size of the point for each cell
-#' @param cell_link_size The size of the line segments connecting cells (when used with ICA) or the principal graph (when used with DDRTree)
-#' @param cell_name_size the size of cell name labels
-#' @param state_number_size the size of the state number
-#' @param show_branch_points Whether to show icons for each branch point (only available after running assign_cell_states)
-#' @param theta How many degrees you want to rotate the trajectory
-#' @param alpha The alpha aesthetics for the original cell points, useful to highlight the learned principal graph
-#' @param ... Additional arguments passed into scale_color_viridis function
-#' @return a ggplot2 plot object
-#' @export
-#' @examples
-#' \dontrun{
-#' lung <- load_lung()
-#' plot_cell_trajectory(lung)
-#' plot_cell_trajectory(lung, color_by="Pseudotime", show_backbone=FALSE)
-#' plot_cell_trajectory(lung, markers="MYH3")
-#' }
-plot_cell_trajectory <- function(cds,
-                                 x=1,
-                                 y=2,
-                                 reduction_method = "UMAP",
-                                 color_by="Pseudotime",
-                                 show_backbone=TRUE,
-                                 backbone_color="black",
-                                 markers=NULL,
-                                 markers_linear = FALSE,
-                                 show_cell_names=FALSE,
-                                 show_state_number = FALSE,
-                                 cell_size=1,
-                                 cell_link_size=0.75,
-                                 cell_name_size=2,
-                                 state_number_size = 2.9,
-                                 label_branch_points=TRUE,
-                                 label_roots=TRUE,
-                                 label_leaves=TRUE,
-                                 theta = 0,
-                                 alpha = 1,
-                                 min_expr=0.1,
-                                 ...) {
-
-  assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
-                          msg = paste("No dimensionality reduction for",
-                                      reduction_method, "calculated.",
-                                      "Please run reduce_dimensions with",
-                                      "reduction_method =", reduction_method,
-                                      "before running plot_cell_trajectory"))
-  #requireNamespace("igraph")
-  gene_short_name <- NA
-  sample_name <- NA
-  sample_state <- colData(cds)$State
-  data_dim_1 <- NA
-  data_dim_2 <- NA
-  if (require("ggrastr",character.only = TRUE)){
-    plotting_func = ggrastr::geom_point_rast
-  }else{
-    plotting_func = ggplot2::geom_point
-  }
-
-  #TODO: need to validate cds as ready for this plot (need mst, pseudotime, etc)
-  lib_info_with_pseudo <- colData(cds)
-
-  ica_space_df <- t(cds@principal_graph_aux[[reduction_method]]$dp_mst) %>%
-    as.data.frame() %>%
-    dplyr::select_(prin_graph_dim_1 = x, prin_graph_dim_2 = y) %>%
-    dplyr::mutate(sample_name = rownames(.), sample_state = rownames(.))
-
-  dp_mst <- cds@principal_graph[[reduction_method]]
-
-  if (is.null(dp_mst)){
-    stop("You must first call order_cells() before using this function")
-  }
-
-  edge_df <- dp_mst %>%
-    igraph::as_data_frame() %>%
-    dplyr::select_(source = "from", target = "to") %>%
-    dplyr::left_join(ica_space_df %>% dplyr::select_(source="sample_name", source_prin_graph_dim_1="prin_graph_dim_1", source_prin_graph_dim_2="prin_graph_dim_2"), by = "source") %>%
-    dplyr::left_join(ica_space_df %>% dplyr::select_(target="sample_name", target_prin_graph_dim_1="prin_graph_dim_1", target_prin_graph_dim_2="prin_graph_dim_2"), by = "target")
-
-  S_matrix <-
-    reducedDims(cds)$UMAP
-  data_df <- data.frame(S_matrix[,c(x,y)])
-  #data_df <- cbind(data_df, sample_state)
-  colnames(data_df) <- c("data_dim_1", "data_dim_2")
-  data_df$sample_name <- row.names(data_df)
-  data_df <- merge(data_df, lib_info_with_pseudo, by.x="sample_name", by.y="row.names")
-
-  return_rotation_mat <- function(theta) {
-    theta <- theta / 180 * pi
-    matrix(c(cos(theta), sin(theta), -sin(theta), cos(theta)), nrow = 2)
-  }
-  rot_mat <- return_rotation_mat(theta)
-
-  cn1 <- c("data_dim_1", "data_dim_2")
-  cn2 <- c("source_prin_graph_dim_1", "source_prin_graph_dim_2")
-  cn3 <- c("target_prin_graph_dim_1", "target_prin_graph_dim_2")
-  data_df[, cn1] <- as.matrix(data_df[, cn1]) %*% t(rot_mat)
-  edge_df[, cn2] <- as.matrix(edge_df[, cn2]) %*% t(rot_mat)
-  edge_df[, cn3] <- as.matrix(edge_df[, cn3]) %*% t(rot_mat)
-
-  markers_exprs <- NULL
-  if (is.null(markers) == FALSE) {
-    markers_rowData <- subset(rowData(cds), gene_short_name %in% markers)
-    if (nrow(markers_rowData) >= 1) {
-      cds_exprs <- counts(cds)[row.names(markers_rowData),]
-      cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds))
-      #cds_exprs <- reshape2::melt(round(as.matrix(cds_exprs)))
-      markers_exprs = matrix(cds_exprs, nrow=nrow(markers_rowData))
-      markers_exprs = round(markers_exprs)
-      colnames(markers_exprs) = colnames(counts(cds))
-      row.names(markers_exprs) = row.names(markers_rowData)
-      markers_exprs <- reshape2::melt(markers_exprs)
-      colnames(markers_exprs)[1:2] <- c('feature_id','cell_id')
-      markers_exprs <- merge(markers_exprs, markers_rowData, by.x = "feature_id", by.y="row.names")
-      #print (head( markers_exprs[is.na(markers_exprs$gene_short_name) == FALSE,]))
-      markers_exprs$feature_label <- as.character(markers_exprs$gene_short_name)
-      markers_exprs$feature_label[is.na(markers_exprs$feature_label)] <- markers_exprs$feature_id
-    }
-  }
-  if (is.null(markers_exprs) == FALSE && nrow(markers_exprs) > 0){
-    data_df <- merge(data_df, markers_exprs, by.x="sample_name", by.y="cell_id")
-    data_df$value <- with(data_df, ifelse(value > min_expr, value, NA))
-    data_df$feature_label <- factor(data_df$feature_label,levels = markers)
-    if(markers_linear){
-      g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2)) + plotting_func(aes(color=value, alpha = ifelse(!is.na(value), "2", "1")), size=I(cell_size), stroke = I(cell_size / 2), na.rm = TRUE) +
-        viridis::scale_color_viridis(option = "viridis", name = "log10(values + 0.1)", na.value = "grey80", end = 0.8) +
-        guides(alpha = FALSE) + facet_wrap(~feature_label)
-      # g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2)) + geom_point(aes(color= value), size=I(cell_size), na.rm = TRUE, alpha = alpha) +
-      #     viridis::scale_color_viridis(name = paste0("value"), ...) + facet_wrap(~feature_label)
-    } else {
-      g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2)) + plotting_func(aes(color=log10(value+min_expr), alpha = ifelse(!is.na(value), "2", "1")), size=I(cell_size), stroke = I(cell_size / 2), na.rm = TRUE) +
-        viridis::scale_color_viridis(option = "viridis", name = "log10(values + 0.1)", na.value = "grey80", end = 0.8) +
-        guides(alpha = FALSE) + facet_wrap(~feature_label)
-      # g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2)) + geom_point(aes(color=log10(value + 0.1)), size=I(cell_size), na.rm = TRUE, alpha = alpha) +
-      #     viridis::scale_color_viridis(name = paste0("log10(value + 0.1)"), ...) + facet_wrap(~feature_label)
-    }
-  } else {
-    g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2))
-
-    # We don't want to force users to call order_cells before even being able to look at the trajectory,
-    # so check whether it's null and if so, just don't color the cells
-    if (color_by == "Pseudotime" & is.null(colData(cds)$Pseudotime)){
-      g <- g + geom_point(color=I("gray"), size=I(cell_size), na.rm = TRUE, alpha = I(alpha))
-      message("order_cells() has not been called yet, can't color cells by Pseudotime")
-    } else if (class(colData(cds)[,color_by]) == "numeric"){
-      g <- g + geom_point(aes_string(color = color_by), size=I(cell_size), na.rm = TRUE, alpha = alpha)
-      g <- g + viridis::scale_color_viridis(option="C")
-    } else {
-      g <- g + geom_point(aes_string(color = color_by), size=I(cell_size), na.rm = TRUE, alpha = alpha)
-    }
-  }
-  if (show_backbone){
-    g <- g + geom_segment(aes_string(x="source_prin_graph_dim_1", y="source_prin_graph_dim_2", xend="target_prin_graph_dim_1", yend="target_prin_graph_dim_2"), size=cell_link_size, linetype="solid", na.rm=TRUE, data=edge_df)
-  }
-
-  if (label_branch_points){
-    mst_branch_nodes <- branch_nodes(cds)
-    branch_point_df <- ica_space_df %>%
-      dplyr::slice(match(mst_branch_nodes, sample_name)) %>%
-      dplyr::mutate(branch_point_idx = seq_len(dplyr::n()))
-
-    g <- g +
-      geom_point(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2"),
-                 shape = 21, stroke=1, color="white", fill="black", size=5, na.rm=TRUE, branch_point_df, alpha = alpha) +
-      geom_text(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2", label="branch_point_idx"),
-                size=4, color="white", na.rm=TRUE, branch_point_df)
-  }
-
-  if (label_leaves){
-    mst_leaf_nodes <- leaf_nodes(cds)
-    leaf_df <- ica_space_df %>%
-      dplyr::slice(match(names(mst_leaf_nodes), sample_name)) %>%
-      dplyr::mutate(leaf_idx = seq_len(dplyr::n()))
-
-    g <- g +
-      geom_point(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2"),
-                 shape = 21, stroke=1, color="black", fill="lightgray", size=5, na.rm=TRUE, leaf_df, alpha = alpha) +
-      geom_text(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2", label="leaf_idx"),
-                size=4, color="black", na.rm=TRUE, leaf_df)
-  }
-
-  if (label_roots){
-    mst_root_nodes <- root_nodes(cds)
-    root_df <- ica_space_df %>%
-      dplyr::slice(match(names(mst_root_nodes), sample_name)) %>%
-      dplyr::mutate(root_idx = seq_len(dplyr::n()))
-
-    g <- g +
-      geom_point(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2"),
-                 shape = 21, stroke=1, color="black", fill="white", size=5, na.rm=TRUE, root_df, alpha = alpha) +
-      geom_text(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2", label="root_idx"),
-                size=4, color="black", na.rm=TRUE, root_df)
-  }
-
-
-  if (show_cell_names){
-    g <- g + geom_text(aes(label=sample_name), size=cell_name_size)
-  }
-  if (show_state_number){
-    g <- g + geom_text(aes(label = sample_state), size = state_number_size)
-  }
-
-  g <- g +
-    #scale_color_brewer(palette="Set1") +
-    monocle_theme_opts() +
-    xlab(paste("Component", x)) +
-    ylab(paste("Component", y)) +
-    theme(legend.position="top", legend.key.height=grid::unit(0.35, "in")) +
-    #guides(color = guide_legend(label.position = "top")) +
-    theme(legend.key = element_blank()) +
-    theme(panel.background = element_rect(fill='white'))
-  g
-}
-
-
 #' Plot a dataset and trajectory in 3 dimensions
 #'
 #' @param cds cell_data_set for the experiment
@@ -263,36 +37,36 @@ plot_cell_trajectory <- function(cds,
 #' @export
 #' @examples
 #' \dontrun{
-#' plot_3d_cell_trajectory(cds, markers=c("Rbfox3, Neurod1", "Sox2"))
+#' plot_cells_3d(cds, markers=c("Rbfox3, Neurod1", "Sox2"))
 #' }
 #'
-plot_3d_cell_trajectory <- function(cds,
-                                    reduction_method = "UMAP",
-                                    downsample_size = NULL,
-                                    dim=c(1, 2, 3),
-                                    color_by=NULL,
-                                    palette = NULL,
-                                    markers=NULL,
-                                    markers_linear=FALSE,
-                                    cell_size=5,
-                                    cell_alpha=0.5,
-                                    backbone_segment_color="#77B6EA",
-                                    backbone_segment_width=2,
-                                    backbone_vertex_color=NULL,
-                                    show_group_labels=TRUE,
-                                    show_branch_points=TRUE,
-                                    webGL_filename=NULL,
-                                    image_filename=NULL,
-                                    obj_filename=NULL,
-                                    scale_expr=TRUE,
-                                    width=800,
-                                    height=600,
-                                    view_matrix=NULL,
-                                    useNULL_GLdev = !interactive(),
-                                    text_cex = 1,
-                                    use_plotly = FALSE,
-                                    selfcontained=FALSE,
-                                    ...){
+plot_cells_3d <- function(cds,
+                          reduction_method = "UMAP",
+                          downsample_size = NULL,
+                          dim=c(1, 2, 3),
+                          color_by=NULL,
+                          palette = NULL,
+                          markers=NULL,
+                          markers_linear=FALSE,
+                          cell_size=5,
+                          cell_alpha=0.5,
+                          backbone_segment_color="#77B6EA",
+                          backbone_segment_width=2,
+                          backbone_vertex_color=NULL,
+                          show_group_labels=TRUE,
+                          show_branch_points=TRUE,
+                          webGL_filename=NULL,
+                          image_filename=NULL,
+                          obj_filename=NULL,
+                          scale_expr=TRUE,
+                          width=800,
+                          height=600,
+                          view_matrix=NULL,
+                          useNULL_GLdev = !interactive(),
+                          text_cex = 1,
+                          use_plotly = FALSE,
+                          selfcontained=FALSE,
+                          ...){
   gene_short_name <- NA
   sample_name <- NA
 
@@ -588,180 +362,6 @@ plot_3d_cell_trajectory <- function(cds,
   return(widget)
 }
 
-#' Plots clusters of cells .
-#'
-#' @param cds CellDataSet for the experiment
-#' @param x the column of reducedDimS(cds) to plot on the horizontal axis
-#' @param y the column of reducedDimS(cds) to plot on the vertical axis
-#' @param color_by the cell attribute (e.g. the column of colData(cds)) to map to each cell's color
-#' @param markers a gene name or gene id to use for setting the size of each cell in the plot
-#' @param show_cell_names draw the name of each cell in the plot
-#' @param cell_size The size of the point for each cell
-#' @param cell_name_size the size of cell name labels
-#' @param min_expr the minimum (untransformed) expression level to use in plotted the genes.
-#' @param show_group_id A logic flag signifying whether or not you'd like the plot to display the id of each group
-#' @param nrow the number of rows used when laying out the panels for each gene's expression
-#' @param ncol the number of columns used when laying out the panels for each gene's expression
-#' @param ... additional arguments passed into the scale_color_viridis function
-#' @return a ggplot2 plot object
-#' @import ggplot2
-#' @export
-#' @examples
-#' \dontrun{
-#' library(HSMMSingleCell)
-#' HSMM <- load_HSMM()
-#' HSMM <- reduceDimension(HSMM, reduction_method = 'tSNE')
-#' HSMM <- clusterCells(HSMM)
-#' plot_cell_clusters(HSMM)
-#' plot_cell_clusters(HSMM, color_by="Pseudotime")
-#' plot_cell_clusters(HSMM, markers="MYH3")
-#' }
-plot_cell_clusters <- function(cds,
-                               x=1,
-                               y=2,
-                               reduction_method = "UMAP",
-                               color_by=NULL,
-                               markers=NULL,
-                               size_factor_normalize = TRUE,
-                               show_cell_names=FALSE,
-                               cell_size=1.5,
-                               cell_name_size=2,
-                               min_expr=0.1,
-                               show_group_id = FALSE,
-                               rasterize = FALSE,
-                               nrow = NULL,
-                               ncol = NULL){
-
-  assertthat::assert_that(is(cds, "cell_data_set"))
-  assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
-                          msg = paste("No dimensionality reduction for",
-                                      reduction_method, "calculated.",
-                                      "Please run reduce_dimensions with",
-                                      "reduction_method =", reduction_method,
-                                      "before attempting to plot."))
-  low_dim_coords <- reducedDims(cds)[[reduction_method]]
-  assertthat::assert_that(ncol(low_dim_coords) >=max(x,y),
-                          msg = paste("x and/or y is too large. x and y must",
-                                      "be dimensions in reduced dimension",
-                                      "space."))
-  if(!is.null(color_by)) {
-    assertthat::assert_that(color_by == "Cluster" | color_by %in% names(colData(cds)),
-                            msg = paste("color_by must be a column in the",
-                                        "colData table."))
-  }
-  assertthat::assert_that(!is.null(color_by) || !is.null(markers),
-                          msg = paste("Either color_by or markers must be",
-                                      "NULL, cannot color by both!"))
-  assertthat::assert_that(is.logical(size_factor_normalize))
-
-  if (!is.null(color_by) && color_by == "Cluster" && length(clusters(cds, reduction_method = reduction_method)) == 0){
-    stop("Error: Clustering is not performed yet. Please call clusterCells() before calling this function.")
-  }
-  if (rasterize) {
-    require("ggrastr",character.only = TRUE)
-    plotting_func = ggrastr::geom_point_rast
-  } else {
-    plotting_func = ggplot2::geom_point
-  }
-
-  gene_short_name <- NULL
-  sample_name <- NULL
-  data_dim_1 <- NULL
-  data_dim_2 <- NULL
-
-  #TODO: need to validate cds as ready for this plot (need mst, pseudotime, etc)
-  lib_info <- colData(cds)
-
-  data_df <- data.frame(low_dim_coords[,c(x,y)])
-  colnames(data_df) <- c("data_dim_1", "data_dim_2")
-  data_df$sample_name <- colnames(cds)
-  data_df$Cluster = clusters(cds, reduction_method = reduction_method)
-  data_df <- merge(data_df, lib_info, by.x="sample_name", by.y="row.names")
-
-  markers_exprs <- NULL
-  if (!is.null(markers)) {
-    markers_rowData <- subset(rowData(cds), gene_short_name %in% markers)
-    if (nrow(markers_rowData) >= 1) {
-      cds_subset <- cds[row.names(markers_rowData),]
-      if (size_factor_normalize) {
-        markers_exprs <- counts(cds_subset)
-
-        if (is.null(size_factors(cds_subset))) {
-          stop("Error: to call this function you must call estimate_size_factors() first")
-        }
-        markers_exprs <- Matrix::t(Matrix::t(markers_exprs)/size_factors(cds_subset))
-
-        markers_exprs <- reshape2::melt(round(as.matrix(markers_exprs)))
-      } else {
-        markers_exprs <- reshape2::melt(as.matrix(counts(cds_subset)))
-      }
-      colnames(markers_exprs)[1:2] <- c('feature_id','cell_id')
-      markers_exprs <- merge(markers_exprs, markers_rowData, by.x = "feature_id", by.y="row.names")
-      markers_exprs$feature_label <- as.character(markers_exprs$gene_short_name)
-      markers_exprs$feature_label[is.na(markers_exprs$feature_label)] <- markers_exprs$Var1
-      markers_exprs$feature_label <- factor(markers_exprs$feature_label,
-                                            levels = markers[which(markers_exprs$feature_label %in% markers)])
-
-    }
-  }
-
-  if (is.null(markers_exprs) == FALSE && nrow(markers_exprs) > 0){
-    data_df <- merge(data_df, markers_exprs, by.x="sample_name", by.y="cell_id")
-    data_df$value <- with(data_df, ifelse(value >= 0.01, value, NA))
-    g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2)) + facet_wrap(~feature_label)
-  }else{
-    text_df <- data_df %>% dplyr::group_by_(color_by) %>% dplyr::summarize(text_x = median(x = data_dim_1),
-                                                                           text_y = median(x = data_dim_2))
-  if(color_by != "Cluster" & !is.numeric(data_df[, color_by]) & !is.factor(data_df[, color_by])) {
-      text_df$label = text_df %>% dplyr::pull(color_by)
-      # I feel like there's probably a good reason for the bit below, but I hate it and I'm killing it for now.
-      # text_df$label <- paste0(1:nrow(text_df))
-      # text_df$process_label <- paste0(1:nrow(text_df), '_', as.character(as.matrix(text_df[, 1])))
-      # process_label <- text_df$process_label
-      # names(process_label) <- as.character(as.matrix(text_df[, 1]))
-      # data_df[, color_by] <- process_label[as.character(data_df[, color_by])]
-      # text_df$label = process_label
-    } else {
-      text_df$label <- as.character(as.matrix(text_df[, 1]))
-    }
-
-    g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2))
-  }
-
-  # FIXME: setting size here overrides the marker expression funtionality.
-  # Don't do it!
-  if (is.null(markers_exprs) == FALSE && nrow(markers_exprs) > 0){
-
-    if (size_factor_normalize){
-      g <- g + plotting_func(aes(color=log10(value + min_expr), alpha = ifelse(!is.na(value), "2", "1")), size=I(cell_size), stroke = I(cell_size / 2), na.rm = TRUE) +
-        viridis::scale_color_viridis(option = "viridis", name = "log10(values + 0.1)", na.value = "grey80", end = 0.8) +
-        guides(alpha = FALSE) + facet_wrap(~feature_label, nrow = nrow, ncol = ncol)
-    }else{
-      g <- g + plotting_func(aes(color=value, alpha = ifelse(!is.na(value), "2", "1")), size=I(cell_size), stroke = I(cell_size / 2), na.rm = TRUE) +
-        viridis::scale_color_viridis(option = "viridis", name = "log10(values + 0.1)", na.value = "grey80", end = 0.8) +
-        guides(alpha = FALSE) + facet_wrap(~feature_label, nrow = nrow, ncol = ncol)
-    }
-  }else {
-    # g <- g + geom_point(aes_string(color = color_by), size=I(cell_size), stroke = I(cell_size / 2), na.rm = TRUE, ...)
-    g <- g + plotting_func(aes_string(color = color_by), size=I(cell_size), stroke = I(cell_size / 2), na.rm = TRUE)
-
-    if(show_group_id) {
-      g <- g + geom_text(data = text_df, mapping = aes_string(x = "text_x", y = "text_y", label = "label"))
-    }
-  }
-
-  g <- g +
-    #scale_color_brewer(palette="Set1") +
-    monocle_theme_opts() +
-    xlab(paste("Component", x)) +
-    ylab(paste("Component", y)) +
-    theme(legend.position="top", legend.key.height=grid::unit(0.35, "in")) +
-    #guides(color = guide_legend(label.position = "top")) +
-    theme(legend.key = element_blank()) +
-    theme(panel.background = element_rect(fill='white'))
-  g
-}
-
 
 #' Plots the cells along with their trajectories.
 #'
@@ -788,9 +388,9 @@ plot_cell_clusters <- function(cds,
 #' @examples
 #' \dontrun{
 #' lung <- load_lung()
-#' plot_cell_trajectory(lung)
-#' plot_cell_trajectory(lung, color_by="Pseudotime", show_backbone=FALSE)
-#' plot_cell_trajectory(lung, markers="MYH3")
+#' plot_cells(lung)
+#' plot_cells(lung, color_by="Pseudotime", show_backbone=FALSE)
+#' plot_cells(lung, markers="MYH3")
 #' }
 plot_cells <- function(cds,
                        x=1,
@@ -814,7 +414,7 @@ plot_cells <- function(cds,
                        cell_size=0.35,
                        alpha = 1,
                        min_expr=0.1,
-                       rasterize=TRUE) {
+                       rasterize=FALSE) {
 
   assertthat::assert_that(is(cds, "cell_data_set"))
   assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
@@ -833,6 +433,7 @@ plot_cells <- function(cds,
                             msg = paste("color_cells_by must be a column in the",
                                         "colData table."))
   }
+<<<<<<< HEAD
   assertthat::assert_that(!is.null(color_cells_by) || !is.null(markers),
                           msg = paste("Either color_cells_by or markers must be",
                                       "NULL, cannot color by both!"))
@@ -842,28 +443,41 @@ plot_cells <- function(cds,
   #}
   norm_method = match.arg(norm_method)
   group_cells_by=match.arg(group_cells_by)
+=======
+  assertthat::assert_that(!is.null(color_by) || !is.null(genes),
+                          msg = paste("Either color_by or genes must be",
+                                      "NULL, cannot color by both!"))
 
-  #requireNamespace("igraph")
+  if (show_trajectory_graph && is.null(principal_graph(cds)[[reduction_method]])) {
+    message("No trajectory to plot. Has learn_graph() been called yet?")
+    show_trajectory_graph = FALSE
+  }
+
+
+
+
+
+  norm_method <- match.arg(norm_method)
+>>>>>>> 7366bcf3164e0c00d14ae754fb69c5d4ab0b21eb
+
   gene_short_name <- NA
   sample_name <- NA
   sample_state <- colData(cds)$State
   data_dim_1 <- NA
   data_dim_2 <- NA
   if (rasterize){
-    plotting_func = ggrastr::geom_point_rast
+    plotting_func <- ggrastr::geom_point_rast
   }else{
-    plotting_func = ggplot2::geom_point
+    plotting_func <- ggplot2::geom_point
   }
 
-  lib_info_with_pseudo <- colData(cds)
-
-  S_matrix <-
-    reducedDims(cds)$UMAP
+  S_matrix <- reducedDims(cds)[[reduction_method]]
   data_df <- data.frame(S_matrix[,c(x,y)])
-  #data_df <- cbind(data_df, sample_state)
+
   colnames(data_df) <- c("data_dim_1", "data_dim_2")
   data_df$sample_name <- row.names(data_df)
 
+<<<<<<< HEAD
   data_df <- merge(data_df, lib_info_with_pseudo, by.x="sample_name", by.y="row.names")
 
   if (group_cells_by == "cluster"){
@@ -881,14 +495,14 @@ plot_cells <- function(cds,
   } else{
     data_df$cell_color = colData(cds)[data_df$sample_name,color_cells_by]
   }
+=======
+  data_df <- as.data.frame(cbind(data_df, colData(cds)))
+  data_df$Cluster <- clusters(cds, reduction_method = reduction_method)[data_df$sample_name]
+>>>>>>> 7366bcf3164e0c00d14ae754fb69c5d4ab0b21eb
 
-  if (show_trajectory_graph){
-    #TODO: need to validate cds as ready for this plot (need mst, pseudotime, etc)
+  ## Graph info
+  if (show_trajectory_graph) {
 
-    if (is.null(principal_graph(cds)[[reduction_method]])){
-      message("No trajectory to plot. Has learn_graph() been called yet?")
-      show_trajectory_graph = FALSE
-    }else{
     ica_space_df <- t(cds@principal_graph_aux[[reduction_method]]$dp_mst) %>%
       as.data.frame() %>%
       dplyr::select_(prin_graph_dim_1 = x, prin_graph_dim_2 = y) %>%
@@ -896,22 +510,27 @@ plot_cells <- function(cds,
 
     dp_mst <- cds@principal_graph[[reduction_method]]
 
-    if (is.null(dp_mst)){
-      stop("You must first call order_cells() before using this function")
-    }
     edge_df <- dp_mst %>%
       igraph::as_data_frame() %>%
       dplyr::select_(source = "from", target = "to") %>%
-      dplyr::left_join(ica_space_df %>% dplyr::select_(source="sample_name", source_prin_graph_dim_1="prin_graph_dim_1", source_prin_graph_dim_2="prin_graph_dim_2"), by = "source") %>%
-      dplyr::left_join(ica_space_df %>% dplyr::select_(target="sample_name", target_prin_graph_dim_1="prin_graph_dim_1", target_prin_graph_dim_2="prin_graph_dim_2"), by = "target")
-    }
+      dplyr::left_join(ica_space_df %>%
+                         dplyr::select_(source="sample_name",
+                                        source_prin_graph_dim_1="prin_graph_dim_1",
+                                        source_prin_graph_dim_2="prin_graph_dim_2"),
+                       by = "source") %>%
+      dplyr::left_join(ica_space_df %>%
+                         dplyr::select_(target="sample_name",
+                                        target_prin_graph_dim_1="prin_graph_dim_1",
+                                        target_prin_graph_dim_2="prin_graph_dim_2"),
+                       by = "target")
   }
 
+  ## Marker genes
   markers_exprs <- NULL
-  if (is.null(genes) == FALSE) {
+  if (!is.null(genes)) {
     if ((is.null(dim(genes)) == FALSE) && dim(genes) >= 2){
       markers = unlist(genes[,1], use.names=FALSE)
-    }else{
+    } else {
       markers = genes
     }
     markers_rowData <- as.data.frame(subset(rowData(cds), gene_short_name %in% markers | rownames(rowData(cds)) %in% markers))
@@ -934,7 +553,7 @@ plot_cells <- function(cds,
         #print (head( markers_exprs[is.na(markers_exprs$gene_short_name) == FALSE,]))
         markers_exprs$feature_label <- markers_exprs$feature_id
         markers_linear=TRUE
-      }else{
+      } else {
         cds_exprs@x = round(cds_exprs@x)
         markers_exprs = matrix(cds_exprs, nrow=nrow(markers_rowData))
         colnames(markers_exprs) = colnames(counts(cds))
@@ -951,6 +570,7 @@ plot_cells <- function(cds,
     }
   }
 
+<<<<<<< HEAD
   if (label_cell_groups && is.null(color_cells_by) == FALSE){
     if (is.null(data_df$cell_color)){
       message(paste(color_cells_by, "not found in colData(cds), cells will not be colored"))
@@ -961,6 +581,18 @@ plot_cells <- function(cds,
 
         if (label_groups_by_cluster && is.null(data_df$cell_group) == FALSE){
           #text_df = data_df %>% dplyr::color_cells_by_("cluster", color_cells_by)
+=======
+
+  if (label_cell_groups && is.null(color_by) == FALSE){
+    if (color_by %in% colnames(data_df) == FALSE){
+      message(paste(color_by, "not found in colData(cds), cells will not be colored"))
+      text_df = NULL
+      label_cell_groups = FALSE
+    } else {
+      if(is.character(data_df[, color_by]) || is.factor(data_df[, color_by])) {
+
+        if (label_groups_by_cluster && "Cluster" %in% colnames(data_df)){
+>>>>>>> 7366bcf3164e0c00d14ae754fb69c5d4ab0b21eb
           text_df = data_df %>%
             dplyr::group_by(cell_group) %>%
             dplyr::mutate(cells_in_cluster= dplyr::n()) %>%
@@ -990,7 +622,7 @@ plot_cells <- function(cds,
         # names(process_label) <- as.character(as.matrix(text_df[, 1]))
         # data_df[, group_by] <- process_label[as.character(data_df[, group_by])]
         # text_df$label = process_label
-      }else{
+      } else {
         message("Cells aren't colored in a way that allows them to be grouped.")
         text_df = NULL
         label_cell_groups = FALSE
@@ -1163,12 +795,12 @@ plot_genes_in_pseudotime <-function(cds_subset,
   Cell <- NA
   cds_subset = cds_subset[,is.finite(colData(cds_subset)$Pseudotime)]
 
-    cds_exprs <- counts(cds_subset)
-    if (is.null(size_factors(cds_subset))) {
-       stop("Error: to call this function, you must call estimate_size_factors() first")
-    }
-    cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds_subset))
-    cds_exprs <- reshape2::melt(round(as.matrix(cds_exprs)))
+  cds_exprs <- counts(cds_subset)
+  if (is.null(size_factors(cds_subset))) {
+    stop("Error: to call this function, you must call estimate_size_factors() first")
+  }
+  cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds_subset))
+  cds_exprs <- reshape2::melt(round(as.matrix(cds_exprs)))
 
   if (is.null(min_expr)) {
     min_expr <- 0
@@ -1557,8 +1189,8 @@ plot_percent_cells_positive <- function(cds_subset,
   marker_counts <- plyr::ddply(marker_exprs_melted, c("feature_label",
                                                       grouping),
                                function(x) {
-          data.frame(target = sum(x$expression > min_expr),
-                     target_fraction = sum(x$expression > min_expr)/nrow(x)) })
+                                 data.frame(target = sum(x$expression > min_expr),
+                                            target_fraction = sum(x$expression > min_expr)/nrow(x)) })
 
   if (!plot_as_count){
     marker_counts$target_fraction <- marker_counts$target_fraction * 100
@@ -1580,186 +1212,4 @@ plot_percent_cells_positive <- function(cds_subset,
 
   return(qp)
 }
-
-
-
-#' Plots a pseudotime-ordered, row-centered heatmap
-#'
-#' @description The function plot_pseudotime_heatmap takes a CellDataSet object
-#' (usually containing a only subset of significant genes) and generates smooth expression
-#' curves much like plot_genes_in_pseudotime.
-#' Then, it clusters these genes and plots them using the pheatmap package.
-#' This allows you to visualize modules of genes that co-vary across pseudotime.
-#'
-#' @param cds_subset CellDataSet for the experiment (normally only the branching genes detected with branchTest)
-#' @param cluster_rows Whether to cluster the rows of the heatmap.
-#' @param hclust_method The method used by pheatmap to perform hirearchical clustering of the rows.
-#' @param num_clusters Number of clusters for the heatmap of branch genes
-#' @param hmcols The color scheme for drawing the heatmap.
-#' @param add_annotation_row Additional annotations to show for each row in the heatmap. Must be a dataframe with one row for each row in the fData table of cds_subset, with matching IDs.
-#' @param add_annotation_col Additional annotations to show for each column in the heatmap. Must be a dataframe with one row for each cell in the pData table of cds_subset, with matching IDs.
-#' @param show_rownames Whether to show the names for each row in the table.
-#' @param use_gene_short_name Whether to use the short names for each row. If FALSE, uses row IDs from the fData table.
-#' @param scale_max The maximum value (in standard deviations) to show in the heatmap. Values larger than this are set to the max.
-#' @param scale_min The minimum value (in standard deviations) to show in the heatmap. Values smaller than this are set to the min.
-#' @param norm_method Determines how to transform expression values prior to rendering
-#' @param trend_formula A formula string specifying the model used in fitting the spline curve for each gene/feature.
-#' @param return_heatmap Whether to return the pheatmap object to the user.
-#' @param cores Number of cores to use when smoothing the expression curves shown in the heatmap.
-#' @return A list of heatmap_matrix (expression matrix for the branch committment), ph (pheatmap heatmap object),
-#' annotation_row (annotation data.frame for the row), annotation_col (annotation data.frame for the column).
-#' @export
-#'
-plot_pseudotime_heatmap <- function(cds_subset,
-
-                                    cluster_rows = TRUE,
-                                    hclust_method = "ward.D2",
-                                    num_clusters = 6,
-
-                                    hmcols = NULL,
-
-                                    add_annotation_row = NULL,
-                                    add_annotation_col = NULL,
-                                    show_rownames = FALSE,
-                                    use_gene_short_name = TRUE,
-                                    norm_method = c("log", "none"),
-                                    scale_max=3,
-                                    scale_min=-3,
-
-                                    trend_formula = '~splines::ns(Pseudotime, df=3)',
-
-                                    return_heatmap=FALSE,
-                                    cores=1){
-  num_clusters <- min(num_clusters, nrow(cds_subset))
-  pseudocount <- 1
-  newdata <- data.frame(Pseudotime = seq(min(colData(cds_subset)$Pseudotime), max(colData(cds_subset)$Pseudotime),length.out = 100))
-  model_tbl = fit_models(cds_subset, model_formula_str = trend_formula, cores=cores)
-
-  model_expectation <- model_predictions(model_tbl,
-                                         new_data = colData(cds_subset))
-
-
-  #remove genes with no expression in any condition
-  model_expectation=model_expectation[!apply(model_expectation,1,sum)==0,]
-
-  norm_method <- match.arg(norm_method)
-
-
-  if(norm_method == 'log') {
-    model_expectation = log10(model_expectation+pseudocount)
-  }
-
-  # Row-center the data.
-  model_expectation=model_expectation[!apply(model_expectation,1,stats::sd)==0,]
-  model_expectation=Matrix::t(scale(Matrix::t(model_expectation),center=TRUE))
-  model_expectation=model_expectation[is.na(row.names(model_expectation)) == FALSE,]
-  model_expectation[is.nan(model_expectation)] = 0
-  model_expectation[model_expectation>scale_max] = scale_max
-  model_expectation[model_expectation<scale_min] = scale_min
-
-  heatmap_matrix <- model_expectation
-
-  row_dist <- stats::as.dist((1 - stats::cor(Matrix::t(heatmap_matrix)))/2)
-  row_dist[is.na(row_dist)] <- 1
-
-  if(is.null(hmcols)) {
-    bks <- seq(-3.1,3.1, by = 0.1)
-    hmcols <- viridis::viridis(length(bks) - 1) #blue2green2red(length(bks) - 1)
-  }
-  else {
-    bks <- seq(-3.1,3.1, length.out = length(hmcols))
-  }
-
-  ph <- pheatmap::pheatmap(heatmap_matrix,
-                 useRaster = T,
-                 cluster_cols=FALSE,
-                 cluster_rows=cluster_rows,
-                 show_rownames=F,
-                 show_colnames=F,
-                 clustering_distance_rows=row_dist,
-                 clustering_method = hclust_method,
-                 cutree_rows=num_clusters,
-                 silent=TRUE,
-                 filename=NA,
-                 breaks=bks,
-                 border_color = NA,
-                 color=hmcols)
-
-  if(cluster_rows) {
-    annotation_row <- data.frame(Cluster=factor(stats::cutree(ph$tree_row, num_clusters)))
-  } else {
-    annotation_row <- NULL
-  }
-
-  if(!is.null(add_annotation_row)) {
-    old_colnames_length <- ncol(annotation_row)
-    annotation_row <- cbind(annotation_row, add_annotation_row[row.names(annotation_row), ])
-    colnames(annotation_row)[(old_colnames_length+1):ncol(annotation_row)] <- colnames(add_annotation_row)
-    # annotation_row$bif_time <- add_annotation_row[as.character(fData(absolute_cds[row.names(annotation_row), ])$gene_short_name), 1]
-  }
-
-  if(!is.null(add_annotation_col)) {
-    if(nrow(add_annotation_col) != 100) {
-      stop('add_annotation_col should have only 100 rows (check model_predictions before you supply the annotation data)!')
-    }
-    annotation_col <- add_annotation_col
-  } else {
-    annotation_col <- NA
-  }
-
-  if (use_gene_short_name == TRUE) {
-    if (is.null(fData(cds_subset)$gene_short_name) == FALSE) {
-      feature_label <- as.character(fData(cds_subset)[row.names(heatmap_matrix), 'gene_short_name'])
-      feature_label[is.na(feature_label)] <- row.names(heatmap_matrix)
-
-      row_ann_labels <- as.character(fData(cds_subset)[row.names(annotation_row), 'gene_short_name'])
-      row_ann_labels[is.na(row_ann_labels)] <- row.names(annotation_row)
-    }
-    else {
-      feature_label <- row.names(heatmap_matrix)
-      row_ann_labels <- row.names(annotation_row)
-    }
-  }
-  else {
-    feature_label <- row.names(heatmap_matrix)
-    if(!is.null(annotation_row))
-      row_ann_labels <- row.names(annotation_row)
-  }
-
-  row.names(heatmap_matrix) <- feature_label
-  if(!is.null(annotation_row))
-    row.names(annotation_row) <- row_ann_labels
-
-  colnames(heatmap_matrix) <- c(1:ncol(heatmap_matrix))
-
-  ph_res <- pheatmap::pheatmap(heatmap_matrix[, ], #ph$tree_row$order
-                     useRaster = T,
-                     cluster_cols = FALSE,
-                     cluster_rows = cluster_rows,
-                     show_rownames=show_rownames,
-                     show_colnames=F,
-                     #scale="row",
-                     clustering_distance_rows=row_dist, #row_dist
-                     clustering_method = hclust_method, #ward.D2
-                     cutree_rows=num_clusters,
-                     # cutree_cols = 2,
-                     annotation_row=annotation_row,
-                     annotation_col=annotation_col,
-                     treeheight_row = 20,
-                     breaks=bks,
-                     fontsize = 6,
-                     color=hmcols,
-                     border_color = NA,
-                     silent=TRUE,
-                     filename=NA
-  )
-
-  grid::grid.rect(gp=grid::gpar("fill", col=NA))
-  grid::grid.draw(ph_res$gtable)
-  if (return_heatmap){
-    return(ph_res)
-  }
-}
-
-
 
