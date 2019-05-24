@@ -21,6 +21,9 @@ choose_cells <- function(cds,
                                        ", cluster_cells, and learn_graph ",
                                        "before running choose_cells"))
   assertthat::assert_that(is.logical(return_list))
+  assertthat::assert_that(interactive(),
+                          msg = paste("choose_cells only works in",
+                                      "interactive mode."))
 
   ui <- shiny::fluidPage(
     shiny::titlePanel("Choose cells for a subset"),
@@ -145,6 +148,9 @@ choose_graph_segments <- function(cds,
                                       "reduction_method =", reduction_method,
                                       "before running choose_graph_segments."))
   assertthat::assert_that(is.logical(return_list))
+  assertthat::assert_that(interactive(),
+                          msg = paste("choose_graph_segments only works in",
+                                      "interactive mode."))
 
   dp_mst <- cds@principal_graph[[reduction_method]]
 
