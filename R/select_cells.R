@@ -8,7 +8,9 @@
 #' @export
 #'
 #' @examples
-choose_cells <- function(cds, reduction_method = "UMAP", return_list = FALSE) {
+choose_cells <- function(cds,
+                         reduction_method = "UMAP",
+                         return_list = FALSE) {
   ui <- shiny::fluidPage(
     shiny::titlePanel("Choose cells for a subset"),
 

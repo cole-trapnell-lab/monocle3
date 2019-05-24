@@ -6,7 +6,6 @@ is_sparse_matrix <- function(x){
 #' Function to calculate the size factor for the single-cell RNA-seq data
 #'
 #' @param cds The cell_data_set
-#' @param locfunc The location function used to find the representive value
 #' @param round_exprs A logic flag to determine whether or not the expression
 #'   value should be rounded
 #' @param method A string to specify the size factor calculation approach.
@@ -21,14 +20,13 @@ estimate_size_factors <- function(cds, locfunc = stats::median,
                                   method=c("mean-geometric-mean-total",
                                            'mean-geometric-mean-log-total'))
 {
+  method <- match.arg(method)
   if (is_sparse_matrix(counts(cds))){
     size_factors(cds) <- estimate_sf_sparse(counts(cds),
-                                            locfunc = locfunc,
                                             round_exprs=round_exprs,
                                             method=method)
   }else{
     size_factors(cds) <- estimate_sf_dense(counts(cds),
-                                           locfunc = locfunc,
                                            round_exprs=round_exprs,
                                            method=method)
   }
@@ -39,7 +37,6 @@ estimate_size_factors <- function(cds, locfunc = stats::median,
 # Estimate size factors for each column, given a sparseMatrix from the Matrix
 # package
 estimate_sf_sparse <- function(counts,
-                               locfunc = median,
                                round_exprs=TRUE,
                                method="mean-geometric-mean-total"){
   if (round_exprs)
@@ -59,48 +56,12 @@ estimate_sf_sparse <- function(counts,
 
 # Estimate size factors for each column, given a matrix
 estimate_sf_dense <- function(counts,
-                              locfunc = median,
                               round_exprs=TRUE,
                               method="mean-geometric-mean-total"){
 
   CM <- counts
   if (round_exprs)
     CM <- round(CM)
-#  if (method == "weighted-median"){
-#    log_medians <- apply(CM, 1, function(cell_expr) {
-#      log(locfunc(cell_expr))
-#    })
-#
-#    weights <- apply(CM, 1, function(cell_expr) {
-#      num_pos <- sum(cell_expr > 0)
-#      num_pos / length(cell_expr)
-#    })
-#
-#    sfs <- apply( CM, 2, function(cnts) {
-#      norm_cnts <-  weights * (log(cnts) -  log_medians)
-#      norm_cnts <- norm_cnts[is.nan(norm_cnts) == FALSE]
-#      norm_cnts <- norm_cnts[is.finite(norm_cnts)]
-#      #print (head(norm_cnts))
-#      exp( mean(norm_cnts) )
-#    })
-#  }else if (method == "median-geometric-mean"){
-#    log_geo_means <- rowMeans(log(CM))
-#
-#    sfs <- apply( CM, 2, function(cnts) {
-#      norm_cnts <- log(cnts) -  log_geo_means
-#      norm_cnts <- norm_cnts[is.nan(norm_cnts) == FALSE]
-#      norm_cnts <- norm_cnts[is.finite(norm_cnts)]
-#      #print (head(norm_cnts))
-#      exp( locfunc( norm_cnts ))
-#    })
-#  }else if(method == "median"){
-#    row_median <- apply(CM, 1, median)
-#    sfs <- apply(Matrix::t(Matrix::t(CM) - row_median), 2, median)
-#  }else if(method == 'mode'){
-#    sfs <- estimate_t(CM)
-#   }else if(method == 'geometric-mean-total') {
-#    cell_total <- apply(CM, 2, sum)
-#    sfs <- log(cell_total) / mean(log(cell_total))
   if(method == "mean-geometric-mean-log-total") {
     cell_total <- apply(CM, 2, sum)
     sfs <- log(cell_total) / exp(mean(log(log(cell_total))))
