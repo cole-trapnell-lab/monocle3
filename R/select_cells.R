@@ -363,7 +363,7 @@ plot_principal_graph <- function(data_df,
 
   ica_space_df <- t(cds@principal_graph_aux[[reduction_method]]$dp_mst) %>%
     as.data.frame() %>%
-    dplyr::select_(prin_graph_dim_1 = x, prin_graph_dim_2 = y) %>%
+    dplyr::select_(prin_graph_dim_1 = 1, prin_graph_dim_2 = 2) %>%
     dplyr::mutate(sample_name = rownames(.), sample_state = rownames(.))
 
   dp_mst <- cds@principal_graph[[reduction_method]]
@@ -456,8 +456,8 @@ plot_principal_graph <- function(data_df,
 
   g <- g +
     monocle3:::monocle_theme_opts() +
-    xlab(paste(reduction_method, x)) +
-    ylab(paste(reduction_method, y)) +
+    xlab(paste(reduction_method, 1)) +
+    ylab(paste(reduction_method, 2)) +
     theme(legend.key = element_blank()) +
     theme(panel.background = element_rect(fill='white'))
   g
