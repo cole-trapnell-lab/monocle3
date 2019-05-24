@@ -411,3 +411,51 @@ detect_genes <- function(cds, min_expr=0){
   cds
 }
 
+#' Retrieve a table of values specifying the mean-variance relationship
+#'
+#' Calling estimate_dispersions computes a smooth function describing how variance
+#' in each gene's expression across cells varies according to the mean. This
+#' function only works for cell_data_set objects containing count-based expression
+#' data, either transcripts or reads.
+#'
+#' @param cds The cell_data_set from which to extract a dispersion table.
+#' @return A data frame containing the empirical mean expression,
+#' empirical dispersion, and the value estimated by the dispersion model.
+#'
+#' @export
+dispersion_table <- function(cds){
+
+  if (is.null(cds@disp_fit_info[["blind"]])){
+    warning("Warning: estimate_dispersions only works, and is only needed, when you're using a cell_data_set with a negbinomial or negbinomial.size expression family")
+    stop("Error: no dispersion model found. Please call estimate_dispersions() before calling this function")
+  }
+
+  disp_df<-data.frame(gene_id=cds@disp_fit_info[["blind"]]$disp_table$gene_id,
+                      mean_expression=cds@disp_fit_info[["blind"]]$disp_table$mu,
+                      dispersion_fit=cds@disp_fit_info[["blind"]]$disp_func(cds@disp_fit_info[["blind"]]$disp_table$mu),
+                      dispersion_empirical=cds@disp_fit_info[["blind"]]$disp_table$disp)
+  return(disp_df)
+}
+
+#' Return a size-factor normalized and (optionally) log-transformed expression matrix
+#' @export
+normalized_counts <- function(cds, norm_method=c("log", "size_only"), pseudocount=1){
+  norm_method = match.arg(norm_method)
+  norm_mat = counts(cds)
+  if (is_sparse_matrix(norm_mat)){
+    norm_mat@x = norm_mat@x / rep.int(size_factors(cds), diff(norm_mat@p))
+    if (norm_method == "log"){
+      if (pseudocount == 1){
+        norm_mat@x = log10(norm_mat@x + pseudocount)
+      }else{
+        stop("Pseudocount must equal 1 with sparse expression matrices")
+      }
+    }
+  }else{
+      norm_mat = Matrix::t(Matrix::t(norm_mat) / size_factors(cds))
+      if (norm_method == "log"){
+          norm_mat@x = log10(norm_mat + pseudocount)
+      }
+  }
+  return(norm_mat)
+}

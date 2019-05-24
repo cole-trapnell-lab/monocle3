@@ -396,7 +396,8 @@ plot_cells <- function(cds,
                        x=1,
                        y=2,
                        reduction_method = "UMAP",
-                       color_by="Cluster",
+                       color_cells_by="cluster",
+                       group_cells_by=c("cluster", "partition"),
                        genes=NULL,
                        show_trajectory_graph=TRUE,
                        trajectory_graph_color="black",
@@ -427,25 +428,29 @@ plot_cells <- function(cds,
                           msg = paste("x and/or y is too large. x and y must",
                                       "be dimensions in reduced dimension",
                                       "space."))
-  if(!is.null(color_by)) {
-    assertthat::assert_that(color_by == "Cluster" | color_by %in% names(colData(cds)),
-                            msg = paste("color_by must be a column in the",
+  if(!is.null(color_cells_by)) {
+    assertthat::assert_that(color_cells_by %in% c("cluster", "partition") | color_cells_by %in% names(colData(cds)),
+                            msg = paste("color_cells_by must be a column in the",
                                         "colData table."))
   }
-  assertthat::assert_that(!is.null(color_by) || !is.null(genes),
-                          msg = paste("Either color_by or genes must be",
+
+  assertthat::assert_that(!is.null(color_cells_by) || !is.null(markers),
+                          msg = paste("Either color_cells_by or markers must be",
+                                      "NULL, cannot color by both!"))
+
+  #if (!is.null(color_cells_by) && color_cells_by == "cluster" && length(clusters(cds, reduction_method = reduction_method)) == 0){
+  #  stop("Error: Clustering is not performed yet. Please call clusterCells() before calling this function.")
+  #}
+  norm_method = match.arg(norm_method)
+  group_cells_by=match.arg(group_cells_by)
+  assertthat::assert_that(!is.null(color_cells_by) || !is.null(genes),
+                          msg = paste("Either color_cells_by or genes must be",
                                       "NULL, cannot color by both!"))
 
   if (show_trajectory_graph && is.null(principal_graph(cds)[[reduction_method]])) {
     message("No trajectory to plot. Has learn_graph() been called yet?")
     show_trajectory_graph = FALSE
   }
-
-
-
-
-
-  norm_method <- match.arg(norm_method)
 
   gene_short_name <- NA
   sample_name <- NA
@@ -465,7 +470,21 @@ plot_cells <- function(cds,
   data_df$sample_name <- row.names(data_df)
 
   data_df <- as.data.frame(cbind(data_df, colData(cds)))
-  data_df$Cluster <- clusters(cds, reduction_method = reduction_method)[data_df$sample_name]
+  if (group_cells_by == "cluster"){
+    data_df$cell_group = tryCatch({clusters(cds, reduction_method = reduction_method)[data_df$sample_name]}, error = function(e) {NULL})
+  } else if (group_cells_by == "partition") {
+    data_df$cell_group = tryCatch({partitions(cds, reduction_method = reduction_method)[data_df$sample_name]}, error = function(e) {NULL})
+  } else{
+    stop("Error: unrecognized way of grouping cells.")
+  }
+
+  if (color_cells_by == "cluster"){
+    data_df$cell_color = tryCatch({clusters(cds, reduction_method = reduction_method)[data_df$sample_name]}, error = function(e) {NULL})
+  } else if (color_cells_by == "partition") {
+    data_df$cell_color = tryCatch({partitions(cds, reduction_method = reduction_method)[data_df$sample_name]}, error = function(e) {NULL})
+  } else{
+    data_df$cell_color = colData(cds)[data_df$sample_name,color_cells_by]
+  }
 
   ## Graph info
   if (show_trajectory_graph) {
@@ -537,38 +556,38 @@ plot_cells <- function(cds,
     }
   }
 
-
-  if (label_cell_groups && is.null(color_by) == FALSE){
-    if (color_by %in% colnames(data_df) == FALSE){
-      message(paste(color_by, "not found in colData(cds), cells will not be colored"))
+  if (label_cell_groups && is.null(color_cells_by) == FALSE){
+    if (is.null(data_df$cell_color)){
+      message(paste(color_cells_by, "not found in colData(cds), cells will not be colored"))
       text_df = NULL
       label_cell_groups = FALSE
-    } else {
-      if(is.character(data_df[, color_by]) || is.factor(data_df[, color_by])) {
+    }else{
+      if(is.character(data_df$cell_color) || is.factor(data_df$cell_color)) {
 
-        if (label_groups_by_cluster && "Cluster" %in% colnames(data_df)){
+        if (label_groups_by_cluster && is.null(data_df$cell_group) == FALSE){
+          #text_df = data_df %>% dplyr::color_cells_by_("cluster", color_cells_by)
           text_df = data_df %>%
-            dplyr::group_by_("Cluster") %>%
+            dplyr::group_by(cell_group) %>%
             dplyr::mutate(cells_in_cluster= dplyr::n()) %>%
-            dplyr::group_by_(color_by, add=TRUE) %>%
+            dplyr::group_by(cell_color, add=TRUE) %>%
             dplyr::mutate(per=dplyr::n()/cells_in_cluster)
           median_coord_df = text_df %>% dplyr::summarize(fraction_of_group = n(),
                                                          text_x = median(x = data_dim_1),
                                                          text_y = median(x = data_dim_2))
           text_df = text_df %>% dplyr::select(per) %>% dplyr::distinct()
           text_df = dplyr::inner_join(text_df, median_coord_df)
-          text_df = text_df %>% dplyr::group_by(Cluster) %>% dplyr::top_n(labels_per_group, per)
+          text_df = text_df %>% dplyr::group_by(cell_group) %>% dplyr::top_n(labels_per_group, per)
         } else {
-          text_df = data_df %>% dplyr::group_by_(color_by) %>% dplyr::mutate(per=1)
+          text_df = data_df %>% dplyr::group_by(cell_color) %>% dplyr::mutate(per=1)
           median_coord_df = text_df %>% dplyr::summarize(fraction_of_group = n(),
                                                          text_x = median(x = data_dim_1),
                                                          text_y = median(x = data_dim_2))
           text_df = text_df %>% dplyr::select(per) %>% dplyr::distinct()
           text_df = dplyr::inner_join(text_df, median_coord_df)
-          text_df = text_df %>% dplyr::group_by_(color_by) %>% dplyr::top_n(labels_per_group, per)
+          text_df = text_df %>% dplyr::group_by(cell_color) %>% dplyr::top_n(labels_per_group, per)
         }
 
-        text_df$label = as.character(text_df %>% dplyr::pull(color_by))
+        text_df$label = as.character(text_df %>% dplyr::pull(cell_color))
         # I feel like there's probably a good reason for the bit below, but I hate it and I'm killing it for now.
         # text_df$label <- paste0(1:nrow(text_df))
         # text_df$process_label <- paste0(1:nrow(text_df), '_', as.character(as.matrix(text_df[, 1])))
@@ -605,17 +624,21 @@ plot_cells <- function(cds,
 
     # We don't want to force users to call order_cells before even being able to look at the trajectory,
     # so check whether it's null and if so, just don't color the cells
-    if (color_by == "Pseudotime" & is.null(data_df$Pseudotime)){
+    if (color_cells_by == "Pseudotime" & is.null(data_df$Pseudotime)){
       g <- g + geom_point(color=I("gray"), size=I(cell_size), na.rm = TRUE, alpha = I(alpha))
       message("order_cells() has not been called yet, can't color cells by Pseudotime")
-    } else if(color_by == "Cluster"& is.null(data_df$Cluster)){
-      g <- g + geom_point(color=I("gray"), size=I(cell_size), na.rm = TRUE, alpha = I(alpha))
-      message("cluster_cells() has not been called yet, can't color cells by Cluster")
-    } else if (class(data_df[,color_by]) == "numeric"){
-      g <- g + geom_point(aes_string(color = color_by), size=I(cell_size), na.rm = TRUE, alpha = alpha)
+    } else if(color_cells_by %in% c("cluster", "partition")){
+      if (is.null(data_df$cell_color)){
+        g <- g + geom_point(color=I("gray"), size=I(cell_size), na.rm = TRUE, alpha = I(alpha))
+        message("cluster_cells() has not been called yet, can't color cells by cluster")
+      } else{
+        g <- g + geom_point(aes(color = cell_color), size=I(cell_size), na.rm = TRUE, alpha = alpha)
+      }
+    } else if (class(data_df$cell_color) == "numeric"){
+      g <- g + geom_point(aes(color = cell_color), size=I(cell_size), na.rm = TRUE, alpha = alpha)
       g <- g + viridis::scale_color_viridis(option="C")
     } else {
-      g <- g + geom_point(aes_string(color = color_by), size=I(cell_size), na.rm = TRUE, alpha = alpha)
+      g <- g + geom_point(aes(color = cell_color), size=I(cell_size), na.rm = TRUE, alpha = alpha)
     }
   }
   if (show_trajectory_graph){
