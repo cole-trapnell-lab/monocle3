@@ -41,32 +41,32 @@ monocle_theme_opts <- function()
 #' }
 #'
 plot_cells_3d <- function(cds,
-                                    reduction_method = "UMAP",
-                                    downsample_size = NULL,
-                                    dim=c(1, 2, 3),
-                                    color_by=NULL,
-                                    palette = NULL,
-                                    markers=NULL,
-                                    markers_linear=FALSE,
-                                    cell_size=5,
-                                    cell_alpha=0.5,
-                                    backbone_segment_color="#77B6EA",
-                                    backbone_segment_width=2,
-                                    backbone_vertex_color=NULL,
-                                    show_group_labels=TRUE,
-                                    show_branch_points=TRUE,
-                                    webGL_filename=NULL,
-                                    image_filename=NULL,
-                                    obj_filename=NULL,
-                                    scale_expr=TRUE,
-                                    width=800,
-                                    height=600,
-                                    view_matrix=NULL,
-                                    useNULL_GLdev = !interactive(),
-                                    text_cex = 1,
-                                    use_plotly = FALSE,
-                                    selfcontained=FALSE,
-                                    ...){
+                          reduction_method = "UMAP",
+                          downsample_size = NULL,
+                          dim=c(1, 2, 3),
+                          color_by=NULL,
+                          palette = NULL,
+                          markers=NULL,
+                          markers_linear=FALSE,
+                          cell_size=5,
+                          cell_alpha=0.5,
+                          backbone_segment_color="#77B6EA",
+                          backbone_segment_width=2,
+                          backbone_vertex_color=NULL,
+                          show_group_labels=TRUE,
+                          show_branch_points=TRUE,
+                          webGL_filename=NULL,
+                          image_filename=NULL,
+                          obj_filename=NULL,
+                          scale_expr=TRUE,
+                          width=800,
+                          height=600,
+                          view_matrix=NULL,
+                          useNULL_GLdev = !interactive(),
+                          text_cex = 1,
+                          use_plotly = FALSE,
+                          selfcontained=FALSE,
+                          ...){
   gene_short_name <- NA
   sample_name <- NA
 
@@ -432,9 +432,18 @@ plot_cells <- function(cds,
                             msg = paste("color_by must be a column in the",
                                         "colData table."))
   }
-  assertthat::assert_that(!is.null(color_by) || !is.null(markers),
-                          msg = paste("Either color_by or markers must be",
+  assertthat::assert_that(!is.null(color_by) || !is.null(genes),
+                          msg = paste("Either color_by or genes must be",
                                       "NULL, cannot color by both!"))
+
+  if (show_trajectory_graph && is.null(principal_graph(cds)[[reduction_method]])) {
+    message("No trajectory to plot. Has learn_graph() been called yet?")
+    show_trajectory_graph = FALSE
+  }
+
+
+
+
 
   norm_method <- match.arg(norm_method)
 
@@ -458,12 +467,9 @@ plot_cells <- function(cds,
   data_df <- as.data.frame(cbind(data_df, colData(cds)))
   data_df$Cluster <- clusters(cds, reduction_method = reduction_method)[data_df$sample_name]
 
-  if (show_trajectory_graph){
+  ## Graph info
+  if (show_trajectory_graph) {
 
-    if (is.null(principal_graph(cds)[[reduction_method]])){
-      message("No trajectory to plot. Has learn_graph() been called yet?")
-      show_trajectory_graph = FALSE
-    } else {
     ica_space_df <- t(cds@principal_graph_aux[[reduction_method]]$dp_mst) %>%
       as.data.frame() %>%
       dplyr::select_(prin_graph_dim_1 = x, prin_graph_dim_2 = y) %>%
@@ -484,14 +490,14 @@ plot_cells <- function(cds,
                                         target_prin_graph_dim_1="prin_graph_dim_1",
                                         target_prin_graph_dim_2="prin_graph_dim_2"),
                        by = "target")
-    }
   }
 
+  ## Marker genes
   markers_exprs <- NULL
-  if (is.null(genes) == FALSE) {
+  if (!is.null(genes)) {
     if ((is.null(dim(genes)) == FALSE) && dim(genes) >= 2){
       markers = unlist(genes[,1], use.names=FALSE)
-    }else{
+    } else {
       markers = genes
     }
     markers_rowData <- as.data.frame(subset(rowData(cds), gene_short_name %in% markers | rownames(rowData(cds)) %in% markers))
@@ -514,7 +520,7 @@ plot_cells <- function(cds,
         #print (head( markers_exprs[is.na(markers_exprs$gene_short_name) == FALSE,]))
         markers_exprs$feature_label <- markers_exprs$feature_id
         markers_linear=TRUE
-      }else{
+      } else {
         cds_exprs@x = round(cds_exprs@x)
         markers_exprs = matrix(cds_exprs, nrow=nrow(markers_rowData))
         colnames(markers_exprs) = colnames(counts(cds))
@@ -531,16 +537,16 @@ plot_cells <- function(cds,
     }
   }
 
+
   if (label_cell_groups && is.null(color_by) == FALSE){
     if (color_by %in% colnames(data_df) == FALSE){
       message(paste(color_by, "not found in colData(cds), cells will not be colored"))
       text_df = NULL
       label_cell_groups = FALSE
-    }else{
+    } else {
       if(is.character(data_df[, color_by]) || is.factor(data_df[, color_by])) {
 
         if (label_groups_by_cluster && "Cluster" %in% colnames(data_df)){
-          #text_df = data_df %>% dplyr::color_by_("Cluster", color_by)
           text_df = data_df %>%
             dplyr::group_by_("Cluster") %>%
             dplyr::mutate(cells_in_cluster= dplyr::n()) %>%
@@ -570,7 +576,7 @@ plot_cells <- function(cds,
         # names(process_label) <- as.character(as.matrix(text_df[, 1]))
         # data_df[, group_by] <- process_label[as.character(data_df[, group_by])]
         # text_df$label = process_label
-      }else{
+      } else {
         message("Cells aren't colored in a way that allows them to be grouped.")
         text_df = NULL
         label_cell_groups = FALSE
@@ -739,12 +745,12 @@ plot_genes_in_pseudotime <-function(cds_subset,
   Cell <- NA
   cds_subset = cds_subset[,is.finite(colData(cds_subset)$Pseudotime)]
 
-    cds_exprs <- counts(cds_subset)
-    if (is.null(size_factors(cds_subset))) {
-       stop("Error: to call this function, you must call estimate_size_factors() first")
-    }
-    cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds_subset))
-    cds_exprs <- reshape2::melt(round(as.matrix(cds_exprs)))
+  cds_exprs <- counts(cds_subset)
+  if (is.null(size_factors(cds_subset))) {
+    stop("Error: to call this function, you must call estimate_size_factors() first")
+  }
+  cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds_subset))
+  cds_exprs <- reshape2::melt(round(as.matrix(cds_exprs)))
 
   if (is.null(min_expr)) {
     min_expr <- 0
@@ -1133,8 +1139,8 @@ plot_percent_cells_positive <- function(cds_subset,
   marker_counts <- plyr::ddply(marker_exprs_melted, c("feature_label",
                                                       grouping),
                                function(x) {
-          data.frame(target = sum(x$expression > min_expr),
-                     target_fraction = sum(x$expression > min_expr)/nrow(x)) })
+                                 data.frame(target = sum(x$expression > min_expr),
+                                            target_fraction = sum(x$expression > min_expr)/nrow(x)) })
 
   if (!plot_as_count){
     marker_counts$target_fraction <- marker_counts$target_fraction * 100
