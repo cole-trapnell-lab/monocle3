@@ -53,3 +53,21 @@ test_that("reduce_dimension runs", {
   expect_error(reduce_dimension(cds, reduction_method = "DDRTree"),
                "reduction_method must be one of 'UMAP', 'PCA' or 'tSNE'")
 })
+
+test_that("reduce_dimension clears old graphs", {
+  cds <- preprocess_cds(cds)
+  cds <- reduce_dimension(cds)
+  cds <- cluster_cells(cds)
+  cds <- learn_graph(cds)
+  cds <- reduce_dimension(cds)
+  expect_null(cds@preprocess_aux[["UMAP"]])
+  expect_error(partitions(cds), "No partitions calculated for reduction_method = UMAP. Please first run cluster_cells with reduction_method = UMAP.")
+  expect_error(clusters(cds), "No clusters calculated for reduction_method = UMAP. Please first run cluster_cells with reduction_method = UMAP.")
+  expect_null(cds@principal_graph[["UMAP"]])
+
+  cds <- cluster_cells(cds)
+  cds <- learn_graph(cds)
+  cds <- reduce_dimension(cds, reduction_method = "tSNE")
+  expect_is(clusters(cds), "factor")
+  testthat::expect_is(cds@principal_graph[["UMAP"]], "igraph")
+})
