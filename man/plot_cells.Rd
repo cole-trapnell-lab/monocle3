@@ -5,7 +5,8 @@
 \title{Plots the cells along with their trajectories.}
 \usage{
 plot_cells(cds, x = 1, y = 2, reduction_method = "UMAP",
-  color_by = "Cluster", genes = NULL, show_trajectory_graph = TRUE,
+  color_cells_by = "cluster", group_cells_by = c("cluster",
+  "partition"), genes = NULL, show_trajectory_graph = TRUE,
   trajectory_graph_color = "black",
   trajectory_graph_segment_size = 0.75, norm_method = c("log",
   "size_only"), label_cell_groups = TRUE,
@@ -21,11 +22,11 @@ plot_cells(cds, x = 1, y = 2, reduction_method = "UMAP",
 
 \item{y}{the column of reducedDimS(cds) to plot on the vertical axis}
 
-\item{color_by}{the cell attribute (e.g. the column of colData(cds)) to map to each cell's color}
-
 \item{cell_size}{The size of the point for each cell}
 
 \item{alpha}{The alpha aesthetics for the original cell points, useful to highlight the learned principal graph}
+
+\item{color_by}{the cell attribute (e.g. the column of colData(cds)) to map to each cell's color}
 
 \item{show_backbone}{whether to show the diameter path of the MST used to order the cells}
 
