@@ -968,7 +968,7 @@ plot_pc_variance_explained <- function(cds,
 #' plot_genes_violin(my_genes, grouping="Hours", ncol=2, min_expr=0.1)
 #' }
 plot_genes_violin <- function (cds_subset,
-                               grouping = "State",
+                               group_cells_by = NULL,
                                min_expr = NULL,
                                nrow = NULL,
                                ncol = 1,
@@ -979,9 +979,12 @@ plot_genes_violin <- function (cds_subset,
 
   assertthat::assert_that(is(cds_subset, "cell_data_set"))
 
-  assertthat::assert_that(grouping %in% names(colData(cds_subset)),
-                          msg = paste("grouping must be a column in the",
-                                      "colData table"))
+  if(!is.null(group_cells_by)) {
+    assertthat::assert_that(group_cells_by %in% names(colData(cds_subset)),
+                            msg = paste("group_cells_by must be a column in",
+                                        "the colData table"))
+  }
+
   if(!is.null(min_expr)) {
     assertthat::assert_that(assertthat::is.number(min_expr))
   }
@@ -995,6 +998,11 @@ plot_genes_violin <- function (cds_subset,
   assertthat::assert_that(is.logical(label_by_short_name))
   assertthat::assert_that(is.logical(normalize))
   assertthat::assert_that(is.logical(log_scale))
+
+  assertthat::assert_that(nrow(rowData(cds_subset)) <= 100,
+                          msg = paste("cds_subset has more than 100 genes -",
+                                      "pass only the subset of the CDS to be",
+                                      "plotted."))
 
   if (normalize) {
     cds_exprs <- counts(cds_subset)
@@ -1031,13 +1039,19 @@ plot_genes_violin <- function (cds_subset,
                                      levels = panel_order)
   }
 
-  cds_exprs[,grouping] <- as.factor(cds_exprs[,grouping])
+  if(is.null(group_cells_by)) {
+    cds_exprs$all_cell <- "All"
+    group_cells_by <- "all_cell"
+  }
+  cds_exprs[,group_cells_by] <- as.factor(cds_exprs[,group_cells_by])
 
-  q <- ggplot(aes_string(x = grouping, y = "expression"), data = cds_exprs) +
+  q <- ggplot(aes_string(x = group_cells_by, y = "expression"),
+              data = cds_exprs) +
     monocle_theme_opts()
 
-  cds_exprs[,grouping] <- as.factor(cds_exprs[,grouping])
-  q <- q + geom_violin(aes_string(fill = grouping), scale="width") + guides(fill=FALSE)
+  cds_exprs[,group_cells_by] <- as.factor(cds_exprs[,group_cells_by])
+  q <- q + geom_violin(aes_string(fill = group_cells_by), scale="width") +
+    guides(fill=FALSE)
 
   q <- q + facet_wrap(~feature_label, nrow = nrow,
                       ncol = ncol, scales = "free_y")
@@ -1045,7 +1059,8 @@ plot_genes_violin <- function (cds_subset,
     q <- q + expand_limits(y = c(min_expr, 1))
   }
 
-  q <- q + ylab("Expression") + xlab(grouping)
+  if(group_cells_by == "all_cell") group_cells_by = ""
+  q <- q + ylab("Expression") + xlab(group_cells_by)
 
   if (log_scale){
     q <- q + scale_y_log10()
@@ -1097,7 +1112,7 @@ plot_genes_violin <- function (cds_subset,
 #' plot_percent_cells_positive(MYOG_ID1, grouping="Media", ncol=2)
 #' }
 plot_percent_cells_positive <- function(cds_subset,
-                                        grouping = "State",
+                                        group_cells_by = NULL,
                                         min_expr = NULL,
                                         nrow = NULL,
                                         ncol = 1,
@@ -1109,9 +1124,12 @@ plot_percent_cells_positive <- function(cds_subset,
 
   assertthat::assert_that(is(cds_subset, "cell_data_set"))
 
-  assertthat::assert_that(grouping %in% names(colData(cds_subset)),
-                          msg = paste("grouping must be a column in the",
-                                      "colData table"))
+  if(!is.null(group_cells_by)) {
+    assertthat::assert_that(group_cells_by %in% names(colData(cds_subset)),
+                            msg = paste("group_cells_by must be a column in",
+                                        "the colData table"))
+  }
+
   if(!is.null(min_expr)) {
     assertthat::assert_that(assertthat::is.number(min_expr))
   }
@@ -1162,22 +1180,35 @@ plot_percent_cells_positive <- function(cds_subset,
       factor(marker_exprs_melted$feature_label, levels=panel_order)
   }
 
-  marker_counts <- plyr::ddply(marker_exprs_melted, c("feature_label",
-                                                      grouping),
-                               function(x) {
-                                 data.frame(target = sum(x$expression > min_expr),
-                                            target_fraction = sum(x$expression > min_expr)/nrow(x)) })
+
+  if(is.null(group_cells_by)) {
+    marker_exprs_melted$all_cell <- "All"
+    group_cells_by <- "all_cell"
+  }
+
+  marker_counts <- plyr::ddply(marker_exprs_melted,
+                               c("feature_label", group_cells_by),
+    function(x) {
+      data.frame(target = sum(x$expression > min_expr),
+                 target_fraction = sum(x$expression > min_expr)/nrow(x))
+    })
 
   if (!plot_as_count){
     marker_counts$target_fraction <- marker_counts$target_fraction * 100
-    qp <- ggplot(aes_string(x=grouping, y="target_fraction", fill=grouping),
+    qp <- ggplot(aes_string(x=group_cells_by, y="target_fraction",
+                            fill=group_cells_by),
                  data=marker_counts) +
       ylab("Cells (percent)")
   } else {
-    qp <- ggplot(aes_string(x=grouping, y="target", fill=grouping),
+    qp <- ggplot(aes_string(x=group_cells_by, y="target", fill=group_cells_by),
                  data=marker_counts) +
       ylab("Cells")
   }
+  if (group_cells_by == "all_cell") {
+    group_cells_by <- ""
+    qp <- qp + theme(legend.title = element_blank())
+  }
+  qp <- qp + xlab(group_cells_by)
 
   if (is.null(plot_limits) == FALSE) {
     qp <- qp + scale_y_continuous(limits=plot_limits)
