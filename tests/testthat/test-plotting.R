@@ -46,13 +46,13 @@ test_that("plot_percent_cells_positive doesn't error", {
   expect_equal(1, 1)
 })
 
-cds <- load_a549()
-cds <- estimate_size_factors(cds)
 
-test_that("plot_percent_cells_positive doesn't error", {
+test_that("plot_pc_variance_explained doesn't error", {
+  expect_error(plot_pc_variance_explained(cds),
+               "Data has not been preprocessed with PCA. Please run preprocess_cds with method = 'PCA' before running plot_pc_variance_explained.")
 
-
-
+  cds <- preprocess_cds(cds)
+  plot_pc_variance_explained(cds)
 
   expect_equal(1, 1)
   })

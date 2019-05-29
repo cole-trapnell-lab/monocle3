@@ -871,67 +871,20 @@ plot_genes_in_pseudotime <-function(cds_subset,
 #' HSMM <- load_HSMM()
 #' plot_pc_variance_explained(HSMM)
 #' }
-plot_pc_variance_explained <- function(cds,
-                                       max_components=100,
-                                       norm_method = c("log", "vstExprs", "none"),
-                                       residual_model_formula_str=NULL,
-                                       pseudo_count=NULL,
-                                       return_all = F,
-                                       use_existing_pc_variance=FALSE,
-                                       verbose=FALSE,
-                                       ...){
-  norm_method <- match.arg(norm_method)
-  set.seed(2016)
-  if(!is.null(int_metadata(cds)$tsne_variance_explained) & use_existing_pc_variance == T){
-    prop_varex <-int_metadata(cds)$tsne_variance_explained
-  } else if(is.null(assays(cds)$normalized_exprs)) {
-    stop(paste("You must call preprocess(cds) before running this function"))
-  } else {
-    FM <- assays(cds)$normalized_exprs
-    if (!is.null(rowData(cds)$use_for_ordering) &&
-        nrow(subset(rowData(cds), use_for_ordering == TRUE)) > 0) {
-      FM <- FM[rowData(cds)$use_for_ordering, ]
-    }
+plot_pc_variance_explained <- function(cds) {
+  assertthat::assert_that(!is.null(reducedDims(cds)[["PCA"]]),
+                          msg = paste("Data has not been preprocessed with",
+                                      "PCA. Please run preprocess_cds with",
+                                      "method = 'PCA' before running",
+                                      "plot_pc_variance_explained."))
+  prop_varex <- cds@preprocess_aux$prop_var_expl
 
-    xm <- Matrix::rowMeans(FM)
-    xsd <- sqrt(Matrix::rowMeans((FM - xm)^2))
-    FM <- FM[xsd > 0,]
-
-    if (is.null(residual_model_formula_str) == FALSE) {
-      if (verbose)
-        message("Removing batch effects")
-      X.model_mat <- Matrix::sparse.model.matrix(stats::as.formula(residual_model_formula_str),
-                                                 data = colData(cds), drop.unused.levels = TRUE)
-
-      fit <- limma::lmFit(FM, X.model_mat, ...)
-      beta <- fit$coefficients[, -1, drop = FALSE]
-      beta[is.na(beta)] <- 0
-      FM <- as.matrix(FM) - beta %*% t(X.model_mat[, -1])
-    } else {
-      X.model_mat <- NULL
-    }
-
-    if (nrow(FM) == 0) {
-      stop("Error: all rows have standard deviation zero")
-    }
-
-    irlba_res <- sparse_prcomp_irlba(Matrix::t(FM), n = min(max_components, min(dim(FM)) - 1),
-                                     center = TRUE, scale. = TRUE)
-    prop_varex <- irlba_res$sdev^2 / sum(irlba_res$sdev^2)
-
-  }
-
-  p <- qplot(1:length(prop_varex), prop_varex, alpha = I(0.5)) +  monocle_theme_opts() +
+  p <- qplot(1:length(prop_varex), prop_varex, alpha = I(0.5)) +
+    monocle_theme_opts() +
     theme(legend.position="top", legend.key.height=grid::unit(0.35, "in")) +
-    theme(panel.background = element_rect(fill='white')) + xlab('components') +
+    theme(panel.background = element_rect(fill='white')) +
+    xlab('PCA components') +
     ylab('Variance explained \n by each component')
-
-  int_metadata(cds)$tsne_variance_explained <- prop_varex # update CDS slot for variance_explained
-
-  if(return_all) {
-    return(list(variance_explained = prop_varex, p = p))
-  }
-  else
     return(p)
 }
 
