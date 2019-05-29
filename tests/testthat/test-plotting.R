@@ -57,4 +57,29 @@ test_that("plot_pc_variance_explained doesn't error", {
   expect_equal(1, 1)
   })
 
+test_that("plot_genes_in_pseudotime doesn't error", {
+  cds_subset <- cds[c("ENSG00000228253.1", "ENSG00000103034.14",
+                      "ENSG00000223519.8"),]
+  expect_error(plot_genes_in_pseudotime(cds_subset),
+               "Pseudotime must be a column in colData. Please run order_cells before running plot_genes_in_pseudotime.")
+
+  cds <- preprocess_cds(cds)
+  cds <- reduce_dimension(cds)
+  cds <- cluster_cells(cds)
+  cds <- learn_graph(cds)
+  cds <- order_cells(cds, root_pr_nodes = "Y_1")
+  cds_subset <- cds[c("ENSG00000228253.1", "ENSG00000103034.14",
+                      "ENSG00000223519.8"),]
+  plot_genes_in_pseudotime(cds_subset)
+  plot_genes_in_pseudotime(cds_subset, min_expr = 5)
+  plot_genes_in_pseudotime(cds_subset, nrow = 5)
+  plot_genes_in_pseudotime(cds_subset, ncol = 5, panel_order = c("MT-ATP8", "NDRG4", "KIF28P"))
+  plot_genes_in_pseudotime(cds_subset, color_cells_by = "culture_plate")
+  plot_genes_in_pseudotime(cds_subset, label_by_short_name = F)
+  plot_genes_in_pseudotime(cds_subset, vertical_jitter = 1)
+  plot_genes_in_pseudotime(cds_subset, horizontal_jitter = 1)
+  expect_equal(1, 1)
+})
+
+
 
