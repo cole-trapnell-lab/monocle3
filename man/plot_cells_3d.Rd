@@ -5,7 +5,7 @@
 \title{Plot a dataset and trajectory in 3 dimensions}
 \usage{
 plot_cells_3d(cds, reduction_method = "UMAP", downsample_size = NULL,
-  dim = c(1, 2, 3), color_by = NULL, palette = NULL,
+  dims = c(1, 2, 3), color_by = NULL, palette = NULL,
   markers = NULL, markers_linear = FALSE, cell_size = 5,
   cell_alpha = 0.5, backbone_segment_color = "#77B6EA",
   backbone_segment_width = 2, backbone_vertex_color = NULL,
@@ -17,8 +17,6 @@ plot_cells_3d(cds, reduction_method = "UMAP", downsample_size = NULL,
 }
 \arguments{
 \item{cds}{cell_data_set for the experiment}
-
-\item{dim}{the dimensions used to create the 3D plot, by default it is the first three dimensions}
 
 \item{color_by}{the cell attribute (e.g. the column of colData(cds)) to map to each cell's color}
 
@@ -57,6 +55,8 @@ plot_cells_3d(cds, reduction_method = "UMAP", downsample_size = NULL,
 \item{useNULL_GLdev}{if TRUE, don't show the plot on the screen (to be used with webGL or movie output)}
 
 \item{...}{Extra arguments passed to the function}
+
+\item{dim}{the dimensions used to create the 3D plot, by default it is the first three dimensions}
 }
 \value{
 a ggplot2 plot object

@@ -4,15 +4,12 @@
 \alias{plot_genes_violin}
 \title{Plot expression for one or more genes as a violin plot}
 \usage{
-plot_genes_violin(cds_subset, grouping = "State", min_expr = NULL,
+plot_genes_violin(cds_subset, group_cells_by = NULL, min_expr = NULL,
   nrow = NULL, ncol = 1, panel_order = NULL,
   label_by_short_name = TRUE, normalize = TRUE, log_scale = TRUE)
 }
 \arguments{
 \item{cds_subset}{Subset cell_data_set to be plotted.}
-
-\item{grouping}{the cell attribute (e.g. the column of colData(cds)) to
-group cells by on the horizontal axis.}
 
 \item{min_expr}{the minimum (untransformed) expression level to use when
 plotted the genes. If \code{NULL},
@@ -31,6 +28,9 @@ zero is used.}
 feature id (FALSE).}
 
 \item{log_scale}{Logical, whether or not to scale data logarithmically.}
+
+\item{grouping}{the cell attribute (e.g. the column of colData(cds)) to
+group cells by on the horizontal axis.}
 }
 \value{
 a ggplot2 plot object

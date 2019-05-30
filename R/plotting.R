@@ -10,6 +10,197 @@ monocle_theme_opts <- function()
     theme(legend.key=element_blank())
 }
 
+#' @export
+plot_cells_3d2 <- function(cds,
+                           dims = c(1,2,3),
+                           reduction_method = c("UMAP", "tSNE"),
+                           color_cells_by="cluster",
+                           genes=NULL,
+                           show_trajectory_graph=TRUE,
+                           trajectory_graph_color="black",
+                           trajectory_graph_segment_size=0.75,
+                           norm_method = c("log", "size_only"),
+                           cell_size=25,
+                           alpha = 1,
+                           min_expr=0.1) {
+  reduction_method <- match.arg(reduction_method)
+  assertthat::assert_that(is(cds, "cell_data_set"))
+  assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
+                          msg = paste("No dimensionality reduction for",
+                                      reduction_method, "calculated.",
+                                      "Please run reduce_dimensions with",
+                                      "reduction_method =", reduction_method,
+                                      "before attempting to plot."))
+  low_dim_coords <- reducedDims(cds)[[reduction_method]]
+  if(!is.null(color_cells_by)) {
+    assertthat::assert_that(color_cells_by %in% c("cluster", "partition") |
+                              color_cells_by %in% names(colData(cds)),
+                            msg = paste("color_cells_by must be a column in the",
+                                        "colData table."))
+  }
+
+  assertthat::assert_that(!is.null(color_cells_by) || !is.null(markers),
+                          msg = paste("Either color_cells_by or markers must be",
+                                      "NULL, cannot color by both!"))
+  norm_method = match.arg(norm_method)
+
+  if (show_trajectory_graph && is.null(principal_graph(cds)[[reduction_method]])) {
+    message("No trajectory to plot. Has learn_graph() been called yet?")
+    show_trajectory_graph = FALSE
+  }
+
+  gene_short_name <- NA
+  sample_name <- NA
+  sample_state <- colData(cds)$State
+
+  x <- dims[[1]]
+  y <- dims[[2]]
+  z <- dims[[3]]
+
+  S_matrix <- reducedDims(cds)[[reduction_method]]
+  data_df <- data.frame(S_matrix[,c(dims)])
+
+  colnames(data_df) <- c("data_dim_1", "data_dim_2", "data_dim_3")
+  data_df$sample_name <- row.names(data_df)
+
+  data_df <- as.data.frame(cbind(data_df, colData(cds)))
+
+  if (color_cells_by == "cluster"){
+    data_df$cell_color = tryCatch({clusters(cds, reduction_method = reduction_method)[data_df$sample_name]}, error = function(e) {NULL})
+  } else if (color_cells_by == "partition") {
+    data_df$cell_color = tryCatch({partitions(cds, reduction_method = reduction_method)[data_df$sample_name]}, error = function(e) {NULL})
+  } else{
+    data_df$cell_color = colData(cds)[data_df$sample_name,color_cells_by]
+  }
+
+  ## Graph info
+  if (show_trajectory_graph) {
+
+    ica_space_df <- t(cds@principal_graph_aux[[reduction_method]]$dp_mst) %>%
+      as.data.frame() %>%
+      dplyr::select_(prin_graph_dim_1 = x, prin_graph_dim_2 = y, prin_graph_dim_3 = z) %>%
+      dplyr::mutate(sample_name = rownames(.), sample_state = rownames(.))
+
+    dp_mst <- cds@principal_graph[[reduction_method]]
+
+    edge_df <- dp_mst %>%
+      igraph::as_data_frame() %>%
+      dplyr::select_(source = "from", target = "to") %>%
+      dplyr::left_join(ica_space_df %>%
+                         dplyr::select_(source="sample_name",
+                                        source_prin_graph_dim_1="prin_graph_dim_1",
+                                        source_prin_graph_dim_2="prin_graph_dim_2",
+                                        source_prin_graph_dim_3="prin_graph_dim_3"),
+                       by = "source") %>%
+      dplyr::left_join(ica_space_df %>%
+                         dplyr::select_(target="sample_name",
+                                        target_prin_graph_dim_1="prin_graph_dim_1",
+                                        target_prin_graph_dim_2="prin_graph_dim_2",
+                                        target_prin_graph_dim_3="prin_graph_dim_3"),
+                       by = "target")
+  }
+
+  ## Marker genes
+  markers_exprs <- NULL
+  if (!is.null(genes)) {
+    if ((is.null(dim(genes)) == FALSE) && dim(genes) >= 2){
+      markers = unlist(genes[,1], use.names=FALSE)
+    } else {
+      markers = genes
+    }
+    markers_rowData <- as.data.frame(subset(rowData(cds),
+                                            gene_short_name %in% markers |
+                                              rownames(rowData(cds)) %in% markers))
+    if (nrow(markers_rowData) >= 1) {
+      cds_exprs <- counts(cds)[row.names(markers_rowData), ,drop=FALSE]
+      cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds))
+
+      if ((is.null(dim(genes)) == FALSE) && dim(genes) >= 2){
+        genes = as.data.frame(genes)
+        row.names(genes) = genes[,1]
+        genes = genes[row.names(cds_exprs),]
+        agg_mat = as.matrix(Matrix.utils::aggregate.Matrix(cds_exprs, as.factor(genes[,2]), fun="sum"))
+        agg_mat = t(scale(t(log10(agg_mat + 1))))
+        agg_mat[agg_mat < -2] = -2
+        agg_mat[agg_mat > 2] = 2
+        markers_exprs = agg_mat
+        markers_exprs <- reshape2::melt(markers_exprs)
+        colnames(markers_exprs)[1:2] <- c('feature_id','cell_id')
+
+        markers_exprs$feature_label <- markers_exprs$feature_id
+        markers_linear=TRUE
+      } else {
+        cds_exprs@x = round(cds_exprs@x)
+        markers_exprs = matrix(cds_exprs, nrow=nrow(markers_rowData))
+        colnames(markers_exprs) = colnames(counts(cds))
+        row.names(markers_exprs) = row.names(markers_rowData)
+        markers_exprs <- reshape2::melt(markers_exprs)
+        colnames(markers_exprs)[1:2] <- c('feature_id','cell_id')
+        markers_exprs <- merge(markers_exprs, markers_rowData, by.x = "feature_id", by.y="row.names")
+        markers_exprs$feature_label <- as.character(markers_exprs$gene_short_name)
+        markers_exprs$feature_label[is.na(markers_exprs$feature_label)] <- markers_exprs$feature_id
+        markers_exprs$feature_label <- factor(markers_exprs$feature_label,
+                                              levels = markers)
+      }
+    }
+  }
+
+  if (is.null(markers_exprs) == FALSE && nrow(markers_exprs) > 0){
+    data_df <- merge(data_df, markers_exprs, by.x="sample_name", by.y="cell_id")
+    data_df$value <- with(data_df, ifelse(value >= min_expr, value, NA))
+    if(norm_method == "size_only"){
+      p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
+                           z = ~data_dim_3, type = 'scatter3d', color = ~value,
+                           size=I(cell_size), mode="markers",
+                           stroke = I(cell_size / 2))
+    } else {
+      p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
+                           z = ~data_dim_3, type = 'scatter3d',
+                           color = ~log10(value+min_expr), mode="markers",
+                           alpha = ifelse(!is.na(value), "2", "1"),
+                           size=I(cell_size), stroke = I(cell_size / 2))
+    }
+  } else {
+    if (color_cells_by == "Pseudotime" & is.null(data_df$Pseudotime)){
+      p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
+                           z = ~data_dim_3,type = 'scatter3d',
+                           size=I(cell_size),color=I("gray"), mode="markers",
+                           alpha = I(alpha))
+      message("order_cells() has not been called yet, can't color cells by Pseudotime")
+    } else if(color_cells_by %in% c("cluster", "partition")){
+      if (is.null(data_df$cell_color)){
+        p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
+                             z = ~data_dim_3,type = 'scatter3d',
+                             size=I(cell_size),color=I("gray"), mode="markers",
+                             alpha = I(alpha))
+      } else{
+        p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
+                             z = ~data_dim_3, type = 'scatter3d',
+                             size=I(cell_size),color=~cell_color,
+                             mode="markers", alpha = I(alpha))
+      }
+    } else {
+      p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
+                           z = ~data_dim_3, type = 'scatter3d',
+                           size=I(cell_size),color=~cell_color,
+                           mode="markers", alpha = I(alpha))
+    }
+  }
+  if (show_trajectory_graph){
+    all_dat <- merge(data_df, edge_df, all.x=T, all.y=T, by.x=0, by.y="source")
+    print(head(all_dat))
+    print(tail(all_dat))
+    p <- p %>% plotly::add_trace(data = all_dat, mode="lines",
+                                 x = ~source_prin_graph_dim_1,
+                                 y = ~source_prin_graph_dim_2,
+                                 z = ~source_prin_graph_dim_3,
+                                 color = trajectory_graph_color,
+                                 size=trajectory_graph_segment_size)
+  }
+  p
+}
+
+
 #' Plot a dataset and trajectory in 3 dimensions
 #'
 #' @param cds cell_data_set for the experiment
@@ -43,7 +234,7 @@ monocle_theme_opts <- function()
 plot_cells_3d <- function(cds,
                           reduction_method = "UMAP",
                           downsample_size = NULL,
-                          dim=c(1, 2, 3),
+                          dims=c(1, 2, 3),
                           color_by=NULL,
                           palette = NULL,
                           markers=NULL,
@@ -87,12 +278,9 @@ plot_cells_3d <- function(cds,
   lib_info_with_pseudo <- colData(cds)[cell_sampled, ]
   sample_state <- colData(cds)$State[cell_sampled]
 
-  reduced_dim_coords <- cds@principal_graph_aux[[reduction_method]]$dp_mst
+  reduced_dim_coords <- reducedDims(cds)[[reduction_method]]
 
-  if(length(dim) != 3)
-    dim <- 1:3
-
-  ica_space_df <- data.frame(reduced_dim_coords[,dim])
+  ica_space_df <- data.frame(reduced_dim_coords[,dims])
   colnames(ica_space_df) <- c("prin_graph_dim_1", "prin_graph_dim_2",  "prin_graph_dim_3")
 
   ica_space_df$sample_name <- row.names(ica_space_df)
@@ -114,7 +302,7 @@ plot_cells_3d <- function(cds,
   edge_df <- plyr::rename(edge_df, c("prin_graph_dim_1"="target_prin_graph_dim_1", "prin_graph_dim_2"="target_prin_graph_dim_2", "prin_graph_dim_3"="target_prin_graph_dim_3"))
 
   S_matrix <- reducedDims(cds)[[reduction_method]][cell_sampled,]
-  data_df <- data.frame(S_matrix[,dim])
+  data_df <- data.frame(S_matrix[,dims])
   #data_df <- cbind(data_df, sample_state)
   colnames(data_df) <- c("data_dim_1", "data_dim_2", "data_dim_3")
   data_df$sample_name <- row.names(data_df)
@@ -395,7 +583,7 @@ plot_cells_3d <- function(cds,
 plot_cells <- function(cds,
                        x=1,
                        y=2,
-                       reduction_method = c("UMAP", "tSNE"),
+                       reduction_method = c("UMAP", "tSNE", "PCA"),
                        color_cells_by="cluster",
                        group_cells_by=c("cluster", "partition"),
                        genes=NULL,
@@ -439,9 +627,6 @@ plot_cells <- function(cds,
                           msg = paste("Either color_cells_by or markers must be",
                                       "NULL, cannot color by both!"))
 
-  #if (!is.null(color_cells_by) && color_cells_by == "cluster" && length(clusters(cds, reduction_method = reduction_method)) == 0){
-  #  stop("Error: Clustering is not performed yet. Please call clusterCells() before calling this function.")
-  #}
   norm_method = match.arg(norm_method)
   group_cells_by=match.arg(group_cells_by)
   assertthat::assert_that(!is.null(color_cells_by) || !is.null(genes),
@@ -776,7 +961,7 @@ plot_genes_in_pseudotime <-function(cds_subset,
     assertthat::assert_that(assertthat::is.number(min_expr))
   }
   assertthat::assert_that(assertthat::is.number(cell_size))
-
+  assertthat::assert_that(!is.null(size_factors(cds_subset)))
   if(!is.null(nrow)) {
     assertthat::assert_that(assertthat::is.count(nrow))
   }
@@ -796,9 +981,11 @@ plot_genes_in_pseudotime <-function(cds_subset,
 
   if(!is.null(panel_order)) {
     if (label_by_short_name) {
-      assertthat::assert_that(all(panel_order %in% rowData(cds_subset)$gene_short_name))
+      assertthat::assert_that(all(panel_order %in%
+                                    rowData(cds_subset)$gene_short_name))
     } else {
-      assertthat::assert_that(all(panel_order %in% row.names(rowData(cds_subset))))
+      assertthat::assert_that(all(panel_order %in%
+                                    row.names(rowData(cds_subset))))
     }
   }
   assertthat::assert_that(nrow(rowData(cds_subset)) <= 100,
@@ -811,9 +998,6 @@ plot_genes_in_pseudotime <-function(cds_subset,
   cds_subset = cds_subset[,is.finite(colData(cds_subset)$Pseudotime)]
 
   cds_exprs <- counts(cds_subset)
-  if (is.null(size_factors(cds_subset))) {
-    stop("Error: to call this function, you must call estimate_size_factors() first")
-  }
   cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds_subset))
   cds_exprs <- reshape2::melt(round(as.matrix(cds_exprs)))
 
@@ -825,13 +1009,9 @@ plot_genes_in_pseudotime <-function(cds_subset,
   cds_rowData <- rowData(cds_subset)
   cds_exprs <- merge(cds_exprs, cds_rowData, by.x = "f_id", by.y = "row.names")
   cds_exprs <- merge(cds_exprs, cds_colData, by.x = "Cell", by.y = "row.names")
-  #cds_exprs$f_id <- as.character(cds_exprs$f_id)
-  #cds_exprs$Cell <- as.character(cds_exprs$Cell)
 
   cds_exprs$adjusted_expression <- cds_exprs$expression
 
-  # trend_formula <- paste("adjusted_expression", trend_formula,
-  #     sep = "")
   if (label_by_short_name == TRUE) {
     if (is.null(cds_exprs$gene_short_name) == FALSE) {
       cds_exprs$feature_label <- as.character(cds_exprs$gene_short_name)
@@ -855,9 +1035,11 @@ plot_genes_in_pseudotime <-function(cds_subset,
                                          new_data = colData(cds_subset))
 
   colnames(model_expectation) <- colnames(cds_subset)
-  expectation <- plyr::ddply(cds_exprs, plyr::.(f_id, Cell), function(x) data.frame("expectation"=model_expectation[x$f_id, x$Cell]))
+  expectation <- plyr::ddply(cds_exprs, plyr::.(f_id, Cell),
+                             function(x) {
+                               data.frame("expectation"=model_expectation[x$f_id, x$Cell])
+                             })
   cds_exprs <- merge(cds_exprs, expectation)
-  #cds_exprs$expectation <- expectation#apply(cds_exprs,1, function(x) model_expectation[x$f_id, x$Cell])
 
   cds_exprs$expression[cds_exprs$expression < min_expr] <- min_expr
   cds_exprs$expectation[cds_exprs$expectation < min_expr] <- min_expr
@@ -867,13 +1049,18 @@ plot_genes_in_pseudotime <-function(cds_subset,
   }
   q <- ggplot(aes(Pseudotime, expression), data = cds_exprs)
   if (!is.null(color_cells_by)) {
-    q <- q + geom_point(aes_string(color = color_cells_by), size = I(cell_size), position=position_jitter(horizontal_jitter, vertical_jitter))
+    q <- q + geom_point(aes_string(color = color_cells_by),
+                        size = I(cell_size),
+                        position=position_jitter(horizontal_jitter,
+                                                 vertical_jitter))
     if (class(colData(cds_subset)[,color_cells_by]) == "numeric"){
       q <- q + viridis::scale_color_viridis(option="C")
     }
   }
   else {
-    q <- q + geom_point(size = I(cell_size), position=position_jitter(horizontal_jitter, vertical_jitter))
+    q <- q + geom_point(size = I(cell_size),
+                        position=position_jitter(horizontal_jitter,
+                                                 vertical_jitter))
   }
 
   q <- q + geom_line(aes(x = Pseudotime, y = expectation), data = cds_exprs)
@@ -925,7 +1112,7 @@ plot_pc_variance_explained <- function(cds) {
     theme(panel.background = element_rect(fill='white')) +
     xlab('PCA components') +
     ylab('Variance explained \n by each component')
-    return(p)
+  return(p)
 }
 
 #' @title Plot expression for one or more genes as a violin plot
@@ -997,9 +1184,11 @@ plot_genes_violin <- function (cds_subset,
   }
   if(!is.null(panel_order)) {
     if (label_by_short_name) {
-      assertthat::assert_that(all(panel_order %in% rowData(cds_subset)$gene_short_name))
+      assertthat::assert_that(all(panel_order %in%
+                                    rowData(cds_subset)$gene_short_name))
     } else {
-      assertthat::assert_that(all(panel_order %in% row.names(rowData(cds_subset))))
+      assertthat::assert_that(all(panel_order %in%
+                                    row.names(rowData(cds_subset))))
     }
   }
   assertthat::assert_that(is.logical(normalize))
@@ -1199,10 +1388,10 @@ plot_percent_cells_positive <- function(cds_subset,
 
   marker_counts <- plyr::ddply(marker_exprs_melted,
                                c("feature_label", group_cells_by),
-    function(x) {
-      data.frame(target = sum(x$expression > min_expr),
-                 target_fraction = sum(x$expression > min_expr)/nrow(x))
-    })
+                               function(x) {
+                                 data.frame(target = sum(x$expression > min_expr),
+                                            target_fraction = sum(x$expression > min_expr)/nrow(x))
+                               })
 
   if (!plot_as_count){
     marker_counts$target_fraction <- marker_counts$target_fraction * 100

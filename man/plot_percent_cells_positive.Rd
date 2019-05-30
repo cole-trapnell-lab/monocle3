@@ -5,16 +5,13 @@
 \title{Plots the number of cells expressing one or more genes above a given value
 as a barplot}
 \usage{
-plot_percent_cells_positive(cds_subset, grouping = "State",
+plot_percent_cells_positive(cds_subset, group_cells_by = NULL,
   min_expr = NULL, nrow = NULL, ncol = 1, panel_order = NULL,
   plot_as_count = FALSE, label_by_short_name = TRUE,
   normalize = TRUE, plot_limits = NULL)
 }
 \arguments{
 \item{cds_subset}{Subset cell_data_set to be plotted.}
-
-\item{grouping}{the cell attribute (e.g. the column of colData(cds)) to
-group cells by on the horizontal axis}
 
 \item{min_expr}{the minimum (untransformed) expression level to consider the
 gene 'expressed'. If \code{NULL},
@@ -35,6 +32,9 @@ feature id (FALSE).}
 
 \item{plot_limits}{A pair of number specifying the limits of the y axis. If
 \code{NULL}, scale to the range of the data. Example \code{c(0,100)}.}
+
+\item{grouping}{the cell attribute (e.g. the column of colData(cds)) to
+group cells by on the horizontal axis}
 }
 \value{
 a ggplot2 plot object

@@ -222,9 +222,15 @@ smart_es_apply <- function(cds, MARGIN, FUN, convert_to_dense, ...) {
 #' Build a cell_data_set from the data stored in inst/extdata directory.
 #' @export
 load_a549 <- function(){
-  small_a549_colData_df <- readRDS(system.file("extdata", "small_a549_dex_pdata.rda", package = "monocle3"))
-  small_a549_rowData_df <- readRDS(system.file("extdata", "small_a549_dex_fdata.rda", package = "monocle3"))
-  small_a549_exprs <- readRDS(system.file("extdata", "small_a549_dex_exprs.rda", package = "monocle3"))
+  small_a549_colData_df <- readRDS(system.file("extdata",
+                                               "small_a549_dex_pdata.rda",
+                                               package = "monocle3"))
+  small_a549_rowData_df <- readRDS(system.file("extdata",
+                                               "small_a549_dex_fdata.rda",
+                                               package = "monocle3"))
+  small_a549_exprs <- readRDS(system.file("extdata",
+                                          "small_a549_dex_exprs.rda",
+                                          package = "monocle3"))
   small_a549_exprs <- small_a549_exprs[,row.names(small_a549_colData_df)]
 
   cds <- new_cell_data_set(expression_data = small_a549_exprs,

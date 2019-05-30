@@ -7,9 +7,11 @@
 get_genome_in_matrix_path(matrix_path, genome = NULL)
 }
 \arguments{
-\item{matrix_path}{Path to a matrices directory produced by the Cell Ranger pipeline}
+\item{matrix_path}{Path to a matrices directory produced by the Cell Ranger
+pipeline}
 
-\item{genome}{Genome to specifically check for, otherwise will check for whatever genome(s) exist there}
+\item{genome}{Genome to specifically check for, otherwise will check for
+whatever genome(s) exist there}
 }
 \value{
 A string representing the genome found

@@ -4,8 +4,8 @@
 \alias{plot_cells}
 \title{Plots the cells along with their trajectories.}
 \usage{
-plot_cells(cds, x = 1, y = 2, reduction_method = c("UMAP", "tSNE"),
-  color_cells_by = "cluster", group_cells_by = c("cluster",
+plot_cells(cds, x = 1, y = 2, reduction_method = c("UMAP", "tSNE",
+  "PCA"), color_cells_by = "cluster", group_cells_by = c("cluster",
   "partition"), genes = NULL, show_trajectory_graph = TRUE,
   trajectory_graph_color = "black",
   trajectory_graph_segment_size = 0.75, norm_method = c("log",

@@ -8,9 +8,13 @@ choose_graph_segments(cds, reduction_method = "UMAP",
   return_list = FALSE)
 }
 \arguments{
-\item{cds}{CDS object}
+\item{cds}{CDS object to be subsetted.}
 
-\item{return_list}{Logical, return a list of cells.}
+\item{reduction_method}{The reduction method to plot while choosing cells.
+Currently only "UMAP" is supported.}
+
+\item{return_list}{Logical, return a list of cells instead of a subsetted
+CDS object.}
 }
 \value{
 A subset CDS object. If return_list = FALSE, a list of cell and

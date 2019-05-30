@@ -1,15 +1,16 @@
-#' Choose cells interactively to make subset cds
+#' Choose cells interactively to subset a cds
 #'
-#' @param cds CDS object
-#' @param reduction_method
-#' @param return_list Logical, return a list of cells.
+#' @param cds CDS object to subset
+#' @param reduction_method The reduction method to plot while choosing cells.
+#' @param return_list Logical, return a list of cells instead of a subsetted
+#'   CDS object.
 #'
 #' @return A subset CDS object. If return_list = FALSE, a list of cell names.
 #' @export
 #'
 #' @examples
 choose_cells <- function(cds,
-                         reduction_method = c("UMAP", "tSNE"),
+                         reduction_method = c("UMAP", "tSNE", "PCA"),
                          return_list = FALSE) {
   reduction_method <- match.arg(reduction_method)
   assertthat::assert_that(is(cds, "cell_data_set"))
@@ -25,6 +26,9 @@ choose_cells <- function(cds,
                           msg = paste("choose_cells only works in",
                                       "interactive mode."))
 
+  reduced_dims <- as.data.frame(reducedDims(cds)[[reduction_method]])
+  names(reduced_dims)[1:2] <- c("V1", "V2")
+
   ui <- shiny::fluidPage(
     shiny::titlePanel("Choose cells for a subset"),
 
@@ -39,17 +43,17 @@ choose_cells <- function(cds,
         shiny::actionButton("reset", "Clear"),
         # done button
         shiny::actionButton("done", "Done"),
-        h3("Instructions:"),
-        tags$ol(
-          tags$li("Highlight points by clicking and dragging."),
-          tags$li("Click the 'Choose/unchoose' button."),
-          tags$li("Repeat until all of the desired cells are black."),
-          tags$li("Click 'Done'.")
+        shiny::h3("Instructions:"),
+        shiny::tags$ol(
+          shiny::tags$li("Highlight points by clicking and dragging."),
+          shiny::tags$li("Click the 'Choose/unchoose' button."),
+          shiny::tags$li("Repeat until all of the desired cells are black."),
+          shiny::tags$li("Click 'Done'.")
         ),
-        h4("Details:"),
-        tags$ul(
-          tags$li("To start over, click 'Clear'"),
-          tags$li("You can also choose/unchoose specific cells by clicking on them directly")
+        shiny::h4("Details:"),
+        shiny::tags$ul(
+          shiny::tags$li("To start over, click 'Clear'"),
+          shiny::tags$li("You can also choose/unchoose specific cells by clicking on them directly")
         )
       ),
 
@@ -72,20 +76,26 @@ choose_cells <- function(cds,
       # Plot the kept and excluded points as two separate data sets
       colData(cds)$keep <- vals$keeprows
 
-      suppressMessages(plot_cells(cds, reduction_method = reduction_method, cell_size = 1, label_cell_groups = FALSE) + geom_point(alpha = colData(cds)$keep))
+      suppressMessages(plot_cells(cds, reduction_method = reduction_method,
+                                  cell_size = 1, label_cell_groups = FALSE) +
+                         geom_point(alpha = colData(cds)$keep))
     }, height = function() {
       session$clientData$output_plot1_width
     })
 
     # Toggle points that are clicked
     shiny::observeEvent(input$plot1_click, {
-      res <- shiny::nearPoints(as.data.frame(reducedDims(cds)[[reduction_method]]), xvar = "V1", yvar = "V2", input$plot1_click, allRows = TRUE)
+      res <- shiny::nearPoints(reduced_dims,
+                               xvar = "V1", yvar = "V2", input$plot1_click,
+                               allRows = TRUE)
       vals$keeprows <- vals$keeprows | res$selected_
     })
 
     # Toggle points that are brushed, when button is clicked
     shiny::observeEvent(input$choose_toggle, {
-      res <- shiny::brushedPoints(as.data.frame(reducedDims(cds)[[reduction_method]]), xvar = "V1", yvar = "V2", input$plot1_brush, allRows = TRUE)
+      res <- shiny::brushedPoints(reduced_dims,
+                                  xvar = "V1", yvar = "V2", input$plot1_brush,
+                                  allRows = TRUE)
       vals$keeprows <- vals$keeprows | res$selected_
     })
 
@@ -110,9 +120,11 @@ choose_cells <- function(cds,
 
 #' Choose cells interactively along the path of a principal graph
 #'
-#' @param cds CDS object
-#' @param reduction_method
-#' @param return_list Logical, return a list of cells.
+#' @param cds CDS object to be subsetted.
+#' @param reduction_method The reduction method to plot while choosing cells.
+#'   Currently only "UMAP" is supported.
+#' @param return_list Logical, return a list of cells instead of a subsetted
+#'   CDS object.
 #'
 #' @return A subset CDS object. If return_list = FALSE, a list of cell and
 #'   graph node names.
@@ -320,8 +332,11 @@ get_principal_path <- function(cds, reduction_method,
     subset_principal_nodes <- c(subset_principal_nodes, path_cells)
   }
   subset_principal_nodes <- unique(subset_principal_nodes)
-  corresponding_cells <- which(paste0("Y_", cds@principal_graph_aux[[reduction_method]]$pr_graph_cell_proj_closest_vertex) %in% subset_principal_nodes)
-  subset_cells <- row.names(cds@principal_graph_aux[[reduction_method]]$pr_graph_cell_proj_closest_vertex)[corresponding_cells]
+  corresponding_cells <- which(paste0("Y_", cds@principal_graph_aux[[
+    reduction_method]]$pr_graph_cell_proj_closest_vertex) %in%
+      subset_principal_nodes)
+  subset_cells <- row.names(cds@principal_graph_aux[[
+    reduction_method]]$pr_graph_cell_proj_closest_vertex)[corresponding_cells]
 
   return(list(nodes = subset_principal_nodes, cells =subset_cells))
 }
@@ -390,7 +405,8 @@ plot_principal_graph <- function(data_df,
 
   g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2))
 
-  g <- g + geom_point(color=data_df$chosen_cells, size=I(cell_size), na.rm = TRUE, alpha = I(alpha))
+  g <- g + geom_point(color=data_df$chosen_cells, size=I(cell_size),
+                      na.rm = TRUE, alpha = I(alpha))
   message("cluster_cells() has not been called yet, can't color cells by cluster")
 
   g <- g + geom_point(aes(x = x, y = y, color = chosen), data=princ_points) +
@@ -419,8 +435,10 @@ plot_principal_graph <- function(data_df,
                  fill="black",
                  size=I(graph_label_size * 1.5),
                  na.rm=TRUE, branch_point_df) +
-      geom_text(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2", label="branch_point_idx"),
-                size=I(graph_label_size), color="white", na.rm=TRUE, branch_point_df)
+      geom_text(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2",
+                           label="branch_point_idx"),
+                size=I(graph_label_size), color="white", na.rm=TRUE,
+                branch_point_df)
   }
 
   if (label_leaves){
@@ -437,7 +455,8 @@ plot_principal_graph <- function(data_df,
                  size=I(graph_label_size * 1.5),
                  na.rm=TRUE,
                  leaf_df) +
-      geom_text(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2", label="leaf_idx"),
+      geom_text(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2",
+                           label="leaf_idx"),
                 size=I(graph_label_size), color="black", na.rm=TRUE, leaf_df)
   }
 
@@ -455,7 +474,8 @@ plot_principal_graph <- function(data_df,
                  size=I(graph_label_size * 1.5),
                  na.rm=TRUE,
                  root_df) +
-      geom_text(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2", label="root_idx"),
+      geom_text(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2",
+                           label="root_idx"),
                 size=I(graph_label_size), color="black", na.rm=TRUE, root_df)
   }
 

@@ -82,5 +82,15 @@ test_that("plot_genes_in_pseudotime doesn't error", {
   expect_equal(1, 1)
 })
 
+test_that("plot_cells_3d doesn't error", {
+  cds <- preprocess_cds(cds)
+  cds <- reduce_dimension(cds, max_components = 3)
+  cds <- cluster_cells(cds)
+  cds <- learn_graph(cds)
+  cds <- order_cells(cds, root_pr_nodes = "Y_1")
+  expect_equal(1, 1)
+})
+
+
 
 
