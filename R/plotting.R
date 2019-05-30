@@ -18,7 +18,7 @@ plot_cells_3d2 <- function(cds,
                            genes=NULL,
                            show_trajectory_graph=TRUE,
                            trajectory_graph_color="black",
-                           trajectory_graph_segment_size=0.75,
+                           trajectory_graph_segment_size=5,
                            norm_method = c("log", "size_only"),
                            cell_size=25,
                            alpha = 1,
@@ -73,33 +73,6 @@ plot_cells_3d2 <- function(cds,
     data_df$cell_color = colData(cds)[data_df$sample_name,color_cells_by]
   }
 
-  ## Graph info
-  if (show_trajectory_graph) {
-
-    ica_space_df <- t(cds@principal_graph_aux[[reduction_method]]$dp_mst) %>%
-      as.data.frame() %>%
-      dplyr::select_(prin_graph_dim_1 = x, prin_graph_dim_2 = y, prin_graph_dim_3 = z) %>%
-      dplyr::mutate(sample_name = rownames(.), sample_state = rownames(.))
-
-    dp_mst <- cds@principal_graph[[reduction_method]]
-
-    edge_df <- dp_mst %>%
-      igraph::as_data_frame() %>%
-      dplyr::select_(source = "from", target = "to") %>%
-      dplyr::left_join(ica_space_df %>%
-                         dplyr::select_(source="sample_name",
-                                        source_prin_graph_dim_1="prin_graph_dim_1",
-                                        source_prin_graph_dim_2="prin_graph_dim_2",
-                                        source_prin_graph_dim_3="prin_graph_dim_3"),
-                       by = "source") %>%
-      dplyr::left_join(ica_space_df %>%
-                         dplyr::select_(target="sample_name",
-                                        target_prin_graph_dim_1="prin_graph_dim_1",
-                                        target_prin_graph_dim_2="prin_graph_dim_2",
-                                        target_prin_graph_dim_3="prin_graph_dim_3"),
-                       by = "target")
-  }
-
   ## Marker genes
   markers_exprs <- NULL
   if (!is.null(genes)) {
@@ -147,17 +120,18 @@ plot_cells_3d2 <- function(cds,
 
   if (is.null(markers_exprs) == FALSE && nrow(markers_exprs) > 0){
     data_df <- merge(data_df, markers_exprs, by.x="sample_name", by.y="cell_id")
-    data_df$value <- with(data_df, ifelse(value >= min_expr, value, NA))
+    data_df$value <- with(data_df, ifelse(value >= min_expr, value, 0))
     if(norm_method == "size_only"){
       p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
                            z = ~data_dim_3, type = 'scatter3d', color = ~value,
                            size=I(cell_size), mode="markers",
                            stroke = I(cell_size / 2))
     } else {
+      data_df$log10_value <- log10(data_df$value + min_expr)
       p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
                            z = ~data_dim_3, type = 'scatter3d',
-                           color = ~log10(value+min_expr), mode="markers",
-                           alpha = ifelse(!is.na(value), "2", "1"),
+                           color = ~log10_value, mode="markers",
+                           alpha = ifelse(!is.na(~value), "2", "1"),
                            size=I(cell_size), stroke = I(cell_size / 2))
     }
   } else {
@@ -185,17 +159,45 @@ plot_cells_3d2 <- function(cds,
                            size=I(cell_size),color=~cell_color,
                            mode="markers", alpha = I(alpha))
     }
+
+
   }
-  if (show_trajectory_graph){
-    all_dat <- merge(data_df, edge_df, all.x=T, all.y=T, by.x=0, by.y="source")
-    print(head(all_dat))
-    print(tail(all_dat))
-    p <- p %>% plotly::add_trace(data = all_dat, mode="lines",
-                                 x = ~source_prin_graph_dim_1,
-                                 y = ~source_prin_graph_dim_2,
-                                 z = ~source_prin_graph_dim_3,
-                                 color = trajectory_graph_color,
-                                 size=trajectory_graph_segment_size)
+
+  ## Graph info
+  if (show_trajectory_graph) {
+
+    ica_space_df <- t(cds@principal_graph_aux[[reduction_method]]$dp_mst) %>%
+      as.data.frame() %>%
+      dplyr::select_(prin_graph_dim_1 = x, prin_graph_dim_2 = y,
+                     prin_graph_dim_3 = z) %>%
+      dplyr::mutate(sample_name = rownames(.), sample_state = rownames(.))
+
+    dp_mst <- cds@principal_graph[[reduction_method]]
+
+    edge_df <- dp_mst %>%
+      igraph::as_data_frame() %>%
+      dplyr::select_(source = "from", target = "to") %>%
+      dplyr::left_join(ica_space_df %>%
+                         dplyr::select_(source="sample_name",
+                                        source_prin_graph_dim_1="prin_graph_dim_1",
+                                        source_prin_graph_dim_2="prin_graph_dim_2",
+                                        source_prin_graph_dim_3="prin_graph_dim_3"),
+                       by = "source") %>%
+      dplyr::left_join(ica_space_df %>%
+                         dplyr::select_(target="sample_name",
+                                        target_prin_graph_dim_1="prin_graph_dim_1",
+                                        target_prin_graph_dim_2="prin_graph_dim_2",
+                                        target_prin_graph_dim_3="prin_graph_dim_3"),
+                       by = "target")
+
+    for (i in 1:nrow(edge_df)) {
+      p <- p %>% plotly::add_trace(x = as.vector(t(edge_df[i, c("source_prin_graph_dim_1", "target_prin_graph_dim_1")])),
+                                   y = as.vector(t(edge_df[i, c("source_prin_graph_dim_2", "target_prin_graph_dim_2")])),
+                                   z = as.vector(t(edge_df[i, c("source_prin_graph_dim_3", "target_prin_graph_dim_3")])),
+                                   color = trajectory_graph_color,
+                                   line = list(color = trajectory_graph_color, width = trajectory_graph_segment_size),
+                                   mode = 'lines', type = 'scatter3d', showlegend = FALSE)
+    }
   }
   p
 }
