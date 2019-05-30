@@ -603,7 +603,7 @@ plot_cells <- function(cds,
                        alpha = 1,
                        min_expr=0.1,
                        rasterize=FALSE) {
-
+  reduction_method <- match.arg(reduction_method)
   assertthat::assert_that(is(cds, "cell_data_set"))
   assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
                           msg = paste("No dimensionality reduction for",
@@ -1138,7 +1138,7 @@ plot_pc_variance_explained <- function(cds) {
 #' cds <- load_a549()
 #' cds_subset <- cds[row.names(subset(rowData(cds),
 #'                  gene_short_name %in% c("ACTA1", "ID1", "CCNB2"))),]
-#' plot_genes_violin(cds_subset, grouping="culture_plate", ncol=2, min_expr=0.1)
+#' plot_genes_violin(cds_subset, group_cells_by="culture_plate", ncol=2, min_expr=0.1)
 #'
 plot_genes_violin <- function (cds_subset,
                                group_cells_by = NULL,
@@ -1220,13 +1220,15 @@ plot_genes_violin <- function (cds_subset,
                                      levels = panel_order)
   }
 
-  cds_exprs[,grouping] <- as.factor(cds_exprs[,grouping])
+  cds_exprs[,group_cells_by] <- as.factor(cds_exprs[,group_cells_by])
 
-  q <- ggplot(aes_string(x = grouping, y = "expression"), data = cds_exprs) +
+  q <- ggplot(aes_string(x = group_cells_by, y = "expression"),
+              data = cds_exprs) +
     monocle_theme_opts()
 
-  cds_exprs[,grouping] <- as.factor(cds_exprs[,grouping])
-  q <- q + geom_violin(aes_string(fill = grouping), scale="width") + guides(fill=FALSE)
+  cds_exprs[,group_cells_by] <- as.factor(cds_exprs[,group_cells_by])
+  q <- q + geom_violin(aes_string(fill = group_cells_by), scale="width") +
+    guides(fill=FALSE)
 
   q <- q + facet_wrap(~feature_label, nrow = nrow,
                       ncol = ncol, scales = "free_y")
@@ -1234,7 +1236,7 @@ plot_genes_violin <- function (cds_subset,
     q <- q + expand_limits(y = c(min_expr, 1))
   }
 
-  q <- q + ylab("Expression") + xlab(grouping)
+  q <- q + ylab("Expression") + xlab(group_cells_by)
 
   if (log_scale){
     q <- q + scale_y_log10()
@@ -1279,7 +1281,7 @@ plot_genes_violin <- function (cds_subset,
 #' cds <- load_a549()
 #' cds_subset <- cds[row.names(subset(rowData(cds),
 #'                                   gene_short_name %in% c("MYOG", "ID1"))),]
-#' plot_percent_cells_positive(cds_subset, grouping="culture_plate")
+#' plot_percent_cells_positive(cds_subset, group_cells_by="culture_plate")
 plot_percent_cells_positive <- function(cds_subset,
                                         group_cells_by = NULL,
                                         min_expr = 0,
@@ -1363,11 +1365,11 @@ plot_percent_cells_positive <- function(cds_subset,
 
   if (!plot_as_count){
     marker_counts$target_fraction <- marker_counts$target_fraction * 100
-    qp <- ggplot(aes_string(x=grouping, y="target_fraction", fill=grouping),
+    qp <- ggplot(aes_string(x=group_cells_by, y="target_fraction", fill=group_cells_by),
                  data=marker_counts) +
       ylab("Cells (percent)")
   } else {
-    qp <- ggplot(aes_string(x=grouping, y="target", fill=grouping),
+    qp <- ggplot(aes_string(x=group_cells_by, y="target", fill=group_cells_by),
                  data=marker_counts) +
       ylab("Cells")
   }
@@ -1402,7 +1404,6 @@ plot_percent_cells_positive <- function(cds_subset,
 #' @param ... additional arguments passed into the function (not used for now)
 #' @return a ggplot2 plot object
 #' @import ggplot2
-#' @import pheatmap
 #' @importFrom reshape2 melt
 #' @importFrom reshape2 dcast
 #' @importFrom viridis scale_color_viridis

@@ -98,9 +98,10 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
     preproc_res <- irlba_res$x
     row.names(preproc_res) <- colnames(cds)
 
-    irlba_rotation = irlba_res$rotation
-    row.names(irlba_rotation) = rownames(FM)
-    cds@preprocess_aux$gene_loadings = irlba_rotation
+    irlba_rotation <- irlba_res$rotation
+    row.names(irlba_rotation) <- rownames(FM)
+    cds@preprocess_aux$gene_loadings <- irlba_rotation
+    cds@preprocess_aux$prop_var_expl <- irlba_res$sdev^2 / sum(irlba_res$sdev^2)
 
   } else if(method == "LSI") {
     # preproc_res <- tfidf(FM)

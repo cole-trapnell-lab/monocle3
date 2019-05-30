@@ -55,5 +55,5 @@ sub-group in the cell_data_set.
 cds <- load_a549()
 cds_subset <- cds[row.names(subset(rowData(cds),
                                   gene_short_name \%in\% c("MYOG", "ID1"))),]
-plot_percent_cells_positive(cds_subset, grouping="culture_plate")
+plot_percent_cells_positive(cds_subset, group_cells_by="culture_plate")
 }

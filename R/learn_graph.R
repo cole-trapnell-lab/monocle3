@@ -26,7 +26,7 @@
 #'   distance of two tip nodes in the spanning tree and the maximum distance
 #'   between any connecting points on the spanning tree allowed to be connected
 #'   during the loop closure procedure. Default is 1.}
-#'   \item{geodesic_distance_ratio:}{The minimal ratio between the geodestic
+#'   \item{geodesic_distance_ratio:}{The minimal ratio between the geodesic
 #'   distance of two tip nodes in the spanning tree and the length of the
 #'   diameter path on the spanning tree allowed to be connected during the loop
 #'   closure procedure. (Both euclidean_distance_ratio and
@@ -981,10 +981,9 @@ connect_tips <- function(pd,
                          qval_thresh = 0.05,
                          kmean_res,
                          euclidean_distance_ratio = 1,
-                         geodestic_distance_ratio = 1/3,
+                         geodesic_distance_ratio = 1/3,
                          medioids,
-                         verbose = FALSE,
-                         ...) {
+                         verbose = FALSE) {
   if(is.null(row.names(stree)) & is.null(row.names(stree))) {
     dimnames(stree) <- list(paste0('Y_', 1:ncol(stree)),
                             paste0('Y_', 1:ncol(stree)))
@@ -1078,7 +1077,7 @@ connect_tips <- function(pd,
     if(all(edge_vec %in% tip_pc_points) &
        (igraph::distances(mst_g_old, edge_vec_in_tip_pc_point[1],
                           edge_vec_in_tip_pc_point[2]) >=
-        geodestic_distance_ratio * diameter_dis) &
+        geodesic_distance_ratio * diameter_dis) &
        (euclidean_distance_ratio * max_node_dist >
         dist(t(reducedDimK_old[, edge_vec]))) ) {
       if(verbose) message('edge_vec is ', edge_vec[1], '\t', edge_vec[2])

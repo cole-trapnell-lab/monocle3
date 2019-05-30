@@ -57,7 +57,7 @@ trajectory building process after \code{preprocess_cds},
 distance of two tip nodes in the spanning tree and the maximum distance
 between any connecting points on the spanning tree allowed to be connected
 during the loop closure procedure. Default is 1.}
-\item{geodesic_distance_ratio:}{The minimal ratio between the geodestic
+\item{geodesic_distance_ratio:}{The minimal ratio between the geodesic
 distance of two tip nodes in the spanning tree and the length of the
 diameter path on the spanning tree allowed to be connected during the loop
 closure procedure. (Both euclidean_distance_ratio and
