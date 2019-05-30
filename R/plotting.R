@@ -617,7 +617,8 @@ plot_cells <- function(cds,
                                       "be dimensions in reduced dimension",
                                       "space."))
   if(!is.null(color_cells_by)) {
-    assertthat::assert_that(color_cells_by %in% c("cluster", "partition") | color_cells_by %in% names(colData(cds)),
+    assertthat::assert_that(color_cells_by %in% c("cluster", "partition") |
+                              color_cells_by %in% names(colData(cds)),
                             msg = paste("color_cells_by must be a column in the",
                                         "colData table."))
   }
@@ -704,7 +705,9 @@ plot_cells <- function(cds,
     } else {
       markers = genes
     }
-    markers_rowData <- as.data.frame(subset(rowData(cds), gene_short_name %in% markers | rownames(rowData(cds)) %in% markers))
+    markers_rowData <- as.data.frame(subset(rowData(cds),
+                                            gene_short_name %in% markers |
+                                              rownames(rowData(cds)) %in% markers))
     if (nrow(markers_rowData) >= 1) {
       cds_exprs <- counts(cds)[row.names(markers_rowData), ,drop=FALSE]
       cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds))
@@ -944,11 +947,50 @@ plot_genes_in_pseudotime <-function(cds_subset,
                                     nrow=NULL,
                                     ncol=1,
                                     panel_order=NULL,
-                                    color_by="Pseudotime",
+                                    color_cells_by="Pseudotime",
                                     trend_formula="~ splines::ns(Pseudotime, df=3)",
                                     label_by_short_name=TRUE,
                                     vertical_jitter=NULL,
                                     horizontal_jitter=NULL){
+  assertthat::assert_that(is(cds_subset, "cell_data_set"))
+  assertthat::assert_that("Pseudotime" %in% names(colData(cds_subset)),
+                          msg = paste("Pseudotime must be a column in",
+                                      "colData. Please run order_cells",
+                                      "before running",
+                                      "plot_genes_in_pseudotime."))
+  if(!is.null(min_expr)) {
+    assertthat::assert_that(assertthat::is.number(min_expr))
+  }
+  assertthat::assert_that(assertthat::is.number(cell_size))
+
+  if(!is.null(nrow)) {
+    assertthat::assert_that(assertthat::is.count(nrow))
+  }
+
+  assertthat::assert_that(assertthat::is.count(ncol))
+  assertthat::assert_that(is.logical(label_by_short_name))
+  if (label_by_short_name) {
+    assertthat::assert_that("gene_short_name" %in% names(rowData(cds_subset)),
+                            msg = paste("When label_by_short_name = TRUE,",
+                                        "rowData must have a column of gene",
+                                        "names called gene_short_name."))
+  }
+  assertthat::assert_that(color_cells_by %in% c("cluster", "partition") |
+                            color_cells_by %in% names(colData(cds_subset)),
+                          msg = paste("color_cells_by must be a column in the",
+                                      "colData table."))
+
+  if(!is.null(panel_order)) {
+    if (label_by_short_name) {
+      assertthat::assert_that(all(panel_order %in% rowData(cds_subset)$gene_short_name))
+    } else {
+      assertthat::assert_that(all(panel_order %in% row.names(rowData(cds_subset))))
+    }
+  }
+  assertthat::assert_that(nrow(rowData(cds_subset)) <= 100,
+                          msg = paste("cds_subset has more than 100 genes -",
+                                      "pass only the subset of the CDS to be",
+                                      "plotted."))
 
   assertthat::assert_that(is(cds_subset, "cell_data_set"))
   assertthat::assert_that("Pseudotime" %in% names(colData(cds_subset)),
@@ -1042,11 +1084,12 @@ plot_genes_in_pseudotime <-function(cds_subset,
 
   cds_exprs$expression[cds_exprs$expression < min_expr] <- min_expr
   cds_exprs$expectation[cds_exprs$expectation < min_expr] <- min_expr
-  if (is.null(panel_order) == FALSE) {
+  if (!is.null(panel_order)) {
     cds_exprs$feature_label <- factor(cds_exprs$feature_label,
                                       levels = panel_order)
   }
   q <- ggplot(aes(Pseudotime, expression), data = cds_exprs)
+
 
   if (!is.null(color_cells_by)) {
     q <- q + geom_point(aes_string(color = color_cells_by),
@@ -1054,7 +1097,6 @@ plot_genes_in_pseudotime <-function(cds_subset,
                         position=position_jitter(horizontal_jitter,
                                                  vertical_jitter))
     if (class(colData(cds_subset)[,color_cells_by]) == "numeric"){
-
       q <- q + viridis::scale_color_viridis(option="C")
     }
   }
@@ -1074,7 +1116,7 @@ plot_genes_in_pseudotime <-function(cds_subset,
 
   q <- q + ylab("Expression")
 
-  q <- q + xlab("Pseudo-time")
+  q <- q + xlab("Pseudotime")
   q <- q + monocle_theme_opts()
   q
 }
@@ -1101,9 +1143,9 @@ plot_pc_variance_explained <- function(cds) {
   p <- qplot(1:length(prop_varex), prop_varex, alpha = I(0.5)) +
     monocle_theme_opts() +
     theme(legend.position="top", legend.key.height=grid::unit(0.35, "in")) +
-    theme(panel.background = element_rect(fill='white')) + xlab('components') +
+    theme(panel.background = element_rect(fill='white')) +
+    xlab('PCA components') +
     ylab('Variance explained \n by each component')
-
   return(p)
 }
 
@@ -1167,7 +1209,6 @@ plot_genes_violin <- function (cds_subset,
   assertthat::assert_that(assertthat::is.count(ncol))
 
   assertthat::assert_that(is.logical(label_by_short_name))
-
   if (label_by_short_name) {
     assertthat::assert_that("gene_short_name" %in% names(rowData(cds_subset)),
                             msg = paste("When label_by_short_name = TRUE,",
@@ -1186,6 +1227,11 @@ plot_genes_violin <- function (cds_subset,
 
   assertthat::assert_that(is.logical(normalize))
   assertthat::assert_that(is.logical(log_scale))
+
+  assertthat::assert_that(nrow(rowData(cds_subset)) <= 100,
+                          msg = paste("cds_subset has more than 100 genes -",
+                                      "pass only the subset of the CDS to be",
+                                      "plotted."))
 
   if (normalize) {
     cds_exprs <- counts(cds_subset)
@@ -1373,6 +1419,11 @@ plot_percent_cells_positive <- function(cds_subset,
                  data=marker_counts) +
       ylab("Cells")
   }
+  if (group_cells_by == "all_cell") {
+    group_cells_by <- ""
+    qp <- qp + theme(legend.title = element_blank())
+  }
+  qp <- qp + xlab(group_cells_by)
 
   if (is.null(plot_limits) == FALSE) {
     qp <- qp + scale_y_continuous(limits=plot_limits)
