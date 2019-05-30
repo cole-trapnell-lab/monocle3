@@ -8,6 +8,23 @@ top_markers(cds, group_cells_by = "cluster",
   genes_to_test_per_group = 50, reduction_method = "UMAP",
   expression_bins = 5, cores = 1)
 }
+\arguments{
+\item{cds}{cell_data_set object to calculate top markers for}
+
+\item{group_cells_by}{String indicating what to group cells by for
+comparison. Default is "cluster".}
+
+\item{genes_to_test_per_group}{Numeric, how many genes of the top ranked
+specific genes by Jenson-Shannon to do the more expensive regression test
+on.}
+
+\item{reduction_method}{String indicating the method used for dimensionality
+reduction. Currently only "UMAP" is supported.}
+
+\item{expression_bins}{?}
+
+\item{cores}{Number of cores to use.}
+}
 \description{
 Identify the genes most specifically expressed in specified groups of cells
 }

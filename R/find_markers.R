@@ -1,5 +1,16 @@
 #' Identify the genes most specifically expressed in specified groups of cells
 #'
+#' @param cds cell_data_set object to calculate top markers for
+#' @param group_cells_by String indicating what to group cells by for
+#'   comparison. Default is "cluster".
+#' @param genes_to_test_per_group Numeric, how many genes of the top ranked
+#'   specific genes by Jenson-Shannon to do the more expensive regression test
+#'   on.
+#' @param reduction_method String indicating the method used for dimensionality
+#'   reduction. Currently only "UMAP" is supported.
+#' @param expression_bins ?
+#' @param cores Number of cores to use.
+#'
 #' @export
 top_markers <- function(cds,
                         group_cells_by="cluster",
@@ -33,7 +44,7 @@ top_markers <- function(cds,
   # Now compute a Jensen Shannon specificity score for each gene w.r.t each group
   cluster_spec_mat = specificity_matrix(cluster_agg_exprs, cores=cores)
   cluster_spec_table = tibble::rownames_to_column(as.data.frame(cluster_spec_mat))
-  cluster_spec_table = gather(cluster_spec_table, "cell_group", "specificity", -rowname)
+  cluster_spec_table = tidyr::gather(cluster_spec_table, "cell_group", "specificity", -rowname)
   spec_model_df = data.frame(rowname=row.names(cluster_spec_mat),
                              num_expressing=Matrix::rowSums(counts(cds) > 0),
                              mean_exprs=Matrix::rowMeans(cluster_agg_exprs),
@@ -42,20 +53,20 @@ top_markers <- function(cds,
   # Now compute the expected max specificity as a function of how many cells express a given gene
   # Genes that are expressed in few cells tend to have very high specificity, so we want to
   # control for this trend when ranking genes by specificity later on
-  spec_model_df = spec_model_df %>% mutate(quantile = ntile(num_expressing, expression_bins))
-  spec_summary = spec_model_df %>% group_by(quantile) %>% summarize(log_spec_mean = mean(log(max_spec)), log_spec_sd = sd(log(max_spec)))
-  spec_model_df = left_join(spec_model_df, spec_summary)
+  spec_model_df = spec_model_df %>% dplyr::mutate(quantile = dplyr::ntile(num_expressing, expression_bins))
+  spec_summary = spec_model_df %>% dplyr::group_by(quantile) %>% dplyr::summarize(log_spec_mean = mean(log(max_spec)), log_spec_sd = sd(log(max_spec)))
+  spec_model_df = dplyr::left_join(spec_model_df, spec_summary)
 
   # Compute the "specifity above expectation" for each gene w.r.t. each group:
   cluster_spec_table = dplyr::left_join(cluster_spec_table, spec_model_df)
-  cluster_spec_table = cluster_spec_table %>% mutate(log_spec=log(specificity),
+  cluster_spec_table = cluster_spec_table %>% dplyr::mutate(log_spec=log(specificity),
                                                      pval_excess_spec = pnorm(log(specificity),log_spec_mean, log_spec_sd, lower.tail=FALSE))
 
 
   cluster_spec_table = cluster_spec_table %>%
     #filter(num_expressing > 10) %>%
-    group_by(cell_group) %>%
-    top_n(genes_to_test_per_group, -pval_excess_spec)
+    dplyr::group_by(cell_group) %>%
+    dplyr::top_n(genes_to_test_per_group, -pval_excess_spec)
 
 
   old_omp_num_threads = Sys.getenv("OMP_NUM_THREADS")
@@ -175,5 +186,55 @@ test_marker_for_cell_group = function(gene_id, cell_group, cell_group_df, cds){
 
   #print(pval)
   return(results)
+}
+
+#' Title
+#'
+#' @param top_markers Tibble of top markers, output of
+#'   \code{\link{top_markers}}.
+#' @param file Path to the marker file to be generated. Default is
+#'   "./marker_file.txt".
+#' @param qval_cutoff Numeric, the q-value cutoff below which to include genes
+#'   as markers. Default is 0.05.
+#' @param max_genes_per_group Numeric, the maximum number of genes to output
+#'   per cell type entry. Default is 10.
+#'
+#' @return None, marker file is written to \code{file} parameter location.
+#' @export
+#'
+generate_garnett_marker_file <- function(top_markers,
+                                         file = "./marker_file.txt",
+                                         qval_cutoff = 0.05,
+                                         max_genes_per_group = 10) {
+  top_markers <- as.data.frame(top_markers)
+  if(is.null(top_markers$cluster_name)) {
+    top_markers$cluster_name <- paste("Cell type", top_markers$cell_group)
+  }
+  group_list <- unique(top_markers$cluster_name)
+
+  good_markers <- top_markers[top_markers$marker_test_q_value <= qval_cutoff,]
+
+  output <- list()
+
+  for (group in group_list) {
+    if (sum(good_markers$cluster_name == group) == 0) {
+      message(paste(group, "did not have any markers above the q-value",
+                    "threshold. It will be skipped."))
+      next
+    }
+
+    sub <- good_markers[good_markers$cluster_name == group,]
+    if (nrow(sub) > max_genes_per_group) {
+      sub <- sub[order(sub$marker_test_q_value),][1:max_genes_per_group,]
+    }
+    entry <- paste0("> ", group, "\n", "expressed: ",
+                    paste(sub$gene_id, collapse = ", "), "\n")
+    output <- append(output, entry)
+  }
+
+  all <- paste(output, collapse = "\n")
+
+  write(all, file=file)
+  message(paste("Garnett marker file written to", file))
 }
 
