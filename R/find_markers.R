@@ -23,6 +23,7 @@ top_markers <- function(cds,
   } else{
     cell_group_df$cell_group = colData(cds)[,group_cells_by]
   }
+  cell_group_df$cell_group = as.character(cell_group_df$cell_group)
 
   # For each gene ggregate expression values across cells within each group
   # in a matrix thats genes x cell groups
@@ -57,20 +58,39 @@ top_markers <- function(cds,
     group_by(cell_group) %>%
     top_n(genes_to_test_per_group, -pval_excess_spec)
 
+  cell_group_df$cell_id = as.character(cell_group_df$cell_id)
+  cell_group_df$cell_group = as.character(cell_group_df$cell_group)
 
-  old_omp_num_threads = Sys.getenv("OMP_NUM_THREADS")
-  Sys.setenv(OMP_NUM_THREADS = 1)
-  marker_test_res = pbmcapply::pbmcmapply(test_marker_for_cell_group,
+  # Temporarily disable OpenMP threading in functions to be run in parallel
+  old_omp_num_threads = as.numeric(Sys.getenv("OMP_NUM_THREADS"))
+  if (is.na(old_omp_num_threads)){
+    old_omp_num_threads = 1
+  }
+  RhpcBLASctl::omp_set_num_threads(1)
+
+  # Temporarily set the number of threads the BLAS library can use to be 1
+  old_blas_num_threads = as.numeric(Sys.getenv("OPENBLAS_NUM_THREADS"))
+  if (is.na(old_omp_num_threads)){
+    old_blas_num_threads = 1
+  }
+  RhpcBLASctl::blas_set_num_threads(1)
+
+  marker_test_res = tryCatch({pbmcapply::pbmcmapply(test_marker_for_cell_group,
                                           cluster_spec_table$rowname,
                                           cluster_spec_table$cell_group,
                                           MoreArgs=list(cell_group_df, cds),
-                                          mc.cores=cores)
+                                          ignore.interactive = TRUE,
+                                          mc.cores=cores)},
+                             finally = {
+                               RhpcBLASctl::omp_set_num_threads(old_omp_num_threads)
+                               RhpcBLASctl::blas_set_num_threads(old_blas_num_threads)
+                             })
+
   marker_test_res = t(marker_test_res)
   marker_test_res = as.matrix(marker_test_res)
   colnames(marker_test_res) = c("pseudo_R2", "lrtest_p_value")
 
   #marker_test_res = as.data.frame(marker_test_res)
-  Sys.setenv(OMP_NUM_THREADS = old_omp_num_threads)
 
   marker_test_res = dplyr::bind_cols(cluster_spec_table, as.data.frame(marker_test_res))
   marker_test_res$lrtest_q_value = p.adjust(marker_test_res$lrtest_p_value,
@@ -141,11 +161,16 @@ specificity_matrix <- function(agg_expr_matrix, cores=1){
 test_marker_for_cell_group = function(gene_id, cell_group, cell_group_df, cds){
   #print(gene_id)
   #print(cell_group)
+
   results = tryCatch({
     f_expression = log(as.numeric(counts(cds)[gene_id,]) / size_factors(cds) + 0.1)
     #print(sum(counts(cds)[gene_id,] > 0))
     is_member = as.character(cell_group_df[colnames(cds),2]) == as.character(cell_group)
-    #print (is_member)
+    is_member[is.na(is_member)] = FALSE
+    is_member[is.null(is_member)] = FALSE
+    if (sum(is.na(f_expression)) > 0 || sum(is.na(is_member)) > 0){
+      stop("Expression and group membership can't be NA")
+    }
 
     model = speedglm::speedglm(is_member ~ f_expression,
                                acc=1e-3, model=FALSE,
@@ -158,7 +183,7 @@ test_marker_for_cell_group = function(gene_id, cell_group, cell_group_df, cds){
                                     verbose=TRUE,
                                     family=binomial())
     lr.stat <- lmtest::lrtest(null_model, model)
-    # #print (summary(model))
+    #print (summary(model))
     # #print(summary(null_model))
     # #print (lr.stat)
     #print (str(lr.stat))
@@ -171,7 +196,7 @@ test_marker_for_cell_group = function(gene_id, cell_group, cell_group_df, cds){
     # pseudo_R2
     #pval
     return (list(pseudo_R2, LR_test_pval))
-  }, error = function(e) { print(e); return(list(0.0, 1.0)) })
+  }, error = function(e) { return(list(0.0, 1.0)) })
 
   #print(pval)
   return(results)

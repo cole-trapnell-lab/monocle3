@@ -166,6 +166,21 @@ mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1, convert_to
 
   # Note: use outfile argument to makeCluster for debugging
   platform <- Sys.info()[['sysname']]
+
+  # Temporarily disable OpenMP threading in functions to be run in parallel
+  old_omp_num_threads = as.numeric(Sys.getenv("OMP_NUM_THREADS"))
+  if (is.na(old_omp_num_threads)){
+    old_omp_num_threads = 1
+  }
+  RhpcBLASctl::omp_set_num_threads(1)
+
+  # Temporarily set the number of threads the BLAS library can use to be 1
+  old_blas_num_threads = as.numeric(Sys.getenv("OPENBLAS_NUM_THREADS"))
+  if (is.na(old_omp_num_threads)){
+    old_blas_num_threads = 1
+  }
+  RhpcBLASctl::blas_set_num_threads(1)
+
   if (platform == "Windows")
     cl <- parallel::makeCluster(cores)
   if (platform %in% c("Linux", "Darwin"))
@@ -173,13 +188,15 @@ mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1, convert_to
 
   cleanup <- function(){
     parallel::stopCluster(cl)
+    RhpcBLASctl::omp_set_num_threads(old_omp_num_threads)
+    RhpcBLASctl::blas_set_num_threads(old_blas_num_threads)
   }
   on.exit(cleanup)
 
   if (is.null(required_packages) == FALSE){
     BiocGenerics::clusterCall(cl, function(pkgs) {
       for (req in pkgs) {
-        library(req, character.only=TRUE)
+        library(req, character.only=TRUE, warn.conflicts=FALSE)
       }
     }, required_packages)
   }
