@@ -395,7 +395,7 @@ plot_cells_3d <- function(cds,
 plot_cells <- function(cds,
                        x=1,
                        y=2,
-                       reduction_method = "UMAP",
+                       reduction_method = c("UMAP", "tSNE"),
                        color_cells_by="cluster",
                        group_cells_by=c("cluster", "partition"),
                        genes=NULL,
@@ -415,7 +415,7 @@ plot_cells <- function(cds,
                        alpha = 1,
                        min_expr=0.1,
                        rasterize=FALSE) {
-
+  reduction_method <- match.arg(reduction_method)
   assertthat::assert_that(is(cds, "cell_data_set"))
   assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
                           msg = paste("No dimensionality reduction for",
@@ -429,7 +429,8 @@ plot_cells <- function(cds,
                                       "be dimensions in reduced dimension",
                                       "space."))
   if(!is.null(color_cells_by)) {
-    assertthat::assert_that(color_cells_by %in% c("cluster", "partition") | color_cells_by %in% names(colData(cds)),
+    assertthat::assert_that(color_cells_by %in% c("cluster", "partition") |
+                              color_cells_by %in% names(colData(cds)),
                             msg = paste("color_cells_by must be a column in the",
                                         "colData table."))
   }
@@ -519,7 +520,9 @@ plot_cells <- function(cds,
     } else {
       markers = genes
     }
-    markers_rowData <- as.data.frame(subset(rowData(cds), gene_short_name %in% markers | rownames(rowData(cds)) %in% markers))
+    markers_rowData <- as.data.frame(subset(rowData(cds),
+                                            gene_short_name %in% markers |
+                                              rownames(rowData(cds)) %in% markers))
     if (nrow(markers_rowData) >= 1) {
       cds_exprs <- counts(cds)[row.names(markers_rowData), ,drop=FALSE]
       cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds))
@@ -758,11 +761,50 @@ plot_genes_in_pseudotime <-function(cds_subset,
                                     nrow=NULL,
                                     ncol=1,
                                     panel_order=NULL,
-                                    color_by="Pseudotime",
+                                    color_cells_by="Pseudotime",
                                     trend_formula="~ splines::ns(Pseudotime, df=3)",
                                     label_by_short_name=TRUE,
                                     vertical_jitter=NULL,
                                     horizontal_jitter=NULL){
+  assertthat::assert_that(is(cds_subset, "cell_data_set"))
+  assertthat::assert_that("Pseudotime" %in% names(colData(cds_subset)),
+                          msg = paste("Pseudotime must be a column in",
+                                      "colData. Please run order_cells",
+                                      "before running",
+                                      "plot_genes_in_pseudotime."))
+  if(!is.null(min_expr)) {
+    assertthat::assert_that(assertthat::is.number(min_expr))
+  }
+  assertthat::assert_that(assertthat::is.number(cell_size))
+
+  if(!is.null(nrow)) {
+    assertthat::assert_that(assertthat::is.count(nrow))
+  }
+
+  assertthat::assert_that(assertthat::is.count(ncol))
+  assertthat::assert_that(is.logical(label_by_short_name))
+  if (label_by_short_name) {
+    assertthat::assert_that("gene_short_name" %in% names(rowData(cds_subset)),
+                            msg = paste("When label_by_short_name = TRUE,",
+                                        "rowData must have a column of gene",
+                                        "names called gene_short_name."))
+  }
+  assertthat::assert_that(color_cells_by %in% c("cluster", "partition") |
+                            color_cells_by %in% names(colData(cds_subset)),
+                          msg = paste("color_cells_by must be a column in the",
+                                      "colData table."))
+
+  if(!is.null(panel_order)) {
+    if (label_by_short_name) {
+      assertthat::assert_that(all(panel_order %in% rowData(cds_subset)$gene_short_name))
+    } else {
+      assertthat::assert_that(all(panel_order %in% row.names(rowData(cds_subset))))
+    }
+  }
+  assertthat::assert_that(nrow(rowData(cds_subset)) <= 100,
+                          msg = paste("cds_subset has more than 100 genes -",
+                                      "pass only the subset of the CDS to be",
+                                      "plotted."))
 
   f_id <- NA
   Cell <- NA
@@ -819,14 +861,14 @@ plot_genes_in_pseudotime <-function(cds_subset,
 
   cds_exprs$expression[cds_exprs$expression < min_expr] <- min_expr
   cds_exprs$expectation[cds_exprs$expectation < min_expr] <- min_expr
-  if (is.null(panel_order) == FALSE) {
+  if (!is.null(panel_order)) {
     cds_exprs$feature_label <- factor(cds_exprs$feature_label,
                                       levels = panel_order)
   }
   q <- ggplot(aes(Pseudotime, expression), data = cds_exprs)
-  if (is.null(color_by) == FALSE) {
-    q <- q + geom_point(aes_string(color = color_by), size = I(cell_size), position=position_jitter(horizontal_jitter, vertical_jitter))
-    if (class(colData(cds_subset)[,color_by]) == "numeric"){
+  if (!is.null(color_cells_by)) {
+    q <- q + geom_point(aes_string(color = color_cells_by), size = I(cell_size), position=position_jitter(horizontal_jitter, vertical_jitter))
+    if (class(colData(cds_subset)[,color_cells_by]) == "numeric"){
       q <- q + viridis::scale_color_viridis(option="C")
     }
   }
@@ -844,7 +886,7 @@ plot_genes_in_pseudotime <-function(cds_subset,
 
   q <- q + ylab("Expression")
 
-  q <- q + xlab("Pseudo-time")
+  q <- q + xlab("Pseudotime")
   q <- q + monocle_theme_opts()
   q
 }
@@ -868,67 +910,21 @@ plot_genes_in_pseudotime <-function(cds_subset,
 #' HSMM <- load_HSMM()
 #' plot_pc_variance_explained(HSMM)
 #' }
-plot_pc_variance_explained <- function(cds,
-                                       max_components=100,
-                                       norm_method = c("log", "vstExprs", "none"),
-                                       residual_model_formula_str=NULL,
-                                       pseudo_count=NULL,
-                                       return_all = F,
-                                       use_existing_pc_variance=FALSE,
-                                       verbose=FALSE,
-                                       ...){
-  norm_method <- match.arg(norm_method)
-  set.seed(2016)
-  if(!is.null(int_metadata(cds)$tsne_variance_explained) & use_existing_pc_variance == T){
-    prop_varex <-int_metadata(cds)$tsne_variance_explained
-  } else if(is.null(assays(cds)$normalized_exprs)) {
-    stop(paste("You must call preprocess(cds) before running this function"))
-  } else {
-    FM <- assays(cds)$normalized_exprs
-    if (!is.null(rowData(cds)$use_for_ordering) &&
-        nrow(subset(rowData(cds), use_for_ordering == TRUE)) > 0) {
-      FM <- FM[rowData(cds)$use_for_ordering, ]
-    }
+plot_pc_variance_explained <- function(cds) {
+  assertthat::assert_that(is(cds, "cell_data_set"))
+  assertthat::assert_that(!is.null(reducedDims(cds)[["PCA"]]),
+                          msg = paste("Data has not been preprocessed with",
+                                      "PCA. Please run preprocess_cds with",
+                                      "method = 'PCA' before running",
+                                      "plot_pc_variance_explained."))
+  prop_varex <- cds@preprocess_aux$prop_var_expl
 
-    xm <- Matrix::rowMeans(FM)
-    xsd <- sqrt(Matrix::rowMeans((FM - xm)^2))
-    FM <- FM[xsd > 0,]
-
-    if (is.null(residual_model_formula_str) == FALSE) {
-      if (verbose)
-        message("Removing batch effects")
-      X.model_mat <- Matrix::sparse.model.matrix(stats::as.formula(residual_model_formula_str),
-                                                 data = colData(cds), drop.unused.levels = TRUE)
-
-      fit <- limma::lmFit(FM, X.model_mat, ...)
-      beta <- fit$coefficients[, -1, drop = FALSE]
-      beta[is.na(beta)] <- 0
-      FM <- as.matrix(FM) - beta %*% t(X.model_mat[, -1])
-    } else {
-      X.model_mat <- NULL
-    }
-
-    if (nrow(FM) == 0) {
-      stop("Error: all rows have standard deviation zero")
-    }
-
-    irlba_res <- sparse_prcomp_irlba(Matrix::t(FM), n = min(max_components, min(dim(FM)) - 1),
-                                     center = TRUE, scale. = TRUE)
-    prop_varex <- irlba_res$sdev^2 / sum(irlba_res$sdev^2)
-
-  }
-
-  p <- qplot(1:length(prop_varex), prop_varex, alpha = I(0.5)) +  monocle_theme_opts() +
+  p <- qplot(1:length(prop_varex), prop_varex, alpha = I(0.5)) +
+    monocle_theme_opts() +
     theme(legend.position="top", legend.key.height=grid::unit(0.35, "in")) +
-    theme(panel.background = element_rect(fill='white')) + xlab('components') +
+    theme(panel.background = element_rect(fill='white')) +
+    xlab('PCA components') +
     ylab('Variance explained \n by each component')
-
-  int_metadata(cds)$tsne_variance_explained <- prop_varex # update CDS slot for variance_explained
-
-  if(return_all) {
-    return(list(variance_explained = prop_varex, p = p))
-  }
-  else
     return(p)
 }
 
@@ -965,7 +961,7 @@ plot_pc_variance_explained <- function(cds,
 #' plot_genes_violin(my_genes, grouping="Hours", ncol=2, min_expr=0.1)
 #' }
 plot_genes_violin <- function (cds_subset,
-                               grouping = "State",
+                               group_cells_by = NULL,
                                min_expr = NULL,
                                nrow = NULL,
                                ncol = 1,
@@ -976,9 +972,12 @@ plot_genes_violin <- function (cds_subset,
 
   assertthat::assert_that(is(cds_subset, "cell_data_set"))
 
-  assertthat::assert_that(grouping %in% names(colData(cds_subset)),
-                          msg = paste("grouping must be a column in the",
-                                      "colData table"))
+  if(!is.null(group_cells_by)) {
+    assertthat::assert_that(group_cells_by %in% names(colData(cds_subset)),
+                            msg = paste("group_cells_by must be a column in",
+                                        "the colData table"))
+  }
+
   if(!is.null(min_expr)) {
     assertthat::assert_that(assertthat::is.number(min_expr))
   }
@@ -990,8 +989,26 @@ plot_genes_violin <- function (cds_subset,
   assertthat::assert_that(assertthat::is.count(ncol))
 
   assertthat::assert_that(is.logical(label_by_short_name))
+  if (label_by_short_name) {
+    assertthat::assert_that("gene_short_name" %in% names(rowData(cds_subset)),
+                            msg = paste("When label_by_short_name = TRUE,",
+                                        "rowData must have a column of gene",
+                                        "names called gene_short_name."))
+  }
+  if(!is.null(panel_order)) {
+    if (label_by_short_name) {
+      assertthat::assert_that(all(panel_order %in% rowData(cds_subset)$gene_short_name))
+    } else {
+      assertthat::assert_that(all(panel_order %in% row.names(rowData(cds_subset))))
+    }
+  }
   assertthat::assert_that(is.logical(normalize))
   assertthat::assert_that(is.logical(log_scale))
+
+  assertthat::assert_that(nrow(rowData(cds_subset)) <= 100,
+                          msg = paste("cds_subset has more than 100 genes -",
+                                      "pass only the subset of the CDS to be",
+                                      "plotted."))
 
   if (normalize) {
     cds_exprs <- counts(cds_subset)
@@ -1028,13 +1045,19 @@ plot_genes_violin <- function (cds_subset,
                                      levels = panel_order)
   }
 
-  cds_exprs[,grouping] <- as.factor(cds_exprs[,grouping])
+  if(is.null(group_cells_by)) {
+    cds_exprs$all_cell <- "All"
+    group_cells_by <- "all_cell"
+  }
+  cds_exprs[,group_cells_by] <- as.factor(cds_exprs[,group_cells_by])
 
-  q <- ggplot(aes_string(x = grouping, y = "expression"), data = cds_exprs) +
+  q <- ggplot(aes_string(x = group_cells_by, y = "expression"),
+              data = cds_exprs) +
     monocle_theme_opts()
 
-  cds_exprs[,grouping] <- as.factor(cds_exprs[,grouping])
-  q <- q + geom_violin(aes_string(fill = grouping), scale="width") + guides(fill=FALSE)
+  cds_exprs[,group_cells_by] <- as.factor(cds_exprs[,group_cells_by])
+  q <- q + geom_violin(aes_string(fill = group_cells_by), scale="width") +
+    guides(fill=FALSE)
 
   q <- q + facet_wrap(~feature_label, nrow = nrow,
                       ncol = ncol, scales = "free_y")
@@ -1042,7 +1065,8 @@ plot_genes_violin <- function (cds_subset,
     q <- q + expand_limits(y = c(min_expr, 1))
   }
 
-  q <- q + ylab("Expression") + xlab(grouping)
+  if(group_cells_by == "all_cell") group_cells_by = ""
+  q <- q + ylab("Expression") + xlab(group_cells_by)
 
   if (log_scale){
     q <- q + scale_y_log10()
@@ -1094,7 +1118,7 @@ plot_genes_violin <- function (cds_subset,
 #' plot_percent_cells_positive(MYOG_ID1, grouping="Media", ncol=2)
 #' }
 plot_percent_cells_positive <- function(cds_subset,
-                                        grouping = "State",
+                                        group_cells_by = NULL,
                                         min_expr = NULL,
                                         nrow = NULL,
                                         ncol = 1,
@@ -1106,9 +1130,12 @@ plot_percent_cells_positive <- function(cds_subset,
 
   assertthat::assert_that(is(cds_subset, "cell_data_set"))
 
-  assertthat::assert_that(grouping %in% names(colData(cds_subset)),
-                          msg = paste("grouping must be a column in the",
-                                      "colData table"))
+  if(!is.null(group_cells_by)) {
+    assertthat::assert_that(group_cells_by %in% names(colData(cds_subset)),
+                            msg = paste("group_cells_by must be a column in",
+                                        "the colData table"))
+  }
+
   if(!is.null(min_expr)) {
     assertthat::assert_that(assertthat::is.number(min_expr))
   }
@@ -1121,6 +1148,11 @@ plot_percent_cells_positive <- function(cds_subset,
   assertthat::assert_that(is.logical(plot_as_count))
   assertthat::assert_that(is.logical(label_by_short_name))
   assertthat::assert_that(is.logical(normalize))
+
+  assertthat::assert_that(nrow(rowData(cds_subset)) <= 100,
+                          msg = paste("cds_subset has more than 100 genes -",
+                                      "pass only the subset of the CDS to be",
+                                      "plotted."))
 
   if (is.null(min_expr)) {
     min_expr <- 0
@@ -1159,22 +1191,35 @@ plot_percent_cells_positive <- function(cds_subset,
       factor(marker_exprs_melted$feature_label, levels=panel_order)
   }
 
-  marker_counts <- plyr::ddply(marker_exprs_melted, c("feature_label",
-                                                      grouping),
-                               function(x) {
-                                 data.frame(target = sum(x$expression > min_expr),
-                                            target_fraction = sum(x$expression > min_expr)/nrow(x)) })
+
+  if(is.null(group_cells_by)) {
+    marker_exprs_melted$all_cell <- "All"
+    group_cells_by <- "all_cell"
+  }
+
+  marker_counts <- plyr::ddply(marker_exprs_melted,
+                               c("feature_label", group_cells_by),
+    function(x) {
+      data.frame(target = sum(x$expression > min_expr),
+                 target_fraction = sum(x$expression > min_expr)/nrow(x))
+    })
 
   if (!plot_as_count){
     marker_counts$target_fraction <- marker_counts$target_fraction * 100
-    qp <- ggplot(aes_string(x=grouping, y="target_fraction", fill=grouping),
+    qp <- ggplot(aes_string(x=group_cells_by, y="target_fraction",
+                            fill=group_cells_by),
                  data=marker_counts) +
       ylab("Cells (percent)")
   } else {
-    qp <- ggplot(aes_string(x=grouping, y="target", fill=grouping),
+    qp <- ggplot(aes_string(x=group_cells_by, y="target", fill=group_cells_by),
                  data=marker_counts) +
       ylab("Cells")
   }
+  if (group_cells_by == "all_cell") {
+    group_cells_by <- ""
+    qp <- qp + theme(legend.title = element_blank())
+  }
+  qp <- qp + xlab(group_cells_by)
 
   if (is.null(plot_limits) == FALSE) {
     qp <- qp + scale_y_continuous(limits=plot_limits)
