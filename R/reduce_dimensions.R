@@ -110,6 +110,10 @@ reduce_dimension <- function(cds,
   #ensure results from RNG sensitive algorithms are the same on all calls
   set.seed(2016)
 
+  if (umap.fast_sgd == TRUE || cores > 1){
+    message("Note: reduce_dimension will produce slightly different output each time you run it unless you set 'umap.fast_sgd = FALSE' and 'cores = 1'")
+  }
+
   preprocess_mat <- reducedDims(cds)[[preprocess_method]]
 
   if(reduction_method == "PCA") {
