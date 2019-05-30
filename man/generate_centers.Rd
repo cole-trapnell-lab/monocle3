@@ -13,7 +13,8 @@ generate_centers(X, W, P, param.gamma)
 
 \item{P}{the cluster assignment matrix}
 
-\item{param.gamma}{regularization parameter for k-means (the prefix of 'param' is used to avoid name collision with gamma)}
+\item{param.gamma}{regularization parameter for k-means (the prefix of
+'param' is used to avoid name collision with gamma)}
 }
 \value{
 A matrix C for the centers for principal graph

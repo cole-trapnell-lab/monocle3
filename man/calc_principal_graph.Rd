@@ -2,7 +2,8 @@
 % Please edit documentation in R/learn_graph.R
 \name{calc_principal_graph}
 \alias{calc_principal_graph}
-\title{Function to automatically learn the structure of data by either using L1-graph or the spanning-tree formulization}
+\title{Function to automatically learn the structure of data by either using
+L1-graph or the spanning-tree formulization}
 \usage{
 calc_principal_graph(X, C0, maxiter = 10, eps = 1e-05,
   L1.gamma = 0.5, L1.sigma = 0.01, verbose = T)
@@ -16,7 +17,8 @@ calc_principal_graph(X, C0, maxiter = 10, eps = 1e-05,
 
 \item{eps}{relative objective difference}
 
-\item{L1.gamma}{regularization parameter for k-means (the prefix of 'param' is used to avoid name collision with gamma)}
+\item{L1.gamma}{regularization parameter for k-means (the prefix of 'param'
+is used to avoid name collision with gamma)}
 
 \item{L1.sigma}{bandwidth parameter}
 
@@ -31,5 +33,6 @@ P is the cluster assignment matrix
 objs is the objective value for the function
 }
 \description{
-Function to automatically learn the structure of data by either using L1-graph or the spanning-tree formulization
+Function to automatically learn the structure of data by either using
+L1-graph or the spanning-tree formulization
 }

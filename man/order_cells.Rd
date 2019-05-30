@@ -17,24 +17,24 @@ use when ordering cells. Currently only "UMAP" is supported.}
 provided, Pseudotime will start (i.e. be zero) at these graph nodes. Both
 \code{root_pr_nodes} and \code{root_cells} cannot be provided.}
 
-\item{root_cells}{Null or a vector of starting cells. If provided,
-Pseudotime will start (i.e. be zero) at these cells.}
+\item{root_cells}{NULL or a vector of starting cells. If provided,
+Pseudotime will start (i.e. be zero) at these cells. Both
+\code{root_pr_nodes} and \code{root_cells} cannot be provided.}
 
 \item{verbose}{Whether to show running information for order_cells}
-
-\item{reverse}{Whether to reverse the direction of the trajectory}
 }
 \value{
 an updated cell_data_set object, in which colData contains values
-for State and Pseudotime for each cell
+for State and Pseudotime for each cell.
 }
 \description{
-Learns a "trajectory" describing the biological process the cells are
-going through, and calculates where each cell falls within that trajectory.
-This function takes as input a cell_data_set and returns it with
-two new columns: \code{Pseudotime} and \code{State}, which together encode
-where each cell maps to the trajectory. \code{order_cells()} optionally
-takes "root" state(s), which you can use to specify the start of the
+Assigns cells a pseudotime value based on their projection on the principal
+graph learned in the \code{learn_graph} function and the position of chosen
+root states. This function takes as input a cell_data_set and returns it
+with two new colData columns: \code{Pseudotime} and \code{State}, which
+together encode where each cell maps to the principal graph trajectory.
+\code{order_cells()} optionally takes "root" state(s) in the form of cell
+or principal graph node IDs, which you can use to specify the start of the
 trajectory. If you don't provide a root state, an plot will be generated
 where you can choose the root state(s) interactively. The trajectory will be
 composed of segments. The cells from a segment will share the same value of

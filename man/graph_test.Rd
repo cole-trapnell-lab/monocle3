@@ -13,6 +13,9 @@ graph_test(cds, neighbor_graph = c("principal_graph", "knn"),
 \arguments{
 \item{cds}{a cell_data_set object upon which to perform this operation}
 
+\item{neighbor_graph}{String indicating what neighbor graph to use.
+"principal_graph" and "knn" are supported. Default is "principal_graph".}
+
 \item{reduction_method}{character, the method used to reduce dimension.
 Currently only supported for "UMAP".}
 

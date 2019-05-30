@@ -14,7 +14,8 @@ soft_assignment(X, C, sigma)
 \item{sigma}{bandwidth parameter}
 }
 \value{
-a matrix with diagonal element as 1 while other elements as zero (eye matrix)
+a matrix with diagonal element as 1 while other elements as zero
+(eye matrix)
 }
 \description{
 Function to calculate the third term in the objective function

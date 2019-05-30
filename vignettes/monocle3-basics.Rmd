@@ -77,7 +77,11 @@ cds <- estimate_size_factors(cds)
 
 ```{r}
 cds_subset <- cds[c("Cdk1", "Zwint", "Znhit1"),]
+<<<<<<< HEAD
 plot_genes_violin(cds_subset, group_cells_by="cell_type2")
+=======
+plot_genes_violin(cds_subset, group_cells_by ="cell_type2")
+>>>>>>> 587d4ae0d98e67b1424447556036ef55d0fd11bd
 
 plot_percent_cells_positive(cds_subset, group_cells_by="cell_type2")
 
@@ -89,7 +93,7 @@ cds <- preprocess_cds(cds, num_dim = 20)
 ```
 
 ```{r}
-#plot_pc_variance_explained(cds)
+plot_pc_variance_explained(cds)
 
 ```
 
@@ -119,7 +123,7 @@ cds <- learn_graph(cds)
 
 ```{r}
 plot_cells(cds,
-           color_by = "cell_type2") +
+           color_cells_by = "cell_type2") +
   ggplot2::scale_color_manual(values = cell_type_color)
 ```
 

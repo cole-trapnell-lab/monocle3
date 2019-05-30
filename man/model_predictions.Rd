@@ -6,6 +6,15 @@
 \usage{
 model_predictions(model_tbl, new_data, type = "response")
 }
+\arguments{
+\item{model_tbl}{A tibble of model objects, generally output of
+\code{\link{fit_models}}.}
+
+\item{new_data}{A data frame of new data to be passed to predict for
+prediction.}
+
+\item{type}{String of type to pass to predict. Default is "response".}
+}
 \description{
 Predict output of fitted models and return as a matrix
 }

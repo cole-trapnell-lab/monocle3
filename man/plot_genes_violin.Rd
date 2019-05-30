@@ -4,33 +4,37 @@
 \alias{plot_genes_violin}
 \title{Plot expression for one or more genes as a violin plot}
 \usage{
-plot_genes_violin(cds_subset, grouping = "State", min_expr = NULL,
+plot_genes_violin(cds_subset, group_cells_by = NULL, min_expr = 0,
   nrow = NULL, ncol = 1, panel_order = NULL,
   label_by_short_name = TRUE, normalize = TRUE, log_scale = TRUE)
 }
 \arguments{
 \item{cds_subset}{Subset cell_data_set to be plotted.}
 
-\item{grouping}{the cell attribute (e.g. the column of colData(cds)) to
-group cells by on the horizontal axis.}
+\item{group_cells_by}{NULL of the cell attribute (e.g. the column of
+colData(cds)) to group cells by on the horizontal axis. If NULL, all cells
+are plotted together.}
 
-\item{min_expr}{the minimum (untransformed) expression level to use when
-plotted the genes. If \code{NULL},
-zero is used.}
+\item{min_expr}{the minimum (untransformed) expression level to be plotted.
+Default is 0.}
 
 \item{nrow}{the number of panels per row in the figure.}
 
 \item{ncol}{the number of panels per column in the figure.}
 
 \item{panel_order}{the order in which genes should be layed out
-(left-to-right, top-to-bottom). Should be gene_short_name, if
-\code{label_by_short_name = TRUE} or gene ID if
+(left-to-right, top-to-bottom). Should be gene_short_name if
+\code{label_by_short_name = TRUE} or feature ID if
 \code{label_by_short_name = FALSE}.}
 
 \item{label_by_short_name}{label figure panels by gene_short_name (TRUE) or
-feature id (FALSE).}
+feature id (FALSE). Default is TRUE.}
 
-\item{log_scale}{Logical, whether or not to scale data logarithmically.}
+\item{normalize}{Logical, whether or not to normalize expression by size
+factor. Default is TRUE.}
+
+\item{log_scale}{Logical, whether or not to scale data logarithmically.
+Default is TRUE.}
 }
 \value{
 a ggplot2 plot object
@@ -41,11 +45,9 @@ cells by, and produces a ggplot2 object that plots the level of expression
 for each group of cells.
 }
 \examples{
-\dontrun{
-library(HSMMSingleCell)
-HSMM <- load_HSMM()
-my_genes <- HSMM[row.names(subset(rowData(HSMM),
+cds <- load_a549()
+cds_subset <- cds[row.names(subset(rowData(cds),
                  gene_short_name \%in\% c("ACTA1", "ID1", "CCNB2"))),]
-plot_genes_violin(my_genes, grouping="Hours", ncol=2, min_expr=0.1)
-}
+plot_genes_violin(cds_subset, group_cells_by="culture_plate", ncol=2, min_expr=0.1)
+
 }

@@ -6,6 +6,10 @@
 \usage{
 coefficient_table(model_tbl)
 }
+\arguments{
+\item{model_tbl}{A tibble of model objects, generally the output of
+\code{\link{fit_models}}.}
+}
 \description{
 Extracts a table of coefficients from a tibble containing model objects
 }

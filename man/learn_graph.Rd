@@ -2,7 +2,8 @@
 % Please edit documentation in R/learn_graph.R
 \name{learn_graph}
 \alias{learn_graph}
-\title{Learn principal graph from the reduced space using reversed graph embedding}
+\title{Learn principal graph from the reduced dimension space using reversed graph
+embedding}
 \usage{
 learn_graph(cds, use_partition = TRUE, close_loop = TRUE,
   learn_graph_control = NULL, verbose = FALSE)
@@ -10,28 +11,21 @@ learn_graph(cds, use_partition = TRUE, close_loop = TRUE,
 \arguments{
 \item{cds}{the cell_data_set upon which to perform this operation}
 
-\item{close_loop}{Whether or not to perform an additional run of loop closing after running DDRTree or SimplePPT to identify potential loop structure in the data space}
+\item{use_partition}{logical parameter that determines whether to use
+partitions calculated during \code{cluster_cells} and therefore to learn
+disjoint graph in each partition. When \code{use_partition = FALSE}, a
+single graph is learned across all partitions. Default is TRUE.}
 
-\item{verbose}{Whether to emit verbose output during dimensionality reduction}
+\item{close_loop}{logical parameter that determines whether or not to
+perform an additional run of loop closing after estimating the principal
+graphs to identify potential loop structure in the data space. Default is
+TRUE.}
 
-\item{rge_method}{Determines how to transform expression values prior to reducing dimensionality}
+\item{learn_graph_control}{NULL or a list of control parameters to be
+passed to the reversed graph embedding function. Default is NULL. A list
+of potential control parameters is provided in details.}
 
-\item{scale}{When this argument is set to TRUE (default), it will scale each gene before running trajectory reconstruction.}
-
-\item{euclidean_distance_ratio}{The maximal ratio between the euclidean distance of two tip nodes in the spanning tree inferred from SimplePPT algorithm and
-that of the maximum distance between any connecting points on the spanning tree allowed to be connected during the loop closure procedure .}
-
-\item{geodesic_distance_ratio}{The minimal ratio between the geodestic distance of two tip nodes in the spanning tree inferred from SimplePPT algorithm and
-that of the length of the diameter path on the spanning tree allowed to be connected during the loop closure procedure. (Both euclidean_distance_ratio and geodesic_distance_ratio
-need to be satisfied to introduce the edge for loop closure.)}
-
-\item{prune_graph}{Whether or not to perform an additional run of graph pruning to remove small insignificant branches}
-
-\item{minimal_branch_len}{The minimal length of the diameter path for a branch to be preserved during graph pruning procedure}
-
-\item{orthogonal_proj_tip}{Whether to perform orthogonal projection for cells corresponding to the tip principal points. Default to be FALSE}
-
-\item{...}{additional arguments to pass to the dimensionality reduction function}
+\item{verbose}{Whether to emit verbose output during graph learning.}
 }
 \value{
 an updated cell_data_set object
@@ -47,31 +41,40 @@ in the analysis, the harder the trajectory is to learn. Fortunately, many
 genes typically co-vary with one another, and so the dimensionality of the
 data can be reduced with a wide variety of different algorithms. Monocle3
 provides two different algorithms for dimensionality reduction via
-\code{reduce_dimension}.
-Both take a cell_data_set object and a number of dimensions allowed for the
-reduced space. You can also provide a model formula indicating some variables
-(e.g. batch ID or other technical factors) to "subtract" from the data so it
-doesn't contribute to the trajectory.
+\code{reduce_dimension} (UMAP and tSNE). Both take a cell_data_set object
+and a number of dimensions allowed for the reduced space. You can also
+provide a model formula indicating some variables (e.g. batch ID or other
+technical factors) to "subtract" from the data so it doesn't contribute to
+the trajectory. The function \code{learn_graph} is the fourth step in the
+trajectory building process after \code{preprocess_cds},
+\code{reduce_dimensions}, and \code{cluster_cells}. After
+\code{learn_graph}, \code{order_cells} is typically called.
 }
-\details{
-You can choose two different reduction algorithms: Independent Component
-Analysis (ICA) and Discriminative Dimensionality Reduction with Trees (DDRTree).
-The choice impacts numerous downstream analysis steps, including \code{\link{order_cells}}.
-Choosing ICA will execute the ordering procedure described in Trapnell and Cacchiarelli et al.,
-which was implemented in Monocle version 1. \code{\link[DDRTree]{DDRTree}} is a more recent manifold
-learning algorithm developed by Qi Mao and colleages. It is substantially more
-powerful, accurate, and robust for single-cell trajectory analysis than ICA,
-and is now the default method.
+\section{Optional \code{learn_graph_control} parameters}{
 
-Often, experiments include cells from different batches or treatments. You can
-reduce the effects of these treatments by transforming the data with a linear
-model prior to dimensionality reduction. To do so, provide a model formula
-through \code{residual_model_formula_str}.
+\describe{
+\item{euclidean_distance_ratio:}{The maximal ratio between the euclidean
+distance of two tip nodes in the spanning tree and the maximum distance
+between any connecting points on the spanning tree allowed to be connected
+during the loop closure procedure. Default is 1.}
+\item{geodesic_distance_ratio:}{The minimal ratio between the geodesic
+distance of two tip nodes in the spanning tree and the length of the
+diameter path on the spanning tree allowed to be connected during the loop
+closure procedure. (Both euclidean_distance_ratio and
+geodesic_distance_ratio need to be satisfied to introduce the edge for
+loop closure). Default is 1/3.}
+\item{minimal_branch_len:}{The minimal length of the diameter path for a
+branch to be preserved during graph pruning procedure. Default is 10.}
+\item{orthogonal_proj_tip:}{ Whether to perform orthogonal projection for
+cells corresponding to the tip principal points. Default is FALSE.}
+\item{prune_graph:}{Whether or not to perform an additional round of graph
+pruning to remove small insignificant branches. Default is TRUE.}
+\item{scale:}{}
+\item{ncenter:}{}
+\item{maxiter:}{}
+\item{eps:}{}
+\item{L1.gamma:}{}
+\item{L1.sigma:}{}
 }
-\references{
-DDRTree: Qi Mao, Li Wang, Steve Goodison, and Yijun Sun. Dimensionality reduction via graph structure learning. In Proceedings of the 21th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining, pages 765–774. ACM, 2015.
-
-L1graph (generalized SimplePPT): Qi Mao, Li Wang, Ivor Tsang, and Yijun Sun. Principal graph and structure learning based on reversed graph embedding . IEEE Trans. Pattern Anal. Mach. Intell., 5 December 2016.
-
-Original SimplePPT: Qi Mao, Le Yang, Li Wang, Steve Goodison, Yijun Sun. SimplePPT: A Simple Principal Tree Algorithm https://epubs.siam.org/doi/10.1137/1.9781611974010.89
 }
+

@@ -1,59 +1,45 @@
 #' Compute a projection of a cell_data_set object into a lower dimensional
 #' space with non-linear dimension reduction methods
 #'
-#' @description Monocle aims to learn how cells transition through a biological
-#' program of gene expression changes in an experiment. Each cell can be viewed
-#' as a point in a high-dimensional space, where each dimension describes the
-#' expression of a different gene in the genome. Identifying the program of
+#' @description Monocle3 aims to learn how cells transition through a
+#' biological program of gene expression changes in an experiment. Each cell
+#' can be viewed as a point in a high-dimensional space, where each dimension
+#' describes the expression of a different gene. Identifying the program of
 #' gene expression changes is equivalent to learning a \emph{trajectory} that
 #' the cells follow through this space. However, the more dimensions there are
 #' in the analysis, the harder the trajectory is to learn. Fortunately, many
 #' genes typically co-vary with one another, and so the dimensionality of the
-#' data can be reduced with a wide variety of different algorithms. Monocle
-#' provides three different algorithms for dimensionality reduction via
-#' \code{reduce_dimension}. All take a cell_data_set object and a number of
-#' dimensions allowed for the reduced space.
+#' data can be reduced with a wide variety of different algorithms. Monocle3
+#' provides two different algorithms for dimensionality reduction via
+#' \code{reduce_dimensions} (UMAP and tSNE). The function
+#' \code{reduce_dimensions} is the second step in the trajectory building
+#' process after \code{preprocess_cds}.
 #'
-#' @details You can choose a few different reduction algorithms: Independent
-#' Component Analysis (ICA) and Discriminative Dimensionality Reduction with
-#' Trees (DDRTree). The choice impacts numerous downstream analysis steps,
-#' including \code{\link{order_cells}}. Choosing ICA will execute the ordering
-#' procedure described in Trapnell and Cacchiarelli et al., which was
-#' implemented in Monocle version 1. \code{\link[DDRTree]{DDRTree}} is a more
-#' recent manifold learning algorithm developed by Qi Mao and colleages. It is
-#' substantially more powerful, accurate, and robust for single-cell trajectory
-#' analysis than ICA, and is now the default method.
+#' UMAP is implemented from the package uwot.
 #'
-#' Often, experiments include cells from different batches or treatments. You
-#' can reduce the effects of these treatments by transforming the data with a
-#' linear model prior to dimensionality reduction. To do so, provide a model
-#' formula through \code{residual_model_formula_str}.
-#'
-#' Prior to reducing the dimensionality of the data, it usually helps to
-#' normalize it so that highly expressed or highly variable genes don't
-#' dominate the computation. \code{reduce_dimension()} automatically transforms
-#' the data in one of several ways depending on the \code{expression_family} of
-#' the cell_data_set object. If the expression_family is \code{negbinomial} or
-#' \code{negbinomial.size}, the data are variance-stabilized. If the
-#' expression_family is \code{Tobit}, the data are adjusted by adding a
-#' pseudocount (of 1 by default) and then log-transformed. If you don't want
-#' any transformation at all, set norm_method to "none" and pseudo_count to 0.
-#' This maybe useful for single-cell qPCR data, or data you've already
-#' transformed yourself in some way.
-#'
-#' @param cds the cell_data_set upon which to perform this operation
-#' @param max_components the dimensionality of the reduced space
+#' @param cds the cell_data_set upon which to perform this operation.
+#' @param max_components the dimensionality of the reduced space. Default is 2.
 #' @param reduction_method A character string specifying the algorithm to use
-#'   for dimensionality reduction.
-#' @param verbose Whether to emit verbose output during dimensionality
-#'   reduction
+#'   for dimensionality reduction. Currently "UMAP", "tSNE", and "PCA" are
+#'   supported.
+#' @param umap.metric A string indicating the distance metric to be used when
+#'   calculating UMAP. Default is "cosine". See uwot package's
+#'   \code{\link[umap]{umap}} for details.
+#' @param umap.min_dist Numeric indicating the minimum distance to be passed to
+#'   UMAP function. Default is 0.1.See uwot package's \code{\link[umap]{umap}}
+#'   for details.
+#' @param umap.n_neighbors Integer indicating the number of neighbors to use
+#'   during KNN graph construction. Default is 15L. See uwot package's
+#'   \code{\link[umap]{umap}} for details.
+#' @param umap.fast_sgd Logical indicating whether to use fast SGD. Default is
+#'   TRUE. See uwot package's \code{\link[umap]{umap}} for details.
+#' @param umap.nn_method String indicating the nearest neighbor method to be
+#'   used by umap. Default is "annoy". See uwot package's
+#'   \code{\link[umap]{umap}} for details.
+#' @param verbose Logical, whether to emit verbose output.
 #' @param ... additional arguments to pass to the dimensionality reduction
-#'   function
+#'   function.
 #' @return an updated cell_data_set object
-#' @references DDRTree: Qi Mao, Li Wang, Steve Goodison, and Yijun Sun.
-#'   Dimensionality reduction via graph structure learning. In Proceedings of
-#'   the 21th ACM SIGKDD International Conference on Knowledge Discovery and
-#'   Data Mining, pages 765–774. ACM, 2015.
 #' @references UMAP: McInnes, L, Healy, J, UMAP: Uniform Manifold Approximation
 #'   and Projection for Dimension Reduction, ArXiv e-prints 1802.03426, 2018
 #' @references tSNE: Laurens van der Maaten and Geoffrey Hinton. Visualizing
@@ -147,8 +133,6 @@ reduce_dimension <- function(cds,
     row.names(umap_res) <- colnames(cds)
     reducedDims(cds)$UMAP <- umap_res
   }
-
-
 
   ## Clear out any old graphs:
   cds@principal_graph_aux[[reduction_method]] <- NULL

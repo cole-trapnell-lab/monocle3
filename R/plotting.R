@@ -10,6 +10,197 @@ monocle_theme_opts <- function()
     theme(legend.key=element_blank())
 }
 
+#' @export
+plot_cells_3d2 <- function(cds,
+                           dims = c(1,2,3),
+                           reduction_method = c("UMAP", "tSNE"),
+                           color_cells_by="cluster",
+                           genes=NULL,
+                           show_trajectory_graph=TRUE,
+                           trajectory_graph_color="black",
+                           trajectory_graph_segment_size=0.75,
+                           norm_method = c("log", "size_only"),
+                           cell_size=25,
+                           alpha = 1,
+                           min_expr=0.1) {
+  reduction_method <- match.arg(reduction_method)
+  assertthat::assert_that(is(cds, "cell_data_set"))
+  assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
+                          msg = paste("No dimensionality reduction for",
+                                      reduction_method, "calculated.",
+                                      "Please run reduce_dimensions with",
+                                      "reduction_method =", reduction_method,
+                                      "before attempting to plot."))
+  low_dim_coords <- reducedDims(cds)[[reduction_method]]
+  if(!is.null(color_cells_by)) {
+    assertthat::assert_that(color_cells_by %in% c("cluster", "partition") |
+                              color_cells_by %in% names(colData(cds)),
+                            msg = paste("color_cells_by must be a column in the",
+                                        "colData table."))
+  }
+
+  assertthat::assert_that(!is.null(color_cells_by) || !is.null(markers),
+                          msg = paste("Either color_cells_by or markers must be",
+                                      "NULL, cannot color by both!"))
+  norm_method = match.arg(norm_method)
+
+  if (show_trajectory_graph && is.null(principal_graph(cds)[[reduction_method]])) {
+    message("No trajectory to plot. Has learn_graph() been called yet?")
+    show_trajectory_graph = FALSE
+  }
+
+  gene_short_name <- NA
+  sample_name <- NA
+  sample_state <- colData(cds)$State
+
+  x <- dims[[1]]
+  y <- dims[[2]]
+  z <- dims[[3]]
+
+  S_matrix <- reducedDims(cds)[[reduction_method]]
+  data_df <- data.frame(S_matrix[,c(dims)])
+
+  colnames(data_df) <- c("data_dim_1", "data_dim_2", "data_dim_3")
+  data_df$sample_name <- row.names(data_df)
+
+  data_df <- as.data.frame(cbind(data_df, colData(cds)))
+
+  if (color_cells_by == "cluster"){
+    data_df$cell_color = tryCatch({clusters(cds, reduction_method = reduction_method)[data_df$sample_name]}, error = function(e) {NULL})
+  } else if (color_cells_by == "partition") {
+    data_df$cell_color = tryCatch({partitions(cds, reduction_method = reduction_method)[data_df$sample_name]}, error = function(e) {NULL})
+  } else{
+    data_df$cell_color = colData(cds)[data_df$sample_name,color_cells_by]
+  }
+
+  ## Graph info
+  if (show_trajectory_graph) {
+
+    ica_space_df <- t(cds@principal_graph_aux[[reduction_method]]$dp_mst) %>%
+      as.data.frame() %>%
+      dplyr::select_(prin_graph_dim_1 = x, prin_graph_dim_2 = y, prin_graph_dim_3 = z) %>%
+      dplyr::mutate(sample_name = rownames(.), sample_state = rownames(.))
+
+    dp_mst <- cds@principal_graph[[reduction_method]]
+
+    edge_df <- dp_mst %>%
+      igraph::as_data_frame() %>%
+      dplyr::select_(source = "from", target = "to") %>%
+      dplyr::left_join(ica_space_df %>%
+                         dplyr::select_(source="sample_name",
+                                        source_prin_graph_dim_1="prin_graph_dim_1",
+                                        source_prin_graph_dim_2="prin_graph_dim_2",
+                                        source_prin_graph_dim_3="prin_graph_dim_3"),
+                       by = "source") %>%
+      dplyr::left_join(ica_space_df %>%
+                         dplyr::select_(target="sample_name",
+                                        target_prin_graph_dim_1="prin_graph_dim_1",
+                                        target_prin_graph_dim_2="prin_graph_dim_2",
+                                        target_prin_graph_dim_3="prin_graph_dim_3"),
+                       by = "target")
+  }
+
+  ## Marker genes
+  markers_exprs <- NULL
+  if (!is.null(genes)) {
+    if ((is.null(dim(genes)) == FALSE) && dim(genes) >= 2){
+      markers = unlist(genes[,1], use.names=FALSE)
+    } else {
+      markers = genes
+    }
+    markers_rowData <- as.data.frame(subset(rowData(cds),
+                                            gene_short_name %in% markers |
+                                              rownames(rowData(cds)) %in% markers))
+    if (nrow(markers_rowData) >= 1) {
+      cds_exprs <- counts(cds)[row.names(markers_rowData), ,drop=FALSE]
+      cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds))
+
+      if ((is.null(dim(genes)) == FALSE) && dim(genes) >= 2){
+        genes = as.data.frame(genes)
+        row.names(genes) = genes[,1]
+        genes = genes[row.names(cds_exprs),]
+        agg_mat = as.matrix(Matrix.utils::aggregate.Matrix(cds_exprs, as.factor(genes[,2]), fun="sum"))
+        agg_mat = t(scale(t(log10(agg_mat + 1))))
+        agg_mat[agg_mat < -2] = -2
+        agg_mat[agg_mat > 2] = 2
+        markers_exprs = agg_mat
+        markers_exprs <- reshape2::melt(markers_exprs)
+        colnames(markers_exprs)[1:2] <- c('feature_id','cell_id')
+
+        markers_exprs$feature_label <- markers_exprs$feature_id
+        markers_linear=TRUE
+      } else {
+        cds_exprs@x = round(cds_exprs@x)
+        markers_exprs = matrix(cds_exprs, nrow=nrow(markers_rowData))
+        colnames(markers_exprs) = colnames(counts(cds))
+        row.names(markers_exprs) = row.names(markers_rowData)
+        markers_exprs <- reshape2::melt(markers_exprs)
+        colnames(markers_exprs)[1:2] <- c('feature_id','cell_id')
+        markers_exprs <- merge(markers_exprs, markers_rowData, by.x = "feature_id", by.y="row.names")
+        markers_exprs$feature_label <- as.character(markers_exprs$gene_short_name)
+        markers_exprs$feature_label[is.na(markers_exprs$feature_label)] <- markers_exprs$feature_id
+        markers_exprs$feature_label <- factor(markers_exprs$feature_label,
+                                              levels = markers)
+      }
+    }
+  }
+
+  if (is.null(markers_exprs) == FALSE && nrow(markers_exprs) > 0){
+    data_df <- merge(data_df, markers_exprs, by.x="sample_name", by.y="cell_id")
+    data_df$value <- with(data_df, ifelse(value >= min_expr, value, NA))
+    if(norm_method == "size_only"){
+      p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
+                           z = ~data_dim_3, type = 'scatter3d', color = ~value,
+                           size=I(cell_size), mode="markers",
+                           stroke = I(cell_size / 2))
+    } else {
+      p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
+                           z = ~data_dim_3, type = 'scatter3d',
+                           color = ~log10(value+min_expr), mode="markers",
+                           alpha = ifelse(!is.na(value), "2", "1"),
+                           size=I(cell_size), stroke = I(cell_size / 2))
+    }
+  } else {
+    if (color_cells_by == "Pseudotime" & is.null(data_df$Pseudotime)){
+      p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
+                           z = ~data_dim_3,type = 'scatter3d',
+                           size=I(cell_size),color=I("gray"), mode="markers",
+                           alpha = I(alpha))
+      message("order_cells() has not been called yet, can't color cells by Pseudotime")
+    } else if(color_cells_by %in% c("cluster", "partition")){
+      if (is.null(data_df$cell_color)){
+        p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
+                             z = ~data_dim_3,type = 'scatter3d',
+                             size=I(cell_size),color=I("gray"), mode="markers",
+                             alpha = I(alpha))
+      } else{
+        p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
+                             z = ~data_dim_3, type = 'scatter3d',
+                             size=I(cell_size),color=~cell_color,
+                             mode="markers", alpha = I(alpha))
+      }
+    } else {
+      p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
+                           z = ~data_dim_3, type = 'scatter3d',
+                           size=I(cell_size),color=~cell_color,
+                           mode="markers", alpha = I(alpha))
+    }
+  }
+  if (show_trajectory_graph){
+    all_dat <- merge(data_df, edge_df, all.x=T, all.y=T, by.x=0, by.y="source")
+    print(head(all_dat))
+    print(tail(all_dat))
+    p <- p %>% plotly::add_trace(data = all_dat, mode="lines",
+                                 x = ~source_prin_graph_dim_1,
+                                 y = ~source_prin_graph_dim_2,
+                                 z = ~source_prin_graph_dim_3,
+                                 color = trajectory_graph_color,
+                                 size=trajectory_graph_segment_size)
+  }
+  p
+}
+
+
 #' Plot a dataset and trajectory in 3 dimensions
 #'
 #' @param cds cell_data_set for the experiment
@@ -43,7 +234,7 @@ monocle_theme_opts <- function()
 plot_cells_3d <- function(cds,
                           reduction_method = "UMAP",
                           downsample_size = NULL,
-                          dim=c(1, 2, 3),
+                          dims=c(1, 2, 3),
                           color_by=NULL,
                           palette = NULL,
                           markers=NULL,
@@ -87,12 +278,9 @@ plot_cells_3d <- function(cds,
   lib_info_with_pseudo <- colData(cds)[cell_sampled, ]
   sample_state <- colData(cds)$State[cell_sampled]
 
-  reduced_dim_coords <- cds@principal_graph_aux[[reduction_method]]$dp_mst
+  reduced_dim_coords <- reducedDims(cds)[[reduction_method]]
 
-  if(length(dim) != 3)
-    dim <- 1:3
-
-  ica_space_df <- data.frame(reduced_dim_coords[,dim])
+  ica_space_df <- data.frame(reduced_dim_coords[,dims])
   colnames(ica_space_df) <- c("prin_graph_dim_1", "prin_graph_dim_2",  "prin_graph_dim_3")
 
   ica_space_df$sample_name <- row.names(ica_space_df)
@@ -114,7 +302,7 @@ plot_cells_3d <- function(cds,
   edge_df <- plyr::rename(edge_df, c("prin_graph_dim_1"="target_prin_graph_dim_1", "prin_graph_dim_2"="target_prin_graph_dim_2", "prin_graph_dim_3"="target_prin_graph_dim_3"))
 
   S_matrix <- reducedDims(cds)[[reduction_method]][cell_sampled,]
-  data_df <- data.frame(S_matrix[,dim])
+  data_df <- data.frame(S_matrix[,dims])
   #data_df <- cbind(data_df, sample_state)
   colnames(data_df) <- c("data_dim_1", "data_dim_2", "data_dim_3")
   data_df$sample_name <- row.names(data_df)
@@ -395,7 +583,7 @@ plot_cells_3d <- function(cds,
 plot_cells <- function(cds,
                        x=1,
                        y=2,
-                       reduction_method = c("UMAP", "tSNE"),
+                       reduction_method = c("UMAP", "tSNE", "PCA"),
                        color_cells_by="cluster",
                        group_cells_by=c("cluster", "partition"),
                        genes=NULL,
@@ -439,9 +627,6 @@ plot_cells <- function(cds,
                           msg = paste("Either color_cells_by or markers must be",
                                       "NULL, cannot color by both!"))
 
-  #if (!is.null(color_cells_by) && color_cells_by == "cluster" && length(clusters(cds, reduction_method = reduction_method)) == 0){
-  #  stop("Error: Clustering is not performed yet. Please call clusterCells() before calling this function.")
-  #}
   norm_method = match.arg(norm_method)
   group_cells_by=match.arg(group_cells_by)
   assertthat::assert_that(!is.null(color_cells_by) || !is.null(genes),
@@ -730,31 +915,32 @@ plot_cells <- function(cds,
 
 #' Plots expression for one or more genes as a function of pseudotime
 #'
-#' @description Plots expression for one or more genes as a function of pseudotime.
-#' Plotting allows you determine if the ordering produced by orderCells() is correct
-#' and it does not need to be flipped using the "reverse" flag in orderCells
-#'
-#' @param cds_subset cell_data_set for the experiment
-#' @param min_expr the minimum (untransformed) expression level to use in plotted the genes.
-#' @param cell_size the size (in points) of each cell used in the plot
-#' @param nrow the number of rows used when laying out the panels for each gene's expression
-#' @param ncol the number of columns used when laying out the panels for each gene's expression
-#' @param panel_order the order in which genes should be layed out (left-to-right, top-to-bottom)
-#' @param color_by the cell attribute (e.g. the column of colData(cds)) to be used to color each cell
-#' @param trend_formula the model formula to be used for fitting the expression trend over pseudotime
-#' @param label_by_short_name label figure panels by gene_short_name (TRUE) or feature id (FALSE)
-#' @param vertical_jitter A value passed to ggplot to jitter the points in the vertical dimension. Prevents overplotting, and is particularly helpful for rounded transcript count data.
-#' @param horizontal_jitter A value passed to ggplot to jitter the points in the horizontal dimension. Prevents overplotting, and is particularly helpful for rounded transcript count data.
+#' @param cds_subset subset cell_data_set including only the genes to be
+#'   plotted.
+#' @param min_expr the minimum (untransformed) expression level to plot.
+#' @param cell_size the size (in points) of each cell used in the plot.
+#' @param nrow the number of rows used when laying out the panels for each
+#'   gene's expression.
+#' @param ncol the number of columns used when laying out the panels for each
+#'   gene's expression
+#' @param panel_order vector of gene names indicating the order in which genes
+#'   should be layed out (left-to-right, top-to-bottom). If
+#'   \code{label_by_short_name = TRUE}, use gene_short_name values, otherwise
+#'   use feature IDs.
+#' @param color_cells_by the cell attribute (e.g. the column of colData(cds))
+#'   to be used to color each cell.
+#' @param trend_formula the model formula to be used for fitting the expression
+#'   trend over pseudotime.
+#' @param label_by_short_name label figure panels by gene_short_name (TRUE) or
+#'   feature ID (FALSE).
+#' @param vertical_jitter A value passed to ggplot to jitter the points in the
+#'   vertical dimension. Prevents overplotting, and is particularly helpful for
+#'   rounded transcript count data.
+#' @param horizontal_jitter A value passed to ggplot to jitter the points in
+#'   the horizontal dimension. Prevents overplotting, and is particularly
+#'   helpful for rounded transcript count data.
 #' @return a ggplot2 plot object
 #' @export
-#' @examples
-#' \dontrun{
-#' library(HSMMSingleCell)
-#' HSMM <- load_HSMM()
-#' my_genes <- row.names(subset(rowData(HSMM), gene_short_name %in% c("CDK1", "MEF2C", "MYH3")))
-#' cds_subset <- HSMM[my_genes,]
-#' plot_genes_in_pseudotime(cds_subset, color_by="Time")
-#' }
 plot_genes_in_pseudotime <-function(cds_subset,
                                     min_expr=NULL,
                                     cell_size=0.75,
@@ -806,14 +992,53 @@ plot_genes_in_pseudotime <-function(cds_subset,
                                       "pass only the subset of the CDS to be",
                                       "plotted."))
 
+  assertthat::assert_that(is(cds_subset, "cell_data_set"))
+  assertthat::assert_that("Pseudotime" %in% names(colData(cds_subset)),
+                          msg = paste("Pseudotime must be a column in",
+                                      "colData. Please run order_cells",
+                                      "before running",
+                                      "plot_genes_in_pseudotime."))
+  if(!is.null(min_expr)) {
+    assertthat::assert_that(assertthat::is.number(min_expr))
+  }
+  assertthat::assert_that(assertthat::is.number(cell_size))
+  assertthat::assert_that(!is.null(size_factors(cds_subset)))
+  if(!is.null(nrow)) {
+    assertthat::assert_that(assertthat::is.count(nrow))
+  }
+
+  assertthat::assert_that(assertthat::is.count(ncol))
+  assertthat::assert_that(is.logical(label_by_short_name))
+  if (label_by_short_name) {
+    assertthat::assert_that("gene_short_name" %in% names(rowData(cds_subset)),
+                            msg = paste("When label_by_short_name = TRUE,",
+                                        "rowData must have a column of gene",
+                                        "names called gene_short_name."))
+  }
+  assertthat::assert_that(color_cells_by %in% c("cluster", "partition") |
+                            color_cells_by %in% names(colData(cds_subset)),
+                          msg = paste("color_cells_by must be a column in the",
+                                      "colData table."))
+
+  if(!is.null(panel_order)) {
+    if (label_by_short_name) {
+      assertthat::assert_that(all(panel_order %in%
+                                    rowData(cds_subset)$gene_short_name))
+    } else {
+      assertthat::assert_that(all(panel_order %in%
+                                    row.names(rowData(cds_subset))))
+    }
+  }
+  assertthat::assert_that(nrow(rowData(cds_subset)) <= 100,
+                          msg = paste("cds_subset has more than 100 genes -",
+                                      "pass only the subset of the CDS to be",
+                                      "plotted."))
+
   f_id <- NA
   Cell <- NA
   cds_subset = cds_subset[,is.finite(colData(cds_subset)$Pseudotime)]
 
   cds_exprs <- counts(cds_subset)
-  if (is.null(size_factors(cds_subset))) {
-    stop("Error: to call this function, you must call estimate_size_factors() first")
-  }
   cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds_subset))
   cds_exprs <- reshape2::melt(round(as.matrix(cds_exprs)))
 
@@ -825,13 +1050,9 @@ plot_genes_in_pseudotime <-function(cds_subset,
   cds_rowData <- rowData(cds_subset)
   cds_exprs <- merge(cds_exprs, cds_rowData, by.x = "f_id", by.y = "row.names")
   cds_exprs <- merge(cds_exprs, cds_colData, by.x = "Cell", by.y = "row.names")
-  #cds_exprs$f_id <- as.character(cds_exprs$f_id)
-  #cds_exprs$Cell <- as.character(cds_exprs$Cell)
 
   cds_exprs$adjusted_expression <- cds_exprs$expression
 
-  # trend_formula <- paste("adjusted_expression", trend_formula,
-  #     sep = "")
   if (label_by_short_name == TRUE) {
     if (is.null(cds_exprs$gene_short_name) == FALSE) {
       cds_exprs$feature_label <- as.character(cds_exprs$gene_short_name)
@@ -855,9 +1076,11 @@ plot_genes_in_pseudotime <-function(cds_subset,
                                          new_data = colData(cds_subset))
 
   colnames(model_expectation) <- colnames(cds_subset)
-  expectation <- plyr::ddply(cds_exprs, plyr::.(f_id, Cell), function(x) data.frame("expectation"=model_expectation[x$f_id, x$Cell]))
+  expectation <- plyr::ddply(cds_exprs, plyr::.(f_id, Cell),
+                             function(x) {
+                               data.frame("expectation"=model_expectation[x$f_id, x$Cell])
+                             })
   cds_exprs <- merge(cds_exprs, expectation)
-  #cds_exprs$expectation <- expectation#apply(cds_exprs,1, function(x) model_expectation[x$f_id, x$Cell])
 
   cds_exprs$expression[cds_exprs$expression < min_expr] <- min_expr
   cds_exprs$expectation[cds_exprs$expectation < min_expr] <- min_expr
@@ -866,14 +1089,21 @@ plot_genes_in_pseudotime <-function(cds_subset,
                                       levels = panel_order)
   }
   q <- ggplot(aes(Pseudotime, expression), data = cds_exprs)
+
+
   if (!is.null(color_cells_by)) {
-    q <- q + geom_point(aes_string(color = color_cells_by), size = I(cell_size), position=position_jitter(horizontal_jitter, vertical_jitter))
+    q <- q + geom_point(aes_string(color = color_cells_by),
+                        size = I(cell_size),
+                        position=position_jitter(horizontal_jitter,
+                                                 vertical_jitter))
     if (class(colData(cds_subset)[,color_cells_by]) == "numeric"){
       q <- q + viridis::scale_color_viridis(option="C")
     }
   }
   else {
-    q <- q + geom_point(size = I(cell_size), position=position_jitter(horizontal_jitter, vertical_jitter))
+    q <- q + geom_point(size = I(cell_size),
+                        position=position_jitter(horizontal_jitter,
+                                                 vertical_jitter))
   }
 
   q <- q + geom_line(aes(x = Pseudotime, y = expectation), data = cds_exprs)
@@ -891,25 +1121,16 @@ plot_genes_in_pseudotime <-function(cds_subset,
   q
 }
 
-#' Plots the percentage of variance explained by the each component based on PCA from the normalized expression
-#' data using the same procedure used in reduceDimension function.
+#' Plots the percentage of variance explained by the each component based on
+#' PCA from the normalized expression data determined using preprocess_cds.
 #'
-#' @param cds CellDataSet for the experiment after running reduceDimension with reduction_method as tSNE
-#' @param max_components Maximum number of components shown in the scree plot (variance explained by each component)
-#' @param norm_method Determines how to transform expression values prior to reducing dimensionality
-#' @param residual_model_formula_str A model formula specifying the effects to subtract from the data before clustering.
-#' @param pseudo_count amount to increase expression values before dimensionality reduction
-#' @param return_all A logical argument to determine whether or not the variance of each component is returned
-#' @param use_existing_pc_variance Whether to plot existing results for variance explained by each PC
-#' @param verbose Whether to emit verbose output during dimensionality reduction
-#' @param ... additional arguments to pass to the dimensionality reduction function
+#' @param cds cell_data_set of the experiment.
+#' @return ggplot object.
 #' @export
 #' @examples
-#' \dontrun{
-#' library(HSMMSingleCell)
-#' HSMM <- load_HSMM()
-#' plot_pc_variance_explained(HSMM)
-#' }
+#' cds <- load_a549()
+#' cds <- preprocess_cds(cds)
+#' plot_pc_variance_explained(cds)
 plot_pc_variance_explained <- function(cds) {
   assertthat::assert_that(is(cds, "cell_data_set"))
   assertthat::assert_that(!is.null(reducedDims(cds)[["PCA"]]),
@@ -925,44 +1146,45 @@ plot_pc_variance_explained <- function(cds) {
     theme(panel.background = element_rect(fill='white')) +
     xlab('PCA components') +
     ylab('Variance explained \n by each component')
-    return(p)
+  return(p)
 }
 
-#' @title Plot expression for one or more genes as a violin plot
+#' Plot expression for one or more genes as a violin plot
 #'
 #' @description Accepts a subset of a cell_data_set and an attribute to group
 #' cells by, and produces a ggplot2 object that plots the level of expression
 #' for each group of cells.
 #'
 #' @param cds_subset Subset cell_data_set to be plotted.
-#' @param grouping the cell attribute (e.g. the column of colData(cds)) to
-#'   group cells by on the horizontal axis.
-#' @param min_expr the minimum (untransformed) expression level to use when
-#'   plotted the genes. If \code{NULL},
-#'   zero is used.
+#' @param group_cells_by NULL of the cell attribute (e.g. the column of
+#'   colData(cds)) to group cells by on the horizontal axis. If NULL, all cells
+#'   are plotted together.
+#' @param min_expr the minimum (untransformed) expression level to be plotted.
+#'   Default is 0.
 #' @param nrow the number of panels per row in the figure.
 #' @param ncol the number of panels per column in the figure.
 #' @param panel_order the order in which genes should be layed out
-#'   (left-to-right, top-to-bottom). Should be gene_short_name, if
-#'   \code{label_by_short_name = TRUE} or gene ID if
+#'   (left-to-right, top-to-bottom). Should be gene_short_name if
+#'   \code{label_by_short_name = TRUE} or feature ID if
 #'   \code{label_by_short_name = FALSE}.
 #' @param label_by_short_name label figure panels by gene_short_name (TRUE) or
-#'   feature id (FALSE).
+#'   feature id (FALSE). Default is TRUE.
+#' @param normalize Logical, whether or not to normalize expression by size
+#'   factor. Default is TRUE.
 #' @param log_scale Logical, whether or not to scale data logarithmically.
+#'   Default is TRUE.
 #' @return a ggplot2 plot object
 #' @import ggplot2
 #' @export
 #' @examples
-#' \dontrun{
-#' library(HSMMSingleCell)
-#' HSMM <- load_HSMM()
-#' my_genes <- HSMM[row.names(subset(rowData(HSMM),
+#' cds <- load_a549()
+#' cds_subset <- cds[row.names(subset(rowData(cds),
 #'                  gene_short_name %in% c("ACTA1", "ID1", "CCNB2"))),]
-#' plot_genes_violin(my_genes, grouping="Hours", ncol=2, min_expr=0.1)
-#' }
+#' plot_genes_violin(cds_subset, group_cells_by="culture_plate", ncol=2, min_expr=0.1)
+#'
 plot_genes_violin <- function (cds_subset,
                                group_cells_by = NULL,
-                               min_expr = NULL,
+                               min_expr = 0,
                                nrow = NULL,
                                ncol = 1,
                                panel_order = NULL,
@@ -978,9 +1200,7 @@ plot_genes_violin <- function (cds_subset,
                                         "the colData table"))
   }
 
-  if(!is.null(min_expr)) {
-    assertthat::assert_that(assertthat::is.number(min_expr))
-  }
+  assertthat::assert_that(assertthat::is.number(min_expr))
 
   if(!is.null(nrow)) {
     assertthat::assert_that(assertthat::is.count(nrow))
@@ -997,11 +1217,14 @@ plot_genes_violin <- function (cds_subset,
   }
   if(!is.null(panel_order)) {
     if (label_by_short_name) {
-      assertthat::assert_that(all(panel_order %in% rowData(cds_subset)$gene_short_name))
+      assertthat::assert_that(all(panel_order %in%
+                                    rowData(cds_subset)$gene_short_name))
     } else {
-      assertthat::assert_that(all(panel_order %in% row.names(rowData(cds_subset))))
+      assertthat::assert_that(all(panel_order %in%
+                                    row.names(rowData(cds_subset))))
     }
   }
+
   assertthat::assert_that(is.logical(normalize))
   assertthat::assert_that(is.logical(log_scale))
 
@@ -1018,9 +1241,7 @@ plot_genes_violin <- function (cds_subset,
     cds_exprs <- counts(cds_subset)
     cds_exprs <- reshape2::melt(as.matrix(cds_exprs))
   }
-  if (is.null(min_expr)) {
-    min_expr <- 0
-  }
+
   colnames(cds_exprs) <- c("f_id", "Cell", "expression")
   cds_exprs$expression[cds_exprs$expression < min_expr] <- min_expr
 
@@ -1045,10 +1266,6 @@ plot_genes_violin <- function (cds_subset,
                                      levels = panel_order)
   }
 
-  if(is.null(group_cells_by)) {
-    cds_exprs$all_cell <- "All"
-    group_cells_by <- "all_cell"
-  }
   cds_exprs[,group_cells_by] <- as.factor(cds_exprs[,group_cells_by])
 
   q <- ggplot(aes_string(x = group_cells_by, y = "expression"),
@@ -1065,7 +1282,6 @@ plot_genes_violin <- function (cds_subset,
     q <- q + expand_limits(y = c(min_expr, 1))
   }
 
-  if(group_cells_by == "all_cell") group_cells_by = ""
   q <- q + ylab("Expression") + xlab(group_cells_by)
 
   if (log_scale){
@@ -1078,48 +1294,43 @@ plot_genes_violin <- function (cds_subset,
 #' Plots the number of cells expressing one or more genes above a given value
 #' as a barplot
 #'
-#'  @description Accepts a cell_data_set and the parameter "grouping", used for
-#'  dividing cells into groups. Returns one or more bar graphs (one graph for
-#'  each gene in the cell_data_set). Each graph shows the percentage of cells
-#'  that express a gene in each sub-group in the cell_data_set.
-#'
-#'  As an example, let's say the cell_data_set passed into the function as
-#'  cds_subset included genes A, B, and C and the grouping parameter divided
-#'  the cells into three groups called X, Y, and Z. Then three graphs would be
-#'  produced called A, B, and C. In each graph there would be three bars one
-#'  for X, one for Y, and one for Z. The X bar in the A graph would show the
-#'  percentage of cells in the X group that express gene A.
+#'  @description Accepts a subset cell_data_set and the parameter
+#'  \code{group_cells_by}, used for dividing cells into groups. Returns one or
+#'  more bar graphs (one graph for each gene in the cell_data_set). Each graph
+#'  shows the percentage (or number) of cells that express a gene in each
+#'  sub-group in the cell_data_set.
 #'
 #' @param cds_subset Subset cell_data_set to be plotted.
-#' @param grouping the cell attribute (e.g. the column of colData(cds)) to
-#'   group cells by on the horizontal axis
+#' @param group_cells_by the cell attribute (e.g. the column of colData(cds))
+#'   to group cells by on the horizontal axis. If NULL, all cells plotted as
+#'   one group.
 #' @param min_expr the minimum (untransformed) expression level to consider the
-#'   gene 'expressed'. If \code{NULL},
-#'  zero is used.
+#'   gene 'expressed'. Default is 0.
 #' @param nrow the number of panels per row in the figure.
 #' @param ncol the number of panels per column in the figure.
 #' @param panel_order the order in which genes should be layed out
-#'   (left-to-right, top-to-bottom)
-#' @param plot_as_count whether to plot as a count of cells rather than a
-#'   percent.
+#'   (left-to-right, top-to-bottom). Should be gene_short_name if
+#'   \code{label_by_short_name = TRUE} or feature ID if
+#'   \code{label_by_short_name = FALSE}.
+#' @param plot_as_count Logical, whether to plot as a count of cells rather
+#'   than a percent. Default is FALSE.
 #' @param label_by_short_name label figure panels by gene_short_name (TRUE) or
-#'   feature id (FALSE).
+#'   feature id (FALSE). Default is TRUE.
+#' @param normalize Logical, whether or not to normalize expression by size
+#'   factor. Default is TRUE.
 #' @param plot_limits A pair of number specifying the limits of the y axis. If
 #'   \code{NULL}, scale to the range of the data. Example \code{c(0,100)}.
 #' @return a ggplot2 plot object
 #' @import ggplot2
 #' @export
 #' @examples
-#' \dontrun{
-#' library(HSMMSingleCell)
-#' HSMM <- load_HSMM()
-#' MYOG_ID1 <- HSMM[row.names(subset(rowData(HSMM),
+#' cds <- load_a549()
+#' cds_subset <- cds[row.names(subset(rowData(cds),
 #'                                   gene_short_name %in% c("MYOG", "ID1"))),]
-#' plot_percent_cells_positive(MYOG_ID1, grouping="Media", ncol=2)
-#' }
+#' plot_percent_cells_positive(cds_subset, group_cells_by="culture_plate")
 plot_percent_cells_positive <- function(cds_subset,
                                         group_cells_by = NULL,
-                                        min_expr = NULL,
+                                        min_expr = 0,
                                         nrow = NULL,
                                         ncol = 1,
                                         panel_order = NULL,
@@ -1135,10 +1346,7 @@ plot_percent_cells_positive <- function(cds_subset,
                             msg = paste("group_cells_by must be a column in",
                                         "the colData table"))
   }
-
-  if(!is.null(min_expr)) {
-    assertthat::assert_that(assertthat::is.number(min_expr))
-  }
+  assertthat::assert_that(assertthat::is.number(min_expr))
 
   if(!is.null(nrow)) {
     assertthat::assert_that(assertthat::is.count(nrow))
@@ -1153,10 +1361,6 @@ plot_percent_cells_positive <- function(cds_subset,
                           msg = paste("cds_subset has more than 100 genes -",
                                       "pass only the subset of the CDS to be",
                                       "plotted."))
-
-  if (is.null(min_expr)) {
-    min_expr <- 0
-  }
 
   marker_exprs <- counts(cds_subset)
 
@@ -1191,23 +1395,23 @@ plot_percent_cells_positive <- function(cds_subset,
       factor(marker_exprs_melted$feature_label, levels=panel_order)
   }
 
-
   if(is.null(group_cells_by)) {
     marker_exprs_melted$all_cell <- "All"
     group_cells_by <- "all_cell"
   }
 
-  marker_counts <- plyr::ddply(marker_exprs_melted,
-                               c("feature_label", group_cells_by),
-    function(x) {
-      data.frame(target = sum(x$expression > min_expr),
-                 target_fraction = sum(x$expression > min_expr)/nrow(x))
-    })
+  marker_counts <-
+    plyr::ddply(marker_exprs_melted,
+                c("feature_label", group_cells_by),
+                function(x) {
+                  data.frame(target = sum(x$expression > min_expr),
+                             target_fraction = sum(x$expression >
+                                                     min_expr)/nrow(x))
+                })
 
   if (!plot_as_count){
     marker_counts$target_fraction <- marker_counts$target_fraction * 100
-    qp <- ggplot(aes_string(x=group_cells_by, y="target_fraction",
-                            fill=group_cells_by),
+    qp <- ggplot(aes_string(x=group_cells_by, y="target_fraction", fill=group_cells_by),
                  data=marker_counts) +
       ylab("Cells (percent)")
   } else {
@@ -1232,9 +1436,10 @@ plot_percent_cells_positive <- function(cds_subset,
 }
 
 
-#' Create a dot plot to visualize the mean gene expression and percentage of expressed cells in each group of cells
+#' Create a dot plot to visualize the mean gene expression and percentage of
+#' expressed cells in each group of cells
 #'
-#' @param cds CellDataSet for the experiment
+#' @param cds cell_data_set for the experiment
 #' @param markers a gene name use for visualize the dot plot
 #' @param group_by the cell attribute (e.g. the column of pData(cds)) to group cells
 #' @param lower_threshold The lowest gene expressed treated as expressed. By default, it is cds@lowerDetectionLimit.
@@ -1250,19 +1455,10 @@ plot_percent_cells_positive <- function(cds_subset,
 #' @param ... additional arguments passed into the function (not used for now)
 #' @return a ggplot2 plot object
 #' @import ggplot2
-#' @import pheatmap
 #' @importFrom reshape2 melt
 #' @importFrom reshape2 dcast
 #' @importFrom viridis scale_color_viridis
 #' @export
-#' @examples
-#' \dontrun{
-#' library(HSMMSingleCell)
-#' HSMM <- load_HSMM()
-#' HSMM <- reduceDimension(HSMM, reduction_method = 'tSNE')
-#' HSMM <- clusterCells(HSMM)
-#' plot_gene_by_group(HSMM, get_classic_muscle_markers())
-#' }
 plot_genes_by_group <- function(cds,
                                 markers,
                                 group_cells_by="cluster",

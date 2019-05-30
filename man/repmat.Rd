@@ -2,7 +2,8 @@
 % Please edit documentation in R/learn_graph.R
 \name{repmat}
 \alias{repmat}
-\title{function to reproduce the behavior of repmat function in matlab to replicate and tile an matrix}
+\title{function to reproduce the behavior of repmat function in matlab to replicate
+and tile an matrix}
 \usage{
 repmat(X, m, n)
 }
@@ -17,5 +18,6 @@ repmat(X, m, n)
 a matrix
 }
 \description{
-function to reproduce the behavior of repmat function in matlab to replicate and tile an matrix
+function to reproduce the behavior of repmat function in matlab to replicate
+and tile an matrix
 }

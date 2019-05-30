@@ -1,4 +1,4 @@
-#' @title Test genes for differential expression based on the low dimensional
+#' Test genes for differential expression based on the low dimensional
 #' embedding and the principal graph
 #'
 #' @description We are often interested in finding genes that are
@@ -15,7 +15,8 @@
 #' *anti-correlated*.
 #'
 #' @param cds a cell_data_set object upon which to perform this operation
-#' @param neighbor_graph
+#' @param neighbor_graph String indicating what neighbor graph to use.
+#'   "principal_graph" and "knn" are supported. Default is "principal_graph".
 #' @param reduction_method character, the method used to reduce dimension.
 #'   Currently only supported for "UMAP".
 #' @param k Number of nearest neighbors used for building the kNN graph which

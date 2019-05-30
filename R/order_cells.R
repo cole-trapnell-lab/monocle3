@@ -1,12 +1,13 @@
 
 #' Orders cells according to pseudotime.
 #'
-#' Learns a "trajectory" describing the biological process the cells are
-#' going through, and calculates where each cell falls within that trajectory.
-#' This function takes as input a cell_data_set and returns it with
-#' two new columns: \code{Pseudotime} and \code{State}, which together encode
-#' where each cell maps to the trajectory. \code{order_cells()} optionally
-#' takes "root" state(s), which you can use to specify the start of the
+#' Assigns cells a pseudotime value based on their projection on the principal
+#' graph learned in the \code{learn_graph} function and the position of chosen
+#' root states. This function takes as input a cell_data_set and returns it
+#' with two new colData columns: \code{Pseudotime} and \code{State}, which
+#' together encode where each cell maps to the principal graph trajectory.
+#' \code{order_cells()} optionally takes "root" state(s) in the form of cell
+#' or principal graph node IDs, which you can use to specify the start of the
 #' trajectory. If you don't provide a root state, an plot will be generated
 #' where you can choose the root state(s) interactively. The trajectory will be
 #' composed of segments. The cells from a segment will share the same value of
@@ -18,13 +19,13 @@
 #' @param root_pr_nodes NULL or a vector of starting principal points. If
 #'   provided, Pseudotime will start (i.e. be zero) at these graph nodes. Both
 #'   \code{root_pr_nodes} and \code{root_cells} cannot be provided.
-#' @param root_cells Null or a vector of starting cells. If provided,
-#'   Pseudotime will start (i.e. be zero) at these cells.
-#' @param reverse Whether to reverse the direction of the trajectory
+#' @param root_cells NULL or a vector of starting cells. If provided,
+#'   Pseudotime will start (i.e. be zero) at these cells. Both
+#'   \code{root_pr_nodes} and \code{root_cells} cannot be provided.
 #' @param verbose Whether to show running information for order_cells
 #'
 #' @return an updated cell_data_set object, in which colData contains values
-#'   for State and Pseudotime for each cell
+#'   for State and Pseudotime for each cell.
 #' @export
 order_cells <- function(cds,
                         reduction_method = "UMAP",
@@ -56,14 +57,16 @@ order_cells <- function(cds,
                                       "Please run learn_graph with",
                                       "reduction_method =", reduction_method,
                                       "before running order_cells."))
-  assertthat::assert_that(igraph::vcount(principal_graph(cds)[[reduction_method]]) < 10000,
-                          msg = paste("principal graph is too large.",
-                                      "order_cells doesn't support more than",
-                                      "10 thousand centroids."))
+  assertthat::assert_that(
+    igraph::vcount(principal_graph(cds)[[reduction_method]]) < 10000,
+    msg = paste("principal graph is too large. order_cells doesn't support",
+                "more than 10 thousand centroids."))
   if(!is.null(root_pr_nodes)) {
-    assertthat::assert_that(all(root_pr_nodes %in% igraph::V(principal_graph(cds)[[reduction_method]])$name),
-                            msg = paste("All provided root_pr_nodes must be",
-                                        "present in the principal graph."))
+    assertthat::assert_that(
+      all(root_pr_nodes %in%
+            igraph::V(principal_graph(cds)[[reduction_method]])$name),
+      msg = paste("All provided root_pr_nodes must be present in the",
+                  "principal graph."))
   }
 
   if(!is.null(root_cells)) {
@@ -84,16 +87,19 @@ order_cells <- function(cds,
 
   if (is.null(root_pr_nodes) & is.null(root_cells)){
     if (interactive()){
-      root_pr_nodes <- select_trajectory_roots(cds, reduction_method = reduction_method)
+      root_pr_nodes <-
+        select_trajectory_roots(cds, reduction_method = reduction_method)
     }
   } else if(!is.null(root_cells)){
-    closest_vertex <- cds@principal_graph_aux[[reduction_method]]$pr_graph_cell_proj_closest_vertex
+    closest_vertex <- cds@principal_graph_aux[[
+      reduction_method]]$pr_graph_cell_proj_closest_vertex
     root_pr_nodes <- paste("Y_", closest_vertex[root_cells,], sep="")
   }
 
   cds@principal_graph_aux[[reduction_method]]$root_pr_nodes <- root_pr_nodes
 
-  cc_ordering <- extract_general_graph_ordering(cds, root_pr_nodes, verbose, reduction_method)
+  cc_ordering <- extract_general_graph_ordering(cds, root_pr_nodes, verbose,
+                                                reduction_method)
   colData(cds)$Pseudotime <- cc_ordering[row.names(colData(cds)), ]$pseudo_time
 
   cds
@@ -120,11 +126,13 @@ extract_general_graph_ordering <- function(cds,
   # 1. identify nearest cells to the selected principal node
   # 2. build a cell-wise graph for each louvain group
   # 3. run the distance function to assign pseudotime for each cell
-  closest_vertex <- findNearestVertex(Y[, root_cell, drop = F], Z)
+  closest_vertex <- find_nearest_vertex(Y[, root_cell, drop = F], Z)
   closest_vertex_id <- colnames(cds)[closest_vertex]
 
-  cell_wise_graph <- cds@principal_graph_aux[[reduction_method]]$pr_graph_cell_proj_tree
-  cell_wise_distances <- igraph::distances(cell_wise_graph, v = closest_vertex_id)
+  cell_wise_graph <-
+    cds@principal_graph_aux[[reduction_method]]$pr_graph_cell_proj_tree
+  cell_wise_distances <- igraph::distances(cell_wise_graph,
+                                           v = closest_vertex_id)
 
   if (length(closest_vertex_id) > 1){
     node_names <- colnames(cell_wise_distances)
@@ -136,37 +144,23 @@ extract_general_graph_ordering <- function(cds,
 
   names(pseudotimes) <- node_names
 
-  ordering_df <- data.frame(sample_name = igraph::V(cell_wise_graph)$name, # pr_graph
-                            # cell_state = states,
+  ordering_df <- data.frame(sample_name = igraph::V(cell_wise_graph)$name,
                             pseudo_time = as.vector(pseudotimes)
-                            # parent = parents
   )
   row.names(ordering_df) <- ordering_df$sample_name
   return(ordering_df)
 }
 
-#' Select the roots of the principal graph
-#' @param cds CellDataSet where roots will be selected from
-#' @param x The first dimension to plot
-#' @param y The number of dimension to plot
-#' @param num_roots Number of roots for the trajectory
-#' @param pch Size of the principal graph node
-#' @param ... Extra arguments to pass to function
+# Select the roots of the principal graph
 select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
-                                    num_roots = NULL,
-                                    pch = 19,
-                                    reduction_method,
-                                    ...)
-{
-  #TODO: need to validate cds as ready for this plot (need mst, pseudotime, etc)
-  #lib_info_with_pseudo <- colData(cds)
-
+                                    reduction_method) {
   reduced_dim_coords <- t(cds@principal_graph_aux[[reduction_method]]$dp_mst)
 
   ica_space_df <- as.data.frame(reduced_dim_coords)
   use_3d <- ncol(ica_space_df) >= 3
   if (use_3d){
-    colnames(ica_space_df) = c("prin_graph_dim_1", "prin_graph_dim_2", "prin_graph_dim_3")
+    colnames(ica_space_df) = c("prin_graph_dim_1", "prin_graph_dim_2",
+                               "prin_graph_dim_3")
   }
   else{
     colnames(ica_space_df) = c("prin_graph_dim_1", "prin_graph_dim_2")
@@ -187,15 +181,15 @@ select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
       select_(source = "from", target = "to") %>%
       dplyr::left_join(ica_space_df %>%
                          dplyr::select_(source="sample_name",
-                                        source_prin_graph_dim_1="prin_graph_dim_1",
-                                        source_prin_graph_dim_2="prin_graph_dim_2",
-                                        source_prin_graph_dim_3="prin_graph_dim_3"),
+                                    source_prin_graph_dim_1="prin_graph_dim_1",
+                                    source_prin_graph_dim_2="prin_graph_dim_2",
+                                    source_prin_graph_dim_3="prin_graph_dim_3"),
                        by = "source") %>%
       dplyr::left_join(ica_space_df %>%
                          dplyr::select_(target="sample_name",
-                                        target_prin_graph_dim_1="prin_graph_dim_1",
-                                        target_prin_graph_dim_2="prin_graph_dim_2",
-                                        target_prin_graph_dim_3="prin_graph_dim_3"),
+                                    target_prin_graph_dim_1="prin_graph_dim_1",
+                                    target_prin_graph_dim_2="prin_graph_dim_2",
+                                    target_prin_graph_dim_3="prin_graph_dim_3"),
                        by = "target")
   }else{
     edge_df <- dp_mst %>%
@@ -203,20 +197,17 @@ select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
       dplyr::select_(source = "from", target = "to") %>%
       dplyr::left_join(ica_space_df %>%
                          dplyr::select_(source="sample_name",
-                                        source_prin_graph_dim_1="prin_graph_dim_1",
-                                        source_prin_graph_dim_2="prin_graph_dim_2"),
+                                    source_prin_graph_dim_1="prin_graph_dim_1",
+                                    source_prin_graph_dim_2="prin_graph_dim_2"),
                        by = "source") %>%
       dplyr::left_join(ica_space_df %>%
                          dplyr::select_(target="sample_name",
-                                        target_prin_graph_dim_1="prin_graph_dim_1",
-                                        target_prin_graph_dim_2="prin_graph_dim_2"),
+                                    target_prin_graph_dim_1="prin_graph_dim_1",
+                                    target_prin_graph_dim_2="prin_graph_dim_2"),
                        by = "target")
   }
 
-  if (is.null(num_roots)){
-    num_roots = nrow(ica_space_df)
-  }
-  #xy <- xy.coords(x, y); x <- xy$x; y <- xy$y
+  num_roots <- nrow(ica_space_df)
   sel <- rep(FALSE, nrow(ica_space_df))
 
   if (use_3d){
@@ -262,7 +253,6 @@ select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
       # Toggle points that are clicked
       shiny::observeEvent(event_data("plotly_click"), {
         d <- event_data("plotly_click")
-        print(str(d))
         new_keep <- rep(FALSE, nrow(ica_space_df))
         new_keep[which(ica_space_df$sample_name == d$key)] <- TRUE
         vals$keeprows <- xor(vals$keeprows, new_keep)
@@ -316,25 +306,29 @@ select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
         keep    <- ica_space_df[ vals$keeprows, , drop = FALSE]
         exclude <- ica_space_df[!vals$keeprows, , drop = FALSE]
 
-        ggplot(keep, aes(prin_graph_dim_1, prin_graph_dim_2)) + geom_point(alpha = .7) +
+        ggplot(keep, aes(prin_graph_dim_1, prin_graph_dim_2)) +
+          geom_point(alpha = .7) +
           geom_point(data = exclude, shape = 21, fill = NA, color = "blue") +
           geom_segment(data = edge_df,  aes(x = source_prin_graph_dim_1,
                                             xend = target_prin_graph_dim_1,
                                             y = source_prin_graph_dim_2,
                                             yend = target_prin_graph_dim_2)) +
-          labs(x="Component 1", y="Component 2") + monocle3:::monocle_theme_opts()
+          labs(x="Component 1", y="Component 2") +
+          monocle3:::monocle_theme_opts()
       })
 
       # Toggle points that are clicked
       shiny::observeEvent(input$plot1_click, {
-        res <- shiny::nearPoints(ica_space_df, input$plot1_click, allRows = TRUE)
+        res <- shiny::nearPoints(ica_space_df, input$plot1_click,
+                                 allRows = TRUE)
 
         vals$keeprows <- xor(vals$keeprows, res$selected_)
       })
 
       # Toggle points that are brushed, when button is clicked
       shiny::observeEvent(input$choose_toggle, {
-        res <- shiny::brushedPoints(ica_space_df, input$plot1_brush, allRows = TRUE)
+        res <- shiny::brushedPoints(ica_space_df, input$plot1_brush,
+                                    allRows = TRUE)
 
         vals$keeprows <- xor(vals$keeprows, res$selected_)
       })
@@ -355,7 +349,6 @@ select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
   as.character(ica_space_df$sample_name[which(!sel)])
 } # nocov end
 
-#' Return the names of principal graph nodes that are branches (excluding roots)
 branch_nodes <- function(cds,reduction_method="UMAP"){
   g = principal_graph(cds)[[reduction_method]]
   branch_points <- which(igraph::degree(g) > 2)
@@ -363,7 +356,6 @@ branch_nodes <- function(cds,reduction_method="UMAP"){
   return(branch_points)
 }
 
-#' Return the names of principal graph nodes that are leaves (excluding roots)
 leaf_nodes <- function(cds,reduction_method="UMAP"){
   g = principal_graph(cds)[[reduction_method]]
   leaves <- which(igraph::degree(g) == 1)
@@ -371,12 +363,12 @@ leaf_nodes <- function(cds,reduction_method="UMAP"){
   return(leaves)
 }
 
-#' Return the names of principal graph nodes that are roots
 root_nodes <- function(cds, reduction_method="UMAP"){
   g = principal_graph(cds)[[reduction_method]]
-  root_pr_nodes = which(names(igraph::V(g)) %in%
-                          cds@principal_graph_aux[[reduction_method]]$root_pr_nodes)
-  names(root_pr_nodes) = cds@principal_graph_aux[[reduction_method]]$root_pr_nodes
+  root_pr_nodes <- which(names(igraph::V(g)) %in%
+                    cds@principal_graph_aux[[reduction_method]]$root_pr_nodes)
+  names(root_pr_nodes) <-
+    cds@principal_graph_aux[[reduction_method]]$root_pr_nodes
   return(root_pr_nodes)
 }
 

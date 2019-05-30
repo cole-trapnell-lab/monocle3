@@ -2,8 +2,10 @@
 
 #' Get a genome from Cell Ranger output
 #'
-#' @param matrix_path Path to a matrices directory produced by the Cell Ranger pipeline
-#' @param genome Genome to specifically check for, otherwise will check for whatever genome(s) exist there
+#' @param matrix_path Path to a matrices directory produced by the Cell Ranger
+#'   pipeline
+#' @param genome Genome to specifically check for, otherwise will check for
+#'   whatever genome(s) exist there
 #' @return A string representing the genome found
 get_genome_in_matrix_path <- function(matrix_path, genome=NULL) {
   genomes <- dir(matrix_path)
@@ -11,7 +13,8 @@ get_genome_in_matrix_path <- function(matrix_path, genome=NULL) {
     if (length(genomes) == 1) {
       genome <- genomes[1]
     } else {
-      stop(sprintf("Multiple genomes found; please specify one. \n Genomes present: %s",paste(genomes, collapse=", ")))
+      stop(sprintf("Multiple genomes found; please specify one. \n Genomes present: %s",
+                   paste(genomes, collapse=", ")))
     }
   } else if (!(genome %in% genomes)) {
     stop(sprintf("Could not find specified genome: '%s'. Genomes present: %s",
@@ -36,7 +39,8 @@ get_genome_in_matrix_path <- function(matrix_path, genome=NULL) {
 #' # Load from a Cell Ranger output directory
 #' gene_bc_matrix <- load_cellranger_data("/home/user/cellranger_output")
 #' }
-load_cellranger_data <- function(pipestance_path=NULL, genome=NULL, barcode_filtered=TRUE) {
+load_cellranger_data <- function(pipestance_path=NULL, genome=NULL,
+                                 barcode_filtered=TRUE) {
   # check for correct directory structure
   if (!dir.exists(pipestance_path))
     stop("Could not find the pipestance path: '", pipestance_path,"'.
@@ -118,17 +122,12 @@ load_cellranger_data <- function(pipestance_path=NULL, genome=NULL, barcode_filt
 
   barcodes <- read.delim(barcode.loc, stringsAsFactors=FALSE, header=FALSE)
   if (dim(data)[2] != length(barcodes[,1])) {
-    stop(sprintf("Mismatch dimension between barcode file: \n\t %s\n and matrix file: \n\t %s\n", barcode.loc,matrix.loc))
+    stop(sprintf("Mismatch dimension between barcode file: \n\t %s\n and matrix file: \n\t %s\n",
+                 barcode.loc,matrix.loc))
   }
   barcodes$V1 = make.unique(barcodes$V1)
   colnames(data) = barcodes[,1]
   pd = data.frame(barcode=barcodes[,1], row.names=barcodes[,1])
-  #The expression value matrix \emph{must} have the same number of columns as the \Robject{phenoData} has rows,
-  #and it must have the same number of rows as the \Robject{featureData} data frame has rows.
-  # Row names of the \Robject{phenoData} object should match the column names of the expression matrix. Row names of
-  # the \Robject{featureData} object should match row names of the expression matrix. Also, one of the columns of the
-  #\Robject{featureData} must be named "gene\_short\_name".
-
   gbm <- new_cell_data_set(data,
                         cell_metadata = pd,
                         gene_metadata =  feature.names)

@@ -2,19 +2,22 @@
 % Please edit documentation in R/select_cells.R
 \name{choose_cells}
 \alias{choose_cells}
-\title{Choose cells interactively to make subset cds}
+\title{Choose cells interactively to subset a cds}
 \usage{
-choose_cells(cds, reduction_method = c("UMAP", "tSNE"),
+choose_cells(cds, reduction_method = c("UMAP", "tSNE", "PCA"),
   return_list = FALSE)
 }
 \arguments{
-\item{cds}{CDS object}
+\item{cds}{CDS object to subset}
 
-\item{return_list}{Logical, return a list of cells.}
+\item{reduction_method}{The reduction method to plot while choosing cells.}
+
+\item{return_list}{Logical, return a list of cells instead of a subsetted
+CDS object.}
 }
 \value{
 A subset CDS object. If return_list = FALSE, a list of cell names.
 }
 \description{
-Choose cells interactively to make subset cds
+Choose cells interactively to subset a cds
 }
