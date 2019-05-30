@@ -12,42 +12,44 @@ plot_genes_in_pseudotime(cds_subset, min_expr = NULL, cell_size = 0.75,
   horizontal_jitter = NULL)
 }
 \arguments{
-\item{cds_subset}{cell_data_set for the experiment}
+\item{cds_subset}{subset cell_data_set including only the genes to be
+plotted.}
 
-\item{min_expr}{the minimum (untransformed) expression level to use in plotted the genes.}
+\item{min_expr}{the minimum (untransformed) expression level to plot.}
 
-\item{cell_size}{the size (in points) of each cell used in the plot}
+\item{cell_size}{the size (in points) of each cell used in the plot.}
 
-\item{nrow}{the number of rows used when laying out the panels for each gene's expression}
+\item{nrow}{the number of rows used when laying out the panels for each
+gene's expression.}
 
-\item{ncol}{the number of columns used when laying out the panels for each gene's expression}
+\item{ncol}{the number of columns used when laying out the panels for each
+gene's expression}
 
-\item{panel_order}{the order in which genes should be layed out (left-to-right, top-to-bottom)}
+\item{panel_order}{vector of gene names indicating the order in which genes
+should be layed out (left-to-right, top-to-bottom). If
+\code{label_by_short_name = TRUE}, use gene_short_name values, otherwise
+use feature IDs.}
 
-\item{trend_formula}{the model formula to be used for fitting the expression trend over pseudotime}
+\item{color_cells_by}{the cell attribute (e.g. the column of colData(cds))
+to be used to color each cell.}
 
-\item{label_by_short_name}{label figure panels by gene_short_name (TRUE) or feature id (FALSE)}
+\item{trend_formula}{the model formula to be used for fitting the expression
+trend over pseudotime.}
 
-\item{vertical_jitter}{A value passed to ggplot to jitter the points in the vertical dimension. Prevents overplotting, and is particularly helpful for rounded transcript count data.}
+\item{label_by_short_name}{label figure panels by gene_short_name (TRUE) or
+feature ID (FALSE).}
 
-\item{horizontal_jitter}{A value passed to ggplot to jitter the points in the horizontal dimension. Prevents overplotting, and is particularly helpful for rounded transcript count data.}
+\item{vertical_jitter}{A value passed to ggplot to jitter the points in the
+vertical dimension. Prevents overplotting, and is particularly helpful for
+rounded transcript count data.}
 
-\item{color_by}{the cell attribute (e.g. the column of colData(cds)) to be used to color each cell}
+\item{horizontal_jitter}{A value passed to ggplot to jitter the points in
+the horizontal dimension. Prevents overplotting, and is particularly
+helpful for rounded transcript count data.}
 }
 \value{
 a ggplot2 plot object
 }
 \description{
-Plots expression for one or more genes as a function of pseudotime.
-Plotting allows you determine if the ordering produced by orderCells() is correct
-and it does not need to be flipped using the "reverse" flag in orderCells
-}
-\examples{
-\dontrun{
-library(HSMMSingleCell)
-HSMM <- load_HSMM()
-my_genes <- row.names(subset(rowData(HSMM), gene_short_name \%in\% c("CDK1", "MEF2C", "MYH3")))
-cds_subset <- HSMM[my_genes,]
-plot_genes_in_pseudotime(cds_subset, color_by="Time")
-}
+Plots expression for one or more genes as a function of pseudotime
 }

@@ -915,31 +915,32 @@ plot_cells <- function(cds,
 
 #' Plots expression for one or more genes as a function of pseudotime
 #'
-#' @description Plots expression for one or more genes as a function of pseudotime.
-#' Plotting allows you determine if the ordering produced by orderCells() is correct
-#' and it does not need to be flipped using the "reverse" flag in orderCells
-#'
-#' @param cds_subset cell_data_set for the experiment
-#' @param min_expr the minimum (untransformed) expression level to use in plotted the genes.
-#' @param cell_size the size (in points) of each cell used in the plot
-#' @param nrow the number of rows used when laying out the panels for each gene's expression
-#' @param ncol the number of columns used when laying out the panels for each gene's expression
-#' @param panel_order the order in which genes should be layed out (left-to-right, top-to-bottom)
-#' @param color_by the cell attribute (e.g. the column of colData(cds)) to be used to color each cell
-#' @param trend_formula the model formula to be used for fitting the expression trend over pseudotime
-#' @param label_by_short_name label figure panels by gene_short_name (TRUE) or feature id (FALSE)
-#' @param vertical_jitter A value passed to ggplot to jitter the points in the vertical dimension. Prevents overplotting, and is particularly helpful for rounded transcript count data.
-#' @param horizontal_jitter A value passed to ggplot to jitter the points in the horizontal dimension. Prevents overplotting, and is particularly helpful for rounded transcript count data.
+#' @param cds_subset subset cell_data_set including only the genes to be
+#'   plotted.
+#' @param min_expr the minimum (untransformed) expression level to plot.
+#' @param cell_size the size (in points) of each cell used in the plot.
+#' @param nrow the number of rows used when laying out the panels for each
+#'   gene's expression.
+#' @param ncol the number of columns used when laying out the panels for each
+#'   gene's expression
+#' @param panel_order vector of gene names indicating the order in which genes
+#'   should be layed out (left-to-right, top-to-bottom). If
+#'   \code{label_by_short_name = TRUE}, use gene_short_name values, otherwise
+#'   use feature IDs.
+#' @param color_cells_by the cell attribute (e.g. the column of colData(cds))
+#'   to be used to color each cell.
+#' @param trend_formula the model formula to be used for fitting the expression
+#'   trend over pseudotime.
+#' @param label_by_short_name label figure panels by gene_short_name (TRUE) or
+#'   feature ID (FALSE).
+#' @param vertical_jitter A value passed to ggplot to jitter the points in the
+#'   vertical dimension. Prevents overplotting, and is particularly helpful for
+#'   rounded transcript count data.
+#' @param horizontal_jitter A value passed to ggplot to jitter the points in
+#'   the horizontal dimension. Prevents overplotting, and is particularly
+#'   helpful for rounded transcript count data.
 #' @return a ggplot2 plot object
 #' @export
-#' @examples
-#' \dontrun{
-#' library(HSMMSingleCell)
-#' HSMM <- load_HSMM()
-#' my_genes <- row.names(subset(rowData(HSMM), gene_short_name %in% c("CDK1", "MEF2C", "MYH3")))
-#' cds_subset <- HSMM[my_genes,]
-#' plot_genes_in_pseudotime(cds_subset, color_by="Time")
-#' }
 plot_genes_in_pseudotime <-function(cds_subset,
                                     min_expr=NULL,
                                     cell_size=0.75,
@@ -1078,25 +1079,16 @@ plot_genes_in_pseudotime <-function(cds_subset,
   q
 }
 
-#' Plots the percentage of variance explained by the each component based on PCA from the normalized expression
-#' data using the same procedure used in reduceDimension function.
+#' Plots the percentage of variance explained by the each component based on
+#' PCA from the normalized expression data determined using preprocess_cds.
 #'
-#' @param cds CellDataSet for the experiment after running reduceDimension with reduction_method as tSNE
-#' @param max_components Maximum number of components shown in the scree plot (variance explained by each component)
-#' @param norm_method Determines how to transform expression values prior to reducing dimensionality
-#' @param residual_model_formula_str A model formula specifying the effects to subtract from the data before clustering.
-#' @param pseudo_count amount to increase expression values before dimensionality reduction
-#' @param return_all A logical argument to determine whether or not the variance of each component is returned
-#' @param use_existing_pc_variance Whether to plot existing results for variance explained by each PC
-#' @param verbose Whether to emit verbose output during dimensionality reduction
-#' @param ... additional arguments to pass to the dimensionality reduction function
+#' @param cds cell_data_set of the experiment.
+#' @return ggplot object.
 #' @export
 #' @examples
-#' \dontrun{
-#' library(HSMMSingleCell)
-#' HSMM <- load_HSMM()
-#' plot_pc_variance_explained(HSMM)
-#' }
+#' cds <- load_a549()
+#' cds <- preprocess_cds(cds)
+#' plot_pc_variance_explained(cds)
 plot_pc_variance_explained <- function(cds) {
   assertthat::assert_that(is(cds, "cell_data_set"))
   assertthat::assert_that(!is.null(reducedDims(cds)[["PCA"]]),
@@ -1115,41 +1107,42 @@ plot_pc_variance_explained <- function(cds) {
   return(p)
 }
 
-#' @title Plot expression for one or more genes as a violin plot
+#' Plot expression for one or more genes as a violin plot
 #'
 #' @description Accepts a subset of a cell_data_set and an attribute to group
 #' cells by, and produces a ggplot2 object that plots the level of expression
 #' for each group of cells.
 #'
 #' @param cds_subset Subset cell_data_set to be plotted.
-#' @param grouping the cell attribute (e.g. the column of colData(cds)) to
-#'   group cells by on the horizontal axis.
-#' @param min_expr the minimum (untransformed) expression level to use when
-#'   plotted the genes. If \code{NULL},
-#'   zero is used.
+#' @param group_cells_by NULL of the cell attribute (e.g. the column of
+#'   colData(cds)) to group cells by on the horizontal axis. If NULL, all cells
+#'   are plotted together.
+#' @param min_expr the minimum (untransformed) expression level to be plotted.
+#'   Default is 0.
 #' @param nrow the number of panels per row in the figure.
 #' @param ncol the number of panels per column in the figure.
 #' @param panel_order the order in which genes should be layed out
-#'   (left-to-right, top-to-bottom). Should be gene_short_name, if
-#'   \code{label_by_short_name = TRUE} or gene ID if
+#'   (left-to-right, top-to-bottom). Should be gene_short_name if
+#'   \code{label_by_short_name = TRUE} or feature ID if
 #'   \code{label_by_short_name = FALSE}.
 #' @param label_by_short_name label figure panels by gene_short_name (TRUE) or
-#'   feature id (FALSE).
+#'   feature id (FALSE). Default is TRUE.
+#' @param normalize Logical, whether or not to normalize expression by size
+#'   factor. Default is TRUE.
 #' @param log_scale Logical, whether or not to scale data logarithmically.
+#'   Default is TRUE.
 #' @return a ggplot2 plot object
 #' @import ggplot2
 #' @export
 #' @examples
-#' \dontrun{
-#' library(HSMMSingleCell)
-#' HSMM <- load_HSMM()
-#' my_genes <- HSMM[row.names(subset(rowData(HSMM),
+#' cds <- load_a549()
+#' cds_subset <- cds[row.names(subset(rowData(cds),
 #'                  gene_short_name %in% c("ACTA1", "ID1", "CCNB2"))),]
-#' plot_genes_violin(my_genes, grouping="Hours", ncol=2, min_expr=0.1)
-#' }
+#' plot_genes_violin(cds_subset, grouping="culture_plate", ncol=2, min_expr=0.1)
+#'
 plot_genes_violin <- function (cds_subset,
                                group_cells_by = NULL,
-                               min_expr = NULL,
+                               min_expr = 0,
                                nrow = NULL,
                                ncol = 1,
                                panel_order = NULL,
@@ -1165,9 +1158,7 @@ plot_genes_violin <- function (cds_subset,
                                         "the colData table"))
   }
 
-  if(!is.null(min_expr)) {
-    assertthat::assert_that(assertthat::is.number(min_expr))
-  }
+  assertthat::assert_that(assertthat::is.number(min_expr))
 
   if(!is.null(nrow)) {
     assertthat::assert_that(assertthat::is.count(nrow))
@@ -1207,9 +1198,7 @@ plot_genes_violin <- function (cds_subset,
     cds_exprs <- counts(cds_subset)
     cds_exprs <- reshape2::melt(as.matrix(cds_exprs))
   }
-  if (is.null(min_expr)) {
-    min_expr <- 0
-  }
+
   colnames(cds_exprs) <- c("f_id", "Cell", "expression")
   cds_exprs$expression[cds_exprs$expression < min_expr] <- min_expr
 
@@ -1267,48 +1256,43 @@ plot_genes_violin <- function (cds_subset,
 #' Plots the number of cells expressing one or more genes above a given value
 #' as a barplot
 #'
-#'  @description Accepts a cell_data_set and the parameter "grouping", used for
-#'  dividing cells into groups. Returns one or more bar graphs (one graph for
-#'  each gene in the cell_data_set). Each graph shows the percentage of cells
-#'  that express a gene in each sub-group in the cell_data_set.
-#'
-#'  As an example, let's say the cell_data_set passed into the function as
-#'  cds_subset included genes A, B, and C and the grouping parameter divided
-#'  the cells into three groups called X, Y, and Z. Then three graphs would be
-#'  produced called A, B, and C. In each graph there would be three bars one
-#'  for X, one for Y, and one for Z. The X bar in the A graph would show the
-#'  percentage of cells in the X group that express gene A.
+#'  @description Accepts a subset cell_data_set and the parameter
+#'  \code{group_cells_by}, used for dividing cells into groups. Returns one or
+#'  more bar graphs (one graph for each gene in the cell_data_set). Each graph
+#'  shows the percentage (or number) of cells that express a gene in each
+#'  sub-group in the cell_data_set.
 #'
 #' @param cds_subset Subset cell_data_set to be plotted.
-#' @param grouping the cell attribute (e.g. the column of colData(cds)) to
-#'   group cells by on the horizontal axis
+#' @param group_cells_by the cell attribute (e.g. the column of colData(cds))
+#'   to group cells by on the horizontal axis. If NULL, all cells plotted as
+#'   one group.
 #' @param min_expr the minimum (untransformed) expression level to consider the
-#'   gene 'expressed'. If \code{NULL},
-#'  zero is used.
+#'   gene 'expressed'. Default is 0.
 #' @param nrow the number of panels per row in the figure.
 #' @param ncol the number of panels per column in the figure.
 #' @param panel_order the order in which genes should be layed out
-#'   (left-to-right, top-to-bottom)
-#' @param plot_as_count whether to plot as a count of cells rather than a
-#'   percent.
+#'   (left-to-right, top-to-bottom). Should be gene_short_name if
+#'   \code{label_by_short_name = TRUE} or feature ID if
+#'   \code{label_by_short_name = FALSE}.
+#' @param plot_as_count Logical, whether to plot as a count of cells rather
+#'   than a percent. Default is FALSE.
 #' @param label_by_short_name label figure panels by gene_short_name (TRUE) or
-#'   feature id (FALSE).
+#'   feature id (FALSE). Default is TRUE.
+#' @param normalize Logical, whether or not to normalize expression by size
+#'   factor. Default is TRUE.
 #' @param plot_limits A pair of number specifying the limits of the y axis. If
 #'   \code{NULL}, scale to the range of the data. Example \code{c(0,100)}.
 #' @return a ggplot2 plot object
 #' @import ggplot2
 #' @export
 #' @examples
-#' \dontrun{
-#' library(HSMMSingleCell)
-#' HSMM <- load_HSMM()
-#' MYOG_ID1 <- HSMM[row.names(subset(rowData(HSMM),
+#' cds <- load_a549()
+#' cds_subset <- cds[row.names(subset(rowData(cds),
 #'                                   gene_short_name %in% c("MYOG", "ID1"))),]
-#' plot_percent_cells_positive(MYOG_ID1, grouping="Media", ncol=2)
-#' }
+#' plot_percent_cells_positive(cds_subset, grouping="culture_plate")
 plot_percent_cells_positive <- function(cds_subset,
                                         group_cells_by = NULL,
-                                        min_expr = NULL,
+                                        min_expr = 0,
                                         nrow = NULL,
                                         ncol = 1,
                                         panel_order = NULL,
@@ -1324,10 +1308,7 @@ plot_percent_cells_positive <- function(cds_subset,
                             msg = paste("group_cells_by must be a column in",
                                         "the colData table"))
   }
-
-  if(!is.null(min_expr)) {
-    assertthat::assert_that(assertthat::is.number(min_expr))
-  }
+  assertthat::assert_that(assertthat::is.number(min_expr))
 
   if(!is.null(nrow)) {
     assertthat::assert_that(assertthat::is.count(nrow))
@@ -1342,10 +1323,6 @@ plot_percent_cells_positive <- function(cds_subset,
                           msg = paste("cds_subset has more than 100 genes -",
                                       "pass only the subset of the CDS to be",
                                       "plotted."))
-
-  if (is.null(min_expr)) {
-    min_expr <- 0
-  }
 
   marker_exprs <- counts(cds_subset)
 
@@ -1386,12 +1363,14 @@ plot_percent_cells_positive <- function(cds_subset,
     group_cells_by <- "all_cell"
   }
 
-  marker_counts <- plyr::ddply(marker_exprs_melted,
-                               c("feature_label", group_cells_by),
-                               function(x) {
-                                 data.frame(target = sum(x$expression > min_expr),
-                                            target_fraction = sum(x$expression > min_expr)/nrow(x))
-                               })
+  marker_counts <-
+    plyr::ddply(marker_exprs_melted,
+                c("feature_label", group_cells_by),
+                function(x) {
+                  data.frame(target = sum(x$expression > min_expr),
+                             target_fraction = sum(x$expression >
+                                                     min_expr)/nrow(x))
+                })
 
   if (!plot_as_count){
     marker_counts$target_fraction <- marker_counts$target_fraction * 100
@@ -1421,9 +1400,10 @@ plot_percent_cells_positive <- function(cds_subset,
 }
 
 
-#' Create a dot plot to visualize the mean gene expression and percentage of expressed cells in each group of cells
+#' Create a dot plot to visualize the mean gene expression and percentage of
+#' expressed cells in each group of cells
 #'
-#' @param cds CellDataSet for the experiment
+#' @param cds cell_data_set for the experiment
 #' @param markers a gene name use for visualize the dot plot
 #' @param group_by the cell attribute (e.g. the column of pData(cds)) to group cells
 #' @param lower_threshold The lowest gene expressed treated as expressed. By default, it is cds@lowerDetectionLimit.
@@ -1444,14 +1424,6 @@ plot_percent_cells_positive <- function(cds_subset,
 #' @importFrom reshape2 dcast
 #' @importFrom viridis scale_color_viridis
 #' @export
-#' @examples
-#' \dontrun{
-#' library(HSMMSingleCell)
-#' HSMM <- load_HSMM()
-#' HSMM <- reduceDimension(HSMM, reduction_method = 'tSNE')
-#' HSMM <- clusterCells(HSMM)
-#' plot_gene_by_group(HSMM, get_classic_muscle_markers())
-#' }
 plot_genes_by_group <- function(cds,
                                 markers,
                                 group_cells_by="cluster",

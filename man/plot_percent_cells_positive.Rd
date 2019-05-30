@@ -6,59 +6,54 @@
 as a barplot}
 \usage{
 plot_percent_cells_positive(cds_subset, group_cells_by = NULL,
-  min_expr = NULL, nrow = NULL, ncol = 1, panel_order = NULL,
+  min_expr = 0, nrow = NULL, ncol = 1, panel_order = NULL,
   plot_as_count = FALSE, label_by_short_name = TRUE,
   normalize = TRUE, plot_limits = NULL)
 }
 \arguments{
 \item{cds_subset}{Subset cell_data_set to be plotted.}
 
+\item{group_cells_by}{the cell attribute (e.g. the column of colData(cds))
+to group cells by on the horizontal axis. If NULL, all cells plotted as
+one group.}
+
 \item{min_expr}{the minimum (untransformed) expression level to consider the
-gene 'expressed'. If \code{NULL},
-zero is used.}
+gene 'expressed'. Default is 0.}
 
 \item{nrow}{the number of panels per row in the figure.}
 
 \item{ncol}{the number of panels per column in the figure.}
 
 \item{panel_order}{the order in which genes should be layed out
-(left-to-right, top-to-bottom)}
+(left-to-right, top-to-bottom). Should be gene_short_name if
+\code{label_by_short_name = TRUE} or feature ID if
+\code{label_by_short_name = FALSE}.}
 
-\item{plot_as_count}{whether to plot as a count of cells rather than a
-percent.}
+\item{plot_as_count}{Logical, whether to plot as a count of cells rather
+than a percent. Default is FALSE.}
 
 \item{label_by_short_name}{label figure panels by gene_short_name (TRUE) or
-feature id (FALSE).}
+feature id (FALSE). Default is TRUE.}
+
+\item{normalize}{Logical, whether or not to normalize expression by size
+factor. Default is TRUE.}
 
 \item{plot_limits}{A pair of number specifying the limits of the y axis. If
 \code{NULL}, scale to the range of the data. Example \code{c(0,100)}.}
-
-\item{grouping}{the cell attribute (e.g. the column of colData(cds)) to
-group cells by on the horizontal axis}
 }
 \value{
 a ggplot2 plot object
 }
 \description{
-@description Accepts a cell_data_set and the parameter "grouping", used for
-dividing cells into groups. Returns one or more bar graphs (one graph for
-each gene in the cell_data_set). Each graph shows the percentage of cells
-that express a gene in each sub-group in the cell_data_set.
-}
-\details{
-As an example, let's say the cell_data_set passed into the function as
-cds_subset included genes A, B, and C and the grouping parameter divided
-the cells into three groups called X, Y, and Z. Then three graphs would be
-produced called A, B, and C. In each graph there would be three bars one
-for X, one for Y, and one for Z. The X bar in the A graph would show the
-percentage of cells in the X group that express gene A.
+@description Accepts a subset cell_data_set and the parameter
+\code{group_cells_by}, used for dividing cells into groups. Returns one or
+more bar graphs (one graph for each gene in the cell_data_set). Each graph
+shows the percentage (or number) of cells that express a gene in each
+sub-group in the cell_data_set.
 }
 \examples{
-\dontrun{
-library(HSMMSingleCell)
-HSMM <- load_HSMM()
-MYOG_ID1 <- HSMM[row.names(subset(rowData(HSMM),
+cds <- load_a549()
+cds_subset <- cds[row.names(subset(rowData(cds),
                                   gene_short_name \%in\% c("MYOG", "ID1"))),]
-plot_percent_cells_positive(MYOG_ID1, grouping="Media", ncol=2)
-}
+plot_percent_cells_positive(cds_subset, grouping="culture_plate")
 }

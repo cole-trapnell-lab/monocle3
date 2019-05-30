@@ -6,6 +6,13 @@
 \usage{
 compare_models(model_tbl_full, model_tbl_reduced)
 }
+\arguments{
+\item{model_tbl_full}{A tibble of model objects, generally output of
+\code{\link{fit_models}}, to be compared with \code{model_tbl_reduced}}
+
+\item{model_tbl_reduced}{A tibble of model objects, generally output of
+\code{\link{fit_models}}, to be compared with \code{model_tbl_full}.}
+}
 \description{
 Compares goodness of fit for two ways of fitting a set of genes' expression
 }

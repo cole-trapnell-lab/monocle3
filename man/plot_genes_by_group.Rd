@@ -2,7 +2,8 @@
 % Please edit documentation in R/plotting.R
 \name{plot_genes_by_group}
 \alias{plot_genes_by_group}
-\title{Create a dot plot to visualize the mean gene expression and percentage of expressed cells in each group of cells}
+\title{Create a dot plot to visualize the mean gene expression and percentage of
+expressed cells in each group of cells}
 \usage{
 plot_genes_by_group(cds, markers, group_cells_by = "cluster",
   reduction_method = "UMAP", norm_method = c("log", "size_only"),
@@ -13,7 +14,7 @@ plot_genes_by_group(cds, markers, group_cells_by = "cluster",
   scale_min = -3, ...)
 }
 \arguments{
-\item{cds}{CellDataSet for the experiment}
+\item{cds}{cell_data_set for the experiment}
 
 \item{markers}{a gene name use for visualize the dot plot}
 
@@ -43,14 +44,6 @@ plot_genes_by_group(cds, markers, group_cells_by = "cluster",
 a ggplot2 plot object
 }
 \description{
-Create a dot plot to visualize the mean gene expression and percentage of expressed cells in each group of cells
-}
-\examples{
-\dontrun{
-library(HSMMSingleCell)
-HSMM <- load_HSMM()
-HSMM <- reduceDimension(HSMM, reduction_method = 'tSNE')
-HSMM <- clusterCells(HSMM)
-plot_gene_by_group(HSMM, get_classic_muscle_markers())
-}
+Create a dot plot to visualize the mean gene expression and percentage of
+expressed cells in each group of cells
 }

@@ -17,6 +17,11 @@ the genes.}
 responses. Default is "quasipoisson"}
 
 \item{cores}{the number of processor cores use during fitting.}
+
+\item{clean_model}{Logical indicating whether to clean the model. Default is
+TRUE.}
+
+\item{verbose}{Logical indicating whether to emit progress messages.}
 }
 \value{
 a tibble containing model objects

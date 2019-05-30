@@ -8,7 +8,6 @@
 #' @return A subset CDS object. If return_list = FALSE, a list of cell names.
 #' @export
 #'
-#' @examples
 choose_cells <- function(cds,
                          reduction_method = c("UMAP", "tSNE", "PCA"),
                          return_list = FALSE) {
@@ -130,7 +129,6 @@ choose_cells <- function(cds,
 #'   graph node names.
 #' @export
 #'
-#' @examples
 choose_graph_segments <- function(cds,
                                  reduction_method = "UMAP",
                                  return_list = FALSE) {

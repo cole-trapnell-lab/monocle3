@@ -185,6 +185,9 @@ fit_model_helper <- function(x,
 #' @param expression_family specifies the family function used for expression
 #'   responses. Default is "quasipoisson"
 #' @param cores the number of processor cores use during fitting.
+#' @param clean_model Logical indicating whether to clean the model. Default is
+#'   TRUE.
+#' @param verbose Logical indicating whether to emit progress messages.
 #' @return a tibble containing model objects
 #' @export
 fit_models <- function(cds,
@@ -339,7 +342,7 @@ extract_coefficient_helper = function(model, model_summary,
     zero_coef_mat$model_component = "zero"
     coef_mat = dplyr::bind_rows(count_coef_mat, zero_coef_mat)
     return (coef_mat)
-  }else {
+  } else {
     coef_mat = matrix(NA, nrow = 1, ncol = 5)
     colnames(coef_mat) = c('estimate',
                            'std_err',
@@ -354,6 +357,9 @@ extract_coefficient_helper = function(model, model_summary,
 }
 
 #' Extracts a table of coefficients from a tibble containing model objects
+#'
+#' @param model_tbl A tibble of model objects, generally the output of
+#'   \code{\link{fit_models}}.
 #' @importFrom dplyr %>%
 #' @export
 coefficient_table <- function(model_tbl) {
@@ -368,6 +374,12 @@ coefficient_table <- function(model_tbl) {
 }
 
 #' Compares goodness of fit for two ways of fitting a set of genes' expression
+#'
+#' @param model_tbl_full A tibble of model objects, generally output of
+#'   \code{\link{fit_models}}, to be compared with \code{model_tbl_reduced}
+#' @param model_tbl_reduced A tibble of model objects, generally output of
+#'   \code{\link{fit_models}}, to be compared with \code{model_tbl_full}.
+#'
 #' @export
 compare_models <- function(model_tbl_full, model_tbl_reduced){
   model_x_eval = evaluate_fits(model_tbl_full)
@@ -398,8 +410,11 @@ compare_models <- function(model_tbl_full, model_tbl_reduced){
 }
 
 
+#' Evaluate the fits of model objects.
+#'
 #' @importFrom dplyr %>%
-#' @param model_tbl
+#' @param model_tbl A tibble of model objects, generally output of
+#'   \code{\link{fit_models}}.
 #' @export
 evaluate_fits = function(model_tbl){
   private_glance = function(m){
@@ -463,6 +478,13 @@ likelihood_ratio_test_pval = function(model_summary_x, model_summary_y){
 }
 
 #' Predict output of fitted models and return as a matrix
+#'
+#' @param model_tbl A tibble of model objects, generally output of
+#'   \code{\link{fit_models}}.
+#' @param new_data A data frame of new data to be passed to predict for
+#'   prediction.
+#' @param type String of type to pass to predict. Default is "response".
+#'
 #' @export
 model_predictions = function(model_tbl, new_data, type="response") {
   predict_helper = function(model, cds){

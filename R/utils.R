@@ -405,7 +405,7 @@ sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE, scale. = F
 #' @export
 #' @examples
 #' \dontrun{
-#' HSMM <- detect_genes(HSMM, min_expr=0.1)
+#' cds <- detect_genes(cds, min_expr=0.1)
 #' }
 detect_genes <- function(cds, min_expr=0){
   assertthat::assert_that(is(cds, "cell_data_set"))
