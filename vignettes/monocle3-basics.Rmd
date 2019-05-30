@@ -119,7 +119,7 @@ cds <- learn_graph(cds)
 
 ```{r}
 plot_cells(cds,
-           color_by = "cell_type2") +
+           color_cells_by = "cell_type2") +
   ggplot2::scale_color_manual(values = cell_type_color)
 ```
 
