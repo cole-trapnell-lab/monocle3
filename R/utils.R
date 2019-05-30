@@ -166,6 +166,21 @@ mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1, convert_to
 
   # Note: use outfile argument to makeCluster for debugging
   platform <- Sys.info()[['sysname']]
+
+  # Temporarily disable OpenMP threading in functions to be run in parallel
+  old_omp_num_threads = as.numeric(Sys.getenv("OMP_NUM_THREADS"))
+  if (is.na(old_omp_num_threads)){
+    old_omp_num_threads = 1
+  }
+  RhpcBLASctl::omp_set_num_threads(1)
+
+  # Temporarily set the number of threads the BLAS library can use to be 1
+  old_blas_num_threads = as.numeric(Sys.getenv("OPENBLAS_NUM_THREADS"))
+  if (is.na(old_omp_num_threads)){
+    old_blas_num_threads = 1
+  }
+  RhpcBLASctl::blas_set_num_threads(1)
+
   if (platform == "Windows")
     cl <- parallel::makeCluster(cores)
   if (platform %in% c("Linux", "Darwin"))
@@ -173,13 +188,15 @@ mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1, convert_to
 
   cleanup <- function(){
     parallel::stopCluster(cl)
+    RhpcBLASctl::omp_set_num_threads(old_omp_num_threads)
+    RhpcBLASctl::blas_set_num_threads(old_blas_num_threads)
   }
   on.exit(cleanup)
 
   if (is.null(required_packages) == FALSE){
     BiocGenerics::clusterCall(cl, function(pkgs) {
       for (req in pkgs) {
-        library(req, character.only=TRUE)
+        library(req, character.only=TRUE, warn.conflicts=FALSE)
       }
     }, required_packages)
   }
@@ -415,6 +432,32 @@ detect_genes <- function(cds, min_expr=0){
   colData(cds)$num_genes_expressed <- Matrix::colSums(counts(cds) > min_expr)
 
   cds
+}
+
+#' Retrieve a table of values specifying the mean-variance relationship
+#'
+#' Calling estimate_dispersions computes a smooth function describing how variance
+#' in each gene's expression across cells varies according to the mean. This
+#' function only works for cell_data_set objects containing count-based expression
+#' data, either transcripts or reads.
+#'
+#' @param cds The cell_data_set from which to extract a dispersion table.
+#' @return A data frame containing the empirical mean expression,
+#' empirical dispersion, and the value estimated by the dispersion model.
+#'
+#' @export
+dispersion_table <- function(cds){
+
+  if (is.null(cds@disp_fit_info[["blind"]])){
+    warning("Warning: estimate_dispersions only works, and is only needed, when you're using a cell_data_set with a negbinomial or negbinomial.size expression family")
+    stop("Error: no dispersion model found. Please call estimate_dispersions() before calling this function")
+  }
+
+  disp_df<-data.frame(gene_id=cds@disp_fit_info[["blind"]]$disp_table$gene_id,
+                      mean_expression=cds@disp_fit_info[["blind"]]$disp_table$mu,
+                      dispersion_fit=cds@disp_fit_info[["blind"]]$disp_func(cds@disp_fit_info[["blind"]]$disp_table$mu),
+                      dispersion_empirical=cds@disp_fit_info[["blind"]]$disp_table$disp)
+  return(disp_df)
 }
 
 #' Return a size-factor normalized and (optionally) log-transformed expression matrix

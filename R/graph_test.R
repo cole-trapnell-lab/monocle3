@@ -51,7 +51,6 @@ graph_test <- function(cds,
                        cores=1,
                        interactive = FALSE,
                        verbose=FALSE) {
-  neighbor_graph <- match.arg(neighbor_graph)
   lw <- calculateLW(cds,
                     k = k,
                     interactive = interactive,
