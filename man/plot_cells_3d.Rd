@@ -4,62 +4,48 @@
 \alias{plot_cells_3d}
 \title{Plot a dataset and trajectory in 3 dimensions}
 \usage{
-plot_cells_3d(cds, reduction_method = "UMAP", downsample_size = NULL,
-  dims = c(1, 2, 3), color_by = NULL, palette = NULL,
-  markers = NULL, markers_linear = FALSE, cell_size = 5,
-  cell_alpha = 0.5, backbone_segment_color = "#77B6EA",
-  backbone_segment_width = 2, backbone_vertex_color = NULL,
-  show_group_labels = TRUE, show_branch_points = TRUE,
-  webGL_filename = NULL, image_filename = NULL, obj_filename = NULL,
-  scale_expr = TRUE, width = 800, height = 600, view_matrix = NULL,
-  useNULL_GLdev = !interactive(), text_cex = 1, use_plotly = FALSE,
-  selfcontained = FALSE, ...)
+plot_cells_3d(cds, dims = c(1, 2, 3), reduction_method = c("UMAP",
+  "tSNE"), color_cells_by = "cluster", genes = NULL,
+  show_trajectory_graph = TRUE, trajectory_graph_color = "black",
+  trajectory_graph_segment_size = 5, norm_method = c("log",
+  "size_only"), cell_size = 25, alpha = 1, min_expr = 0.1)
 }
 \arguments{
-\item{cds}{cell_data_set for the experiment}
+\item{cds}{cell_data_set to plot}
 
-\item{color_by}{the cell attribute (e.g. the column of colData(cds)) to map to each cell's color}
+\item{dims}{numeric vector that indicates the dimensions used to create the
+3D plot, by default it is the first three dimensions.}
 
-\item{palette}{the color palette used for plotting}
+\item{reduction_method}{string indicating the reduction method to plot.}
 
-\item{markers}{a gene name or gene id to use for setting the size of each cell in the plot}
+\item{color_cells_by}{the cell attribute (e.g. the column of colData(cds))
+to map to each cell's color. Default is cluster.}
 
-\item{markers_linear}{a boolean used to indicate whether you want to scale the markers logarithimically or linearly}
+\item{genes}{a gene name or gene id to color the plot by.}
 
-\item{cell_size}{size of cells, default value is 5}
+\item{show_trajectory_graph}{a logical used to indicate whether to graph the
+principal graph backbone. Default is TRUE.}
 
-\item{cell_alpha}{Alpha value for the vertex in the 3D plot}
+\item{trajectory_graph_color}{the color of graph backbone. Default is black.}
 
-\item{backbone_segment_color}{color of backbone, value is a string containing a hex color value}
+\item{trajectory_graph_segment_size}{numeric indicating the width of the
+graph backbone. Default is 5.}
 
-\item{backbone_vertex_color}{Color for the vertex on the principal graph backbone}
+\item{norm_method}{string indicating the method used to transform gene
+expression when gene markers are provided. Default is "log". "size_only"
+is also supported.}
 
-\item{show_group_labels}{Whether or not to show labels of groups}
+\item{cell_size}{numeric indicating the size of the point to be plotted.
+Default is 25.}
 
-\item{show_branch_points}{Whether to show icons for each branch point (only available after running assign_cell_states)}
+\item{alpha}{numeric indicating the alpha value of the plotted cells.
+Default is 1.}
 
-\item{webGL_filename}{the name of a file to which you'd to write a webGL file containing the plot}
-
-\item{image_filename}{the name of a file to which you'd to write an animated GIF containing the plot}
-
-\item{obj_filename}{The filename that you'd like to save the 3d plot to}
-
-\item{scale_expr}{whether to tranform the log expression values to z scores}
-
-\item{width}{the width of the plot in pixels}
-
-\item{height}{the height of the plot in pixels}
-
-\item{view_matrix}{A 4x4 matrix signifying your point of view on the 3d plot}
-
-\item{useNULL_GLdev}{if TRUE, don't show the plot on the screen (to be used with webGL or movie output)}
-
-\item{...}{Extra arguments passed to the function}
-
-\item{dim}{the dimensions used to create the 3D plot, by default it is the first three dimensions}
+\item{min_expr}{numeric indicating the minimum marker gene value to be
+colored. Default is 0.1.}
 }
 \value{
-a ggplot2 plot object
+a plotly plot object
 }
 \description{
 Plot a dataset and trajectory in 3 dimensions
