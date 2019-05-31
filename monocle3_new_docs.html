@@ -1120,6 +1120,14 @@ plot_genes_jitter(cds_subset,
         plot_trend = TRUE)
 {%endhighlight%} -->
 
+<p> </p>
+<p>
+  <font color="red">
+    XX This plot needs to be changed w/ one that uses worm data XX
+  </font>
+</p>
+
+
 <div class= "text-center">
 <img src= "{{site.baseurl}}/images/vignette/jitter_plot_diff_res-1.png" width= 760>
 </div>
@@ -1140,6 +1148,13 @@ The differential analysis procedure in Monocle is extremely flexible: the model 
 <p> Monocle's main job is to put cells in order of progress through a biological process (such as cell differentiation) without knowing which genes to look at ahead of time.
 Once it's done so, you can analyze the cells to find genes that change as the cells make progress.
 For example, you can find genes that are significantly upregulated as the cells "mature".  Let's look at a panel of genes important for myogenesis: </p>
+
+<p> </p>
+<p>
+  <font color="red">
+    XX Do you want to talk about myogenesis here or is this an oversight and you want to switch it to worm data? XX
+  </font>
+</p>
 
 {% highlight R %}
 to_be_tested <- row.names(subset(fData(HSMM),
@@ -1190,6 +1205,12 @@ and generates smooth expression curves much like  <code><a href = "https://rdrr.
 and plots them using the <em>pheatmap</em> package.  This allows you to visualize modules of genes that
 co-vary across pseudotime. </p>
 
+<p> </p>
+<p>
+  <font color="red">
+    XX Plot uses muscle data instead of work data XX
+  </font>
+</p>
 
 {% highlight R %}
 diff_test_res <- differentialGeneTest(HSMM_myo[marker_genes,],
