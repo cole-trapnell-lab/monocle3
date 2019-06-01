@@ -4,25 +4,67 @@ monocle_theme_opts <- function()
     theme(panel.border = element_blank()) +
     theme(axis.line.x = element_line(size=0.25, color="black")) +
     theme(axis.line.y = element_line(size=0.25, color="black")) +
-    theme(panel.grid.minor.x = element_blank(), panel.grid.minor.y = element_blank()) +
-    theme(panel.grid.major.x = element_blank(), panel.grid.major.y = element_blank()) +
+    theme(panel.grid.minor.x = element_blank(),
+          panel.grid.minor.y = element_blank()) +
+    theme(panel.grid.major.x = element_blank(),
+          panel.grid.major.y = element_blank()) +
     theme(panel.background = element_rect(fill='white')) +
     theme(legend.key=element_blank())
 }
 
+#' Plot a dataset and trajectory in 3 dimensions
+#'
+#' @param cds cell_data_set to plot
+#' @param dims numeric vector that indicates the dimensions used to create the
+#'   3D plot, by default it is the first three dimensions.
+#' @param reduction_method string indicating the reduction method to plot.
+#' @param color_cells_by the cell attribute (e.g. the column of colData(cds))
+#'   to map to each cell's color. Default is cluster.
+#' @param genes a gene name or gene id to color the plot by.
+#' @param show_trajectory_graph a logical used to indicate whether to graph the
+#'   principal graph backbone. Default is TRUE.
+#' @param trajectory_graph_color the color of graph backbone. Default is black.
+#' @param trajectory_graph_segment_size numeric indicating the width of the
+#'   graph backbone. Default is 5.
+#' @param norm_method string indicating the method used to transform gene
+#'   expression when gene markers are provided. Default is "log". "size_only"
+#'   is also supported.
+#' @param cell_size numeric indicating the size of the point to be plotted.
+#'   Default is 25.
+#' @param alpha numeric indicating the alpha value of the plotted cells.
+#'   Default is 1.
+#' @param min_expr numeric indicating the minimum marker gene value to be
+#'   colored. Default is 0.1.
+#' @return a plotly plot object
 #' @export
-plot_cells_3d2 <- function(cds,
+#' @examples
+#' \dontrun{
+#' plot_cells_3d(cds, markers=c("Rbfox3, Neurod1", "Sox2"))
+#' }
+#'
+#' @export
+plot_cells_3d <- function(cds,
                            dims = c(1,2,3),
                            reduction_method = c("UMAP", "tSNE"),
                            color_cells_by="cluster",
+                           #group_cells_by=c("cluster", "partition"), #
                            genes=NULL,
                            show_trajectory_graph=TRUE,
                            trajectory_graph_color="black",
-                           trajectory_graph_segment_size=0.75,
+                           trajectory_graph_segment_size=5,
                            norm_method = c("log", "size_only"),
+                           #label_cell_groups = TRUE,#
+                           #label_groups_by_cluster=TRUE,#
+                           #group_label_size=2,#
+                           #labels_per_group=1,#
+                           #label_branch_points=TRUE,#
+                           #label_roots=TRUE,#
+                           #label_leaves=TRUE,#
+                           #graph_label_size=2,#
                            cell_size=25,
                            alpha = 1,
                            min_expr=0.1) {
+
   reduction_method <- match.arg(reduction_method)
   assertthat::assert_that(is(cds, "cell_data_set"))
   assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
@@ -35,16 +77,17 @@ plot_cells_3d2 <- function(cds,
   if(!is.null(color_cells_by)) {
     assertthat::assert_that(color_cells_by %in% c("cluster", "partition") |
                               color_cells_by %in% names(colData(cds)),
-                            msg = paste("color_cells_by must be a column in the",
-                                        "colData table."))
+                            msg = paste("color_cells_by must be a column in",
+                                        "the colData table."))
   }
 
   assertthat::assert_that(!is.null(color_cells_by) || !is.null(markers),
-                          msg = paste("Either color_cells_by or markers must be",
-                                      "NULL, cannot color by both!"))
+                          msg = paste("Either color_cells_by or markers must",
+                                      "be NULL, cannot color by both!"))
   norm_method = match.arg(norm_method)
 
-  if (show_trajectory_graph && is.null(principal_graph(cds)[[reduction_method]])) {
+  if (show_trajectory_graph &&
+      is.null(principal_graph(cds)[[reduction_method]])) {
     message("No trajectory to plot. Has learn_graph() been called yet?")
     show_trajectory_graph = FALSE
   }
@@ -66,19 +109,135 @@ plot_cells_3d2 <- function(cds,
   data_df <- as.data.frame(cbind(data_df, colData(cds)))
 
   if (color_cells_by == "cluster"){
-    data_df$cell_color = tryCatch({clusters(cds, reduction_method = reduction_method)[data_df$sample_name]}, error = function(e) {NULL})
+    data_df$cell_color <- tryCatch({
+      clusters(cds, reduction_method = reduction_method)[data_df$sample_name]},
+      error = function(e) {NULL})
   } else if (color_cells_by == "partition") {
-    data_df$cell_color = tryCatch({partitions(cds, reduction_method = reduction_method)[data_df$sample_name]}, error = function(e) {NULL})
+    data_df$cell_color <- tryCatch({
+      partitions(cds,
+                 reduction_method = reduction_method)[data_df$sample_name]},
+      error = function(e) {NULL})
   } else{
-    data_df$cell_color = colData(cds)[data_df$sample_name,color_cells_by]
+    data_df$cell_color <- colData(cds)[data_df$sample_name,color_cells_by]
   }
 
+  ## Marker genes
+  markers_exprs <- NULL
+  if (!is.null(genes)) {
+    if ((is.null(dim(genes)) == FALSE) && dim(genes) >= 2){
+      markers <- unlist(genes[,1], use.names=FALSE)
+    } else {
+      markers <- genes
+    }
+    markers_rowData <-
+      as.data.frame(subset(rowData(cds), gene_short_name %in% markers |
+                             rownames(rowData(cds)) %in% markers))
+    if (nrow(markers_rowData) >= 1) {
+      cds_exprs <- counts(cds)[row.names(markers_rowData), ,drop=FALSE]
+      cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds))
+
+      if ((is.null(dim(genes)) == FALSE) && dim(genes) >= 2){
+        genes <- as.data.frame(genes)
+        row.names(genes) <- genes[,1]
+        genes <- genes[row.names(cds_exprs),]
+        agg_mat <-
+          as.matrix(Matrix.utils::aggregate.Matrix(cds_exprs,
+                                                   as.factor(genes[,2]),
+                                                   fun="sum"))
+        agg_mat <- t(scale(t(log10(agg_mat + 1))))
+        agg_mat[agg_mat < -2] <- -2
+        agg_mat[agg_mat > 2] <- 2
+        markers_exprs <- agg_mat
+        markers_exprs <- reshape2::melt(markers_exprs)
+        colnames(markers_exprs)[1:2] <- c('feature_id','cell_id')
+
+        markers_exprs$feature_label <- markers_exprs$feature_id
+        markers_linear <- TRUE
+      } else {
+        cds_exprs@x <- round(cds_exprs@x)
+        markers_exprs <- matrix(cds_exprs, nrow=nrow(markers_rowData))
+        colnames(markers_exprs) <- colnames(counts(cds))
+        row.names(markers_exprs) <- row.names(markers_rowData)
+        markers_exprs <- reshape2::melt(markers_exprs)
+        colnames(markers_exprs)[1:2] <- c('feature_id','cell_id')
+        markers_exprs <- merge(markers_exprs, markers_rowData,
+                               by.x = "feature_id", by.y="row.names")
+        markers_exprs$feature_label <-
+          as.character(markers_exprs$gene_short_name)
+        markers_exprs$feature_label[is.na(markers_exprs$feature_label)] <-
+          markers_exprs$feature_id
+        markers_exprs$feature_label <- factor(markers_exprs$feature_label,
+                                              levels = markers)
+      }
+    }
+  }
+
+  if (is.null(markers_exprs) == FALSE && nrow(markers_exprs) > 0){
+    data_df <- merge(data_df, markers_exprs, by.x="sample_name",
+                     by.y="cell_id")
+    data_df$expression <- with(data_df, ifelse(value >= min_expr, value, NA))
+    sub1 <- data_df[!is.na(data_df$expression),]
+    sub2 <- data_df[is.na(data_df$expression),]
+    if(norm_method == "size_only"){
+
+      p <- plotly::plot_ly(sub1, x = ~data_dim_1, y = ~data_dim_2,
+                           z = ~data_dim_3, type = 'scatter3d',
+                           color = ~expression, size=I(cell_size),
+                           mode="markers", name = "Expression",
+                           alpha = I(alpha)) %>%
+        plotly::add_markers(x = sub2$data_dim_1, y = sub2$data_dim_2,
+                            color = I("lightgrey"), z = sub2$data_dim_3,
+                            marker=list(opacity = .4), showlegend=FALSE)
+    } else {
+      sub1$log10_expression <- log10(sub1$expression + min_expr)
+      p <- plotly::plot_ly(sub1, x = ~data_dim_1, y = ~data_dim_2,
+                           z = ~data_dim_3, type = 'scatter3d',
+                           color = ~log10_expression, mode="markers",
+                           size=I(cell_size), name = "Log10\nExpression",
+                           alpha = I(alpha)) %>%
+        plotly::add_markers(x = sub2$data_dim_1, y = sub2$data_dim_2,
+                            z = sub2$data_dim_3, color = I("lightgrey"),
+                            marker=list(opacity = .4), showlegend=FALSE)
+    }
+  } else {
+    if (color_cells_by == "pseudotime" & is.null(data_df$pseudotime)){
+      p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
+                           z = ~data_dim_3, type = 'scatter3d',
+                           size=I(cell_size), color=I("gray"), mode="markers",
+                           alpha = I(alpha))
+      message("order_cells() has not been called yet, can't color cells by pseudotime")
+    } else if(color_cells_by %in% c("cluster", "partition")){
+      if (is.null(data_df$cell_color)){
+        p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
+                             z = ~data_dim_3, type = 'scatter3d',
+                             size=I(cell_size), color=I("gray"),
+                             mode="markers", alpha = I(alpha))
+      } else{
+        p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
+                             z = ~data_dim_3, type = 'scatter3d',
+                             size=I(cell_size), color=~cell_color,
+                             mode="markers", alpha = I(alpha),
+                             name = color_cells_by)
+      }
+    } else {
+      p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
+                           z = ~data_dim_3, type = 'scatter3d',
+                           size=I(cell_size), color=~cell_color,
+                           mode="markers", alpha = I(alpha),
+                           name = color_cells_by)
+    }
+  }
+  p <- p %>%
+    plotly::layout(scene = list(xaxis=list(title=paste("Component", x)),
+                                yaxis=list(title=paste("Component", y)),
+                                zaxis=list(title=paste("Component", z))))
   ## Graph info
   if (show_trajectory_graph) {
 
     ica_space_df <- t(cds@principal_graph_aux[[reduction_method]]$dp_mst) %>%
       as.data.frame() %>%
-      dplyr::select_(prin_graph_dim_1 = x, prin_graph_dim_2 = y, prin_graph_dim_3 = z) %>%
+      dplyr::select_(prin_graph_dim_1 = x, prin_graph_dim_2 = y,
+                     prin_graph_dim_3 = z) %>%
       dplyr::mutate(sample_name = rownames(.), sample_state = rownames(.))
 
     dp_mst <- cds@principal_graph[[reduction_method]]
@@ -88,114 +247,31 @@ plot_cells_3d2 <- function(cds,
       dplyr::select_(source = "from", target = "to") %>%
       dplyr::left_join(ica_space_df %>%
                          dplyr::select_(source="sample_name",
-                                        source_prin_graph_dim_1="prin_graph_dim_1",
-                                        source_prin_graph_dim_2="prin_graph_dim_2",
-                                        source_prin_graph_dim_3="prin_graph_dim_3"),
+                                    source_prin_graph_dim_1="prin_graph_dim_1",
+                                    source_prin_graph_dim_2="prin_graph_dim_2",
+                                    source_prin_graph_dim_3="prin_graph_dim_3"),
                        by = "source") %>%
       dplyr::left_join(ica_space_df %>%
                          dplyr::select_(target="sample_name",
-                                        target_prin_graph_dim_1="prin_graph_dim_1",
-                                        target_prin_graph_dim_2="prin_graph_dim_2",
-                                        target_prin_graph_dim_3="prin_graph_dim_3"),
+                                    target_prin_graph_dim_1="prin_graph_dim_1",
+                                    target_prin_graph_dim_2="prin_graph_dim_2",
+                                    target_prin_graph_dim_3="prin_graph_dim_3"),
                        by = "target")
-  }
 
-  ## Marker genes
-  markers_exprs <- NULL
-  if (!is.null(genes)) {
-    if ((is.null(dim(genes)) == FALSE) && dim(genes) >= 2){
-      markers = unlist(genes[,1], use.names=FALSE)
-    } else {
-      markers = genes
+    for (i in 1:nrow(edge_df)) {
+      p <- p %>%
+        plotly::add_trace(
+          x = as.vector(t(edge_df[i, c("source_prin_graph_dim_1",
+                                       "target_prin_graph_dim_1")])),
+          y = as.vector(t(edge_df[i, c("source_prin_graph_dim_2",
+                                       "target_prin_graph_dim_2")])),
+          z = as.vector(t(edge_df[i, c("source_prin_graph_dim_3",
+                                       "target_prin_graph_dim_3")])),
+          color = trajectory_graph_color,
+          line = list(color = I(trajectory_graph_color),
+                      width = trajectory_graph_segment_size), mode = 'lines',
+          type = 'scatter3d', showlegend = FALSE)
     }
-    markers_rowData <- as.data.frame(subset(rowData(cds),
-                                            gene_short_name %in% markers |
-                                              rownames(rowData(cds)) %in% markers))
-    if (nrow(markers_rowData) >= 1) {
-      cds_exprs <- counts(cds)[row.names(markers_rowData), ,drop=FALSE]
-      cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds))
-
-      if ((is.null(dim(genes)) == FALSE) && dim(genes) >= 2){
-        genes = as.data.frame(genes)
-        row.names(genes) = genes[,1]
-        genes = genes[row.names(cds_exprs),]
-        agg_mat = as.matrix(Matrix.utils::aggregate.Matrix(cds_exprs, as.factor(genes[,2]), fun="sum"))
-        agg_mat = t(scale(t(log10(agg_mat + 1))))
-        agg_mat[agg_mat < -2] = -2
-        agg_mat[agg_mat > 2] = 2
-        markers_exprs = agg_mat
-        markers_exprs <- reshape2::melt(markers_exprs)
-        colnames(markers_exprs)[1:2] <- c('feature_id','cell_id')
-
-        markers_exprs$feature_label <- markers_exprs$feature_id
-        markers_linear=TRUE
-      } else {
-        cds_exprs@x = round(cds_exprs@x)
-        markers_exprs = matrix(cds_exprs, nrow=nrow(markers_rowData))
-        colnames(markers_exprs) = colnames(counts(cds))
-        row.names(markers_exprs) = row.names(markers_rowData)
-        markers_exprs <- reshape2::melt(markers_exprs)
-        colnames(markers_exprs)[1:2] <- c('feature_id','cell_id')
-        markers_exprs <- merge(markers_exprs, markers_rowData, by.x = "feature_id", by.y="row.names")
-        markers_exprs$feature_label <- as.character(markers_exprs$gene_short_name)
-        markers_exprs$feature_label[is.na(markers_exprs$feature_label)] <- markers_exprs$feature_id
-        markers_exprs$feature_label <- factor(markers_exprs$feature_label,
-                                              levels = markers)
-      }
-    }
-  }
-
-  if (is.null(markers_exprs) == FALSE && nrow(markers_exprs) > 0){
-    data_df <- merge(data_df, markers_exprs, by.x="sample_name", by.y="cell_id")
-    data_df$value <- with(data_df, ifelse(value >= min_expr, value, NA))
-    if(norm_method == "size_only"){
-      p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
-                           z = ~data_dim_3, type = 'scatter3d', color = ~value,
-                           size=I(cell_size), mode="markers",
-                           stroke = I(cell_size / 2))
-    } else {
-      p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
-                           z = ~data_dim_3, type = 'scatter3d',
-                           color = ~log10(value+min_expr), mode="markers",
-                           alpha = ifelse(!is.na(value), "2", "1"),
-                           size=I(cell_size), stroke = I(cell_size / 2))
-    }
-  } else {
-    if (color_cells_by == "pseudotime" & is.null(data_df$pseudotime)){
-      p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
-                           z = ~data_dim_3,type = 'scatter3d',
-                           size=I(cell_size),color=I("gray"), mode="markers",
-                           alpha = I(alpha))
-      message("order_cells() has not been called yet, can't color cells by pseudotime")
-    } else if(color_cells_by %in% c("cluster", "partition")){
-      if (is.null(data_df$cell_color)){
-        p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
-                             z = ~data_dim_3,type = 'scatter3d',
-                             size=I(cell_size),color=I("gray"), mode="markers",
-                             alpha = I(alpha))
-      } else{
-        p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
-                             z = ~data_dim_3, type = 'scatter3d',
-                             size=I(cell_size),color=~cell_color,
-                             mode="markers", alpha = I(alpha))
-      }
-    } else {
-      p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
-                           z = ~data_dim_3, type = 'scatter3d',
-                           size=I(cell_size),color=~cell_color,
-                           mode="markers", alpha = I(alpha))
-    }
-  }
-  if (show_trajectory_graph){
-    all_dat <- merge(data_df, edge_df, all.x=T, all.y=T, by.x=0, by.y="source")
-    print(head(all_dat))
-    print(tail(all_dat))
-    p <- p %>% plotly::add_trace(data = all_dat, mode="lines",
-                                 x = ~source_prin_graph_dim_1,
-                                 y = ~source_prin_graph_dim_2,
-                                 z = ~source_prin_graph_dim_3,
-                                 color = trajectory_graph_color,
-                                 size=trajectory_graph_segment_size)
   }
   p
 }
@@ -231,7 +307,7 @@ plot_cells_3d2 <- function(cds,
 #' plot_cells_3d(cds, markers=c("Rbfox3, Neurod1", "Sox2"))
 #' }
 #'
-plot_cells_3d <- function(cds,
+plot_cells_3d_old <- function(cds,
                           reduction_method = "UMAP",
                           downsample_size = NULL,
                           dims=c(1, 2, 3),

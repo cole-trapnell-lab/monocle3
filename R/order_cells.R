@@ -242,13 +242,13 @@ select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
         ica_space_df$keep <- FALSE
         ica_space_df[ vals$keeprows,]$keep <- TRUE
 
-        plot_ly(x = ica_space_df$prin_graph_dim_1,
+        plotly::plot_ly(x = ica_space_df$prin_graph_dim_1,
                 y = ica_space_df$prin_graph_dim_2,
                 z = ica_space_df$prin_graph_dim_3,
                 colors = c('blue', 'black'), key = ica_space_df$sample_name,
                 color = ica_space_df$keep, size = 1,
                 type = "scatter3d", mode="markers") %>%
-          layout(showlegend = FALSE)
+          plotly::layout(showlegend = FALSE)
       })
       # Toggle points that are clicked
       shiny::observeEvent(event_data("plotly_click"), {
