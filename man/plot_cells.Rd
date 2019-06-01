@@ -7,7 +7,7 @@
 plot_cells(cds, x = 1, y = 2, reduction_method = c("UMAP", "tSNE",
   "PCA"), color_cells_by = "cluster", group_cells_by = c("cluster",
   "partition"), genes = NULL, show_trajectory_graph = TRUE,
-  trajectory_graph_color = "black",
+  trajectory_graph_color = "grey28",
   trajectory_graph_segment_size = 0.75, norm_method = c("log",
   "size_only"), label_cell_groups = TRUE,
   label_groups_by_cluster = TRUE, group_label_size = 2,
@@ -62,7 +62,7 @@ Plots the cells along with their trajectories.
 \dontrun{
 lung <- load_lung()
 plot_cells(lung)
-plot_cells(lung, color_by="Pseudotime", show_backbone=FALSE)
+plot_cells(lung, color_by="pseudotime", show_backbone=FALSE)
 plot_cells(lung, markers="MYH3")
 }
 }

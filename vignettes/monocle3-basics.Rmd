@@ -77,12 +77,7 @@ cds <- estimate_size_factors(cds)
 
 ```{r}
 cds_subset <- cds[c("Cdk1", "Zwint", "Znhit1"),]
-<<<<<<< HEAD
-plot_genes_violin(cds_subset, group_cells_by="cell_type2")
-=======
 plot_genes_violin(cds_subset, group_cells_by ="cell_type2")
->>>>>>> 587d4ae0d98e67b1424447556036ef55d0fd11bd
-
 plot_percent_cells_positive(cds_subset, group_cells_by="cell_type2")
 
 ```
