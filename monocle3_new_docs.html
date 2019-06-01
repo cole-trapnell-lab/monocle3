@@ -398,7 +398,7 @@ cds = new_cell_data_set(expression_matrix,
 {% endhighlight %}
 
 
-<h2>Cluster your cells</h2>
+<h2>Clustering and classifying your cells</h2>
 <h3>Pre-process the data</h3>
 {% highlight R %}
 cds = preprocess_cds(cds, num_dim = 100)
@@ -479,7 +479,7 @@ plot_cells(cds, color_cells_by="cao_cell_type", label_groups_by_cluster=FALSE)
 <div class= "text-center">
   <img src= "{{site.baseurl}}/images/manual_images/L2_umap_corrected_cao_type_no_cluster_label.png" width= 760>
 </div>
-
+<!-- 
 
 {% highlight R %}
 pheatmap::pheatmap(log(table(clusters(cds), colData(cds)$cao_cell_type)+1),
@@ -489,31 +489,256 @@ pheatmap::pheatmap(log(table(clusters(cds), colData(cds)$cao_cell_type)+1),
 
 <div class= "text-center">
   <img src= "{{site.baseurl}}/images/manual_images/L2_cell_type_by_cluster.png" width= 760>
-</div>
+</div> -->
 
 <h3>Find marker genes expressed by each cluster</h2>
 
-<h2>Annotate your cells according to type</h2>
+{% highlight R %}
+marker_test_res = top_markers(cds, group_cells_by="partition", reference_cells=1000, cores=8)
+{% endhighlight %}
 
 {% highlight R %}
-library(org.Ce.eg.db)
+top_specific_markers = marker_test_res %>% 
+    filter(marker_test_q_value < 0.05 & pseudo_R2 > 0.01) %>%
+    group_by(cell_group) %>% 
+    top_n(1, pseudo_R2)
+
+top_specific_marker_ids = unique(top_specific_markers %>% pull(gene_id))
+{% endhighlight %}
+
+{% highlight R %}
+plot_genes_by_group(cds, 
+                    top_specific_marker_ids, 
+                    group_cells_by="partition", 
+                    ordering_type="cluster_row_col")
+{% endhighlight %}
+
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/L2_plot_top_partition_marker.png" width= 760>
+</div>
+
+{% highlight R %}
+top_specific_markers = marker_test_res %>% 
+    filter(marker_test_q_value < 0.05 & pseudo_R2 > 0.01) %>%
+    group_by(cell_group) %>% 
+    top_n(3, pseudo_R2)
+
+top_specific_marker_ids = unique(top_specific_markers %>% pull(gene_id))
+
+plot_genes_by_group(cds, 
+                    top_specific_marker_ids, 
+                    group_cells_by="partition", 
+                    ordering_type="cluster_row_col")
+{% endhighlight %}
+
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/L2_plot_top3_partition_marker.png" width= 760>
+</div>
+
+
+<h3>Annotate your cells according to type</h2>
+
+{% highlight R %}
+colData(cds)$assigned_cell_type = as.character(partitions(cds))
+colData(cds)$assigned_cell_type = dplyr::recode(colData(cds)$assigned_cell_type,
+                                                "1"="Body wall muscle",
+                                                "2"="Germline",
+                                                "3"="Neurons",
+                                                "4"="Seam cells",
+                                                "5"="Coelomocytes",
+                                                "6"="Pharyngeal epithelia",
+                                                "7"="Unknown",
+                                                "8"="Unknown",
+                                                "9"="Intestinal/rectal muscle",
+                                                "10"="Neurons",
+                                                "11"="Neurons",
+                                                "12"="Am/PH sheath cells",
+                                                "13"="Unknown",
+                                                "14"="Neurons",
+                                                "15"="Neurons",
+                                                "16"="Neurons",
+                                                "17"="Pharyngeal gland",
+                                                "18"="Neurons",
+                                                "19"="Neurons",
+                                                "20"="Neurons",
+                                                "21"="Neurons",
+                                                "22"="Neurons",
+                                                "23"="Neurons",
+                                                "24"="Neurons",
+                                                "25"="Neurons",
+                                                "26"="Neurons",
+                                                "27"="Unknown",
+                                                "28"="Pharyngeal gland",
+                                                "29"="Neurons",
+                                                "30"="Neurons",
+                                                "31"="Neurons",
+                                                "32"="Neurons",
+                                                "33"="Pharyngeal muscle",
+                                                "34"="Failed QC")
+{% endhighlight %}
+
+{% highlight R %}
+plot_cells(cds, group_cells_by="partition", color_cells_by="assigned_cell_type")
+{% endhighlight %}
+
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/L2_plot_cells_by_initial_annotation.png" width= 760>
+</div>
+
+{% highlight R %}
+cds_subset = choose_cells(cds)
+{% endhighlight %}
+
+<!-- 
+I made choose_cells_recording by:
+1) Using quicktime to screen record my interaction with the choose_cells shiny app
+2) saving the MOV file to the manual_image directory. 
+3) Converting it to a GIF using instructions found here: https://gist.github.com/dergachev/4627207
+ffmpeg -i in.mov -s 600x400 -pix_fmt rgb24 -r 10 -f gif - | gifsicle --optimize=3 --delay=3 > out.gif 
+-->
+
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/choose_cells_recording.gif" width= 760>
+</div>
+
+{% highlight R %}
+pr_graph_test_res = graph_test(cds_subset, neighbor_graph="knn", cores=8)
+pr_deg_ids = row.names(subset(pr_graph_test_res, morans_I > 0.01 & q_value < 0.05))
+{% endhighlight %}
+
+{% highlight R %}
+gene_module_df = cluster_genes(cds_subset[pr_deg_ids,], resolution=1e-3)
+{% endhighlight %}
+
+{% highlight R %}
+plot_cells(cds_subset, genes=gene_module_df, show_trajectory_graph=FALSE, label_cell_groups=FALSE)
+{% endhighlight %}
+
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/L2_sex_partition_modules.png" width= 760>
+</div>
+
+{% highlight R %}
+plot_cells(cds_subset, color_cells_by="cluster") 
+{% endhighlight %}
+
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/L2_sex_partition_color_by_cluster.png" width= 760>
+</div>
+
+{% highlight R %}
+colData(cds_subset)$assigned_cell_type = as.character(clusters(cds_subset)[colnames(cds_subset)])
+colData(cds_subset)$assigned_cell_type = dplyr::recode(colData(cds_subset)$assigned_cell_type,
+                                                "28"="Vulval precursors",
+                                                "38"="Neurons",
+                                                "39"="Unknown",
+                                                "42"="Sex myoblasts",
+                                                "27"="Sex myoblasts",
+                                                "31"="Somatic gonad progenitors")
+plot_cells(cds_subset, group_cells_by="cluster", color_cells_by="assigned_cell_type")
+{% endhighlight %}
+
+{% highlight R %}
+colData(cds)[colnames(cds_subset),]$assigned_cell_type = colData(cds_subset)$assigned_cell_type
+plot_cells(cds, group_cells_by="partition", color_cells_by="assigned_cell_type", labels_per_group=5)
+{% endhighlight %}
+
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/L2_plot_cells_by_refined_annotation.png" width= 760>
+</div>
+
+{% highlight R %}
+assigned_type_marker_test_res = top_markers(cds, 
+                                            group_cells_by="assigned_cell_type", 
+                                            reference_cells=1000, 
+                                            cores=8)
+{% endhighlight %}
+
+{% highlight R %}
+generate_garnett_marker_file(assigned_type_marker_test_res, file="./marker_file.txt")
+{% endhighlight %}
+
+{% highlight console %}
+> Cell type Pharyngeal epithelia
+expressed: abu-6, gon-2, pqn-2, eyg-1, cutl-21
+
+> Cell type Pharyngeal muscle
+expressed: nspe-4, Y105C5B.5, Y52E8A.6
+
+> Cell type Neurons
+expressed: gei-18, htp-1, plk-3, F42G10.1, toca-2
+
+> Cell type Coelomocytes
+expressed: dig-1, prmn-1, inos-1, ZK593.3, C23H3.2, R11G1.6
+
+> Cell type Unknown 2
+expressed: cdk-1, Y49E10.4, D2024.4
+
+> Cell type Pharyngeal gland
+expressed: lys-8, C14B4.2
+
+> Cell type Unknown
+expressed: plk-1, nspc-20, nspc-15
+
+> Cell type Germline
+expressed: htp-2, mei-2, C56A3.8, Y57A10A.3, C16C8.13, EEED8.13, ztf-28, bath-4, K12H6.2
+
+> Cell type Failed QC
+expressed: T20B6.3, pqn-29, R13H4.8, T01B7.8, C04G6.7, C27A2.5, pqn-67, F41G3.3, Y47D3B.6, F41E6.11
+
+> Cell type Intestinal/rectal muscle
+expressed: mls-1, C15C8.6
+
+> Cell type Body wall muscle
+expressed: rme-2, T20D4.12
+
+> Cell type Sex myoblasts
+expressed: grd-14
+
+> Cell type Seam cells
+expressed: nhr-73, trcs-1, F54B11.10, W08G11.1
+
+> Cell type Am/PH sheath cells
+expressed: ZK822.4, T02B11.3, far-8, T11B7.5, vap-1, Y54G2A.10, R13D7.2, F11C7.2, K09C6.9, F52E1.2
+{% endhighlight %}
+
+{% highlight R %}
 library(garnett)
 load(url("https://cole-trapnell-lab.github.io/garnett/classifiers/ceWhole"))
 {% endhighlight %}
 
 {% highlight R %}
 colData(cds)$garnett_cluster = clusters(cds)
-cds = classify_cells(cds, ceWhole,
-                           db = org.Ce.eg.db,
-                           cluster_extend = TRUE,
-                           cds_gene_id_type = "ENSEMBL")
+worm_classifier <- train_cell_classifier(cds = cds,
+                                         marker_file = "./marker_file.txt",
+                                         db=org.Ce.eg.db::org.Ce.eg.db,
+                                         cds_gene_id_type = "ENSEMBL",
+                                         num_unknown = 50,
+                                         marker_file_gene_id_type = "SYMBOL",
+                                         cores=8)
 {% endhighlight %}
 
 {% highlight R %}
 plot_cells(cds, color_cells_by="cluster_ext_type")
 {% endhighlight %}
 
-<h2>Constructing Single Cell Trajectories </h2>
+{% highlight R %}
+load(url("https://cole-trapnell-lab.github.io/garnett/classifiers/ceWhole"))
+cds = classify_cells(cds, ceWhole,
+                           db = org.Ce.eg.db,
+                           cluster_extend = TRUE,
+                           cds_gene_id_type = "ENSEMBL")
+plot_cells(cds, color_cells_by="cluster_ext_type")
+{% endhighlight %}
+
+<!-- {% highlight R %}
+# Plot the overlap between clusters and annotated cell types:
+pheatmap::pheatmap(log(table(partitions(cds), colData(cds)$cao_cell_type)+1),
+                   clustering_method="ward.D2",
+                   fontsize=6, width=5, height=8, filename="L2_cell_type_by_partition.png")
+{% endhighlight %} -->
+
+<h2>Constructing single cell trajectories </h2>
 
 <p>   During development, in response to stimuli, and througout life, cells
 transition from one functional "state" to another. Cells in different states
@@ -541,30 +766,15 @@ trajectory. These branches correspond to cellular "decisions", and Monocle
 provides powerful tools for identifying the genes affected by them and involved
 in making them. You can see how to analyze branches in the section <a href = "{{
 site.baseurl }}/docs/#analyzing-branches-in-single-cell-trajectories"> Analyzing
-Branches in Single-Cell Trajectories </a>. Monocle relies on a machine learning
+branches in single-cell trajectories </a>. 
+
+<!-- Monocle relies on a machine learning
 technique called <em>reversed graph embedding</em> to construct single-cell
 trajectories. You can read more about the theoretical foundations of Monocle's
 approach in the section <a href = "{{ site.baseurl }}/docs/#theory-behind-monocle">
 Theory Behind Monocle </a> , or consult the references shown at the end of the
-vignette. </p>
-
-
-<div class= "panel panel-info">
-<div class= "panel-heading">
-<h3 class= "panel-title">What is pseudotime?</h3>
-</div>
-<div class= "panel-body">
-Pseudotime is a measure of how much progress an individual cell has made through a process such as cell differentiation.
-
-
-In many biological processes, cells do not progress in perfect synchrony.  In single-cell expression studies of processes such as cell differentiation, captured cells might be widely distributed in terms of progress.  That is, in a population of cells captured at exactly the same time, some cells might be far along, while others might not yet even have begun the process.  This asynchrony creates major problems when you want to understand the sequence of regulatory changes that occur as cells transition from one state to the next. Tracking the expression across cells captured at the same time produces a very compressed sense of a gene's kinetics, and the apparent variability of that gene's expression will be very high.
-
-By ordering each cell according to its progress along a learned trajectory, Monocle alleviates the problems that arise due to asynchrony. Instead of tracking changes in expression as a function of time, Monocle tracks changes as a function of progress along the trajectory, which we term ``pseudotime''. Pseudotime is an abstract unit of progress: it's simply the distance between a cell and the start of the trajectory, measured along the shortest path. The trajectory's total length is defined in terms of the total amount of transcriptional change that a cell undergoes as it moves from the starting state to the end state.
-
-</div>
-</div>
-
-<h3>The ordering workflow</h3>
+vignette.  -->
+</p>
 
 Before we get into the details of ordering cells along a trajectory, it's
 important to understand what Monocle is doing. The ordering workflow has three
@@ -581,50 +791,79 @@ cds <- new_cell_data_set(expression_matrix,
                          gene_metadata = gene_annotation)
 {% endhighlight %}
 
-<h4>Step 1: Normalize data</h4>
-
+<h3>Pre-process the data</h3>
 {% highlight R %}
 cds <- estimate_size_factors(cds)
 cds <- preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
 {% endhighlight %}
 
-
-<h4>Step 2: reducing the dimensionality of the data </h4>
-<p>    Once we have normalized the data and removed any batch effects, Monocle
-applies a <em>dimensionality reduction</em> to the data.  Monocle uses a
-recently developed algoithm called <a href = "{{ site.baseurl
-}}/docs/#reversed-graph-embedding"> Reversed Graph Embedding </a> to reduce the
-data's dimensionality.</p>
+<h3>Reduce dimensionality and visualize the results</h3>
+<p>Once we have normalized the data and removed any batch effects, Monocle
+applies a <em>dimensionality reduction</em> to the data.</p>
 
 {% highlight R %}
-cds <- estimate_size_factors(cds)
-cds <- reduce_dimension(cds, max_components= __, reduction_method="UMAP")
+set.seed(42)
+cds <- reduce_dimension(cds, umap.fast_sgd = FALSE, cores=1)
+plot_cells(cds, label_groups_by_cluster=FALSE,  color_cells_by = "cell.type") 
 {% endhighlight %}
 
-<h4>Step 3: Cluster the cells </h4>
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/embryo_umap_packer_cell_type.png" width= 760>
+</div>
+
+<h3>Cluster your cells </h3>
 {% highlight R %}
 cds <- cluster_cells(cds)
+plot_cells(cds, color_cells_by = "partition")
 {% endhighlight %}
 
-{% highlight R %}
-plot_cell_clusters(cds, color_by = "Cluster", show_group_id=TRUE)+
-    ggplot2::theme(legend.position="none")
-{% endhighlight %}
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/embryo_umap_partition.png" width= 760>
+</div>
 
-{% highlight R %}
-plot_cell_clusters(cds, color_by = "louvain_component", show_group_id=TRUE)+
-    ggplot2::theme(legend.position="none")
-{% endhighlight %}
-
-
-<h4>Step 4: Learn the cell trajectories </h4>
+<h3>Learn the trajectory graph</h3>
 {% highlight R %}
 cds <- partition_cells(cds)
-cds <- learn_graph(cds, learn_graph_control=list(ncenter=1000), close_loop=TRUE, verbose=TRUE)
-# a helper function to identify the root principal points:
+cds <- learn_graph(cds)
+plot_cells(cds, 
+           color_cells_by = "cell.type", 
+           label_groups_by_cluster=FALSE,
+           label_leaves=FALSE,
+           label_branch_points=FALSE)
+
 {% endhighlight %}
 
-<h4>Step 5: Visualize the trajectories </h4>
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/embryo_pr_graph_packer_cell_type.png" width= 760>
+</div>
+
+{% highlight R %}
+plot_cells(cds, 
+           color_cells_by = "embryo.time.bin", 
+           label_cell_groups=FALSE, 
+           label_leaves=TRUE,
+           label_branch_points=TRUE,
+           graph_label_size=1.5)
+{% endhighlight %}
+
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/embryo_pr_graph_by_time.png" width= 760>
+</div>
+
+
+{% highlight R %}
+plot_cells(cds, 
+           color_cells_by = "pseudotime", 
+           label_cell_groups=FALSE, 
+           label_leaves=FALSE,
+           label_branch_points=FALSE,
+           graph_label_size=1.5)
+{% endhighlight %}
+
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/embryo_pr_graph_by_pseudotime.png" width= 760>
+</div>
+
 
 {% highlight R %}
 plot_cell_trajectory(cds, color_by = "cell.type", cell_size=0.1) +
@@ -649,6 +888,27 @@ plot_cell_trajectory(cds, color_by = "batch") +
     #ggplot2::scale_color_manual(values=color_map) +
     ggplot2::theme(legend.position="right")
 {% endhighlight %}
+
+<h3>Order the cells in pseudotime</h3>
+
+<div class= "panel panel-info">
+<div class= "panel-heading">
+<h3 class= "panel-title" data-toc-skip>What is pseudotime?</h3>
+</div>
+<div class= "panel-body">
+<p><emph>Pseudotime</emph> is a measure of how much progress an individual cell has made through a process such as cell differentiation. </p>
+
+<p>In many biological processes, cells do not progress in perfect synchrony.  In single-cell expression studies of processes such as cell differentiation, captured cells might be widely distributed in terms of progress.  That is, in a population of cells captured at exactly the same time, some cells might be far along, while others might not yet even have begun the process.  This asynchrony creates major problems when you want to understand the sequence of regulatory changes that occur as cells transition from one state to the next. Tracking the expression across cells captured at the same time produces a very compressed sense of a gene's kinetics, and the apparent variability of that gene's expression will be very high.</p>
+
+<p>By ordering each cell according to its progress along a learned trajectory, Monocle alleviates the problems that arise due to asynchrony. Instead of tracking changes in expression as a function of time, Monocle tracks changes as a function of progress along the trajectory, which we term ``pseudotime''. Pseudotime is an abstract unit of progress: it's simply the distance between a cell and the start of the trajectory, measured along the shortest path. The trajectory's total length is defined in terms of the total amount of transcriptional change that a cell undergoes as it moves from the starting state to the end state.</p>
+
+</div>
+</div>
+{% highlight R %}
+cds = order_cells(cds)
+{% endhighlight %}
+
+<p>It's often desirable to specify the root of the trajectory programmatically, rather than manually picking it.</p>
 
 {% highlight R %}
 get_earliest_principal_node <- function(cds, time_bin="130-170"){
@@ -679,11 +939,15 @@ ciliated_genes = c("che-1",
                    "ceh-36",
                    "ham-1")
 
-plot_cell_trajectory(cds, markers=ciliated_genes)
+plot_cells(cds, markers=ciliated_genes)
 {% endhighlight %}
 
 
-<h2>Differential Expression Analysis </h2>
+
+
+
+
+<h2>Differential expression analysis </h2>
 Differential gene expression analysis is a common task in RNA-Seq experiments.  Monocle can help you find genes that are differentially expressed between groups of cells and assesses the statistical signficance of those changes. Monocle 3 includes a powerful system for finding genes that vary across cells of different types, were collected at different developmental time points, or that have been perturbed in different ways.
 
 <h3>Basic Differential Analysis </h3>
@@ -1025,9 +1289,45 @@ plot_genes_jitter(cds_subset,
         plot_trend = TRUE)
 {%endhighlight%} -->
 
-<div class= "text-center">
+<!-- <div class= "text-center">
 <img src= "{{site.baseurl}}/images/vignette/jitter_plot_diff_res-1.png" width= 760>
-</div>
+</div> -->
+
+<h3>Comparing selected subsets of cells</h3>
+<p>Often, you'll see one or more clusters and wonder what makes them different from other cells. Monocle provides several functions you can use to select cells of interest for downstream analysis </p>
+
+{% highlight R %}
+cds_subset = choose_cells()
+{% endhighlight %}
+
+<strong>XXX animated GIF of choosing cells</strong>
+
+<p>Now that we have selected several specific clusters of cells, we can find genes that distinguish them:</p>
+{% highlight R %}
+cluster_models = fit_models(cds_subset, 
+                            model_formula_str = "~cluster")
+fit_coefs = coefficient_table(cluster_models)
+fit_coefs %>% filter(grepl("cluster", term) %>%
+  select(gene_short_name, term, q_value, estimate)
+{% endhighlight %}
+
+XXX TODO SHOW OUTPUT XXX
+
+<h3>Finding modules of co-regulated genes</h3>
+
+{% highlight R %}
+cds_subset = choose_cells()
+{% endhighlight %}
+
+## TODO: need to use choose_cells() here to pick some specific clusters:
+pr_graph_test_res = graph_test(cds, neighbor_graph="knn", cores=8)
+pr_deg_ids = row.names(subset(pr_graph_test_res, q_value < 0.05))
+
+gene_cluster_df = cluster_genes(cds[pr_deg_ids,], resolution=c(0,10^seq(-6,-1)))
+
+png("module_graph.png", res=600, width=8, height=8, units="in")
+plot_cells(cds, genes=gene_cluster_df, cell_size=0.5, show_backbone=FALSE, label_branch_points=FALSE, label_leaves=FALSE, label_roots=FALSE)
+dev.off()
 
 <p> We could also simply compute summary statistics such as mean or
 median expression level on a per-<em>CellType</em> basis to see this, which
@@ -1039,7 +1339,9 @@ table of the <a href = "https://rdrr.io/bioc/monocle/man/cell_data_set.html">cel
 
 The differential analysis procedure in Monocle is extremely flexible: the model formulae you use in your tests can include any term that exists as a column in the <code>pData</code> table, including those columns that are added by Monocle in other analysis steps. For example, if you use <code><a href = "https://rdrr.io/bioc/monocle/man/clusterCells.html">clusterCells</a></code>, you can test for genes that differ between clusters by using <em>Cluster</em> as your model formula.
 
+<h3>Finding genes that change as a function of pseudotime </h3>
 
+<!-- 
 <h3>Finding Genes that Change as a Function of Pseudotime </h3>
 
 <p> Monocle's main job is to put cells in order of progress through a biological process (such as cell differentiation) without knowing which genes to look at ahead of time.
@@ -1112,11 +1414,9 @@ plot_pseudotime_heatmap(HSMM_myo[sig_gene_names,],
 
 <div class= "text-center">
 <img src= "{{site.baseurl}}/images/vignette/plot_diff_res_pt_heatmap-1.png" width= 550>
-</div>
+</div> -->
 
-<h2>Analyzing Branches in Single-Cell Trajectories </h2>
-
-<h2>Appendices</h2>
+<h3>Analyzing Branches in Single-Cell Trajectories </h3>
 
 <h2>Major updates in Monocle 3 </h2>
 
@@ -1158,6 +1458,8 @@ These density peaks nucleate clusters: all other cells will be associated with t
 Finally, we identify genes that differ between the clusters by performing a likelihood ratio test between using a generalized linear model that knows the cluster to which each cell is assigned and a model that doesn't.
 We then select (by default) the top 1,000 significantly differentially expressed genes as the ordering genes for the trajectory reconstruction. -->
 
+
+<h2>Appendices</h2>
 
 <h3>Reversed graph embedding </h3>
 
