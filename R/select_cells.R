@@ -257,7 +257,7 @@ choose_graph_segments <- function(cds,
       data_df$chosen_cells <- "gray"
       data_df$chosen_cells[vals$chosen_cells] <- "purple"
       suppressMessages(plot_principal_graph(data_df, princ_points,
-                                            label_branch_points = F,
+                                            label_branch_points = FALSE,
                                             label_leaves = FALSE,
                                             label_roots = FALSE))
     }, height = function() {
