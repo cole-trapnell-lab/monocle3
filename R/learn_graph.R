@@ -223,13 +223,17 @@ multi_component_RGE <- function(cds,
     }
 
     if(is.null(ncenter)) {
-      ncenter <- cal_ncenter(ncol(X_subset))
+      num_clusters_in_partition = length(unique(clusters(cds)[colnames(X_subset)]))
+      num_cells_in_partition = ncol(X_subset)
+      ncenter <- cal_ncenter(num_clusters_in_partition, num_cells_in_partition)
       if(is.null(ncenter) || ncenter >= ncol(X_subset)) {
         ncenter <- ncol(X_subset) - 1
       }
     } else {
       ncenter <- min(ncol(X_subset) - 1, ncenter)
     }
+    if (verbose)
+      message(paste("Using", ncenter, "nodes for principal graph"))
 
     kmean_res <- NULL
 
@@ -411,12 +415,8 @@ multi_component_RGE <- function(cds,
               dp_mst = dp_mst))
 }
 
-cal_ncenter <- function(ncells, ncells_limit = 1000){
-  if(ncells <= ncells_limit) {
-    return(NULL)
-  }
-
-  round(5 * ncells_limit * log(ncells)/ (log(ncells) + log(ncells_limit)))
+cal_ncenter <- function(num_cell_communities, ncells, nodes_per_log10_cells=15){
+  round(num_cell_communities * nodes_per_log10_cells * log10(ncells))
 }
 
 #' Finds the nearest principal graph node
