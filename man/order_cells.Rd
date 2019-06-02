@@ -31,8 +31,7 @@ for State and pseudotime for each cell.
 Assigns cells a pseudotime value based on their projection on the principal
 graph learned in the \code{learn_graph} function and the position of chosen
 root states. This function takes as input a cell_data_set and returns it
-with two new colData columns: \code{pseudotime} and \code{State}, which
-together encode where each cell maps to the principal graph trajectory.
+with pseudotime information stored internally.
 \code{order_cells()} optionally takes "root" state(s) in the form of cell
 or principal graph node IDs, which you can use to specify the start of the
 trajectory. If you don't provide a root state, an plot will be generated

@@ -1,8 +1,32 @@
+#' Generic to extract pseudotime from CDS object
+#'
+#' @param x CDS object
+#' @param reduction_method Reduced dimension to extract pseudotime for.
+#'
+#' @export
+setGeneric("pseudotime", function(x, reduction_method = "UMAP")
+  standardGeneric("pseudotime"))
+
+#' Method to extract pseudotime from CDS object
+#' @param cell_data_set CDS object
+#'
+#' @export
+setMethod("pseudotime", "cell_data_set",
+          function(x, reduction_method = "UMAP") {
+            value <- x@principal_graph_aux[[reduction_method]]$pseudotime
+            if (is.null(value)) {
+              stop(paste0("No pseudotime calculated for reduction_method = ",
+                          reduction_method, ". Please first run ",
+                          "order_cells with reduction_method = ",
+                          reduction_method, "."))
+            }
+            return(value)
+          })
+
 #' Generic to extract clusters from CDS object
 #'
 #' @param x CDS object
 #' @param reduction_method Reduced dimension to extract clusters for.
-#'
 #' @export
 setGeneric("clusters", function(x, reduction_method = "UMAP")
   standardGeneric("clusters"))

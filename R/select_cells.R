@@ -371,7 +371,7 @@ plot_principal_graph <- function(data_df,
 
   gene_short_name <- NA
   sample_name <- NA
-  sample_state <- colData(cds)$State
+  #sample_state <- colData(cds)$State
   data_dim_1 <- NA
   data_dim_2 <- NA
   plotting_func <- ggplot2::geom_point

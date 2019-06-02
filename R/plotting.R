@@ -94,7 +94,6 @@ plot_cells_3d <- function(cds,
 
   gene_short_name <- NA
   sample_name <- NA
-  sample_state <- colData(cds)$State
 
   x <- dims[[1]]
   y <- dims[[2]]
@@ -352,7 +351,7 @@ plot_cells_3d_old <- function(cds,
   }
 
   lib_info_with_pseudo <- colData(cds)[cell_sampled, ]
-  sample_state <- colData(cds)$State[cell_sampled]
+ # sample_state <- colData(cds)$State[cell_sampled]
 
   reduced_dim_coords <- reducedDims(cds)[[reduction_method]]
 
@@ -716,7 +715,7 @@ plot_cells <- function(cds,
 
   gene_short_name <- NA
   sample_name <- NA
-  sample_state <- colData(cds)$State
+  #sample_state <- colData(cds)$State
   data_dim_1 <- NA
   data_dim_2 <- NA
   if (rasterize){

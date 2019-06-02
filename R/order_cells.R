@@ -4,14 +4,12 @@
 #' Assigns cells a pseudotime value based on their projection on the principal
 #' graph learned in the \code{learn_graph} function and the position of chosen
 #' root states. This function takes as input a cell_data_set and returns it
-#' with two new colData columns: \code{pseudotime} and \code{State}, which
-#' together encode where each cell maps to the principal graph trajectory.
+#' with pseudotime information stored internally.
 #' \code{order_cells()} optionally takes "root" state(s) in the form of cell
 #' or principal graph node IDs, which you can use to specify the start of the
 #' trajectory. If you don't provide a root state, an plot will be generated
 #' where you can choose the root state(s) interactively. The trajectory will be
-#' composed of segments. The cells from a segment will share the same value of
-#' \code{State}.
+#' composed of segments.
 #'
 #' @param cds the cell_data_set upon which to perform this operation
 #' @param reduction_method a string specifying the reduced dimension method to
@@ -24,8 +22,7 @@
 #'   \code{root_pr_nodes} and \code{root_cells} cannot be provided.
 #' @param verbose Whether to show running information for order_cells
 #'
-#' @return an updated cell_data_set object, in which colData contains values
-#'   for State and pseudotime for each cell.
+#' @return an updated cell_data_set object.
 #' @export
 order_cells <- function(cds,
                         reduction_method = "UMAP",
@@ -100,7 +97,8 @@ order_cells <- function(cds,
 
   cc_ordering <- extract_general_graph_ordering(cds, root_pr_nodes, verbose,
                                                 reduction_method)
-  colData(cds)$pseudotime <- cc_ordering[row.names(colData(cds)), ]$pseudo_time
+  cds@principal_graph_aux[[reduction_method]]$pseudotime <-
+    cc_ordering[row.names(colData(cds)), ]$pseudo_time
 
   cds
 }
