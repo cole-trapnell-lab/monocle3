@@ -18,7 +18,7 @@ cds = new_cell_data_set(expression_matrix,
 
 ## Step 1: Normalize and pre-process the data
 cds = preprocess_cds(cds, num_dim = 100)
-
+plot_pc_variance_explained(cds) + ggsave("L2_pc_variance_explained.png", width=3, height=2, dpi = 600)
 ## Step 2: Reduce the dimensionality of the data
 #### Without batch correction:
 cds = reduce_dimension(cds)

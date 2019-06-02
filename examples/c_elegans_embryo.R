@@ -5,19 +5,9 @@ library(tidymodels)
 
 theme_set(theme_gray(base_size = 6))
 
-# color_metadata = read.delim("/Users/coletrap/dropbox_lab/Analysis/worm-lineage/animations/ciliated_neurons_3D_umap_metadata.txt")
-# color_metadata = color_metadata %>% dplyr::select(plot.cell.type, color.for.movie) %>% distinct()
-# color_map = as.character(color_metadata$color.for.movie)
-# names(color_map) = as.character(color_metadata$plot.cell.type)
-
-# expression_matrix = readRDS("for-cole.ciliated.amphid.neurons.exprs.rds")
-# cell_metadata = readRDS("for-cole.ciliated.amphid.neurons.pData.rds")
-# gene_annotation = readRDS("for-cole.ciliated.amphid.neurons.fData.rds")
-
-expression_matrix = readRDS(url("http://jpacker-data.s3.amazonaws.com/for-cole/for-cole.ciliated.amphid.neurons.exprs.rds"))
-cell_metadata = readRDS(url("http://jpacker-data.s3.amazonaws.com/for-cole/for-cole.ciliated.amphid.neurons.pData.rds"))
-gene_annotation = readRDS(url("http://jpacker-data.s3.amazonaws.com/for-cole/for-cole.ciliated.amphid.neurons.fData.rds"))
-gene_annotation$use_for_ordering = NULL
+expression_matrix = readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_expression.rds"))
+cell_metadata = readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_colData.rds"))
+gene_annotation = readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_rowData.rds"))
 
 cds <- new_cell_data_set(expression_matrix,
                          cell_metadata = cell_metadata,
@@ -225,11 +215,15 @@ plot_cells(cds_subset,
            label_cell_groups=FALSE,
            show_trajectory_graph=FALSE) + ggsave("embryo_umap_AFD_modules.png", width=5, height=4, dpi = 600)
 
+subset_pr_test_res = inner_join(subset_pr_test_res, gene_module_df)
+#top_diff_genes = subset_pr_test_res %>% group_by(module) %>% filter(q_value < 0.05) %>% top_n(5, morans_I)
+top_AFD_genes = subset_pr_test_res %>% filter(q_value < 0.05 & module == 3) %>% top_n(3, morans_I)
+top_AWC_genes = subset_pr_test_res %>% filter(q_value < 0.05 & module %in% c(11, 7)) %>% top_n(3, morans_I)
 
-# png("branch_modules.png", res=600, width=6, height=6, units="in")
-# plot_cells(cds_subset, genes=gene_module_df, show_trajectory_graph=FALSE, color_cells_by="cell.type")
-# dev.off()
-
+plot_cells(cds_subset, 
+           genes=c(top_AFD_genes %>% pull(gene_short_name), top_AWC_genes %>% pull(gene_short_name)), 
+           label_cell_groups=FALSE,
+           show_trajectory_graph=FALSE) + ggsave("embryo_umap_AFD_AWC_branch_genes.png", width=5, height=4, dpi = 600)
 
 ###### Making 3D trajectories:
 
