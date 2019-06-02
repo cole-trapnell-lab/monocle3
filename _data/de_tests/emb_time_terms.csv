@@ -1,7 +1,7 @@
-"","id","gene_short_name","num_cells_expressed","status","term","estimate","std_err","test_val","p_value","normalized_effect","model_component","q_value"
-"1","WBGene00001820","ham-1",1618,"OK","embryo.time",-0.0033071,0.0002848,-11.6142,7.29e-31,-0.00475053771659975,"count",3.645e-30
-"2","WBGene00007058","dmd-6",873,"OK","embryo.time",0.0068932,0.0002827,24.3849,1.79e-125,0.000460201264559108,"count",1.074e-124
-"3","WBGene00001961","hlh-17",51,"OK","embryo.time",-0.0021732,0.0012831,-1.6937,0.0904,-8.5061064494849e-10,"count",0.1808
-"4","WBGene00003605","nhr-6",133,"OK","embryo.time",0.0050927,0.0007407,6.8759,6.77e-12,0.000199917848820768,"count",2.708e-11
-"5","WBGene00000457","ceh-36",1123,"OK","embryo.time",0.0022543,0.0003444,6.5449,6.43e-11,0.00303073469083144,"count",1.929e-10
-"6","WBGene00000483","che-1",292,"OK","embryo.time",-0.0002872,0.0006657,-0.4315,0.666,-0.000397504514615481,"count",0.666
+"","id","gene_short_name","num_cells_expressed","use_for_ordering","status","term","estimate","std_err","test_val","p_value","normalized_effect","model_component","q_value"
+"1","WBGene00001820","ham-1",1618,TRUE,"OK","embryo.time",-0.0044819,0.0002364,-18.9621,5.52e-78,-0.00644606244572239,"count",2.76e-77
+"2","WBGene00007058","dmd-6",873,FALSE,"OK","embryo.time",0.0069775,0.0002214,31.5177,2.47e-202,0.00464572663641225,"count",1.482e-201
+"3","WBGene00001961","hlh-17",51,TRUE,"OK","embryo.time",0.0018918,0.0009967,1.898,0.0577,0.00106972293168327,"count",0.0577
+"4","WBGene00003605","nhr-6",133,TRUE,"OK","embryo.time",0.0053983,0.0005571,9.6903,4.75e-22,0.00173648950379359,"count",1.9e-21
+"5","WBGene00000457","ceh-36",1123,TRUE,"OK","embryo.time",0.0022045,0.0002597,8.4898,2.57e-17,0.00305328700191416,"count",7.71e-17
+"6","WBGene00000483","che-1",292,TRUE,"OK","embryo.time",-0.0020443,0.0005311,-3.8495,0.00012,-0.00286940056906084,"count",0.00024

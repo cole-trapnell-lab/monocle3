@@ -24,50 +24,35 @@ tags: [monocle, manual, vignette]
 <!-- main content area -->
 <div class= "col-sm-8">
 
-<h2>Overview</h2>
-<p>Single cell gene expression studies enables one to profile transcriptional
-regulation in complex biological processes and  highly hetergeneous
-cell populations. These studies facilitate the discovery of genes that identify certain
-subtypes of cells, or that mark intermediate states during a
-biological process as well as bifurcate between two alternative cellular fates.
-In many single cell studies, individual cells are executing
-through a gene expression program in an unsynchronized manner. In effect, each
-cell is a snapshot of the transcriptional program under study. The package
-<strong>Monocle</strong> provides tools for analyzing single-cell expression
-experiments. Monocle introduced the strategy of ordering single cells in
-<strong>pseudotime</strong>, placing them along a trajectory corresponding to a
-biological process such as cell differentiation by taking advantage of individual cell's asynchronous
-progression of those processes. Monocle orders cells by learning an explicit principal graph from the
-single cell genomics data with advanced machine learning techniques (Reversed Graph Embedding), which
-robustly and accurately resolves complicated biological processes. Monocle also performs clustering
-(i.e. using t-SNE and density peaks clustering). Monocle then performs differential gene expression testing, allowing one to
-identify genes that are differentially expressed between different state, along a biological process as well as
-alternative cell fates. Monocle is designed for single cell RNA-Seq studies, but can be
-used with other assays. For more information on the algorithm at the core of
-<strong>Monocle</strong>, or to learn more about how to use single cell RNA-Seq
-to study complex biological processes, explore <a href= "{{ site.baseurl }}/papers/">our
-publications</a>.</p>
-
 <h2>Introduction</h2>
 
-<p>The monocle package provides a toolkit for analyzing single cell gene expression
-experiments. This vignette provides an overview of a single cell RNA-Seq
-analysis workflow with Monocle. Monocle was originally developed to analyze
-dynamic biological processes such as cell differentiation, although it also
-supports other experimental settings.</p>
-
-<p><strong>Monocle </strong> includes new and improved algorithms for classifying
-and counting cells, performing differential expression analysis between
-subpopulations of cells, and reconstructing cellular trajectories. Monocle 2 has
-also been re-engineered to work well with very large single-cell RNA-Seq
-experiments containing tens of thousands of cells or more.</p>
+<p>Single cell transcriptome sequencing (sc-RNA-seq) experiments allow us to discover new cell types and helps us understand how they arise in development. The <strong>Monocle</strong> package provides a toolkit for analyzing single cell gene expression experiments.</p>
 
 <p>Monocle can help you perform three main types of analysis:
 <ul>
 <li><strong>Clustering, classifying, and counting cells.</strong> Single-cell RNA-Seq experiments allow you to discover new (and possibly rare) subtypes of cells. Monocle helps you identify them.
 <li><strong>Constructing single-cell trajectories.</strong> In development, disease, and throughout life, cells transition from one state to another. Monocle helps you discover these transitions.
-<li> <strong>Differential expression analysis.</strong> Characterizing new cell types and states begins with comparing them to other, better understood cells. Monocle includes a sophisticated but easy to use system for differential expression.
+<li> <strong>Differential expression analysis.</strong> Characterizing new cell types and states begins with comparing them to other, better understood cells. Monocle includes a sophisticated but easy-to-use system for differential expression.
 </ul>
+
+
+<div class= "panel panel-warning">
+<div class= "panel-heading">
+<h3 class= "panel-title" data-toc-skip>Under construction</h3>
+</div>
+<div class= "panel-body">
+<p>Monocle 3 is currently in the <a href="https://en.wikipedia.org/wiki/Software_release_life_cycle#Alpha">alpha phase</a> of its development. This means not all planned features have been implemented, the API is not yet finalized, and updates might break prior analyses. We are working hard towards a beta release, but please be patient while Monocle 3 is under construction.</p>
+
+<p>The documentation on this page is also still under construction. Not all features currently implemented have been documented.</p>
+</div>
+</div>
+
+
+
+For more information on the algorithms at the core of
+<strong>Monocle</strong>, or to learn more about how to use single cell RNA-Seq
+to study complex biological processes, explore <a href= "{{ site.baseurl }}/papers/">our
+publications</a>.</p>
 
 Before we look at Monocle's functions for each of these common analysis tasks,
 let's see how to install Monocle.
@@ -104,7 +89,7 @@ for private communications that cannot be addressed by the Monocle user
 community. Please do not email technical questions to Monocle contributors
 directly.</p>
 
-<h2>Recommended analysis protocol</h2>
+<!-- <h2>Recommended analysis protocol</h2>
 
 <p>Monocle is a powerful toolkit for analyzing single-cell RNA-seq.  You don't need
 to use all of its features for every analysis, and there are more than one way
@@ -126,7 +111,7 @@ one way to do a certain step, we've labeled the options as follows:
 <td>Of the ways you could do this, this way might work better than the one we usually recommend.</td>
 </tr>
 </tbody>
-</table>
+</table> -->
 
 <h3>Workflow steps at a glance</h3>
 <p>Below, you can see snippets of code that highlight the main steps of Monocle.
@@ -170,11 +155,11 @@ cds <- classifyCells(cds, cth, 0.1)
 You can easily cluster your cells to find new types:
 
 {% highlight R %}
-cds = reduce_dimension(cds, reduction_method = 'UMAP', verbose=TRUE)
+cds = reduce_dimension(cds)
 cds = cluster_cells(cds)
 {% endhighlight %}
 
-<h4><a href= "{{ site.baseurl }}/docs/#constructing-single-cell-trajectories">Order cells in pseudotime along a trajectory</a></h4>
+<h4><span class= "label label-info">Optional</span> <a href= "{{ site.baseurl }}/docs/#constructing-single-cell-trajectories">Order cells in pseudotime along a trajectory</a> </h4>
 Now, put your cells in order by how much progress they've made through whatever process you're studying, such as differentiation,
 reprogramming, or an immune response.
 
@@ -184,7 +169,7 @@ cds = order_cells(cds)
 plot_cells(cds)
 {% endhighlight %}
 
-<h4><a href= "{{ site.baseurl }}/docs/#differential-expression-analysis">Perform differential expression analysis</a></h4>
+<h4><span class= "label label-info">Optional</span> <a href= "{{ site.baseurl }}/docs/#differential-expression-analysis">Perform differential expression analysis</a> </h4>
 Compare groups of cells in myriad ways to find differentially expressed genes,
 controlling for batch effects and treatments as you like:
 
@@ -320,7 +305,7 @@ lung_seurat <- exportCDS(lung, 'Seurat')
 
 {% endhighlight %} -->
 
-<h3 data-toc-text= "Working with large data sets">Working with large data sets <span class= "label label-info">Recommended</span></h3>
+<h3 data-toc-text= "Working with large data sets">Working with large data sets</h3>
 
 <p> Some single-cell RNA-Seq experiments report measurements from tens of thousands of cells or more.
 As instrumentation improves and costs drop, experiments will become ever larger and more complex, with many conditions, controls, and replicates.
@@ -857,6 +842,22 @@ plot_cells(cds,
   <img src= "{{site.baseurl}}/images/manual_images/embryo_pr_graph_packer_cell_type.png" width= 760>
 </div>
 
+<h3>Order the cells in pseudotime</h3>
+
+<div class= "panel panel-info">
+<div class= "panel-heading">
+<h3 class= "panel-title" data-toc-skip>What is pseudotime?</h3>
+</div>
+<div class= "panel-body">
+<p><emph>Pseudotime</emph> is a measure of how much progress an individual cell has made through a process such as cell differentiation. </p>
+
+<p>In many biological processes, cells do not progress in perfect synchrony.  In single-cell expression studies of processes such as cell differentiation, captured cells might be widely distributed in terms of progress.  That is, in a population of cells captured at exactly the same time, some cells might be far along, while others might not yet even have begun the process.  This asynchrony creates major problems when you want to understand the sequence of regulatory changes that occur as cells transition from one state to the next. Tracking the expression across cells captured at the same time produces a very compressed sense of a gene's kinetics, and the apparent variability of that gene's expression will be very high.</p>
+
+<p>By ordering each cell according to its progress along a learned trajectory, Monocle alleviates the problems that arise due to asynchrony. Instead of tracking changes in expression as a function of time, Monocle tracks changes as a function of progress along the trajectory, which we term ``pseudotime''. Pseudotime is an abstract unit of progress: it's simply the distance between a cell and the start of the trajectory, measured along the shortest path. The trajectory's total length is defined in terms of the total amount of transcriptional change that a cell undergoes as it moves from the starting state to the end state.</p>
+</div>
+</div>
+
+
 {% highlight R %}
 plot_cells(cds, 
            color_cells_by = "embryo.time.bin", 
@@ -869,6 +870,12 @@ plot_cells(cds,
 <div class= "text-center">
   <img src= "{{site.baseurl}}/images/manual_images/embryo_pr_graph_by_time.png" width= 760>
 </div>
+
+
+{% highlight R %}
+cds = order_cells(cds)
+{% endhighlight %}
+
 
 {% highlight R %}
 plot_cells(cds, 
@@ -884,76 +891,12 @@ plot_cells(cds,
 </div>
 
 
-{% highlight R %}
-plot_cell_trajectory(cds, color_by = "cell.type", cell_size=0.1) +
-    #ggplot2::scale_color_manual(values=color_map) +
-    ggplot2::theme(legend.position="right")
-{% endhighlight %}
-
-<p> </p>
-<p>
-  <font color="red">
-    XX Plot needs to be added here XX
-  </font>
-</p>
-
-
-{% highlight R %}
-plot_cell_trajectory(cds, color_by = "embryo.time.bin", cell_size=0.1) +
-    #ggplot2::scale_color_manual(values=color_map) +
-    ggplot2::theme(legend.position="right")
-{% endhighlight %}
-
-<p> </p>
-<p>
-  <font color="red">
-    XX Plot needs to be added here XX
-  </font>
-</p>
-
-
-{% highlight R %}
-plot_cell_trajectory(cds, color_by = "Pseudotime", cell_size=0.1) +
-    #ggplot2::scale_color_manual(values=color_map) +
-    ggplot2::theme(legend.position="right")
-{% endhighlight %}
-
-<p> </p>
-<p>
-  <font color="red">
-    XX Plot needs to be added here XX
-  </font>
-</p>
-
-
-{% highlight R %}
-plot_cell_trajectory(cds, color_by = "batch") +
-    #ggplot2::scale_color_manual(values=color_map) +
-    ggplot2::theme(legend.position="right")
-{% endhighlight %}
-
-<h3>Order the cells in pseudotime</h3>
-
-<div class= "panel panel-info">
-<div class= "panel-heading">
-<h3 class= "panel-title" data-toc-skip>What is pseudotime?</h3>
-</div>
-<div class= "panel-body">
-<p><emph>Pseudotime</emph> is a measure of how much progress an individual cell has made through a process such as cell differentiation. </p>
-
-<p>In many biological processes, cells do not progress in perfect synchrony.  In single-cell expression studies of processes such as cell differentiation, captured cells might be widely distributed in terms of progress.  That is, in a population of cells captured at exactly the same time, some cells might be far along, while others might not yet even have begun the process.  This asynchrony creates major problems when you want to understand the sequence of regulatory changes that occur as cells transition from one state to the next. Tracking the expression across cells captured at the same time produces a very compressed sense of a gene's kinetics, and the apparent variability of that gene's expression will be very high.</p>
-
-<p>By ordering each cell according to its progress along a learned trajectory, Monocle alleviates the problems that arise due to asynchrony. Instead of tracking changes in expression as a function of time, Monocle tracks changes as a function of progress along the trajectory, which we term ``pseudotime''. Pseudotime is an abstract unit of progress: it's simply the distance between a cell and the start of the trajectory, measured along the shortest path. The trajectory's total length is defined in terms of the total amount of transcriptional change that a cell undergoes as it moves from the starting state to the end state.</p>
-
-</div>
-</div>
-{% highlight R %}
-cds = order_cells(cds)
-{% endhighlight %}
 
 <p>It's often desirable to specify the root of the trajectory programmatically, rather than manually picking it.</p>
 
 {% highlight R %}
+
+# a helper function to identify the root principal points:
 get_earliest_principal_node <- function(cds, time_bin="130-170"){
   cell_ids <- which(colData(cds)[, "embryo.time.bin"] == time_bin)
 
@@ -967,27 +910,20 @@ get_earliest_principal_node <- function(cds, time_bin="130-170"){
   root_pr_nodes
 }
 cds = order_cells(cds, root_pr_nodes=get_earliest_principal_node(cds))
-plot_cell_trajectory(cds, markers=c("egl-21", "egl-1"))
 {% endhighlight %}
-
-<p> </p>
-<p>
-  <font color="red">
-    XX Plot needs to be added here XX
-  </font>
-</p>
-
 
 {% highlight R %}
-plot_genes_in_pseudotime(cds[rowData(cds)$gene_short_name %in% c("egl-21", "egl-1"),])
+plot_cells(cds, 
+           color_cells_by = "pseudotime", 
+           label_cell_groups=FALSE, 
+           label_leaves=FALSE,
+           label_branch_points=FALSE,
+           graph_label_size=1.5)
 {% endhighlight %}
 
-<p> </p>
-<p>
-  <font color="red">
-    XX Plot needs to be added here XX
-  </font>
-</p>
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/embryo_pr_graph_by_pseudotime_programmatically_ordered.png" width= 760>
+</div>
 
 
 {% highlight R %}
@@ -998,19 +934,35 @@ ciliated_genes = c("che-1",
                    "ceh-36",
                    "ham-1")
 
-plot_cells(cds, markers=ciliated_genes)
+plot_cells(cds, 
+           genes=ciliated_genes, 
+           label_cell_groups=FALSE, 
+           show_trajectory_graph=FALSE) 
 {% endhighlight %}
 
-<p> </p>
-<p>
-  <font color="red">
-    XX Plot needs to be added here XX
-  </font>
-</p>
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/embryo_ciliated_markers.png" width= 760>
+</div>
 
+<h3>Working with 3D trajectories</h3>
 
+{% highlight R %}
+cds_3d = reduce_dimension(cds, max_components = 3)
+cds_3d = cluster_cells(cds_3d)
+cds_3d = learn_graph(cds_3d)
+cds_3d = order_cells(cds_3d, root_pr_nodes=get_earliest_principal_node(cds))
 
+cds_3d_plot_obj = plot_cells_3d(cds_3d, color_cells_by="partition")
+{% endhighlight %}
 
+<strong>XXX PUT 3D PLOT BACK!!</strong>
+
+<!-- <iframe src="{{site.baseurl}}/images/manual_images/emb_3d_by_partition.html"
+  height="600" width="100%"
+  scrolling="no" seamless="seamless"
+  frameBorder="0">
+</iframe>
+ -->
 
 
 <h2>Differential expression analysis </h2>
@@ -1031,7 +983,7 @@ ciliated_genes = c("che-1",
 cds_subset = cds[rowData(cds)$gene_short_name %in% ciliated_genes,]
 {% endhighlight %}
 
-<p> In the embryo data, the cells were collected at different time points. We can test whether any of the genes above change over time in their expression by first fitting a <emph>generalized linear model</emph> to each one: </p>
+<p></p>The differential analysis tools in Monocle are extremely flexible. Monocle works by fitting a <emph>regression model</emph> to each gene. You can specify this model to account for various factors in your experiment (time, treatment, and so on). For example, In the embryo data, the cells were collected at different time points. We can test whether any of the genes above change over time in their expression by first fitting a <emph>generalized linear model</emph> to each one: </p>
 
 \begin{equation}
   log(y_i) = \beta_0 + \beta_t x_t
@@ -1043,9 +995,9 @@ cds_subset = cds[rowData(cds)$gene_short_name %in% ciliated_genes,]
 gene_fits = fit_models(cds_subset, model_formula_str = "~embryo.time")
 {% endhighlight %}
 
-<p><code>gene_fits</code> is a <a href="https://tibble.tidyverse.org/">tibble</a> that contains a row for each gene. The <code>model</code> column contains generalized linear model objects, each of which aims to explain the expression of a gene across the cells using the equation above.</p>
+<p><code>gene_fits</code> is a <a href="https://tibble.tidyverse.org/">tibble</a> that contains a row for each gene. The <code>model</code> column contains generalized linear model objects, each of which aims to explain the expression of a gene across the cells using the equation above. The parameter <code>model_formula_str</code> should be a string specifying the model formula. The model formulae you use in your tests can include any term that exists as a column in the <code>pData</code> table, including those columns that are added by Monocle in other analysis steps. For example, if you use <code><a href = "https://rdrr.io/bioc/monocle/man/cluster_cells.html">clusterCells</a></code>, you can test for genes that differ between clusters and partitions by using <code>~cluster</code> or <code>~partition</code> (respectively) as your model formula. You can also include multiple variables, for example  <code>~embryo.time + batch</code>, which can be very helpful for subtracting unwanted effects.
 
-<p> Now let's see which, if any of these genes have time-dependent expression. First, we extract a table of coefficients from each model using the <code>coefficient_table()</code> function:</p>
+<p> Now let's see which of these genes have time-dependent expression. First, we extract a table of coefficients from each model using the <code>coefficient_table()</code> function:</p>
 {% highlight R %}
 fit_coefs = coefficient_table(gene_fits)
 {% endhighlight %}
@@ -1132,13 +1084,18 @@ emb_time_terms %>% filter (q_value < 0.05) %>%
 <p> Monocle also provides some easy ways to plot the expression of a small set of genes grouped by the factors you use during differential analysis.  This helps you visualize the differences revealed by the tests above.  One type of plot is a "violin" plot. </p>
 
 {% highlight R %}
-plot_genes_violin(cds_subset, grouping="embryo.time.bin") +
+plot_genes_violin(cds_subset, group_cells_by="embryo.time.bin", ncol=2) +
     theme(axis.text.x=element_text(angle=45, hjust=1))
 {% endhighlight %}
 
-<p><strong>XXX PUT IN EXAMPLE OF PERCENT POSITIVE PLOT? XXX</strong></p>
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/embryo_ciliated_markers_violin.png" width= 500>
+</div>
 
 <h3>Controlling for batch effects and other factors</h3>
+
+<!-- TODO: Add violin plots in this section -->
+
 {% highlight R %}
 gene_fits = fit_models(cds_subset, model_formula_str = "~embryo.time + batch")
 fit_coefs = coefficient_table(gene_fits)
@@ -1355,6 +1312,7 @@ plot_genes_jitter(cds_subset,
         plot_trend = TRUE)
 {%endhighlight%} -->
 
+<!-- 
 <h3>Comparing selected subsets of cells</h3>
 <p>Often, you'll see one or more clusters and wonder what makes them different from other cells. Monocle provides several functions you can use to select cells of interest for downstream analysis </p>
 
@@ -1373,136 +1331,176 @@ fit_coefs %>% filter(grepl("cluster", term) %>%
   select(gene_short_name, term, q_value, estimate)
 {% endhighlight %}
 
-XXX TODO SHOW OUTPUT XXX
+XXX TODO SHOW OUTPUT XXX -->
 
 <h3>Finding modules of co-regulated genes</h3>
 
 {% highlight R %}
-cds_subset = choose_cells()
-{% endhighlight %}
-
-## TODO: need to use choose_cells() here to pick some specific clusters:
-pr_graph_test_res = graph_test(cds, neighbor_graph="knn", cores=8)
-pr_deg_ids = row.names(subset(pr_graph_test_res, q_value < 0.05))
-
-gene_cluster_df = cluster_genes(cds[pr_deg_ids,], resolution=c(0,10^seq(-6,-1)))
-
-png("module_graph.png", res=600, width=8, height=8, units="in")
-plot_cells(cds, genes=gene_cluster_df, cell_size=0.5, show_backbone=FALSE, label_branch_points=FALSE, label_leaves=FALSE, label_roots=FALSE)
-dev.off()
-
-<p> We could also simply compute summary statistics such as mean or
-median expression level on a per-<em>CellType</em> basis to see this, which
-might be handy if we are looking at more than a handful of genes. Of course, we
-could test for genes that change as a function of <em>Hours</em> to find
-time-varying genes, or <em>Media</em> to identify genes that are responsive to
-the serum switch. In general, model formulae can contain terms in the pData
-table of the <a href = "https://rdrr.io/bioc/monocle/man/cell_data_set.html">cell_data_set</a>. </p>
-
-The differential analysis procedure in Monocle is extremely flexible: the model formulae you use in your tests can include any term that exists as a column in the <code>pData</code> table, including those columns that are added by Monocle in other analysis steps. For example, if you use <code><a href = "https://rdrr.io/bioc/monocle/man/clusterCells.html">clusterCells</a></code>, you can test for genes that differ between clusters by using <em>Cluster</em> as your model formula.
-
-<h3>Finding genes that change as a function of pseudotime </h3>
-
-<!-- 
-<h3>Finding Genes that Change as a Function of Pseudotime </h3>
-
-<p> Monocle's main job is to put cells in order of progress through a biological process (such as cell differentiation) without knowing which genes to look at ahead of time.
-Once it's done so, you can analyze the cells to find genes that change as the cells make progress.
-For example, you can find genes that are significantly upregulated as the cells "mature".  Let's look at a panel of genes important for myogenesis: </p>
-
-<p> </p>
-<p>
-  <font color="red">
-    XX Do you want to talk about myogenesis here or is this an oversight and you want to switch it to worm data? XX
-  </font>
-</p>
-
-{% highlight R %}
-to_be_tested <- row.names(subset(fData(HSMM),
-gene_short_name %in% c("MYH3", "MEF2C", "CCNB2", "TNNT1")))
-cds_subset <- HSMM_myo[to_be_tested,]
-{% endhighlight %}
-
-<p> Again, we'll need to specify the model we want to use for differential analysis.  This model will be a bit more complicated than the one we used to look at the differences between <em>CellType</em>.  Monocle assigns each cell a "pseudotime" value, which records its progress through the process in the experiment.  The model can test against changes as a function of this value. Monocle uses the <em>VGAM</em> package to model a gene's expression level as a smooth, nonlinear function of pseudotime. </p>
-
-
-
-{% highlight R %}
-diff_test_res <- differentialGeneTest(cds_subset,
-fullModelFormulaStr = "~sm.ns(Pseudotime)")
-{% endhighlight %}
-
-The <code>sm.ns</code> function states that Monocle should fit a natural spline through the expression values to help it describe the changes in expression as a function of progress.
-We'll see what this trend looks like in just a moment. Other smoothing functions are available.
-
-Once again, let's add in the gene annotations so it's easy to see which genes are significant.
-
-<p>
-{% highlight R %}
-diff_test_res[,c("gene_short_name", "pval", "qval")]
-{% endhighlight %}
-</p>
-
-We can plot the expression levels of these genes, all of which show significant changes as a function of differentiation, using the function <code><a href = "https://rdrr.io/bioc/monocle/man/plot_genes_in_pseudotime.html">plot_genes_in_pseudotime</a></code>.
-This function has a number of cosmetic options you can use to control the layout and appearance of your plot.
-
-{% highlight R %}
-plot_genes_in_pseudotime(cds_subset, color_by = "Hours")
+neurons_cds = cds[,colData(cds)$assigned_cell_type == "Neurons"]
+plot_cells(neurons_cds, color_cells_by="partition")
 {% endhighlight %}
 
 <div class= "text-center">
-<img src= "{{site.baseurl}}/images/vignette/plot_diff_res_pt-1.png" width= 400>
+  <img src= "{{site.baseurl}}/images/manual_images/L2_umap_neurons.png" width= 760>
 </div>
 
 
-<h3>Clustering Genes by Pseudotemporal Expression Pattern </h3>
-
-
-<p> A common question that arises when studying time-series gene expression studies is: "which genes follow similar kinetic trends"?
-Monocle can help you answer this question by grouping genes that have similar trends, so you can analyze these groups to see what they have in common.
-Monocle provides a convenient way to visualize all pseudotime-dependent genes. The function
-<code><a href = "https://rdrr.io/bioc/monocle/man/plot_pseudotime_heatmap.html">plot_pseudotime_heatmap</a></code> takes a <a href = "https://rdrr.io/bioc/monocle/man/cell_data_set.html">cell_data_set</a> object (usually containing a only subset of significant genes)
-and generates smooth expression curves much like  <code><a href = "https://rdrr.io/bioc/monocle/man/plot_genes_in_pseudotime.html">plot_genes_in_pseudotime</a></code>. Then, it clusters these genes
-and plots them using the <em>pheatmap</em> package.  This allows you to visualize modules of genes that
-co-vary across pseudotime. </p>
-
-<p> </p>
-<p>
-  <font color="red">
-    XX Plot uses muscle data instead of work data XX
-  </font>
-</p>
+{% highlight R %}
+pr_graph_test_res = graph_test(neurons_cds, neighbor_graph="knn", cores=8)
+pr_deg_ids = row.names(subset(pr_graph_test_res, q_value < 0.05))
+{% endhighlight %}
 
 {% highlight R %}
-diff_test_res <- differentialGeneTest(HSMM_myo[marker_genes,],
-    fullModelFormulaStr = "~sm.ns(Pseudotime)")
-sig_gene_names <- row.names(subset(diff_test_res, qval < 0.1))
-plot_pseudotime_heatmap(HSMM_myo[sig_gene_names,],
-      num_clusters = 3,
-      cores = 1,
-      show_rownames = T)
+gene_module_df = monocle3:::find_gene_modules(neurons_cds[pr_deg_ids,], resolution=1e-2)
+{% endhighlight %}
+
+{% highlight R %}
+cell_group_df = tibble::tibble(cell=row.names(colData(neurons_cds)), cell_group=partitions(cds)[colnames(neurons_cds)])
+agg_mat = aggregate_gene_expression(neurons_cds, gene_module_df, cell_group_df)
+row.names(agg_mat) = stringr::str_c("Module ", row.names(agg_mat))
+colnames(agg_mat) = stringr::str_c("Partition ", colnames(agg_mat))
+
+pheatmap::pheatmap(agg_mat, cluster_rows=TRUE, cluster_cols=TRUE,
+                   scale="column", clustering_method="ward.D2", 
+                   fontsize=6)
 {% endhighlight %}
 
 <div class= "text-center">
-<img src= "{{site.baseurl}}/images/vignette/plot_diff_res_pt_heatmap-1.png" width= 550>
-</div> -->
+  <img src= "{{site.baseurl}}/images/manual_images/L2_neuron_module_heatmap.png" width= 760>
+</div>
+
+{% highlight R %}
+plot_cells(neurons_cds, 
+           genes=gene_module_df %>% filter(module %in% c(16,38,33,42)), 
+           group_cells_by="partition",
+           color_cells_by="partition",
+           show_trajectory_graph=FALSE)
+{% endhighlight %}
+
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/L2_umap_neurons_selected_modules.png" width= 760>
+</div>
+
+<h3>Finding genes that change as a function of pseudotime </h3>
+
+{% highlight R %}
+plot_cells(cds, 
+           color_cells_by = "cell.type", 
+           label_groups_by_cluster=FALSE,
+           label_leaves=FALSE,
+           label_branch_points=FALSE) 
+{% endhighlight %}
+
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/embryo_pr_graph_packer_cell_type.png" width= 760>
+</div>
+
+
+{% highlight R %}
+ciliated_cds_pr_test_res = graph_test(cds, cores=4)
+pr_deg_ids = row.names(subset(ciliated_cds_pr_test_res, q_value < 0.05))
+{% endhighlight %}
+
+{% highlight R %}
+gene_module_df = monocle3:::find_gene_modules(cds[pr_deg_ids,], resolution=c(0,10^seq(-6,-1)))
+{% endhighlight %}
+
+{% highlight R %}
+cell_group_df = tibble::tibble(cell=row.names(colData(cds)), cell_group=colData(cds)$cell.type)
+agg_mat = aggregate_gene_expression(cds, gene_module_df, cell_group_df)
+row.names(agg_mat) = stringr::str_c("Module ", row.names(agg_mat))
+pheatmap::pheatmap(agg_mat,
+                    scale="column", clustering_method="ward.D2")
+{% endhighlight %}
+
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/emb_pseudotime_module_heatmap.png" width= 760>
+</div>
+
+{% highlight R %}
+plot_cells(cds, 
+           genes=gene_module_df %>% filter(module %in% c(29,20, 11,22)), 
+           label_cell_groups=FALSE,
+           show_trajectory_graph=FALSE)
+{% endhighlight %}
+
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/embryo_umap_selected_pseudotime_modules.png" width= 760>
+</div>
+
+{% highlight R %}
+plot_cells(cds, genes=c("hlh-4", "gcy-8", "dac-1", "oig-8"), 
+           show_trajectory_graph=FALSE,
+           label_cell_groups=FALSE,
+           label_leaves=FALSE)
+{% endhighlight %}
+
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/embryo_umap_selected_markers.png" width= 760>
+</div>
+
+
+{% highlight R %}
+plot_cells(cds, show_trajectory_graph=FALSE)
+{% endhighlight %}
+
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/embryo_umap_cluster.png" width= 760>
+</div>
+
+
+{% highlight R %}
+AFD_genes = c("gcy-8", "dac-1", "oig-8")
+AFD_lineage_cds = cds[rowData(AFD_lineage_cds)$gene_short_name %in% AFD_genes,
+                      clusters(cds) %in% c(22, 28, 35)]
+
+plot_genes_in_pseudotime(AFD_lineage_cds, 
+                         color_cells_by="embryo.time.bin",
+                         min_expr=0.5)
+{% endhighlight %}
+
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/embryo_AFD_dynamic_genes.png" width= 500>
+</div>
 
 <h3>Analyzing Branches in Single-Cell Trajectories </h3>
-<p> </p>
-<p>
-  <font color="red">
-    XX Text needs to be added XX
-  </font>
-</p>
 
-<h2>Appendices</h2>
+{% highlight R %}
+cds_subset = choose_cells(cds)
+{% endhighlight %}
 
-<p> </p>
-<p>
-  <font color="red">
-    XX Text needs to be added XX
-  </font>
-</p>
+
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/choose_branch_recording.gif" width= 760>
+</div>
+
+{% highlight R %}
+subset_pr_test_res = graph_test(cds_subset, cores=4)
+pr_deg_ids = row.names(subset(subset_pr_test_res, q_value < 0.05))
+{% endhighlight %}
+
+{% highlight R %}
+gene_module_df = monocle3:::find_gene_modules(cds_subset[pr_deg_ids,], resolution=1e-2)
+{% endhighlight %}
+
+{% highlight R %}
+cell_group_df = tibble::tibble(cell=row.names(colData(cds_subset)), cell_group=clusters(cds_subset)[colnames(cds_subset)])
+agg_mat = aggregate_gene_expression(cds_subset, gene_module_df, cell_group_df)
+module_dendro = hclust(dist(agg_mat))
+gene_module_df$module <- factor(gene_module_df$module, levels = row.names(agg_mat)[module_dendro$order])
+
+plot_cells(cds_subset, 
+           genes=gene_module_df, 
+           label_cell_groups=FALSE,
+           show_trajectory_graph=FALSE)
+{% endhighlight %}
+
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/embryo_umap_AFD_modules.png" width= 760>
+</div>
+
+
+
 
 <h2>Major updates in Monocle 3 </h2>
 
