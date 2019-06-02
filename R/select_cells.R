@@ -77,8 +77,10 @@ choose_cells <- function(cds,
       colData(cds)$keep <- vals$keeprows
 
       suppressMessages(plot_cells(cds, reduction_method = reduction_method,
-                                  cell_size = 1, label_cell_groups = FALSE) +
-                         geom_point(alpha = colData(cds)$keep))
+                                  cell_size = 1, label_cell_groups = FALSE,
+                                  rasterize=FALSE) +
+                         geom_point(alpha = colData(cds)$keep)) +
+        theme(legend.position = "none")
     }, height = function() {
       session$clientData$output_plot1_width
     })
@@ -372,11 +374,7 @@ plot_principal_graph <- function(data_df,
   sample_state <- colData(cds)$State
   data_dim_1 <- NA
   data_dim_2 <- NA
-  if (rasterize){
-    plotting_func <- ggrastr::geom_point_rast
-  }else{
-    plotting_func <- ggplot2::geom_point
-  }
+  plotting_func <- ggplot2::geom_point
 
 
   ## Graph info

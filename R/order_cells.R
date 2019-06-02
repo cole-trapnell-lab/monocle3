@@ -178,7 +178,7 @@ select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
   if (use_3d){
     edge_df <- dp_mst %>%
       igraph::as_data_frame() %>%
-      select_(source = "from", target = "to") %>%
+      dplyr::select_(source = "from", target = "to") %>%
       dplyr::left_join(ica_space_df %>%
                          dplyr::select_(source="sample_name",
                                     source_prin_graph_dim_1="prin_graph_dim_1",
@@ -227,7 +227,7 @@ select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
 
         # Main panel for displaying outputs ----
         shiny::mainPanel(
-          plotlyOutput("plot1")
+          plotly::plotlyOutput("plot1")
         )
       )
     )
@@ -315,6 +315,8 @@ select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
                                             yend = target_prin_graph_dim_2)) +
           labs(x="Component 1", y="Component 2") +
           monocle3:::monocle_theme_opts()
+      }, height = function() {
+        session$clientData$output_plot1_width
       })
 
       # Toggle points that are clicked
