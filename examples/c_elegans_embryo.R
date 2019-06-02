@@ -40,9 +40,8 @@ plot_cells(cds, group_cells_by="partition", color_cells_by = "partition")+ ggsav
 
 ## Step 4: Learn cell trajectories
 #cds <- learn_graph(cds, learn_graph_control=list(ncenter=1000))
-cds <- learn_graph(cds, 
-                   #learn_graph_control=list(ncenter=2000), 
-                   verbose=TRUE)
+cds <- learn_graph(cds)
+
 plot_cells(cds, 
            color_cells_by = "cell.type", 
            label_groups_by_cluster=FALSE,
@@ -83,13 +82,12 @@ get_earliest_principal_node <- function(cds, time_bin="130-170"){
 
 cds = order_cells(cds, root_pr_nodes=get_earliest_principal_node(cds))
 
-plot_cells(cds, color_cells_by = "pseudotime")
-
-## Step 5: Visualize the trajectory
-
-
-plot_cells(cds, color_cells_by = "embryo.time.bin", label_cell_groups=FALSE)
-
+plot_cells(cds, 
+           color_cells_by = "pseudotime", 
+           label_cell_groups=FALSE, 
+           label_leaves=FALSE,
+           label_branch_points=FALSE,
+           graph_label_size=1.5) + ggsave("embryo_pr_graph_by_pseudotime_programmatically_ordered.png", width=5, height=4, dpi = 600)
 
 #plot_cells(cds, genes=c("egl-21", "egl-1"))
 #plot_genes_in_pseudotime(cds[rowData(cds)$gene_short_name %in% c("egl-21", "egl-1"),])
@@ -100,9 +98,10 @@ ciliated_genes = c("che-1",
                    "dmd-6",
                    "ceh-36",
                    "ham-1")
-cds_subset = cds[rowData(cds)$gene_short_name %in% ciliated_genes,]
-
-plot_cells(cds, genes=ciliated_genes, show_trajectory_graph=FALSE)
+plot_cells(cds, 
+           genes=ciliated_genes, 
+           label_cell_groups=FALSE, 
+           show_trajectory_graph=FALSE) + ggsave("embryo_ciliated_markers.png", width=5, height=4, dpi = 600)
 
 #graph_test(cds_subset)
 
@@ -116,19 +115,20 @@ plot_cells(cds, genes=ciliated_genes, show_trajectory_graph=FALSE)
 #     theme(axis.text.x=element_text(angle=45, hjust=1))
 
 ### Basic differential expression:
+cds_subset = cds[rowData(cds)$gene_short_name %in% ciliated_genes,]
 
 gene_fits = fit_models(cds_subset, model_formula_str = "~embryo.time")
 fit_coefs = coefficient_table(gene_fits)
 write.csv(fit_coefs, "emb_terms.csv")
 
-emb_time_terms = emb_terms %>% filter(term == "embryo.time")
+emb_time_terms = fit_coefs %>% filter(term == "embryo.time")
 write.csv(emb_time_terms, "emb_time_terms.csv")
 
 sig_emb_time_terms = emb_time_terms %>% filter (q_value < 0.05) %>% select(gene_short_name, term, q_value, estimate)
 write.csv(sig_emb_time_terms, "emb_time_sig_terms.csv")
 
-plot_genes_violin(cds_subset, color_cells_by="embryo.time.bin") +
-    theme(axis.text.x=element_text(angle=45, hjust=1))
+plot_genes_violin(cds_subset, group_cells_by="embryo.time.bin", ncol=2) +
+    theme(axis.text.x=element_text(angle=45, hjust=1)) + ggsave("embryo_ciliated_markers_violin.png", width=4, height=4, dpi = 600)
 
 ### Subtracting unwanted effects:
 
@@ -171,16 +171,39 @@ emb_time_terms %>% filter (q_value < 0.05) %>% select(gene_short_name, term, q_v
 ciliated_cds_pr_test_res = graph_test(cds, cores=4)
 pr_deg_ids = row.names(subset(ciliated_cds_pr_test_res, q_value < 0.05))
 
-gene_cluster_df = monocle3:::cluster_genes(cds[pr_deg_ids,], resolution=c(0,10^seq(-6,-1)))
+gene_module_df = monocle3:::find_gene_modules(cds[pr_deg_ids,], resolution=c(0,10^seq(-6,-1)))
 cell_group_df = tibble::tibble(cell=row.names(colData(cds)), cell_group=colData(cds)$cell.type)
-pheatmap::pheatmap(aggregate_gene_expression(cds, gene_cluster_df, cell_group_df),
-                    scale="column", clustering_method="ward.D2")
+agg_mat = aggregate_gene_expression(cds, gene_module_df, cell_group_df)
+row.names(agg_mat) = stringr::str_c("Module ", row.names(agg_mat))
+pheatmap::pheatmap(agg_mat,
+                    scale="column", clustering_method="ward.D2",
+                    fontsize=6, width=5, height=8,
+                    file="emb_pseudotime_module_heatmap.png")
+ 
+plot_cells(cds, 
+           genes=gene_module_df %>% filter(module %in% c(29,20, 11,22)), 
+           label_cell_groups=FALSE,
+           show_trajectory_graph=FALSE) + ggsave("embryo_umap_selected_pseudotime_modules.png", width=5, height=4, dpi = 600)
 
-fData(cds)[gene_cluster_df %>% filter(cluster == 2) %>% pull(id),]
+rowData(cds)[gene_module_df %>% filter(module == 29) %>% pull(id),]
 
-plot_cells(cds, genes=gene_cluster_df, color_cells_by="cell.type", show_trajectory_graph=FALSE)
+plot_cells(cds, genes=gene_module_df, color_cells_by="cell.type", show_trajectory_graph=FALSE)
 
-plot_cells(cds, genes=c("ctc-3", "nduo-4", "T05C7.4", "atp-6", "cutl-24"), label_branch_points=FALSE, label_roots=FALSE, label_leaves=FALSE)
+plot_cells(cds, genes=c("hlh-4", "gcy-8", "dac-1", "oig-8"), 
+           show_trajectory_graph=FALSE,
+           label_cell_groups=FALSE,
+           label_leaves=FALSE) + ggsave("embryo_umap_selected_markers.png", width=5, height=4, dpi = 600)
+
+
+plot_cells(cds, show_trajectory_graph=FALSE) + ggsave("embryo_umap_cluster.png", width=5, height=4, dpi = 600)
+
+
+AFD_lineage_cds = cds[,clusters(cds) %in% c(22, 28, 35)]
+plot_genes_in_pseudotime(AFD_lineage_cds[rowData(AFD_lineage_cds)$gene_short_name %in% c("gcy-8", "dac-1", "oig-8"),], 
+                         color_cells_by="embryo.time.bin",
+                         min_expr=0.5) + 
+    ggsave("embryo_AFD_dynamic_genes.png", width=3, height=3, dpi = 600)
+
 
 plot_cells(cds, genes=c("F29C4.2", "grld-1", "csn-5", "vamp-7"), label_branch_points=FALSE, label_roots=FALSE, label_leaves=FALSE)
 
@@ -192,7 +215,29 @@ cds_subset = choose_cells(cds)
 subset_pr_test_res = graph_test(cds_subset, cores=4)
 pr_deg_ids = row.names(subset(subset_pr_test_res, q_value < 0.05))
 
-gene_cluster_df = monocle3:::cluster_genes(cds_subset[pr_deg_ids,], resolution=c(0,10^seq(-6,-1)))
-png("branch_modules.png", res=600, width=6, height=6, units="in")
-plot_cells(cds_subset, genes=gene_cluster_df, show_trajectory_graph=FALSE, color_cells_by="cell.type")
-dev.off()
+gene_module_df = monocle3:::find_gene_modules(cds_subset[pr_deg_ids,], resolution=1e-2)
+cell_group_df = tibble::tibble(cell=row.names(colData(cds_subset)), cell_group=clusters(cds_subset)[colnames(cds_subset)])
+agg_mat = aggregate_gene_expression(cds_subset, gene_module_df, cell_group_df)
+gene_module_df$module <- factor(gene_module_df$module, levels = row.names(agg_mat)[module_dendro$order])
+
+plot_cells(cds_subset, 
+           genes=gene_module_df, 
+           label_cell_groups=FALSE,
+           show_trajectory_graph=FALSE) + ggsave("embryo_umap_AFD_modules.png", width=5, height=4, dpi = 600)
+
+
+# png("branch_modules.png", res=600, width=6, height=6, units="in")
+# plot_cells(cds_subset, genes=gene_module_df, show_trajectory_graph=FALSE, color_cells_by="cell.type")
+# dev.off()
+
+
+###### Making 3D trajectories:
+
+cds_3d = reduce_dimension(cds, max_components = 3)
+cds_3d = cluster_cells(cds_3d)
+cds_3d = learn_graph(cds_3d)
+cds_3d = order_cells(cds_3d, root_pr_nodes=get_earliest_principal_node(cds))
+
+cds_3d_plot_obj = plot_cells_3d(cds_3d, color_cells_by="partition")
+
+htmlwidgets::saveWidget(cds_3d_plot_obj, "emb_3d_by_partition.html")

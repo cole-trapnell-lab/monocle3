@@ -117,7 +117,7 @@ cds_subset = choose_cells(cds)
 pr_graph_test_res = graph_test(cds_subset, neighbor_graph="knn", cores=8)
 pr_deg_ids = row.names(subset(pr_graph_test_res, morans_I > 0.01 & q_value < 0.05))
 
-gene_module_df = cluster_genes(cds_subset[pr_deg_ids,], resolution=1e-3)
+gene_module_df = find_gene_modules(cds_subset[pr_deg_ids,], resolution=1e-3)
 #c(0,10^seq(-6,-1))
 plot_cells(cds_subset, genes=gene_module_df, show_trajectory_graph=FALSE, label_cell_groups=FALSE) + 
     ggsave("L2_sex_partition_modules.png", width=5, height=4, dpi = 600)
@@ -179,31 +179,60 @@ pheatmap::pheatmap(log(table(partitions(cds), colData(cds)$cao_cell_type)+1),
 
 
 ########
-# Look at a specific set of clusters
+# Globally clustering genes into modules:
 
-cds_subset = choose_cells(cds)
+neurons_cds = cds[,colData(cds)$assigned_cell_type == "Neurons"]
+plot_cells(neurons_cds, color_cells_by="partition") + ggsave("L2_umap_neurons.png", width=5, height=4, dpi = 600)
 
-pr_graph_test_res = graph_test(cds_subset, neighbor_graph="knn", cores=8)
+pr_graph_test_res = graph_test(neurons_cds, neighbor_graph="knn", cores=8)
 pr_deg_ids = row.names(subset(pr_graph_test_res, q_value < 0.05))
 
-gene_cluster_df = monocle3:::cluster_genes(cds[pr_deg_ids,], resolution=c(0,10^seq(-6,-1)), verbose=TRUE)
-cell_group_df = tibble::tibble(cell=row.names(colData(cds)), cell_group=clusters(cds))
-agg_mat = aggregate_gene_expression(cds, gene_cluster_df, cell_group_df)
-#agg_mat
+gene_module_df = monocle3:::find_gene_modules(neurons_cds[pr_deg_ids,], resolution=1e-2)
+
+cell_group_df = tibble::tibble(cell=row.names(colData(neurons_cds)), cell_group=partitions(cds)[colnames(neurons_cds)])
+agg_mat = aggregate_gene_expression(neurons_cds, gene_module_df, cell_group_df)
+row.names(agg_mat) = stringr::str_c("Module ", row.names(agg_mat))
+colnames(agg_mat) = stringr::str_c("Partition ", colnames(agg_mat))
+
 pheatmap::pheatmap(agg_mat, cluster_rows=TRUE, cluster_cols=TRUE,
-                    scale="column", clustering_method="ward.D2", fontsize=6)
+                   scale="column", clustering_method="ward.D2", 
+                   fontsize=6, width=5, height=8,
+                   file="L2_neuron_module_heatmap.png")
 
-png("branch_modules.png", res=600, width=6, height=6, units="in")
-plot_cells(cds_subset, genes=gene_cluster_df, show_trajectory_graph=FALSE, label_cell_groups=FALSE)
-dev.off()
+plot_cells(neurons_cds, 
+           genes=gene_module_df %>% filter(module %in% c(16,38,33,42)), 
+           cell_size=1,
+           group_cells_by="partition",
+           color_cells_by="partition",
+           show_trajectory_graph=FALSE) + ggsave("L2_umap_neurons_selected_modules.png", width=5, height=4, dpi = 600)
 
 
-mod_df = data.frame(resolution= c(0,10^seq(-6,-1)),
-                    modularity = c(0.0463080808623619, 0.0463080808623619, 0.519517905711304, 0.722441186959141, 0.893506647690171, 0.926503643050994, 0.861890178533872),
-                    clusters = c(5, 5, 6, 8, 18, 60, 179))
+# ########
+# # Look at a specific set of clusters
 
-qplot(clusters, modularity, data=mod_df)
+# cds_subset = choose_cells(cds)
 
-qplot(diff(mod_df$modularity), diff(mod_df$clusters))
+# pr_graph_test_res = graph_test(cds_subset, neighbor_graph="knn", cores=8)
+# pr_deg_ids = row.names(subset(pr_graph_test_res, q_value < 0.05))
 
-qplot(10^seq(-6,-1), diff(mod_df$modularity)/diff(mod_df$clusters), log="x")
+# gene_module_df = monocle3:::find_gene_modules(cds[pr_deg_ids,], resolution=c(0,10^seq(-6,-1)), verbose=TRUE)
+# cell_group_df = tibble::tibble(cell=row.names(colData(cds)), cell_group=clusters(cds))
+# agg_mat = aggregate_gene_expression(cds, gene_module_df, cell_group_df)
+# #agg_mat
+# pheatmap::pheatmap(agg_mat, cluster_rows=TRUE, cluster_cols=TRUE,
+#                     scale="column", clustering_method="ward.D2", fontsize=6)
+
+# png("branch_modules.png", res=600, width=6, height=6, units="in")
+# plot_cells(cds_subset, genes=gene_module_df, show_trajectory_graph=FALSE, label_cell_groups=FALSE)
+# dev.off()
+
+
+# mod_df = data.frame(resolution= c(0,10^seq(-6,-1)),
+#                     modularity = c(0.0463080808623619, 0.0463080808623619, 0.519517905711304, 0.722441186959141, 0.893506647690171, 0.926503643050994, 0.861890178533872),
+#                     clusters = c(5, 5, 6, 8, 18, 60, 179))
+
+# qplot(clusters, modularity, data=mod_df)
+
+# qplot(diff(mod_df$modularity), diff(mod_df$clusters))
+
+# qplot(10^seq(-6,-1), diff(mod_df$modularity)/diff(mod_df$clusters), log="x")
