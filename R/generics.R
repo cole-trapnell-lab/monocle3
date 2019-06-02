@@ -13,7 +13,7 @@ setGeneric("pseudotime", function(x, reduction_method = "UMAP")
 #' @export
 setMethod("pseudotime", "cell_data_set",
           function(x, reduction_method = "UMAP") {
-            value <- cds@principal_graph_aux[[reduction_method]]$pseudotime
+            value <- x@principal_graph_aux[[reduction_method]]$pseudotime
             if (is.null(value)) {
               stop(paste0("No pseudotime calculated for reduction_method = ",
                           reduction_method, ". Please first run ",

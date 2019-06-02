@@ -9,8 +9,7 @@
 #' or principal graph node IDs, which you can use to specify the start of the
 #' trajectory. If you don't provide a root state, an plot will be generated
 #' where you can choose the root state(s) interactively. The trajectory will be
-#' composed of segments. The cells from a segment will share the same value of
-#' \code{State}.
+#' composed of segments.
 #'
 #' @param cds the cell_data_set upon which to perform this operation
 #' @param reduction_method a string specifying the reduced dimension method to
@@ -23,8 +22,7 @@
 #'   \code{root_pr_nodes} and \code{root_cells} cannot be provided.
 #' @param verbose Whether to show running information for order_cells
 #'
-#' @return an updated cell_data_set object, in which colData contains values
-#'   for State and pseudotime for each cell.
+#' @return an updated cell_data_set object.
 #' @export
 order_cells <- function(cds,
                         reduction_method = "UMAP",
