@@ -152,7 +152,7 @@ plot_cells_3d <- function(cds,
         colnames(markers_exprs)[1:2] <- c('feature_id','cell_id')
 
         markers_exprs$feature_label <- markers_exprs$feature_id
-        markers_linear <- TRUE
+        #markers_linear <- TRUE
       } else {
         cds_exprs@x <- round(cds_exprs@x)
         markers_exprs <- matrix(cds_exprs, nrow=nrow(markers_rowData))
@@ -775,6 +775,7 @@ plot_cells <- function(cds,
 
   ## Marker genes
   markers_exprs <- NULL
+  expression_legend_label <- NULL
   if (!is.null(genes)) {
     if ((is.null(dim(genes)) == FALSE) && dim(genes) >= 2){
       markers = unlist(genes[,1], use.names=FALSE)
@@ -799,10 +800,13 @@ plot_cells <- function(cds,
         markers_exprs = agg_mat
         markers_exprs <- reshape2::melt(markers_exprs)
         colnames(markers_exprs)[1:2] <- c('feature_id','cell_id')
+        if (is.factor(genes[,2]))
+          markers_exprs$feature_id = factor(markers_exprs$feature_id, levels=levels(genes[,2]))
         #markers_exprs <- merge(markers_exprs, markers_rowData, by.x = "feature_id", by.y="row.names")
         #print (head( markers_exprs[is.na(markers_exprs$gene_short_name) == FALSE,]))
         markers_exprs$feature_label <- markers_exprs$feature_id
-        markers_linear=TRUE
+        norm_method = "size_only"
+        expression_legend_label = "Expression score"
       } else {
         cds_exprs@x = round(cds_exprs@x)
         markers_exprs = matrix(cds_exprs, nrow=nrow(markers_rowData))
@@ -815,6 +819,10 @@ plot_cells <- function(cds,
         markers_exprs$feature_label <- as.character(markers_exprs$gene_short_name)
         markers_exprs$feature_label[is.na(markers_exprs$feature_label)] <- markers_exprs$feature_id
         markers_exprs$feature_label <- factor(markers_exprs$feature_label,levels = markers)
+        if (norm_method == "size_only")
+          expression_legend_label = "Expression"
+        else
+          expression_legend_label = "log10(Expression)"
         #markers_exprs = with(markers_exprs, ifelse(value > min_expr, value, NA))
       }
     }
@@ -872,13 +880,13 @@ plot_cells <- function(cds,
     data_df$value <- with(data_df, ifelse(value >= min_expr, value, NA))
     if(norm_method == "size_only"){
       g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2)) + plotting_func(aes(color=value), size=I(cell_size), stroke = I(cell_size / 2), na.rm = TRUE) +
-        viridis::scale_color_viridis(option = "viridis", name = "Expression", na.value = "grey80", end = 0.8) +
+        viridis::scale_color_viridis(option = "viridis", name = expression_legend_label, na.value = "grey80", end = 0.8) +
         guides(alpha = FALSE) + facet_wrap(~feature_label)
       # g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2)) + geom_point(aes(color= value), size=I(cell_size), na.rm = TRUE, alpha = alpha) +
       #     viridis::scale_color_viridis(name = paste0("value"), ...) + facet_wrap(~feature_label)
     } else {
       g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2)) + plotting_func(aes(color=log10(value+min_expr), alpha = ifelse(!is.na(value), "2", "1")), size=I(cell_size), stroke = I(cell_size / 2), na.rm = TRUE) +
-        viridis::scale_color_viridis(option = "viridis", name = "log10(Expression)", na.value = "grey80", end = 0.8) +
+        viridis::scale_color_viridis(option = "viridis", name = expression_legend_label, na.value = "grey80", end = 0.8) +
         guides(alpha = FALSE) + facet_wrap(~feature_label)
       # g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2)) + geom_point(aes(color=log10(value + 0.1)), size=I(cell_size), na.rm = TRUE, alpha = alpha) +
       #     viridis::scale_color_viridis(name = paste0("log10(value + 0.1)"), ...) + facet_wrap(~feature_label)
@@ -975,7 +983,10 @@ plot_cells <- function(cds,
   if(label_cell_groups) {
     g <- g + ggrepel::geom_text_repel(data = text_df,
                                       mapping = aes_string(x = "text_x", y = "text_y", label = "label"),
-                                      size=I(group_label_size)) + theme(legend.position="none")
+                                      size=I(group_label_size))
+    # If we're coloring by gene expression, don't hide the legend
+    if (is.null(markers_exprs))
+        g <- g + theme(legend.position="none")
   }
 
   g <- g +
@@ -1353,7 +1364,7 @@ plot_genes_violin <- function (cds_subset,
   cds_exprs[,group_cells_by] <- as.factor(cds_exprs[,group_cells_by])
   q <- q + geom_violin(aes_string(fill = group_cells_by), scale="width") +
     guides(fill=FALSE)
-
+  q <- q + stat_summary(fun.y=mean, geom="point", size=1, color="black")
   q <- q + facet_wrap(~feature_label, nrow = nrow,
                       ncol = ncol, scales = "free_y")
   if (min_expr < 1) {
