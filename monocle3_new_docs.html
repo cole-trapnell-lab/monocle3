@@ -609,8 +609,16 @@ There are many ways to compare and contrast clusters (and other groupings) of ce
 
 <h3>Annotate your cells according to type</h2>
 
+<p>Identifying the type of each cell in your dataset is critical for many downstream analyses. There are several ways of doing this. One commonly used approach is to first cluster the cells and then assign a cell type to each cluster based on its gene expression profile. We've already seen how to use <code>top_markers()</code>. Reviewing literature associated with a marker gene often give strong indications of the identity of clusters that express it. In Cao & Packer <emph>>et al</emph>, the authors consulted literature and gene expression databases for markers restricted to each cluster in order to assign the identities contained in <code>colData(cds)$cao_cell_type</code>.</p>
+
+<p>To assign cell types based on clustering, we begin by creating a new column in <code>colData(cds)</code> and initialize it with the values of <code>clusters(cds)</code>:</p>
+
 {% highlight R %}
 colData(cds)$assigned_cell_type = as.character(partitions(cds))
+{% endhighlight %}
+
+<p>Now, we can use the <code>dplyr</code>package's <code>recode()</code> function to remap each cluster to a different cell type:</p>
+{% highlight R %}
 colData(cds)$assigned_cell_type = dplyr::recode(colData(cds)$assigned_cell_type,
                                                 "1"="Body wall muscle",
                                                 "2"="Germline",
@@ -648,6 +656,7 @@ colData(cds)$assigned_cell_type = dplyr::recode(colData(cds)$assigned_cell_type,
                                                 "34"="Failed QC")
 {% endhighlight %}
 
+<p>Let's see how the new annotations look:</p>
 {% highlight R %}
 plot_cells(cds, group_cells_by="partition", color_cells_by="assigned_cell_type")
 {% endhighlight %}
@@ -655,6 +664,8 @@ plot_cells(cds, group_cells_by="partition", color_cells_by="assigned_cell_type")
 <div class= "text-center">
   <img src= "{{site.baseurl}}/images/manual_images/L2_plot_cells_by_initial_annotation.png" width= 760>
 </div>
+
+<p>Partition 7 has some substructure, and it's not obvious just from looking at the output of <code>top_markers()</code> what cell type or types it corresponds to. So we can isolate it with the <code>choose_cells()</code> function for further analysis:</p>
 
 {% highlight R %}
 cds_subset = choose_cells(cds)
@@ -672,15 +683,21 @@ ffmpeg -i in.mov -s 600x400 -pix_fmt rgb24 -r 10 -f gif - | gifsicle --optimize=
   <img src= "{{site.baseurl}}/images/manual_images/choose_cells_recording.gif" width= 760>
 </div>
 
+<p>Now we have a smaller <code>cell_data_set</code> object that contains just the cells from the partition we'd like to drill into. We can use <code>graph_test()</code> to identify genes that are differentially expressed in different subsets of cells from this partition:</p>
+
 {% highlight R %}
 pr_graph_test_res = graph_test(cds_subset, neighbor_graph="knn", cores=8)
 pr_deg_ids = row.names(subset(pr_graph_test_res, morans_I > 0.01 & q_value < 0.05))
 {% endhighlight %}
 
+<p>We will learn more about <code>graph_test()</code> in the <a href = "{{
+  site.baseurl }}/docs/#finding-modules-of-co-regulated-genes">Differential expression analysis</a> section later. We can take all the genes that vary across this set of cells and group those that have similar patterns of expression into <emph>modules</emph>: </p>
+
 {% highlight R %}
-gene_module_df = cluster_genes(cds_subset[pr_deg_ids,], resolution=1e-3)
+gene_module_df = find_gene_modules(cds_subset[pr_deg_ids,], resolution=1e-3)
 {% endhighlight %}
 
+<p>Plotting these modules' aggregate expression values reveals which cells express which modues. </p>
 {% highlight R %}
 plot_cells(cds_subset, genes=gene_module_df, show_trajectory_graph=FALSE, label_cell_groups=FALSE)
 {% endhighlight %}
@@ -688,6 +705,8 @@ plot_cells(cds_subset, genes=gene_module_df, show_trajectory_graph=FALSE, label_
 <div class= "text-center">
   <img src= "{{site.baseurl}}/images/manual_images/L2_sex_partition_modules.png" width= 760>
 </div>
+
+<p>You can explore the genes in each module or conduct <a href="http://geneontology.org/">gene ontology enrichment analysis</a> on them to glean insights about which cell types are present. Suppose after doing this we have a good idea of what the cell types in the partition are. Let's see how they overlap with the clusters in the partition:</p>
 
 {% highlight R %}
 plot_cells(cds_subset, color_cells_by="cluster") 
@@ -697,6 +716,7 @@ plot_cells(cds_subset, color_cells_by="cluster")
   <img src= "{{site.baseurl}}/images/manual_images/L2_sex_partition_color_by_cluster.png" width= 760>
 </div>
 
+<p>Based on how the patterns line up, we'll make the following assignments:</p>
 {% highlight R %}
 colData(cds_subset)$assigned_cell_type = as.character(clusters(cds_subset)[colnames(cds_subset)])
 colData(cds_subset)$assigned_cell_type = dplyr::recode(colData(cds_subset)$assigned_cell_type,
@@ -709,6 +729,8 @@ colData(cds_subset)$assigned_cell_type = dplyr::recode(colData(cds_subset)$assig
 plot_cells(cds_subset, group_cells_by="cluster", color_cells_by="assigned_cell_type")
 {% endhighlight %}
 
+<p>Now we can transfer the annotations from the <code>cds_subset</code> object back to the full dataset:</p>
+
 {% highlight R %}
 colData(cds)[colnames(cds_subset),]$assigned_cell_type = colData(cds_subset)$assigned_cell_type
 plot_cells(cds, group_cells_by="partition", color_cells_by="assigned_cell_type", labels_per_group=5)
@@ -718,6 +740,11 @@ plot_cells(cds, group_cells_by="partition", color_cells_by="assigned_cell_type",
   <img src= "{{site.baseurl}}/images/manual_images/L2_plot_cells_by_refined_annotation.png" width= 760>
 </div>
 
+<h3>Automated annotation with Garnett</h3>
+
+<p>The above process for manually annotating cells by type can be laborious, and must be re-done if the underlying cluster changes. We recently developed <a href="https://cole-trapnell-lab.github.io/garnett/">Garnett</a>, a software toolkit for automatically annotating cells. Garnett classifies cells based on marker genes. If you've gone through the trouble of annotated your cells manually, Monocle can generate a file of marker genes that can be used with Garnett. This will help you annotate other datasets in the future or reannotate this one if you refine your analysis and update your clustering in the future.</p>
+
+<p>To generate a Garnett file, first find the top markers that each annotated cell type expresses:</p>
 {% highlight R %}
 assigned_type_marker_test_res = top_markers(cds, 
                                             group_cells_by="assigned_cell_type", 
@@ -725,10 +752,12 @@ assigned_type_marker_test_res = top_markers(cds,
                                             cores=8)
 {% endhighlight %}
 
+<p>Then call <code>generate_garnett_marker_file</code>:</p>
 {% highlight R %}
 generate_garnett_marker_file(assigned_type_marker_test_res, file="./marker_file.txt")
 {% endhighlight %}
 
+<p><code>generate_garnett_marker_file</code></p> will produce a text file like this:
 {% highlight console %}
 > Cell type Pharyngeal epithelia
 expressed: abu-6, gon-2, pqn-2, eyg-1, cutl-21
@@ -773,18 +802,13 @@ expressed: nhr-73, trcs-1, F54B11.10, W08G11.1
 expressed: ZK822.4, T02B11.3, far-8, T11B7.5, vap-1, Y54G2A.10, R13D7.2, F11C7.2, K09C6.9, F52E1.2
 {% endhighlight %}
 
-<p> </p>
-<p>
-  <font color="red">
-    XX Text needs to be added here XX
-  </font>
-</p>
-
+<p>You may want to edit this file to add or remove markers based on literature or other information.</p>
+<p>When you're ready run Garnett, load the package:</p>
 {% highlight R %}
 library(garnett)
-load(url("https://cole-trapnell-lab.github.io/garnett/classifiers/ceWhole"))
 {% endhighlight %}
 
+<p>Now train a Garnett classifier based on your marker file like this:</p>
 {% highlight R %}
 colData(cds)$garnett_cluster = clusters(cds)
 worm_classifier <- train_cell_classifier(cds = cds,
@@ -796,9 +820,9 @@ worm_classifier <- train_cell_classifier(cds = cds,
                                          cores=8)
 {% endhighlight %}
 
-{% highlight R %}
-plot_cells(cds, color_cells_by="cluster_ext_type")
-{% endhighlight %}
+<p>Garnett classifiers can be applied to datasets other than the one they were trained on. We strongly encourage you to <a href="https://cole-trapnell-lab.github.io/garnett/docs/#submitting-a-classifier">share</a> your Garnett files and include them with your papers so that others can use them.</p> 
+
+<p>We trained a Garnett model to classify <emph>C. elegans</emph> cells based on the L2 data. You can classify cells with it by first downloading and then passing it to the <code>classify_cells()</code> function:</p>
 
 {% highlight R %}
 load(url("https://cole-trapnell-lab.github.io/garnett/classifiers/ceWhole"))
@@ -809,6 +833,16 @@ cds = classify_cells(cds, ceWhole,
 plot_cells(cds, color_cells_by="cluster_ext_type")
 {% endhighlight %}
 
+<p>Here's how Garnett annotated the cells:</p>
+
+{% highlight R %}
+plot_cells(cds, color_cells_by="cluster_ext_type")
+{% endhighlight %}
+
+<div class= "text-center">
+    <img src= "{{site.baseurl}}/images/manual_images/L2_umap_corrected_garnett_ext_type.png" width= 760>
+</div>
+  
 <!-- {% highlight R %}
 # Plot the overlap between clusters and annotated cell types:
 pheatmap::pheatmap(log(table(partitions(cds), colData(cds)$cao_cell_type)+1),
