@@ -16,7 +16,7 @@
 #'
 #' @export
 
-cluster_genes <- function(cds,
+find_gene_modules <- function(cds,
                           reduction_method = c("UMAP", "tSNE", "PCA"),
                           max_components = 2,
                           umap.metric = "cosine",
@@ -93,12 +93,12 @@ cluster_genes <- function(cds,
   names(partitions) <- row.names(reduced_dim_res)
   partitions <- as.factor(partitions)
 
-  gene_cluster_df = tibble::tibble(id = row.names(preprocess_mat),
-                                   cluster = factor(igraph::membership(louvain_res$optim_res)),
-                                   supercluster = partitions)
-  gene_cluster_df = tibble::as_tibble(cbind(gene_cluster_df, umap_res))
+  gene_module_df = tibble::tibble(id = row.names(preprocess_mat),
+                                   module = factor(igraph::membership(louvain_res$optim_res)),
+                                   supermodule = partitions)
+  gene_module_df = tibble::as_tibble(cbind(gene_module_df, umap_res))
 
-  return(gene_cluster_df)
+  return(gene_module_df)
 }
 
 #' Creates a matrix with aggregated expression values for arbitrary groups of genes
