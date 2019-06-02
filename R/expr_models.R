@@ -184,6 +184,7 @@ fit_model_helper <- function(x,
 #'   the genes.
 #' @param expression_family specifies the family function used for expression
 #'   responses. Default is "quasipoisson"
+#' @param reduction_method which method to use with clusters() and partitions(). Default is "UMAP".
 #' @param cores the number of processor cores use during fitting.
 #' @param clean_model Logical indicating whether to clean the model. Default is
 #'   TRUE.
@@ -193,6 +194,7 @@ fit_model_helper <- function(x,
 fit_models <- function(cds,
                      model_formula_str,
                      expression_family = "quasipoisson",
+                     reduction_method="UMAP",
                      cores = 1,
                      clean_model = TRUE,
                      verbose = FALSE,
@@ -225,6 +227,7 @@ fit_models <- function(cds,
         required_packages = c("BiocGenerics", "Biobase", "MASS", "purrr",
                               "pscl", "speedglm", "dplyr", "Matrix"),
         cores = cores,
+        reduction_method = reduction_method,
         model_formula_str = model_formula_str,
         expression_family = expression_family ,
         disp_func = disp_func,
@@ -241,6 +244,7 @@ fit_models <- function(cds,
       convert_to_dense = TRUE,
       model_formula_str = model_formula_str,
       expression_family = expression_family,
+      reduction_method = reduction_method,
       disp_func = disp_func,
       clean_model = clean_model,
       verbose = verbose,

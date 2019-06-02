@@ -156,12 +156,16 @@ sparse_par_c_apply <- function (cl = NULL, x, FUN, convert_to_dense, ...)
 #' @param cores The number of cores to use for evaluation
 #'
 #' @return The result of with(colData(cds) apply(counts(cds)), MARGIN, FUN, ...))
-mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1, convert_to_dense=TRUE, ...) {
+mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1, convert_to_dense=TRUE, reduction_method="UMAP", ...) {
   parent <- environment(FUN)
   if (is.null(parent))
     parent <- emptyenv()
   e1 <- new.env(parent=parent)
-  Biobase::multiassign(names(as.data.frame(colData(cds))), as.data.frame(colData(cds)), envir=e1)
+  coldata_df = as.data.frame(colData(cds))
+  coldata_df$cluster = clusters(cds, reduction_method)[colnames(cds)]
+  coldata_df$partition = partitions(cds, reduction_method)[colnames(cds)]
+  #coldata_df$pseudotime = pseudotime(cds) # Once we resolve issue #69.
+  Biobase::multiassign(names(as.data.frame(coldata_df)), as.data.frame(coldata_df), envir=e1)
   environment(FUN) <- e1
 
   # Note: use outfile argument to makeCluster for debugging
@@ -196,7 +200,7 @@ mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1, convert_to
   if (is.null(required_packages) == FALSE){
     BiocGenerics::clusterCall(cl, function(pkgs) {
       for (req in pkgs) {
-        library(req, character.only=TRUE, warn.conflicts=FALSE)
+        library(req, character.only=TRUE, warn.conflicts=FALSE, quietly=TRUE, verbose=FALSE)
       }
     }, required_packages)
   }
@@ -210,12 +214,16 @@ mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1, convert_to
   res
 }
 
-smart_es_apply <- function(cds, MARGIN, FUN, convert_to_dense, ...) {
+smart_es_apply <- function(cds, MARGIN, FUN, convert_to_dense, reduction_method="UMAP", ...) {
   parent <- environment(FUN)
   if (is.null(parent))
     parent <- emptyenv()
   e1 <- new.env(parent=parent)
-  Biobase::multiassign(names(as.data.frame(colData(cds))), as.data.frame(colData(cds)), envir=e1)
+  coldata_df = as.data.frame(colData(cds))
+  coldata_df$cluster = clusters(cds, reduction_method)[colnames(cds)]
+  coldata_df$partition = partitions(cds, reduction_method)[colnames(cds)]
+  #coldata_df$pseudotime = pseudotime(cds) # Once we resolve issue #69.
+  Biobase::multiassign(names(as.data.frame(coldata_df)), as.data.frame(coldata_df), envir=e1)
   environment(FUN) <- e1
 
   if (is_sparse_matrix(counts(cds))){
