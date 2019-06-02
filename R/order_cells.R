@@ -157,6 +157,7 @@ select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
   reduced_dim_coords <- t(cds@principal_graph_aux[[reduction_method]]$dp_mst)
 
   ica_space_df <- as.data.frame(reduced_dim_coords)
+  reduced_dims <- as.data.frame(reducedDims(cds)[[reduction_method]])
   use_3d <- ncol(ica_space_df) >= 3
   if (use_3d){
     colnames(ica_space_df) = c("prin_graph_dim_1", "prin_graph_dim_2",
@@ -245,14 +246,14 @@ select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
         plotly::plot_ly(x = ica_space_df$prin_graph_dim_1,
                 y = ica_space_df$prin_graph_dim_2,
                 z = ica_space_df$prin_graph_dim_3,
-                colors = c('blue', 'black'), key = ica_space_df$sample_name,
+                colors = c('red', 'black'), key = ica_space_df$sample_name,
                 color = ica_space_df$keep, size = 1,
                 type = "scatter3d", mode="markers") %>%
           plotly::layout(showlegend = FALSE)
       })
       # Toggle points that are clicked
-      shiny::observeEvent(event_data("plotly_click"), {
-        d <- event_data("plotly_click")
+      shiny::observeEvent(plotly::event_data("plotly_click"), {
+        d <- plotly::event_data("plotly_click")
         new_keep <- rep(FALSE, nrow(ica_space_df))
         new_keep[which(ica_space_df$sample_name == d$key)] <- TRUE
         vals$keeprows <- xor(vals$keeprows, new_keep)
@@ -295,7 +296,7 @@ select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
       )
     )
 
-    server <- function(input, output) {
+    server <- function(input, output, session) {
 
       vals <- shiny::reactiveValues(
         keeprows = rep(TRUE, nrow(ica_space_df))
@@ -308,13 +309,15 @@ select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
 
         ggplot(keep, aes(prin_graph_dim_1, prin_graph_dim_2)) +
           geom_point(alpha = .7) +
-          geom_point(data = exclude, shape = 21, fill = NA, color = "blue") +
+          geom_point(data = exclude, shape = 21, fill = "red", color = "red") +
           geom_segment(data = edge_df,  aes(x = source_prin_graph_dim_1,
                                             xend = target_prin_graph_dim_1,
                                             y = source_prin_graph_dim_2,
                                             yend = target_prin_graph_dim_2)) +
           labs(x="Component 1", y="Component 2") +
-          monocle3:::monocle_theme_opts()
+          monocle3:::monocle_theme_opts() +
+          geom_point(data = reduced_dims, aes(x=V1, y = V2),
+                     size = .5, color = "gray")
       }, height = function() {
         session$clientData$output_plot1_width
       })
