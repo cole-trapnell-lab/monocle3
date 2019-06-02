@@ -30,24 +30,42 @@ cds <- preprocess_cds(cds, num_dim = 75, residual_model_formula_str = "~ bg.300.
 set.seed(42)
 ## Step 2: Reduce the dimensionality of the data
 cds <- reduce_dimension(cds, umap.fast_sgd = FALSE, cores=1)
-plot_cells(cds, color_cells_by = "cell.type")
-plot_cells(cds, color_cells_by = "batch", label_cell_groups=FALSE)
+plot_cells(cds, label_groups_by_cluster=FALSE, color_cells_by = "cell.type") + ggsave("embryo_umap_packer_cell_type.png", width=5, height=4, dpi = 600)
+#plot_cells(cds, color_cells_by = "batch", label_cell_groups=FALSE) + ggsave("embryo_umap_batch.png", width=5, height=4, dpi = 600)
 
 ## Step 3: Cluster cells
 #cds <- cluster_cells(cds, resolution=c(0, 1e-5, 1e-4, 1e-3, 1e-2))
 cds <- cluster_cells(cds)
-plot_cells(cds, color_cells_by = "Cluster")
+plot_cells(cds, group_cells_by="partition", color_cells_by = "partition")+ ggsave("embryo_umap_partition.png", width=5, height=4, dpi = 600)
 
 ## Step 4: Learn cell trajectories
 #cds <- learn_graph(cds, learn_graph_control=list(ncenter=1000))
-cds <- learn_graph(cds)
-plot_cells(cds, color_cells_by = "cell.type")
+cds <- learn_graph(cds, 
+                   #learn_graph_control=list(ncenter=2000), 
+                   verbose=TRUE)
+plot_cells(cds, 
+           color_cells_by = "cell.type", 
+           label_groups_by_cluster=FALSE,
+           label_leaves=FALSE,
+           label_branch_points=FALSE) + ggsave("embryo_pr_graph_packer_cell_type.png", width=5, height=4, dpi = 600)
 
-plot_cells(cds, color_cells_by = "embryo.time.bin", label_cell_groups=FALSE)
 
+plot_cells(cds, 
+           color_cells_by = "embryo.time.bin", 
+           label_cell_groups=FALSE, 
+           label_leaves=TRUE,
+           label_branch_points=TRUE,
+           graph_label_size=1.5) + ggsave("embryo_pr_graph_by_time.png", width=5, height=4, dpi = 600)
 
 cds = order_cells(cds)
-plot_cells(cds, color_cells_by = "Pseudotime")
+
+plot_cells(cds, 
+           color_cells_by = "pseudotime", 
+           label_cell_groups=FALSE, 
+           label_leaves=FALSE,
+           label_branch_points=FALSE,
+           graph_label_size=1.5) + ggsave("embryo_pr_graph_by_pseudotime.png", width=5, height=4, dpi = 600)
+
 
 # a helper function to identify the root principal points:
 get_earliest_principal_node <- function(cds, time_bin="130-170"){
@@ -65,7 +83,7 @@ get_earliest_principal_node <- function(cds, time_bin="130-170"){
 
 cds = order_cells(cds, root_pr_nodes=get_earliest_principal_node(cds))
 
-plot_cells(cds, color_cells_by = "Pseudotime")
+plot_cells(cds, color_cells_by = "pseudotime")
 
 ## Step 5: Visualize the trajectory
 
@@ -140,11 +158,11 @@ write.csv(emb_model_lr_test, "emb_model_lr_test.csv")
 
 
 cds_subset = cds[rowData(cds)$gene_short_name %in% ciliated_genes,
-                 is.finite(colData(cds)$Pseudotime)]
+                 is.finite(colData(cds)$pseudotime)]
 
-gene_fits = fit_models(cds_subset, model_formula_str = "~splines::ns(Pseudotime, df=3)", verbose=TRUE)
+gene_fits = fit_models(cds_subset, model_formula_str = "~splines::ns(pseudotime, df=3)", verbose=TRUE)
 fit_coefs = coefficient_table(gene_fits)
-emb_time_terms = fit_coefs %>% filter(grepl("Pseudotime", term))
+emb_time_terms = fit_coefs %>% filter(grepl("pseudotime", term))
 emb_time_terms = emb_time_terms %>% mutate(q_value = p.adjust(p_value))
 emb_time_terms %>% filter (q_value < 0.05) %>% select(gene_short_name, term, q_value, estimate)
 

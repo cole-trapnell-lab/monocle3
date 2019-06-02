@@ -4,7 +4,7 @@
 #' Assigns cells a pseudotime value based on their projection on the principal
 #' graph learned in the \code{learn_graph} function and the position of chosen
 #' root states. This function takes as input a cell_data_set and returns it
-#' with two new colData columns: \code{Pseudotime} and \code{State}, which
+#' with two new colData columns: \code{pseudotime} and \code{State}, which
 #' together encode where each cell maps to the principal graph trajectory.
 #' \code{order_cells()} optionally takes "root" state(s) in the form of cell
 #' or principal graph node IDs, which you can use to specify the start of the
@@ -17,15 +17,15 @@
 #' @param reduction_method a string specifying the reduced dimension method to
 #'   use when ordering cells. Currently only "UMAP" is supported.
 #' @param root_pr_nodes NULL or a vector of starting principal points. If
-#'   provided, Pseudotime will start (i.e. be zero) at these graph nodes. Both
+#'   provided, pseudotime will start (i.e. be zero) at these graph nodes. Both
 #'   \code{root_pr_nodes} and \code{root_cells} cannot be provided.
 #' @param root_cells NULL or a vector of starting cells. If provided,
-#'   Pseudotime will start (i.e. be zero) at these cells. Both
+#'   pseudotime will start (i.e. be zero) at these cells. Both
 #'   \code{root_pr_nodes} and \code{root_cells} cannot be provided.
 #' @param verbose Whether to show running information for order_cells
 #'
 #' @return an updated cell_data_set object, in which colData contains values
-#'   for State and Pseudotime for each cell.
+#'   for State and pseudotime for each cell.
 #' @export
 order_cells <- function(cds,
                         reduction_method = "UMAP",
@@ -100,7 +100,7 @@ order_cells <- function(cds,
 
   cc_ordering <- extract_general_graph_ordering(cds, root_pr_nodes, verbose,
                                                 reduction_method)
-  colData(cds)$Pseudotime <- cc_ordering[row.names(colData(cds)), ]$pseudo_time
+  colData(cds)$pseudotime <- cc_ordering[row.names(colData(cds)), ]$pseudo_time
 
   cds
 }

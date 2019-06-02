@@ -12,11 +12,9 @@ gene_annotation = readRDS("L2_gene_metadata.rda")
 # gene_annotation = read.delim(url("http://jpacker-data.s3.amazonaws.com/public/worm/L2/Cao_et_al_2017_data_2019_update.fData.tsv"))
 # cell_metadata  = read.delim(url("http://jpacker-data.s3.amazonaws.com/public/worm/L2/Cao_et_al_2017_data_2019_update.pData.tsv"))
 
-
 cds = new_cell_data_set(expression_matrix,
                          cell_metadata = cell_metadata,
                          gene_metadata = gene_annotation)
-
 
 ## Step 1: Normalize and pre-process the data
 cds = preprocess_cds(cds, num_dim = 100)
@@ -30,7 +28,7 @@ plot_cells(cds, color_cells_by="plate", label_cell_groups=FALSE) + ggsave("L2_um
 
 #### With batch correction:
 cds = preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ plate")
-cds = reduce_dimension(cds)
+cds = reduce_dimension(cds, umap.fast_sgd=FALSE, cores=1)
 plot_cells(cds, color_cells_by="plate", label_cell_groups=FALSE) + ggsave("L2_umap_corrected_plate.png", width=5, height=4, dpi = 600)
 
 ## Step 3: (Optional) Cluster cells
@@ -39,42 +37,146 @@ plot_cells(cds) + ggsave("L2_umap_color_cells_by_cluster.png", width=5, height=4
 plot_cells(cds, color_cells_by="partition", group_cells_by="partition") + ggsave("L2_umap_color_cells_by_partition.png", width=5, height=4, dpi = 600)
 
 plot_cells(cds, color_cells_by="cao_cell_type")  + ggsave("L2_umap_corrected_cao_type.png", width=5, height=4, dpi = 600)
-plot_cells(cds, color_cells_by="cao_cell_type", label_groups_by_cluster=FALSE)  + ggsave("L2_umap_corrected_cao_type_no_cluster_label.png", width=5, height=4, dpi = 600)
+plot_cells(cds, color_cells_by="cao_cell_type", label_groups_by_cluster=FALSE) + ggsave("L2_umap_corrected_cao_type_no_cluster_label.png", width=5, height=4, dpi = 600)
 
-## Step 4: Find genes expressed in each cluster or cell type
-marker_test_res = top_markers(cds, group_cells_by="cluster", cores=8)
+## Step 4: Compare and contrast cells in different clusters
+# Identify top marker genes for each cluster
+marker_test_res = top_markers(cds, group_cells_by="partition", reference_cells=1000, cores=8)
 
-top_specific_markers = as.character(unique(marker_test_res %>% 
-    filter(marker_test_q_value < 0.05) %>%
+top_specific_markers = marker_test_res %>% 
+    filter(marker_test_q_value < 0.05 & pseudo_R2 > 0.01) %>%
     group_by(cell_group) %>% 
-    top_n(1, pseudo_R2) %>% pull(gene_id)))
+    top_n(1, pseudo_R2)
 
-plot_genes_by_group(cds, top_specific_markers, group_cells_by="cao_cell_type", ordering_type="maximal_on_diag")
+top_specific_marker_ids = unique(top_specific_markers %>% pull(gene_id))
 
-## TODO: need to use choose_cells() here to pick some specific clusters:
-pr_graph_test_res = graph_test(cds, neighbor_graph="knn", cores=8)
-pr_deg_ids = row.names(subset(pr_graph_test_res, q_value < 0.05))
+plot_genes_by_group(cds, 
+                    top_specific_marker_ids, 
+                    group_cells_by="partition", 
+                    ordering_type="maximal_on_diag",
+                    max.size=3) + ggsave("L2_plot_top_partition_marker.png", width=5, height=4, dpi = 600)
 
-gene_cluster_df = cluster_genes(cds[pr_deg_ids,], resolution=c(0,10^seq(-6,-1)))
 
-png("module_graph.png", res=600, width=8, height=8, units="in")
-plot_cells(cds, genes=gene_cluster_df, cell_size=0.5, show_backbone=FALSE, label_branch_points=FALSE, label_leaves=FALSE, label_roots=FALSE)
-dev.off()
+top_specific_markers = marker_test_res %>% 
+    filter(marker_test_q_value < 0.05 & pseudo_R2 > 0.01) %>%
+    group_by(cell_group) %>% 
+    top_n(3, pseudo_R2)
+
+top_specific_marker_ids = unique(top_specific_markers %>% pull(gene_id))
+
+plot_genes_by_group(cds, 
+                    top_specific_marker_ids, 
+                    group_cells_by="partition", 
+                    ordering_type="cluster_row_col",
+                    max.size=3) + ggsave("L2_plot_top3_partition_marker.png", width=5, height=6, dpi = 600)
 
 
 ## Step 5: Annotate cells by type:
-#ceModel = readRDS(url("https://cole-trapnell-lab.github.io/garnett/classifiers/ceWhole"))
-#library(org.Ce.eg.db)
-library(garnett)
-load(url("https://cole-trapnell-lab.github.io/garnett/classifiers/ceWhole"))
+colData(cds)$assigned_cell_type = as.character(partitions(cds))
+colData(cds)$assigned_cell_type = dplyr::recode(colData(cds)$assigned_cell_type,
+                                                "1"="Body wall muscle",
+                                                "2"="Germline",
+                                                "3"="Neurons",
+                                                "4"="Seam cells",
+                                                "5"="Coelomocytes",
+                                                "6"="Pharyngeal epithelia",
+                                                "7"="Unknown 1",
+                                                "8"="Unknown 2",
+                                                "9"="Intestinal/rectal muscle",
+                                                "10"="Neurons",
+                                                "11"="Neurons",
+                                                "12"="Am/PH sheath cells",
+                                                "13"="Unknown",
+                                                "14"="Neurons",
+                                                "15"="Neurons",
+                                                "16"="Neurons",
+                                                "17"="Pharyngeal gland",
+                                                "18"="Neurons",
+                                                "19"="Neurons",
+                                                "20"="Neurons",
+                                                "21"="Neurons",
+                                                "22"="Neurons",
+                                                "23"="Neurons",
+                                                "24"="Neurons",
+                                                "25"="Neurons",
+                                                "26"="Neurons",
+                                                "27"="Unknown 3",
+                                                "28"="Pharyngeal gland",
+                                                "29"="Neurons",
+                                                "30"="Neurons",
+                                                "31"="Neurons",
+                                                "32"="Neurons",
+                                                "33"="Pharyngeal muscle",
+                                                "34"="Failed QC")
+plot_cells(cds, group_cells_by="partition", color_cells_by="assigned_cell_type") + ggsave("L2_plot_cells_by_initial_annotation.png", width=5, height=4, dpi = 600)
 
+# Drilling into specific subsets of cells
+# Draw bounding box around partition 7:
+cds_subset = choose_cells(cds)
+
+pr_graph_test_res = graph_test(cds_subset, neighbor_graph="knn", cores=8)
+pr_deg_ids = row.names(subset(pr_graph_test_res, morans_I > 0.01 & q_value < 0.05))
+
+gene_module_df = cluster_genes(cds_subset[pr_deg_ids,], resolution=1e-3)
+#c(0,10^seq(-6,-1))
+plot_cells(cds_subset, genes=gene_module_df, show_trajectory_graph=FALSE, label_cell_groups=FALSE) + 
+    ggsave("L2_sex_partition_modules.png", width=5, height=4, dpi = 600)
+
+plot_cells(cds_subset, color_cells_by="cluster") + 
+    ggsave("L2_sex_partition_color_by_cluster.png", width=5, height=4, dpi = 600)
+
+# Plot the overlap between clusters and annotated cell types:
+pheatmap::pheatmap(log(table(clusters(cds_subset)[colnames(cds_subset)], colData(cds_subset)$cao_cell_type)+1),
+                   clustering_method="ward.D2",
+                   fontsize=6)
+
+colData(cds_subset)$assigned_cell_type = as.character(clusters(cds_subset)[colnames(cds_subset)])
+colData(cds_subset)$assigned_cell_type = dplyr::recode(colData(cds_subset)$assigned_cell_type,
+                                                "28"="Vulval precursors",
+                                                "38"="Neurons",
+                                                "39"="Unknown",
+                                                "42"="Sex myoblasts",
+                                                "27"="Sex myoblasts",
+                                                "31"="Somatic gonad progenitors")
+plot_cells(cds_subset, group_cells_by="cluster", color_cells_by="assigned_cell_type")
+colData(cds)[colnames(cds_subset),]$assigned_cell_type = colData(cds_subset)$assigned_cell_type
+plot_cells(cds, group_cells_by="partition", color_cells_by="assigned_cell_type", labels_per_group=5) + ggsave("L2_plot_cells_by_refined_annotation.png", width=5, height=4, dpi = 600)
+
+#ceModel = readRDS(url("https://cole-trapnell-lab.github.io/garnett/classifiers/ceWhole"))
+
+assigned_type_marker_test_res = top_markers(cds, 
+                                            group_cells_by="assigned_cell_type", 
+                                            reference_cells=1000, 
+                                            cores=8)
+
+generate_garnett_marker_file(assigned_type_marker_test_res)
+
+
+library(garnett)
+
+worm_classifier <- train_cell_classifier(cds = cds,
+                                         marker_file = "./marker_file.txt",
+                                         db=org.Ce.eg.db::org.Ce.eg.db,
+                                         cds_gene_id_type = "ENSEMBL",
+                                         num_unknown = 50,
+                                         marker_file_gene_id_type = "SYMBOL",
+                                         cores=8)
+
+
+load(url("https://cole-trapnell-lab.github.io/garnett/classifiers/ceWhole"))
 colData(cds)$garnett_cluster = clusters(cds)
 cds = classify_cells(cds, ceWhole,
                            db = org.Ce.eg.db::org.Ce.eg.db,
                            cluster_extend = TRUE,
                            cds_gene_id_type = "ENSEMBL")
 
-plot_cells(cds, group_cells_by="partition", color_cells_by="cluster_ext_type") + ggsave("L2_umap_corrected_garnett_ext_type.png", width=5, height=4, dpi = 600)
+plot_cells(cds, group_cells_by="cluster", color_cells_by="cluster_ext_type") + ggsave("L2_umap_corrected_garnett_ext_type.png", width=5, height=4, dpi = 600)
+
+# Plot the overlap between clusters and annotated cell types:
+pheatmap::pheatmap(log(table(partitions(cds), colData(cds)$cao_cell_type)+1),
+                   clustering_method="ward.D2",
+                   fontsize=6, width=5, height=8, filename="L2_cell_type_by_partition.png")
+
 
 ########
 # Look at a specific set of clusters

@@ -200,14 +200,13 @@ plot_cells_3d <- function(cds,
                             marker=list(opacity = .4), showlegend=FALSE)
     }
   } else {
-    if (color_cells_by == "Pseudotime" & is.null(data_df$Pseudotime)) {
+    if (color_cells_by == "pseudotime" & is.null(data_df$pseudotime)){
       p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
                            z = ~data_dim_3, type = 'scatter3d',
                            size=I(cell_size), color=I("gray"), mode="markers",
                            alpha = I(alpha))
-      message(paste("order_cells() has not been called yet, can't color cells",
-                    "by Pseudotime"))
-    } else if(color_cells_by %in% c("cluster", "partition")) {
+      message("order_cells() has not been called yet, can't color cells by pseudotime")
+    } else if(color_cells_by %in% c("cluster", "partition")){
       if (is.null(data_df$cell_color)){
         p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
                              z = ~data_dim_3, type = 'scatter3d',
@@ -654,7 +653,7 @@ plot_cells_3d_old <- function(cds,
 #' \dontrun{
 #' lung <- load_lung()
 #' plot_cells(lung)
-#' plot_cells(lung, color_by="Pseudotime", show_backbone=FALSE)
+#' plot_cells(lung, color_by="pseudotime", show_backbone=FALSE)
 #' plot_cells(lung, markers="MYH3")
 #' }
 plot_cells <- function(cds,
@@ -665,7 +664,7 @@ plot_cells <- function(cds,
                        group_cells_by=c("cluster", "partition"),
                        genes=NULL,
                        show_trajectory_graph=TRUE,
-                       trajectory_graph_color="black",
+                       trajectory_graph_color="grey28",
                        trajectory_graph_segment_size=0.75,
                        norm_method = c("log", "size_only"),
                        label_cell_groups = TRUE,
@@ -889,9 +888,9 @@ plot_cells <- function(cds,
 
     # We don't want to force users to call order_cells before even being able to look at the trajectory,
     # so check whether it's null and if so, just don't color the cells
-    if (color_cells_by == "Pseudotime" & is.null(data_df$Pseudotime)){
+    if (color_cells_by == "pseudotime" & is.null(data_df$pseudotime)){
       g <- g + geom_point(color=I("gray"), size=I(cell_size), na.rm = TRUE, alpha = I(alpha))
-      message("order_cells() has not been called yet, can't color cells by Pseudotime")
+      message("order_cells() has not been called yet, can't color cells by pseudotime")
     } else if(color_cells_by %in% c("cluster", "partition")){
       if (is.null(data_df$cell_color)){
         g <- g + geom_point(color=I("gray"), size=I(cell_size), na.rm = TRUE, alpha = I(alpha))
@@ -905,6 +904,7 @@ plot_cells <- function(cds,
     } else {
       g <- g + geom_point(aes(color = cell_color), size=I(cell_size), na.rm = TRUE, alpha = alpha)
     }
+    g <- g + guides(color = guide_legend(override.aes = list(size = 4)))
   }
   if (show_trajectory_graph){
     g <- g + geom_segment(aes_string(x="source_prin_graph_dim_1",
@@ -912,6 +912,7 @@ plot_cells <- function(cds,
                                      xend="target_prin_graph_dim_1",
                                      yend="target_prin_graph_dim_2"),
                           size=trajectory_graph_segment_size,
+                          color=I(trajectory_graph_color),
                           linetype="solid",
                           na.rm=TRUE,
                           data=edge_df)
@@ -1024,14 +1025,14 @@ plot_genes_in_pseudotime <-function(cds_subset,
                                     nrow=NULL,
                                     ncol=1,
                                     panel_order=NULL,
-                                    color_cells_by="Pseudotime",
-                                    trend_formula="~ splines::ns(Pseudotime, df=3)",
+                                    color_cells_by="pseudotime",
+                                    trend_formula="~ splines::ns(pseudotime, df=3)",
                                     label_by_short_name=TRUE,
                                     vertical_jitter=NULL,
                                     horizontal_jitter=NULL){
   assertthat::assert_that(is(cds_subset, "cell_data_set"))
-  assertthat::assert_that("Pseudotime" %in% names(colData(cds_subset)),
-                          msg = paste("Pseudotime must be a column in",
+  assertthat::assert_that("pseudotime" %in% names(colData(cds_subset)),
+                          msg = paste("pseudotime must be a column in",
                                       "colData. Please run order_cells",
                                       "before running",
                                       "plot_genes_in_pseudotime."))
@@ -1070,8 +1071,8 @@ plot_genes_in_pseudotime <-function(cds_subset,
                                       "plotted."))
 
   assertthat::assert_that(is(cds_subset, "cell_data_set"))
-  assertthat::assert_that("Pseudotime" %in% names(colData(cds_subset)),
-                          msg = paste("Pseudotime must be a column in",
+  assertthat::assert_that("pseudotime" %in% names(colData(cds_subset)),
+                          msg = paste("pseudotime must be a column in",
                                       "colData. Please run order_cells",
                                       "before running",
                                       "plot_genes_in_pseudotime."))
@@ -1113,7 +1114,7 @@ plot_genes_in_pseudotime <-function(cds_subset,
 
   f_id <- NA
   Cell <- NA
-  cds_subset = cds_subset[,is.finite(colData(cds_subset)$Pseudotime)]
+  cds_subset = cds_subset[,is.finite(colData(cds_subset)$pseudotime)]
 
   cds_exprs <- counts(cds_subset)
   cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds_subset))
@@ -1146,7 +1147,7 @@ plot_genes_in_pseudotime <-function(cds_subset,
   cds_exprs$feature_label <- factor(cds_exprs$feature_label)
 
 
-  new_data <- data.frame(Pseudotime = colData(cds_subset)$Pseudotime)
+  new_data <- data.frame(pseudotime = colData(cds_subset)$pseudotime)
   model_tbl = fit_models(cds_subset, model_formula_str = trend_formula)
 
   model_expectation <- model_predictions(model_tbl,
@@ -1165,7 +1166,7 @@ plot_genes_in_pseudotime <-function(cds_subset,
     cds_exprs$feature_label <- factor(cds_exprs$feature_label,
                                       levels = panel_order)
   }
-  q <- ggplot(aes(Pseudotime, expression), data = cds_exprs)
+  q <- ggplot(aes(pseudotime, expression), data = cds_exprs)
 
 
   if (!is.null(color_cells_by)) {
@@ -1183,7 +1184,7 @@ plot_genes_in_pseudotime <-function(cds_subset,
                                                  vertical_jitter))
   }
 
-  q <- q + geom_line(aes(x = Pseudotime, y = expectation), data = cds_exprs)
+  q <- q + geom_line(aes(x = pseudotime, y = expectation), data = cds_exprs)
 
   q <- q + scale_y_log10() + facet_wrap(~feature_label, nrow = nrow,
                                         ncol = ncol, scales = "free_y")
@@ -1193,7 +1194,7 @@ plot_genes_in_pseudotime <-function(cds_subset,
 
   q <- q + ylab("Expression")
 
-  q <- q + xlab("Pseudotime")
+  q <- q + xlab("pseudotime")
   q <- q + monocle_theme_opts()
   q
 }
@@ -1658,7 +1659,15 @@ plot_genes_by_group <- function(cds,
     g <- ggplot(ExpVal, aes(y = Gene,  x = Group)) + geom_point(aes(colour = mean,  size = percentage)) + viridis::scale_color_viridis(name = 'log(mean + 0.1)') + scale_size(name = 'percentage', range = c(0, max.size))
   }
 
-  g <- g + xlab("Cluster") + ylab("Gene") + monocle3:::monocle_theme_opts() + xlab("Cluster") + ylab("Gene") +
+  if (group_cells_by == "cluster"){
+    g <- g + xlab("Cluster")
+  } else if (group_cells_by == "partition") {
+    g <- g + xlab("Partition")
+  } else{
+    g <- g + xlab(group_cells_by)
+  }
+
+  g <- g + ylab("Gene") + monocle3:::monocle_theme_opts() +
     theme(axis.text.x = element_text(angle = 30, hjust = 1))
   if(axis_order == 'marker_group') {
     g <- g + coord_flip()

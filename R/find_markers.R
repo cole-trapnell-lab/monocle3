@@ -14,9 +14,10 @@
 #' @export
 top_markers <- function(cds,
                         group_cells_by="cluster",
-                        genes_to_test_per_group=50,
+                        genes_to_test_per_group=500,
                         reduction_method="UMAP",
-                        expression_bins=5,
+                        expression_bins=20,
+                        reference_cells=NULL,
                         cores=1
                         ){
 
@@ -86,10 +87,23 @@ top_markers <- function(cds,
   }
   RhpcBLASctl::blas_set_num_threads(1)
 
+  # Set up a balanced "reference" panel of cells from each group
+  if (is.null(reference_cells) == FALSE){
+    if(is.numeric(reference_cells)){
+      num_ref_cells_per_group = reference_cells / length(unique(cell_group_df$cell_group))
+      reference_cells = cell_group_df %>% dplyr::group_by(cell_group) %>%
+        dplyr::sample_n(min(num_ref_cells_per_group, dplyr::n())) %>%
+        pull(cell_id)
+      #reference_cells = sample(colnames(cds), reference_cells)
+    } else {
+      # TODO: check that reference cells is a list of valid cell ids.
+    }
+  }
+
   marker_test_res = tryCatch({pbmcapply::pbmcmapply(test_marker_for_cell_group,
                                           cluster_spec_table$rowname,
                                           cluster_spec_table$cell_group,
-                                          MoreArgs=list(cell_group_df, cds),
+                                          MoreArgs=list(cell_group_df, cds, reference_cells),
                                           ignore.interactive = TRUE,
                                           mc.cores=cores)},
                              finally = {
@@ -111,6 +125,14 @@ top_markers <- function(cds,
   marker_test_res = marker_test_res %>% dplyr::rename(gene_id=rowname, marker_test_p_value=lrtest_p_value,  marker_test_q_value=lrtest_q_value)
   marker_test_res$pseudo_R2 = unlist(marker_test_res$pseudo_R2)
   marker_test_res$marker_test_p_value = unlist(marker_test_res$marker_test_p_value)
+
+  if ("gene_short_name" %in% colnames(rowData(cds)))
+    marker_test_res = rowData(cds) %>%
+                      as.data.frame %>%
+                      tibble::rownames_to_column() %>%
+                      dplyr::select(rowname, gene_short_name) %>%
+                      inner_join(marker_test_res, by=c("rowname"="gene_id"))
+  marker_test_res = marker_test_res %>% dplyr::rename(gene_id=rowname)
   return(marker_test_res)
 }
 
@@ -169,16 +191,24 @@ specificity_matrix <- function(agg_expr_matrix, cores=1){
 }
 
 
-test_marker_for_cell_group = function(gene_id, cell_group, cell_group_df, cds){
+test_marker_for_cell_group = function(gene_id, cell_group, cell_group_df, cds, reference_cells=NULL){
   #print(gene_id)
   #print(cell_group)
-
+  #print (length(reference_cells))
   results = tryCatch({
     f_expression = log(as.numeric(counts(cds)[gene_id,]) / size_factors(cds) + 0.1)
     #print(sum(counts(cds)[gene_id,] > 0))
     is_member = as.character(cell_group_df[colnames(cds),2]) == as.character(cell_group)
+    names(is_member) = names(f_expression) = colnames(cds)
     is_member[is.na(is_member)] = FALSE
     is_member[is.null(is_member)] = FALSE
+
+    if (is.null(reference_cells) == FALSE){
+      # Exclude cells that aren't in either the cell_group or the reference_panel
+      f_expression = f_expression[is_member | names(f_expression) %in% reference_cells]
+      is_member = is_member[is_member | names(is_member) %in% reference_cells]
+    }
+
     if (sum(is.na(f_expression)) > 0 || sum(is.na(is_member)) > 0){
       stop("Expression and group membership can't be NA")
     }
@@ -252,8 +282,14 @@ generate_garnett_marker_file <- function(top_markers,
     if (nrow(sub) > max_genes_per_group) {
       sub <- sub[order(sub$marker_test_q_value),][1:max_genes_per_group,]
     }
-    entry <- paste0("> ", group, "\n", "expressed: ",
-                    paste(sub$gene_id, collapse = ", "), "\n")
+    if ("gene_short_name" %in% colnames(sub)){
+      entry <- paste0("> ", group, "\n", "expressed: ",
+                      paste(sub$gene_short_name, collapse = ", "), "\n")
+    } else {
+      entry <- paste0("> ", group, "\n", "expressed: ",
+                      paste(sub$gene_id, collapse = ", "), "\n")
+    }
+
     output <- append(output, entry)
   }
 

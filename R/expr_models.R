@@ -201,7 +201,7 @@ fit_models <- function(cds,
   model_form <- stats::as.formula(model_formula_str)
 
   # FIXME: These checks are too stringent, because they don't catch formula that include functions of columns in colData.
-  # for example, the formula `~ splines::ns(Pseudotime, df=3) triggers the error.
+  # for example, the formula `~ splines::ns(pseudotime, df=3) triggers the error.
   # if (length(model_form[[2]]) == 1) {
   #   if (!as.character(model_form[[2]]) %in% c(names(colData(cds)), "~", "1", "|", "+", "-", ":", "*", "^", "I")) {
   #     stop(paste(as.character(model_form[[2]][[i]]), "formula element is missing"))
