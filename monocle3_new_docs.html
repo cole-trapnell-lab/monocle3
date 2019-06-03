@@ -1650,7 +1650,7 @@ plot_genes_in_pseudotime(AFD_lineage_cds,
 
 <h3>Analyzing branches in single-cell trajectories </h3>
 
-Analyzing the genes that are regulated around trajectory branch points often provides insights into the genetic circuits that control cell fate decisions. Monocle can help you drill into a branch point that corresponds to a fate decision in your system. Doing so is as simple as selecting the cells (and branch point) of interest with <code>choose_cells(): 
+Analyzing the genes that are regulated around trajectory branch points often provides insights into the genetic circuits that control cell fate decisions. Monocle can help you drill into a branch point that corresponds to a fate decision in your system. Doing so is as simple as selecting the cells (and branch point) of interest with <code>choose_cells()</code>: 
 
 {% highlight R %}
 cds_subset = choose_cells(cds)
@@ -1688,12 +1688,11 @@ plot_cells(cds_subset,
 {% endhighlight %}
 
 <p>
-<p>
 <div class= "text-center">
   <img src= "{{site.baseurl}}/images/manual_images/embryo_umap_AFD_modules.png" width= 760>
 </div>
 
-<h2>Major updates in Monocle 3 </h2>
+<h2>Major updates in Monocle 3</h2>
 
 <p>Monocle 3 has been re-engineered to analyze large, complex single-cell datasets. The algorithms at the core of Monocle 3 are highly scalable and can handle millions of cells. Monocle 3 adds some powerful new features that enable the analysis of organism- or embryo-scale experiments:</p>
 
