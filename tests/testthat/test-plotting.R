@@ -54,7 +54,7 @@ test_that("plot_genes_in_pseudotime doesn't error", {
   cds_subset <- cds[c("ENSG00000228253.1", "ENSG00000103034.14",
                       "ENSG00000223519.8"),]
   expect_error(plot_genes_in_pseudotime(cds_subset),
-               "pseudotime must be a column in colData. Please run order_cells before running plot_genes_in_pseudotime.")
+               "No pseudotime calculated. Must call order_cells first.")
 
   cds <- preprocess_cds(cds)
   cds <- reduce_dimension(cds)

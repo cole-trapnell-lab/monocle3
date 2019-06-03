@@ -1041,11 +1041,9 @@ plot_genes_in_pseudotime <-function(cds_subset,
                                     vertical_jitter=NULL,
                                     horizontal_jitter=NULL){
   assertthat::assert_that(is(cds_subset, "cell_data_set"))
-  assertthat::assert_that("pseudotime" %in% names(colData(cds_subset)),
-                          msg = paste("pseudotime must be a column in",
-                                      "colData. Please run order_cells",
-                                      "before running",
-                                      "plot_genes_in_pseudotime."))
+  tryCatch({pseudotime(cds_subset)}, error = function(x) {
+    stop(paste("No pseudotime calculated. Must call order_cells first."))})
+  colData(cds_subset)$pseudotime <- pseudotime(cds_subset)
   if(!is.null(min_expr)) {
     assertthat::assert_that(assertthat::is.number(min_expr))
   }
