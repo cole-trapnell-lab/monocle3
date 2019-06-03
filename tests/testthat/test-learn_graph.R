@@ -25,14 +25,14 @@ test_that("learn_graph stays the same", {
   cds <- learn_graph(cds)
   expect_is(principal_graph(cds)[["UMAP"]], "igraph")
   expect_equal(length(principal_graph(cds)[["UMAP"]]), 10)
-  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "123")
+  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "96")
 
   # Force partition
   cds@clusters[["UMAP"]]$partitions <- c(1,2)
   cds <- learn_graph(cds, use_partition = FALSE)
   expect_is(principal_graph(cds)[["UMAP"]], "igraph")
   expect_equal(length(principal_graph(cds)[["UMAP"]]), 10)
-  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "123")
+  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "96")
 
   cds <- learn_graph(cds)
   expect_is(principal_graph(cds)[["UMAP"]], "igraph")
