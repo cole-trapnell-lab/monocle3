@@ -131,7 +131,7 @@ top_markers <- function(cds,
                       as.data.frame %>%
                       tibble::rownames_to_column() %>%
                       dplyr::select(rowname, gene_short_name) %>%
-                      inner_join(marker_test_res, by=c("rowname"="gene_id"))
+                      dplyr::inner_join(marker_test_res, by=c("rowname"="gene_id"))
   marker_test_res = marker_test_res %>% dplyr::rename(gene_id=rowname)
   return(marker_test_res)
 }
