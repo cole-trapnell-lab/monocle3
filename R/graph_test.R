@@ -16,7 +16,8 @@
 #'
 #' @param cds a cell_data_set object upon which to perform this operation
 #' @param neighbor_graph String indicating what neighbor graph to use.
-#'   "principal_graph" and "knn" are supported. Default is "principal_graph".
+#'   "principal_graph" and "knn" are supported. Default is "knn", but
+#'   "principal_graph" is recommended for trajectory analysis.
 #' @param reduction_method character, the method used to reduce dimension.
 #'   Currently only supported for "UMAP".
 #' @param k Number of nearest neighbors used for building the kNN graph which
@@ -42,7 +43,7 @@
 #' @seealso \code{\link[spdep]{moran.test}} \code{\link[spdep]{geary.test}}
 #' @export
 graph_test <- function(cds,
-                       neighbor_graph = c("principal_graph", "knn"),
+                       neighbor_graph = c("knn", "principal_graph"),
                        reduction_method = "UMAP",
                        k = 25,
                        method = c('Moran_I'),
