@@ -46,7 +46,7 @@ citEntry(entry="article",
          textVersion =
          paste("Xiaojie Qiu et al (2017):",
                "Reverse graph embedding resolves complex single-cell developmental trajectories.",
-                "BioRxiv" ) )
+                "Nature Methods" ) )
 
 citEntry(entry="article",
          title = "The dynamics and regulators of cell fate decisions are revealed by pseudo-temporal ordering of single cells",
