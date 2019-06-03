@@ -117,7 +117,7 @@ one way to do a certain step, we've labeled the options as follows:
 <p>Below, you can see snippets of code that highlight the main steps of Monocle.
 Click on the section headers to jump to the detailed sections describing each one. </p>
 
-<h4><a href= "{{ site.baseurl }}/docs/#getting-started-with-monocle">Store Data in a <a href = "https://rdrr.io/bioc/monocle/man/cell_data_set.html">cell_data_set</a> Object</a></h4>
+<h4><a href= "{{ site.baseurl }}/monocle3_docs/#getting-started-with-monocle">Store Data in a <a href = "https://rdrr.io/bioc/monocle/man/cell_data_set.html">cell_data_set</a> Object</a></h4>
 The first step in working with Monocle is to load up your data into Monocle's
 main class, <code><a href = "https://rdrr.io/bioc/monocle/man/cell_data_set.html">cell_data_set</a></code>:
 
@@ -151,7 +151,7 @@ function(x) { x[MYF5_id,] < 1 & x[ANPEP_id,] > 1 } )
 cds <- classifyCells(cds, cth, 0.1)
 {% endhighlight %} -->
 
-<h4><a href= "{{ site.baseurl }}/docs/#clustering-cells">Cluster your cells</a></h4>
+<h4><a href= "{{ site.baseurl }}/monocle3_docs/#clustering-and-classifying-your-cells">Cluster your cells</a></h4>
 You can easily cluster your cells to find new types:
 
 {% highlight R %}
@@ -159,7 +159,7 @@ cds = reduce_dimension(cds)
 cds = cluster_cells(cds)
 {% endhighlight %}
 
-<h4><span class= "label label-info">Optional</span> <a href= "{{ site.baseurl }}/docs/#constructing-single-cell-trajectories">Order cells in pseudotime along a trajectory</a> </h4>
+<h4><span class= "label label-info">Optional</span> <a href= "{{ site.baseurl }}/monocle3_docs/#constructing-single-cell-trajectories">Order cells in pseudotime along a trajectory</a> </h4>
 Now, put your cells in order by how much progress they've made through whatever process you're studying, such as differentiation,
 reprogramming, or an immune response.
 
@@ -169,16 +169,22 @@ cds = order_cells(cds)
 plot_cells(cds)
 {% endhighlight %}
 
-<h4><span class= "label label-info">Optional</span> <a href= "{{ site.baseurl }}/docs/#differential-expression-analysis">Perform differential expression analysis</a> </h4>
+<h4><span class= "label label-info">Optional</span> <a href= "{{ site.baseurl }}/monocle3_docs/#differential-expression-analysis">Perform differential expression analysis</a> </h4>
 Compare groups of cells in myriad ways to find differentially expressed genes,
 controlling for batch effects and treatments as you like:
 
 {% highlight R %}
+# With regresion:
 gene_fits = fit_models(cds, model_formula_str = "~embryo.time")
 fit_coefs = coefficient_table(gene_fits)
 emb_time_terms = fit_coefs %>% filter(term == "embryo.time")
 emb_time_terms = emb_time_terms %>% mutate(q_value = p.adjust(p_value))
 sig_genes = emb_time_terms %>% filter (q_value < 0.05) %>% pull(gene_short_name)
+
+# With graph autocorrelation:
+
+pr_test_res = graph_test(cds,  neighbor_graph="principal_graph", cores=4)
+pr_deg_ids = row.names(subset(pr_test_res, q_value < 0.05))
 {% endhighlight %}
 
 
@@ -1563,7 +1569,7 @@ plot_cells(cds,
 
 <p>How do we find the genes that are differentially expressed on the different paths through the trajectory? How do we find the ones that are restricted to the beginning of the trajectory? Or excluded from it?</p>
 
-<p>Once again, we turn to <code>graph_test(), this time passing it <code>neighbor_graph="principal_graph"</code>, which tells it to test whether cells at similar positions on the trajectory have correlated expression </code>:</p>
+<p>Once again, we turn to <code>graph_test()</code>, this time passing it <code>neighbor_graph="principal_graph"</code>, which tells it to test whether cells at similar positions on the trajectory have correlated expression:</p>
 
 {% highlight R %}
 ciliated_cds_pr_test_res = graph_test(cds, neighbor_graph="principal_graph", cores=4)
@@ -1702,46 +1708,11 @@ plot_cells(cds_subset,
 </ul>
 
 <p>Most of the algorithmic details in Monocle 3 are described in <a href="http://dx.doi.org/10.1038/s41586-019-0969-x">Cao & Spielmann <emph>et al</emph></a>. </p>
-<!-- <p>Monocle 2 is a near-complete re-write of Monocle 1. Monocle 2 is geared towards larger, more complex single-cell RNA-Seq experiments than those possible at the time Monocle 1 was written.
-It's also redesigned to support analysis of mRNA counts, which were hard to estimate experimentally in early versions of single-cell RNA-Seq.
-Now, with spike controls or UMIs, gene expression can  be measured in mRNA counts. Analysis of these counts is typically easier and more accurate than relative expression values, and we encourage all users to adopt an mRNA-count centered workflow.
-Numerous Monocle functions have been re-written to take advantage of the nicer statistical properties of mRNA counts.
-For example, we adopt the dispersion modeling and variance-stabilization techniques introduced by DESeq <a href = "https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-10-r106">[6]</a> during differential analysis, dimensionality reduction, and other steps.
 
-<p>Trajectory reconstruction in Monocle 2 is vastly more robust, faster, and more powerful than in Monocle 1. Monocle 2 uses an advanced nonlinear reconstruction algorithm called DDRTree <a href= "http://dl.acm.org/citation.cfm?id= 2783309">[7]</a>, described below in the section <a href = "{{ site.baseurl }}/docs/#theory-behind-monocle"> Theory Behind Monocle </a>. This algorithm can expose branches that are hard to see with the less powerful linear technique used in Monocle 1.
-The algorithm is also far less sensitive to outliers, so careful QC and selection of high quality cells is less critical.
-Finally, DDRTree is much more robust in that it reports qualititatively similar trajectories more consistently when you vary the number of cells in the experiment.
-Although which genes are included in the ordering still greatly impact the trajectory, varying them also produces more qualititatively consistent trajectories than the previous linear technique.
-
-<p>Because Monocle 2 is so much better at finding branches, it also includes some additional tools to help you interpret them. <a href = "https://rdrr.io/bioc/monocle/man/BEAM.html">Branch expression analysis modeling (BEAM)</a> is a new test for analyzing specific branch points <a href= "https://www.ncbi.nlm.nih.gov/pubmed/28114287">[8]</a>. <a href = "https://rdrr.io/bioc/monocle/man/BEAM.html">BEAM</a> reports branch-dependent genes, and Monocle 2 includes some new visualization functions to help you inspect these genes. Overall, we find that branching is pervasive in diverse biological processes, and thus we expect <a href = "https://rdrr.io/bioc/monocle/man/BEAM.html">BEAM</a> will be very useful to those analyzing single-cell RNA-Seq data in many settings.
-
-<p>Monocle 2 also includes functionality that is inspired by other packages that weren't available when Monocle 1 was written. For example, much of Monocle 2's clustering strategy is similar to
-Seurat <a href= "https://www.ncbi.nlm.nih.gov/pubmed/25867923">[9]</a> from Rahul Satija's lab.
-
-<p>A manuscript describing Monocle 2 and the general stragegy of using reversed
-graph embedding for single-cell trajectory analysis is available on the bioRxiv <a href= "http://www.biorxiv.org/content/early/2017/02/21/110668">[10]</a>.
+<!-- 
+<h2>Appendices</h2>
 
 <h2>Theory Behind Monocle </h2>
-
-<h3 data-toc-text= "dpFeature">dpFeature: Selecting features from dense cell clusters </h3>
-
-
-<p>Appling algorithms like t-SNE to cells transiting through a continuous process like cell differentiation often groups the cells into clusters that do not necessarily reflect their progression through the process. Nevertheless, the genes that are differentially expressed by cells the clusters are often highly informative markers of each cell's progress through the trajectory. That is, clustering algorithms like t-SNE can find often genes that vary over the trajectory, but not the trajectory itself. We designed a simple procedure to identify these genes for use in trajectory reconstruction.
-
-<p>The dpFeature procedure works as follows.
-First, dpFeature excludes genes that only expressed in a very small percentage of cells (by default, <em>5%</em>).
-Second, dpFeature performs PCA on the remaining genes in order to identify the principal components that explain a substantial amount of variance in the data.
-These top PCs are then used to initialize t-SNE, which projects the cells into two-dimensional t-SNE space.
-Next, dpFeature uses a recently developed clustering algorithm, called "density peak" clustering <a href = "http://science.sciencemag.org/content/344/6191/1492">[4]</a> to cluster the cells in the two-dimensional t-SNE space.
-The density peak clustering algorithm calculates each cell's local density (&Rho;) and its distance (&Delta;) to another cell with higher density.
-The &Rho; and &Delta; values for each cell can be plotted in a so-called "decision plot" in order to select thresholds that define "peaks" in the t-SNE space.
-Cells with high local density that are far away from other cells with high local density correspond to the density peaks.
-These density peaks nucleate clusters: all other cells will be associated with the nearest density peak cell.
-Finally, we identify genes that differ between the clusters by performing a likelihood ratio test between using a generalized linear model that knows the cluster to which each cell is assigned and a model that doesn't.
-We then select (by default) the top 1,000 significantly differentially expressed genes as the ordering genes for the trajectory reconstruction. -->
-
-
-<h2>Appendices</h2>
 
 <h3>Reversed graph embedding </h3>
 
@@ -1846,7 +1817,7 @@ schemes in future versions.
 of reversed graph embedding. Both are briefly summarized below. See the original
 paper on DDRTree for more details. Monocle 2 uses the second scheme, but can easily be
 run in a mode that corresponds to the first.
-
+ -->
 
 
 <h2>Citation </h2>
@@ -1856,22 +1827,18 @@ If you use Monocle to analyze your experiments, please cite:
 
 {% highlight R %}
 
-citation("monocle")
+citation("monocle3")
 
-##   Cole Trapnell and Davide Cacchiarelli et al (2014): The dynamics
-##   and regulators of cell fate decisions are revealed by
-##   pseudo-temporal ordering of single cells. Nature Biotechnology
-##
-##   Xiaojie Qiu, Andrew Hill, Cole Trapnell et al (2017):
-##   Single-cell mRNA quantification and differential analysis with
-##   Census. Nature Methods
-##
-##   Xiaojie Qiu, Cole Trapnell et al (2017): Reverse graph embedding
-##   resolves complex single-cell developmental trajectories. BioRxiv
-##
-##   To see these entries in BibTeX format, use 'print(<citation>,
-##   bibtex=TRUE)', 'toBibtex(.)', or set
-##   'options(citation.bibtex.max= 999)'.
+## Cole Trapnell and Davide Cacchiarelli et al (2014): The dynamics and regulators of cell fate decisions are
+## revealed by pseudo-temporal ordering of single cells. Nature Biotechnology
+## 
+## Xiaojie Qiu et al (2017): Single-cell mRNA quantification and differential analysis with Census. Nature Methods
+## 
+## Xiaojie Qiu et al (2017): Reverse graph embedding resolves complex single-cell developmental trajectories.
+## Nature Methods
+## 
+## Junyue Cao, Malte Spielmann et al (2019): The single-cell transcriptional landscape of mammalian organogenesis.
+## Nature
 
 {% endhighlight %}
 
@@ -1904,7 +1871,7 @@ This vignette was created from Wolfgang Huber's Bioconductor vignette style docu
     <a href = "https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1663-x">
       PAGA: graph abstraction reconciles clustering with trajectory inference through a topology preserving map of single cells</a>.<br/>Genome biology, 2018.<br/><br/>  </li>
 
-  <li>Junyue Cao*, Malte Spielmann*, Xiaojie Qiu, Xingfan Huang, Daniel M. Ibrahim, Andrew J. Hill1, Fan Zhang, Stefan Mundlos, Lena Christiansen, Frank J. Steemers, Cole Trapnell**, and Jay Shendure** <br/>
+  <li>Junyue Cao*, Malte Spielmann*, Xiaojie Qiu, Xingfan Huang, Daniel M. Ibrahim, Andrew J. Hill, Fan Zhang, Stefan Mundlos, Lena Christiansen, Frank J. Steemers, Cole Trapnell**, and Jay Shendure** <br/>
     <a href = "http://dx.doi.org/10.1038/s41586-019-0969-x">
           The single-cell transcriptional landscape of mammalian organogenesis</a>.<br/>Nature, 2019.<br/><br/>  </li>
 
@@ -1915,7 +1882,15 @@ This vignette was created from Wolfgang Huber's Bioconductor vignette style docu
   <li>Nadav Sharon*, Raghav Chawla*, Jonas Mueller, Jordan Vanderhooft, Luke James Whitehorn, Benjamin Rosenthal, Mads Gurtler, Ralph R. Estanboulieh, Dmitry Shvartsman, David K. Gifford, Cole Trapnell** and Doug Melton**<br/>
         <a href = "http://dx.doi.org/10.1016/j.cell.2018.12.003">
           A peninsular structure coordinates asynchronous differentiation with morphogenesis to generate pancreatic islets</a>.<br/>Cell, 2019.<br/><br/>  </li>
-      
+
+  <li>Xiaojie Qiu, Qi Mao, Ying Tang, Li Wang, Raghav Chawla, Hannah Pliner, and Cole Trapnell<br/>
+    <a href = "http://dx.doi.org/doi:10.1038/nmeth.4402">
+      Reversed graph embedding resolves complex single-cell developmental trajectories</a>.<br/>Nature methods, 2017<br/><br/>  </li>
+    
+   <li>X Qiu, A Hill, J Packer, D Lin, YA Ma, and C Trapnell.<br/>
+        <a href = "http://dx.doi.org/10.1038/nmeth.4150">
+          Single-cell mrna quantification and differential analysis with census</a>.<br/>Nature methods, 2017<br/><br/>  </li>
+          
 </ol>
 <!-- 
 <p> [1] Cole Trapnell, Davide Cacchiarelli, Jonna Grimsby, Prapti Pokharel, Shuqiang Li, Michael Morse, Niall J. Lennon, Kenneth J. Livak, Tarjei S. Mikkelsen, and John L. Rinn. <a href = "http://www.nature.com/nbt/journal/v32/n4/abs/nbt.2859.html"> The dynamics and regulators of cell fate decisions are revealed by pseudotemporal ordering of single cells</a>. Nature Biotechnology, 2014. </p>
