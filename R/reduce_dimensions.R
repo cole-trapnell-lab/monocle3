@@ -52,9 +52,9 @@ reduce_dimension <- function(cds,
                              umap.metric = "cosine",
                              umap.min_dist = 0.1,
                              umap.n_neighbors = 15L,
-                             umap.fast_sgd = TRUE,
+                             umap.fast_sgd = FALSE,
                              umap.nn_method = "annoy",
-                             cores=max(1, RcppParallel::defaultNumThreads()/2),
+                             cores=1,
                              verbose=FALSE,
                              ...){
   extra_arguments <- list(...)

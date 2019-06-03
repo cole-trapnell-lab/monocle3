@@ -4,9 +4,15 @@ library(monocle3) # Load Monocle
 library(tidymodels)
 theme_set(theme_gray(base_size = 6))
 
-expression_matrix = readRDS("L2_expression.rda")
-cell_metadata = readRDS("L2_cell_metadata.rda")
-gene_annotation = readRDS("L2_gene_metadata.rda")
+# expression_matrix = readRDS("L2_expression.rda")
+# cell_metadata = readRDS("L2_cell_metadata.rda")
+# gene_annotation = readRDS("L2_gene_metadata.rda")
+
+expression_matrix = readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_expression.rds"))
+cell_metadata = readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_colData.rds"))
+gene_annotation = readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_rowData.rds"))
+
+
 
 # expression_matrix = Matrix::readMM(gzcon(url("http://jpacker-data.s3.amazonaws.com/public/worm/L2/Cao_et_al_2017_data_2019_update.exprs.mm.gz")))
 # gene_annotation = read.delim(url("http://jpacker-data.s3.amazonaws.com/public/worm/L2/Cao_et_al_2017_data_2019_update.fData.tsv"))
@@ -26,10 +32,16 @@ plot_cells(cds) + ggsave("L2_umap_no_color.png", width=5, height=4, dpi = 600)
 plot_cells(cds, color_cells_by="cao_cell_type") + ggsave("L2_umap_color_cells_by_cao_type.png", width=5, height=4, dpi = 600)
 plot_cells(cds, color_cells_by="plate", label_cell_groups=FALSE) + ggsave("L2_umap_plate.png", width=5, height=4, dpi = 600)
 
+
 #### With batch correction:
 cds = preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ plate")
 cds = reduce_dimension(cds, umap.fast_sgd=FALSE, cores=1)
 plot_cells(cds, color_cells_by="plate", label_cell_groups=FALSE) + ggsave("L2_umap_corrected_plate.png", width=5, height=4, dpi = 600)
+
+# exmaple of using t-SNE:
+cds = reduce_dimension(cds, reduction_method="tSNE")
+plot_cells(cds, reduction_method="tSNE", color_cells_by="cao_cell_type") + ggsave("L2_tsne_corrected_cao_type.png", width=5, height=4, dpi = 600)
+
 
 ## Step 3: (Optional) Cluster cells
 cds = cluster_cells(cds, resolution=c(10^seq(-6,-1)))

@@ -158,7 +158,7 @@ emb_time_terms %>% filter (q_value < 0.05) %>% select(gene_short_name, term, q_v
 
 # Principal graph test:
 
-ciliated_cds_pr_test_res = graph_test(cds, cores=4)
+ciliated_cds_pr_test_res = graph_test(cds,  neighbor_graph="principal_graph", cores=4)
 pr_deg_ids = row.names(subset(ciliated_cds_pr_test_res, q_value < 0.05))
 
 gene_module_df = monocle3:::find_gene_modules(cds[pr_deg_ids,], resolution=c(0,10^seq(-6,-1)))
