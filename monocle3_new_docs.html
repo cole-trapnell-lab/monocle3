@@ -453,6 +453,17 @@ plot_cells(cds, color_cells_by="cao_cell_type")
 
 <p>Except for a few cases described in a moment, <code>color_cells_by</code> can be the name of any column in <code>colData(cds)</code>. Note that when <code>color_cells_by</code> is a categorical variable, labels are added to the plot, with each label positioned roughly in the middle of all the cells that have that label.</p>
 
+
+
+<div class= "panel panel-info">
+<div class= "panel-heading">
+<h3 class= "panel-title" data-toc-skip>Faster clustering with UMAP</h3>
+</div>
+<div class= "panel-body">
+<p>If you have a relatively large dataset (with >10,000 cells or more), you may want to take advantage of options that can accelerate UMAP. Passing <code>umap.fast_sgd=TRUE</code> to <code>reduce_dimension()</code> will use a fast stochastic gradient descent method inside of UMAP. If your computer has multiple cores, you can use the <code>cores</code> argument to make UMAP multithreaded. However, invoking <code>reduce_dimension()</code> with either of these options will make it produce slighly different output each time you run it. If this is acceptable to you, you could see signifant reductions in the running time of <code>reduction_dimension()</code>.</p>
+</div>
+</div>
+    
 <p>If you want, you can also use t-SNE to visualize your data. First, call reduce_dimension with <code>reduction_method="tSNE"</code>.</p>
 {% highlight R %}
 cds = reduce_dimension(cds, reduction_method="tSNE")
@@ -855,7 +866,7 @@ pheatmap::pheatmap(log(table(partitions(cds), colData(cds)$cao_cell_type)+1),
 <p>   During development, in response to stimuli, and throughout life, cells
 transition from one functional "state" to another. Cells in different states
 express different sets of genes, producing a dynamic repetoire of proteins and
-metabolites that carry out their work. As cells move between states, undergo a
+metabolites that carry out their work. As cells move between states, they undergo a
 process of transcriptional re-configuration, with some genes being silenced and
 others newly activated. These transient states are often hard to characterize
 because purifying cells in between more stable endpoint states can be difficult
@@ -871,13 +882,13 @@ process. Once it has learned the overall "trajectory" of gene expression
 changes, Monocle can place each cell at its proper position in the trajectory.
 You can then use Monocle's differential analysis toolkit to find genes regulated
 over the course of the trajectory, as described in the section <a href = "{{
-site.baseurl }}/docs/#finding-genes-that-change-as-a-function-of-pseudotime">
-Finding Genes that Change as a Function of Pseudotime </a>. If there are
+site.baseurl }}/monocle3_docs/#finding-genes-that-change-as-a-function-of-pseudotime">
+Finding genes that change as a function of pseudotime </a>. If there are
 multiple outcomes for the process, Monocle will reconstruct a "branched"
 trajectory. These branches correspond to cellular "decisions", and Monocle
 provides powerful tools for identifying the genes affected by them and involved
 in making them. You can see how to analyze branches in the section <a href = "{{
-site.baseurl }}/docs/#analyzing-branches-in-single-cell-trajectories"> Analyzing
+site.baseurl }}/monocle3_docs/#analyzing-branches-in-single-cell-trajectories"> Analyzing
 branches in single-cell trajectories </a>. 
 
 <!-- Monocle relies on a machine learning
@@ -888,15 +899,12 @@ Theory Behind Monocle </a> , or consult the references shown at the end of the
 vignette.  -->
 </p>
 
-Before we get into the details of ordering cells along a trajectory, it's
-important to understand what Monocle is doing. The ordering workflow has three
-main steps, each of which involve a significant machine learning task.
+The workflow for reconstructing trajectories is very similar to the workflow for clustering, but it has a few additional steps. To illustrate the workflow, we will use another <emph>C. elegans</emph> data set, this one from <a href="http://dx.doi.org/10.1101/565549">Packer & Zhu et al</a>. Their study includes a time series analysis of whole developing embyros. We will examine a small subset of the data which includes most of the neurons. We will load it as we did with the L2 data:
 
 {% highlight R %}
-expression_matrix = readRDS(url("http://jpacker-data.s3.amazonaws.com/for-cole/for-cole.ciliated.amphid.neurons.exprs.rds"))
-cell_metadata = readRDS(url("http://jpacker-data.s3.amazonaws.com/for-cole/for-cole.ciliated.amphid.neurons.pData.rds"))
-gene_annotation = readRDS(url("http://jpacker-data.s3.amazonaws.com/for-cole/for-cole.ciliated.amphid.neurons.fData.rds"))
-gene_annotation$use_for_ordering = NULL
+expression_matrix = readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_expression.rds"))
+cell_metadata = readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_colData.rds"))
+gene_annotation = readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_rowData.rds"))
 
 cds <- new_cell_data_set(expression_matrix,
                          cell_metadata = cell_metadata,
@@ -904,135 +912,27 @@ cds <- new_cell_data_set(expression_matrix,
 {% endhighlight %}
 
 <h3>Pre-process the data</h3>
+<p>Pre-processing works exactly as in clustering analysis. This time, we will use a different strategy for batch correction, which replicates what <emph>Packer & Zhu et al</emph> did in their original analysis:</p>
+
 {% highlight R %}
-cds <- estimate_size_factors(cds)
 cds <- preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
 {% endhighlight %}
 
 <h3>Reduce dimensionality and visualize the results</h3>
-<p>Once we have normalized the data and removed any batch effects, Monocle
-applies a <em>dimensionality reduction</em> to the data.</p>
+Next, we reduce the dimensionality of the data. However, unlike clustering, which works well with both UMAP and t-SNE, here we strongly urge you to use UMAP, the default method:
 
 {% highlight R %}
-set.seed(42)
-cds <- reduce_dimension(cds, umap.fast_sgd = FALSE, cores=1)
+cds <- reduce_dimension(cds)
 plot_cells(cds, label_groups_by_cluster=FALSE,  color_cells_by = "cell.type") 
 {% endhighlight %}
+
+<p>As you can see, despite the fact that we are only looking at a small slice of this dataset, Monocle reconstructs a trajectory with numerous branches. Overlaying the manual annotations on the UMAP reveals that these branches are pricipally occupied by one cell type.  
 
 <div class= "text-center">
   <img src= "{{site.baseurl}}/images/manual_images/embryo_umap_packer_cell_type.png" width= 760>
 </div>
 
-<h3>Cluster your cells </h3>
-{% highlight R %}
-cds <- cluster_cells(cds)
-plot_cells(cds, color_cells_by = "partition")
-{% endhighlight %}
-
-<div class= "text-center">
-  <img src= "{{site.baseurl}}/images/manual_images/embryo_umap_partition.png" width= 760>
-</div>
-
-<h3>Learn the trajectory graph</h3>
-{% highlight R %}
-cds <- partition_cells(cds)
-cds <- learn_graph(cds)
-plot_cells(cds, 
-           color_cells_by = "cell.type", 
-           label_groups_by_cluster=FALSE,
-           label_leaves=FALSE,
-           label_branch_points=FALSE)
-
-{% endhighlight %}
-
-<div class= "text-center">
-  <img src= "{{site.baseurl}}/images/manual_images/embryo_pr_graph_packer_cell_type.png" width= 760>
-</div>
-
-<h3>Order the cells in pseudotime</h3>
-
-<div class= "panel panel-info">
-<div class= "panel-heading">
-<h3 class= "panel-title" data-toc-skip>What is pseudotime?</h3>
-</div>
-<div class= "panel-body">
-<p><emph>Pseudotime</emph> is a measure of how much progress an individual cell has made through a process such as cell differentiation. </p>
-
-<p>In many biological processes, cells do not progress in perfect synchrony.  In single-cell expression studies of processes such as cell differentiation, captured cells might be widely distributed in terms of progress.  That is, in a population of cells captured at exactly the same time, some cells might be far along, while others might not yet even have begun the process.  This asynchrony creates major problems when you want to understand the sequence of regulatory changes that occur as cells transition from one state to the next. Tracking the expression across cells captured at the same time produces a very compressed sense of a gene's kinetics, and the apparent variability of that gene's expression will be very high.</p>
-
-<p>By ordering each cell according to its progress along a learned trajectory, Monocle alleviates the problems that arise due to asynchrony. Instead of tracking changes in expression as a function of time, Monocle tracks changes as a function of progress along the trajectory, which we term ``pseudotime''. Pseudotime is an abstract unit of progress: it's simply the distance between a cell and the start of the trajectory, measured along the shortest path. The trajectory's total length is defined in terms of the total amount of transcriptional change that a cell undergoes as it moves from the starting state to the end state.</p>
-</div>
-</div>
-
-
-{% highlight R %}
-plot_cells(cds, 
-           color_cells_by = "embryo.time.bin", 
-           label_cell_groups=FALSE, 
-           label_leaves=TRUE,
-           label_branch_points=TRUE,
-           graph_label_size=1.5)
-{% endhighlight %}
-
-<div class= "text-center">
-  <img src= "{{site.baseurl}}/images/manual_images/embryo_pr_graph_by_time.png" width= 760>
-</div>
-
-
-{% highlight R %}
-cds = order_cells(cds)
-{% endhighlight %}
-
-
-{% highlight R %}
-plot_cells(cds, 
-           color_cells_by = "pseudotime", 
-           label_cell_groups=FALSE, 
-           label_leaves=FALSE,
-           label_branch_points=FALSE,
-           graph_label_size=1.5)
-{% endhighlight %}
-
-<div class= "text-center">
-  <img src= "{{site.baseurl}}/images/manual_images/embryo_pr_graph_by_pseudotime.png" width= 760>
-</div>
-
-
-
-<p>It's often desirable to specify the root of the trajectory programmatically, rather than manually picking it.</p>
-
-{% highlight R %}
-
-# a helper function to identify the root principal points:
-get_earliest_principal_node <- function(cds, time_bin="130-170"){
-  cell_ids <- which(colData(cds)[, "embryo.time.bin"] == time_bin)
-
-  closest_vertex <-
-    cds@principal_graph_aux[["UMAP"]]$pr_graph_cell_proj_closest_vertex
-  closest_vertex <- as.matrix(closest_vertex[colnames(cds), ])
-  root_pr_nodes <-
-    igraph::V(principal_graph(cds)[["UMAP"]])$name[as.numeric(names
-      (which.max(table(closest_vertex[cell_ids,]))))]
-
-  root_pr_nodes
-}
-cds = order_cells(cds, root_pr_nodes=get_earliest_principal_node(cds))
-{% endhighlight %}
-
-{% highlight R %}
-plot_cells(cds, 
-           color_cells_by = "pseudotime", 
-           label_cell_groups=FALSE, 
-           label_leaves=FALSE,
-           label_branch_points=FALSE,
-           graph_label_size=1.5)
-{% endhighlight %}
-
-<div class= "text-center">
-  <img src= "{{site.baseurl}}/images/manual_images/embryo_pr_graph_by_pseudotime_programmatically_ordered.png" width= 760>
-</div>
-
-
+<p>As with clustering analysis, you can use <code>plot_cells()</code> to visualize how individual genes vary along the trajectory. Let's look at some genes with interesting patterns of expression in ciliated neurons:</p>
 {% highlight R %}
 ciliated_genes = c("che-1",
                    "hlh-17",
@@ -1050,6 +950,134 @@ plot_cells(cds,
 <div class= "text-center">
   <img src= "{{site.baseurl}}/images/manual_images/embryo_ciliated_markers.png" width= 760>
 </div>
+
+<p>We will learn how to identify the genes that are restricted to each outcome of the trajectory later on in the section <a href = "{{
+  site.baseurl }}/monocle3_docs/#finding-genes-that-change-as-a-function-of-pseudotime">
+  Finding genes that change as a function of pseudotime</a>.</p>
+
+
+<h3>Cluster your cells </h3>
+<p>Although cells may continuously transition from one state to the next with no discrete boundary between them, Monocle does not assume that all cells in the dataset descend from a common transcriptional "ancestor". In many experiments, there might in fact be multiple distinct trajectories. For example, in a tissue responding to an infection, tissue resident immune cells and stromal cells will have very different initial transcriptomes, and will respond to infection quite differently, so they should be a part of the same trajectory. </p>
+
+<p>Monocle is able to learn when cells should be placed in the same trajectory as opposed to separate trajectories through its clustering procedure. Recall that we run <code>cluster_cells()</code>, each cell is assigned not only to a cluster but also to a <emph>partition</emph>. When you are learning trajectories, each partition will eventually become a separate trajectory. We run <code>cluster_cells()</code>as before.</p>
+{% highlight R %}
+cds <- cluster_cells(cds)
+plot_cells(cds, color_cells_by = "partition")
+{% endhighlight %}
+
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/embryo_umap_partition.png" width= 760>
+</div>
+
+<h3>Learn the trajectory graph</h3>
+Next, we will fit a <emph>principal graph</emph> within each parition using the <code>learn_graph()</code> function:
+{% highlight R %}
+cds <- learn_graph(cds)
+plot_cells(cds, 
+           color_cells_by = "cell.type", 
+           label_groups_by_cluster=FALSE,
+           label_leaves=FALSE,
+           label_branch_points=FALSE)
+{% endhighlight %}
+
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/embryo_pr_graph_packer_cell_type.png" width= 760>
+</div>
+
+This graph will be used in many downstream steps, such as branch analysis and differential expression.
+
+<h3>Order the cells in pseudotime</h3>
+Once we've learned a graph, we are ready to order the cells according to their progress through the developmental program. Monocle measures this progress in <emph>pseudotime</emph>. The box below defines pseudotime. 
+
+<div class= "panel panel-info">
+<div class= "panel-heading">
+<h3 class= "panel-title" data-toc-skip>What is pseudotime?</h3>
+</div>
+<div class= "panel-body">
+<p><emph>Pseudotime</emph> is a measure of how much progress an individual cell has made through a process such as cell differentiation. </p>
+
+<p>In many biological processes, cells do not progress in perfect synchrony.  In single-cell expression studies of processes such as cell differentiation, captured cells might be widely distributed in terms of progress.  That is, in a population of cells captured at exactly the same time, some cells might be far along, while others might not yet even have begun the process.  This asynchrony creates major problems when you want to understand the sequence of regulatory changes that occur as cells transition from one state to the next. Tracking the expression across cells captured at the same time produces a very compressed sense of a gene's kinetics, and the apparent variability of that gene's expression will be very high.</p>
+
+<p>By ordering each cell according to its progress along a learned trajectory, Monocle alleviates the problems that arise due to asynchrony. Instead of tracking changes in expression as a function of time, Monocle tracks changes as a function of progress along the trajectory, which we term ``pseudotime''. Pseudotime is an abstract unit of progress: it's simply the distance between a cell and the start of the trajectory, measured along the shortest path. The trajectory's total length is defined in terms of the total amount of transcriptional change that a cell undergoes as it moves from the starting state to the end state.</p>
+</div>
+</div>
+
+<p>In order to place the cells in order, we need to tell Monocle where the "beginning" of the biological process is. We do so by chosing regions of the graph that we mark as "roots" of the trajectory. In time series experiments, this can usually be accomplished by finding spots in the UMAP space that are occupied by cells from early time points:</p>
+{% highlight R %}
+plot_cells(cds, 
+           color_cells_by = "embryo.time.bin", 
+           label_cell_groups=FALSE, 
+           label_leaves=TRUE,
+           label_branch_points=TRUE,
+           graph_label_size=1.5)
+{% endhighlight %}
+
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/embryo_pr_graph_by_time.png" width= 760>
+</div>
+
+<p>The black lines show the structure of the graph. Note that the graph is not fully connected: cells in different partitions are in distinct components of the graph. The circles with numbers in them denote special points within the graph. Each <emph>leaf</emph>, denoted by light gray circles, corresponds to a different outcome (i.e. cell fate) of the trajectory. Black circles indicate branch nodes, in which cells can travel to one of several outcomes. You can control whether or not these are shown in the plot with the <code>label_leaves</code> and <code>label_branch_points</code> arguments to <code>plot_cells</code>.</p>
+
+<p>Now that we have a sense of where the early cells fall, we can call <code>order_cells()</code>, which will calculate where each cell falls in pseudotime. In order to do so <code>order_cells()</code>needs you to specify the <emph>root nodes</emph> of the trajectory graph. If you don't provide them as an argument, it will launch a graphical user interface for selecting or or more root nodes.</p>
+
+{% highlight R %}
+cds = order_cells(cds)
+{% endhighlight %}
+
+<div class= "text-center">
+    <img src= "{{site.baseurl}}/images/manual_images/choose_root_recording.gif" width= 760>
+</div>
+
+<p>In the above example, we just chose one location, but you could pick as many as you want. Plotting the cells and coloring them by pseudotime shows how they were ordered:</p>
+  
+{% highlight R %}
+plot_cells(cds, 
+           color_cells_by = "pseudotime", 
+           label_cell_groups=FALSE, 
+           label_leaves=FALSE,
+           label_branch_points=FALSE,
+           graph_label_size=1.5)
+{% endhighlight %}
+
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/embryo_pr_graph_by_pseudotime.png" width= 760>
+</div>
+<p>Note that some of the cells are gray. This means they have <emph>infinite</emph> pseudotime, because they were not reachable from the root nodes that were picked. In general, any cell on a parition that lacks a root node will be assigned an infinite pseudotime. In general, you should choose at least one root per partition.</p>
+
+<p>It's often desirable to specify the root of the trajectory programmatically, rather than manually picking it. The function below does so by first grouping the cells according to which trajectory graph node they are nearest to. Then, it calcuates what fraction of the cells at each node come from the earliest time point. Then it picks the node that is most heavily occupied by early cells and returns that as the root.</p>
+
+{% highlight R %}
+# a helper function to identify the root principal points:
+get_earliest_principal_node <- function(cds, time_bin="130-170"){
+  cell_ids <- which(colData(cds)[, "embryo.time.bin"] == time_bin)
+
+  closest_vertex <-
+    cds@principal_graph_aux[["UMAP"]]$pr_graph_cell_proj_closest_vertex
+  closest_vertex <- as.matrix(closest_vertex[colnames(cds), ])
+  root_pr_nodes <-
+    igraph::V(principal_graph(cds)[["UMAP"]])$name[as.numeric(names
+      (which.max(table(closest_vertex[cell_ids,]))))]
+
+  root_pr_nodes
+}
+cds = order_cells(cds, root_pr_nodes=get_earliest_principal_node(cds))
+{% endhighlight %}
+
+<p>Passing the programatically selected root node to <code>order_cells()</code> via the <code>root_pr_node</code>argument yields:
+{% highlight R %}
+plot_cells(cds, 
+           color_cells_by = "pseudotime", 
+           label_cell_groups=FALSE, 
+           label_leaves=FALSE,
+           label_branch_points=FALSE,
+           graph_label_size=1.5)
+{% endhighlight %}
+
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/embryo_pr_graph_by_pseudotime_programmatically_ordered.png" width= 760>
+</div>
+
+<p>Note that we we could easily do this on a per-partition basis by first grouping the cells by partition using the <code>partitions()</code> function. This would result in all cells being assigned a finite pseudotime.
 
 <h3>Working with 3D trajectories</h3>
 
@@ -1075,7 +1103,17 @@ cds_3d_plot_obj = plot_cells_3d(cds_3d, color_cells_by="partition")
 <h2>Differential expression analysis </h2>
 Differential gene expression analysis is a common task in RNA-Seq experiments.  Monocle can help you find genes that are differentially expressed between groups of cells and assesses the statistical signficance of those changes. Monocle 3 includes a powerful system for finding genes that vary across cells of different types, were collected at different developmental time points, or that have been perturbed in different ways.
 
-<h3>Basic Differential Analysis </h3>
+<p>There are two approaches for differential analysis in Monocle:</p>
+<ul>
+  <li><strong>Regression analysis</strong>: using <code>fit_models()</code>, you can evaluate whether each gene depends on variables such as time, treatments, etc.</li>
+  <li><strong>Graph-autocorrelation analysis</strong>: using <code>graph_test()</code>, you can find genes that vary over a trajectory or between clusters.</li>
+</ul>
+
+<p>Monocle also comes with specialized functions for finding co-regulated modules of differentially expressed genes. Monocle also allows you to interactively interrogate specific clusters or regions of a trajectory (e.g. branch points) for genes that vary within them. 
+  
+<p>Let's examine these tools in turn.</p>
+
+<h3>Regression analysis </h3>
 <p> In this section, we'll explore how to use Monocle to find genes that are differentially expressed according to several different criteria. Performing differential expression analysis on all genes in a <a href = "https://rdrr.io/bioc/monocle/man/cell_data_set.html">cell_data_set</a> object can take anywhere from minutes to hours, depending on how complex the analysis is. To keep the vignette simple and fast, we'll be working with small sets of genes. Rest assured, however, that Monocle can analyze several thousands of genes even in large experiments, making it useful for discovering dynamically regulated genes during the biological process you're studying. </p>
 
 <p> Let's begin with a small set of genes that we know are important in ciliated neurons to demonstrate Monocle's capabilities:</p>
@@ -1102,7 +1140,7 @@ cds_subset = cds[rowData(cds)$gene_short_name %in% ciliated_genes,]
 gene_fits = fit_models(cds_subset, model_formula_str = "~embryo.time")
 {% endhighlight %}
 
-<p><code>gene_fits</code> is a <a href="https://tibble.tidyverse.org/">tibble</a> that contains a row for each gene. The <code>model</code> column contains generalized linear model objects, each of which aims to explain the expression of a gene across the cells using the equation above. The parameter <code>model_formula_str</code> should be a string specifying the model formula. The model formulae you use in your tests can include any term that exists as a column in the <code>pData</code> table, including those columns that are added by Monocle in other analysis steps. For example, if you use <code><a href = "https://rdrr.io/bioc/monocle/man/cluster_cells.html">clusterCells</a></code>, you can test for genes that differ between clusters and partitions by using <code>~cluster</code> or <code>~partition</code> (respectively) as your model formula. You can also include multiple variables, for example  <code>~embryo.time + batch</code>, which can be very helpful for subtracting unwanted effects.
+<p><code>gene_fits</code> is a <a href="https://tibble.tidyverse.org/">tibble</a> that contains a row for each gene. The <code>model</code> column contains generalized linear model objects, each of which aims to explain the expression of a gene across the cells using the equation above. The parameter <code>model_formula_str</code> should be a string specifying the model formula. The model formulae you use in your tests can include any term that exists as a column in the <code>colData</code> table, including those columns that are added by Monocle in other analysis steps. For example, if you use <code><a href = "https://rdrr.io/bioc/monocle/man/cluster_cells.html">cluster_cells</a></code>, you can test for genes that differ between clusters and partitions by using <code>~cluster</code> or <code>~partition</code> (respectively) as your model formula. You can also include multiple variables, for example  <code>~embryo.time + batch</code>, which can be very helpful for subtracting unwanted effects.
 
 <p> Now let's see which of these genes have time-dependent expression. First, we extract a table of coefficients from each model using the <code>coefficient_table()</code> function:</p>
 {% highlight R %}
@@ -1440,8 +1478,9 @@ fit_coefs %>% filter(grepl("cluster", term) %>%
 
 XXX TODO SHOW OUTPUT XXX -->
 
-<h3>Finding modules of co-regulated genes</h3>
+<h3>Graph-autocorrelation analysis for comparing clusters</h3>
 
+<p>In the L2 worm data, we identified a number of clusters that were very distinct as neurons: </p>
 {% highlight R %}
 neurons_cds = cds[,colData(cds)$assigned_cell_type == "Neurons"]
 plot_cells(neurons_cds, color_cells_by="partition")
@@ -1451,15 +1490,28 @@ plot_cells(neurons_cds, color_cells_by="partition")
   <img src= "{{site.baseurl}}/images/manual_images/L2_umap_neurons.png" width= 760>
 </div>
 
+<p>There are many subtypes of neurons, so perhaps the different neuron clusters correspond to different subtypes. To investigate which genes are expressed differentially across the clusters, we could use the regression analysis tools discussed above. However, Monocle provides an alternative way of finding genes that vary between groups of cells in UMAP or t-SNE space. The function <code>graph_test()</code> uses a statistic from spatial autocorrelation analysis called <a href="https://en.wikipedia.org/wiki/Moran%27s_I">Moran's I</a>, which Cao & Spielmann <emph>et al</emph> showed to be effective in finding genes that vary in single-cell RNA-seq datasets.</p>
+
+<p>You can run <code>graph_test()</code> like this:</p>
 
 {% highlight R %}
 pr_graph_test_res = graph_test(neurons_cds, neighbor_graph="knn", cores=8)
 pr_deg_ids = row.names(subset(pr_graph_test_res, q_value < 0.05))
 {% endhighlight %}
 
+<p>The data frame <code>pr_graph_test_res</code> has the Moran's I test results for each gene in the <code>cell_data_set</code>. If you'd like to rank the genes by effect size, sort this table by the <code>morans_I</code>column, which ranges from -1 to +1. A value of 0 indicates no effect, while +1 indicates perfect positive autocorrelation and suggests that a nearby cells have very similar values of a gene's expression. Significant values much less than zero are generally rare.</p>
+
+<p>Positive values indicate a gene is expressed in a focal region of the UMAP space (e.g. specific to one or more clusters). But how do we associate genes with clusters? The next section explains how to collect genes into modules that have similar patterns of expression and associate them with clusters.</p>
+
+<h3>Finding modules of co-regulated genes</h3>
+
+<p>Once you have a set of genes that vary in some interesting way across the clusters, Monocle provides a means of grouping them into modules. You can call <code>find_gene_modules()</code>, which essentially runs UMAP on the genes (as opposed to the cells) and then groups them into modules using Louvain community analysis:</p>
+
 {% highlight R %}
-gene_module_df = monocle3:::find_gene_modules(neurons_cds[pr_deg_ids,], resolution=1e-2)
+gene_module_df = find_gene_modules(neurons_cds[pr_deg_ids,], resolution=1e-2)
 {% endhighlight %}
+
+The data frame <code>gene_module_df</code> contains a row for each gene and identifies the module it belongs to. To see which modules are expressed in which clusters or partitions you can use two different approaches for visualization. The first is just to make a simple table that shows the aggregate expression of all genes in each module across all the clusters. Monocle provides a simple utility function called <code>aggregate_gene_expression</code> for this purpose:
 
 {% highlight R %}
 cell_group_df = tibble::tibble(cell=row.names(colData(neurons_cds)), cell_group=partitions(cds)[colnames(neurons_cds)])
@@ -1476,6 +1528,10 @@ pheatmap::pheatmap(agg_mat, cluster_rows=TRUE, cluster_cols=TRUE,
   <img src= "{{site.baseurl}}/images/manual_images/L2_neuron_module_heatmap.png" width= 760>
 </div>
 
+<p>Some modules are highly specific to certain paritions of cells, while others are shared across multiple partitions. Note that <code>aggregate_gene_expression</code> can work with arbitrary groupings of cells and genes. You're not limited to looking at modules from <code>find_gene_modules()</code>, <code>clusters()</code>, and <code>partitions()</code>.</p>
+
+The second way of looking at modules and their expression is to pass <code>gene_module_df</code> directly to <code>plot_cells()</code>. If there are many modules, it can be hard to see where each one is expressed, so we'll just look at a subset of them: 
+
 {% highlight R %}
 plot_cells(neurons_cds, 
            genes=gene_module_df %>% filter(module %in% c(16,38,33,42)), 
@@ -1489,6 +1545,9 @@ plot_cells(neurons_cds,
 </div>
 
 <h3>Finding genes that change as a function of pseudotime </h3>
+Identifying the genes that change as cells progress along a trajectory is a core objective of this type of analysis. Knowing the order in which genes go on and off can inform new models of development. For example, <a href="http://dx.doi.org/10.1016/j.cell.2018.12.003">Sharon and Chawla et al</a> recently analyzed pseudotime-dependent genes to arrive a whole new model of how islets form in the pancreas.</p>
+
+<p>Let's return to the embryo data:</p>
 
 {% highlight R %}
 plot_cells(cds, 
@@ -1502,15 +1561,35 @@ plot_cells(cds,
   <img src= "{{site.baseurl}}/images/manual_images/embryo_pr_graph_packer_cell_type.png" width= 760>
 </div>
 
+<p>How do we find the genes that are differentially expressed on the different paths through the trajectory? How do we find the ones that are restricted to the beginning of the trajectory? Or excluded from it?</p>
+
+<p>Once again, we turn to <code>graph_test(), this time passing it <code>neighbor_graph="principal_graph"</code>, which tells it to test whether cells at similar positions on the trajectory have correlated expression </code>:</p>
 
 {% highlight R %}
-ciliated_cds_pr_test_res = graph_test(cds, cores=4)
+ciliated_cds_pr_test_res = graph_test(cds, neighbor_graph="principal_graph", cores=4)
 pr_deg_ids = row.names(subset(ciliated_cds_pr_test_res, q_value < 0.05))
 {% endhighlight %}
+
+<p>Here are a couple of interesting genes that score as highly significant according to <code>graph_test()</code>:</p>
+
+{% highlight R %}
+plot_cells(cds, genes=c("hlh-4", "gcy-8", "dac-1", "oig-8"), 
+           show_trajectory_graph=FALSE,
+           label_cell_groups=FALSE,
+           label_leaves=FALSE)
+{% endhighlight %}
+
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/manual_images/embryo_umap_selected_markers.png" width= 760>
+</div>
+
+<p>As before, we can collect the trajectory-variable genes into modules:</p>
 
 {% highlight R %}
 gene_module_df = monocle3:::find_gene_modules(cds[pr_deg_ids,], resolution=c(0,10^seq(-6,-1)))
 {% endhighlight %}
+
+<p>Here we plot the aggregate module scores within each group of cell types as annotated by Packer & Zhu <emph>et al</emph>:</p>
 
 {% highlight R %}
 cell_group_df = tibble::tibble(cell=row.names(colData(cds)), cell_group=colData(cds)$cell.type)
@@ -1524,6 +1603,8 @@ pheatmap::pheatmap(agg_mat,
   <img src= "{{site.baseurl}}/images/manual_images/emb_pseudotime_module_heatmap.png" width= 760>
 </div>
 
+We can also pass <code>gene_module_df</code> to <code>plot_cells()</code> as we did when we compared clusters in the L2 data above.
+
 {% highlight R %}
 plot_cells(cds, 
            genes=gene_module_df %>% filter(module %in% c(29,20, 11,22)), 
@@ -1535,18 +1616,7 @@ plot_cells(cds,
   <img src= "{{site.baseurl}}/images/manual_images/embryo_umap_selected_pseudotime_modules.png" width= 760>
 </div>
 
-{% highlight R %}
-plot_cells(cds, genes=c("hlh-4", "gcy-8", "dac-1", "oig-8"), 
-           show_trajectory_graph=FALSE,
-           label_cell_groups=FALSE,
-           label_leaves=FALSE)
-{% endhighlight %}
-
-<div class= "text-center">
-  <img src= "{{site.baseurl}}/images/manual_images/embryo_umap_selected_markers.png" width= 760>
-</div>
-
-
+<p>Monocle offers another plotting function that can sometimes give a clearer view of a gene's dynamics along a single path. Let's pick one such path, the AFD cells, which are found in clusters 22, 38, and 35:</p>
 {% highlight R %}
 plot_cells(cds, show_trajectory_graph=FALSE)
 {% endhighlight %}
@@ -1555,7 +1625,7 @@ plot_cells(cds, show_trajectory_graph=FALSE)
   <img src= "{{site.baseurl}}/images/manual_images/embryo_umap_cluster.png" width= 760>
 </div>
 
-
+<p>The function <code>plot_genes_in_pseudotime()</code> takes a small set of genes and shows you their dynamics as a function of pseudotime:</p>
 {% highlight R %}
 AFD_genes = c("gcy-8", "dac-1", "oig-8")
 AFD_lineage_cds = cds[rowData(AFD_lineage_cds)$gene_short_name %in% AFD_genes,
@@ -1570,7 +1640,11 @@ plot_genes_in_pseudotime(AFD_lineage_cds,
   <img src= "{{site.baseurl}}/images/manual_images/embryo_AFD_dynamic_genes.png" width= 500>
 </div>
 
-<h3>Analyzing Branches in Single-Cell Trajectories </h3>
+<p>You can see that <emph>dac-1</emph> is activated before the other two genes.</p>
+
+<h3>Analyzing branches in single-cell trajectories </h3>
+
+Analyzing the genes that are regulated around trajectory branch points often provides insights into the genetic circuits that control cell fate decisions. Monocle can help you drill into a branch point that corresponds to a fate decision in your system. Doing so is as simple as selecting the cells (and branch point) of interest with <code>choose_cells(): 
 
 {% highlight R %}
 cds_subset = choose_cells(cds)
@@ -1581,14 +1655,19 @@ cds_subset = choose_cells(cds)
   <img src= "{{site.baseurl}}/images/manual_images/choose_branch_recording.gif" width= 760>
 </div>
 
+<p> And then calling <code>graph_test()</code> on the subset. This will identify genes with interesting patterns of expression that fall only within the region of the trajectory you selected, giving you a more refined and relevant set of genes.</p>
 {% highlight R %}
 subset_pr_test_res = graph_test(cds_subset, cores=4)
 pr_deg_ids = row.names(subset(subset_pr_test_res, q_value < 0.05))
 {% endhighlight %}
 
+<p>Grouping these genes into modules can reveal fate specific genes or those that are activate immediate prior to or following the branch point:</p>
+
 {% highlight R %}
 gene_module_df = monocle3:::find_gene_modules(cds_subset[pr_deg_ids,], resolution=1e-2)
 {% endhighlight %}
+
+<p>We will organize the modules by their similarity (using <code>hclust</code>) over the trajectory so it's a little easier to see which ones come on before others:</p>
 
 {% highlight R %}
 cell_group_df = tibble::tibble(cell=row.names(colData(cds_subset)), cell_group=clusters(cds_subset)[colnames(cds_subset)])
@@ -1602,15 +1681,27 @@ plot_cells(cds_subset,
            show_trajectory_graph=FALSE)
 {% endhighlight %}
 
+<p>
+<p>
 <div class= "text-center">
   <img src= "{{site.baseurl}}/images/manual_images/embryo_umap_AFD_modules.png" width= 760>
 </div>
 
-
-
-
 <h2>Major updates in Monocle 3 </h2>
 
+<p>Monocle 3 has been re-engineered to analyze large, complex single-cell datasets. The algorithms at the core of Monocle 3 are highly scalable and can handle millions of cells. Monocle 3 adds some powerful new features that enable the analysis of organism- or embryo-scale experiments:</p>
+
+<ul>
+    <li>A better structured workflow to learn developmental trajectories.
+    <li>Support for the <a href="https://github.com/lmcinnes/umap">UMAP</a> algorithm to initialize trajectory inference.
+    <li>Support for trajectories with multiple roots.
+    <li>Ways to learn trajectories that have loops or points of convergence.
+    <li>Algorithms that automatically partition cells to learn disjoint or parallel trajectories using ideas from <a href="https://www.biorxiv.org/content/early/2017/10/25/208819">"approximate graph abstraction"</a>.
+    <li>A new statistical test for genes that have trajectory-dependent expression. This replaces both the old <code>differentialGeneTest()</code> function and <code>BEAM()</code>.
+    <li>A 3D interface to visualize trajectories and gene expression.
+</ul>
+
+<p>Most of the algorithmic details in Monocle 3 are described in <a href="http://dx.doi.org/10.1038/s41586-019-0969-x">Cao & Spielmann <emph>et al</emph></a>. </p>
 <!-- <p>Monocle 2 is a near-complete re-write of Monocle 1. Monocle 2 is geared towards larger, more complex single-cell RNA-Seq experiments than those possible at the time Monocle 1 was written.
 It's also redesigned to support analysis of mRNA counts, which were hard to estimate experimentally in early versions of single-cell RNA-Seq.
 Now, with spike controls or UMIs, gene expression can  be measured in mRNA counts. Analysis of these counts is typically easier and more accurate than relative expression values, and we encourage all users to adopt an mRNA-count centered workflow.
@@ -1812,6 +1903,19 @@ This vignette was created from Wolfgang Huber's Bioconductor vignette style docu
   <li>F. Alexander Wolf,, Fiona K. Hamey, Mireya Plass, Jordi Solana, Joakim S. Dahlin, Berthold Göttgens, Nikolaus Rajewsky, Lukas Simon and Fabian J. Theis<br/>
     <a href = "https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1663-x">
       PAGA: graph abstraction reconciles clustering with trajectory inference through a topology preserving map of single cells</a>.<br/>Genome biology, 2018.<br/><br/>  </li>
+
+  <li>Junyue Cao*, Malte Spielmann*, Xiaojie Qiu, Xingfan Huang, Daniel M. Ibrahim, Andrew J. Hill1, Fan Zhang, Stefan Mundlos, Lena Christiansen, Frank J. Steemers, Cole Trapnell**, and Jay Shendure** <br/>
+    <a href = "http://dx.doi.org/10.1038/s41586-019-0969-x">
+          The single-cell transcriptional landscape of mammalian organogenesis</a>.<br/>Nature, 2019.<br/><br/>  </li>
+
+  <li>Jonathan S. Packer*, Qin Zhu*, Chau Huynh, Priya Sivaramakrishnan, Elicia Preston, Hannah Dueck, Derek Stefanik, Kai Tan, Cole Trapnell, Junhyong Kim**, Robert H. Waterston**, John I. Murray** <br/>
+    <a href = "http://dx.doi.org/10.1101/565549">
+      A lineage-resolved molecular atlas of C. elegans embryogenesis at single cell resolution</a>.<br/>bioRxiv, 2019.<br/><br/>  </li>
+  
+  <li>Nadav Sharon*, Raghav Chawla*, Jonas Mueller, Jordan Vanderhooft, Luke James Whitehorn, Benjamin Rosenthal, Mads Gurtler, Ralph R. Estanboulieh, Dmitry Shvartsman, David K. Gifford, Cole Trapnell** and Doug Melton**<br/>
+        <a href = "http://dx.doi.org/10.1016/j.cell.2018.12.003">
+          A peninsular structure coordinates asynchronous differentiation with morphogenesis to generate pancreatic islets</a>.<br/>Cell, 2019.<br/><br/>  </li>
+      
 </ol>
 <!-- 
 <p> [1] Cole Trapnell, Davide Cacchiarelli, Jonna Grimsby, Prapti Pokharel, Shuqiang Li, Michael Morse, Niall J. Lennon, Kenneth J. Livak, Tarjei S. Mikkelsen, and John L. Rinn. <a href = "http://www.nature.com/nbt/journal/v32/n4/abs/nbt.2859.html"> The dynamics and regulators of cell fate decisions are revealed by pseudotemporal ordering of single cells</a>. Nature Biotechnology, 2014. </p>
