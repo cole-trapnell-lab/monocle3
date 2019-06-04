@@ -5,7 +5,7 @@
 \title{Creates a matrix with aggregated expression values for arbitrary groups of genes}
 \usage{
 aggregate_gene_expression(cds, gene_group_df = NULL,
-  cell_group_df = NULL, norm_method = c("log", "size_only"),
+  cell_group_df = NULL, norm_method = c("log", "binary", "size_only"),
   pseudocount = 1, scale_agg_values = TRUE, max_agg_value = 3,
   min_agg_value = -3)
 }

@@ -8,9 +8,8 @@ space with non-linear dimension reduction methods}
 reduce_dimension(cds, max_components = 2, reduction_method = c("UMAP",
   "tSNE", "PCA"), preprocess_method = c("PCA", "LSI"),
   umap.metric = "cosine", umap.min_dist = 0.1,
-  umap.n_neighbors = 15L, umap.fast_sgd = TRUE,
-  umap.nn_method = "annoy", cores = max(1,
-  RcppParallel::defaultNumThreads()/2), verbose = FALSE, ...)
+  umap.n_neighbors = 15L, umap.fast_sgd = FALSE,
+  umap.nn_method = "annoy", cores = 1, verbose = FALSE, ...)
 }
 \arguments{
 \item{cds}{the cell_data_set upon which to perform this operation.}

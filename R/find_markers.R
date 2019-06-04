@@ -14,12 +14,12 @@
 #' @export
 top_markers <- function(cds,
                         group_cells_by="cluster",
-                        genes_to_test_per_group=500,
+                        genes_to_test_per_group=25,
                         reduction_method="UMAP",
-                        expression_bins=20,
+                        marker_sig_test=TRUE,
                         reference_cells=NULL,
                         cores=1
-                        ){
+){
 
   # Yes, it's stupid we have cell ids both as a column and as the rownames.
   cell_group_df = data.frame(row.names=row.names(colData(cds)),
@@ -37,101 +37,133 @@ top_markers <- function(cds,
   }
   cell_group_df$cell_group = as.character(cell_group_df$cell_group)
 
-  # For each gene ggregate expression values across cells within each group
+  # For each gene compute the fraction of cells expressing it within each group
   # in a matrix thats genes x cell groups
-  cluster_agg_exprs = aggregate_gene_expression(cds,
-                                                cell_group_df=cell_group_df,
-                                                norm_method="size_only")
+  cluster_binary_exprs = as.matrix(aggregate_gene_expression(cds,
+                                                             cell_group_df=cell_group_df,
+                                                             norm_method="binary"))
+
+  cluster_mean_exprs = as.matrix(aggregate_gene_expression(cds,
+                                                           cell_group_df=cell_group_df,
+                                                           norm_method="size_only"))
 
   # Now compute a Jensen Shannon specificity score for each gene w.r.t each group
-  cluster_spec_mat = specificity_matrix(cluster_agg_exprs, cores=cores)
+  cluster_spec_mat = specificity_matrix(cluster_mean_exprs, cores=cores)
+  cluster_marker_score_mat = as.matrix(cluster_binary_exprs * cluster_spec_mat)
+
+  cluster_marker_score_table = tibble::rownames_to_column(as.data.frame(cluster_marker_score_mat))
+  cluster_marker_score_table = tidyr::gather(cluster_marker_score_table, "cell_group", "marker_score", -rowname)
+
   cluster_spec_table = tibble::rownames_to_column(as.data.frame(cluster_spec_mat))
   cluster_spec_table = tidyr::gather(cluster_spec_table, "cell_group", "specificity", -rowname)
-  spec_model_df = data.frame(rowname=row.names(cluster_spec_mat),
-                             num_expressing=Matrix::rowSums(counts(cds) > 0),
-                             mean_exprs=Matrix::rowMeans(cluster_agg_exprs),
-                             max_spec=rowMaxs(cluster_spec_mat))
 
-  # Now compute the expected max specificity as a function of how many cells express a given gene
-  # Genes that are expressed in few cells tend to have very high specificity, so we want to
-  # control for this trend when ranking genes by specificity later on
-  spec_model_df = spec_model_df %>% dplyr::mutate(quantile = dplyr::ntile(num_expressing, expression_bins))
-  spec_summary = spec_model_df %>% dplyr::group_by(quantile) %>% dplyr::summarize(log_spec_mean = mean(log(max_spec)), log_spec_sd = sd(log(max_spec)))
-  spec_model_df = dplyr::left_join(spec_model_df, spec_summary)
+  cluster_expr_table = tibble::rownames_to_column(as.data.frame(cluster_mean_exprs))
+  cluster_expr_table = tidyr::gather(cluster_expr_table, "cell_group", "mean_expression", -rowname)
 
-  # Compute the "specifity above expectation" for each gene w.r.t. each group:
-  cluster_spec_table = dplyr::left_join(cluster_spec_table, spec_model_df)
-  cluster_spec_table = cluster_spec_table %>% dplyr::mutate(log_spec=log(specificity),
-                                                     pval_excess_spec = pnorm(log(specificity),log_spec_mean, log_spec_sd, lower.tail=FALSE))
+  cluster_fraction_expressing_table = tibble::rownames_to_column(as.data.frame(cluster_binary_exprs))
+  cluster_fraction_expressing_table = tidyr::gather(cluster_fraction_expressing_table, "cell_group", "fraction_expressing", -rowname)
 
+  # spec_model_df = data.frame(rowname=row.names(cluster_spec_score_mat),
+  #                            num_expressing=Matrix::rowSums(counts(cds) > 0),
+  #                            mean_exprs=Matrix::rowMeans(cluster_agg_exprs),
+  #                            max_spec=rowMaxs(cluster_spec_score_mat))
 
-  cluster_spec_table = cluster_spec_table %>%
+  # # Now compute the expected max specificity as a function of how many cells express a given gene
+  # # Genes that are expressed in few cells tend to have very high specificity, so we want to
+  # # control for this trend when ranking genes by specificity later on
+  # spec_model_df = spec_model_df %>% dplyr::mutate(quantile = dplyr::ntile(num_expressing, expression_bins))
+  # spec_summary = spec_model_df %>% dplyr::group_by(quantile) %>% dplyr::summarize(log_spec_mean = mean(log(max_spec)), log_spec_sd = sd(log(max_spec)))
+  # spec_model_df = dplyr::left_join(spec_model_df, spec_summary)
+  #
+  # # Compute the "specifity above expectation" for each gene w.r.t. each group:
+  # cluster_spec_table = dplyr::left_join(cluster_spec_table, spec_model_df)
+  # cluster_spec_table = cluster_spec_table %>% dplyr::mutate(log_spec=log(specificity),
+  #                                                    pval_excess_spec = pnorm(log(specificity),log_spec_mean, log_spec_sd, lower.tail=FALSE))
+
+  cluster_marker_score_table$specificity = cluster_spec_table$specificity
+  cluster_marker_score_table$mean_expression = cluster_expr_table$mean_expression
+  cluster_marker_score_table$fraction_expressing = cluster_fraction_expressing_table$fraction_expressing
+
+  cluster_marker_score_table = cluster_marker_score_table %>%
     #filter(num_expressing > 10) %>%
     dplyr::group_by(cell_group) %>%
-    dplyr::top_n(genes_to_test_per_group, -pval_excess_spec)
+    dplyr::top_n(genes_to_test_per_group, marker_score)
 
   cell_group_df$cell_id = as.character(cell_group_df$cell_id)
   cell_group_df$cell_group = as.character(cell_group_df$cell_group)
 
-  # Temporarily disable OpenMP threading in functions to be run in parallel
-  old_omp_num_threads = as.numeric(Sys.getenv("OMP_NUM_THREADS"))
-  if (is.na(old_omp_num_threads)){
-    old_omp_num_threads = 1
-  }
-  RhpcBLASctl::omp_set_num_threads(1)
-
-  # Temporarily set the number of threads the BLAS library can use to be 1
-  old_blas_num_threads = as.numeric(Sys.getenv("OPENBLAS_NUM_THREADS"))
-  if (is.na(old_omp_num_threads)){
-    old_blas_num_threads = 1
-  }
-  RhpcBLASctl::blas_set_num_threads(1)
-
-  # Set up a balanced "reference" panel of cells from each group
-  if (is.null(reference_cells) == FALSE){
-    if(is.numeric(reference_cells)){
-      num_ref_cells_per_group = reference_cells / length(unique(cell_group_df$cell_group))
-      reference_cells = cell_group_df %>% dplyr::group_by(cell_group) %>%
-        dplyr::sample_n(min(num_ref_cells_per_group, dplyr::n())) %>%
-        pull(cell_id)
-      #reference_cells = sample(colnames(cds), reference_cells)
-    } else {
-      # TODO: check that reference cells is a list of valid cell ids.
+  if (marker_sig_test){
+    # Temporarily disable OpenMP threading in functions to be run in parallel
+    old_omp_num_threads = as.numeric(Sys.getenv("OMP_NUM_THREADS"))
+    if (is.na(old_omp_num_threads)){
+      old_omp_num_threads = 1
     }
+    RhpcBLASctl::omp_set_num_threads(1)
+
+    # Temporarily set the number of threads the BLAS library can use to be 1
+    old_blas_num_threads = as.numeric(Sys.getenv("OPENBLAS_NUM_THREADS"))
+    if (is.na(old_omp_num_threads)){
+      old_blas_num_threads = 1
+    }
+    RhpcBLASctl::blas_set_num_threads(1)
+
+    # Set up a balanced "reference" panel of cells from each group
+    if (is.null(reference_cells) == FALSE){
+      if(is.numeric(reference_cells)){
+        num_ref_cells_per_group = reference_cells / length(unique(cell_group_df$cell_group))
+        reference_cells = cell_group_df %>% dplyr::group_by(cell_group) %>%
+          dplyr::sample_n(min(num_ref_cells_per_group, dplyr::n())) %>%
+          pull(cell_id)
+        #reference_cells = sample(colnames(cds), reference_cells)
+      } else {
+        # TODO: check that reference cells is a list of valid cell ids.
+      }
+    }
+
+    marker_test_res = tryCatch({pbmcapply::pbmcmapply(test_marker_for_cell_group,
+                                                      cluster_marker_score_table$rowname,
+                                                      cluster_marker_score_table$cell_group,
+                                                      MoreArgs=list(cell_group_df, cds, reference_cells),
+                                                      ignore.interactive = TRUE,
+                                                      mc.cores=cores)},
+                               finally = {
+                                 RhpcBLASctl::omp_set_num_threads(old_omp_num_threads)
+                                 RhpcBLASctl::blas_set_num_threads(old_blas_num_threads)
+                               })
+
+    marker_test_res = t(marker_test_res)
+    marker_test_res = as.matrix(marker_test_res)
+    colnames(marker_test_res) = c("pseudo_R2", "lrtest_p_value")
+
+    #marker_test_res = as.data.frame(marker_test_res)
+
+    marker_test_res = dplyr::bind_cols(cluster_marker_score_table, as.data.frame(marker_test_res))
+    marker_test_res$lrtest_q_value = p.adjust(marker_test_res$lrtest_p_value,
+                                              method="bonferroni",
+                                              n=length(cluster_spec_mat))
+    marker_test_res = marker_test_res %>% dplyr::select(rowname,
+                                                        cell_group,
+                                                        marker_score,
+                                                        mean_expression,
+                                                        fraction_expressing,
+                                                        specificity,
+                                                        pseudo_R2,
+                                                        lrtest_p_value,
+                                                        lrtest_q_value)
+    marker_test_res = marker_test_res %>% dplyr::rename(gene_id=rowname, marker_test_p_value=lrtest_p_value,  marker_test_q_value=lrtest_q_value)
+    marker_test_res$pseudo_R2 = unlist(marker_test_res$pseudo_R2)
+    marker_test_res$marker_test_p_value = unlist(marker_test_res$marker_test_p_value)
+
+    if ("gene_short_name" %in% colnames(rowData(cds)))
+      marker_test_res = rowData(cds) %>%
+      as.data.frame %>%
+      tibble::rownames_to_column() %>%
+      dplyr::select(rowname, gene_short_name) %>%
+      inner_join(marker_test_res, by=c("rowname"="gene_id"))
+  } else {
+    marker_test_res = cluster_marker_score_table
   }
 
-  marker_test_res = tryCatch({pbmcapply::pbmcmapply(test_marker_for_cell_group,
-                                          cluster_spec_table$rowname,
-                                          cluster_spec_table$cell_group,
-                                          MoreArgs=list(cell_group_df, cds, reference_cells),
-                                          ignore.interactive = TRUE,
-                                          mc.cores=cores)},
-                             finally = {
-                               RhpcBLASctl::omp_set_num_threads(old_omp_num_threads)
-                               RhpcBLASctl::blas_set_num_threads(old_blas_num_threads)
-                             })
-
-  marker_test_res = t(marker_test_res)
-  marker_test_res = as.matrix(marker_test_res)
-  colnames(marker_test_res) = c("pseudo_R2", "lrtest_p_value")
-
-  #marker_test_res = as.data.frame(marker_test_res)
-
-  marker_test_res = dplyr::bind_cols(cluster_spec_table, as.data.frame(marker_test_res))
-  marker_test_res$lrtest_q_value = p.adjust(marker_test_res$lrtest_p_value,
-                                            method="bonferroni",
-                                            n=length(cluster_spec_mat))
-  marker_test_res = marker_test_res %>% dplyr::select(rowname, cell_group, specificity, pseudo_R2, lrtest_p_value, lrtest_q_value)
-  marker_test_res = marker_test_res %>% dplyr::rename(gene_id=rowname, marker_test_p_value=lrtest_p_value,  marker_test_q_value=lrtest_q_value)
-  marker_test_res$pseudo_R2 = unlist(marker_test_res$pseudo_R2)
-  marker_test_res$marker_test_p_value = unlist(marker_test_res$marker_test_p_value)
-
-  if ("gene_short_name" %in% colnames(rowData(cds)))
-    marker_test_res = rowData(cds) %>%
-                      as.data.frame %>%
-                      tibble::rownames_to_column() %>%
-                      dplyr::select(rowname, gene_short_name) %>%
-                      inner_join(marker_test_res, by=c("rowname"="gene_id"))
   marker_test_res = marker_test_res %>% dplyr::rename(gene_id=rowname)
   return(marker_test_res)
 }
@@ -190,6 +222,25 @@ specificity_matrix <- function(agg_expr_matrix, cores=1){
   #
 }
 
+enrichment_matrix <- function(agg_expr_matrix, cores=1){
+  specificity_mat = pbmcapply::pbmclapply(row.names(agg_expr_matrix),
+                                          FUN = function(x)
+                                          {
+                                            agg_exprs = as.numeric(agg_expr_matrix[x,])
+                                            agg_exprs = makeprobsvec(agg_exprs)
+                                            perfect_spec_matrix = diag(ncol(agg_expr_matrix))
+                                            sapply(1:ncol(agg_expr_matrix), function(col_idx) {
+                                              1 - JSdistVec(agg_exprs, perfect_spec_matrix[,col_idx])
+                                            }
+                                            )
+                                          }, mc.cores=cores,
+                                          ignore.interactive = TRUE)
+  specificity_mat = do.call(rbind, specificity_mat)
+  colnames(specificity_mat) = colnames(agg_expr_matrix)
+  row.names(specificity_mat) = row.names(agg_expr_matrix)
+  return(specificity_mat)
+  #
+}
 
 test_marker_for_cell_group = function(gene_id, cell_group, cell_group_df, cds, reference_cells=NULL){
   #print(gene_id)
@@ -245,40 +296,38 @@ test_marker_for_cell_group = function(gene_id, cell_group, cell_group_df, cds, r
 
 #' Title
 #'
-#' @param top_markers Tibble of top markers, output of
+#' @param marker_test_res Tibble of top markers, output of
 #'   \code{\link{top_markers}}.
 #' @param file Path to the marker file to be generated. Default is
 #'   "./marker_file.txt".
-#' @param qval_cutoff Numeric, the q-value cutoff below which to include genes
-#'   as markers. Default is 0.05.
 #' @param max_genes_per_group Numeric, the maximum number of genes to output
 #'   per cell type entry. Default is 10.
 #'
 #' @return None, marker file is written to \code{file} parameter location.
 #' @export
 #'
-generate_garnett_marker_file <- function(top_markers,
+generate_garnett_marker_file <- function(marker_test_res,
                                          file = "./marker_file.txt",
-                                         qval_cutoff = 0.05,
                                          max_genes_per_group = 10) {
-  top_markers <- as.data.frame(top_markers)
-  if(is.null(top_markers$cluster_name)) {
-    top_markers$cluster_name <- paste("Cell type", top_markers$cell_group)
+  marker_test_res <- as.data.frame(marker_test_res)
+  if(is.null(marker_test_res$group_name)) {
+    marker_test_res$group_name <- paste("Cell type", marker_test_res$cell_group)
   }
-  group_list <- unique(top_markers$cluster_name)
+  group_list <- unique(marker_test_res$group_name)
 
-  good_markers <- top_markers[top_markers$marker_test_q_value <= qval_cutoff,]
+  #good_markers <- marker_test_res[marker_test_res$marker_test_q_value <= qval_cutoff,]
+  good_markers = marker_test_res %>% dplyr::group_by(group_name) %>% dplyr::top_n(max_genes_per_group, marker_score)
 
   output <- list()
 
   for (group in group_list) {
-    if (sum(good_markers$cluster_name == group) == 0) {
+    if (sum(good_markers$group_name == group) == 0) {
       message(paste(group, "did not have any markers above the q-value",
                     "threshold. It will be skipped."))
       next
     }
 
-    sub <- good_markers[good_markers$cluster_name == group,]
+    sub <- good_markers[good_markers$group_name == group,]
     if (nrow(sub) > max_genes_per_group) {
       sub <- sub[order(sub$marker_test_q_value),][1:max_genes_per_group,]
     }
