@@ -226,8 +226,8 @@ smart_es_apply <- function(cds, MARGIN, FUN, convert_to_dense, reduction_method=
   tryCatch({
     coldata_df$cluster = clusters(cds, reduction_method)[colnames(cds)]
     coldata_df$partition = partitions(cds, reduction_method)[colnames(cds)]
+    coldata_df$pseudotime = pseudotime(cds) # Once we resolve issue #69.
   }, error = function(e) {} )
-  coldata_df$pseudotime = pseudotime(cds) # Once we resolve issue #69.
   Biobase::multiassign(names(as.data.frame(coldata_df)), as.data.frame(coldata_df), envir=e1)
   environment(FUN) <- e1
 
