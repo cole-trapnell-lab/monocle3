@@ -99,6 +99,8 @@ order_cells <- function(cds,
                                                 reduction_method)
   cds@principal_graph_aux[[reduction_method]]$pseudotime <-
     cc_ordering[row.names(colData(cds)), ]$pseudo_time
+  names(cds@principal_graph_aux[[reduction_method]]$pseudotime) <-
+    row.names(colData(cds))
 
   cds
 }
