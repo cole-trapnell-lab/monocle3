@@ -75,7 +75,8 @@ plot_cells_3d <- function(cds,
                                       "before attempting to plot."))
   low_dim_coords <- reducedDims(cds)[[reduction_method]]
   if(!is.null(color_cells_by)) {
-    assertthat::assert_that(color_cells_by %in% c("cluster", "partition") |
+    assertthat::assert_that(color_cells_by %in% c("cluster", "partition",
+                                                  "pseudotime") |
                               color_cells_by %in% names(colData(cds)),
                             msg = paste("color_cells_by must be a column in",
                                         "the colData table."))
@@ -114,6 +115,11 @@ plot_cells_3d <- function(cds,
   } else if (color_cells_by == "partition") {
     data_df$cell_color <- tryCatch({
       partitions(cds,
+                 reduction_method = reduction_method)[data_df$sample_name]},
+      error = function(e) {NULL})
+  } else if (color_cells_by == "pseudotime") {
+    data_df$cell_color <- tryCatch({
+      pseudotime(cds,
                  reduction_method = reduction_method)[data_df$sample_name]},
       error = function(e) {NULL})
   } else{
@@ -205,20 +211,25 @@ plot_cells_3d <- function(cds,
                              z = ~data_dim_3, type = 'scatter3d',
                              size=I(cell_size), color=I("gray"),
                              mode="markers", alpha = I(alpha))
+        message("cluster_cells() has not been called yet, can't color cells by cluster or partition")
       } else{
         p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
                              z = ~data_dim_3, type = 'scatter3d',
                              size=I(cell_size), color=~cell_color,
-                             mode="markers", alpha = I(alpha),
-                             name = color_cells_by)
+                             mode="markers", alpha = I(alpha))
       }
+    } else if(class(data_df$cell_color) == "numeric") {
+
+      p <- plotly::plot_ly(data_df) %>%
+        add_trace(x = ~data_dim_1, y = ~data_dim_2,
+                           z = ~data_dim_3, type = 'scatter3d', size=I(cell_size), alpha = I(alpha),
+                           mode="markers", marker=list(colorbar = list(title = color_cells_by, len=0.5), color=~cell_color, line=list(width = 1, color = ~cell_color, colorscale="Viridis"), colorscale="Viridis"))
     } else {
       p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
                            z = ~data_dim_3, type = 'scatter3d',
                            size=I(cell_size), color=~cell_color,
-                           mode="markers", alpha = I(alpha),
-                           name = color_cells_by)
-    }
+                           mode="markers", alpha = I(alpha))
+      }
   }
   p <- p %>%
     plotly::layout(scene = list(xaxis=list(title=paste("Component", x)),
