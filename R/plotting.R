@@ -199,13 +199,7 @@ plot_cells_3d <- function(cds,
                             marker=list(opacity = .4), showlegend=FALSE)
     }
   } else {
-    if (color_cells_by == "pseudotime" & is.null(data_df$pseudotime)){
-      p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
-                           z = ~data_dim_3, type = 'scatter3d',
-                           size=I(cell_size), color=I("gray"), mode="markers",
-                           alpha = I(alpha))
-      message("order_cells() has not been called yet, can't color cells by pseudotime")
-    } else if(color_cells_by %in% c("cluster", "partition")){
+    if(color_cells_by %in% c("cluster", "partition")){
       if (is.null(data_df$cell_color)){
         p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
                              z = ~data_dim_3, type = 'scatter3d',
@@ -692,10 +686,20 @@ plot_cells <- function(cds,
                                       "be dimensions in reduced dimension",
                                       "space."))
   if(!is.null(color_cells_by)) {
-    assertthat::assert_that(color_cells_by %in% c("cluster", "partition") |
+    assertthat::assert_that(color_cells_by %in% c("cluster", "partition",
+                                                  "pseudotime") |
                               color_cells_by %in% names(colData(cds)),
-                            msg = paste("color_cells_by must be a column in the",
-                                        "colData table."))
+                            msg = paste("color_cells_by must one of",
+                                        "'cluster', 'partition', 'pseudotime,",
+                                        "or a column in the colData table."))
+  }
+  if(color_cells_by == "pseudotime") {
+    tryCatch({pseudotime(cds, reduction_method = reduction_method)},
+             error = function(x) {
+      stop(paste("No pseudotime for", reduction_method, "calculated. Please",
+                 "run order_cells with reduction_method =", reduction_method,
+                 "before attempting to color by pseudotime."))})
+
   }
 
   assertthat::assert_that(!is.null(color_cells_by) || !is.null(markers),
@@ -743,6 +747,8 @@ plot_cells <- function(cds,
     data_df$cell_color = tryCatch({clusters(cds, reduction_method = reduction_method)[data_df$sample_name]}, error = function(e) {NULL})
   } else if (color_cells_by == "partition") {
     data_df$cell_color = tryCatch({partitions(cds, reduction_method = reduction_method)[data_df$sample_name]}, error = function(e) {NULL})
+  } else if (color_cells_by == "pseudotime") {
+    data_df$cell_color = tryCatch({pseudotime(cds, reduction_method = reduction_method)[data_df$sample_name]}, error = function(e) {NULL})
   } else{
     data_df$cell_color = colData(cds)[data_df$sample_name,color_cells_by]
   }
@@ -895,23 +901,22 @@ plot_cells <- function(cds,
 
     # We don't want to force users to call order_cells before even being able to look at the trajectory,
     # so check whether it's null and if so, just don't color the cells
-    if (color_cells_by == "pseudotime" & is.null(data_df$pseudotime)){
-      g <- g + geom_point(color=I("gray"), size=I(cell_size), na.rm = TRUE, alpha = I(alpha))
-      message("order_cells() has not been called yet, can't color cells by pseudotime")
-    } else if(color_cells_by %in% c("cluster", "partition")){
+    if(color_cells_by %in% c("cluster", "partition")){
       if (is.null(data_df$cell_color)){
         g <- g + geom_point(color=I("gray"), size=I(cell_size), na.rm = TRUE, alpha = I(alpha))
         message("cluster_cells() has not been called yet, can't color cells by cluster")
       } else{
         g <- g + geom_point(aes(color = cell_color), size=I(cell_size), na.rm = TRUE, alpha = alpha)
       }
+      g <- g + guides(color = guide_legend(title = color_cells_by, override.aes = list(size = 4)))
     } else if (class(data_df$cell_color) == "numeric"){
       g <- g + geom_point(aes(color = cell_color), size=I(cell_size), na.rm = TRUE, alpha = alpha)
-      g <- g + viridis::scale_color_viridis(option="C")
+      g <- g + viridis::scale_color_viridis(name = color_cells_by, option="C")
     } else {
       g <- g + geom_point(aes(color = cell_color), size=I(cell_size), na.rm = TRUE, alpha = alpha)
+      g <- g + guides(color = guide_legend(title = color_cells_by, override.aes = list(size = 4)))
     }
-    g <- g + guides(color = guide_legend(override.aes = list(size = 4)))
+
   }
   if (show_trajectory_graph){
     g <- g + geom_segment(aes_string(x="source_prin_graph_dim_1",
