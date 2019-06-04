@@ -26,46 +26,70 @@ tags: [monocle, manual, vignette]
 
 <h2>Introduction</h2>
 
-<p>Single cell transcriptome sequencing (sc-RNA-seq) experiments allow us to discover new cell types and helps us understand how they arise in development. The <strong>Monocle</strong> package provides a toolkit for analyzing single cell gene expression experiments.</p>
+<p>Single-cell transcriptome sequencing (sc-RNA-seq) experiments allow us to 
+  discover new cell types and help us understand how they arise in development. 
+  The <strong>Monocle</strong> package provides a toolkit for analyzing 
+  single-cell gene expression experiments.
+</p>
 
 <p>Monocle can help you perform three main types of analysis:
 <ul>
-<li><strong>Clustering, classifying, and counting cells.</strong> Single-cell RNA-Seq experiments allow you to discover new (and possibly rare) subtypes of cells. Monocle helps you identify them.
-<li><strong>Constructing single-cell trajectories.</strong> In development, disease, and throughout life, cells transition from one state to another. Monocle helps you discover these transitions.
-<li> <strong>Differential expression analysis.</strong> Characterizing new cell types and states begins with comparing them to other, better understood cells. Monocle includes a sophisticated but easy-to-use system for differential expression.
+<li><strong>Clustering, classifying, and counting cells.</strong> Single-cell 
+  RNA-Seq experiments allow you to discover new (and possibly rare) subtypes of
+  cells. Monocle helps you identify them.</li>
+<li><strong>Constructing single-cell trajectories.</strong> In development, 
+  disease, and throughout life, cells transition from one state to another. 
+  Monocle helps you discover these transitions.</li>
+<li><strong>Differential expression analysis.</strong> Characterizing new cell 
+  types and states begins with comparisons to other, better understood cells. 
+  Monocle includes a sophisticated, but easy-to-use system for differential 
+  expression.</li>
 </ul>
-
+</p>
 
 <div class= "panel panel-warning">
 <div class= "panel-heading">
 <h3 class= "panel-title" data-toc-skip>Under construction</h3>
 </div>
 <div class= "panel-body">
-<p>Monocle 3 is currently in the <a href="https://en.wikipedia.org/wiki/Software_release_life_cycle#Alpha">alpha phase</a> of its development. This means not all planned features have been implemented, the API is not yet finalized, and updates might break prior analyses. We are working hard towards a beta release, but please be patient while Monocle 3 is under construction.</p>
+<p>Monocle 3 is currently in the 
+  <a href="https://en.wikipedia.org/wiki/Software_release_life_cycle#Alpha">alpha phase</a> 
+  of its development. This means not all planned features have been 
+  implemented, the API is not yet finalized, and updates might break prior 
+  analyses. We are working hard towards a beta release, but please be patient 
+  while Monocle 3 is under construction.</p>
 
-<p>The documentation on this page is also still under construction. Not all features currently implemented have been documented.</p>
+<p>The documentation on this page is also still under construction. Not all 
+  features currently implemented have been documented.</p>
 </div>
 </div>
 
+<p>For more information on the algorithms at the core of 
+  <strong>Monocle</strong>, or to learn more about how to use single-cell 
+  RNA-Seq to study complex biological processes, explore 
+  <a href= "{{ site.baseurl }}/papers/">our publications</a>.</p>
 
-
-For more information on the algorithms at the core of
-<strong>Monocle</strong>, or to learn more about how to use single cell RNA-Seq
-to study complex biological processes, explore <a href= "{{ site.baseurl }}/papers/">our
-publications</a>.</p>
-
-Before we look at Monocle's functions for each of these common analysis tasks,
-let's see how to install Monocle.
-
+<p>Before we look at Monocle's functions for each of these common analysis 
+  tasks, let's see how to install Monocle.
+</p>
 
 <h2>Installing Monocle 3</h2>
 
 <h3> Required software </h3>
 
 <p>Monocle runs in the <a href= "http://www.r-project.org/">R statistical
-computing environment</a>. You will need R version 3.5 or higher, Bioconductor
-version 3.5, and monocle 3.0.0 or higher to have access to the latest features.
-To install monocle 3 through the cole-trapnell-lab GitHub, execute:
+computing environment</a>. You will need R version 3.5 or higher, 
+<a href="http://bioconductor.org/">Bioconductor</a> version 3.5, and 
+monocle3 0.0.0.9001 or higher to have access to the latest features.</p>
+
+<p>To install Bioconductor, open R and run:</p>
+{% highlight R %}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install()
+{% endhighlight %}
+
+<p>To install monocle3 through the cole-trapnell-lab GitHub, execute:</p>
 
 {% highlight R %}
 devtools::install_github('cole-trapnell-lab/monocle3')
@@ -73,8 +97,8 @@ devtools::install_github('cole-trapnell-lab/monocle3')
 
 <h3> Testing the installation </h3>
 
-<p> To ensure that Monocle was installed correctly, start a new R session and run:
-</p>
+<p> To ensure that Monocle was installed correctly, start a new R session and 
+  run: </p>
 
 {% highlight R %}
 library(monocle3)
@@ -82,7 +106,7 @@ library(monocle3)
 
 <h2>Getting Help</h2>
 
-<p>Questions about Monocle should be posted on our <a
+<p>Questions about Monocle3 should be posted on our <a
 href= "https://groups.google.com/forum/#!forum/monocle-users">Google Group</a>.
 Please use <a href= "mailto:monocle.users@gmail.com">monocle.users@gmail.com</a>
 for private communications that cannot be addressed by the Monocle user
@@ -114,22 +138,22 @@ one way to do a certain step, we've labeled the options as follows:
 </table> -->
 
 <h3>Workflow steps at a glance</h3>
-<p>Below, you can see snippets of code that highlight the main steps of Monocle.
-Click on the section headers to jump to the detailed sections describing each one. </p>
+<p>Below, you can see snippets of code that highlight the main steps of 
+  Monocle. Click on the section headers to jump to the detailed sections 
+  describing each one. </p>
 
 <h4><a href= "{{ site.baseurl }}/monocle3_docs/#getting-started-with-monocle">Store Data in a <a href = "https://rdrr.io/bioc/monocle/man/cell_data_set.html">cell_data_set</a> Object</a></h4>
 The first step in working with Monocle is to load up your data into Monocle's
 main class, <code><a href = "https://rdrr.io/bioc/monocle/man/cell_data_set.html">cell_data_set</a></code>:
 
 {% highlight R %}
-expression_matrix = readMM(url("http://jpacker-data.s3.amazonaws.com/public/worm/L2/Cao_et_al_2017_data_2019_update.exprs.mm.gz"))
-cell_metadata = read.delim(url("http://jpacker-data.s3.amazonaws.com/public/worm/L2/Cao_et_al_2017_data_2019_update.fData.tsv"))
-gene_annotation = read.delim(url("http://jpacker-data.s3.amazonaws.com/public/worm/L2/Cao_et_al_2017_data_2019_update.pData.tsv"))
-gene_annotation$use_for_ordering = NULL
+expression_matrix <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_expression.rds"))
+cell_metadata <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_colData.rds"))
+gene_annotation <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_rowData.rds"))
 
 cds <- new_cell_data_set(expression_matrix,
-                cell_metadata = cell_metadata,
-                gene_metadata = gene_annotation)
+                         cell_metadata = cell_metadata,
+                         gene_metadata = gene_annotation)
 ## Step 1: Normalize and pre-process the data
 cds <- preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ batch")
 
@@ -155,17 +179,18 @@ cds <- classifyCells(cds, cth, 0.1)
 You can easily cluster your cells to find new types:
 
 {% highlight R %}
-cds = reduce_dimension(cds)
-cds = cluster_cells(cds)
+cds <- reduce_dimension(cds)
+cds <- cluster_cells(cds)
 {% endhighlight %}
 
 <h4><span class= "label label-info">Optional</span> <a href= "{{ site.baseurl }}/monocle3_docs/#constructing-single-cell-trajectories">Order cells in pseudotime along a trajectory</a> </h4>
-Now, put your cells in order by how much progress they've made through whatever process you're studying, such as differentiation,
-reprogramming, or an immune response.
+Now, put your cells in order by how much progress they've made through whatever 
+process you're studying, such as differentiation, reprogramming, or an immune 
+response.
 
 {% highlight R %}
-cds = learn_graph(cds)
-cds = order_cells(cds)
+cds <- learn_graph(cds)
+cds <- order_cells(cds)
 plot_cells(cds)
 {% endhighlight %}
 
@@ -174,7 +199,7 @@ Compare groups of cells in myriad ways to find differentially expressed genes,
 controlling for batch effects and treatments as you like:
 
 {% highlight R %}
-# With regresion:
+# With regression:
 gene_fits = fit_models(cds, model_formula_str = "~embryo.time")
 fit_coefs = coefficient_table(gene_fits)
 emb_time_terms = fit_coefs %>% filter(term == "embryo.time")
