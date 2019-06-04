@@ -211,7 +211,8 @@ plot_cells_3d <- function(cds,
                              z = ~data_dim_3, type = 'scatter3d',
                              size=I(cell_size), color=I("gray"),
                              mode="markers", alpha = I(alpha))
-        message("cluster_cells() has not been called yet, can't color cells by cluster or partition")
+        message(paste("cluster_cells() has not been called yet, can't color",
+                      "cells by cluster or partition"))
       } else{
         p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
                              z = ~data_dim_3, type = 'scatter3d',
@@ -221,15 +222,21 @@ plot_cells_3d <- function(cds,
     } else if(class(data_df$cell_color) == "numeric") {
 
       p <- plotly::plot_ly(data_df) %>%
-        add_trace(x = ~data_dim_1, y = ~data_dim_2,
-                           z = ~data_dim_3, type = 'scatter3d', size=I(cell_size), alpha = I(alpha),
-                           mode="markers", marker=list(colorbar = list(title = color_cells_by, len=0.5), color=~cell_color, line=list(width = 1, color = ~cell_color, colorscale="Viridis"), colorscale="Viridis"))
+        add_trace(x = ~data_dim_1, y = ~data_dim_2, z = ~data_dim_3,
+                  type = 'scatter3d', size=I(cell_size), alpha = I(alpha),
+                  mode="markers", marker=list(
+                    colorbar = list(title = color_cells_by, len=0.5),
+                    color=~cell_color,
+                    line=list(width = 1,
+                              color = ~cell_color,
+                              colorscale="Viridis"),
+                    colorscale="Viridis"))
     } else {
       p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
                            z = ~data_dim_3, type = 'scatter3d',
                            size=I(cell_size), color=~cell_color,
                            mode="markers", alpha = I(alpha))
-      }
+    }
   }
   p <- p %>%
     plotly::layout(scene = list(xaxis=list(title=paste("Component", x)),
