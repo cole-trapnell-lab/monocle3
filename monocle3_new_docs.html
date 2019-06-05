@@ -28,21 +28,21 @@ tags: [monocle, manual, vignette]
 
 <p>Single-cell transcriptome sequencing (sc-RNA-seq) experiments allow us to 
   discover new cell types and help us understand how they arise in development. 
-  The <strong>Monocle</strong> package provides a toolkit for analyzing 
+  The <strong>Monocle 3</strong> package provides a toolkit for analyzing 
   single-cell gene expression experiments.
 </p>
 
-<p>Monocle can help you perform three main types of analysis:
+<p>Monocle 3 can help you perform three main types of analysis:
 <ul>
 <li><strong>Clustering, classifying, and counting cells.</strong> Single-cell 
   RNA-Seq experiments allow you to discover new (and possibly rare) subtypes of
-  cells. Monocle helps you identify them.</li>
+  cells. Monocle 3 helps you identify them.</li>
 <li><strong>Constructing single-cell trajectories.</strong> In development, 
   disease, and throughout life, cells transition from one state to another. 
-  Monocle helps you discover these transitions.</li>
+  Monocle 3 helps you discover these transitions.</li>
 <li><strong>Differential expression analysis.</strong> Characterizing new cell 
   types and states begins with comparisons to other, better understood cells. 
-  Monocle includes a sophisticated, but easy-to-use system for differential 
+  Monocle 3 includes a sophisticated, but easy-to-use system for differential 
   expression.</li>
 </ul>
 </p>
@@ -69,7 +69,7 @@ tags: [monocle, manual, vignette]
   RNA-Seq to study complex biological processes, explore 
   <a href= "{{ site.baseurl }}/papers/">our publications</a>.</p>
 
-<p>Before we look at Monocle's functions for each of these common analysis 
+<p>Before we look at Monocle 3's functions for each of these common analysis 
   tasks, let's see how to install Monocle.
 </p>
 
@@ -77,7 +77,7 @@ tags: [monocle, manual, vignette]
 
 <h3> Required software </h3>
 
-<p>Monocle runs in the <a href= "http://www.r-project.org/">R statistical
+<p>Monocle 3 runs in the <a href= "http://www.r-project.org/">R statistical
 computing environment</a>. You will need R version 3.5 or higher, 
 <a href="http://bioconductor.org/">Bioconductor</a> version 3.5, and 
 monocle3 0.0.0.9001 or higher to have access to the latest features.</p>
@@ -97,7 +97,7 @@ devtools::install_github('cole-trapnell-lab/monocle3')
 
 <h3> Testing the installation </h3>
 
-<p> To ensure that Monocle was installed correctly, start a new R session and 
+<p> To ensure that Monocle 3 was installed correctly, start a new R session and 
   run: </p>
 
 {% highlight R %}
@@ -106,7 +106,7 @@ library(monocle3)
 
 <h2>Getting Help</h2>
 
-<p>Questions about Monocle3 should be posted on our <a
+<p>Questions about Monocle 3 should be posted on our <a
 href= "https://groups.google.com/forum/#!forum/monocle-users">Google Group</a>.
 Please use <a href= "mailto:monocle.users@gmail.com">monocle.users@gmail.com</a>
 for private communications that cannot be addressed by the Monocle user
@@ -139,12 +139,12 @@ one way to do a certain step, we've labeled the options as follows:
 
 <h3>Workflow steps at a glance</h3>
 <p>Below, you can see snippets of code that highlight the main steps of 
-  Monocle. Click on the section headers to jump to the detailed sections 
+  Monocle 3. Click on the section headers to jump to the detailed sections 
   describing each one. </p>
 
-<h4><a href= "{{ site.baseurl }}/monocle3_docs/#getting-started-with-monocle">Store Data in a <a href = "https://rdrr.io/bioc/monocle/man/cell_data_set.html">cell_data_set</a> Object</a></h4>
-The first step in working with Monocle is to load up your data into Monocle's
-main class, <code><a href = "https://rdrr.io/bioc/monocle/man/cell_data_set.html">cell_data_set</a></code>:
+<h4><a href="{{ site.baseurl }}/monocle3_docs/#the-cell-data-set-class">Store data in a cell_data_set object</a></h4>
+The first step in working with Monocle 3 is to load up your data into 
+Monocle 3's main class, <code><a href = "{{ site.baseurl }}/monocle3_docs/#the-cell-data-set-class">cell_data_set</a></code>:
 
 {% highlight R %}
 expression_matrix <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_expression.rds"))
@@ -154,32 +154,20 @@ gene_annotation <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_
 cds <- new_cell_data_set(expression_matrix,
                          cell_metadata = cell_metadata,
                          gene_metadata = gene_annotation)
-## Step 1: Normalize and pre-process the data
-cds <- preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ batch")
-
 {% endhighlight %}
 
-<!-- <h4><a href= "{{ site.baseurl }}/docs/#classifying-and-counting-cells">Classify cells with known marker genes</a></h4>
-Next, leverage your knowledge of key marker genes to quickly and easily classify your cells by type:
-{% highlight R %}
-cth <- newCellTypeHierarchy()
-
-MYF5_id <- row.names(subset(fData(cds), gene_short_name == "MYF5"))
-ANPEP_id <- row.names(subset(fData(cds), gene_short_name == "ANPEP"))
-
-cth <- addCellType(cth, "Myoblast", classify_func =
-function(x) { x[MYF5_id,] >= 1 })
-cth <- addCellType(cth, "Fibroblast", classify_func =
-function(x) { x[MYF5_id,] < 1 & x[ANPEP_id,] > 1 } )
-
-cds <- classifyCells(cds, cth, 0.1)
-{% endhighlight %} -->
-
 <h4><a href= "{{ site.baseurl }}/monocle3_docs/#clustering-and-classifying-your-cells">Cluster your cells</a></h4>
+
 You can easily cluster your cells to find new types:
 
 {% highlight R %}
+## Step 1: Normalize and pre-process the data
+cds <- preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ batch")
+
+## Step 2: Reduce the dimensions using UMAP
 cds <- reduce_dimension(cds)
+
+## Step 3: Cluster the cells
 cds <- cluster_cells(cds)
 {% endhighlight %}
 
@@ -189,8 +177,12 @@ process you're studying, such as differentiation, reprogramming, or an immune
 response.
 
 {% highlight R %}
+## Step 4: Learn a graph
 cds <- learn_graph(cds)
+
+## Step 5: Order cells
 cds <- order_cells(cds)
+
 plot_cells(cds)
 {% endhighlight %}
 
@@ -200,37 +192,47 @@ controlling for batch effects and treatments as you like:
 
 {% highlight R %}
 # With regression:
-gene_fits = fit_models(cds, model_formula_str = "~embryo.time")
-fit_coefs = coefficient_table(gene_fits)
-emb_time_terms = fit_coefs %>% filter(term == "embryo.time")
-emb_time_terms = emb_time_terms %>% mutate(q_value = p.adjust(p_value))
-sig_genes = emb_time_terms %>% filter (q_value < 0.05) %>% pull(gene_short_name)
+gene_fits <- fit_models(cds, model_formula_str = "~embryo.time")
+fit_coefs <- coefficient_table(gene_fits)
+emb_time_terms <- fit_coefs %>% filter(term == "embryo.time")
+emb_time_terms <- emb_time_terms %>% mutate(q_value = p.adjust(p_value))
+sig_genes <- emb_time_terms %>% filter (q_value < 0.05) %>% pull(gene_short_name)
 
 # With graph autocorrelation:
-
-pr_test_res = graph_test(cds,  neighbor_graph="principal_graph", cores=4)
-pr_deg_ids = row.names(subset(pr_test_res, q_value < 0.05))
+pr_test_res <- graph_test(cds,  neighbor_graph="principal_graph", cores=4)
+pr_deg_ids <- row.names(subset(pr_test_res, q_value < 0.05))
 {% endhighlight %}
 
+<h2>Getting started with Monocle 3</h2>
 
-<h2>Getting started with monocle </h2>
-
-Monocle takes a matrix of gene expression values as calculated by Cufflinks or another gene expression estimation program. Monocle can work with relative expression values (e.g. FPKM or TPM units) or absolute transcript counts (e.g. from UMI experiments). Monocle also works "out-of-the-box" with the transcript count matrices produced by <a href= "https://support.10xgenomics.com/single-cell/software/overview/welcome">CellRanger</a>, the software pipeline for analyzing experiments from the 10X Genomics Chromium instrument. Monocle also works well with data from other RNA-Seq workflows such as <a href= "http://biorxiv.org/content/early/2017/02/02/104844">sci-RNA-Seq</a> and instruments like the Biorad ddSEQ. Although Monocle can be used with raw read counts, these are not directly proportional to expression values unless you normalize them by length, so some Monocle functions could produce nonsense results. If you don't have UMI counts, We recommend you load up FPKM or TPM values instead of raw read counts.
+Monocle 3 takes as input cell by gene expression matrix. Monocle 3 is designed 
+for use with absolute transcript counts (e.g. from UMI experiments). Monocle 3 
+works "out-of-the-box" with the transcript count matrices produced by 
+<a href= "https://support.10xgenomics.com/single-cell/software/overview/welcome">Cell Ranger</a>, 
+the software pipeline for analyzing experiments from the 10X Genomics Chromium 
+instrument. Monocle 3 also works well with data from other RNA-Seq workflows 
+such as <a href= "https://science.sciencemag.org/content/357/6352/661">sci-RNA-Seq</a> 
+and instruments like the Biorad ddSEQ. 
 
 <h3>The cell_data_set class</h3>
 
-Monocle holds single cell expression data in objects of the <code><a href = "https://rdrr.io/bioc/monocle/man/cell_data_set.html">cell_data_set</a></code> class. The class is derived from the Bioconductor <code>ExpressionSet</code> class, which provides a common interface familiar to those who have analyzed microarray experiments with Bioconductor. The class requires three input files:
-<p> </p>
+Monocle holds single-cell expression data in objects of the 
+<code>cell_data_set</code> class. The class is derived from the Bioconductor 
+<code><a href="http://bioconductor.org/packages/release/bioc/html/SingleCellExperiment.html">SingleCellExperiment</a></code> class, 
+which provides a common interface familiar to those who have analyzed other 
+single-cell experiments with Bioconductor. The class requires three input files:
 <p>
-  <font color="red">
-    XX phenoData and featureData need to be updated w/ cell_metadata and gene_metadata XX
-  </font>
-</p>
 <ul>
-<li> <code>exprs</code>, a numeric matrix of expression values, where rows are genes, and columns are cells
-<li> <code>phenoData</code>, an <code>AnnotatedDataFrame</code> object, where rows are cells, and columns are cell attributes (such as cell type, culture condition, day captured, etc.)
-<li> <code>featureData</code>, an <code>AnnotatedDataFrame</code> object, where rows are features (e.g. genes), and columns are gene attributes, such as biotype, gc content, etc.
+<li> <code>expression_matrix</code>, a numeric matrix of expression values, 
+  where rows are genes, and columns are cells </li>
+<li> <code>cell_metadata</code>, a data frame, where rows are cells, and 
+  columns are cell attributes (such as cell type, culture condition, day 
+  captured, etc.)</li>
+<li> <code>gene_metadata</code>, an data frame, where rows are features (e.g. 
+  genes), and columns are gene attributes, such as biotype, gc content, 
+  etc.</li>
 </ul>
+</p>
 <p>
 <div class= "panel panel-warning">
 <div class= "panel-heading">
@@ -241,111 +243,68 @@ Monocle holds single cell expression data in objects of the <code><a href = "htt
 <div class= "panel-body">
 The expression value matrix <strong>must</strong>:
 <ul>
-<li>have the same number of columns as the <code>phenoData</code> has rows.
-<li>have the same number of rows as the <code>featureData</code> data frame has rows.
+<li>have the same number of columns as the <code>cell_metadata</code> has 
+  rows.</li>
+<li>have the same number of rows as the <code>gene_metadata</code> has 
+  rows.</li>
 </ul>
 Additionally:
 <ul>
-<li>row names of the <code>phenoData</code> object should match the column names of the expression matrix.
-<li>row names of the <code>featureData</code> object should match row names of the expression matrix.
-<li> one of the columns of the <code>featureData</code> should be named "gene_short_name".
+<li>row names of the <code>cell_metadata</code> object should match the column 
+  names of the expression matrix. </li>
+<li>row names of the <code>gene_metadata</code> object should match row names 
+  of the expression matrix.</li>
+<li> one of the columns of the <code>gene_metadata</code> should be named 
+  "gene_short_name", which represents the gene symbol or simple name (generally 
+  used for plotting) for each gene.</li>
 </ul>
 
 </div>
 </div>
+<h3>Generate a cell_data_set</h3>
 
-<p>You can create a new <code><a href = "https://rdrr.io/bioc/monocle/man/cell_data_set.html">cell_data_set</a></code> object as follows:</p>
-
-<p>
-{% highlight R %}
-#do not run
-expression_matrix = readRDS(url("http://jpacker-data.s3.amazonaws.com/for-cole/for-cole.ciliated.amphid.neurons.exprs.rds"))
-cell_metadata = readRDS(url("http://jpacker-data.s3.amazonaws.com/for-cole/for-cole.ciliated.amphid.neurons.pData.rds"))
-gene_annotation = readRDS(url("http://jpacker-data.s3.amazonaws.com/for-cole/for-cole.ciliated.amphid.neurons.fData.rds"))
-gene_annotation$use_for_ordering = NULL
-{% endhighlight %}
-</p>
-
-<p>Once these tables are loaded, you can create the <a href = "https://rdrr.io/bioc/monocle/man/cell_data_set.html">cell_data_set</a> object like this:</p>
+<p>You can create a new <code>cell_data_set</code> (CDS) object as follows:</p>
 
 <p>
 {% highlight R %}
+# Load the data
+expression_matrix <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_expression.rds"))
+cell_metadata <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_colData.rds"))
+gene_annotation <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_rowData.rds"))
+
+# Make the CDS object
 cds <- new_cell_data_set(expression_matrix,
                                    cell_metadata = cell_metadata,
                                    gene_metadata = gene_annotation)
 {% endhighlight %}
 </p>
 
-<p>This will create a <a href = "https://rdrr.io/bioc/monocle/man/cell_data_set.html">cell_data_set</a> object with expression values measured in
-FPKM, a measure of relative expression reported by Cufflinks. By default,
-Monocle assumes that your expression data is in units of transcript counts and
-uses a negative binomial model to test for differential expression in downstream
-steps. However, if you're using relative expression values such as TPM or FPKM
-data, see below for how to tell Monocle how to model it in downstream steps.</p>
-
-<!-- FIXME: UPDATE THE DESCRIPTION BELOW TO REFLECT NEW CENSUS PACKAGE  -->
-<!-- <p>
-<div class= "panel panel-warning">
-<div class= "panel-heading">
-<h3 class= "panel-title" data-toc-skip>Don't normalize data yourself</h3>
-</div>
-<div class= "panel-body">
-if you do have UMI data, you should <i>not</i> normalize it yourself prior to creating your <code><a href = "https://rdrr.io/bioc/monocle/man/cell_data_set.html">cell_data_set</a></code>.
-You should also <i>not</i> try to convert the UMI counts to relative abundances (by converting it to FPKM/TPM data).
-You should <i>not</i> use <code><a href = "https://rdrr.io/bioc/monocle/man/relative2abs.html">relative2abs()</a></code> as discussed below in the section on  <a href = "{{ site.baseurl }}/docs/#converting-tpm-fpkm-values-into-mrna-counts-alternative"> Converting TPM to mRNA Counts</a>. Monocle will do all needed normalization steps internally.
-Normalizing it yourself risks breaking some of Monocle's key steps.
-</div>
-</div>
-</p> -->
-
-<!-- FIXME: UPDATE THE DESCRIPTION BELOW WHEN WE HAVE EXPORT IMPORT FUNCTIONS  -->
-<!--
-<h3>Importing & exporting data with other packages</h3>
-
-<strong>XXX NEED TO UPDATE XXX</strong>
-
-<p> Monocle is able to convert Seurat objects from the package "Seurat" and SCESets from the package
-"scater" into cell_data_set objects that Monocle can use.
-It's also worth noting that the function will also work with SCESets from "Scran".
-To convert from either a Seurat object or a SCESet
-to a cell_data_set, execute the function <code>importCDS()</code> as shown:</p>
+<h3>Generate a cell_data_set from 10X output</h3>
+<p>To input data from 10X Genomics Cell Ranger, you can use the 
+  <code>load_cellranger_data</code> function:</p>
 
 {% highlight R %}
-
-# Where 'data_to_be_imported' can either be a Seurat object
-# or an SCESet.
-
-importCDS(data_to_be_imported)
-
-# We can set the parameter 'import_all' to TRUE if we'd like to
-# import all the slots from our Seurat object or SCESet.
-# (Default is FALSE or only keep minimal dataset)
-
-importCDS(data_to_be_imported, import_all = TRUE)
-
+# Provide the path to the Cell Ranger output.
+cds <- load_cellranger_data("~/Downloads/10x_data")
 {% endhighlight %}
 
-<p> Monocle can also export data from cell_data_sets to the package "Seurat" through the
-function <code>exportCDS()</code>:
-
-{% highlight R %}
-lung <- load_lung()
-
-# To convert to Seurat object
-lung_seurat <- exportCDS(lung, 'Seurat')
-
-{% endhighlight %} -->
 
 <h3 data-toc-text= "Working with large data sets">Working with large data sets</h3>
 
-<p> Some single-cell RNA-Seq experiments report measurements from tens of thousands of cells or more.
-As instrumentation improves and costs drop, experiments will become ever larger and more complex, with many conditions, controls, and replicates.
-A matrix of expression data with 50,000 cells and a measurement for each of the 25,000+ genes in the human genome can take up a lot of memory.
-However, because current protocols typically don't capture all or even most of the mRNA molecules in each cell, many of the entries of expression matrices are zero.
-Using <i>sparse matrices</i> can help you work with huge datasets on a typical computer.
-We generally recommend the use of sparseMatrices for most users, as it speeds up many computations even for more modestly sized datasets. </p>
+<p> Some single-cell RNA-Seq experiments report measurements from tens of 
+  thousands of cells or more. As instrumentation improves and costs drop, 
+  experiments will become ever larger and more complex, with many conditions, 
+  controls, and replicates. A matrix of expression data with 50,000 cells and a 
+  measurement for each of the 25,000+ genes in the human genome can take up a 
+  lot of memory. However, because current protocols typically don't capture all 
+  or even most of the mRNA molecules in each cell, many of the entries of 
+  expression matrices are zero. Using <i>sparse matrices</i> can help you work 
+  with huge datasets on a typical computer. We generally recommend the use of 
+  sparse matrices for most users, as it speeds up many computations even for 
+  more modestly sized datasets. </p>
 
-<p> To work with your data in a sparse format, simply provide it to Monocle as a sparse matrix from the <code>Matrix</code> package: </p>
+<p> To work with your data in a sparse format, simply provide it to Monocle 3 
+  as a sparse matrix from the <code>Matrix</code> package: </p>
 
 <p>
 {% highlight R %}
@@ -361,73 +320,52 @@ cds <- new_cell_data_set(as(umi_matrix, "sparseMatrix"),
 <h3 class= "panel-title" data-toc-skip>Don't accidentally convert to a dense expression matrix</h3>
 </div>
 <div class= "panel-body">
-The output from a number of RNA-Seq pipelines, including CellRanger, is already in a sparseMatrix format (e.g. MTX).
-If so, you should just pass it directly to <a href = "https://rdrr.io/bioc/monocle/man/new_cell_data_set.html">new_cell_data_set</a> without first converting it to a dense matrix (via <code>as.matrix()</code>, because that may exceed your available memeory.
+The output from a number of RNA-Seq pipelines, including Cell Ranger, is 
+already in a sparseMatrix format (e.g. MTX). If so, you should just pass it 
+directly to <code>new_cell_data_set</code> without first converting it to a 
+dense matrix (via <code>as.matrix()</code>, because that may exceed your 
+available memeory.
 </div>
 </div>
 </p>
-
-If you have 10X Genomics data and are using <code>cellrangerRkit</code>, you can use it to load your data and then pass that to Monocle as follows:
-
-<p> </p>
-<p>
-  <font color="red">
-    XX are pData and fData still functions of cell_data_set? XX
-  </font>
-</p>
-
-{% highlight R %}
-# Use tenx_to_cds here when it is ready
-
-cellranger_pipestance_path <- "/path/to/your/pipeline/output/directory"
-gbm <- load_cellranger_matrix(cellranger_pipestance_path)
-
-gene_metadata <- fData(gbm)
-
-# The number 2 is picked arbitrarily in the line below.
-# Where "2" is placed you should place the column number that corresponds to your
-# featureData's gene short names.
-
-colnames(gene_metadata)[2] <- "gene_short_name"
-
-gbm_cds <- new_cell_data_set(exprs(gbm),
-        cell_metadata = pData(gbm),
-        gene_metadata = gene_metadata,
-        lowerDetectionLimit = 0.5,
-        expressionFamily = negbinomial.size())
-{% endhighlight %}
 
 Monocle's sparse matrix support is provided by the <code>Matrix</code> package.
-Other sparse matrix packages, such as <code>slam</code> or <code>SparseM</code> are not supported.
-<!--
-<h3 data-toc-text= "Estimate size factors">Estimate size factors<span class= "label label-danger">Required</span></h3>
-
-<p> Finally, we'll also call a function that pre-calculates some information about the data.
-Size factors help us normalize for differences in mRNA recovered across cells. </p>
-
-
-{% highlight R %}
-cds <- estimate_size_factors(cell_data_set)
-{% endhighlight %}
- -->
-
-<!-- <h2 data-toc-text= "Quality control">Quality control <span class= "label label-info">Recommended</span></h2> -->
+Other sparse matrix packages, such as <code>slam</code> or 
+<code>SparseM</code> are not supported.
 
 <h2>Clustering and classifying your cells</h2>
 
-<p>Single cell experiments are often performed on tissues containing many cell types. Monocle provides a simple set of functions you can use to group your cells according to their gene expression profiles into <emph>clusters</emph>. Often cells form clusters that correspond to one cell type or a set of highly related cell types.  Monocle uses techniques to do this that are widely accepted in single-cell RNA-seq analysis and similar to the approaches used by <a href="https://satijalab.org/seurat/">Seurat</a>, <a href="https://scanpy.readthedocs.io/en/stable/">scanpy</a>, and other tools.</p>
+<p>Single-cell experiments are often performed on tissues containing many cell 
+  types. Monocle 3 provides a simple set of functions you can use to group your 
+  cells according to their gene expression profiles into 
+  <emph>clusters</emph>. Often cells form clusters that correspond to one cell 
+  type or a set of highly related cell types. Monocle 3 uses techniques to do 
+  this that are widely accepted in single-cell RNA-seq analysis and similar to 
+  the approaches used by <a href="https://satijalab.org/seurat/">Seurat</a>, 
+  <a href="https://scanpy.readthedocs.io/en/stable/">scanpy</a>, and other 
+  tools.</p>
 
-In this section, you will learn how to cluster cells using Monocle. We will demonstrate the main functions used for clustering with the <emph>C. elegans</emph> data from Cao & Packer et al. This study described how to do single-cell RNA-seq with combinatorial indexing in a protocol called "sci-RNA-seq". Cao & Packer et al used sci-RNA-seq to produce the first single-cell RNA-seq analysis of a whole animal, so there are many cell types represented in the data. You can learn more about the dataset and see how the authors performed the original analysis at the UW Genome Sciences <a href="http://atlas.gs.washington.edu/worm-rna/">RNA Atlas of the Worm</a> site.
+In this section, you will learn how to cluster cells using Monocle 3. We will 
+demonstrate the main functions used for clustering with the 
+<emph>C. elegans</emph> data from 
+<a href="https://science.sciencemag.org/content/357/6352/661">Cao & Packer et al.</a> 
+This study described how to do single-cell RNA-seq with combinatorial indexing 
+in a protocol called "sci-RNA-seq". Cao & Packer et al. used sci-RNA-seq to 
+produce the first single-cell RNA-seq analysis of a whole animal, so there are 
+many cell types represented in the data. You can learn more about the dataset 
+and see how the authors performed the original analysis at the UW Genome Sciences 
+<a href="http://atlas.gs.washington.edu/worm-rna/">RNA Atlas of the Worm</a> 
+site.
 
 You can load the data into Monocle 3 like this:
 
 {% highlight R %}
 ### FIXME: Put these files on the web so they're accessible to others:
-expression_matrix = readRDS("L2_expression.rda")
-cell_metadata = readRDS("L2_cell_metadata.rda")
-gene_annotation = readRDS("L2_gene_metadata.rda")
+expression_matrix <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_expression.rds"))
+cell_metadata <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_colData.rds"))
+gene_annotation <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_rowData.rds"))
 
-cds = new_cell_data_set(expression_matrix,
+cds <- new_cell_data_set(expression_matrix,
                          cell_metadata = cell_metadata,
                          gene_metadata = gene_annotation)
 
@@ -435,13 +373,22 @@ cds = new_cell_data_set(expression_matrix,
 
 <h3>Pre-process the data</h3>
 
-<p>Now that the data's all loaded up, we need to <emph>pre-process</emph> it. This step is where you tell Monocle how you want to normalize the data, whether to use <a href="https://en.wikipedia.org/wiki/Principal_component_analysis">Principal Components Analysis</a> (the standard for RNA-seq) or <a href="https://en.wikipedia.org/wiki/Latent_semantic_analysis">Latent Semantic Indexing</a> (common in ATAC-seq), and how to remove any batch effects. We will just use the standard PCA method. When using PCA, you should specify the number of principal components you want Monocle to compute. </p>
+<p>Now that the data's all loaded up, we need to <emph>pre-process</emph> it. 
+  This step is where you tell Monocle 3 how you want to normalize the data, 
+  whether to use <a href="https://en.wikipedia.org/wiki/Principal_component_analysis">Principal Components Analysis</a> 
+  (the standard for RNA-seq) or <a href="https://en.wikipedia.org/wiki/Latent_semantic_analysis">Latent Semantic Indexing</a> 
+  (common in ATAC-seq), and how to remove any batch effects. We will just use 
+  the standard PCA method in this demonstration. When using PCA, you should 
+  specify the number of principal components you want Monocle to compute. </p>
 
 {% highlight R %}
 cds = preprocess_cds(cds, num_dim = 100)
 {% endhighlight %}
 
-<p>It's a good idea to check that you're using enough PCs to capture most of the variation in gene expression across all the cells in the data set. You can look at the fraction of variation explained by each PC using <code>plot_pc_variance_explained()</code>:</p>
+<p>It's a good idea to check that you're using enough PCs to capture most of 
+  the variation in gene expression across all the cells in the data set. You 
+  can look at the fraction of variation explained by each PC using 
+  <code>plot_pc_variance_explained()</code>:</p>
 
 {% highlight R %}
 plot_pc_variance_explained(cds)
@@ -450,7 +397,7 @@ plot_pc_variance_explained(cds)
 <div class= "text-center">
     <img src= "{{site.baseurl}}/images/manual_images/L2_pc_variance_explained.png" width= 450>
 </div>
-
+<!-- Hannah Marker -->
 <p>We can see that using more than 100 PCs would capture only a small amount of additional variation, and each additional PC makes downstream steps in Monocle slower.</p>
   
 <h3>Reduce dimensionality and visualize the cells</h3>
@@ -892,7 +839,7 @@ pheatmap::pheatmap(log(table(partitions(cds), colData(cds)$cao_cell_type)+1),
                    fontsize=6, width=5, height=8, filename="L2_cell_type_by_partition.png")
 {% endhighlight %} -->
 
-<h2>Constructing single cell trajectories </h2>
+<h2>Constructing single-cell trajectories </h2>
 
 <p>   During development, in response to stimuli, and throughout life, cells
 transition from one functional "state" to another. Cells in different states
@@ -905,7 +852,7 @@ or impossible. Single-cell RNA-Seq can enable you to see these states without
 the need for purification. However, to do so, we must determine where each cell
 is in the range of possible states. </p>
 
-<p>   Monocle introduced the strategy of using RNA-Seq for <em>single cell
+<p>   Monocle introduced the strategy of using RNA-Seq for <em>single-cell
 trajectory analysis</em>. Rather than purifying cells into discrete states
 experimentally, Monocle uses an algorithm to learn the sequence of gene
 expression changes each cell must go through as part of a dynamic biological
