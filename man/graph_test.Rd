@@ -5,7 +5,7 @@
 \title{Test genes for differential expression based on the low dimensional
 embedding and the principal graph}
 \usage{
-graph_test(cds, neighbor_graph = c("principal_graph", "knn"),
+graph_test(cds, neighbor_graph = c("knn", "principal_graph"),
   reduction_method = "UMAP", k = 25, method = c("Moran_I"),
   alternative = "greater", expression_family = "quasipoisson",
   cores = 1, interactive = FALSE, verbose = FALSE)
@@ -14,7 +14,8 @@ graph_test(cds, neighbor_graph = c("principal_graph", "knn"),
 \item{cds}{a cell_data_set object upon which to perform this operation}
 
 \item{neighbor_graph}{String indicating what neighbor graph to use.
-"principal_graph" and "knn" are supported. Default is "principal_graph".}
+"principal_graph" and "knn" are supported. Default is "knn", but
+"principal_graph" is recommended for trajectory analysis.}
 
 \item{reduction_method}{character, the method used to reduce dimension.
 Currently only supported for "UMAP".}

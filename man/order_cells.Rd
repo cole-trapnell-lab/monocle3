@@ -24,8 +24,7 @@ pseudotime will start (i.e. be zero) at these cells. Both
 \item{verbose}{Whether to show running information for order_cells}
 }
 \value{
-an updated cell_data_set object, in which colData contains values
-for State and pseudotime for each cell.
+an updated cell_data_set object.
 }
 \description{
 Assigns cells a pseudotime value based on their projection on the principal
@@ -36,6 +35,5 @@ with pseudotime information stored internally.
 or principal graph node IDs, which you can use to specify the start of the
 trajectory. If you don't provide a root state, an plot will be generated
 where you can choose the root state(s) interactively. The trajectory will be
-composed of segments. The cells from a segment will share the same value of
-\code{State}.
+composed of segments.
 }

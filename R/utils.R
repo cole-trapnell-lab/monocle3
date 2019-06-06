@@ -474,3 +474,50 @@ normalized_counts <- function(cds, norm_method=c("log", "size_only"), pseudocoun
   }
   return(norm_mat)
 }
+
+
+#' Load data from matrix market format
+#'
+#' @param mat_path Path to the .mtx matrix market file
+#' @param gene_anno_path Path to gene annotation file
+#' @param cell_anno_path Path to cell annotation file
+#' @param umi_cutoff UMI per cell cutoff, default is 100.
+#'
+#' @return cds object
+#' @export
+#'
+load_mtx_data <- function(mat_path,
+                          gene_anno_path,
+                          cell_anno_path,
+                          umi_cutoff = 100) {
+  df <- read.table(mat_path, col.names = c("gene.idx", "cell.idx", "count"),
+                   colClasses = c("integer", "integer", "integer"))
+
+  gene.annotations <- read.table(gene_anno_path,
+                                 col.names = c("id", "gene_short_name"),
+                                 colClasses = c("character", "character"))
+
+  cell.annotations <- read.table(cell_anno_path, col.names = c("cell"),
+                                 colClasses = c("character"))
+
+  rownames(gene.annotations) <- gene.annotations$id
+  rownames(cell.annotations) <- cell.annotations$cell
+
+  # add a dummy cell to ensure that all genes are included in the matrix
+  # even if a gene isn't expressed in any cell
+  df <- rbind(df, data.frame(gene.idx = c(1, nrow(gene.annotations)),
+                             cell.idx = rep(nrow(cell.annotations) + 1, 2),
+                             count = c(1, 1)))
+
+  mat <- sparseMatrix(i = df$gene.idx, j = df$cell.idx, x = df$count)
+  mat <- mat[, 1:(ncol(mat)-1)]
+
+  rownames(mat) <- gene.annotations$id
+  colnames(mat) <- cell.annotations$cell
+
+  cds <- new_cell_data_set(mat, cell_metadata = cell.annotations,
+                          gene_metadata = gene.annotations)
+  colData(cds)$n.umi <- Matrix::colSums(exprs(cds))
+  cds <- cds[,colData(cds)$n.umi >= umi_cutoff]
+  return(cds)
+}
