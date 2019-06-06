@@ -509,7 +509,7 @@ load_mtx_data <- function(mat_path,
                              cell.idx = rep(nrow(cell.annotations) + 1, 2),
                              count = c(1, 1)))
 
-  mat <- sparseMatrix(i = df$gene.idx, j = df$cell.idx, x = df$count)
+  mat <- Matrix::sparseMatrix(i = df$gene.idx, j = df$cell.idx, x = df$count)
   mat <- mat[, 1:(ncol(mat)-1)]
 
   rownames(mat) <- gene.annotations$id
