@@ -101,12 +101,40 @@ find_gene_modules <- function(cds,
   return(gene_module_df)
 }
 
+#' A function to aggregate columns within a matrix.
+#' @keywords internal
+my.aggregate.Matrix = function (x, groupings = NULL, form = NULL, fun = "sum", ...)
+{
+  if (!is(x, "Matrix"))
+    x <- Matrix(as.matrix(x), sparse = TRUE)
+  if (fun == "count")
+    x <- x != 0
+  groupings2 <- groupings
+  if (!is(groupings2, "data.frame"))
+    groupings2 <- as(groupings2, "data.frame")
+  groupings2 <- data.frame(lapply(groupings2, as.factor))
+  groupings2 <- data.frame(interaction(groupings2, sep = "_"))
+  colnames(groupings2) <- "A"
+  if (is.null(form))
+    form <- as.formula("~0+.")
+  form <- as.formula(form)
+  mapping <- Matrix.utils::dMcast(groupings2, form)
+  colnames(mapping) <- substring(colnames(mapping), 2)
+  result <- Matrix::t(mapping) %*% x
+  if (fun == "mean")
+    result <- result/as.numeric(table(groupings2)[rownames(result)])
+  attr(result, "crosswalk") <- grr::extract(groupings, match(rownames(result),
+                                                             groupings2$A))
+  return(result)
+}
+
+
 #' Creates a matrix with aggregated expression values for arbitrary groups of genes
 #' @export
 aggregate_gene_expression <- function(cds,
                                       gene_group_df = NULL,
                                       cell_group_df = NULL,
-                                      norm_method=c("log", "size_only"),
+                                      norm_method=c("log", "binary", "size_only"),
                                       pseudocount=1,
                                       scale_agg_values=TRUE,
                                       max_agg_value=3,
@@ -119,7 +147,7 @@ aggregate_gene_expression <- function(cds,
     gene_group_df = gene_group_df[gene_group_df[,1] %in% fData(cds)$gene_short_name | gene_group_df[,1] %in% row.names(fData(cds)),,drop=FALSE]
     # gene_group_df = gene_group_df[row.names(fData(cds)),]
     # FIXME: this should allow genes to be part of multiple groups. group_by over the second column with a call to colSum should do it.
-    agg_mat = as.matrix(Matrix.utils::aggregate.Matrix(agg_mat[gene_group_df[,1],], as.factor(gene_group_df[,2]), fun="sum"))
+    agg_mat = as.matrix(my.aggregate.Matrix(agg_mat[gene_group_df[,1],], as.factor(gene_group_df[,2]), fun="sum"))
     if (scale_agg_values){
       agg_mat = t(scale(t(agg_mat)))
       agg_mat[agg_mat < min_agg_value] = min_agg_value
@@ -131,7 +159,7 @@ aggregate_gene_expression <- function(cds,
     cell_group_df = as.data.frame(cell_group_df)
     cell_group_df = cell_group_df[cell_group_df[,1] %in% row.names(pData(cds)),,drop=FALSE]
     agg_mat = agg_mat[,cell_group_df[,1]]
-    agg_mat = Matrix.utils::aggregate.Matrix(Matrix::t(agg_mat),
+    agg_mat = my.aggregate.Matrix(Matrix::t(agg_mat),
                                              as.factor(cell_group_df[,2]), fun="mean")
     agg_mat = Matrix::t(agg_mat)
   }

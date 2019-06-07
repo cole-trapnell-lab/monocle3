@@ -4,18 +4,15 @@
 \alias{generate_garnett_marker_file}
 \title{Title}
 \usage{
-generate_garnett_marker_file(top_markers, file = "./marker_file.txt",
-  qval_cutoff = 0.05, max_genes_per_group = 10)
+generate_garnett_marker_file(marker_test_res, file = "./marker_file.txt",
+  max_genes_per_group = 10)
 }
 \arguments{
-\item{top_markers}{Tibble of top markers, output of
+\item{marker_test_res}{Tibble of top markers, output of
 \code{\link{top_markers}}.}
 
 \item{file}{Path to the marker file to be generated. Default is
 "./marker_file.txt".}
-
-\item{qval_cutoff}{Numeric, the q-value cutoff below which to include genes
-as markers. Default is 0.05.}
 
 \item{max_genes_per_group}{Numeric, the maximum number of genes to output
 per cell type entry. Default is 10.}

@@ -4,7 +4,7 @@
 \alias{normalized_counts}
 \title{Return a size-factor normalized and (optionally) log-transformed expression matrix}
 \usage{
-normalized_counts(cds, norm_method = c("log", "size_only"),
+normalized_counts(cds, norm_method = c("log", "binary", "size_only"),
   pseudocount = 1)
 }
 \description{

@@ -229,10 +229,9 @@ smart_es_apply <- function(cds, MARGIN, FUN, convert_to_dense, reduction_method=
   tryCatch({
     coldata_df$cluster = clusters(cds, reduction_method)[colnames(cds)]
     coldata_df$partition = partitions(cds, reduction_method)[colnames(cds)]
-  }, error = function(e) {} )
-  tryCatch({
     coldata_df$pseudotime = pseudotime(cds)
   }, error = function(e) {} )
+
   Biobase::multiassign(names(as.data.frame(coldata_df)), as.data.frame(coldata_df), envir=e1)
   environment(FUN) <- e1
 
@@ -292,7 +291,7 @@ load_worm_embryo <- function(){
 
 # Test whether a matrix is one of our supported sparse matrices
 is_sparse_matrix <- function(x){
-  class(x) %in% c("dgCMatrix", "dgTMatrix")
+  class(x) %in% c("dgCMatrix", "dgTMatrix", "lgCMatrix")
 }
 
 
@@ -454,23 +453,31 @@ detect_genes <- function(cds, min_expr=0){
 
 #' Return a size-factor normalized and (optionally) log-transformed expression matrix
 #' @export
-normalized_counts <- function(cds, norm_method=c("log", "size_only"), pseudocount=1){
+normalized_counts <- function(cds, norm_method=c("log", "binary", "size_only"), pseudocount=1){
   norm_method = match.arg(norm_method)
   norm_mat = counts(cds)
-  if (is_sparse_matrix(norm_mat)){
-    norm_mat@x = norm_mat@x / rep.int(size_factors(cds), diff(norm_mat@p))
-    if (norm_method == "log"){
-      if (pseudocount == 1){
-        norm_mat@x = log10(norm_mat@x + pseudocount)
-      }else{
-        stop("Pseudocount must equal 1 with sparse expression matrices")
-      }
+  if (norm_method == "binary"){
+    norm_mat = norm_mat > 0
+    if (is_sparse_matrix(norm_mat)){
+      norm_mat = as(norm_mat, "dgCMatrix")
     }
-  }else{
+  }
+  else {
+    if (is_sparse_matrix(norm_mat)){
+      norm_mat@x = norm_mat@x / rep.int(size_factors(cds), diff(norm_mat@p))
+      if (norm_method == "log"){
+        if (pseudocount == 1){
+          norm_mat@x = log10(norm_mat@x + pseudocount)
+        }else{
+          stop("Pseudocount must equal 1 with sparse expression matrices")
+        }
+      }
+    }else{
       norm_mat = Matrix::t(Matrix::t(norm_mat) / size_factors(cds))
       if (norm_method == "log"){
-          norm_mat@x = log10(norm_mat + pseudocount)
+        norm_mat@x = log10(norm_mat + pseudocount)
       }
+    }
   }
   return(norm_mat)
 }

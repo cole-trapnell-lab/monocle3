@@ -1,12 +1,26 @@
 Package: monocle3
-Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9002
+Title: Clustering and trajectory analysis for single-cell genomics data
+Version: 0.0.0.9001
 Authors@R: 
+    person(given = "Hannah",
+           family = "Pliner",
+           role = c("aut", "cre"),
+           email = "hpliner@uw.edu")
+    person(given = "Xiaojie",
+           family = "Qiu",
+           role = c("aut", "cre"),
+           email = "xqiu@uw.edu")
     person(given = "Cole",
            family = "Trapnell",
            role = c("aut", "cre"),
            email = "coletrap@uw.edu")
-Description: What the package does (one paragraph).
+Description: Monocle performs differential expression and time-series analysis
+    for single-cell expression experiments. It orders individual cells
+    according to progress through a biological process, without knowing ahead
+    of time which genes define progress through that process. Monocle also
+    performs differential expression analysis, clustering, visualization, and
+    other useful tasks on single cell expression data.  It is designed to work
+    with RNA-Seq and qPCR data, but could be used with other types as well.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true

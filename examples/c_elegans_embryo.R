@@ -117,7 +117,10 @@ write.csv(emb_time_terms, "emb_time_terms.csv")
 sig_emb_time_terms = emb_time_terms %>% filter (q_value < 0.05) %>% select(gene_short_name, term, q_value, estimate)
 write.csv(sig_emb_time_terms, "emb_time_sig_terms.csv")
 
-plot_genes_violin(cds_subset, group_cells_by="embryo.time.bin", ncol=2) +
+plot_genes_violin(cds[rowData(cds)$gene_short_name %in% c("che-1",
+                   "nhr-6",
+                   "dmd-6",
+                   "ceh-36")], group_cells_by="embryo.time.bin", ncol=2) +
     theme(axis.text.x=element_text(angle=45, hjust=1)) + ggsave("embryo_ciliated_markers_violin.png", width=4, height=4, dpi = 600)
 
 ### Subtracting unwanted effects:

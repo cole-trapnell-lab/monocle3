@@ -4,9 +4,9 @@ library(monocle3) # Load Monocle
 library(tidymodels)
 theme_set(theme_gray(base_size = 6))
 
-# expression_matrix = readRDS("L2_expression.rda")
-# cell_metadata = readRDS("L2_cell_metadata.rda")
-# gene_annotation = readRDS("L2_gene_metadata.rda")
+expression_matrix = readRDS("L2_expression.rda")
+cell_metadata = readRDS("L2_cell_metadata.rda")
+gene_annotation = readRDS("L2_gene_metadata.rda")
 
 expression_matrix = readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_expression.rds"))
 cell_metadata = readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_colData.rds"))
@@ -50,7 +50,7 @@ plot_cells(cds, color_cells_by="cao_cell_type", label_groups_by_cluster=FALSE) +
 marker_test_res = top_markers(cds, group_cells_by="partition", reference_cells=1000, cores=8)
 
 top_specific_markers = marker_test_res %>%
-    filter(marker_test_q_value < 0.05 & pseudo_R2 > 0.01) %>%
+    filter(fraction_expressing >= 0.10) %>%
     group_by(cell_group) %>%
     top_n(1, pseudo_R2)
 
@@ -62,9 +62,8 @@ plot_genes_by_group(cds,
                     ordering_type="maximal_on_diag",
                     max.size=3) + ggsave("L2_plot_top_partition_marker.png", width=5, height=4, dpi = 600)
 
-
 top_specific_markers = marker_test_res %>%
-    filter(marker_test_q_value < 0.05 & pseudo_R2 > 0.01) %>%
+    filter(fraction_expressing >= 0.10) %>%
     group_by(cell_group) %>%
     top_n(3, pseudo_R2)
 
@@ -76,45 +75,76 @@ plot_genes_by_group(cds,
                     ordering_type="cluster_row_col",
                     max.size=3) + ggsave("L2_plot_top3_partition_marker.png", width=5, height=6, dpi = 600)
 
+## Cheat a bit here by automatically generating assignments that would stem from
+# manual annotation. We'll do this so that when the clusters change we don't have
+# manually go through them. Obviously this isn't possible when you don't already
+# the answers!
+type_partition_olap = as.matrix(prop.table(table(partitions(cds), colData(cds)$cao_cell_type), margin=1))
+pheatmap::pheatmap(type_partition_olap, cluster_rows=FALSE, cluster_cols=FALSE)
+
+paritition_identities = max.col(type_partition_olap,ties.method="first")
+colnames(type_partition_olap)[paritition_identities]
+for (i in (1:length(paritition_identities))){
+    if (i < length(paritition_identities)){
+        cat('"',i,'"="',colnames(type_partition_olap)[paritition_identities[i]], '",\n', sep="")
+    } else {
+       cat('"',i,'"="',colnames(type_partition_olap)[paritition_identities[i]], '"\n', sep="")
+    }
+}
 
 ## Step 5: Annotate cells by type:
 colData(cds)$assigned_cell_type = as.character(partitions(cds))
 colData(cds)$assigned_cell_type = dplyr::recode(colData(cds)$assigned_cell_type,
                                                 "1"="Body wall muscle",
-                                                "2"="Germline",
-                                                "3"="Neurons",
-                                                "4"="Seam cells",
-                                                "5"="Coelomocytes",
-                                                "6"="Pharyngeal epithelia",
-                                                "7"="Unknown 1",
-                                                "8"="Unknown 2",
-                                                "9"="Intestinal/rectal muscle",
-                                                "10"="Neurons",
-                                                "11"="Neurons",
-                                                "12"="Am/PH sheath cells",
-                                                "13"="Unknown",
-                                                "14"="Neurons",
-                                                "15"="Neurons",
-                                                "16"="Neurons",
-                                                "17"="Pharyngeal gland",
-                                                "18"="Neurons",
-                                                "19"="Neurons",
-                                                "20"="Neurons",
-                                                "21"="Neurons",
-                                                "22"="Neurons",
-                                                "23"="Neurons",
-                                                "24"="Neurons",
-                                                "25"="Neurons",
-                                                "26"="Neurons",
-                                                "27"="Unknown 3",
-                                                "28"="Pharyngeal gland",
-                                                "29"="Neurons",
-                                                "30"="Neurons",
-                                                "31"="Neurons",
-                                                "32"="Neurons",
-                                                "33"="Pharyngeal muscle",
-                                                "34"="Failed QC")
+                                                "2"="Coelomocytes",
+                                                "3"="Germline",
+                                                "4"="Unclassified neurons",
+                                                "5"="Seam cells",
+                                                "6"="Non-seam hypodermis",
+                                                "7"="Vulval precursors",
+                                                "8"="Pharyngeal epithelia",
+                                                "9"="Socket cells",
+                                                "10"="Failed QC",
+                                                "11"="Touch receptor neurons",
+                                                "12"="Intestinal/rectal muscle",
+                                                "13"="Pharyngeal neurons",
+                                                "14"="Am/PH sheath cells",
+                                                "15"="NA",
+                                                "16"="flp-1(+) interneurons",
+                                                "17"="Canal associated neurons",
+                                                "18"="Other interneurons",
+                                                "19"="Pharyngeal gland",
+                                                "20"="Failed QC",
+                                                "21"="Unclassified neurons",
+                                                "22"="Ciliated sensory neurons",
+                                                "23"="Ciliated sensory neurons",
+                                                "24"="Ciliated sensory neurons",
+                                                "25"="Ciliated sensory neurons",
+                                                "26"="Oxygen sensory neurons",
+                                                "27"="Ciliated sensory neurons",
+                                                "28"="Ciliated sensory neurons",
+                                                "29"="Ciliated sensory neurons",
+                                                "30"="Oxygen sensory neurons",
+                                                "31"="Ciliated sensory neurons",
+                                                "32"="Unclassified neurons",
+                                                "33"="Pharyngeal epithelia",
+                                                "34"="Pharyngeal gland",
+                                                "35"="Failed QC",
+                                                "36"="Ciliated sensory neurons",
+                                                "37"="Ciliated sensory neurons",
+                                                "38"="Ciliated sensory neurons",
+                                                "39"="Failed QC",
+                                                "40"="Ciliated sensory neurons",
+                                                "41"="Pharyngeal muscle")
 plot_cells(cds, group_cells_by="partition", color_cells_by="assigned_cell_type") + ggsave("L2_plot_cells_by_initial_annotation.png", width=5, height=4, dpi = 600)
+
+
+# # Make a violin that
+# plot_genes_violin(cds[rowData(cds)$gene_short_name %in% c("mec-7", "mec-17", "mig-6", "flp-1", "nlp-12"),
+#                       colData(cds)$cao_cell_type %in% c("GABAergic neurons", "Ciliated sensory neurons", "Cholinergic neurons", "Pharyngeal neurons")],
+#                       group_cells_by="cao_cell_type", ncol=1) +
+#     theme(axis.text.x=element_text(angle=45, hjust=1)) + ggsave("L2_interneuron_violin.png", width=4, height=4, dpi = 600)
+
 
 # Drilling into specific subsets of cells
 # Draw bounding box around partition 7:
@@ -148,14 +178,26 @@ plot_cells(cds_subset, group_cells_by="cluster", color_cells_by="assigned_cell_t
 colData(cds)[colnames(cds_subset),]$assigned_cell_type = colData(cds_subset)$assigned_cell_type
 plot_cells(cds, group_cells_by="partition", color_cells_by="assigned_cell_type", labels_per_group=5) + ggsave("L2_plot_cells_by_refined_annotation.png", width=5, height=4, dpi = 600)
 
+# Plot the overlap between clusters and annotated cell types:
+pheatmap::pheatmap(log(table(colData(cds)$assigned_cell_type, colData(cds)$cao_cell_type)+1),
+                   clustering_method="ward.D2",
+                   fontsize=6, width=5, height=5, filename="L2_cao_cell_type_by_manual_type.png")
+
+
+
 #ceModel = readRDS(url("https://cole-trapnell-lab.github.io/garnett/classifiers/ceWhole"))
 
-assigned_type_marker_test_res = top_markers(cds,
+assigned_type_marker_test_res = top_markers(cds[,is.na(colData(cds)$cao_cell_type) == FALSE & colData(cds)$cao_cell_type != "Failed QC"],
                                             group_cells_by="assigned_cell_type",
                                             reference_cells=1000,
                                             cores=8)
 
-generate_garnett_marker_file(assigned_type_marker_test_res)
+garnett_markers = assigned_type_marker_test_res %>%
+    filter(fraction_expressing >= 0.25) %>%
+    group_by(cell_group) %>%
+    top_n(3, pseudo_R2)
+
+generate_garnett_marker_file(garnett_markers)
 
 
 library(garnett)
@@ -167,6 +209,21 @@ worm_classifier <- train_cell_classifier(cds = cds,
                                          num_unknown = 50,
                                          marker_file_gene_id_type = "SYMBOL",
                                          cores=8)
+
+#load(url("https://cole-trapnell-lab.github.io/garnett/classifiers/ceWhole"))
+colData(cds)$garnett_cluster = partitions(cds)
+cds = classify_cells(cds, worm_classifier,
+                           db = org.Ce.eg.db::org.Ce.eg.db,
+                           cluster_extend = TRUE,
+                           cds_gene_id_type = "ENSEMBL")
+
+plot_cells(cds, group_cells_by="cluster", color_cells_by="cluster_ext_type") + ggsave("L2_umap_corrected_garnett_ext_type.png", width=5, height=4, dpi = 600)
+
+# Plot the overlap between clusters and annotated cell types:
+pheatmap::pheatmap(log(table(colData(cds)$cluster_ext_type, colData(cds)$cao_cell_type)+1),
+                   clustering_method="ward.D2",
+                   fontsize=6, width=5, height=5, filename="L2_cao_cell_type_by_garnett_ext_type.png")
+
 
 
 load(url("https://cole-trapnell-lab.github.io/garnett/classifiers/ceWhole"))
@@ -182,6 +239,7 @@ plot_cells(cds, group_cells_by="cluster", color_cells_by="cluster_ext_type") + g
 pheatmap::pheatmap(log(table(partitions(cds), colData(cds)$cao_cell_type)+1),
                    clustering_method="ward.D2",
                    fontsize=6, width=5, height=8, filename="L2_cell_type_by_partition.png")
+
 
 
 ########

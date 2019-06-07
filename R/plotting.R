@@ -146,7 +146,7 @@ plot_cells_3d <- function(cds,
         row.names(genes) <- genes[,1]
         genes <- genes[row.names(cds_exprs),]
         agg_mat <-
-          as.matrix(Matrix.utils::aggregate.Matrix(cds_exprs,
+          as.matrix(my.aggregate.Matrix(cds_exprs,
                                                    as.factor(genes[,2]),
                                                    fun="sum"))
         agg_mat <- t(scale(t(log10(agg_mat + 1))))
@@ -816,7 +816,7 @@ plot_cells <- function(cds,
         genes = as.data.frame(genes)
         row.names(genes) = genes[,1]
         genes = genes[row.names(cds_exprs),]
-        agg_mat = as.matrix(Matrix.utils::aggregate.Matrix(cds_exprs, as.factor(genes[,2]), fun="sum"))
+        agg_mat = as.matrix(my.aggregate.Matrix(cds_exprs, as.factor(genes[,2]), fun="sum"))
         agg_mat = t(scale(t(log10(agg_mat + 1))))
         agg_mat[agg_mat < -2] = -2
         agg_mat[agg_mat > 2] = 2
