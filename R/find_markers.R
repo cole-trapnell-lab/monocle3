@@ -18,7 +18,8 @@ top_markers <- function(cds,
                         reduction_method="UMAP",
                         marker_sig_test=TRUE,
                         reference_cells=NULL,
-                        cores=1
+                        cores=1,
+                        verbose=FALSE
 ){
 
   # Yes, it's stupid we have cell ids both as a column and as the rownames.
@@ -37,6 +38,8 @@ top_markers <- function(cds,
   }
   cell_group_df$cell_group = as.character(cell_group_df$cell_group)
 
+  if (verbose)
+    message("Aggregating gene expression values for groups")
   # For each gene compute the fraction of cells expressing it within each group
   # in a matrix thats genes x cell groups
   cluster_binary_exprs = as.matrix(aggregate_gene_expression(cds,
@@ -47,10 +50,15 @@ top_markers <- function(cds,
                                                            cell_group_df=cell_group_df,
                                                            norm_method="size_only"))
 
+  if (verbose)
+    message("Computing Jensen-Shannon specificities")
+
   # Now compute a Jensen Shannon specificity score for each gene w.r.t each group
   cluster_spec_mat = specificity_matrix(cluster_mean_exprs, cores=cores)
   cluster_marker_score_mat = as.matrix(cluster_binary_exprs * cluster_spec_mat)
 
+  if (verbose)
+    message("Gathering score tables")
   cluster_marker_score_table = tibble::rownames_to_column(as.data.frame(cluster_marker_score_mat))
   cluster_marker_score_table = tidyr::gather(cluster_marker_score_table, "cell_group", "marker_score", -rowname)
 
@@ -93,6 +101,8 @@ top_markers <- function(cds,
   cell_group_df$cell_group = as.character(cell_group_df$cell_group)
 
   if (marker_sig_test){
+    if (verbose)
+      message("Running marker significance tests")
     # Temporarily disable OpenMP threading in functions to be run in parallel
     old_omp_num_threads = as.numeric(Sys.getenv("OMP_NUM_THREADS"))
     if (is.na(old_omp_num_threads)){
@@ -164,39 +174,9 @@ top_markers <- function(cds,
     marker_test_res = cluster_marker_score_table
   }
 
-  marker_test_res = tryCatch({pbmcapply::pbmcmapply(test_marker_for_cell_group,
-                                          cluster_spec_table$rowname,
-                                          cluster_spec_table$cell_group,
-                                          MoreArgs=list(cell_group_df, cds, reference_cells),
-                                          ignore.interactive = TRUE,
-                                          mc.cores=cores)},
-                             finally = {
-                               RhpcBLASctl::omp_set_num_threads(old_omp_num_threads)
-                               RhpcBLASctl::blas_set_num_threads(old_blas_num_threads)
-                             })
+  if (verbose)
+    message("Running marker significance tests")
 
-  marker_test_res = t(marker_test_res)
-  marker_test_res = as.matrix(marker_test_res)
-  colnames(marker_test_res) = c("pseudo_R2", "lrtest_p_value")
-
-  #marker_test_res = as.data.frame(marker_test_res)
-
-  marker_test_res = dplyr::bind_cols(cluster_spec_table, as.data.frame(marker_test_res))
-  marker_test_res$lrtest_q_value = p.adjust(marker_test_res$lrtest_p_value,
-                                            method="bonferroni",
-                                            n=length(cluster_spec_mat))
-  marker_test_res = marker_test_res %>% dplyr::select(rowname, cell_group, specificity, pseudo_R2, lrtest_p_value, lrtest_q_value)
-  marker_test_res = marker_test_res %>% dplyr::rename(gene_id=rowname, marker_test_p_value=lrtest_p_value,  marker_test_q_value=lrtest_q_value)
-  marker_test_res$pseudo_R2 = unlist(marker_test_res$pseudo_R2)
-  marker_test_res$marker_test_p_value = unlist(marker_test_res$marker_test_p_value)
-
-  if ("gene_short_name" %in% colnames(rowData(cds)))
-    marker_test_res = rowData(cds) %>%
-                      as.data.frame %>%
-                      tibble::rownames_to_column() %>%
-                      dplyr::select(rowname, gene_short_name) %>%
-                      dplyr::inner_join(marker_test_res, by=c("rowname"="gene_id"))
-  marker_test_res = marker_test_res %>% dplyr::rename(gene_id=rowname)
   return(marker_test_res)
 }
 

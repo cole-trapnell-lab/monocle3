@@ -109,12 +109,7 @@ my.aggregate.Matrix = function (x, groupings = NULL, form = NULL, fun = "sum", .
     x <- Matrix(as.matrix(x), sparse = TRUE)
   if (fun == "count")
     x <- x != 0
-  groupings2 <- groupings
-  if (!is(groupings2, "data.frame"))
-    groupings2 <- as(groupings2, "data.frame")
-  groupings2 <- data.frame(lapply(groupings2, as.factor))
-  groupings2 <- data.frame(interaction(groupings2, sep = "_"))
-  colnames(groupings2) <- "A"
+  groupings2 <- data.frame(A=as.factor(groupings))
   if (is.null(form))
     form <- as.formula("~0+.")
   form <- as.formula(form)
@@ -122,7 +117,7 @@ my.aggregate.Matrix = function (x, groupings = NULL, form = NULL, fun = "sum", .
   colnames(mapping) <- substring(colnames(mapping), 2)
   result <- Matrix::t(mapping) %*% x
   if (fun == "mean")
-    result <- result/as.numeric(table(groupings2)[rownames(result)])
+    result <- result/as.numeric(table(groupings)[rownames(result)])
   attr(result, "crosswalk") <- grr::extract(groupings, match(rownames(result),
                                                              groupings2$A))
   return(result)
@@ -138,7 +133,8 @@ aggregate_gene_expression <- function(cds,
                                       pseudocount=1,
                                       scale_agg_values=TRUE,
                                       max_agg_value=3,
-                                      min_agg_value=-3){
+                                      min_agg_value=-3,
+                                      exclude.na=TRUE){
   if (is.null(gene_group_df) && is.null(cell_group_df))
     stop("Error: one of either gene_group_df or cell_group_df must not be NULL")
   agg_mat = normalized_counts(cds, norm_method=norm_method, pseudocount=pseudocount)
@@ -162,6 +158,10 @@ aggregate_gene_expression <- function(cds,
     agg_mat = my.aggregate.Matrix(Matrix::t(agg_mat),
                                              as.factor(cell_group_df[,2]), fun="mean")
     agg_mat = Matrix::t(agg_mat)
+  }
+
+  if (exclude.na){
+    agg_mat = agg_mat[row.names(agg_mat) != "NA", colnames(agg_mat) != "NA"]
   }
   return(agg_mat)
 }

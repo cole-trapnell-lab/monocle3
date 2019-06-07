@@ -4,9 +4,9 @@ library(monocle3) # Load Monocle
 library(tidymodels)
 theme_set(theme_gray(base_size = 6))
 
-expression_matrix = readRDS("L2_expression.rda")
-cell_metadata = readRDS("L2_cell_metadata.rda")
-gene_annotation = readRDS("L2_gene_metadata.rda")
+# expression_matrix = readRDS("L2_expression.rda")
+# cell_metadata = readRDS("L2_cell_metadata.rda")
+# gene_annotation = readRDS("L2_gene_metadata.rda")
 
 expression_matrix = readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_expression.rds"))
 cell_metadata = readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_colData.rds"))
@@ -15,6 +15,7 @@ gene_annotation = readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_r
 cds = new_cell_data_set(expression_matrix,
                          cell_metadata = cell_metadata,
                          gene_metadata = gene_annotation)
+marker_test_res = top_markers(cds, group_cells_by="cao_cell_type", reference_cells=1000, verbose=TRUE, cores=8)
 
 ## Step 1: Normalize and pre-process the data
 cds = preprocess_cds(cds, num_dim = 100)
