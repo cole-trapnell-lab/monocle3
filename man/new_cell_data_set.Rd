@@ -2,7 +2,7 @@
 % Please edit documentation in R/cell_data_set.R
 \name{new_cell_data_set}
 \alias{new_cell_data_set}
-\title{Creates a new cell_data_set object.}
+\title{Create a new cell_data_set object.}
 \usage{
 new_cell_data_set(expression_data, cell_metadata = NULL,
   gene_metadata = NULL)
@@ -22,7 +22,7 @@ where \code{row.names(cell_metadata) = colnames(expression_data)}.}
 a new cell_data_set object
 }
 \description{
-Creates a new cell_data_set object.
+Create a new cell_data_set object.
 }
 \examples{
 small_a549_colData_df <- readRDS(system.file("extdata",

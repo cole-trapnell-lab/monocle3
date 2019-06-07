@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{estimate_size_factors}
 \alias{estimate_size_factors}
-\title{Function to calculate the size factor for the single-cell RNA-seq data}
+\title{Function to calculate size factors for single-cell RNA-seq data}
 \usage{
 estimate_size_factors(cds, locfunc = stats::median, round_exprs = TRUE,
   method = c("mean-geometric-mean-total",
@@ -23,5 +23,5 @@ Updated cell_data_set object with a new colData column called
 'Size_Factor'.
 }
 \description{
-Function to calculate the size factor for the single-cell RNA-seq data
+Function to calculate size factors for single-cell RNA-seq data
 }

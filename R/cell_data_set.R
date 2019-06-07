@@ -2,7 +2,7 @@ setOldClass(c("igraph"), prototype=structure(list(), class="igraph"))
 
 #' The cell_data_set class
 #'
-#' The main class used by Monocle3 to hold single cell expression data.
+#' The main class used by Monocle3 to hold single-cell expression data.
 #' cell_data_set extends the Bioconductor SingleCellExperiment class.
 #'
 #' This class is initialized from a matrix of expression values along with cell
@@ -15,6 +15,8 @@ setOldClass(c("igraph"), prototype=structure(list(), class="igraph"))
 #'   graph construction
 #' @field principal_graph SimpleList of igraph objects containing principal
 #'   graphs for different dimensionality reduction.
+#' @field clusters SimpleList of cluster information for different
+#'   dimensionality reduction.
 #' @name cell_data_set
 #' @rdname cell_data_set
 #' @aliases cell_data_set-class
@@ -34,7 +36,7 @@ setClass("cell_data_set",
 )
 
 
-#' Creates a new cell_data_set object.
+#' Create a new cell_data_set object.
 #'
 #' @param expression_data expression data matrix for an experiment, can be a
 #'   sparseMatrix.
@@ -75,9 +77,10 @@ new_cell_data_set <- function(expression_data,
                             msg = paste("cell_metadata must be NULL or have",
                                         "the same number of rows as columns",
                                         "in expression_data"))
-    assertthat::assert_that(all(row.names(cell_metadata) == colnames(expression_data)),
-                            msg = paste("row.names of cell_metadata must be",
-                                        "equal to colnames of expression_data"))
+    assertthat::assert_that(
+      all(row.names(cell_metadata) == colnames(expression_data)),
+      msg = paste("row.names of cell_metadata must be equal to colnames of",
+                  "expression_data"))
   }
 
   if (!is.null(gene_metadata)) {
@@ -85,10 +88,10 @@ new_cell_data_set <- function(expression_data,
                             msg = paste("gene_metadata must be NULL or have",
                                         "the same number of rows as rows",
                                         "in expression_data"))
-    assertthat::assert_that(all(row.names(gene_metadata) == row.names(expression_data)),
-                            msg = paste("row.names of gene_metadata must be",
-                                        "equal to row.names of",
-                                        "expression_data"))
+    assertthat::assert_that(all(
+      row.names(gene_metadata) == row.names(expression_data)),
+      msg = paste("row.names of gene_metadata must be equal to row.names of",
+                  "expression_data"))
   }
 
   if (is.null(cell_metadata)) {
@@ -97,8 +100,8 @@ new_cell_data_set <- function(expression_data,
   }
 
   if(!('gene_short_name' %in% colnames(gene_metadata))) {
-    warning(paste("Warning: gene_metadata must contain a column verbatim named",
-                  "'gene_short_name' for certain functions."))
+    warning(paste("Warning: gene_metadata must contain a column verbatim",
+                  "named 'gene_short_name' for certain functions."))
   }
 
   sce <- SingleCellExperiment(list(counts=expression_data),
@@ -106,7 +109,8 @@ new_cell_data_set <- function(expression_data,
                               colData = cell_metadata)
 
   cds <- new("cell_data_set",
-             assays = SummarizedExperiment::Assays(list(counts=expression_data)),
+             assays = SummarizedExperiment::Assays(
+               list(counts=expression_data)),
              colData = colData(sce),
              int_elementMetadata =sce@int_elementMetadata,
              int_colData = sce@int_colData,

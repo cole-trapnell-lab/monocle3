@@ -9,17 +9,18 @@ fit_models(cds, model_formula_str, expression_family = "quasipoisson",
   verbose = FALSE, ...)
 }
 \arguments{
-\item{cds}{the cell_data_set upon which to perform this operation}
+\item{cds}{The cell_data_set upon which to perform this operation.}
 
-\item{model_formula_str}{a formula string specifying the model to fit for
+\item{model_formula_str}{A formula string specifying the model to fit for
 the genes.}
 
-\item{expression_family}{specifies the family function used for expression
-responses. Default is "quasipoisson"}
+\item{expression_family}{Specifies the family function used for expression
+responses. Default is "quasipoisson".}
 
-\item{reduction_method}{which method to use with clusters() and partitions(). Default is "UMAP".}
+\item{reduction_method}{Which method to use with clusters() and
+partitions(). Default is "UMAP".}
 
-\item{cores}{the number of processor cores use during fitting.}
+\item{cores}{The number of processor cores to use during fitting.}
 
 \item{clean_model}{Logical indicating whether to clean the model. Default is
 TRUE.}

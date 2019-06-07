@@ -1,12 +1,20 @@
 Package: monocle3
-Title: What the Package Does (One Line, Title Case)
+Title: Clustering, differential expression, and trajectory analysis for single-
+    cell RNA-Seq
 Version: 0.0.0.9002
 Authors@R: 
     person(given = "Cole",
            family = "Trapnell",
            role = c("aut", "cre"),
            email = "coletrap@uw.edu")
-Description: What the package does (one paragraph).
+Description: Monocle 3 performs clustering, differential expression and 
+    trajectory analysis for single-cell expression experiments. It orders 
+    individual cells according to progress through a biological process, 
+    without knowing ahead of time which genes define progress through that 
+    process. Monocle 3 also performs differential expression analysis, 
+    clustering, visualization, and other useful tasks on single-cell expression 
+    data.  It is designed to work with RNA-Seq data, but could be used with 
+    other types as well.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true

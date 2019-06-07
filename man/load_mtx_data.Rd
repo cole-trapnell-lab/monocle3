@@ -7,11 +7,11 @@
 load_mtx_data(mat_path, gene_anno_path, cell_anno_path, umi_cutoff = 100)
 }
 \arguments{
-\item{mat_path}{Path to the .mtx matrix market file}
+\item{mat_path}{Path to the .mtx matrix market file.}
 
-\item{gene_anno_path}{Path to gene annotation file}
+\item{gene_anno_path}{Path to gene annotation file.}
 
-\item{cell_anno_path}{Path to cell annotation file}
+\item{cell_anno_path}{Path to cell annotation file.}
 
 \item{umi_cutoff}{UMI per cell cutoff, default is 100.}
 }

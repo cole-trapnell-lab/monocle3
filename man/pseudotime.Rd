@@ -7,7 +7,7 @@
 pseudotime(x, reduction_method = "UMAP")
 }
 \arguments{
-\item{x}{CDS object}
+\item{x}{A cell_data_set object.}
 
 \item{reduction_method}{Reduced dimension to extract pseudotime for.}
 }

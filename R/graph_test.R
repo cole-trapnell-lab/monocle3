@@ -106,13 +106,15 @@ graph_test <- function(cds,
   test_res <- do.call(rbind.data.frame, test_res)
   row.names(test_res) <- row.names(cds)
   test_res <- merge(test_res, rowData(cds), by="row.names")
-  row.names(test_res) <- test_res[, 1] #remove the first column and set the row names to the first column
+  #remove the first column and set the row names to the first column
+  row.names(test_res) <- test_res[, 1]
   test_res[, 1] <- NULL
   test_res$q_value <- 1
   test_res$q_value[which(test_res$status == 'OK')] <-
     stats::p.adjust(subset(test_res, status == 'OK')[, 'p_value'], method="BH")
   test_res$status = as.character(test_res$status)
-  test_res[row.names(cds), ] # make sure gene name ordering in the DEG test result is the same as the CDS
+  # make sure gene name ordering in the DEG test result is the same as the CDS
+  test_res[row.names(cds), ]
 }
 
 my.moran.test <- function (x, listw, wc, alternative = "greater",
@@ -342,15 +344,18 @@ calculateLW <- function(cds,
                        function(x) id_map[as.character(knn_res[x, -1])])
   }
   else if (neighbor_graph == "principal_graph") {
+    # mapping from each cell to the principal points
     cell2pp_map <-
-      cds@principal_graph_aux[[reduction_method]]$pr_graph_cell_proj_closest_vertex # mapping from each cell to the principal points
+      cds@principal_graph_aux[[
+        reduction_method]]$pr_graph_cell_proj_closest_vertex
     if(is.null(cell2pp_map)) {
       stop(paste("Error: projection matrix for each cell to principal",
                  "points doesn't exist, you may need to rerun learn_graph"))
     }
 
-    # This cds object might be a subset of the one on which ordering was performed,
-    # so we may need to subset the nearest vertex and low-dim coordinate matrices:
+    # This cds object might be a subset of the one on which ordering was
+    # performed, so we may need to subset the nearest vertex and low-dim
+    # coordinate matrices:
     cell2pp_map <-  cell2pp_map[row.names(cell2pp_map) %in%
                                   row.names(colData(cds)),, drop=FALSE]
     cell2pp_map <- cell2pp_map[colnames(cds), ]
@@ -358,13 +363,18 @@ calculateLW <- function(cds,
     if(verbose) {
       message("Identify connecting principal point pairs ...")
     }
-    # an alternative approach to make the kNN graph based on the principal graph
+    # an alternative approach to make the kNN graph based on the principal
+    # graph
     knn_res <- RANN::nn2(cell_coords, cell_coords,
                          min(k + 1, nrow(cell_coords)),
                          searchtype = "standard")[[1]]
-    # kNN_res_pp_map <- matrix(cell2pp_map[knn_res], ncol = k + 1, byrow = F) # convert the matrix of knn graph from the cell IDs into a matrix of principal points IDs
+    # convert the matrix of knn graph from the cell IDs into a matrix of
+    # principal points IDs
+    # kNN_res_pp_map <- matrix(cell2pp_map[knn_res], ncol = k + 1, byrow = F)
 
-    principal_g_tmp <- principal_g # kNN can be built within group of cells corresponding to each principal points
+    # kNN can be built within group of cells corresponding to each principal
+    # points
+    principal_g_tmp <- principal_g
     diag(principal_g_tmp) <- 1 # so set diagnol as 1
     cell_membership <- as.factor(cell2pp_map)
     uniq_member <- sort(unique(cell_membership))
@@ -391,7 +401,6 @@ calculateLW <- function(cds,
       message('start calculating valid kNN graph ...')
     }
 
-    #pb_feasible_knn <- utils::txtProgressBar(max = num_blocks, file = "", style = 3, min = 0)
     tmp <- NULL
 
     for (j in 1:num_blocks){
@@ -410,7 +419,6 @@ calculateLW <- function(cds,
       } else {
         tmp <- rBind(tmp, cur_tmp)
       }
-      #utils::setTxtProgressBar(pb = pb_feasible_knn, value = pb_feasible_knn$getVal() + 1)
     }
 
     #close(pb_feasible_knn)

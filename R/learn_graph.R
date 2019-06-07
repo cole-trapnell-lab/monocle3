@@ -223,7 +223,8 @@ multi_component_RGE <- function(cds,
     }
 
     if(is.null(ncenter)) {
-      num_clusters_in_partition = length(unique(clusters(cds)[colnames(X_subset)]))
+      num_clusters_in_partition <-
+        length(unique(clusters(cds)[colnames(X_subset)]))
       num_cells_in_partition = ncol(X_subset)
       ncenter <- cal_ncenter(num_clusters_in_partition, num_cells_in_partition)
       if(is.null(ncenter) || ncenter >= ncol(X_subset)) {
@@ -353,7 +354,8 @@ multi_component_RGE <- function(cds,
     } else {
       curr_cell_names <-
         paste("Y_", (ncol(reducedDimK_coord) + 1):(ncol(reducedDimK_coord) +
-                                                     ncol(rge_res$Y)), sep = "")
+                                                     ncol(rge_res$Y)),
+              sep = "")
       pr_graph_cell_proj_closest_vertex <-
         rbind(pr_graph_cell_proj_closest_vertex,
               matrix(apply(rge_res$R, 1, which.max) + ncol(reducedDimK_coord)))
@@ -404,7 +406,8 @@ multi_component_RGE <- function(cds,
          R = R,
          objective_vals = merge_rge_res$objective_vals,
          history = merge_rge_res$history)
-  cds@principal_graph_aux[[reduction_method]]$pr_graph_cell_proj_closest_vertex <-
+  cds@principal_graph_aux[[
+    reduction_method]]$pr_graph_cell_proj_closest_vertex <-
     as.data.frame(pr_graph_cell_proj_closest_vertex)[colnames(cds), , drop = F]
   colnames(ddrtree_res_Y) <- paste0("Y_", 1:ncol(ddrtree_res_Y), sep = "")
 
@@ -415,7 +418,8 @@ multi_component_RGE <- function(cds,
               dp_mst = dp_mst))
 }
 
-cal_ncenter <- function(num_cell_communities, ncells, nodes_per_log10_cells=15){
+cal_ncenter <- function(num_cell_communities, ncells,
+                        nodes_per_log10_cells=15) {
   round(num_cell_communities * nodes_per_log10_cells * log10(ncells))
 }
 

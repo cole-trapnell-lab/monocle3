@@ -19,29 +19,37 @@ plot_cells_3d_old(cds, reduction_method = "UMAP",
 \arguments{
 \item{cds}{cell_data_set for the experiment}
 
-\item{color_by}{the cell attribute (e.g. the column of colData(cds)) to map to each cell's color}
+\item{color_by}{the cell attribute (e.g. the column of colData(cds)) to map
+to each cell's color}
 
 \item{palette}{the color palette used for plotting}
 
-\item{markers}{a gene name or gene id to use for setting the size of each cell in the plot}
+\item{markers}{a gene name or gene id to use for setting the size of each
+cell in the plot}
 
-\item{markers_linear}{a boolean used to indicate whether you want to scale the markers logarithimically or linearly}
+\item{markers_linear}{a boolean used to indicate whether you want to scale
+the markers logarithimically or linearly}
 
 \item{cell_size}{size of cells, default value is 5}
 
 \item{cell_alpha}{Alpha value for the vertex in the 3D plot}
 
-\item{backbone_segment_color}{color of backbone, value is a string containing a hex color value}
+\item{backbone_segment_color}{color of backbone, value is a string
+containing a hex color value}
 
-\item{backbone_vertex_color}{Color for the vertex on the principal graph backbone}
+\item{backbone_vertex_color}{Color for the vertex on the principal graph
+backbone}
 
 \item{show_group_labels}{Whether or not to show labels of groups}
 
-\item{show_branch_points}{Whether to show icons for each branch point (only available after running assign_cell_states)}
+\item{show_branch_points}{Whether to show icons for each branch point (only
+available after running assign_cell_states)}
 
-\item{webGL_filename}{the name of a file to which you'd to write a webGL file containing the plot}
+\item{webGL_filename}{the name of a file to which you'd to write a webGL
+file containing the plot}
 
-\item{image_filename}{the name of a file to which you'd to write an animated GIF containing the plot}
+\item{image_filename}{the name of a file to which you'd to write an animated
+GIF containing the plot}
 
 \item{obj_filename}{The filename that you'd like to save the 3d plot to}
 
@@ -53,11 +61,13 @@ plot_cells_3d_old(cds, reduction_method = "UMAP",
 
 \item{view_matrix}{A 4x4 matrix signifying your point of view on the 3d plot}
 
-\item{useNULL_GLdev}{if TRUE, don't show the plot on the screen (to be used with webGL or movie output)}
+\item{useNULL_GLdev}{if TRUE, don't show the plot on the screen (to be used
+with webGL or movie output)}
 
 \item{...}{Extra arguments passed to the function}
 
-\item{dim}{the dimensions used to create the 3D plot, by default it is the first three dimensions}
+\item{dim}{the dimensions used to create the 3D plot, by default it is the
+first three dimensions}
 }
 \value{
 a ggplot2 plot object

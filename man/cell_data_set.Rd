@@ -6,7 +6,7 @@
 \alias{cell_data_set-class}
 \title{The cell_data_set class}
 \description{
-The main class used by Monocle3 to hold single cell expression data.
+The main class used by Monocle3 to hold single-cell expression data.
 cell_data_set extends the Bioconductor SingleCellExperiment class.
 }
 \details{
@@ -26,5 +26,8 @@ graph construction}
 
 \item{\code{principal_graph}}{SimpleList of igraph objects containing principal
 graphs for different dimensionality reduction.}
+
+\item{\code{clusters}}{SimpleList of cluster information for different
+dimensionality reduction.}
 }}
 

@@ -249,9 +249,9 @@ louvain_clustering <- function(data,
                   "(itself)!"))
   }
   if (verbose) {
-    message("Run kNN based graph clustering starts:", "\n", "  -Input data of ",
-            nrow(data), " rows and ", ncol(data), " columns",
-            "\n", "  -k is set to ", k)
+    message("Run kNN based graph clustering starts:", "\n",
+            "  -Input data of ", nrow(data), " rows and ", ncol(data),
+            " columns", "\n", "  -k is set to ", k)
   }
   if (verbose) {
     cat("  Finding nearest neighbors...")
@@ -301,7 +301,8 @@ louvain_clustering <- function(data,
                                random_seed = random_seed,
                                verbose = verbose),
                           extra_arguments[names(extra_arguments) %in%
-                                            c("python_home", "partition_method",
+                                            c("python_home",
+                                              "partition_method",
                                               "initial_membership", "weights",
                                               "node_sizes", 'return_all')])
         Q <- do.call(louvain_R, louvain_args)

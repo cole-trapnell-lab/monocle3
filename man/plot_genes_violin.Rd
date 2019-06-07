@@ -48,6 +48,7 @@ for each group of cells.
 cds <- load_a549()
 cds_subset <- cds[row.names(subset(rowData(cds),
                  gene_short_name \%in\% c("ACTA1", "ID1", "CCNB2"))),]
-plot_genes_violin(cds_subset, group_cells_by="culture_plate", ncol=2, min_expr=0.1)
+plot_genes_violin(cds_subset, group_cells_by="culture_plate", ncol=2,
+                  min_expr=0.1)
 
 }

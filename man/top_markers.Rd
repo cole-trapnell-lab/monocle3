@@ -9,7 +9,7 @@ top_markers(cds, group_cells_by = "cluster",
   expression_bins = 20, reference_cells = NULL, cores = 1)
 }
 \arguments{
-\item{cds}{cell_data_set object to calculate top markers for}
+\item{cds}{A cell_data_set object to calculate top markers for.}
 
 \item{group_cells_by}{String indicating what to group cells by for
 comparison. Default is "cluster".}
@@ -20,8 +20,6 @@ on.}
 
 \item{reduction_method}{String indicating the method used for dimensionality
 reduction. Currently only "UMAP" is supported.}
-
-\item{expression_bins}{?}
 
 \item{cores}{Number of cores to use.}
 }
