@@ -2,7 +2,7 @@
 layout: vanilla
 permalink: /monocle3_docs/
 description: "Documentation for Monocle."
-modified: 2013-09-11
+modified: 2019-06-07
 tags: [monocle, manual, vignette]
 ---
 <!DOCTYPE html>
@@ -639,36 +639,36 @@ colData(cds)$assigned_cell_type = as.character(partitions(cds))
 colData(cds)$assigned_cell_type = dplyr::recode(colData(cds)$assigned_cell_type,
                                                 "1"="Body wall muscle",
                                                 "2"="Germline",
-                                                "3"="Neurons",
+                                                "3"="Unclassified neurons",
                                                 "4"="Seam cells",
                                                 "5"="Coelomocytes",
                                                 "6"="Pharyngeal epithelia",
-                                                "7"="Unknown",
-                                                "8"="Unknown",
+                                                "7"="Vulval precursors",
+                                                "8"="Non-seam hypodermis",
                                                 "9"="Intestinal/rectal muscle",
-                                                "10"="Neurons",
-                                                "11"="Neurons",
+                                                "10"="Touch receptor neurons",
+                                                "11"="Pharyngeal neurons",
                                                 "12"="Am/PH sheath cells",
-                                                "13"="Unknown",
-                                                "14"="Neurons",
-                                                "15"="Neurons",
-                                                "16"="Neurons",
+                                                "13"="NA",
+                                                "14"="Unclassified neurons",
+                                                "15"="flp-1(+) interneurons",
+                                                "16"="Canal associated neurons",
                                                 "17"="Pharyngeal gland",
-                                                "18"="Neurons",
-                                                "19"="Neurons",
-                                                "20"="Neurons",
-                                                "21"="Neurons",
-                                                "22"="Neurons",
-                                                "23"="Neurons",
-                                                "24"="Neurons",
-                                                "25"="Neurons",
-                                                "26"="Neurons",
-                                                "27"="Unknown",
+                                                "18"="Other interneurons",
+                                                "19"="Ciliated sensory neurons",
+                                                "20"="Ciliated sensory neurons",
+                                                "21"="Ciliated sensory neurons",
+                                                "22"="Ciliated sensory neurons",
+                                                "23"="Ciliated sensory neurons",
+                                                "24"="Ciliated sensory neurons",
+                                                "25"="Oxygen sensory neurons",
+                                                "26"="Ciliated sensory neurons",
+                                                "27"="Unclassified neurons",
                                                 "28"="Pharyngeal gland",
-                                                "29"="Neurons",
-                                                "30"="Neurons",
-                                                "31"="Neurons",
-                                                "32"="Neurons",
+                                                "29"="Ciliated sensory neurons",
+                                                "30"="Ciliated sensory neurons",
+                                                "31"="Ciliated sensory neurons",
+                                                "32"="Ciliated sensory neurons",
                                                 "33"="Pharyngeal muscle",
                                                 "34"="Failed QC")
 {% endhighlight %}
@@ -737,12 +737,11 @@ plot_cells(cds_subset, color_cells_by="cluster")
 {% highlight R %}
 colData(cds_subset)$assigned_cell_type = as.character(clusters(cds_subset)[colnames(cds_subset)])
 colData(cds_subset)$assigned_cell_type = dplyr::recode(colData(cds_subset)$assigned_cell_type,
-                                                "28"="Vulval precursors",
-                                                "38"="Neurons",
-                                                "39"="Unknown",
-                                                "42"="Sex myoblasts",
-                                                "27"="Sex myoblasts",
-                                                "31"="Somatic gonad progenitors")
+                                                      "30"="Vulval precursors",
+                                                      "65"="Distal tip cells",
+                                                      "24"="Sex myoblasts",
+                                                      "51"="Sex myoblasts",
+                                                      "33"="Somatic gonad progenitors")
 plot_cells(cds_subset, group_cells_by="cluster", color_cells_by="assigned_cell_type")
 {% endhighlight %}
 
