@@ -1,6 +1,6 @@
 Package: monocle3
 Title: Clustering and trajectory analysis for single-cell genomics data
-Version: 0.0.0.9000
+Version: 0.0.0.9001
 Authors@R: 
     person(given = "Hannah",
            family = "Pliner",

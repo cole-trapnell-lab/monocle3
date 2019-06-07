@@ -12,12 +12,6 @@ expression_matrix = readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2
 cell_metadata = readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_colData.rds"))
 gene_annotation = readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_rowData.rds"))
 
-
-
-# expression_matrix = Matrix::readMM(gzcon(url("http://jpacker-data.s3.amazonaws.com/public/worm/L2/Cao_et_al_2017_data_2019_update.exprs.mm.gz")))
-# gene_annotation = read.delim(url("http://jpacker-data.s3.amazonaws.com/public/worm/L2/Cao_et_al_2017_data_2019_update.fData.tsv"))
-# cell_metadata  = read.delim(url("http://jpacker-data.s3.amazonaws.com/public/worm/L2/Cao_et_al_2017_data_2019_update.pData.tsv"))
-
 cds = new_cell_data_set(expression_matrix,
                          cell_metadata = cell_metadata,
                          gene_metadata = gene_annotation)
@@ -55,36 +49,35 @@ plot_cells(cds, color_cells_by="cao_cell_type", label_groups_by_cluster=FALSE) +
 # Identify top marker genes for each cluster
 marker_test_res = top_markers(cds, group_cells_by="partition", reference_cells=1000, cores=8)
 
-top_specific_markers = marker_test_res %>% 
+top_specific_markers = marker_test_res %>%
     filter(fraction_expressing >= 0.10) %>%
-    group_by(cell_group) %>% 
+    group_by(cell_group) %>%
     top_n(1, pseudo_R2)
 
 top_specific_marker_ids = unique(top_specific_markers %>% pull(gene_id))
 
-plot_genes_by_group(cds, 
-                    top_specific_marker_ids, 
-                    group_cells_by="partition", 
+plot_genes_by_group(cds,
+                    top_specific_marker_ids,
+                    group_cells_by="partition",
                     ordering_type="maximal_on_diag",
                     max.size=3) + ggsave("L2_plot_top_partition_marker.png", width=5, height=4, dpi = 600)
 
-
-top_specific_markers = marker_test_res %>% 
+top_specific_markers = marker_test_res %>%
     filter(fraction_expressing >= 0.10) %>%
-    group_by(cell_group) %>% 
+    group_by(cell_group) %>%
     top_n(3, pseudo_R2)
 
 top_specific_marker_ids = unique(top_specific_markers %>% pull(gene_id))
 
-plot_genes_by_group(cds, 
-                    top_specific_marker_ids, 
-                    group_cells_by="partition", 
+plot_genes_by_group(cds,
+                    top_specific_marker_ids,
+                    group_cells_by="partition",
                     ordering_type="cluster_row_col",
                     max.size=3) + ggsave("L2_plot_top3_partition_marker.png", width=5, height=6, dpi = 600)
 
 ## Cheat a bit here by automatically generating assignments that would stem from
-# manual annotation. We'll do this so that when the clusters change we don't have 
-# manually go through them. Obviously this isn't possible when you don't already 
+# manual annotation. We'll do this so that when the clusters change we don't have
+# manually go through them. Obviously this isn't possible when you don't already
 # the answers!
 type_partition_olap = as.matrix(prop.table(table(partitions(cds), colData(cds)$cao_cell_type), margin=1))
 pheatmap::pheatmap(type_partition_olap, cluster_rows=FALSE, cluster_cols=FALSE)
@@ -146,9 +139,9 @@ colData(cds)$assigned_cell_type = dplyr::recode(colData(cds)$assigned_cell_type,
 plot_cells(cds, group_cells_by="partition", color_cells_by="assigned_cell_type") + ggsave("L2_plot_cells_by_initial_annotation.png", width=5, height=4, dpi = 600)
 
 
-# # Make a violin that 
-# plot_genes_violin(cds[rowData(cds)$gene_short_name %in% c("mec-7", "mec-17", "mig-6", "flp-1", "nlp-12"), 
-#                       colData(cds)$cao_cell_type %in% c("GABAergic neurons", "Ciliated sensory neurons", "Cholinergic neurons", "Pharyngeal neurons")], 
+# # Make a violin that
+# plot_genes_violin(cds[rowData(cds)$gene_short_name %in% c("mec-7", "mec-17", "mig-6", "flp-1", "nlp-12"),
+#                       colData(cds)$cao_cell_type %in% c("GABAergic neurons", "Ciliated sensory neurons", "Cholinergic neurons", "Pharyngeal neurons")],
 #                       group_cells_by="cao_cell_type", ncol=1) +
 #     theme(axis.text.x=element_text(angle=45, hjust=1)) + ggsave("L2_interneuron_violin.png", width=4, height=4, dpi = 600)
 
@@ -162,10 +155,10 @@ pr_deg_ids = row.names(subset(pr_graph_test_res, morans_I > 0.01 & q_value < 0.0
 
 gene_module_df = find_gene_modules(cds_subset[pr_deg_ids,], resolution=1e-3)
 #c(0,10^seq(-6,-1))
-plot_cells(cds_subset, genes=gene_module_df, show_trajectory_graph=FALSE, label_cell_groups=FALSE) + 
+plot_cells(cds_subset, genes=gene_module_df, show_trajectory_graph=FALSE, label_cell_groups=FALSE) +
     ggsave("L2_sex_partition_modules.png", width=5, height=4, dpi = 600)
 
-plot_cells(cds_subset, color_cells_by="cluster") + 
+plot_cells(cds_subset, color_cells_by="cluster") +
     ggsave("L2_sex_partition_color_by_cluster.png", width=5, height=4, dpi = 600)
 
 # Plot the overlap between clusters and annotated cell types:
@@ -194,14 +187,14 @@ pheatmap::pheatmap(log(table(colData(cds)$assigned_cell_type, colData(cds)$cao_c
 
 #ceModel = readRDS(url("https://cole-trapnell-lab.github.io/garnett/classifiers/ceWhole"))
 
-assigned_type_marker_test_res = top_markers(cds[,is.na(colData(cds)$cao_cell_type) == FALSE & colData(cds)$cao_cell_type != "Failed QC"], 
-                                            group_cells_by="assigned_cell_type", 
-                                            reference_cells=1000, 
+assigned_type_marker_test_res = top_markers(cds[,is.na(colData(cds)$cao_cell_type) == FALSE & colData(cds)$cao_cell_type != "Failed QC"],
+                                            group_cells_by="assigned_cell_type",
+                                            reference_cells=1000,
                                             cores=8)
 
-garnett_markers = assigned_type_marker_test_res %>% 
+garnett_markers = assigned_type_marker_test_res %>%
     filter(fraction_expressing >= 0.25) %>%
-    group_by(cell_group) %>% 
+    group_by(cell_group) %>%
     top_n(3, pseudo_R2)
 
 generate_garnett_marker_file(garnett_markers)
@@ -266,12 +259,12 @@ row.names(agg_mat) = stringr::str_c("Module ", row.names(agg_mat))
 colnames(agg_mat) = stringr::str_c("Partition ", colnames(agg_mat))
 
 pheatmap::pheatmap(agg_mat, cluster_rows=TRUE, cluster_cols=TRUE,
-                   scale="column", clustering_method="ward.D2", 
+                   scale="column", clustering_method="ward.D2",
                    fontsize=6, width=5, height=8,
                    file="L2_neuron_module_heatmap.png")
 
-plot_cells(neurons_cds, 
-           genes=gene_module_df %>% filter(module %in% c(16,38,33,42)), 
+plot_cells(neurons_cds,
+           genes=gene_module_df %>% filter(module %in% c(16,38,33,42)),
            cell_size=1,
            group_cells_by="partition",
            color_cells_by="partition",

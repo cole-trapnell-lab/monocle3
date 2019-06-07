@@ -164,6 +164,38 @@ top_markers <- function(cds,
     marker_test_res = cluster_marker_score_table
   }
 
+  marker_test_res = tryCatch({pbmcapply::pbmcmapply(test_marker_for_cell_group,
+                                          cluster_spec_table$rowname,
+                                          cluster_spec_table$cell_group,
+                                          MoreArgs=list(cell_group_df, cds, reference_cells),
+                                          ignore.interactive = TRUE,
+                                          mc.cores=cores)},
+                             finally = {
+                               RhpcBLASctl::omp_set_num_threads(old_omp_num_threads)
+                               RhpcBLASctl::blas_set_num_threads(old_blas_num_threads)
+                             })
+
+  marker_test_res = t(marker_test_res)
+  marker_test_res = as.matrix(marker_test_res)
+  colnames(marker_test_res) = c("pseudo_R2", "lrtest_p_value")
+
+  #marker_test_res = as.data.frame(marker_test_res)
+
+  marker_test_res = dplyr::bind_cols(cluster_spec_table, as.data.frame(marker_test_res))
+  marker_test_res$lrtest_q_value = p.adjust(marker_test_res$lrtest_p_value,
+                                            method="bonferroni",
+                                            n=length(cluster_spec_mat))
+  marker_test_res = marker_test_res %>% dplyr::select(rowname, cell_group, specificity, pseudo_R2, lrtest_p_value, lrtest_q_value)
+  marker_test_res = marker_test_res %>% dplyr::rename(gene_id=rowname, marker_test_p_value=lrtest_p_value,  marker_test_q_value=lrtest_q_value)
+  marker_test_res$pseudo_R2 = unlist(marker_test_res$pseudo_R2)
+  marker_test_res$marker_test_p_value = unlist(marker_test_res$marker_test_p_value)
+
+  if ("gene_short_name" %in% colnames(rowData(cds)))
+    marker_test_res = rowData(cds) %>%
+                      as.data.frame %>%
+                      tibble::rownames_to_column() %>%
+                      dplyr::select(rowname, gene_short_name) %>%
+                      dplyr::inner_join(marker_test_res, by=c("rowname"="gene_id"))
   marker_test_res = marker_test_res %>% dplyr::rename(gene_id=rowname)
   return(marker_test_res)
 }

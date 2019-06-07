@@ -167,7 +167,10 @@ mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1, convert_to
     coldata_df$partition = partitions(cds, reduction_method)[colnames(cds)]
   }, error = function(e) {} )
 
-  coldata_df$pseudotime = pseudotime(cds) # Once we resolve issue #69.
+  tryCatch({
+    coldata_df$pseudotime = pseudotime(cds)
+  }, error = function(e) {} )
+
   Biobase::multiassign(names(as.data.frame(coldata_df)), as.data.frame(coldata_df), envir=e1)
   environment(FUN) <- e1
 
@@ -226,8 +229,9 @@ smart_es_apply <- function(cds, MARGIN, FUN, convert_to_dense, reduction_method=
   tryCatch({
     coldata_df$cluster = clusters(cds, reduction_method)[colnames(cds)]
     coldata_df$partition = partitions(cds, reduction_method)[colnames(cds)]
-    coldata_df$pseudotime = pseudotime(cds) # Once we resolve issue #69.
+    coldata_df$pseudotime = pseudotime(cds)
   }, error = function(e) {} )
+
   Biobase::multiassign(names(as.data.frame(coldata_df)), as.data.frame(coldata_df), envir=e1)
   environment(FUN) <- e1
 
@@ -272,9 +276,9 @@ load_a549 <- function(){
 #' Build a cell_data_set from the data stored in inst/extdata directory.
 #' @keywords internal
 load_worm_embryo <- function(){
-  expression_matrix = readRDS(url("http://jpacker-data.s3.amazonaws.com/for-cole/for-cole.ciliated.amphid.neurons.exprs.rds"))
-  cell_metadata = readRDS(url("http://jpacker-data.s3.amazonaws.com/for-cole/for-cole.ciliated.amphid.neurons.pData.rds"))
-  gene_annotation = readRDS(url("http://jpacker-data.s3.amazonaws.com/for-cole/for-cole.ciliated.amphid.neurons.fData.rds"))
+  expression_matrix = readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_expression.rds"))
+  cell_metadata = readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_colData.rds"))
+  gene_annotation = readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_rowData.rds"))
   gene_annotation$use_for_ordering = NULL
 
   cds <- new_cell_data_set(expression_matrix,
