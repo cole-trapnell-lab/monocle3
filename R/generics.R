@@ -13,7 +13,8 @@ setGeneric("pseudotime", function(x, reduction_method = "UMAP")
 #' @export
 setMethod("pseudotime", "cell_data_set",
           function(x, reduction_method = "UMAP") {
-            value <- x@principal_graph_aux[[reduction_method]]$pseudotime
+            value <- x@principal_graph_aux[[
+              reduction_method]]$pseudotime[colnames(exprs(x))]
             if (is.null(value)) {
               stop(paste0("No pseudotime calculated for reduction_method = ",
                           reduction_method, ". Please first run ",
@@ -37,7 +38,8 @@ setGeneric("clusters", function(x, reduction_method = "UMAP")
 #' @export
 setMethod("clusters", "cell_data_set",
           function(x, reduction_method = "UMAP") {
-            value <- x@clusters[[reduction_method]]$clusters
+            value <- x@clusters[[
+              reduction_method]]$clusters[colnames(exprs(x))]
             if (is.null(value)) {
               stop(paste0("No clusters calculated for reduction_method = ",
                           reduction_method, ". Please first run ",
@@ -62,7 +64,8 @@ setGeneric("partitions", function(x, reduction_method = "UMAP")
 #' @export
 setMethod("partitions", "cell_data_set",
           function(x, reduction_method = "UMAP") {
-            value <- x@clusters[[reduction_method]]$partitions
+            value <- x@clusters[[
+              reduction_method]]$partitions[colnames(exprs(x))]
             if (is.null(value)) {
               stop(paste0("No partitions calculated for reduction_method = ",
                           reduction_method, ". Please first run ",

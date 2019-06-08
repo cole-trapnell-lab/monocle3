@@ -470,8 +470,17 @@ detect_genes <- function(cds, min_expr=0){
 
 #' Return a size-factor normalized and (optionally) log-transformed expression
 #' matrix
+#'
+#' @param cds A CDS object to calculate normalized expression matrix from.
+#' @param norm_method String indicating the normalization method. Options are
+#'   "log" (Default), "binary" and "size_only".
+#' @param pseudocount A pseudocount to add before log transformation. Ignored
+#'   if norm_method is not "log". Default is 1.
+#'
 #' @export
-normalized_counts <- function(cds, norm_method=c("log", "binary", "size_only"), pseudocount=1){
+normalized_counts <- function(cds,
+                              norm_method=c("log", "binary", "size_only"),
+                              pseudocount=1){
   norm_method = match.arg(norm_method)
   norm_mat = counts(cds)
   if (norm_method == "binary"){
