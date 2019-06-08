@@ -1,29 +1,29 @@
-#' Cluster genes into a specified number of groups based on .
+#' Cluster genes into modules that are co-expressed across cells.
 #'
 #'
 #' @param cds the cell_data_set upon which to perform this operation
-#' @param reduction_method
-#' @param max_components
-#' @param umap.metric
-#' @param umap.min_dist
-#' @param umap.n_neighbors
-#' @param umap.fast_sgd
-#' @param umap.nn_method
+#' @param reduction_method The dimensionality reduction method used to generate the lower dimensional space in which genes will be clustered. Currently only UMAP is supported.
+#' @param max_components The number of dimensions in which to cluster genes into modules.
+#' @param umap.metric Metric used by UMAP for measuring similarity between genes .
+#' @param umap.min_dist Minimum distance parameter passed to UMAP.
+#' @param umap.n_neighbors Number of nearest neighbors used by UMAP.
+#' @param umap.fast_sgd Whether to allow UMAP to perform fast stochastic gradient descent. Defaults to TRUE. Setting FALSE will result in slower, but deterministic behavior (if cores=1).
+#' @param umap.nn_method The merthod used for nearest neighbor network construction during UMAP.
 #' @param k number of kNN used in creating the k nearest neighbor graph for Louvain clustering. The number of kNN is related to the resolution of the clustering result, bigger number of kNN gives low resolution and vice versa. Default to be 20
 #' @param louvain_iter Integer number of iterations used for Louvain clustering. The clustering result gives the largest modularity score will be used as the final clustering result.  Default to be 1. Note that if louvain_iter is large than 1, the `seed` argument will be ignored.
-#' @param partition_qval
+#' @param partition_qval Significance threhold used in Louvain community graph partitioning.
 #' @param weight A logic argument to determine whether or not we will use Jaccard coefficent for two nearest neighbors (based on the overlapping of their kNN) as the weight used for Louvain clustering. Default to be FALSE.
-#' @param resolution
+#' @param resolution Resolution parameter passed to Louvain. Can be a list. If so, this method will evaluate modularity at each resolution and use the one with the highest value.
 #' @param random_seed  the seed used by the random number generator in louvain-igraph package. This argument will be ignored if louvain_iter is larger than 1.
 #' @param cores number of cores computer should use to execute function
-#' @param verbose Verbose A logic flag to determine whether or not we should print the running details.
-#' @param ...
+#' @param verbose Whether or not verbose output is printed.
+#' @param ... Additional arguments passed to UMAP and Louvain analysis.
 #'
-#' @return
+#' @return A dataframe with genes and the modules to which they are assigned.
 #'
 #' @export
 find_gene_modules <- function(cds,
-                          reduction_method = c("UMAP", "tSNE", "PCA"),
+                          reduction_method = c("UMAP"),
                           max_components = 2,
                           umap.metric = "cosine",
                           umap.min_dist = 0.1,
@@ -137,16 +137,16 @@ my.aggregate.Matrix = function (x, groupings = NULL, form = NULL, fun = "sum", .
 #' Creates a matrix with aggregated expression values for arbitrary groups of
 #' genes
 #'
-#' @param cds
-#' @param gene_group_df
-#' @param cell_group_df
-#' @param norm_method
-#' @param pseudocount
-#' @param scale_agg_values
-#' @param max_agg_value
-#' @param min_agg_value
+#' @param cds The cell_data_set on which this function operates
+#' @param gene_group_df A dataframe in which the first column contains gene ids and the second contains groups. If NULL, genes are not grouped.
+#' @param cell_group_df A dataframe in which the first colum  contains cell ids and the second contains groups. If NULL, cells are not grouped.
+#' @param norm_method How to transform gene expression values before aggregating them. If "log", a pseudocount is added. If "size_only", values are divided by cell size factors prior to aggregation.
+#' @param pseudocount Value to add to expression prior to log transformation and aggregation.
+#' @param scale_agg_values Whether to center and scale aggregated groups of genes.
+#' @param max_agg_value If scale_agg_values is TRUE, the maximum value the resulting Z scores can take. Higher values are capped at this threshold.
+#' @param min_agg_value If scale_agg_values is TRUE, the minimum value the resulting Z scores can take. Lower values are capped at this threshold.
 #'
-#' @return
+#' @return A matrix of dimension NxM, where N is the number of gene groups and M is the number of cell groups.
 #' @export
 aggregate_gene_expression <- function(cds,
                                       gene_group_df = NULL,

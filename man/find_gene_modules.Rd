@@ -2,9 +2,9 @@
 % Please edit documentation in R/cluster_genes.R
 \name{find_gene_modules}
 \alias{find_gene_modules}
-\title{Cluster genes into a specified number of groups based on .}
+\title{Cluster genes into modules that are co-expressed across cells.}
 \usage{
-find_gene_modules(cds, reduction_method = c("UMAP", "tSNE", "PCA"),
+find_gene_modules(cds, reduction_method = c("UMAP"),
   max_components = 2, umap.metric = "cosine", umap.min_dist = 0.1,
   umap.n_neighbors = 15L, umap.fast_sgd = TRUE,
   umap.nn_method = "annoy", k = 20, louvain_iter = 1,
@@ -14,20 +14,41 @@ find_gene_modules(cds, reduction_method = c("UMAP", "tSNE", "PCA"),
 \arguments{
 \item{cds}{the cell_data_set upon which to perform this operation}
 
+\item{reduction_method}{The dimensionality reduction method used to generate the lower dimensional space in which genes will be clustered. Currently only UMAP is supported.}
+
+\item{max_components}{The number of dimensions in which to cluster genes into modules.}
+
+\item{umap.metric}{Metric used by UMAP for measuring similarity between genes .}
+
+\item{umap.min_dist}{Minimum distance parameter passed to UMAP.}
+
+\item{umap.n_neighbors}{Number of nearest neighbors used by UMAP.}
+
+\item{umap.fast_sgd}{Whether to allow UMAP to perform fast stochastic gradient descent. Defaults to TRUE. Setting FALSE will result in slower, but deterministic behavior (if cores=1).}
+
+\item{umap.nn_method}{The merthod used for nearest neighbor network construction during UMAP.}
+
 \item{k}{number of kNN used in creating the k nearest neighbor graph for Louvain clustering. The number of kNN is related to the resolution of the clustering result, bigger number of kNN gives low resolution and vice versa. Default to be 20}
 
 \item{louvain_iter}{Integer number of iterations used for Louvain clustering. The clustering result gives the largest modularity score will be used as the final clustering result.  Default to be 1. Note that if louvain_iter is large than 1, the \code{seed} argument will be ignored.}
 
+\item{partition_qval}{Significance threhold used in Louvain community graph partitioning.}
+
 \item{weight}{A logic argument to determine whether or not we will use Jaccard coefficent for two nearest neighbors (based on the overlapping of their kNN) as the weight used for Louvain clustering. Default to be FALSE.}
+
+\item{resolution}{Resolution parameter passed to Louvain. Can be a list. If so, this method will evaluate modularity at each resolution and use the one with the highest value.}
 
 \item{random_seed}{the seed used by the random number generator in louvain-igraph package. This argument will be ignored if louvain_iter is larger than 1.}
 
 \item{cores}{number of cores computer should use to execute function}
 
-\item{verbose}{Verbose A logic flag to determine whether or not we should print the running details.}
+\item{verbose}{Whether or not verbose output is printed.}
 
-\item{...}{}
+\item{...}{Additional arguments passed to UMAP and Louvain analysis.}
+}
+\value{
+A dataframe with genes and the modules to which they are assigned.
 }
 \description{
-Cluster genes into a specified number of groups based on .
+Cluster genes into modules that are co-expressed across cells.
 }

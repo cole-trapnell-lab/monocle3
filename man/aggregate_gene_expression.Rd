@@ -8,10 +8,27 @@ genes}
 aggregate_gene_expression(cds, gene_group_df = NULL,
   cell_group_df = NULL, norm_method = c("log", "binary", "size_only"),
   pseudocount = 1, scale_agg_values = TRUE, max_agg_value = 3,
-  min_agg_value = -3)
+  min_agg_value = -3, exclude.na = TRUE)
 }
 \arguments{
-\item{min_agg_value}{}
+\item{cds}{The cell_data_set on which this function operates}
+
+\item{gene_group_df}{A dataframe in which the first column contains gene ids and the second contains groups. If NULL, genes are not grouped.}
+
+\item{cell_group_df}{A dataframe in which the first colum  contains cell ids and the second contains groups. If NULL, cells are not grouped.}
+
+\item{norm_method}{How to transform gene expression values before aggregating them. If "log", a pseudocount is added. If "size_only", values are divided by cell size factors prior to aggregation.}
+
+\item{pseudocount}{Value to add to expression prior to log transformation and aggregation.}
+
+\item{scale_agg_values}{Whether to center and scale aggregated groups of genes.}
+
+\item{max_agg_value}{If scale_agg_values is TRUE, the maximum value the resulting Z scores can take. Higher values are capped at this threshold.}
+
+\item{min_agg_value}{If scale_agg_values is TRUE, the minimum value the resulting Z scores can take. Lower values are capped at this threshold.}
+}
+\value{
+A matrix of dimension NxM, where N is the number of gene groups and M is the number of cell groups.
 }
 \description{
 Creates a matrix with aggregated expression values for arbitrary groups of
