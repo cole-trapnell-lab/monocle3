@@ -8,30 +8,33 @@ sparse_prcomp_irlba(x, n = 3, retx = TRUE, center = TRUE,
   scale. = FALSE, ...)
 }
 \arguments{
-\item{x}{a numeric or complex matrix (or data frame) which provides
-the data for the principal components analysis.}
+\item{x}{a numeric or complex matrix (or data frame) which provides the data
+for the principal components analysis.}
 
-\item{n}{integer number of principal component vectors to return, must be less than
-\code{min(dim(x))}.}
+\item{n}{integer number of principal component vectors to return, must be
+less than \code{min(dim(x))}.}
 
-\item{retx}{a logical value indicating whether the rotated variables should be returned.}
+\item{retx}{a logical value indicating whether the rotated variables should
+be returned.}
 
 \item{center}{a logical value indicating whether the variables should be
 shifted to be zero centered. Alternately, a centering vector of length
 equal the number of columns of \code{x} can be supplied.}
 
 \item{scale.}{a logical value indicating whether the variables should be
-scaled to have unit variance before the analysis takes place.
-The default is \code{FALSE} for consistency with S, but scaling is often advisable.
-Alternatively, a vector of length equal the number of columns of \code{x} can be supplied.\preformatted{     The value of \code{scale} determines how column scaling is performed
-     (after centering).  If \code{scale} is a numeric vector with length
-     equal to the number of columns of \code{x}, then each column of \code{x} is
-     divided by the corresponding value from \code{scale}.  If \code{scale} is
-     \code{TRUE} then scaling is done by dividing the (centered) columns of
-     \code{x} by their standard deviations if \code{center=TRUE}, and the
-     root mean square otherwise.  If \code{scale} is \code{FALSE}, no scaling is done.
-     See \code{\link{scale}} for more details.
-}}
+scaled to have unit variance before the analysis takes place. The default
+is \code{FALSE} for consistency with S, but scaling is often advisable.
+Alternatively, a vector of length equal the number of columns of \code{x}
+can be supplied.
+
+The value of \code{scale} determines how column scaling is performed
+(after centering). If \code{scale} is a numeric vector with length equal
+to the number of columns of \code{x}, then each column of \code{x} is
+divided by the corresponding value from \code{scale}. If \code{scale} is
+\code{TRUE} then scaling is done by dividing the (centered) columns of
+\code{x} by their standard deviations if \code{center=TRUE}, and the root
+mean square otherwise.  If \code{scale} is \code{FALSE}, no scaling is done.
+See \code{\link{scale}} for more details.}
 
 \item{...}{additional arguments passed to \code{\link{irlba}}.}
 }
@@ -39,34 +42,35 @@ Alternatively, a vector of length equal the number of columns of \code{x} can be
 A list with class "prcomp" containing the following components:
 \itemize{
 \item{sdev} {the standard deviations of the principal components (i.e.,
-the square roots of the eigenvalues of the
-covariance/correlation matrix, though the calculation is
-actually done with the singular values of the data matrix).}
-\item{rotation} {the matrix of variable loadings (i.e., a matrix whose columns
-contain the eigenvectors).}
-\item {x} {if \code{retx} is \code{TRUE} the value of the rotated data (the centred
-(and scaled if requested) data multiplied by the \code{rotation}
-matrix) is returned.  Hence, \code{cov(x)} is the diagonal matrix
-\code{diag(sdev^2)}.}
+the square roots of the eigenvalues of the covariance/correlation
+matrix, though the calculation is actually done with the singular
+values of the data matrix).}
+\item{rotation} {the matrix of variable loadings (i.e., a matrix whose
+columns contain the eigenvectors).}
+\item {x} {if \code{retx} is \code{TRUE} the value of the rotated data
+(the centred (and scaled if requested) data multiplied by the
+\code{rotation} matrix) is returned. Hence, \code{cov(x)} is the
+diagonal matrix \code{diag(sdev^2)}.}
 \item{center, scale} {the centering and scaling used, or \code{FALSE}.}
 }
 }
 \description{
-Efficient computation of a truncated principal components analysis of a given data matrix
-using an implicitly restarted Lanczos method from the \code{\link{irlba}} package.
+Efficient computation of a truncated principal components analysis of a
+given data matrix using an implicitly restarted Lanczos method from the
+\code{\link{irlba}} package.
 }
 \note{
-The signs of the columns of the rotation matrix are arbitrary, and
-so may differ between different programs for PCA, and even between
-different builds of R.
+The signs of the columns of the rotation matrix are arbitrary, and so may
+differ between different programs for PCA, and even between different builds
+of R.
 
-NOTE DIFFERENCES WITH THE DEFAULT \code{\link{prcomp}} FUNCTION!
-The \code{tol} truncation argument found in \code{prcomp} is not supported.
-In place of the truncation tolerance in the original function, the
-\code{prcomp_irlba}  function has the argument \code{n} explicitly giving the
-number of principal components to return. A warning is generated if the
-argument \code{tol} is used, which is interpreted differently between
-the two functions.
+NOTE DIFFERENCES WITH THE DEFAULT \code{\link{prcomp}} FUNCTION! The
+\code{tol} truncation argument found in \code{prcomp} is not supported. In
+place of the truncation tolerance in the original function, the
+\code{prcomp_irlba}  function has the argument \code{n} explicitly giving
+the number of principal components to return. A warning is generated if the
+argument \code{tol} is used, which is interpreted differently between the
+two functions.
 }
 \examples{
 \dontrun{set.seed(1)
@@ -77,7 +81,6 @@ summary(p1)
 # Compare with
 p2 <- prcomp(x, tol=0.7)
 summary(p2)}
-
 
 }
 \seealso{

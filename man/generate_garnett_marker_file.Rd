@@ -2,7 +2,7 @@
 % Please edit documentation in R/find_markers.R
 \name{generate_garnett_marker_file}
 \alias{generate_garnett_marker_file}
-\title{Title}
+\title{Generate a Garnett marker file from top_markers output.}
 \usage{
 generate_garnett_marker_file(marker_test_res, file = "./marker_file.txt",
   max_genes_per_group = 10)
@@ -21,5 +21,5 @@ per cell type entry. Default is 10.}
 None, marker file is written to \code{file} parameter location.
 }
 \description{
-Title
+Generate a Garnett marker file from top_markers output.
 }

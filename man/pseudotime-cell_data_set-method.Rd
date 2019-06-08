@@ -8,7 +8,7 @@
 \S4method{pseudotime}{cell_data_set}(x, reduction_method = "UMAP")
 }
 \arguments{
-\item{cell_data_set}{CDS object}
+\item{cell_data_set}{A cell_data_set object.}
 }
 \description{
 Method to extract pseudotime from CDS object

@@ -1,6 +1,6 @@
 #' Identify the genes most specifically expressed in specified groups of cells
 #'
-#' @param cds cell_data_set object to calculate top markers for
+#' @param cds A cell_data_set object to calculate top markers for.
 #' @param group_cells_by String indicating what to group cells by for
 #'   comparison. Default is "cluster".
 #' @param genes_to_test_per_group Numeric, how many genes of the top ranked
@@ -8,7 +8,8 @@
 #'   on.
 #' @param reduction_method String indicating the method used for dimensionality
 #'   reduction. Currently only "UMAP" is supported.
-#' @param expression_bins ?
+#' @param expression_bins
+#' @param reference_cells
 #' @param cores Number of cores to use.
 #'
 #' @export
@@ -23,25 +24,31 @@ top_markers <- function(cds,
 ){
 
   # Yes, it's stupid we have cell ids both as a column and as the rownames.
-  cell_group_df = data.frame(row.names=row.names(colData(cds)),
-                             cell_id=row.names(colData(cds)))
+  cell_group_df <- data.frame(row.names=row.names(colData(cds)),
+                              cell_id=row.names(colData(cds)))
 
   # Set up the table that partitions the cells into groups.
   # Must be either a column in colData or one of "cluster" or "partition.
-  # FIXME: Should check its not a column you can't really use for grouping (i.e. a floating point value)
+  # FIXME: Should check its not a column you can't really use for grouping
+  # (i.e. a floating point value)
   if (group_cells_by == "cluster"){
-    cell_group_df$cell_group = tryCatch({clusters(cds, reduction_method = reduction_method)}, error = function(e) {NULL})
+    cell_group_df$cell_group <-
+      tryCatch({clusters(cds, reduction_method = reduction_method)},
+               error = function(e) {NULL})
   } else if (group_cells_by == "partition") {
-    cell_group_df$cell_group = tryCatch({partitions(cds, reduction_method = reduction_method)}, error = function(e) {NULL})
+    cell_group_df$cell_group <-
+      tryCatch({partitions(cds, reduction_method = reduction_method)},
+               error = function(e) {NULL})
   } else{
-    cell_group_df$cell_group = colData(cds)[,group_cells_by]
+    cell_group_df$cell_group <- colData(cds)[,group_cells_by]
   }
-  cell_group_df$cell_group = as.character(cell_group_df$cell_group)
+  cell_group_df$cell_group <- as.character(cell_group_df$cell_group)
 
   if (verbose)
     message("Aggregating gene expression values for groups")
   # For each gene compute the fraction of cells expressing it within each group
   # in a matrix thats genes x cell groups
+
   cluster_binary_exprs = as.matrix(aggregate_gene_expression(cds,
                                                              cell_group_df=cell_group_df,
                                                              norm_method="binary"))
@@ -97,8 +104,9 @@ top_markers <- function(cds,
     dplyr::group_by(cell_group) %>%
     dplyr::top_n(genes_to_test_per_group, marker_score)
 
-  cell_group_df$cell_id = as.character(cell_group_df$cell_id)
-  cell_group_df$cell_group = as.character(cell_group_df$cell_group)
+  cell_group_df$cell_id <- as.character(cell_group_df$cell_id)
+  cell_group_df$cell_group <- as.character(cell_group_df$cell_group)
+
 
   if (marker_sig_test){
     if (verbose)
@@ -174,6 +182,7 @@ top_markers <- function(cds,
     marker_test_res = cluster_marker_score_table
   }
 
+
   if (verbose)
     message("Done")
   marker_test_res = marker_test_res %>% dplyr::rename(gene_id=rowname)
@@ -182,16 +191,16 @@ top_markers <- function(cds,
 
 
 # Calculate the probability vector
-makeprobsvec<-function(p){
-  phat<-p/sum(p)
+makeprobsvec <- function(p) {
+  phat <- p/sum(p)
   phat[is.na(phat)] = 0
   phat
 }
 
 # Calculate the probability matrix for a relative abundance matrix
-makeprobs<-function(a){
+makeprobs <- function(a) {
   colSums<-apply(a,2,sum)
-  b<-Matrix::t(Matrix::t(a)/colSums)
+  b <- Matrix::t(Matrix::t(a)/colSums)
   b[is.na(b)] = 0
   b
 }
@@ -200,7 +209,7 @@ makeprobs<-function(a){
 shannon.entropy <- function(p) {
   if (min(p) < 0 || sum(p) <=0)
     return(Inf)
-  p.norm<-p[p>0]/sum(p)
+  p.norm <- p[p>0]/sum(p)
   -sum(log2(p.norm)*p.norm)
 }
 
@@ -216,17 +225,18 @@ JSdistVec <- function (p, q)
 }
 
 specificity_matrix <- function(agg_expr_matrix, cores=1){
-  specificity_mat = pbmcapply::pbmclapply(row.names(agg_expr_matrix),
-                                          FUN = function(x)
-                                          {
-                                            agg_exprs = as.numeric(agg_expr_matrix[x,])
-                                            agg_exprs = makeprobsvec(agg_exprs)
-                                            perfect_spec_matrix = diag(ncol(agg_expr_matrix))
-                                            sapply(1:ncol(agg_expr_matrix), function(col_idx) {
-                                              1 - JSdistVec(agg_exprs, perfect_spec_matrix[,col_idx])
-                                            })
-                                          }, mc.cores=cores,
-                                          ignore.interactive = TRUE)
+  specificity_mat <-
+    pbmcapply::pbmclapply(row.names(agg_expr_matrix),
+                          FUN = function(x) {
+                            agg_exprs = as.numeric(agg_expr_matrix[x,])
+                            agg_exprs = makeprobsvec(agg_exprs)
+                            perfect_spec_matrix = diag(ncol(agg_expr_matrix))
+                            sapply(1:ncol(agg_expr_matrix), function(col_idx) {
+                              1 - JSdistVec(agg_exprs,
+                                            perfect_spec_matrix[,col_idx])
+                            })
+                          }, mc.cores=cores,
+                          ignore.interactive = TRUE)
   specificity_mat = do.call(rbind, specificity_mat)
   colnames(specificity_mat) = colnames(agg_expr_matrix)
   row.names(specificity_mat) = row.names(agg_expr_matrix)
@@ -254,45 +264,52 @@ enrichment_matrix <- function(agg_expr_matrix, cores=1){
   #
 }
 
-test_marker_for_cell_group = function(gene_id, cell_group, cell_group_df, cds, reference_cells=NULL){
+test_marker_for_cell_group = function(gene_id, cell_group, cell_group_df, cds,
+                                      reference_cells=NULL){
   #print(gene_id)
   #print(cell_group)
   #print (length(reference_cells))
-  results = tryCatch({
-    f_expression = log(as.numeric(counts(cds)[gene_id,]) / size_factors(cds) + 0.1)
+  results <- tryCatch({
+    f_expression <-
+      log(as.numeric(counts(cds)[gene_id,]) / size_factors(cds) + 0.1)
     #print(sum(counts(cds)[gene_id,] > 0))
-    is_member = as.character(cell_group_df[colnames(cds),2]) == as.character(cell_group)
+    is_member <-
+      as.character(cell_group_df[colnames(cds),2]) == as.character(cell_group)
     names(is_member) = names(f_expression) = colnames(cds)
     is_member[is.na(is_member)] = FALSE
     is_member[is.null(is_member)] = FALSE
 
     if (is.null(reference_cells) == FALSE){
-      # Exclude cells that aren't in either the cell_group or the reference_panel
-      f_expression = f_expression[is_member | names(f_expression) %in% reference_cells]
-      is_member = is_member[is_member | names(is_member) %in% reference_cells]
+      # Exclude cells that aren't in either the cell_group or the
+      # reference_panel
+      f_expression <- f_expression[is_member | names(f_expression) %in%
+                                     reference_cells]
+      is_member <- is_member[is_member | names(is_member) %in% reference_cells]
     }
 
     if (sum(is.na(f_expression)) > 0 || sum(is.na(is_member)) > 0){
       stop("Expression and group membership can't be NA")
     }
 
-    model = speedglm::speedglm(is_member ~ f_expression,
-                               acc=1e-3, model=FALSE,
-                               y=FALSE,
-                               verbose=TRUE,
-                               family=binomial())
-    null_model = speedglm::speedglm(is_member ~ 1,
-                                    acc=1e-3, model=FALSE,
-                                    y=FALSE,
-                                    verbose=TRUE,
-                                    family=binomial())
+    model <- speedglm::speedglm(is_member ~ f_expression,
+                                acc=1e-3, model=FALSE,
+                                y=FALSE,
+                                verbose=TRUE,
+                                family=binomial())
+    null_model <- speedglm::speedglm(is_member ~ 1,
+                                     acc=1e-3, model=FALSE,
+                                     y=FALSE,
+                                     verbose=TRUE,
+                                     family=binomial())
     lr.stat <- lmtest::lrtest(null_model, model)
     #print (summary(model))
     # #print(summary(null_model))
     # #print (lr.stat)
     #print (str(lr.stat))
     n=ncol(cds)
-    pseudo_R2 = (1-exp(-as.numeric(lr.stat$Chisq[2])/n))/(1-exp(2*as.numeric(logLik(null_model)/n)))
+    pseudo_R2 <-
+      (1-exp(-as.numeric(lr.stat$Chisq[2])/n)) /
+      (1-exp(2*as.numeric(logLik(null_model)/n)))
     LR_test_pval = lr.stat$`Pr(>Chisq)`[2]
     # model_summary = summary(model)
     # #print(model_summary)
@@ -306,7 +323,7 @@ test_marker_for_cell_group = function(gene_id, cell_group, cell_group_df, cds, r
   return(results)
 }
 
-#' Title
+#' Generate a Garnett marker file from top_markers output.
 #'
 #' @param marker_test_res Tibble of top markers, output of
 #'   \code{\link{top_markers}}.

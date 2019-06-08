@@ -1,35 +1,36 @@
-# Removes a bunch of auxiliary data from VGAM objects that we usually don't need.
-clean_vgam_model_object = function(model) {
-  attributes(model@terms$terms)$.Environment = NULL
+# Removes a bunch of auxiliary data from VGAM objects that we usually don't
+# need.
+clean_vgam_model_object <- function(model) {
+  attributes(model@terms$terms)$.Environment <- NULL
   model@misc$formula = NULL
-  model@x = matrix()
-  model@y = matrix()
-  model@fitted.values = matrix()
-  model@residuals = matrix()
-  model@qr = list()
+  model@x <- matrix()
+  model@y <- matrix()
+  model@fitted.values <- matrix()
+  model@residuals <- matrix()
+  model@qr <- list()
   return(model)
 }
 
-clean_mass_model_object = function(cm) {
-  cm$y = c()
+clean_mass_model_object <- function(cm) {
+  cm$y <- c()
   #cm$model = c()
-  cm$residuals = c()
-  cm$fitted.values = c()
-  cm$effects = c()
-  cm$qr$qr = c()
-  cm$linear.predictors = c()
-  cm$weights = c()
-  cm$prior.weights = c()
-  cm$data = c()
+  cm$residuals <- c()
+  cm$fitted.values <- c()
+  cm$effects <- c()
+  cm$qr$qr <- c()
+  cm$linear.predictors <- c()
+  cm$weights <- c()
+  cm$prior.weights <- c()
+  cm$data <- c()
 
-  cm$family$variance = c()
-  cm$family$dev.resids = c()
-  cm$family$aic = c()
-  cm$family$validmu = c()
-  cm$family$simulate = c()
-  cm$family$control = c()
-  attr(cm$terms,".Environment") = c()
-  attr(cm$formula,".Environment") = c()
+  cm$family$variance <- c()
+  cm$family$dev.resids <- c()
+  cm$family$aic <- c()
+  cm$family$validmu <- c()
+  cm$family$simulate <- c()
+  cm$family$control <- c()
+  attr(cm$terms,".Environment") <- c()
+  attr(cm$formula,".Environment") <- c()
   return(cm)
 }
 
@@ -179,13 +180,14 @@ fit_model_helper <- function(x,
 #' cell_data_set. Formulae can be provided to account for additional covariates
 #' (e.g. day collected, genotype of cells, media conditions, etc).
 #'
-#' @param cds the cell_data_set upon which to perform this operation
-#' @param model_formula_str a formula string specifying the model to fit for
+#' @param cds The cell_data_set upon which to perform this operation.
+#' @param model_formula_str A formula string specifying the model to fit for
 #'   the genes.
-#' @param expression_family specifies the family function used for expression
-#'   responses. Default is "quasipoisson"
-#' @param reduction_method which method to use with clusters() and partitions(). Default is "UMAP".
-#' @param cores the number of processor cores use during fitting.
+#' @param expression_family Specifies the family function used for expression
+#'   responses. Default is "quasipoisson".
+#' @param reduction_method Which method to use with clusters() and
+#'   partitions(). Default is "UMAP".
+#' @param cores The number of processor cores to use during fitting.
 #' @param clean_model Logical indicating whether to clean the model. Default is
 #'   TRUE.
 #' @param verbose Logical indicating whether to emit progress messages.
@@ -202,16 +204,23 @@ fit_models <- function(cds,
 
   model_form <- stats::as.formula(model_formula_str)
 
-  # FIXME: These checks are too stringent, because they don't catch formula that include functions of columns in colData.
-  # for example, the formula `~ splines::ns(pseudotime, df=3) triggers the error.
+  # FIXME: These checks are too stringent, because they don't catch formula
+  # that include functions of columns in colData. For example, the formula
+  # `~ splines::ns(pseudotime, df=3) triggers the error.
   # if (length(model_form[[2]]) == 1) {
-  #   if (!as.character(model_form[[2]]) %in% c(names(colData(cds)), "~", "1", "|", "+", "-", ":", "*", "^", "I")) {
-  #     stop(paste(as.character(model_form[[2]][[i]]), "formula element is missing"))
+  #   if (!as.character(model_form[[2]]) %in%
+  #       c(names(colData(cds)), "~", "1", "|", "+", "-",
+  #         ":", "*", "^", "I")) {
+  #     stop(paste(as.character(model_form[[2]][[i]]),
+  #                             "formula element is missing"))
   #   }
   # } else {
   #   for(i in 1:length(model_form[[2]])) {
-  #     if (!as.character(model_form[[2]][[i]]) %in% c(names(colData(cds)), "~", "1", "|", "+", "-", ":", "*", "^", "I")) {
-  #       stop(paste(as.character(model_form[[2]][[i]]), "formula element is missing"))
+  #     if (!as.character(model_form[[2]][[i]]) %in%
+  #         c(names(colData(cds)), "~", "1", "|", "+", "-",
+  #           ":", "*", "^", "I")) {
+  #       stop(paste(as.character(model_form[[2]][[i]]),
+  #                               "formula element is missing"))
   #     }
   #   }
   # }
@@ -253,27 +262,26 @@ fit_models <- function(cds,
     fits
   }
 
-  fits = tibble::as_tibble(purrr::transpose(fits))
-  M_f = tibble::as_tibble(rowData(cds))
-  M_f = dplyr::bind_cols(M_f, fits)
-  M_f = M_f %>%
-    dplyr::mutate(status = purrr::map(.f = purrr::possibly(extract_model_status_helper,
-                                                           NA_real_),
-                                      .x = model)) %>%
+  fits <- tibble::as_tibble(purrr::transpose(fits))
+  M_f <- tibble::as_tibble(rowData(cds))
+  M_f <- dplyr::bind_cols(M_f, fits)
+  M_f <- M_f %>%
+    dplyr::mutate(status = purrr::map(.f = purrr::possibly(
+      extract_model_status_helper, NA_real_), .x = model)) %>%
     tidyr::unnest(status)
   return(M_f)
 }
 
-extract_model_status_helper = function(model){
+extract_model_status_helper <- function(model){
   if (class(model)[1] == "speedglm") {
-    status_str = ifelse(model$convergence, "OK", "FAIL")
+    status_str <- ifelse(model$convergence, "OK", "FAIL")
     return (status_str)
 
   } else if (class(model)[1] == "negbin"){
-    status_str = ifelse(model$converged, "OK", "FAIL")
+    status_str <- ifelse(model$converged, "OK", "FAIL")
     return (status_str)
   } else if (class(model) == "zeroinfl"){
-    status_str = ifelse(model$converged, "OK", "FAIL")
+    status_str <- ifelse(model$converged, "OK", "FAIL")
     return (status_str)
   }else {
     return("FAIL")
@@ -283,8 +291,10 @@ extract_model_status_helper = function(model){
 extract_coefficient_helper = function(model, model_summary,
                                       pseudo_count = 0.01) {
   if (class(model)[1] == "speedglm") {
-    coef_mat = model_summary$coefficients # first row is intercept
-    coef_mat = apply(coef_mat, 2, function(x) {as.numeric(as.character(x)) }) # We need this because some summary methods "format" the coefficients into a factor...
+    coef_mat <- model_summary$coefficients # first row is intercept
+    # We need this because some summary methods "format" the coefficients into
+    # a factor...
+    coef_mat <- apply(coef_mat, 2, function(x) {as.numeric(as.character(x)) })
     row.names(coef_mat) = row.names(model_summary$coefficients)
     colnames(coef_mat) = c('estimate',
                            'std_err',
@@ -303,7 +313,9 @@ extract_coefficient_helper = function(model, model_summary,
 
   } else if (class(model)[1] == "negbin"){
     coef_mat = model_summary$coefficients # first row is intercept
-    coef_mat = apply(coef_mat, 2, function(x) {as.numeric(as.character(x)) }) # We need this because some summary methods "format" the coefficients into a factor...
+    # We need this because some summary methods "format" the coefficients into
+    # a factor...
+    coef_mat = apply(coef_mat, 2, function(x) {as.numeric(as.character(x)) })
     row.names(coef_mat) = row.names(model_summary$coefficients)
     colnames(coef_mat) = c('estimate',
                            'std_err',
@@ -330,7 +342,8 @@ extract_coefficient_helper = function(model, model_summary,
                                              count_coef_mat[1, 1]) +
                                pseudo_count) /
                               rep(model$linkinv(count_coef_mat[1, 1]) +
-                                    pseudo_count, times = nrow(count_coef_mat)))
+                                    pseudo_count,
+                                  times = nrow(count_coef_mat)))
     log_eff_over_int[1] = 0
     count_coef_mat = tibble::as_tibble(count_coef_mat, rownames = "term")
     count_coef_mat$normalized_effect = log_eff_over_int
@@ -368,9 +381,9 @@ extract_coefficient_helper = function(model, model_summary,
 #' @export
 coefficient_table <- function(model_tbl) {
   M_f = model_tbl %>%
-    dplyr::mutate(terms = purrr::map2(.f = purrr::possibly(extract_coefficient_helper,
-                                                           NA_real_),
-                                      .x = model, .y = model_summary)) %>%
+    dplyr::mutate(terms = purrr::map2(.f = purrr::possibly(
+      extract_coefficient_helper, NA_real_), .x = model,
+      .y = model_summary)) %>%
     tidyr::unnest(terms)
   M_f = M_f %>% dplyr::group_by(model_component, term) %>%
     dplyr::mutate(q_value = p.adjust(p_value)) %>% dplyr::ungroup()
@@ -386,22 +399,24 @@ coefficient_table <- function(model_tbl) {
 #'
 #' @export
 compare_models <- function(model_tbl_full, model_tbl_reduced){
-  model_x_eval = evaluate_fits(model_tbl_full)
-  model_y_eval = evaluate_fits(model_tbl_reduced)
-  joined_fits = dplyr::full_join(model_x_eval, model_y_eval,
-                                 by=c("id", "gene_short_name",
-                                      "num_cells_expressed"))
+  model_x_eval <- evaluate_fits(model_tbl_full)
+  model_y_eval <- evaluate_fits(model_tbl_reduced)
+  joined_fits <- dplyr::full_join(model_x_eval, model_y_eval,
+                                  by=c("id", "gene_short_name",
+                                       "num_cells_expressed"))
 
-  joined_fits = joined_fits %>% dplyr::mutate(
-    dfs = round(abs(df_residual.x  - df_residual.y)),
-    LLR = 2 * abs(logLik.x  - logLik.y),
-    p_value = pchisq(LLR, dfs, lower.tail = FALSE)
+  joined_fits <- joined_fits %>% dplyr::mutate(
+    dfs <- round(abs(df_residual.x  - df_residual.y)),
+    LLR <- 2 * abs(logLik.x  - logLik.y),
+    p_value <- pchisq(LLR, dfs, lower.tail = FALSE)
   )
 
-  joined_fits = joined_fits %>% dplyr::select(id, gene_short_name,
-                                              num_cells_expressed, p_value)
-  joined_fits$q_value = p.adjust(joined_fits$p_value)
-  # joined_fits = joined_fits %>% dplyr::mutate(lr_test_p_value = purrr::map2_dbl(model_summary.x, model_summary.x,
+  joined_fits <- joined_fits %>% dplyr::select(id, gene_short_name,
+                                               num_cells_expressed, p_value)
+  joined_fits$q_value <- p.adjust(joined_fits$p_value)
+  # joined_fits = joined_fits %>%
+  #               dplyr::mutate(lr_test_p_value = purrr::map2_dbl(
+  #                             model_summary.x, model_summary.x,
   #                   function(x, y) {
   #                     if (identical(class(x), class(y))){
   #                       likelihood_ratio_test_pval(x,y)
@@ -420,11 +435,11 @@ compare_models <- function(model_tbl_full, model_tbl_reduced){
 #' @param model_tbl A tibble of model objects, generally output of
 #'   \code{\link{fit_models}}.
 #' @export
-evaluate_fits = function(model_tbl){
-  private_glance = function(m){
+evaluate_fits <- function(model_tbl){
+  private_glance <- function(m){
 
 
-    mass_glance = function(m) {
+    mass_glance <- function(m) {
       tibble::tibble(null_deviance = m$null.deviance,
                      df_null = m$df.null,
                      logLik = as.numeric(logLik(m)),
@@ -434,16 +449,16 @@ evaluate_fits = function(model_tbl){
                      df_residual = m$df.residual)
     }
 
-    zeroinfl_glance = function(m) {
+    zeroinfl_glance <- function(m) {
       tibble::tibble(null_deviance = NA_real_,
                      df_null = m$df.null,
-             logLik = as.numeric(logLik(m)),
-             AIC = AIC(m),
-             BIC = AIC(m),
-             deviance = NA_real_,
-             df_residual = m$df.residual)
+                     logLik = as.numeric(logLik(m)),
+                     AIC = AIC(m),
+                     BIC = AIC(m),
+                     deviance = NA_real_,
+                     df_residual = m$df.residual)
     }
-    speedglm_glance = function(m) {
+    speedglm_glance <- function(m) {
       tibble::tibble(null_deviance = m$nulldev,
                      df_null = m$nulldf,
                      logLik = m$logLik,
@@ -452,7 +467,7 @@ evaluate_fits = function(model_tbl){
                      deviance = m$deviance,
                      df_residual = m$df)
     }
-    default_glance = function(m) {
+    default_glance <- function(m) {
       tibble::tibble(null_deviance = NA_real_,
                      df_null = NA_integer_,
                      logLik = NA_real_,
@@ -463,19 +478,19 @@ evaluate_fits = function(model_tbl){
     }
 
     tryCatch({switch(class(m)[1],
-                      "negbin" = mass_glance(m),
-                      "zeroinfl" = zeroinfl_glance(m),
-                      "speedglm" = speedglm_glance(m),
-                      default_glance(m)
-                      )
-             })
+                     "negbin" = mass_glance(m),
+                     "zeroinfl" = zeroinfl_glance(m),
+                     "speedglm" = speedglm_glance(m),
+                     default_glance(m)
+    )
+    })
 
   }
   model_tbl %>% dplyr::mutate(glanced = purrr::map(model, private_glance)) %>%
     tidyr::unnest(glanced, .drop=TRUE)
 }
 
-likelihood_ratio_test_pval = function(model_summary_x, model_summary_y){
+likelihood_ratio_test_pval <- function(model_summary_x, model_summary_y) {
   dfs = round(abs(model_summary_x$df.residual  - model_summary_y$df.residual))
   LLR = 2 * abs(model_summary_x$logLik  - model_summary_y$logLik)
   p_val = pchisq(LLR, dfs, lower.tail = FALSE)
@@ -490,8 +505,8 @@ likelihood_ratio_test_pval = function(model_summary_x, model_summary_y){
 #' @param type String of type to pass to predict. Default is "response".
 #'
 #' @export
-model_predictions = function(model_tbl, new_data, type="response") {
-  predict_helper = function(model, cds){
+model_predictions <- function(model_tbl, new_data, type="response") {
+  predict_helper <- function(model, cds){
     tryCatch({
       predict(model, newdata=new_data, type=type)
     }, error = function(e){
@@ -500,7 +515,7 @@ model_predictions = function(model_tbl, new_data, type="response") {
       return(retval)
     })
   }
-  model_tbl = model_tbl %>%
+  model_tbl <- model_tbl %>%
     dplyr::mutate(predictions = purrr::map(model, predict_helper, new_data))
   pred_matrix = t(do.call(cbind, model_tbl$predictions))
   return(pred_matrix)

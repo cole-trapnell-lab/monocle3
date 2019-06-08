@@ -53,7 +53,8 @@ choose_cells <- function(cds,
         shiny::h4("Details:"),
         shiny::tags$ul(
           shiny::tags$li("To start over, click 'Clear'"),
-          shiny::tags$li("You can also choose/unchoose specific cells by clicking on them directly")
+          shiny::tags$li(paste("You can also choose/unchoose specific cells",
+                               "by clicking on them directly"))
         )
       ),
 
@@ -220,13 +221,15 @@ choose_graph_segments <- function(cds,
           tags$li("Click 'Choose starting node' to highlight."),
           tags$li("Highlight ending principal_graph node(s)."),
           tags$li("Click 'Choose ending nodes' to highlight."),
-          tags$li("Click 'Connect nodes' to highlight connecting nodes and cells"),
+          tags$li(paste("Click 'Connect nodes' to highlight connecting nodes",
+                        "and cells")),
           tags$li("Click 'Done' to return the chosen subset.")
         ),
         h4("Details:"),
         tags$ul(
           tags$li("To start over, click 'Clear'"),
-          tags$li("You can choose multiple ending nodes, but only 1 starting node.")
+          tags$li(paste("You can choose multiple ending nodes, but only 1",
+                        "starting node."))
         )
       ),
 
@@ -287,7 +290,8 @@ choose_graph_segments <- function(cds,
                            end_cells = row.names(princ_points)[vals$end]),
         error = function(e) print(e))
       vals$chosen <- vals$chosen | row.names(princ_points) %in% chosen$nodes
-      vals$chosen_cells <- vals$chosen_cells | row.names(pData(cds)) %in% chosen$cells
+      vals$chosen_cells <- vals$chosen_cells | row.names(pData(cds)) %in%
+        chosen$cells
       vals$start = rep(FALSE, nrow(princ_points))
       vals$end =  rep(FALSE, nrow(princ_points))
     })
@@ -390,14 +394,16 @@ plot_principal_graph <- function(data_df,
     igraph::as_data_frame() %>%
     dplyr::select_(source = "from", target = "to") %>%
     dplyr::left_join(ica_space_df %>%
-                       dplyr::select_(source="sample_name",
-                                      source_prin_graph_dim_1="prin_graph_dim_1",
-                                      source_prin_graph_dim_2="prin_graph_dim_2"),
+                       dplyr::select_(
+                         source="sample_name",
+                         source_prin_graph_dim_1="prin_graph_dim_1",
+                         source_prin_graph_dim_2="prin_graph_dim_2"),
                      by = "source") %>%
     dplyr::left_join(ica_space_df %>%
-                       dplyr::select_(target="sample_name",
-                                      target_prin_graph_dim_1="prin_graph_dim_1",
-                                      target_prin_graph_dim_2="prin_graph_dim_2"),
+                       dplyr::select_(
+                         target="sample_name",
+                         target_prin_graph_dim_1="prin_graph_dim_1",
+                         target_prin_graph_dim_2="prin_graph_dim_2"),
                      by = "target")
 
   g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2))
@@ -405,7 +411,8 @@ plot_principal_graph <- function(data_df,
   g <- g + geom_point(color=data_df$chosen_cells, size=I(cell_size),
                       na.rm = TRUE, alpha = I(alpha))
 
-  message("cluster_cells() has not been called yet, can't color cells by cluster")
+  message(paste("cluster_cells() has not been called yet, can't color cells",
+                "by cluster"))
 
   g <- g + geom_point(aes(x = x, y = y, color = chosen), data=princ_points) +
     scale_color_manual(values = c("Start" = "green", "End" = "blue",

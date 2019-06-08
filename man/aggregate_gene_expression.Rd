@@ -2,13 +2,18 @@
 % Please edit documentation in R/cluster_genes.R
 \name{aggregate_gene_expression}
 \alias{aggregate_gene_expression}
-\title{Creates a matrix with aggregated expression values for arbitrary groups of genes}
+\title{Creates a matrix with aggregated expression values for arbitrary groups of
+genes}
 \usage{
 aggregate_gene_expression(cds, gene_group_df = NULL,
   cell_group_df = NULL, norm_method = c("log", "binary", "size_only"),
   pseudocount = 1, scale_agg_values = TRUE, max_agg_value = 3,
   min_agg_value = -3)
 }
+\arguments{
+\item{min_agg_value}{}
+}
 \description{
-Creates a matrix with aggregated expression values for arbitrary groups of genes
+Creates a matrix with aggregated expression values for arbitrary groups of
+genes
 }

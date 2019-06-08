@@ -8,24 +8,27 @@ mc_es_apply(cds, MARGIN, FUN, required_packages, cores = 1,
   convert_to_dense = TRUE, reduction_method = "UMAP", ...)
 }
 \arguments{
-\item{cds}{a cell_data_set object}
+\item{cds}{A cell_data_set object.}
 
-\item{MARGIN}{The margin to apply to, either 1 for rows (samples) or 2 for columns (features)}
+\item{MARGIN}{The margin to apply to, either 1 for rows (samples) or 2 for
+columns (features).}
 
-\item{FUN}{Any function}
+\item{FUN}{Any function.}
 
-\item{required_packages}{A list of packages FUN will need. Failing to provide packages needed by FUN will generate errors in worker threads.}
+\item{required_packages}{A list of packages FUN will need. Failing to
+provide packages needed by FUN will generate errors in worker threads.}
 
-\item{cores}{The number of cores to use for evaluation}
+\item{cores}{The number of cores to use for evaluation.}
 
-\item{convert_to_dense}{Whether to force conversion a sparse matrix to a dense one before calling FUN}
+\item{convert_to_dense}{Whether to force conversion of a sparse matrix to a
+dense one before calling FUN.}
 
-\item{...}{Additional parameters for FUN}
+\item{...}{Additional parameters for FUN.}
 }
 \value{
 The result of with(colData(cds) apply(counts(cds)), MARGIN, FUN, ...))
 }
 \description{
-mcesApply computes the row-wise or column-wise results of FUN, just like
+mc_es_apply computes the row-wise or column-wise results of FUN, just like
 esApply. Variables in colData from cds are available in FUN.
 }

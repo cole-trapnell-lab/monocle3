@@ -97,7 +97,9 @@ reduce_dimension <- function(cds,
   set.seed(2016)
 
   if (reduction_method=="UMAP" && (umap.fast_sgd == TRUE || cores > 1)){
-    message("Note: reduce_dimension will produce slightly different output each time you run it unless you set 'umap.fast_sgd = FALSE' and 'cores = 1'")
+    message(paste("Note: reduce_dimension will produce slightly different",
+                  "output each time you run it unless you set",
+                  "'umap.fast_sgd = FALSE' and 'cores = 1'"))
   }
 
   preprocess_mat <- reducedDims(cds)[[preprocess_method]]

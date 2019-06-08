@@ -26,18 +26,8 @@ find_gene_modules(cds, reduction_method = c("UMAP", "tSNE", "PCA"),
 
 \item{verbose}{Verbose A logic flag to determine whether or not we should print the running details.}
 
-\item{res}{Resolution parameter for the louvain clustering. Values between 0 and 1e-2 are good, bigger values give you more clusters. Default is set to be \code{seq(0, 1e-4, length.out = 5)}.}
-}
-\value{
-an updated cell_data_set object, in which phenoData contains values for Cluster for each cell
+\item{...}{}
 }
 \description{
 Cluster genes into a specified number of groups based on .
-}
-\references{
-Rodriguez, A., & Laio, A. (2014). Clustering by fast search and find of density peaks. Science, 344(6191), 1492-1496. doi:10.1126/science.1242072
-
-Vincent D. Blondel, Jean-Loup Guillaume, Renaud Lambiotte, Etienne Lefebvre: Fast unfolding of communities in large networks. J. Stat. Mech. (2008) P10008
-
-Jacob H. Levine and et.al. Data-Driven Phenotypic Dissection of AML Reveals Progenitor-like Cells that Correlate with Prognosis. Cell, 2015.
 }

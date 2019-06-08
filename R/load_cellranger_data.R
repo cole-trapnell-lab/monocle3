@@ -13,7 +13,8 @@ get_genome_in_matrix_path <- function(matrix_path, genome=NULL) {
     if (length(genomes) == 1) {
       genome <- genomes[1]
     } else {
-      stop(sprintf("Multiple genomes found; please specify one. \n Genomes present: %s",
+      stop(sprintf(paste("Multiple genomes found; please specify one. \n",
+                         "Genomes present: %s"),
                    paste(genomes, collapse=", ")))
     }
   } else if (!(genome %in% genomes)) {
@@ -26,8 +27,8 @@ get_genome_in_matrix_path <- function(matrix_path, genome=NULL) {
 #' Load data from the 10x Genomics Cell Ranger pipeline
 #'
 #' Loads cellranger data into a CellDataSet object.  Note that if your dataset
-#' is from version 3.0 and contains non-Gene-Expression data (e.g. Antibodies or
-#' CRISPR features), only the Gene Expression data is returned.
+#' is from version 3.0 and contains non-Gene-Expression data (e.g. Antibodies
+#' or CRISPR features), only the Gene Expression data is returned.
 #'
 #' @param pipestance_path Path to the output directory produced by Cell Ranger
 #' @param genome The desired genome (e.g., 'hg19' or 'mm10')
@@ -93,23 +94,26 @@ load_cellranger_data <- function(pipestance_path=NULL, genome=NULL,
   feature.names = read.delim(features.loc,
                              header = FALSE,
                              stringsAsFactors = FALSE)
-  feature.names$V1 = make.unique(feature.names$V1) # Duplicate row names not allowed
+  # Duplicate row names not allowed
+  feature.names$V1 = make.unique(feature.names$V1)
   if(dim(data)[1] != length(feature.names[,1])) {
-    stop(sprintf("Mismatch dimension between gene file: \n\t %s\n and matrix file: \n\t %s\n",
-                 features.loc,
-                 matrix.loc))
+    stop(sprintf(paste("Mismatch dimension between gene file: \n\t %s\n and",
+                       "matrix file: \n\t %s\n"), features.loc, matrix.loc))
   }
   if(v3d) {
     # We will only load GEX data for the relevant genome
     data_types = factor(feature.names$V3)
     allowed = data_types == "Gene Expression"
     if(!is.null(genome)) {
-      # If not multigenome, no prefix will be added and we won't filter out the one genome
+      # If not multigenome, no prefix will be added and we won't filter out
+      # the one genome
       gfilter = grepl(genome, feature.names$V1)
       if(any(gfilter)) {
         allowed = allowed & grepl(genome, feature.names$V1)
       } else {
-        message("Data does not appear to be from a multi-genome sample, simply returning all gene feature data without filtering by genome.")
+        message(paste("Data does not appear to be from a multi-genome sample,",
+                      "simply returning all gene feature data without",
+                      "filtering by genome."))
       }
 
     }
@@ -122,8 +126,8 @@ load_cellranger_data <- function(pipestance_path=NULL, genome=NULL,
 
   barcodes <- read.delim(barcode.loc, stringsAsFactors=FALSE, header=FALSE)
   if (dim(data)[2] != length(barcodes[,1])) {
-    stop(sprintf("Mismatch dimension between barcode file: \n\t %s\n and matrix file: \n\t %s\n",
-                 barcode.loc,matrix.loc))
+    stop(sprintf(paste("Mismatch dimension between barcode file: \n\t %s\n",
+                       "and matrix file: \n\t %s\n"), barcode.loc,matrix.loc))
   }
   barcodes$V1 = make.unique(barcodes$V1)
   colnames(data) = barcodes[,1]

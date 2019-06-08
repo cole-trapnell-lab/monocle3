@@ -2,11 +2,13 @@
 % Please edit documentation in R/utils.R
 \name{normalized_counts}
 \alias{normalized_counts}
-\title{Return a size-factor normalized and (optionally) log-transformed expression matrix}
+\title{Return a size-factor normalized and (optionally) log-transformed expression
+matrix}
 \usage{
 normalized_counts(cds, norm_method = c("log", "binary", "size_only"),
   pseudocount = 1)
 }
 \description{
-Return a size-factor normalized and (optionally) log-transformed expression matrix
+Return a size-factor normalized and (optionally) log-transformed expression
+matrix
 }

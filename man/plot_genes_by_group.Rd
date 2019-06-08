@@ -11,34 +11,46 @@ plot_genes_by_group(cds, markers, group_cells_by = "cluster",
   ordering_type = c("cluster_row_col", "maximal_on_diag", "none"),
   axis_order = c("group_marker", "marker_group"),
   flip_percentage_mean = FALSE, pseudocount = 1, scale_max = 3,
-  scale_min = -3, ...)
+  scale_min = -3)
 }
 \arguments{
-\item{cds}{cell_data_set for the experiment}
+\item{cds}{A cell_data_set for plotting.}
 
-\item{markers}{a gene name use for visualize the dot plot}
+\item{reduction_method}{The dimensionality reduction method used for
+clusters and partitions.}
 
-\item{lower_threshold}{The lowest gene expressed treated as expressed. By default, it is cds@lowerDetectionLimit.}
+\item{norm_method}{Determines how to transform expression values prior to
+plotting. Options are "log" and "size_only". Default is "log".}
+
+\item{lower_threshold}{The lowest gene expressed treated as expressed.
+By default, zero.}
 
 \item{max.size}{The maximum size of the dot. By default, it is 10.}
 
-\item{ordering_type}{How to order the genes / groups on the dot plot. Only accept 'cluster_row_col' (use biclustering to cluster the rows and columns),
-'maximal_on_diag' (position each column so that the maximal color shown on each column on the diagonal, if the current maximal is used in earlier columns, the next largest one is position),
-'none' (preserve the ordering from the input gene or alphabetical ordering of groups)}
+\item{ordering_type}{How to order the genes / groups on the dot plot. Only
+accepts 'cluster_row_col' (use biclustering to cluster the rows and
+columns), 'maximal_on_diag' (position each column so that the maximal
+color shown on each column on the diagonal, if the current maximal is used
+in earlier columns, the next largest one is position), and 'none'
+(preserve the ordering from the input gene or alphabetical ordering of
+groups). Default is 'cluster_row_col'.}
 
-\item{axis_order}{Wheter to put groups on x-axis, genes on y-axis (option 'group_marker') or the reverse order (option 'marker_group')}
+\item{axis_order}{Whether to put groups on x-axis, genes on y-axis (option
+'group_marker') or the reverse order (option 'marker_group'). Default is
+"group_marker".}
 
-\item{flip_percentage_mean}{Whether to use color of the dot to represent the percentage (by setting flip_percentage_mean = FALSE, default) and size of the dot the mean expression or the opposite (by setting flip_percentage_mean = T)}
+\item{flip_percentage_mean}{Logical indicating whether to use color of the
+dot to represent the percentage (by setting flip_percentage_mean = FALSE,
+default) and size of the dot the mean expression, or the opposite
+(by setting flip_percentage_mean = TRUE).}
 
-\item{pseudocount}{A pseudo-count added to the average gene expression}
+\item{pseudocount}{A pseudo-count added to the average gene expression.}
 
-\item{scale_max}{The maximum value (in standard deviations) to show in the heatmap. Values larger than this are set to the max.}
+\item{scale_max}{The maximum value (in standard deviations) to show in the
+heatmap. Values larger than this are set to the max.}
 
-\item{scale_min}{The minimum value (in standard deviations) to show in the heatmap. Values smaller than this are set to the min.}
-
-\item{...}{additional arguments passed into the function (not used for now)}
-
-\item{group_by}{the cell attribute (e.g. the column of pData(cds)) to group cells}
+\item{scale_min}{The minimum value (in standard deviations) to show in the
+heatmap. Values smaller than this are set to the min.}
 }
 \value{
 a ggplot2 plot object

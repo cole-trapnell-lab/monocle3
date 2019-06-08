@@ -19,8 +19,8 @@ a new CellDataSet object
 }
 \description{
 Loads cellranger data into a CellDataSet object.  Note that if your dataset
-is from version 3.0 and contains non-Gene-Expression data (e.g. Antibodies or
-CRISPR features), only the Gene Expression data is returned.
+is from version 3.0 and contains non-Gene-Expression data (e.g. Antibodies
+or CRISPR features), only the Gene Expression data is returned.
 }
 \examples{
 \dontrun{

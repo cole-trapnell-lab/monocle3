@@ -15,11 +15,12 @@ gene_annotation = readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_r
 cds = new_cell_data_set(expression_matrix,
                          cell_metadata = cell_metadata,
                          gene_metadata = gene_annotation)
-marker_test_res = top_markers(cds, group_cells_by="cao_cell_type", reference_cells=1000, verbose=TRUE, cores=8)
+
 
 ## Step 1: Normalize and pre-process the data
 cds = preprocess_cds(cds, num_dim = 100)
 plot_pc_variance_explained(cds) + ggsave("L2_pc_variance_explained.png", width=3, height=2, dpi = 600)
+
 ## Step 2: Reduce the dimensionality of the data
 #### Without batch correction:
 cds = reduce_dimension(cds)
@@ -96,49 +97,41 @@ for (i in (1:length(paritition_identities))){
 ## Step 5: Annotate cells by type:
 colData(cds)$assigned_cell_type = as.character(partitions(cds))
 colData(cds)$assigned_cell_type = dplyr::recode(colData(cds)$assigned_cell_type,
-                                                "1"="Body wall muscle",
-                                                "2"="Coelomocytes",
-                                                "3"="Germline",
-                                                "4"="Unclassified neurons",
-                                                "5"="Seam cells",
-                                                "6"="Non-seam hypodermis",
-                                                "7"="Vulval precursors",
-                                                "8"="Pharyngeal epithelia",
-                                                "9"="Socket cells",
-                                                "10"="Failed QC",
-                                                "11"="Touch receptor neurons",
-                                                "12"="Intestinal/rectal muscle",
-                                                "13"="Pharyngeal neurons",
-                                                "14"="Am/PH sheath cells",
-                                                "15"="NA",
-                                                "16"="flp-1(+) interneurons",
-                                                "17"="Canal associated neurons",
-                                                "18"="Other interneurons",
-                                                "19"="Pharyngeal gland",
-                                                "20"="Failed QC",
-                                                "21"="Unclassified neurons",
-                                                "22"="Ciliated sensory neurons",
-                                                "23"="Ciliated sensory neurons",
-                                                "24"="Ciliated sensory neurons",
-                                                "25"="Ciliated sensory neurons",
-                                                "26"="Oxygen sensory neurons",
-                                                "27"="Ciliated sensory neurons",
-                                                "28"="Ciliated sensory neurons",
-                                                "29"="Ciliated sensory neurons",
-                                                "30"="Oxygen sensory neurons",
-                                                "31"="Ciliated sensory neurons",
-                                                "32"="Unclassified neurons",
-                                                "33"="Pharyngeal epithelia",
-                                                "34"="Pharyngeal gland",
-                                                "35"="Failed QC",
-                                                "36"="Ciliated sensory neurons",
-                                                "37"="Ciliated sensory neurons",
-                                                "38"="Ciliated sensory neurons",
-                                                "39"="Failed QC",
-                                                "40"="Ciliated sensory neurons",
-                                                "41"="Pharyngeal muscle")
+"1"="Body wall muscle",
+"2"="Germline",
+"3"="Unclassified neurons",
+"4"="Seam cells",
+"5"="Coelomocytes",
+"6"="Pharyngeal epithelia",
+"7"="Vulval precursors",
+"8"="Non-seam hypodermis",
+"9"="Intestinal/rectal muscle",
+"10"="Touch receptor neurons",
+"11"="Pharyngeal neurons",
+"12"="Am/PH sheath cells",
+"13"="NA",
+"14"="Unclassified neurons",
+"15"="flp-1(+) interneurons",
+"16"="Canal associated neurons",
+"17"="Pharyngeal gland",
+"18"="Other interneurons",
+"19"="Ciliated sensory neurons",
+"20"="Ciliated sensory neurons",
+"21"="Ciliated sensory neurons",
+"22"="Ciliated sensory neurons",
+"23"="Ciliated sensory neurons",
+"24"="Ciliated sensory neurons",
+"25"="Oxygen sensory neurons",
+"26"="Ciliated sensory neurons",
+"27"="Unclassified neurons",
+"28"="Pharyngeal gland",
+"29"="Ciliated sensory neurons",
+"30"="Ciliated sensory neurons",
+"31"="Ciliated sensory neurons",
+"32"="Ciliated sensory neurons",
+"33"="Pharyngeal muscle",
+"34"="Failed QC")
 plot_cells(cds, group_cells_by="partition", color_cells_by="assigned_cell_type") + ggsave("L2_plot_cells_by_initial_annotation.png", width=5, height=4, dpi = 600)
-
 
 # # Make a violin that
 # plot_genes_violin(cds[rowData(cds)$gene_short_name %in% c("mec-7", "mec-17", "mig-6", "flp-1", "nlp-12"),
@@ -169,15 +162,16 @@ pheatmap::pheatmap(log(table(clusters(cds_subset)[colnames(cds_subset)], colData
 
 colData(cds_subset)$assigned_cell_type = as.character(clusters(cds_subset)[colnames(cds_subset)])
 colData(cds_subset)$assigned_cell_type = dplyr::recode(colData(cds_subset)$assigned_cell_type,
-                                                "28"="Vulval precursors",
-                                                "38"="Neurons",
-                                                "39"="Unknown",
-                                                "42"="Sex myoblasts",
-                                                "27"="Sex myoblasts",
-                                                "31"="Somatic gonad progenitors")
+                                                "30"="Vulval precursors",
+                                                "65"="Distal tip cells",
+                                                "24"="Sex myoblasts",
+                                                "51"="Sex myoblasts",
+                                                "33"="Somatic gonad progenitors")
 plot_cells(cds_subset, group_cells_by="cluster", color_cells_by="assigned_cell_type")
 colData(cds)[colnames(cds_subset),]$assigned_cell_type = colData(cds_subset)$assigned_cell_type
 plot_cells(cds, group_cells_by="partition", color_cells_by="assigned_cell_type", labels_per_group=5) + ggsave("L2_plot_cells_by_refined_annotation.png", width=5, height=4, dpi = 600)
+
+cds = cds[,colData(cds)$assigned_cell_type != "Failed QC" | is.na(colData(cds)$assigned_cell_type )]
 
 # Plot the overlap between clusters and annotated cell types:
 pheatmap::pheatmap(log(table(colData(cds)$assigned_cell_type, colData(cds)$cao_cell_type)+1),
@@ -190,13 +184,23 @@ pheatmap::pheatmap(log(table(colData(cds)$assigned_cell_type, colData(cds)$cao_c
 
 assigned_type_marker_test_res = top_markers(cds[,is.na(colData(cds)$cao_cell_type) == FALSE & colData(cds)$cao_cell_type != "Failed QC"],
                                             group_cells_by="assigned_cell_type",
-                                            reference_cells=1000,
+                                            #reference_cells=1000,
                                             cores=8)
 
 garnett_markers = assigned_type_marker_test_res %>%
-    filter(fraction_expressing >= 0.25) %>%
+    filter(marker_test_q_value < 0.01 & specificity >= 0.2) %>%
     group_by(cell_group) %>%
-    top_n(3, pseudo_R2)
+    top_n(5, marker_score)
+garnett_markers = garnett_markers %>% group_by(gene_short_name) %>% 
+    filter(n() == 1) 
+
+
+plot_genes_by_group(cds,
+                    unique(as.character(garnett_markers$gene_id)),
+                    group_cells_by="cao_cell_type",
+                    ordering_type="cluster_row_col",
+                    max.size=3) + ggsave("L2_plot_top3_cao_type_markers.png", width=5, height=6, dpi = 600)
+
 
 generate_garnett_marker_file(garnett_markers)
 
@@ -211,14 +215,16 @@ worm_classifier <- train_cell_classifier(cds = cds,
                                          marker_file_gene_id_type = "SYMBOL",
                                          cores=8)
 
-#load(url("https://cole-trapnell-lab.github.io/garnett/classifiers/ceWhole"))
-colData(cds)$garnett_cluster = partitions(cds)
+# FIXME: remove the bracket op once issue #56 is resolved
+colData(cds)$garnett_cluster = clusters(cds)[colnames(cds)]
 cds = classify_cells(cds, worm_classifier,
                            db = org.Ce.eg.db::org.Ce.eg.db,
                            cluster_extend = TRUE,
                            cds_gene_id_type = "ENSEMBL")
 
-plot_cells(cds, group_cells_by="cluster", color_cells_by="cluster_ext_type") + ggsave("L2_umap_corrected_garnett_ext_type.png", width=5, height=4, dpi = 600)
+plot_cells(cds, 
+           group_cells_by="partition", 
+           color_cells_by="cluster_ext_type") + ggsave("L2_umap_corrected_garnett_ext_type.png", width=5, height=4, dpi = 600)
 
 # Plot the overlap between clusters and annotated cell types:
 pheatmap::pheatmap(log(table(colData(cds)$cluster_ext_type, colData(cds)$cao_cell_type)+1),
@@ -234,11 +240,15 @@ cds = classify_cells(cds, ceWhole,
                            cluster_extend = TRUE,
                            cds_gene_id_type = "ENSEMBL")
 
-plot_cells(cds, group_cells_by="cluster", color_cells_by="cluster_ext_type") + ggsave("L2_umap_corrected_garnett_ext_type.png", width=5, height=4, dpi = 600)
+plot_cells(cds, 
+           group_cells_by="partition", 
+           color_cells_by="cluster_ext_type") + ggsave("L2_umap_corrected_garnett_ext_type.png", width=5, height=4, dpi = 600)
 
 # Plot the overlap between clusters and annotated cell types:
-pheatmap::pheatmap(log(table(partitions(cds), colData(cds)$cao_cell_type)+1),
-                   clustering_method="ward.D2",
+pheatmap::pheatmap(prop.table(table(partitions(cds)[colnames(cds)], colData(cds)$cluster_ext_type), margin=1),
+                   #clustering_method="ward.D2",
+                   cluster_cols=FALSE,
+                   cluster_rows=FALSE,
                    fontsize=6, width=5, height=8, filename="L2_cell_type_by_partition.png")
 
 

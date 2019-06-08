@@ -24,33 +24,10 @@ plot_cells(cds, x = 1, y = 2, reduction_method = c("UMAP", "tSNE",
 
 \item{cell_size}{The size of the point for each cell}
 
-\item{alpha}{The alpha aesthetics for the original cell points, useful to highlight the learned principal graph}
+\item{alpha}{The alpha aesthetics for the original cell points, useful to
+highlight the learned principal graph}
 
-\item{color_by}{the cell attribute (e.g. the column of colData(cds)) to map to each cell's color}
-
-\item{show_backbone}{whether to show the diameter path of the MST used to order the cells}
-
-\item{backbone_color}{the color used to render the backbone.}
-
-\item{markers}{a gene name or gene id to use for setting the size of each cell in the plot}
-
-\item{markers_linear}{a boolean used to indicate whether you want to scale the markers logarithimically or linearly}
-
-\item{show_cell_names}{draw the name of each cell in the plot}
-
-\item{show_state_number}{show state number}
-
-\item{cell_link_size}{The size of the line segments connecting cells (when used with ICA) or the principal graph (when used with DDRTree)}
-
-\item{cell_name_size}{the size of cell name labels}
-
-\item{state_number_size}{the size of the state number}
-
-\item{show_branch_points}{Whether to show icons for each branch point (only available after running assign_cell_states)}
-
-\item{theta}{How many degrees you want to rotate the trajectory}
-
-\item{...}{Additional arguments passed into scale_color_viridis function}
+\item{rasterize}{}
 }
 \value{
 a ggplot2 plot object

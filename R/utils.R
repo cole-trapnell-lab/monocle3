@@ -3,7 +3,7 @@ is_sparse_matrix <- function(x){
   class(x) %in% c("dgCMatrix", "dgTMatrix")
 }
 
-#' Function to calculate the size factor for the single-cell RNA-seq data
+#' Function to calculate size factors for single-cell RNA-seq data
 #'
 #' @param cds The cell_data_set
 #' @param round_exprs A logic flag to determine whether or not the expression
@@ -32,7 +32,6 @@ estimate_size_factors <- function(cds, locfunc = stats::median,
   }
   return(cds)
 }
-
 
 # Estimate size factors for each column, given a sparseMatrix from the Matrix
 # package
@@ -105,17 +104,18 @@ sparse_apply <- function(Sp_X, MARGIN, FUN, convert_to_dense, ...){
 
 #' @keywords internal
 split_rows <- function (x, ncl) {
-  lapply(parallel::splitIndices(nrow(x), ncl), function(i) x[i, , drop = FALSE])
+  lapply(parallel::splitIndices(nrow(x), ncl),
+         function(i) x[i, , drop = FALSE])
 }
 
 #' @keywords internal
 split_cols <- function (x, ncl) {
-  lapply(parallel::splitIndices(ncol(x), ncl), function(i) x[, i, drop = FALSE])
+  lapply(parallel::splitIndices(ncol(x), ncl),
+         function(i) x[, i, drop = FALSE])
 }
 
 #' @keywords internal
-sparse_par_r_apply <- function (cl, x, FUN, convert_to_dense, ...)
-{
+sparse_par_r_apply <- function (cl, x, FUN, convert_to_dense, ...) {
   par_res <- do.call(c, BiocGenerics::clusterApply(cl = cl,
                                                    x = split_rows(x,
                                                                   length(cl)),
@@ -128,8 +128,7 @@ sparse_par_r_apply <- function (cl, x, FUN, convert_to_dense, ...)
 }
 
 #' @keywords internal
-sparse_par_c_apply <- function (cl = NULL, x, FUN, convert_to_dense, ...)
-{
+sparse_par_c_apply <- function (cl = NULL, x, FUN, convert_to_dense, ...) {
   par_res <- do.call(c, BiocGenerics::clusterApply(cl = cl,
                                                    x = split_cols(x,
                                                                   length(cl)),
@@ -144,19 +143,24 @@ sparse_par_c_apply <- function (cl = NULL, x, FUN, convert_to_dense, ...)
 
 #' Multicore apply-like function for cell_data_set
 #'
-#' mcesApply computes the row-wise or column-wise results of FUN, just like
+#' mc_es_apply computes the row-wise or column-wise results of FUN, just like
 #' esApply. Variables in colData from cds are available in FUN.
 #'
-#' @param cds a cell_data_set object
-#' @param MARGIN The margin to apply to, either 1 for rows (samples) or 2 for columns (features)
-#' @param FUN Any function
-#' @param required_packages A list of packages FUN will need. Failing to provide packages needed by FUN will generate errors in worker threads.
-#' @param convert_to_dense Whether to force conversion a sparse matrix to a dense one before calling FUN
-#' @param ... Additional parameters for FUN
-#' @param cores The number of cores to use for evaluation
+#' @param cds A cell_data_set object.
+#' @param MARGIN The margin to apply to, either 1 for rows (samples) or 2 for
+#'   columns (features).
+#' @param FUN Any function.
+#' @param required_packages A list of packages FUN will need. Failing to
+#'   provide packages needed by FUN will generate errors in worker threads.
+#' @param convert_to_dense Whether to force conversion of a sparse matrix to a
+#'   dense one before calling FUN.
+#' @param ... Additional parameters for FUN.
+#' @param cores The number of cores to use for evaluation.
 #'
 #' @return The result of with(colData(cds) apply(counts(cds)), MARGIN, FUN, ...))
-mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1, convert_to_dense=TRUE, reduction_method="UMAP", ...) {
+mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1,
+                        convert_to_dense=TRUE,
+                        reduction_method="UMAP", ...) {
   parent <- environment(FUN)
   if (is.null(parent))
     parent <- emptyenv()
@@ -171,7 +175,8 @@ mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1, convert_to
     coldata_df$pseudotime = pseudotime(cds)
   }, error = function(e) {} )
 
-  Biobase::multiassign(names(as.data.frame(coldata_df)), as.data.frame(coldata_df), envir=e1)
+  Biobase::multiassign(names(as.data.frame(coldata_df)),
+                       as.data.frame(coldata_df), envir=e1)
   environment(FUN) <- e1
 
   # Note: use outfile argument to makeCluster for debugging
@@ -206,21 +211,25 @@ mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1, convert_to
   if (is.null(required_packages) == FALSE){
     BiocGenerics::clusterCall(cl, function(pkgs) {
       for (req in pkgs) {
-        library(req, character.only=TRUE, warn.conflicts=FALSE, quietly=TRUE, verbose=FALSE)
+        library(req, character.only=TRUE, warn.conflicts=FALSE, quietly=TRUE,
+                verbose=FALSE)
       }
     }, required_packages)
   }
 
   if (MARGIN == 1){
-    suppressWarnings(res <- sparse_par_r_apply(cl, counts(cds), FUN, convert_to_dense, ...))
+    suppressWarnings(res <- sparse_par_r_apply(cl, counts(cds), FUN,
+                                               convert_to_dense, ...))
   }else{
-    suppressWarnings(res <- sparse_par_c_apply(cl, counts(cds), FUN, convert_to_dense, ...))
+    suppressWarnings(res <- sparse_par_c_apply(cl, counts(cds), FUN,
+                                               convert_to_dense, ...))
   }
 
   res
 }
 
-smart_es_apply <- function(cds, MARGIN, FUN, convert_to_dense, reduction_method="UMAP", ...) {
+smart_es_apply <- function(cds, MARGIN, FUN, convert_to_dense,
+                           reduction_method="UMAP", ...) {
   parent <- environment(FUN)
   if (is.null(parent))
     parent <- emptyenv()
@@ -231,8 +240,8 @@ smart_es_apply <- function(cds, MARGIN, FUN, convert_to_dense, reduction_method=
     coldata_df$partition = partitions(cds, reduction_method)[colnames(cds)]
     coldata_df$pseudotime = pseudotime(cds)
   }, error = function(e) {} )
-
-  Biobase::multiassign(names(as.data.frame(coldata_df)), as.data.frame(coldata_df), envir=e1)
+  Biobase::multiassign(names(as.data.frame(coldata_df)),
+                       as.data.frame(coldata_df), envir=e1)
   environment(FUN) <- e1
 
   if (is_sparse_matrix(counts(cds))){
@@ -276,10 +285,10 @@ load_a549 <- function(){
 #' Build a cell_data_set from the data stored in inst/extdata directory.
 #' @keywords internal
 load_worm_embryo <- function(){
-  expression_matrix = readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_expression.rds"))
-  cell_metadata = readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_colData.rds"))
-  gene_annotation = readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_rowData.rds"))
-  gene_annotation$use_for_ordering = NULL
+  expression_matrix <- readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_expression.rds"))
+  cell_metadata <- readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_colData.rds"))
+  gene_annotation <- readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_rowData.rds"))
+  gene_annotation$use_for_ordering <- NULL
 
   cds <- new_cell_data_set(expression_matrix,
                            cell_metadata = cell_metadata,
@@ -298,60 +307,63 @@ is_sparse_matrix <- function(x){
 
 #' Principal Components Analysis
 #'
-#' Efficient computation of a truncated principal components analysis of a given data matrix
-#' using an implicitly restarted Lanczos method from the \code{\link{irlba}} package.
+#' Efficient computation of a truncated principal components analysis of a
+#' given data matrix using an implicitly restarted Lanczos method from the
+#' \code{\link{irlba}} package.
 #'
-#' @param x a numeric or complex matrix (or data frame) which provides
-#'          the data for the principal components analysis.
-#' @param retx a logical value indicating whether the rotated variables should be returned.
+#' @param x a numeric or complex matrix (or data frame) which provides the data
+#'   for the principal components analysis.
+#' @param retx a logical value indicating whether the rotated variables should
+#'   be returned.
 #' @param center a logical value indicating whether the variables should be
-#'          shifted to be zero centered. Alternately, a centering vector of length
-#'          equal the number of columns of \code{x} can be supplied.
+#'   shifted to be zero centered. Alternately, a centering vector of length
+#'   equal the number of columns of \code{x} can be supplied.
 #' @param scale. a logical value indicating whether the variables should be
-#'          scaled to have unit variance before the analysis takes place.
-#'          The default is \code{FALSE} for consistency with S, but scaling is often advisable.
-#'          Alternatively, a vector of length equal the number of columns of \code{x} can be supplied.
+#'   scaled to have unit variance before the analysis takes place. The default
+#'   is \code{FALSE} for consistency with S, but scaling is often advisable.
+#'   Alternatively, a vector of length equal the number of columns of \code{x}
+#'   can be supplied.
 #'
-#'          The value of \code{scale} determines how column scaling is performed
-#'          (after centering).  If \code{scale} is a numeric vector with length
-#'          equal to the number of columns of \code{x}, then each column of \code{x} is
-#'          divided by the corresponding value from \code{scale}.  If \code{scale} is
-#'          \code{TRUE} then scaling is done by dividing the (centered) columns of
-#'          \code{x} by their standard deviations if \code{center=TRUE}, and the
-#'          root mean square otherwise.  If \code{scale} is \code{FALSE}, no scaling is done.
-#'          See \code{\link{scale}} for more details.
-#' @param n integer number of principal component vectors to return, must be less than
-#' \code{min(dim(x))}.
+#'   The value of \code{scale} determines how column scaling is performed
+#'   (after centering). If \code{scale} is a numeric vector with length equal
+#'   to the number of columns of \code{x}, then each column of \code{x} is
+#'   divided by the corresponding value from \code{scale}. If \code{scale} is
+#'   \code{TRUE} then scaling is done by dividing the (centered) columns of
+#'   \code{x} by their standard deviations if \code{center=TRUE}, and the root
+#'   mean square otherwise.  If \code{scale} is \code{FALSE}, no scaling is done.
+#'   See \code{\link{scale}} for more details.
+#' @param n integer number of principal component vectors to return, must be
+#'   less than \code{min(dim(x))}.
 #' @param ... additional arguments passed to \code{\link{irlba}}.
 #'
 #' @return
 #' A list with class "prcomp" containing the following components:
 #' \itemize{
 #'    \item{sdev} {the standard deviations of the principal components (i.e.,
-#'          the square roots of the eigenvalues of the
-#'          covariance/correlation matrix, though the calculation is
-#'          actually done with the singular values of the data matrix).}
-#'   \item{rotation} {the matrix of variable loadings (i.e., a matrix whose columns
-#'          contain the eigenvectors).}
-#'   \item {x} {if \code{retx} is \code{TRUE} the value of the rotated data (the centred
-#'          (and scaled if requested) data multiplied by the \code{rotation}
-#'         matrix) is returned.  Hence, \code{cov(x)} is the diagonal matrix
-#'          \code{diag(sdev^2)}.}
+#'      the square roots of the eigenvalues of the covariance/correlation
+#'      matrix, though the calculation is actually done with the singular
+#'      values of the data matrix).}
+#'   \item{rotation} {the matrix of variable loadings (i.e., a matrix whose
+#'     columns contain the eigenvectors).}
+#'   \item {x} {if \code{retx} is \code{TRUE} the value of the rotated data
+#'     (the centred (and scaled if requested) data multiplied by the
+#'     \code{rotation} matrix) is returned. Hence, \code{cov(x)} is the
+#'     diagonal matrix \code{diag(sdev^2)}.}
 #'   \item{center, scale} {the centering and scaling used, or \code{FALSE}.}
 #' }
 #'
 #' @note
-#' The signs of the columns of the rotation matrix are arbitrary, and
-#' so may differ between different programs for PCA, and even between
-#' different builds of R.
+#' The signs of the columns of the rotation matrix are arbitrary, and so may
+#' differ between different programs for PCA, and even between different builds
+#' of R.
 #'
-#' NOTE DIFFERENCES WITH THE DEFAULT \code{\link{prcomp}} FUNCTION!
-#' The \code{tol} truncation argument found in \code{prcomp} is not supported.
-#' In place of the truncation tolerance in the original function, the
-#' \code{prcomp_irlba}  function has the argument \code{n} explicitly giving the
-#' number of principal components to return. A warning is generated if the
-#' argument \code{tol} is used, which is interpreted differently between
-#' the two functions.
+#' NOTE DIFFERENCES WITH THE DEFAULT \code{\link{prcomp}} FUNCTION! The
+#' \code{tol} truncation argument found in \code{prcomp} is not supported. In
+#' place of the truncation tolerance in the original function, the
+#' \code{prcomp_irlba}  function has the argument \code{n} explicitly giving
+#' the number of principal components to return. A warning is generated if the
+#' argument \code{tol} is used, which is interpreted differently between the
+#' two functions.
 #'
 #' @examples
 #' \dontrun{set.seed(1)
@@ -363,19 +375,18 @@ is_sparse_matrix <- function(x){
 #' p2 <- prcomp(x, tol=0.7)
 #' summary(p2)}
 #'
-#'
 #' @seealso \code{\link{prcomp}}
-sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE, scale. = FALSE, ...)
+sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
+                                scale. = FALSE, ...)
 {
   a <- names(as.list(match.call()))
   ans <- list(scale=scale.)
   if ("tol" %in% a)
     warning("The `tol` truncation argument from `prcomp` is not supported by
-            `prcomp_irlba`. If specified, `tol` is passed to the `irlba` function to
-            control that algorithm's convergence tolerance. See `?prcomp_irlba` for help.")
-  # Try to convert to a matrix...
-  #if (!is.matrix(x)) x <- as.matrix(x)
-  orig_x = x
+            `prcomp_irlba`. If specified, `tol` is passed to the `irlba`
+            function to control that algorithm's convergence tolerance. See
+            `?prcomp_irlba` for help.")
+  orig_x <- x
   if (class(x) != "DelayedMatrix")
     x = DelayedArray::DelayedArray(x)
 
@@ -388,25 +399,31 @@ sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE, scale. = F
   {
     if (is.numeric(args$center))
     {
-      scale. = sqrt(DelayedMatrixStats::colVars(x))
+      scale. <- sqrt(DelayedMatrixStats::colVars(x))
       if (ans$scale) ans$totalvar <- ncol(x)
       else ans$totalvar <- sum(scale. ^ 2)
     } else
     {
       if (ans$scale)
       {
-        scale. = sqrt(DelayedMatrixStats::colSums2(x ^ 2) / (max(1, nrow(x) - 1L)))
-        ans$totalvar = sum(sqrt(DelayedMatrixStats::colSums2(t(t(x)/scale.) ^ 2) / (nrow(x) - 1L)))
+        scale. <-
+          sqrt(DelayedMatrixStats::colSums2(x ^ 2) / (max(1, nrow(x) - 1L)))
+        ans$totalvar <-
+          sum(sqrt(DelayedMatrixStats::colSums2(t(t(x)/scale.) ^ 2) /
+                     (nrow(x) - 1L)))
       } else
       {
-        ans$totalvar = sum(DelayedMatrixStats::colSums2(x ^ 2) / (nrow(x) - 1L))
+        ans$totalvar <-
+          sum(DelayedMatrixStats::colSums2(x ^ 2) / (nrow(x) - 1L))
       }
     }
     if (ans$scale) args$scale <- scale.
   } else
   {
     args$scale <- scale.
-    ans$totalvar = sum(sqrt(DelayedMatrixStats::colSums2(t(t(x)/scale.) ^ 2) / (nrow(x) - 1L)))
+    ans$totalvar <-
+      sum(sqrt(DelayedMatrixStats::colSums2(t(t(x)/scale.) ^ 2) /
+                 (nrow(x) - 1L)))
   }
   if (!missing(...)) args <- c(args, list(...))
 
@@ -427,14 +444,14 @@ sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE, scale. = F
 
 #' Detects genes above minimum threshold.
 #'
-#' @description For each feature in a cell_data_set object, detect_genes counts
+#' @description For each gene in a cell_data_set object, detect_genes counts
 #' how many cells are expressed above a minimum threshold. In addition, for
 #' each cell, detect_genes counts the number of genes above this threshold that
 #' are detectable. Results are added as columns num_cells_expressed and
 #' num_genes_expressed in the rowData and colData tables respectively.
 #'
 #' @param cds Input cell_data_set object.
-#' @param min_expr Expression threshold
+#' @param min_expr Numeric indicating expression threshold
 #' @return Updated cell_data_set object
 #' @export
 #' @examples
@@ -451,7 +468,8 @@ detect_genes <- function(cds, min_expr=0){
   cds
 }
 
-#' Return a size-factor normalized and (optionally) log-transformed expression matrix
+#' Return a size-factor normalized and (optionally) log-transformed expression
+#' matrix
 #' @export
 normalized_counts <- function(cds, norm_method=c("log", "binary", "size_only"), pseudocount=1){
   norm_method = match.arg(norm_method)
@@ -475,7 +493,7 @@ normalized_counts <- function(cds, norm_method=c("log", "binary", "size_only"), 
     }else{
       norm_mat = Matrix::t(Matrix::t(norm_mat) / size_factors(cds))
       if (norm_method == "log"){
-        norm_mat@x = log10(norm_mat + pseudocount)
+          norm_mat@x <- log10(norm_mat + pseudocount)
       }
     }
   }
@@ -485,9 +503,9 @@ normalized_counts <- function(cds, norm_method=c("log", "binary", "size_only"), 
 
 #' Load data from matrix market format
 #'
-#' @param mat_path Path to the .mtx matrix market file
-#' @param gene_anno_path Path to gene annotation file
-#' @param cell_anno_path Path to cell annotation file
+#' @param mat_path Path to the .mtx matrix market file.
+#' @param gene_anno_path Path to gene annotation file.
+#' @param cell_anno_path Path to cell annotation file.
 #' @param umi_cutoff UMI per cell cutoff, default is 100.
 #'
 #' @return cds object
@@ -497,6 +515,10 @@ load_mtx_data <- function(mat_path,
                           gene_anno_path,
                           cell_anno_path,
                           umi_cutoff = 100) {
+  assertthat::assert_that(assertthat::is.readable(mat_path))
+  assertthat::assert_that(assertthat::is.readable(gene_anno_path))
+  assertthat::assert_that(assertthat::is.readable(cell_anno_path))
+  assertthat::assert_that(is.numeric(umi_cutoff))
   df <- read.table(mat_path, col.names = c("gene.idx", "cell.idx", "count"),
                    colClasses = c("integer", "integer", "integer"))
 
@@ -516,7 +538,7 @@ load_mtx_data <- function(mat_path,
                              cell.idx = rep(nrow(cell.annotations) + 1, 2),
                              count = c(1, 1)))
 
-  mat <- sparseMatrix(i = df$gene.idx, j = df$cell.idx, x = df$count)
+  mat <- Matrix::sparseMatrix(i = df$gene.idx, j = df$cell.idx, x = df$count)
   mat <- mat[, 1:(ncol(mat)-1)]
 
   rownames(mat) <- gene.annotations$id

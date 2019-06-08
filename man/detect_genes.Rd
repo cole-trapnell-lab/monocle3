@@ -9,13 +9,13 @@ detect_genes(cds, min_expr = 0)
 \arguments{
 \item{cds}{Input cell_data_set object.}
 
-\item{min_expr}{Expression threshold}
+\item{min_expr}{Numeric indicating expression threshold}
 }
 \value{
 Updated cell_data_set object
 }
 \description{
-For each feature in a cell_data_set object, detect_genes counts
+For each gene in a cell_data_set object, detect_genes counts
 how many cells are expressed above a minimum threshold. In addition, for
 each cell, detect_genes counts the number of genes above this threshold that
 are detectable. Results are added as columns num_cells_expressed and

@@ -9,7 +9,7 @@ top_markers(cds, group_cells_by = "cluster",
   marker_sig_test = TRUE, reference_cells = NULL, cores = 1)
 }
 \arguments{
-\item{cds}{cell_data_set object to calculate top markers for}
+\item{cds}{A cell_data_set object to calculate top markers for.}
 
 \item{group_cells_by}{String indicating what to group cells by for
 comparison. Default is "cluster".}
