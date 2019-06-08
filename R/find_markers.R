@@ -175,8 +175,8 @@ top_markers <- function(cds,
   }
 
   if (verbose)
-    message("Running marker significance tests")
-
+    message("Done")
+  marker_test_res = marker_test_res %>% dplyr::rename(gene_id=rowname)
   return(marker_test_res)
 }
 
@@ -330,6 +330,8 @@ generate_garnett_marker_file <- function(marker_test_res,
   #good_markers <- marker_test_res[marker_test_res$marker_test_q_value <= qval_cutoff,]
   good_markers = marker_test_res %>% dplyr::group_by(group_name) %>% dplyr::top_n(max_genes_per_group, marker_score)
 
+
+  #good_markers = good_markers %>% dplyr::ungr
   output <- list()
 
   for (group in group_list) {
