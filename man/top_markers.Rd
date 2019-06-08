@@ -2,11 +2,12 @@
 % Please edit documentation in R/find_markers.R
 \name{top_markers}
 \alias{top_markers}
-\title{Identify the genes most specifically expressed in specified groups of cells}
+\title{Identify the genes most specifically expressed in groups of cells}
 \usage{
 top_markers(cds, group_cells_by = "cluster",
   genes_to_test_per_group = 25, reduction_method = "UMAP",
-  marker_sig_test = TRUE, reference_cells = NULL, cores = 1)
+  marker_sig_test = TRUE, reference_cells = NULL, cores = 1,
+  verbose = FALSE)
 }
 \arguments{
 \item{cds}{A cell_data_set object to calculate top markers for.}
@@ -21,10 +22,20 @@ on.}
 \item{reduction_method}{String indicating the method used for dimensionality
 reduction. Currently only "UMAP" is supported.}
 
+\item{marker_sig_test}{A flag indicating whether to assess the discriminative
+power of each marker through logistic regression. Can be slow, consider
+disabling to speed up top_markers().}
+
+\item{reference_cells}{If provided, top_markers will perform the marker
+significance test against a "reference set" of cells. Must be either a list
+of cell ids from colnames(cds), or a positive integer. If the latter, top_markers()
+will randomly select the specified numnber of reference cells. Accelerates
+the marker significance test at some cost in sensitivity.}
+
 \item{cores}{Number of cores to use.}
 
-\item{expression_bins}{?}
+\item{verbose}{Whether to print verbose progress output.}
 }
 \description{
-Identify the genes most specifically expressed in specified groups of cells
+Identify the genes most specifically expressed in groups of cells
 }

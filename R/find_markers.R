@@ -1,4 +1,4 @@
-#' Identify the genes most specifically expressed in specified groups of cells
+#' Identify the genes most specifically expressed in groups of cells
 #'
 #' @param cds A cell_data_set object to calculate top markers for.
 #' @param group_cells_by String indicating what to group cells by for
@@ -8,9 +8,16 @@
 #'   on.
 #' @param reduction_method String indicating the method used for dimensionality
 #'   reduction. Currently only "UMAP" is supported.
-#' @param expression_bins
-#' @param reference_cells
+#' @param marker_sig_test A flag indicating whether to assess the discriminative
+#' power of each marker through logistic regression. Can be slow, consider
+#' disabling to speed up top_markers().
+#' @param reference_cells If provided, top_markers will perform the marker
+#' significance test against a "reference set" of cells. Must be either a list
+#' of cell ids from colnames(cds), or a positive integer. If the latter, top_markers()
+#' will randomly select the specified numnber of reference cells. Accelerates
+#' the marker significance test at some cost in sensitivity.
 #' @param cores Number of cores to use.
+#' @param verbose Whether to print verbose progress output.
 #'
 #' @export
 top_markers <- function(cds,
