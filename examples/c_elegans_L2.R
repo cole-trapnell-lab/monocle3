@@ -27,6 +27,7 @@ cds = reduce_dimension(cds)
 plot_cells(cds) + ggsave("L2_umap_no_color.png", width=5, height=4, dpi = 600)
 plot_cells(cds, color_cells_by="cao_cell_type") + ggsave("L2_umap_color_cells_by_cao_type.png", width=5, height=4, dpi = 600)
 plot_cells(cds, color_cells_by="plate", label_cell_groups=FALSE) + ggsave("L2_umap_plate.png", width=5, height=4, dpi = 600)
+plot_cells(cds, genes=c("cpna-2", "egl-21", "ram-2", "inos-1")) + ggsave("L2_umap_gene_markers.png", width=5, height=4, dpi = 600)
 
 
 #### With batch correction:
@@ -110,11 +111,11 @@ colData(cds)$assigned_cell_type = dplyr::recode(colData(cds)$assigned_cell_type,
 "11"="Pharyngeal neurons",
 "12"="Am/PH sheath cells",
 "13"="NA",
-"14"="Unclassified neurons",
-"15"="flp-1(+) interneurons",
-"16"="Canal associated neurons",
-"17"="Pharyngeal gland",
-"18"="Other interneurons",
+"14"="flp-1(+) interneurons",
+"15"="Canal associated neurons",
+"16"="Pharyngeal gland",
+"17"="Unclassified neurons",
+"18"="Ciliated sensory neurons",
 "19"="Ciliated sensory neurons",
 "20"="Ciliated sensory neurons",
 "21"="Ciliated sensory neurons",
@@ -129,8 +130,8 @@ colData(cds)$assigned_cell_type = dplyr::recode(colData(cds)$assigned_cell_type,
 "30"="Ciliated sensory neurons",
 "31"="Ciliated sensory neurons",
 "32"="Ciliated sensory neurons",
-"33"="Pharyngeal muscle",
-"34"="Failed QC")
+"33"="Failed QC",
+"34"="Pharyngeal muscle")
 plot_cells(cds, group_cells_by="partition", color_cells_by="assigned_cell_type") + ggsave("L2_plot_cells_by_initial_annotation.png", width=5, height=4, dpi = 600)
 
 # # Make a violin that
@@ -155,23 +156,36 @@ plot_cells(cds_subset, genes=gene_module_df, show_trajectory_graph=FALSE, label_
 plot_cells(cds_subset, color_cells_by="cluster") +
     ggsave("L2_sex_partition_color_by_cluster.png", width=5, height=4, dpi = 600)
 
-# Plot the overlap between clusters and annotated cell types:
-pheatmap::pheatmap(log(table(clusters(cds_subset)[colnames(cds_subset)], colData(cds_subset)$cao_cell_type)+1),
-                   clustering_method="ward.D2",
-                   fontsize=6)
+## Cheat a bit here by automatically generating assignments that would stem from
+# manual annotation. We'll do this so that when the clusters change we don't have
+# manually go through them. Obviously this isn't possible when you don't already
+# the answers!
+type_partition_olap = as.matrix(prop.table(table(clusters(cds_subset), colData(cds_subset)$cao_cell_type), margin=1))
+pheatmap::pheatmap(type_partition_olap, cluster_rows=FALSE, cluster_cols=FALSE)
+
+paritition_identities = max.col(type_partition_olap,ties.method="first")
+colnames(type_partition_olap)[paritition_identities]
+for (i in (1:length(paritition_identities))){
+    if (i < length(paritition_identities)){
+        cat('"',i,'"="',colnames(type_partition_olap)[paritition_identities[i]], '",\n', sep="")
+    } else {
+       cat('"',i,'"="',colnames(type_partition_olap)[paritition_identities[i]], '"\n', sep="")
+    }
+}
 
 colData(cds_subset)$assigned_cell_type = as.character(clusters(cds_subset)[colnames(cds_subset)])
 colData(cds_subset)$assigned_cell_type = dplyr::recode(colData(cds_subset)$assigned_cell_type,
-                                                "30"="Vulval precursors",
-                                                "65"="Distal tip cells",
-                                                "24"="Sex myoblasts",
-                                                "51"="Sex myoblasts",
-                                                "33"="Somatic gonad progenitors")
+                                                "27"="Sex myoblasts",
+                                                "28"="Vulval precursors",
+                                                "31"="Somatic gonad precursors",
+                                                "38"="Unclassified neurons",
+                                                "42"="Sex myoblasts",
+                                                "39"="Failed QC"
+                                                )
 plot_cells(cds_subset, group_cells_by="cluster", color_cells_by="assigned_cell_type")
 colData(cds)[colnames(cds_subset),]$assigned_cell_type = colData(cds_subset)$assigned_cell_type
-plot_cells(cds, group_cells_by="partition", color_cells_by="assigned_cell_type", labels_per_group=5) + ggsave("L2_plot_cells_by_refined_annotation.png", width=5, height=4, dpi = 600)
-
 cds = cds[,colData(cds)$assigned_cell_type != "Failed QC" | is.na(colData(cds)$assigned_cell_type )]
+plot_cells(cds, group_cells_by="partition", color_cells_by="assigned_cell_type", labels_per_group=5) + ggsave("L2_plot_cells_by_refined_annotation.png", width=5, height=4, dpi = 600)
 
 # Plot the overlap between clusters and annotated cell types:
 pheatmap::pheatmap(log(table(colData(cds)$assigned_cell_type, colData(cds)$cao_cell_type)+1),
@@ -182,22 +196,21 @@ pheatmap::pheatmap(log(table(colData(cds)$assigned_cell_type, colData(cds)$cao_c
 
 #ceModel = readRDS(url("https://cole-trapnell-lab.github.io/garnett/classifiers/ceWhole"))
 
-assigned_type_marker_test_res = top_markers(cds[,is.na(colData(cds)$cao_cell_type) == FALSE & colData(cds)$cao_cell_type != "Failed QC"],
+assigned_type_marker_test_res = top_markers(cds[,is.na(colData(cds)$assigned_cell_type) == FALSE & colData(cds)$assigned_cell_type != "Failed QC"],
                                             group_cells_by="assigned_cell_type",
-                                            #reference_cells=1000,
+                                            reference_cells=1000,
                                             cores=8)
 
 garnett_markers = assigned_type_marker_test_res %>%
-    filter(marker_test_q_value < 0.01 & specificity >= 0.2) %>%
+    filter(marker_test_q_value < 0.01 & specificity >= 0.5) %>%
     group_by(cell_group) %>%
     top_n(5, marker_score)
 garnett_markers = garnett_markers %>% group_by(gene_short_name) %>% 
     filter(n() == 1) 
 
-
 plot_genes_by_group(cds,
                     unique(as.character(garnett_markers$gene_id)),
-                    group_cells_by="cao_cell_type",
+                    group_cells_by="assigned_cell_type",
                     ordering_type="cluster_row_col",
                     max.size=3) + ggsave("L2_plot_top3_cao_type_markers.png", width=5, height=6, dpi = 600)
 
@@ -215,8 +228,7 @@ worm_classifier <- train_cell_classifier(cds = cds,
                                          marker_file_gene_id_type = "SYMBOL",
                                          cores=8)
 
-# FIXME: remove the bracket op once issue #56 is resolved
-colData(cds)$garnett_cluster = clusters(cds)[colnames(cds)]
+colData(cds)$garnett_cluster = clusters(cds)
 cds = classify_cells(cds, worm_classifier,
                            db = org.Ce.eg.db::org.Ce.eg.db,
                            cluster_extend = TRUE,
@@ -224,14 +236,12 @@ cds = classify_cells(cds, worm_classifier,
 
 plot_cells(cds, 
            group_cells_by="partition", 
-           color_cells_by="cluster_ext_type") + ggsave("L2_umap_corrected_garnett_ext_type.png", width=5, height=4, dpi = 600)
+           color_cells_by="cluster_ext_type") + ggsave("L2_umap_corrected_garnett_ext_type_our_annotations.png", width=5, height=4, dpi = 600)
 
 # Plot the overlap between clusters and annotated cell types:
 pheatmap::pheatmap(log(table(colData(cds)$cluster_ext_type, colData(cds)$cao_cell_type)+1),
                    clustering_method="ward.D2",
-                   fontsize=6, width=5, height=5, filename="L2_cao_cell_type_by_garnett_ext_type.png")
-
-
+                   fontsize=6, width=5, height=5, filename="L2_cao_cell_type_by_garnett_ext_type_our_annotations.png")
 
 load(url("https://cole-trapnell-lab.github.io/garnett/classifiers/ceWhole"))
 colData(cds)$garnett_cluster = clusters(cds)
@@ -241,8 +251,8 @@ cds = classify_cells(cds, ceWhole,
                            cds_gene_id_type = "ENSEMBL")
 
 plot_cells(cds, 
-           group_cells_by="partition", 
-           color_cells_by="cluster_ext_type") + ggsave("L2_umap_corrected_garnett_ext_type.png", width=5, height=4, dpi = 600)
+           group_cells_by="cluster", 
+           color_cells_by="cluster_ext_type") + ggsave("L2_umap_corrected_garnett_ext_type_cao_annoutations.png", width=5, height=4, dpi = 600)
 
 # Plot the overlap between clusters and annotated cell types:
 pheatmap::pheatmap(prop.table(table(partitions(cds)[colnames(cds)], colData(cds)$cluster_ext_type), margin=1),
