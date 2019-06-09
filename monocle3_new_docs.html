@@ -15,14 +15,13 @@ tags: [monocle, manual, vignette]
   <body  data-spy= "scroll" data-target= "#toc">
     {% include header.html %}
 
-<div class= "container">
-<div class= "row">
-<!-- sidebar, which will move to the top on a small screen -->
-<div class= "col-sm-4">
-  <nav id= "toc" data-spy= "affix" data-toggle= "toc"></nav>
-</div>
-<!-- main content area -->
-<div class= "col-sm-8">
+    <div class= "container">
+    <div class= "row">
+    <div class= "col-sm-4">
+      <nav id= "toc" data-spy= "affix" data-toggle= "toc"></nav>
+    </div>
+    <!-- main content area -->
+    <div class= "col-sm-8">
 
 <h2>Introduction</h2>
 
@@ -427,11 +426,23 @@ plot_cells(cds, color_cells_by="cao_cell_type")
 <div class= "text-center">
   <img src= "{{site.baseurl}}/images/manual_images/L2_umap_color_by_cao_type.png" width= 760>
 </div>
+
 <p>You can see that many of the cell types land very close to one another in the UMAP plot.</p>
 
 <p>Except for a few cases described in a moment, <code>color_cells_by</code> can be the name of any column in <code>colData(cds)</code>. Note that when <code>color_cells_by</code> is a categorical variable, labels are added to the plot, with each label positioned roughly in the middle of all the cells that have that label.</p>
 
+<p>You can also color your cells according to how much of a gene or set of genes they express:</p>
 
+{% highlight R %}
+plot_cells(cds, genes=c("cpna-2", "egl-21", "ram-2", "inos-1"))
+{% endhighlight %}
+
+
+
+
+<div class= "text-center">
+    <img src= "{{site.baseurl}}/images/manual_images/L2_umap_gene_markers.png" width= 760>
+  </div>
 
 <div class= "panel panel-info">
 <div class= "panel-heading">
@@ -553,21 +564,23 @@ marker_test_res = top_markers(cds, group_cells_by="partition", reference_cells=1
 <p></p>The data frame <code>marker_test_res</code> contains a number of metrics for how specifically expressed each gene is in each partition. We could group the cells according to cluster, partition, or any categorical variable in <code>colData(cds)</code>. You can rank the table according to one or more of the specificity metrics and take the top gene for each cluster. For example, <code>pseudo_R2</code> is one such measure. We can rank markers according to <code>pseudo_R2</code> like this:
 
 {% highlight R %}
-top_specific_markers = marker_test_res %>% 
-    filter(marker_test_q_value < 0.05 & pseudo_R2 > 0.01) %>%
-    group_by(cell_group) %>% 
+top_specific_markers = marker_test_res %>%
+    filter(fraction_expressing >= 0.10) %>%
+    group_by(cell_group) %>%
     top_n(1, pseudo_R2)
 
 top_specific_marker_ids = unique(top_specific_markers %>% pull(gene_id))
+
 {% endhighlight %}
 
 <p>Now, we can plot the expression and fraction of cells that express each marker in each group with the <code>plot_genes_by_group</code> function:</p>
 
 {% highlight R %}
-plot_genes_by_group(cds, 
-                    top_specific_marker_ids, 
-                    group_cells_by="partition", 
-                    ordering_type="cluster_row_col")
+plot_genes_by_group(cds,
+                    top_specific_marker_ids,
+                    group_cells_by="partition",
+                    ordering_type="maximal_on_diag",
+                    max.size=3)
 {% endhighlight %}
 
 <div class= "text-center">
@@ -576,17 +589,18 @@ plot_genes_by_group(cds,
 
 <p>It's often informative to look at more than one marker, which you can do just by changing the first argument to <code>top_n()</code>:</p>
 {% highlight R %}
-top_specific_markers = marker_test_res %>% 
-    filter(marker_test_q_value < 0.05 & pseudo_R2 > 0.01) %>%
-    group_by(cell_group) %>% 
+top_specific_markers = marker_test_res %>%
+    filter(fraction_expressing >= 0.10) %>%
+    group_by(cell_group) %>%
     top_n(3, pseudo_R2)
 
 top_specific_marker_ids = unique(top_specific_markers %>% pull(gene_id))
 
-plot_genes_by_group(cds, 
-                    top_specific_marker_ids, 
-                    group_cells_by="partition", 
-                    ordering_type="cluster_row_col")
+plot_genes_by_group(cds,
+                    top_specific_marker_ids,
+                    group_cells_by="partition",
+                    ordering_type="cluster_row_col",
+                    max.size=3)
 {% endhighlight %}
 
 <div class= "text-center">
@@ -717,10 +731,11 @@ colData(cds_subset)$assigned_cell_type = dplyr::recode(colData(cds_subset)$assig
 plot_cells(cds_subset, group_cells_by="cluster", color_cells_by="assigned_cell_type")
 {% endhighlight %}
 
-<p>Now we can transfer the annotations from the <code>cds_subset</code> object back to the full dataset:</p>
+<p>Now we can transfer the annotations from the <code>cds_subset</code> object back to the full dataset. We'll also filter out low-quality cells at this stage</p>
 
 {% highlight R %}
 colData(cds)[colnames(cds_subset),]$assigned_cell_type = colData(cds_subset)$assigned_cell_type
+cds = cds[,colData(cds)$assigned_cell_type != "Failed QC" | is.na(colData(cds)$assigned_cell_type )]
 plot_cells(cds, group_cells_by="partition", color_cells_by="assigned_cell_type", labels_per_group=5)
 {% endhighlight %}
 
@@ -740,57 +755,89 @@ assigned_type_marker_test_res = top_markers(cds,
                                             cores=8)
 {% endhighlight %}
 
+<p>Next, filter these markers according to how stringent you want to be:</p>
+{% highlight R %}
+# Require that markers have at least JS specificty score > 0.5 and 
+# be significant in the logistic test for identifying their cell type:
+garnett_markers = assigned_type_marker_test_res %>%
+    filter(marker_test_q_value < 0.01 & specificity >= 0.5) %>%
+    group_by(cell_group) %>%
+    top_n(5, marker_score)
+# Exclude genes that are good markers for more than one cell type:
+garnett_markers = garnett_markers %>% group_by(gene_short_name) %>% 
+    filter(n() == 1) 
+{% endhighlight %}
+
 <p>Then call <code>generate_garnett_marker_file</code>:</p>
 {% highlight R %}
-generate_garnett_marker_file(assigned_type_marker_test_res, file="./marker_file.txt")
+generate_garnett_marker_file(garnett_markers, file="./marker_file.txt")
 {% endhighlight %}
 
 <p><code>generate_garnett_marker_file</code></p> will produce a text file like this:
 {% highlight console %}
-> Cell type Pharyngeal epithelia
-expressed: abu-6, gon-2, pqn-2, eyg-1, cutl-21
+> Cell type Ciliated sensory neurons
+expressed: che-3, scd-2, C33A12.4, R102.2, F27C1.11
 
-> Cell type Pharyngeal muscle
-expressed: nspe-4, Y105C5B.5, Y52E8A.6
-
-> Cell type Neurons
-expressed: gei-18, htp-1, plk-3, F42G10.1, toca-2
-
-> Cell type Coelomocytes
-expressed: dig-1, prmn-1, inos-1, ZK593.3, C23H3.2, R11G1.6
-
-> Cell type Unknown 2
-expressed: cdk-1, Y49E10.4, D2024.4
-
-> Cell type Pharyngeal gland
-expressed: lys-8, C14B4.2
-
-> Cell type Unknown
-expressed: plk-1, nspc-20, nspc-15
-
-> Cell type Germline
-expressed: htp-2, mei-2, C56A3.8, Y57A10A.3, C16C8.13, EEED8.13, ztf-28, bath-4, K12H6.2
-
-> Cell type Failed QC
-expressed: T20B6.3, pqn-29, R13H4.8, T01B7.8, C04G6.7, C27A2.5, pqn-67, F41G3.3, Y47D3B.6, F41E6.11
-
-> Cell type Intestinal/rectal muscle
-expressed: mls-1, C15C8.6
-
-> Cell type Body wall muscle
-expressed: rme-2, T20D4.12
-
-> Cell type Sex myoblasts
-expressed: grd-14
+> Cell type Non-seam hypodermis
+expressed: col-14, col-180, F11E6.3, grsp-1, C06A8.3
 
 > Cell type Seam cells
-expressed: nhr-73, trcs-1, F54B11.10, W08G11.1
+expressed: col-65, col-77, col-107, ram-2, Y47D7A.13
+
+> Cell type Vulval precursors
+expressed: col-68, col-145, lin-31, osm-11, Y62E10A.19
+
+> Cell type Body wall muscle
+expressed: csq-1, hum-9, cpna-2, tag-278, F41C3.5
+
+> Cell type Coelomocytes
+expressed: cup-4, inos-1, Y73F4A.1, ZC116.3, aman-1
+
+> Cell type flp-1 interneurons
+expressed: daf-10, flp-1, nlp-10, zig-2, H05L03.3
+
+> Cell type Sex myoblasts
+expressed: egl-15, C04E12.2
+
+> Cell type Intestinal/rectal muscle
+expressed: egl-20, lbp-2, bgal-1, ttr-10, T23B12.8
 
 > Cell type Am/PH sheath cells
-expressed: ZK822.4, T02B11.3, far-8, T11B7.5, vap-1, Y54G2A.10, R13D7.2, F11C7.2, K09C6.9, F52E1.2
+expressed: far-8, F35B12.9, ZK822.4, F20A1.1, T02B11.3
+
+> Cell type Oxygen sensory neurons
+expressed: flp-17, gcy-9, gcy-33, ist-1, Y57G11B.97
+
+> Cell type Pharyngeal neurons
+expressed: flr-2, nlp-6, F14B6.2, degt-1, flp-28
+
+> Cell type Unclassified neurons
+expressed: gar-2, madd-4, twk-49
+
+> Cell type Germline
+expressed: gld-1, pgl-1, ppw-2, prg-2, cbd-1
+
+> Cell type Somatic gonad precursors
+expressed: inx-9, mnm-2, C36B7.4
+
+> Cell type Touch receptor neurons
+expressed: mec-1, mec-7, mec-12, mec-17, mec-18
+
+> Cell type Pharyngeal epithelia
+expressed: pgp-14, pqn-74, fipr-2, R03C1.1, Y73F4A.2
+
+> Cell type Pharyngeal muscle
+expressed: pqn-29, F31D4.5, R13H4.8, T01B7.8, T20B6.3
+
+> Cell type Pharyngeal gland
+expressed: F15A4.6, dod-6, C49G7.3, M04G7.1, phat-4
+
+> Cell type Canal associated neurons
+expressed: acbp-6, Y66D12A.14, ZC412.4, C32E8.6, C41A3.1
 {% endhighlight %}
 
-<p>You may want to edit this file to add or remove markers based on literature or other information.</p>
+<p>The marker files produced by <code>generate_garnett_marker_file()</code> are just a starting point for classifying your cells with Garnett. You may want to edit this file to add or remove markers based on literature or other information. You also should consider defining subtypes of cells, which can greatly increase the usefulness and accuracy of Garnett. For example, the L2 data contains many different types of neurons. Making a "Neuron" cell type in the file above and then using the <code>subtype of</code> keyword to organize the various subtypes of neurons will make Garnett more able to recognize them and distinguish them from non-neuronal cell types. When two or more of your cell types share most of their top markers in <code>plot_genes_by_group()</code>, consider defining a broader cell type definition of which they are both subtypes. You might also want to define markers for the various subtypes of neurons by subsetting the <code>cds</code> object above and running <code>top_markers()</code> just on them. See the Garnett <a href="https://cole-trapnell-lab.github.io/garnett/docs/">documentation</a> for more on how you can enrich your marker files.</p>
+
 <p>When you're ready run Garnett, load the package:</p>
 {% highlight R %}
 library(garnett)
@@ -808,9 +855,29 @@ worm_classifier <- train_cell_classifier(cds = cds,
                                          cores=8)
 {% endhighlight %}
 
+<p>Now that we've trained a classifier <code>worm_classifier</code>, we can use it to annotate the L2 cells according to type:</p>
+{% highlight R %}
+cds = classify_cells(cds, worm_classifier,
+                           db = org.Ce.eg.db::org.Ce.eg.db,
+                           cluster_extend = TRUE,
+                           cds_gene_id_type = "ENSEMBL")
+{% endhighlight %}
+
+<p>Here's how Garnett annotated the cells:</p>
+
+{% highlight R %}
+plot_cells(cds,  
+           group_cells_by="partition", 
+           color_cells_by="cluster_ext_type")
+{% endhighlight %}
+
+<div class= "text-center">
+    <img src= "{{site.baseurl}}/images/manual_images/L2_umap_corrected_garnett_ext_type.png" width= 760>
+</div>
+  
 <p>Garnett classifiers can be applied to datasets other than the one they were trained on. We strongly encourage you to <a href="https://cole-trapnell-lab.github.io/garnett/docs/#submitting-a-classifier">share</a> your Garnett files and include them with your papers so that others can use them.</p> 
 
-<p>We trained a Garnett model to classify <emph>C. elegans</emph> cells based on the L2 data. You can classify cells with it by first downloading and then passing it to the <code>classify_cells()</code> function:</p>
+<p>As part of writing a paper about Garnett, we trained a Garnett model to classify <emph>C. elegans</emph> cells based on the L2 data. You can classify cells with it by first downloading and then passing it to the <code>classify_cells()</code> function:</p>
 
 {% highlight R %}
 load(url("https://cole-trapnell-lab.github.io/garnett/classifiers/ceWhole"))
@@ -818,18 +885,7 @@ cds = classify_cells(cds, ceWhole,
                            db = org.Ce.eg.db,
                            cluster_extend = TRUE,
                            cds_gene_id_type = "ENSEMBL")
-plot_cells(cds, color_cells_by="cluster_ext_type")
 {% endhighlight %}
-
-<p>Here's how Garnett annotated the cells:</p>
-
-{% highlight R %}
-plot_cells(cds, color_cells_by="cluster_ext_type")
-{% endhighlight %}
-
-<div class= "text-center">
-    <img src= "{{site.baseurl}}/images/manual_images/L2_umap_corrected_garnett_ext_type.png" width= 760>
-</div>
   
 <!-- {% highlight R %}
 # Plot the overlap between clusters and annotated cell types:
