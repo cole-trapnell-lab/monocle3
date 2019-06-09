@@ -22,12 +22,67 @@ plot_cells(cds, x = 1, y = 2, reduction_method = c("UMAP", "tSNE",
 
 \item{y}{the column of reducedDimS(cds) to plot on the vertical axis}
 
+\item{reduction_method}{The lower dimensional space in which to plot cells.
+Must be one of "UMAP", "tSNE", and "PCA".}
+
+\item{color_cells_by}{What to use for coloring the cells. Must be either the
+name of a column of colData(cds), or one of "clusters", "partitions", or
+"pseudotime".}
+
+\item{group_cells_by}{How to group cells when labeling them. Must be either
+the name of a column of colData(cds), or one of "clusters" or "partitions".
+If a column in colData(cds), must be a categorical variable.}
+
+\item{genes}{Facet the plot, showing the expression of each gene in a facet
+panel. Must be either a list of gene ids (or short names), or a dataframe
+with two columns that groups the genes into modules that will be
+aggregrated prior to plotting. If the latter, the first column must be gene
+ids, and the second must the group for each gene.}
+
+\item{show_trajectory_graph}{Whether to render the principal graph for the
+trajectory. Requires that learn_graph() has been called on cds.}
+
+\item{trajectory_graph_color}{The color to be used for plotting the
+trajectory graph.}
+
+\item{trajectory_graph_segment_size}{The size of the line segments used for
+plotting the trajectory graph.}
+
+\item{norm_method}{How to normalize gene expression scores prior to plotting
+them. Must be one of "log" or "size_only".}
+
+\item{label_cell_groups}{Whether to label cells in each group (as specified
+by group_cells_by) according to the most frequently occuring label(s) (as
+specified by color_cells_by) in the group. If false, plot_cells() simply
+adds a traditional color legend.}
+
+\item{label_groups_by_cluster}{Instead of labeling each cluster of cells,
+place each label once, at the centroid of all cells carrying that label.}
+
+\item{group_label_size}{Font size to be used for cell group labels.}
+
+\item{labels_per_group}{How many labels to plot for each group of cells.
+Defaults to 1, which plots only the most frequent label per group.}
+
+\item{label_branch_points}{Whether to plot a label for each branch point in
+the principal graph.}
+
+\item{label_roots}{Whether to plot a label for each root in the principal
+graph.}
+
+\item{label_leaves}{Whether to plot a label for each leaf node in the
+principal graph.}
+
+\item{graph_label_size}{How large to make the branch, root, and leaf labels.}
+
 \item{cell_size}{The size of the point for each cell}
 
-\item{alpha}{The alpha aesthetics for the original cell points, useful to
-highlight the learned principal graph}
+\item{alpha}{Alpha for the cells. Useful for reducing overplotting.}
 
-\item{rasterize}{}
+\item{min_expr}{Minimum expression threshold for plotting genes}
+
+\item{rasterize}{Whether to plot cells as a rastered bitmap. Requires the
+ggrastr package.}
 }
 \value{
 a ggplot2 plot object
@@ -37,9 +92,9 @@ Plots the cells along with their trajectories.
 }
 \examples{
 \dontrun{
-lung <- load_lung()
+lung <- load_A549()
 plot_cells(lung)
-plot_cells(lung, color_by="pseudotime", show_backbone=FALSE)
-plot_cells(lung, markers="MYH3")
+plot_cells(lung, color_cells_by="log_dose")
+plot_cells(lung, markers="GDF15")
 }
 }

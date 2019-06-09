@@ -16,24 +16,30 @@ plot_genes_by_group(cds, markers, group_cells_by = "cluster",
 \arguments{
 \item{cds}{A cell_data_set for plotting.}
 
-\item{reduction_method}{The dimensionality reduction method used for
-clusters and partitions.}
+\item{markers}{A list of gene ids (or short names) to show in the plot}
+
+\item{group_cells_by}{How to group cells when labeling them. Must be either
+the name of a column of colData(cds), or one of "clusters" or "partitions".
+If a column in colData(cds), must be a categorical variable.}
+
+\item{reduction_method}{The dimensionality reduction method used for clusters
+and partitions.}
 
 \item{norm_method}{Determines how to transform expression values prior to
 plotting. Options are "log" and "size_only". Default is "log".}
 
-\item{lower_threshold}{The lowest gene expressed treated as expressed.
-By default, zero.}
+\item{lower_threshold}{The lowest gene expressed treated as expressed. By
+default, zero.}
 
 \item{max.size}{The maximum size of the dot. By default, it is 10.}
 
 \item{ordering_type}{How to order the genes / groups on the dot plot. Only
 accepts 'cluster_row_col' (use biclustering to cluster the rows and
-columns), 'maximal_on_diag' (position each column so that the maximal
-color shown on each column on the diagonal, if the current maximal is used
-in earlier columns, the next largest one is position), and 'none'
-(preserve the ordering from the input gene or alphabetical ordering of
-groups). Default is 'cluster_row_col'.}
+columns), 'maximal_on_diag' (position each column so that the maximal color
+shown on each column on the diagonal, if the current maximal is used in
+earlier columns, the next largest one is position), and 'none' (preserve
+the ordering from the input gene or alphabetical ordering of groups).
+Default is 'cluster_row_col'.}
 
 \item{axis_order}{Whether to put groups on x-axis, genes on y-axis (option
 'group_marker') or the reverse order (option 'marker_group'). Default is
@@ -41,8 +47,8 @@ groups). Default is 'cluster_row_col'.}
 
 \item{flip_percentage_mean}{Logical indicating whether to use color of the
 dot to represent the percentage (by setting flip_percentage_mean = FALSE,
-default) and size of the dot the mean expression, or the opposite
-(by setting flip_percentage_mean = TRUE).}
+default) and size of the dot the mean expression, or the opposite (by
+setting flip_percentage_mean = TRUE).}
 
 \item{pseudocount}{A pseudo-count added to the average gene expression.}
 
