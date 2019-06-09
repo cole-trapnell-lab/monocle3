@@ -406,9 +406,9 @@ compare_models <- function(model_tbl_full, model_tbl_reduced){
                                        "num_cells_expressed"))
 
   joined_fits <- joined_fits %>% dplyr::mutate(
-    dfs <- round(abs(df_residual.x  - df_residual.y)),
-    LLR <- 2 * abs(logLik.x  - logLik.y),
-    p_value <- pchisq(LLR, dfs, lower.tail = FALSE)
+    dfs = round(abs(df_residual.x  - df_residual.y)),
+    LLR = 2 * abs(logLik.x  - logLik.y),
+    p_value = pchisq(LLR, dfs, lower.tail = FALSE)
   )
 
   joined_fits <- joined_fits %>% dplyr::select(id, gene_short_name,
