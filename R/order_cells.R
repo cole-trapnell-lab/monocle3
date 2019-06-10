@@ -86,6 +86,9 @@ order_cells <- function(cds,
     if (interactive()){
       root_pr_nodes <-
         select_trajectory_roots(cds, reduction_method = reduction_method)
+      if(length(root_pr_nodes) == 0) {
+        stop("No root node was chosen!")
+      }
     }
   } else if(!is.null(root_cells)){
     closest_vertex <- cds@principal_graph_aux[[
@@ -223,12 +226,26 @@ select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
           # clear button
           shiny::actionButton("reset", "Clear"),
           # done button
-          shiny::actionButton("done", "Done")
+          shiny::actionButton("done", "Done"),
+          shiny::h3("Instructions:"),
+          shiny::tags$ol(
+            shiny::tags$li("Click and drag to rotate the plot."),
+            shiny::tags$li("Click your desired root nodes to select."),
+            shiny::tags$li("Click 'Done'.")
+          ),
+          shiny::h4("Details:"),
+          shiny::tags$ul(
+            shiny::tags$li(paste("Root nodes indicate where pseudotime will",
+                                 "equal zero")),
+            shiny::tags$li("To start over, click 'Clear'"),
+            shiny::tags$li(paste("You can also choose/unchoose specific nodes",
+                                 "by clicking on them directly"))
+          )
         ),
 
         # Main panel for displaying outputs ----
         shiny::mainPanel(
-          plotly::plotlyOutput("plot1")
+          plotly::plotlyOutput("plot1", height = "800px")
         )
       )
     )
@@ -242,13 +259,21 @@ select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
       output$plot1 <- plotly::renderPlotly({
         ica_space_df$keep <- FALSE
         ica_space_df[ vals$keeprows,]$keep <- TRUE
-
-        plotly::plot_ly(x = ica_space_df$prin_graph_dim_1,
+        if(sum(!ica_space_df$keep) == 0) {
+          cols <- c("black")
+        } else {
+          cols <- c("red", "black")
+        }
+        plotly::plot_ly() %>%
+          plotly::add_markers(x = ica_space_df$prin_graph_dim_1,
                 y = ica_space_df$prin_graph_dim_2,
                 z = ica_space_df$prin_graph_dim_3,
-                colors = c('red', 'black'), key = ica_space_df$sample_name,
-                color = ica_space_df$keep, size = 1,
+                key = ica_space_df$sample_name,
+                color = ica_space_df$keep,
+                colors = cols, size = 5,
                 type = "scatter3d", mode="markers") %>%
+          plotly::add_markers(data = reduced_dims, x=~V1, y = ~V2, z = ~V3,
+                      color = "rgb(220,220,220)", opacity = 0.25, size = 2) %>%
           plotly::layout(showlegend = FALSE)
       })
       # Toggle points that are clicked
@@ -284,7 +309,24 @@ select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
           # clear button
           shiny::actionButton("reset", "Clear"),
           # done button
-          shiny::actionButton("done", "Done")
+          shiny::actionButton("done", "Done"),
+          shiny::h3("Instructions:"),
+          shiny::tags$ol(
+            shiny::tags$li("Highlight nodes by clicking and dragging."),
+            shiny::tags$li("Click the 'Choose/unchoose' button."),
+            shiny::tags$li(paste("Repeat until you have chosen your desired",
+                                 "root nodes.")),
+            shiny::tags$li("Click 'Done'.")
+          ),
+          shiny::h4("Details:"),
+          shiny::tags$ul(
+            shiny::tags$li(paste("Root nodes indicate where pseudotime will",
+                                 "equal zero")),
+            shiny::tags$li("To start over, click 'Clear'"),
+            shiny::tags$li(paste("You can also choose/unchoose specific nodes",
+                                 "by clicking on them directly"))
+          )
+
         ),
 
         # Main panel for displaying outputs ----
@@ -303,11 +345,12 @@ select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
       )
 
       output$plot1 <- shiny::renderPlot({
-        # Plot the kept and excluded points as two separate data sets
         keep    <- ica_space_df[ vals$keeprows, , drop = FALSE]
         exclude <- ica_space_df[!vals$keeprows, , drop = FALSE]
 
         ggplot(keep, aes(prin_graph_dim_1, prin_graph_dim_2)) +
+          geom_point(data = reduced_dims, aes(x=V1, y = V2),
+                     size = .5, color = "gray", alpha = .3) +
           geom_point(alpha = .7) +
           geom_point(data = exclude, shape = 21, fill = "red", color = "red") +
           geom_segment(data = edge_df,  aes(x = source_prin_graph_dim_1,
@@ -315,16 +358,17 @@ select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
                                             y = source_prin_graph_dim_2,
                                             yend = target_prin_graph_dim_2)) +
           labs(x="Component 1", y="Component 2") +
-          monocle3:::monocle_theme_opts() +
-          geom_point(data = reduced_dims, aes(x=V1, y = V2),
-                     size = .5, color = "gray")
+          monocle3:::monocle_theme_opts()
       }, height = function() {
         session$clientData$output_plot1_width
       })
 
       # Toggle points that are clicked
       shiny::observeEvent(input$plot1_click, {
-        res <- shiny::nearPoints(ica_space_df, input$plot1_click,
+        res <- shiny::nearPoints(ica_space_df,
+                                 xvar = "prin_graph_dim_1",
+                                 yvar = "prin_graph_dim_2",
+                                 input$plot1_click,
                                  allRows = TRUE)
 
         vals$keeprows <- xor(vals$keeprows, res$selected_)
@@ -333,6 +377,8 @@ select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
       # Toggle points that are brushed, when button is clicked
       shiny::observeEvent(input$choose_toggle, {
         res <- shiny::brushedPoints(ica_space_df, input$plot1_brush,
+                                    xvar = "prin_graph_dim_1",
+                                    yvar = "prin_graph_dim_2",
                                     allRows = TRUE)
 
         vals$keeprows <- xor(vals$keeprows, res$selected_)
