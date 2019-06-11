@@ -7,7 +7,7 @@ cds <- preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ bg.300
 cds <- reduce_dimension(cds, umap.fast_sgd=FALSE, cores=1)
 cds <- cluster_cells(cds)
 cds <- learn_graph(cds, learn_graph_control=list(ncenter=1000), close_loop=TRUE)
-plot_cells(cds, color_cells_by="cell.type")
+#plot_cells(cds, color_cells_by="cell.type")
 
 # test_that("test graph_test error messages work", {
 #   expect_error(cds <- graph_test(cds),
@@ -31,15 +31,15 @@ test_that("test graph_test returns Dex-dependent genes",{
   pos_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "che-1",]
   pr_test_res = graph_test(pos_ctrl_gene)
   expect_equal(pr_test_res$status[1], "OK")
-  expect_equal(pr_test_res$morans_I, 0.6911794, tolerance=1e-4)
-  expect_equal(pr_test_res$morans_test_statistic, 146.3286, tolerance=1e-1)
+  expect_equal(pr_test_res$morans_I, 0.6911794, tolerance=1e-2)
+  expect_equal(pr_test_res$morans_test_statistic, 204.72, tolerance=1e-1)
   expect_lt(pr_test_res$p_value[1], 0.05)
 
   neg_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "R02D3.1",]
   pr_test_res = graph_test(neg_ctrl_gene)
   expect_equal(pr_test_res$status[1], "OK")
-  expect_equal(pr_test_res$morans_I, 0.0007743661, tolerance=1e-4)
-  expect_equal(pr_test_res$morans_test_statistic, 0.1987074, tolerance=1e-1)
+  expect_equal(pr_test_res$morans_I, -0.002068949, tolerance=1e-4)
+  expect_equal(pr_test_res$morans_test_statistic, -0.5609846, tolerance=1e-1)
   expect_gt(pr_test_res$p_value[1], 0.05)
 })
 
