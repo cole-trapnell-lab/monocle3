@@ -3,20 +3,10 @@
 
   {% include head.html %}
 
-  <body>
+  <body {% if page.sidemenu %}data-spy= "scroll" data-target= "#toc"{% endif %}>
     {% include header.html %}
-<!--
-    <main class="page-content" aria-label="Content">
-      <div class="wrapper">
-        <div class="container">
-          {{ content }}
-        </div>
-      </div>
-    </main> -->
-
-    <div class="container">
+    
     {{ content }}
-    </div>
 
     {% include footer.html %}
 

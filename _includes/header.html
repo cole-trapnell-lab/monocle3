@@ -1,41 +1,28 @@
-<!-- <header class="site-header" role="banner"> -->
-  <div class="container-fullwidth">
-  <nav class="navbar navbar-inverse navbar-static-top">
-    <div class="container">
-      <div class="navbar-header">
-        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-          <span class="sr-only">Toggle navigation</span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-        </button>
-        <a class="navbar-brand" href="{{ site.baseurl }}/">Monocle 3</a>
+<div class="container-fullwidth">
+    <nav class="navbar navbar-inverse navbar-static-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="{{ site.baseurl }}/">Monocle 3</a>
+        </div>
+        <div id="navbar" class="collapse navbar-collapse">
+          <ul class="nav navbar-nav">
+              <li><a href="{{ site.baseurl }}/monocle3_docs/">Documentation</a></li>
+              <!-- <li><a href="{{ site.baseurl }}/Paul/">Paul</a></li> -->
+              <li><a href="http://cole-trapnell-lab.github.io/monocle-release/">Older versions</a></li>
+              <li><a href="{{ site.baseurl }}/papers/">Publications</a></li>
+              <li><a href="https://github.com/cole-trapnell-lab/monocle3">GitHub</a></li>
+          </ul>
+        </div>
       </div>
-      <div id="navbar" class="collapse navbar-collapse">
-        <ul class="nav navbar-nav">
-          <!-- <li class="active"><a href="#">Home</a></li> -->
-
-          <script>
-
-          function mobileDetect() {
-            if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|BB|PlayBook|IEMobile|Windows Phone|Kindle|Silk|Opera Mini/i.test(navigator.userAgent)) {
-              window.location.href = "{{ site.baseurl }}/docs_mobile/"
-            } else {
-              window.location.href = "{{ site.baseurl }}/docs/"
-            }
-          }
-
-          </script>
-          <li><a href="{{ site.baseurl }}/monocle3_docs/">Documentation</a></li>
-          <!-- <li><a href="{{ site.baseurl }}/Paul/">Paul</a></li> -->
-          <li><a href="http://cole-trapnell-lab.github.io/monocle-release/">Older versions</a></li>
-          <li><a href="{{ site.baseurl }}/papers/">Publications</a></li>
-          <li><a href="https://github.com/cole-trapnell-lab/monocle3">GitHub</a></li>
-        </ul>
-      </div><!--/.nav-collapse -->
+    </nav>
     </div>
-  </nav>
-  </div>
-
-</header>
+  
+  </header>
+  

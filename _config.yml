@@ -13,14 +13,25 @@
 # you will see them accessed via {{ site.title }}, {{ site.email }}, and so on.
 # You can create any custom variable you would like, and they will be accessible
 # in the templates via {{ site.myvariable }}.
-title: Monocle
+
+title: Monocle 3
 email: coletrap@uw.edu
 description: > # this means to ignore newlines until "baseurl:"
   Monocle -  A powerful software toolkit for single-cell analysis
 baseurl: "/monocle3" # the subpath of your site, e.g. /blog
-url: "http://cole-trapnell-lab.github.io" # the base hostname & protocol for your site, e.g. http://example.com
+url: "http://cole-trapnell-lab.github.io"
+permalink: pretty
+#url: "http://cole-trapnell-lab.github.io" # the base hostname & protocol for your site, e.g. http://example.com
 #twitter_username: coletrapnell
 #github_username:  ctrapnell
+
+# Defaults
+defaults:
+  -
+    scope:
+      path: "" # Apply to all files
+    values:
+      layout: "default"
 
 # Build settings
 sass:

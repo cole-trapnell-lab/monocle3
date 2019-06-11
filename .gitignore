@@ -3,8 +3,9 @@ inst/doc
 .Rhistory
 .RData
 .Ruserdata
-_site
-.sass-cache
+_site/
+.sass-cache/
 .gitignore~
 .DS_Store
 Gemfile.lock
+vendor/

@@ -1,13 +1,8 @@
-<!DOCTYPE html>
-<html lang="{{ page.lang | default: site.lang | default: "en" }}">
-
-{% include head.html %}
-
-<body>
-  {% include header.html %}
+---
+---
 
   <!-- Main jumbotron for a primary marketing message or call to action -->
-  <div class="jumbotron" style="background-image: url(images/neurons_clipped.png); background-size: 100%; background-repeat: no-repeat; height: 400px";>
+  <div class="jumbotron" style="background-image: url(images/neurons_clipped.png); background-position: center; background-size: 170%; background-repeat: no-repeat; color: #ecf0f1; height: 300px"> <!--; -->
     <div class="container">
       <div class="text-center">
         <h1>Monocle 3</h1>
@@ -129,26 +124,3 @@
 
                   </div>
 
-                  <hr class="featurette-divider">
-
-                  <!-- /END THE FEATURETTES -->
-
-                  <hr>
-                  <!--
-                  <ul class="post-list">
-                  {% for post in site.posts %}
-                  <li><article><a href="{{ site.baseurl }}{{ post.url }}">{{ post.title }} <span class="entry-date"><time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%B %d, %Y" }}</time></span></a></article></li>
-                  {% endfor %}
-                </ul> -->
-
-                <footer>
-                  <p>&copy; 2019 Cole Trapnell</p>
-
-                </footer>
-              </div> <!-- /container -->
-
-              {% include footer.html %}
-
-            </body>
-
-            </html>

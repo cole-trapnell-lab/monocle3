@@ -15,6 +15,11 @@ $icon-font-path: "/node_modules/bootstrap-sass/assets/fonts/bootstrap/";
 /* any style customization must be before the bootstrap import */
 @import "bootstrap";
 
+/* landing page styles */
+.jumbotron {
+    margin-top: -24px;
+}
+
 .jumbotron h1{
     color: #fff;
 }
@@ -32,7 +37,50 @@ $icon-font-path: "/node_modules/bootstrap-sass/assets/fonts/bootstrap/";
     color: #00ffff
     !important;
 }
-//
-// .token.function { ... }
-// .token.variable { ... }
-// .token.namespace { ... }
+
+/* styles for docs menu */
+nav#toc {
+    margin-top: 16px;
+    width: 250px;
+}
+
+@media screen and (max-width: 767px) {
+	nav#toc {
+        display: none;
+	}
+}
+
+/* content styles */
+body {
+    line-height: 1.6;
+}
+
+h2, h3, h4, h5 {
+    margin-top: 36px;
+}
+
+img {
+    max-width: 100%;
+}
+
+.panel-body, .table-wrapper {
+    max-width: 100%;
+    overflow: auto;
+}
+
+.panel,
+p,
+img,
+pre {
+    margin-top: 16px;
+    margin-bottom: 16px;
+}
+
+/* center the footer */
+footer {
+    border-top: 1px solid #ecf0f1;
+    margin-top: 16px;
+    padding: 16px;
+    text-align: center;
+    width: 100%;
+}
