@@ -33,9 +33,6 @@
 #'   function used for the test.
 #' @param cores the number of cores to be used while testing each gene for
 #'   differential expression.
-#' @param interactive Whether or not to allow the user to choose a point or
-#'   region in the scene, then to only identify genes spatially correlated for
-#'   those selected cells.
 #' @param verbose Whether to show spatial test (Moran's I) errors and warnings.
 #'   Only valid for cores = 1.
 #' @return a data frame containing the p values and q-values from the Moran's I
@@ -50,12 +47,10 @@ graph_test <- function(cds,
                        alternative = 'greater',
                        expression_family="quasipoisson",
                        cores=1,
-                       interactive = FALSE,
                        verbose=FALSE) {
   neighbor_graph <- match.arg(neighbor_graph)
   lw <- calculateLW(cds,
                     k = k,
-                    interactive = interactive,
                     verbose = verbose,
                     neighbor_graph = neighbor_graph,
                     reduction_method = reduction_method)
@@ -63,7 +58,7 @@ graph_test <- function(cds,
   if(verbose) {
     message("Performing Moran's I test: ...")
   }
-  exprs_mat <- counts(cds)[, attr(lw, "region.id"), drop=FALSE]
+  exprs_mat <- SingleCellExperiment::counts(cds)[, attr(lw, "region.id"), drop=FALSE]
   sz <- size_factors(cds)[attr(lw, "region.id")]
 
   wc <- spdep::spweights.constants(lw, zero.policy = TRUE, adjust.n = TRUE)
@@ -269,16 +264,12 @@ my.geary.test <- function (x, listw, wc, randomisation = TRUE,
 #' @param  k The maximum number of nearest neighbors to compute
 #' @param verbose A logic flag that determines whether or not to print
 #' execution details
-#' @param interactive Whether or not to allow the user to choose a point or
-#' region in the scene, then to only identify genes spatially correlated for
-#' those selected cells.
 #' @keywords internal
 #'
 calculateLW <- function(cds,
                         k,
                         neighbor_graph,
                         reduction_method,
-                        interactive = FALSE,
                         verbose = FALSE
 ) {
   if(verbose) {
@@ -300,7 +291,7 @@ calculateLW <- function(cds,
                                                  colnames(pr_graph_node_coords)]
   }
 
-  exprs_mat <- counts(cds)
+  exprs_mat <- exprs(cds)
   if(neighbor_graph == "knn") {
     if(is.null(knn_res)) {
       cell_coords <- reducedDims(cds)$UMAP
@@ -314,23 +305,6 @@ calculateLW <- function(cds,
     colnames(relations) <- c("from", "to", "weight")
     knn_res_graph <- igraph::graph.data.frame(relations, directed = T)
 
-    if(interactive) {
-      if('Marked' %in% names(colData(cds))) {
-        points_selected <- which(colData(cds)$Marked)
-      } else {
-        cat("Left click or drag multiple points to select a group of cells\n")
-        cat("Press <Esc> in the rgl screen to exit \n")
-        points_selected <- sort(select_cells(cds))
-      }
-      knn_list <- lapply(points_selected,
-                         function(x) intersect(knn_res[x, -1],
-                                               points_selected))
-      knn_res_graph <- knn_res_graph[points_selected, points_selected]
-      region_id_names <- colnames(cds)[points_selected]
-
-      id_map <- 1:length(points_selected)
-      names(id_map) <- points_selected
-    } else {
       knn_list <- lapply(1:nrow(knn_res), function(x) knn_res[x, -1])
       region_id_names <- colnames(cds)
 
@@ -338,7 +312,6 @@ calculateLW <- function(cds,
       names(id_map) <- id_map
 
       points_selected <- 1:nrow(knn_res)
-    }
 
     knn_list <- lapply(points_selected,
                        function(x) id_map[as.character(knn_res[x, -1])])
@@ -417,7 +390,7 @@ calculateLW <- function(cds,
       if(is.null(tmp)) {
         tmp <- cur_tmp
       } else {
-        tmp <- rBind(tmp, cur_tmp)
+        tmp <- Matrix::rBind(tmp, cur_tmp)
       }
     }
 
@@ -426,25 +399,10 @@ calculateLW <- function(cds,
       message('Calculating valid kNN graph, done ...')
     }
 
-    if(interactive) {
-      if('Marked' %in% names(colData(cds))) {
-        points_selected <- which(colData(cds)$Marked)
-      } else {
-        cat("Left click or drog multiple points to select a group of cells\n")
-        cat("Press <Esc> in the rgl screen to exit \n")
-        points_selected <- sort(select_cells(cds, return_index = T))
-      }
-      tmp <- tmp[points_selected, points_selected]
-      region_id_names <- colnames(cds)[points_selected]
-
-      id_map <- 1:length(points_selected)
-      names(id_map) <- points_selected
-    } else {
       region_id_names <- colnames(cds)
 
       id_map <- 1:ncol(cds)
       names(id_map) <- id_map
-    }
 
     knn_list <-
       slam::rowapply_simple_triplet_matrix(slam::as.simple_triplet_matrix(tmp),
