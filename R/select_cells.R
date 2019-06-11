@@ -12,7 +12,7 @@ choose_cells <- function(cds,
                          reduction_method = c("UMAP", "tSNE", "PCA"),
                          return_list = FALSE) {
   reduction_method <- match.arg(reduction_method)
-  assertthat::assert_that(is(cds, "cell_data_set"))
+  assertthat::assert_that(methods::is(cds, "cell_data_set"))
   assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
                           msg = paste0("No dimensionality reduction for ",
                                        reduction_method, " calculated. ",
@@ -69,7 +69,7 @@ choose_cells <- function(cds,
 
   server <- function(input, output, session) {
 
-    vals <- reactiveValues(
+    vals <- shiny::reactiveValues(
       keeprows = rep(FALSE, nrow(colData(cds)))
     )
 
@@ -137,7 +137,7 @@ choose_graph_segments <- function(cds,
                                  reduction_method = "UMAP",
                                  return_list = FALSE) {
 
-  assertthat::assert_that(is(cds, "cell_data_set"))
+  assertthat::assert_that(methods::is(cds, "cell_data_set"))
   assertthat::assert_that(assertthat::are_equal("UMAP", reduction_method),
                           msg = paste("Currently only 'UMAP' is accepted as a",
                                       "reduction_method."))
@@ -215,20 +215,20 @@ choose_graph_segments <- function(cds,
         shiny::actionButton("reset", "Clear"),
         # done button
         shiny::actionButton("done", "Done"),
-        h3("Instructions:"),
-        tags$ol(
-          tags$li("Highlight starting principal_graph node."),
-          tags$li("Click 'Choose starting node' to highlight."),
-          tags$li("Highlight ending principal_graph node(s)."),
-          tags$li("Click 'Choose ending nodes' to highlight."),
-          tags$li(paste("Click 'Connect nodes' to highlight connecting nodes",
+        shiny::h3("Instructions:"),
+        shiny::tags$ol(
+          shiny::tags$li("Highlight starting principal_graph node."),
+          shiny::tags$li("Click 'Choose starting node' to highlight."),
+          shiny::tags$li("Highlight ending principal_graph node(s)."),
+          shiny::tags$li("Click 'Choose ending nodes' to highlight."),
+          shiny::tags$li(paste("Click 'Connect nodes' to highlight connecting nodes",
                         "and cells")),
-          tags$li("Click 'Done' to return the chosen subset.")
+          shiny::tags$li("Click 'Done' to return the chosen subset.")
         ),
-        h4("Details:"),
-        tags$ul(
-          tags$li("To start over, click 'Clear'"),
-          tags$li(paste("You can choose multiple ending nodes, but only 1",
+        shiny::h4("Details:"),
+        shiny::tags$ul(
+          shiny::tags$li("To start over, click 'Clear'"),
+          shiny::tags$li(paste("You can choose multiple ending nodes, but only 1",
                         "starting node."))
         )
       ),
@@ -244,7 +244,7 @@ choose_graph_segments <- function(cds,
 
   server <- function(input, output, session) {
 
-    vals <- reactiveValues(
+    vals <- shiny::reactiveValues(
       start = rep(FALSE, nrow(princ_points)),
       end =  rep(FALSE, nrow(princ_points)),
       chosen = rep(FALSE, nrow(princ_points)),

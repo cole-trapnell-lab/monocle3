@@ -202,8 +202,8 @@ my.geary.test <- function (x, listw, wc, randomisation = TRUE,
   if (n != length(x))
     stop("objects of different length")
   if (is.null(spChk))
-    spChk <- get.spChkOption()
-  if (spChk && !chkIDs(x, listw))
+    spChk <- spdep::get.spChkOption()
+  if (spChk && !spdep::chkIDs(x, listw))
     stop("Check of data and weights ID integrity failed")
   S02 <- wc$S0 * wc$S0
   res <- spdep::geary(x, listw, wc$n, wc$n1, wc$S0, zero.policy)

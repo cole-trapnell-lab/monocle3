@@ -8,7 +8,9 @@
 \S4method{clusters}{cell_data_set}(x, reduction_method = "UMAP")
 }
 \arguments{
-\item{cell_data_set}{A cell_data_set object.}
+\item{x}{A cell_data_set object.}
+
+\item{reduction_method}{Reduced dimension to extract clusters for.}
 }
 \description{
 Method to extract clusters from CDS object

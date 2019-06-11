@@ -8,7 +8,8 @@ setGeneric("pseudotime", function(x, reduction_method = "UMAP")
   standardGeneric("pseudotime"))
 
 #' Method to extract pseudotime from CDS object
-#' @param cell_data_set A cell_data_set object.
+#' @param x A cell_data_set object.
+#' @param reduction_method Reduced dimension to extract clusters for.
 #'
 #' @export
 setMethod("pseudotime", "cell_data_set",
@@ -33,7 +34,8 @@ setGeneric("clusters", function(x, reduction_method = "UMAP")
   standardGeneric("clusters"))
 
 #' Method to extract clusters from CDS object
-#' @param cell_data_set A cell_data_set object.
+#' @param x A cell_data_set object.
+#' @param reduction_method Reduced dimension to extract clusters for.
 #'
 #' @export
 setMethod("clusters", "cell_data_set",
@@ -59,7 +61,8 @@ setGeneric("partitions", function(x, reduction_method = "UMAP")
   standardGeneric("partitions"))
 
 #' Method to extract partitions from CDS object
-#' @param cell_data_set A cell_data_set object.
+#' @param x A cell_data_set object.
+#' @param reduction_method Reduced dimension to partitions clusters for.
 #'
 #' @export
 setMethod("partitions", "cell_data_set",
@@ -110,24 +113,24 @@ setReplaceMethod("principal_graph", "cell_data_set", function(x, value) {
     names(value) <- character(length(value))
   }
   x@principal_graph <- value
-  validObject(x)
+  methods::validObject(x)
   return(x)
 })
 
-#' Generic to extract principal graph auxilliary information from CDS
+#' Generic to extract principal graph auxiliary information from CDS
 #' @param x A cell_data_set object.
 #' @export
 setGeneric("principal_graph_aux", function(x)
   standardGeneric("principal_graph_aux"))
 
-#' Generic to set principal graph auxilliary information into CDS
+#' Generic to set principal graph auxiliary information into CDS
 #' @param x A cell_data_set object.
-#' @param value A SimpleList of principal graph auxilliary information.
+#' @param value A SimpleList of principal graph auxiliary information.
 #' @export
 setGeneric("principal_graph_aux<-", function(x, value)
   standardGeneric("principal_graph_aux<-"))
 
-#' Method to extract principal graph auxilliary information from CDS
+#' Method to extract principal graph auxiliary information from CDS
 #' @param x A cell_data_set object.
 #' @export
 #' @export
@@ -136,9 +139,9 @@ setMethod("principal_graph_aux", "cell_data_set", function(x) {
   return(value)
 })
 
-#' Method to set principal graph auxilliary information into CDS
+#' Method to set principal graph auxiliary information into CDS
 #' @param x A cell_data_set object.
-#' @param value A SimpleList of principal graph auxilliary information.
+#' @param value A SimpleList of principal graph auxiliary information.
 #' @export
 #' @importClassesFrom S4Vectors List
 setReplaceMethod("principal_graph_aux", "cell_data_set", function(x, value) {
@@ -147,7 +150,7 @@ setReplaceMethod("principal_graph_aux", "cell_data_set", function(x, value) {
     names(value) <- character(length(value))
   }
   x@principal_graph_aux <- value
-  validObject(x)
+  methods::validObject(x)
   return(x)
 })
 
@@ -199,7 +202,7 @@ setMethod("pData", "cell_data_set", function(x) {
 #' @importClassesFrom S4Vectors List
 setReplaceMethod("pData", "cell_data_set", function(x, value) {
   colData(x) <- value
-  validObject(x)
+  methods::validObject(x)
   return(x)
 })
 
@@ -233,6 +236,6 @@ setMethod("fData", "cell_data_set", function(x) {
 #' @importClassesFrom S4Vectors List
 setReplaceMethod("fData", "cell_data_set", function(x, value) {
   rowData(x) <- value
-  validObject(x)
+  methods::validObject(x)
   return(x)
 })

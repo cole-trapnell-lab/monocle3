@@ -2,7 +2,7 @@
 % Please edit documentation in R/generics.R
 \name{principal_graph_aux}
 \alias{principal_graph_aux}
-\title{Generic to extract principal graph auxilliary information from CDS}
+\title{Generic to extract principal graph auxiliary information from CDS}
 \usage{
 principal_graph_aux(x)
 }
@@ -10,5 +10,5 @@ principal_graph_aux(x)
 \item{x}{A cell_data_set object.}
 }
 \description{
-Generic to extract principal graph auxilliary information from CDS
+Generic to extract principal graph auxiliary information from CDS
 }

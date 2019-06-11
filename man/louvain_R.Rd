@@ -3,7 +3,7 @@
 \encoding{UTF-8}
 \name{louvain_R}
 \alias{louvain_R}
-\title{Cluster cells based on louvain community detection algorithm.}
+\title{Cluster cells based on Louvain community detection algorithm.}
 \usage{
 louvain_R(X, python_home = system("which python", intern = TRUE),
   partition_method = "CPMVertexPartition", initial_membership = NULL,
@@ -35,28 +35,28 @@ changed.}
 \item{random_seed}{the seed used by the random number generator in
 louvain-igraph package}
 
-\item{verbose}{bool (optional, default False)}
+\item{verbose}{boolean (optional, default False)}
 
-\item{return_all}{Whether to return all slots after louvain}
+\item{return_all}{Whether to return all slots after Louvain}
 }
 \value{
 The cluster id if return_all set to be FALSE, otherwise all slots
-from the louvain function
+from the Louvain function
 }
 \description{
 This function is a wrapper of the louvain function from the
 python package (louvain-igraph, https://github.com/vtraag/louvain-igraph)
 The following description is from the original package "This package
-implements the louvain algorithm in C++ and exposes it to python. It relies
+implements the Louvain algorithm in C++ and exposes it to python. It relies
 on (python-)igraph for it to function. Besides the relative flexibility of
 the implementation, it also scales well, and can be run on graphs of
 millions of nodes (as long as they can fit in memory). The core function is
-find_partition which finds the optimal partition using the louvain algorithm
+find_partition which finds the optimal partition using the Louvain algorithm
 \link{1} for a number of different methods. The methods currently implemented are
 (1) modularity \link{2}, (2) Reichardt and Bornholdt's model using the
 configuration null model and the Erdös-Rényi null model \link{3}, (3) the
 constant Potts model (CPM) \link{4}, (4) Significance \link{5}, and finally (5)
-Surprise \link{6}. In addition, it supports multiplex partition optimisation
+Surprise \link{6}. In addition, it supports multiplex partition optimization
 allowing community detection on for example negative links \link{7} or multiple
 time slices \link{8}. It also provides some support for community detection on
 bipartite graphs. See the documentation for more information." Please see

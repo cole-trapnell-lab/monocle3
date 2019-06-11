@@ -37,10 +37,10 @@ test_that("fit_models() returns correct output for negative binomial regression"
   expect_equal(pos_ctrl_coefs$normalized_effect, c(0, 0.353), tolerance=1e-1)
   expect_lt(pos_ctrl_coefs$p_value[2], 0.05)
 
-  fitted_vals = predict(pos_ctrl_gene_fit$model[[1]])
+  fitted_vals = stats::predict(pos_ctrl_gene_fit$model[[1]])
   expect_null(fitted_vals)
 
-  fitted_vals = predict(pos_ctrl_gene_fit$model[[1]], newdata=colData(test_cds))
+  fitted_vals = stats::predict(pos_ctrl_gene_fit$model[[1]], newdata=colData(test_cds))
   expect_equal(sum(is.na(fitted_vals)), 0)
   expect_equal(unname(fitted_vals[1]), 0.09561581)
 
@@ -67,10 +67,10 @@ test_that("fit_models() returns correct output for Poisson regression",{
   expect_equal(pos_ctrl_coefs$normalized_effect, c(0, 0.353), tolerance=1e-1)
   expect_lt(pos_ctrl_coefs$p_value[2], 0.05)
 
-  fitted_vals = suppressWarnings(predict(pos_ctrl_gene_fit$model[[1]]))
+  fitted_vals = suppressWarnings(stats::predict(pos_ctrl_gene_fit$model[[1]]))
   expect_null(fitted_vals)
 
-  fitted_vals = predict(pos_ctrl_gene_fit$model[[1]], newdata=colData(test_cds))
+  fitted_vals = stats::predict(pos_ctrl_gene_fit$model[[1]], newdata=colData(test_cds))
   expect_equal(sum(is.na(fitted_vals)), 0)
   expect_equal(unname(fitted_vals[1]), 0.08996605, tolerance=1e-1)
 
@@ -96,10 +96,10 @@ test_that("fit_models() returns correct output for quasipoisson regression",{
   expect_equal(pos_ctrl_coefs$normalized_effect, c(0, 0.353), tolerance=1e-1)
   expect_lt(pos_ctrl_coefs$p_value[2], 0.05)
 
-  fitted_vals = suppressWarnings(predict(pos_ctrl_gene_fit$model[[1]]))
+  fitted_vals = suppressWarnings(stats::predict(pos_ctrl_gene_fit$model[[1]]))
   expect_null(fitted_vals)
 
-  fitted_vals = predict(pos_ctrl_gene_fit$model[[1]], newdata=colData(test_cds))
+  fitted_vals = stats::predict(pos_ctrl_gene_fit$model[[1]], newdata=colData(test_cds))
   expect_equal(sum(is.na(fitted_vals)), 0)
   expect_equal(unname(fitted_vals[1]), 0.08996605, tolerance=1e-1)
 
@@ -145,10 +145,10 @@ test_that("fit_models() returns correct output for zero-inflated Poisson regress
   expect_equal(pos_ctrl_coefs$normalized_effect, c(0.00000000, 0.08186624, NA, NA), tolerance=1e-1)
   expect_lt(pos_ctrl_coefs$p_value[2], 0.05)
 
-  fitted_vals = predict(pos_ctrl_gene_fit$model[[1]])
+  fitted_vals = stats::predict(pos_ctrl_gene_fit$model[[1]])
   expect_null(fitted_vals)
 
-  fitted_vals = predict(pos_ctrl_gene_fit$model[[1]], newdata=colData(test_cds))
+  fitted_vals = stats::predict(pos_ctrl_gene_fit$model[[1]], newdata=colData(test_cds))
   expect_equal(sum(is.na(fitted_vals)), 0)
   expect_equal(unname(fitted_vals[1]), 1.090315, tolerance=1e-1)
 
@@ -174,10 +174,10 @@ test_that("fit_models() returns correct output for zero-inflated negative binomi
   expect_equal(pos_ctrl_coefs$normalized_effect, c(0.000000000, 0.1685858, 0.1325289, NA, NA), tolerance=1e-1)
   expect_lt(pos_ctrl_coefs$p_value[2], 0.05)
 
-  fitted_vals = predict(pos_ctrl_gene_fit$model[[1]])
+  fitted_vals = stats::predict(pos_ctrl_gene_fit$model[[1]])
   expect_null(fitted_vals)
 
-  fitted_vals = predict(pos_ctrl_gene_fit$model[[1]], newdata=colData(test_cds))
+  fitted_vals = stats::predict(pos_ctrl_gene_fit$model[[1]], newdata=colData(test_cds))
   expect_equal(sum(is.na(fitted_vals)), 0)
   expect_equal(unname(fitted_vals[1]), 1.112072, tolerance=1e-1)
 

@@ -29,7 +29,7 @@ disabling to speed up top_markers().}
 \item{reference_cells}{If provided, top_markers will perform the marker
 significance test against a "reference set" of cells. Must be either a list
 of cell ids from colnames(cds), or a positive integer. If the latter, top_markers()
-will randomly select the specified numnber of reference cells. Accelerates
+will randomly select the specified number of reference cells. Accelerates
 the marker significance test at some cost in sensitivity.}
 
 \item{cores}{Number of cores to use.}

@@ -9,7 +9,7 @@ generate_centers(X, W, P, param.gamma)
 \arguments{
 \item{X}{input data}
 
-\item{W}{the pricipal graph matrix}
+\item{W}{the principal graph matrix}
 
 \item{P}{the cluster assignment matrix}
 

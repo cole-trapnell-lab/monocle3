@@ -222,7 +222,7 @@ plot_cells_3d <- function(cds,
     } else if(class(data_df$cell_color) == "numeric") {
 
       p <- plotly::plot_ly(data_df) %>%
-        add_trace(x = ~data_dim_1, y = ~data_dim_2, z = ~data_dim_3,
+        plotly::add_trace(x = ~data_dim_1, y = ~data_dim_2, z = ~data_dim_3,
                   type = 'scatter3d', size=I(cell_size), alpha = I(alpha),
                   mode="markers", marker=list(
                     colorbar = list(title = color_cells_by, len=0.5),
@@ -535,7 +535,7 @@ plot_cells <- function(cds,
       } else {
         cds_exprs@x = round(cds_exprs@x)
         markers_exprs = matrix(cds_exprs, nrow=nrow(markers_rowData))
-        colnames(markers_exprs) = SingleCellExperiment::colnames(counts(cds))
+        colnames(markers_exprs) = colnames(SingleCellExperiment::counts(cds))
         row.names(markers_exprs) = row.names(markers_rowData)
         markers_exprs <- reshape2::melt(markers_exprs)
         colnames(markers_exprs)[1:2] <- c('feature_id','cell_id')
@@ -571,7 +571,7 @@ plot_cells <- function(cds,
             dplyr::group_by(cell_color, add=TRUE) %>%
             dplyr::mutate(per=dplyr::n()/cells_in_cluster)
           median_coord_df = text_df %>%
-            dplyr::summarize(fraction_of_group = n(),
+            dplyr::summarize(fraction_of_group = dplyr::n(),
                              text_x = stats::median(x = data_dim_1),
                              text_y = stats::median(x = data_dim_2))
           text_df = text_df %>% dplyr::select(per) %>% dplyr::distinct()
@@ -582,7 +582,7 @@ plot_cells <- function(cds,
           text_df = data_df %>% dplyr::group_by(cell_color) %>%
             dplyr::mutate(per=1)
           median_coord_df = text_df %>%
-            dplyr::summarize(fraction_of_group = n(),
+            dplyr::summarize(fraction_of_group = dplyr::n(),
                              text_x = stats::median(x = data_dim_1),
                              text_y = stats::median(x = data_dim_2))
           text_df = text_df %>% dplyr::select(per) %>% dplyr::distinct()

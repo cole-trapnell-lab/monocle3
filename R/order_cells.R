@@ -30,7 +30,7 @@ order_cells <- function(cds,
                         root_cells=NULL,
                         verbose = FALSE){
 
-  assertthat::assert_that(is(cds, "cell_data_set"))
+  assertthat::assert_that(methods::is(cds, "cell_data_set"))
   assertthat::assert_that(assertthat::are_equal("UMAP", reduction_method),
                           msg = paste("Currently only 'UMAP' is accepted as a",
                                       "reduction_method."))
@@ -127,7 +127,7 @@ extract_general_graph_ordering <- function(cds,
 
   # do pseudotime calculation on the cell-wise graph
   # 1. identify nearest cells to the selected principal node
-  # 2. build a cell-wise graph for each louvain group
+  # 2. build a cell-wise graph for each Louvain group
   # 3. run the distance function to assign pseudotime for each cell
   closest_vertex <- find_nearest_vertex(Y[, root_cell, drop = F], Z)
   closest_vertex_id <- colnames(cds)[closest_vertex]
@@ -290,7 +290,7 @@ select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
       })
 
       shiny::observeEvent(input$done, {
-        stopApp(vals$keeprows)
+        shiny::stopApp(vals$keeprows)
       })
 
     }
@@ -390,7 +390,7 @@ select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
       })
 
       shiny::observeEvent(input$done, {
-        stopApp(vals$keeprows)
+        shiny::stopApp(vals$keeprows)
       })
 
     }

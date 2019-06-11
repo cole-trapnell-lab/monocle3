@@ -3,7 +3,7 @@
 \docType{methods}
 \name{principal_graph_aux,cell_data_set-method}
 \alias{principal_graph_aux,cell_data_set-method}
-\title{Method to extract principal graph auxilliary information from CDS}
+\title{Method to extract principal graph auxiliary information from CDS}
 \usage{
 \S4method{principal_graph_aux}{cell_data_set}(x)
 }
@@ -11,5 +11,5 @@
 \item{x}{A cell_data_set object.}
 }
 \description{
-Method to extract principal graph auxilliary information from CDS
+Method to extract principal graph auxiliary information from CDS
 }

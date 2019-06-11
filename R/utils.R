@@ -15,18 +15,18 @@ is_sparse_matrix <- function(x){
 #' @return Updated cell_data_set object with a new colData column called
 #'   'Size_Factor'.
 #' @export
-estimate_size_factors <- function(cds, locfunc = stats::median,
+estimate_size_factors <- function(cds,
                                   round_exprs=TRUE,
                                   method=c("mean-geometric-mean-total",
                                            'mean-geometric-mean-log-total'))
 {
   method <- match.arg(method)
-  if (is_sparse_matrix(counts(cds))){
-    size_factors(cds) <- estimate_sf_sparse(counts(cds),
+  if (is_sparse_matrix(SingleCellExperiment::counts(cds))){
+    size_factors(cds) <- estimate_sf_sparse(SingleCellExperiment::counts(cds),
                                             round_exprs=round_exprs,
                                             method=method)
   }else{
-    size_factors(cds) <- estimate_sf_dense(counts(cds),
+    size_factors(cds) <- estimate_sf_dense(SingleCellExperiment::counts(cds),
                                            round_exprs=round_exprs,
                                            method=method)
   }
@@ -154,6 +154,8 @@ sparse_par_c_apply <- function (cl = NULL, x, FUN, convert_to_dense, ...) {
 #'   provide packages needed by FUN will generate errors in worker threads.
 #' @param convert_to_dense Whether to force conversion of a sparse matrix to a
 #'   dense one before calling FUN.
+#' @param reduction_method character, the method used to reduce dimension.
+#'   Default "UMAP".
 #' @param ... Additional parameters for FUN.
 #' @param cores The number of cores to use for evaluation.
 #'
@@ -218,10 +220,10 @@ mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1,
   }
 
   if (MARGIN == 1){
-    suppressWarnings(res <- sparse_par_r_apply(cl, counts(cds), FUN,
+    suppressWarnings(res <- sparse_par_r_apply(cl, SingleCellExperiment::counts(cds), FUN,
                                                convert_to_dense, ...))
   }else{
-    suppressWarnings(res <- sparse_par_c_apply(cl, counts(cds), FUN,
+    suppressWarnings(res <- sparse_par_c_apply(cl, SingleCellExperiment::counts(cds), FUN,
                                                convert_to_dense, ...))
   }
 
@@ -244,10 +246,10 @@ smart_es_apply <- function(cds, MARGIN, FUN, convert_to_dense,
                        as.data.frame(coldata_df), envir=e1)
   environment(FUN) <- e1
 
-  if (is_sparse_matrix(counts(cds))){
-    res <- sparse_apply(counts(cds), MARGIN, FUN, convert_to_dense, ...)
+  if (is_sparse_matrix(SingleCellExperiment::counts(cds))){
+    res <- sparse_apply(SingleCellExperiment::counts(cds), MARGIN, FUN, convert_to_dense, ...)
   } else {
-    res <- pbapply::pbapply(counts(cds), MARGIN, FUN, ...)
+    res <- pbapply::pbapply(SingleCellExperiment::counts(cds), MARGIN, FUN, ...)
   }
 
   if (MARGIN == 1)
@@ -346,7 +348,7 @@ is_sparse_matrix <- function(x){
 #'   \item{rotation} {the matrix of variable loadings (i.e., a matrix whose
 #'     columns contain the eigenvectors).}
 #'   \item {x} {if \code{retx} is \code{TRUE} the value of the rotated data
-#'     (the centred (and scaled if requested) data multiplied by the
+#'     (the centered (and scaled if requested) data multiplied by the
 #'     \code{rotation} matrix) is returned. Hence, \code{cov(x)} is the
 #'     diagonal matrix \code{diag(sdev^2)}.}
 #'   \item{center, scale} {the centering and scaling used, or \code{FALSE}.}
@@ -459,11 +461,11 @@ sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
 #' cds <- detect_genes(cds, min_expr=0.1)
 #' }
 detect_genes <- function(cds, min_expr=0){
-  assertthat::assert_that(is(cds, "cell_data_set"))
+  assertthat::assert_that(methods::is(cds, "cell_data_set"))
     assertthat::assert_that(is.numeric(min_expr))
 
-  rowData(cds)$num_cells_expressed <- Matrix::rowSums(counts(cds) > min_expr)
-  colData(cds)$num_genes_expressed <- Matrix::colSums(counts(cds) > min_expr)
+  rowData(cds)$num_cells_expressed <- Matrix::rowSums(SingleCellExperiment::counts(cds) > min_expr)
+  colData(cds)$num_genes_expressed <- Matrix::colSums(SingleCellExperiment::counts(cds) > min_expr)
 
   cds
 }
@@ -482,11 +484,11 @@ normalized_counts <- function(cds,
                               norm_method=c("log", "binary", "size_only"),
                               pseudocount=1){
   norm_method = match.arg(norm_method)
-  norm_mat = counts(cds)
+  norm_mat = SingleCellExperiment::counts(cds)
   if (norm_method == "binary"){
     norm_mat = norm_mat > 0
     if (is_sparse_matrix(norm_mat)){
-      norm_mat = as(norm_mat, "dgCMatrix")
+      norm_mat = methods::as(norm_mat, "dgCMatrix")
     }
   }
   else {
@@ -528,14 +530,14 @@ load_mtx_data <- function(mat_path,
   assertthat::assert_that(assertthat::is.readable(gene_anno_path))
   assertthat::assert_that(assertthat::is.readable(cell_anno_path))
   assertthat::assert_that(is.numeric(umi_cutoff))
-  df <- read.table(mat_path, col.names = c("gene.idx", "cell.idx", "count"),
+  df <- utils::read.table(mat_path, col.names = c("gene.idx", "cell.idx", "count"),
                    colClasses = c("integer", "integer", "integer"))
 
-  gene.annotations <- read.table(gene_anno_path,
+  gene.annotations <- utils::read.table(gene_anno_path,
                                  col.names = c("id", "gene_short_name"),
                                  colClasses = c("character", "character"))
 
-  cell.annotations <- read.table(cell_anno_path, col.names = c("cell"),
+  cell.annotations <- utils::read.table(cell_anno_path, col.names = c("cell"),
                                  colClasses = c("character"))
 
   rownames(gene.annotations) <- gene.annotations$id

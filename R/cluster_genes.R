@@ -8,12 +8,16 @@
 #' @param umap.min_dist Minimum distance parameter passed to UMAP.
 #' @param umap.n_neighbors Number of nearest neighbors used by UMAP.
 #' @param umap.fast_sgd Whether to allow UMAP to perform fast stochastic gradient descent. Defaults to TRUE. Setting FALSE will result in slower, but deterministic behavior (if cores=1).
-#' @param umap.nn_method The merthod used for nearest neighbor network construction during UMAP.
+#' @param umap.nn_method The method used for nearest neighbor network construction during UMAP.
 #' @param k number of kNN used in creating the k nearest neighbor graph for Louvain clustering. The number of kNN is related to the resolution of the clustering result, bigger number of kNN gives low resolution and vice versa. Default to be 20
 #' @param louvain_iter Integer number of iterations used for Louvain clustering. The clustering result gives the largest modularity score will be used as the final clustering result.  Default to be 1. Note that if louvain_iter is large than 1, the `seed` argument will be ignored.
-#' @param partition_qval Significance threhold used in Louvain community graph partitioning.
-#' @param weight A logic argument to determine whether or not we will use Jaccard coefficent for two nearest neighbors (based on the overlapping of their kNN) as the weight used for Louvain clustering. Default to be FALSE.
-#' @param resolution Resolution parameter passed to Louvain. Can be a list. If so, this method will evaluate modularity at each resolution and use the one with the highest value.
+#' @param partition_qval Significance threshold used in Louvain community graph partitioning.
+#' @param weight A logic argument to determine whether or not we will use
+#'   Jaccard coefficient for two nearest neighbors (based on the overlapping of
+#'   their kNN) as the weight used for Louvain clustering. Default to be FALSE.
+#' @param resolution Resolution parameter passed to Louvain. Can be a list. If
+#'   so, this method will evaluate modularity at each resolution and use the
+#'   one with the highest value.
 #' @param random_seed  the seed used by the random number generator in louvain-igraph package. This argument will be ignored if louvain_iter is larger than 1.
 #' @param cores number of cores computer should use to execute function
 #' @param verbose Whether or not verbose output is printed.
@@ -47,7 +51,7 @@ find_gene_modules <- function(cds,
 
   reduction_method <- match.arg(reduction_method)
 
-  assertthat::assert_that(is(cds, "cell_data_set"))
+  assertthat::assert_that(methods::is(cds, "cell_data_set"))
   assertthat::assert_that(is.character(reduction_method))
   assertthat::assert_that(assertthat::is.count(k))
   assertthat::assert_that(is.logical(weight))
@@ -115,14 +119,14 @@ find_gene_modules <- function(cds,
 #' @keywords internal
 my.aggregate.Matrix = function (x, groupings = NULL, form = NULL, fun = "sum", ...)
 {
-  if (!is(x, "Matrix"))
-    x <- Matrix(as.matrix(x), sparse = TRUE)
+  if (!methods::is(x, "Matrix"))
+    x <- Matrix::Matrix(as.matrix(x), sparse = TRUE)
   if (fun == "count")
     x <- x != 0
   groupings2 <- data.frame(A=as.factor(groupings))
   if (is.null(form))
-    form <- as.formula("~0+.")
-  form <- as.formula(form)
+    form <- stats::as.formula("~0+.")
+  form <- stats::as.formula(form)
   mapping <- Matrix.utils::dMcast(groupings2, form)
   colnames(mapping) <- substring(colnames(mapping), 2)
   result <- Matrix::t(mapping) %*% x
@@ -138,20 +142,32 @@ my.aggregate.Matrix = function (x, groupings = NULL, form = NULL, fun = "sum", .
 #' genes
 #'
 #' @param cds The cell_data_set on which this function operates
-#' @param gene_group_df A dataframe in which the first column contains gene ids and the second contains groups. If NULL, genes are not grouped.
-#' @param cell_group_df A dataframe in which the first colum  contains cell ids and the second contains groups. If NULL, cells are not grouped.
-#' @param norm_method How to transform gene expression values before aggregating them. If "log", a pseudocount is added. If "size_only", values are divided by cell size factors prior to aggregation.
-#' @param pseudocount Value to add to expression prior to log transformation and aggregation.
-#' @param scale_agg_values Whether to center and scale aggregated groups of genes.
-#' @param max_agg_value If scale_agg_values is TRUE, the maximum value the resulting Z scores can take. Higher values are capped at this threshold.
-#' @param min_agg_value If scale_agg_values is TRUE, the minimum value the resulting Z scores can take. Lower values are capped at this threshold.
+#' @param gene_group_df A dataframe in which the first column contains gene ids
+#'   and the second contains groups. If NULL, genes are not grouped.
+#' @param cell_group_df A dataframe in which the first column contains cell ids
+#'   and the second contains groups. If NULL, cells are not grouped.
+#' @param norm_method How to transform gene expression values before
+#'   aggregating them. If "log", a pseudocount is added. If "size_only", values
+#'   are divided by cell size factors prior to aggregation.
+#' @param pseudocount Value to add to expression prior to log transformation
+#'   and aggregation.
+#' @param scale_agg_values Whether to center and scale aggregated groups of
+#'   genes.
+#' @param max_agg_value If scale_agg_values is TRUE, the maximum value the
+#'   resulting Z scores can take. Higher values are capped at this threshold.
+#' @param min_agg_value If scale_agg_values is TRUE, the minimum value the
+#'   resulting Z scores can take. Lower values are capped at this threshold.
+#' @param exclude.na Logical indicating whether or not to exclude NA values
+#'   from the aggregated matrix.
 #'
-#' @return A matrix of dimension NxM, where N is the number of gene groups and M is the number of cell groups.
+#' @return A matrix of dimension NxM, where N is the number of gene groups and
+#'   M is the number of cell groups.
 #' @export
 aggregate_gene_expression <- function(cds,
                                       gene_group_df = NULL,
                                       cell_group_df = NULL,
-                                      norm_method=c("log", "binary", "size_only"),
+                                      norm_method=c("log", "binary",
+                                                    "size_only"),
                                       pseudocount=1,
                                       scale_agg_values=TRUE,
                                       max_agg_value=3,
@@ -169,8 +185,11 @@ aggregate_gene_expression <- function(cds,
                                      row.names(fData(cds)),,drop=FALSE]
     # gene_group_df = gene_group_df[row.names(fData(cds)),]
 
-    # FIXME: this should allow genes to be part of multiple groups. group_by over the second column with a call to colSum should do it.
-    agg_mat = as.matrix(my.aggregate.Matrix(agg_mat[gene_group_df[,1],], as.factor(gene_group_df[,2]), fun="sum"))
+    # FIXME: this should allow genes to be part of multiple groups. group_by
+    # over the second column with a call to colSum should do it.
+    agg_mat = as.matrix(my.aggregate.Matrix(agg_mat[gene_group_df[,1],],
+                                            as.factor(gene_group_df[,2]),
+                                            fun="sum"))
     if (scale_agg_values){
       agg_mat <- t(scale(t(agg_mat)))
       agg_mat[agg_mat < min_agg_value] <- min_agg_value
@@ -181,10 +200,12 @@ aggregate_gene_expression <- function(cds,
   if (is.null(cell_group_df) == FALSE){
 
     cell_group_df = as.data.frame(cell_group_df)
-    cell_group_df = cell_group_df[cell_group_df[,1] %in% row.names(pData(cds)),,drop=FALSE]
+    cell_group_df = cell_group_df[cell_group_df[,1] %in% row.names(pData(cds)),,
+                                  drop=FALSE]
     agg_mat = agg_mat[,cell_group_df[,1]]
     agg_mat = my.aggregate.Matrix(Matrix::t(agg_mat),
-                                             as.factor(cell_group_df[,2]), fun="mean")
+                                             as.factor(cell_group_df[,2]),
+                                  fun="mean")
     agg_mat = Matrix::t(agg_mat)
   }
 

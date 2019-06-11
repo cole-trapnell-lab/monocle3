@@ -32,25 +32,25 @@ plot_cells(cds, group_cells_by="partition", color_cells_by = "partition")+ ggsav
 #cds <- learn_graph(cds, learn_graph_control=list(ncenter=1000))
 cds <- learn_graph(cds)
 
-plot_cells(cds, 
-           color_cells_by = "cell.type", 
+plot_cells(cds,
+           color_cells_by = "cell.type",
            label_groups_by_cluster=FALSE,
            label_leaves=FALSE,
            label_branch_points=FALSE) + ggsave("embryo_pr_graph_packer_cell_type.png", width=5, height=4, dpi = 600)
 
 
-plot_cells(cds, 
-           color_cells_by = "embryo.time.bin", 
-           label_cell_groups=FALSE, 
+plot_cells(cds,
+           color_cells_by = "embryo.time.bin",
+           label_cell_groups=FALSE,
            label_leaves=TRUE,
            label_branch_points=TRUE,
            graph_label_size=1.5) + ggsave("embryo_pr_graph_by_time.png", width=5, height=4, dpi = 600)
 
 cds = order_cells(cds)
 
-plot_cells(cds, 
-           color_cells_by = "pseudotime", 
-           label_cell_groups=FALSE, 
+plot_cells(cds,
+           color_cells_by = "pseudotime",
+           label_cell_groups=FALSE,
            label_leaves=FALSE,
            label_branch_points=FALSE,
            graph_label_size=1.5) + ggsave("embryo_pr_graph_by_pseudotime.png", width=5, height=4, dpi = 600)
@@ -72,9 +72,9 @@ get_earliest_principal_node <- function(cds, time_bin="130-170"){
 
 cds = order_cells(cds, root_pr_nodes=get_earliest_principal_node(cds))
 
-plot_cells(cds, 
-           color_cells_by = "pseudotime", 
-           label_cell_groups=FALSE, 
+plot_cells(cds,
+           color_cells_by = "pseudotime",
+           label_cell_groups=FALSE,
            label_leaves=FALSE,
            label_branch_points=FALSE,
            graph_label_size=1.5) + ggsave("embryo_pr_graph_by_pseudotime_programmatically_ordered.png", width=5, height=4, dpi = 600)
@@ -88,9 +88,9 @@ ciliated_genes = c("che-1",
                    "dmd-6",
                    "ceh-36",
                    "ham-1")
-plot_cells(cds, 
-           genes=ciliated_genes, 
-           label_cell_groups=FALSE, 
+plot_cells(cds,
+           genes=ciliated_genes,
+           label_cell_groups=FALSE,
            show_trajectory_graph=FALSE) + ggsave("embryo_ciliated_markers.png", width=5, height=4, dpi = 600)
 
 #graph_test(cds_subset)
@@ -138,7 +138,7 @@ write.csv(fit_evals, "emb_time_evals.csv")
 gene_fits = fit_models(cds[rowData(cds)$gene_short_name %in% ciliated_genes,], model_formula_str = "~embryo.time + batch")
 fit_coefs = coefficient_table(gene_fits)
 emb_time_terms = fit_coefs %>% filter(term == "embryo.time")
-emb_time_terms = emb_time_terms %>% mutate(q_value = p.adjust(p_value))
+emb_time_terms = emb_time_terms %>% mutate(q_value = stats::p.adjust(p_value))
 emb_time_terms %>% filter (q_value < 0.05) %>% select(gene_short_name, term, q_value, estimate)
 
 ### Comparing models
@@ -156,7 +156,7 @@ cds_subset = cds[rowData(cds)$gene_short_name %in% ciliated_genes,
 gene_fits = fit_models(cds_subset, model_formula_str = "~splines::ns(pseudotime, df=3)", verbose=TRUE)
 fit_coefs = coefficient_table(gene_fits)
 emb_time_terms = fit_coefs %>% filter(grepl("pseudotime", term))
-emb_time_terms = emb_time_terms %>% mutate(q_value = p.adjust(p_value))
+emb_time_terms = emb_time_terms %>% mutate(q_value = stats::p.adjust(p_value))
 emb_time_terms %>% filter (q_value < 0.05) %>% select(gene_short_name, term, q_value, estimate)
 
 # Principal graph test:
@@ -172,9 +172,9 @@ pheatmap::pheatmap(agg_mat,
                     scale="column", clustering_method="ward.D2",
                     fontsize=6, width=5, height=8,
                     file="emb_pseudotime_module_heatmap.png")
- 
-plot_cells(cds, 
-           genes=gene_module_df %>% filter(module %in% c(29,20, 11,22)), 
+
+plot_cells(cds,
+           genes=gene_module_df %>% filter(module %in% c(29,20, 11,22)),
            label_cell_groups=FALSE,
            show_trajectory_graph=FALSE) + ggsave("embryo_umap_selected_pseudotime_modules.png", width=5, height=4, dpi = 600)
 
@@ -182,7 +182,7 @@ rowData(cds)[gene_module_df %>% filter(module == 29) %>% pull(id),]
 
 plot_cells(cds, genes=gene_module_df, color_cells_by="cell.type", show_trajectory_graph=FALSE)
 
-plot_cells(cds, genes=c("hlh-4", "gcy-8", "dac-1", "oig-8"), 
+plot_cells(cds, genes=c("hlh-4", "gcy-8", "dac-1", "oig-8"),
            show_trajectory_graph=FALSE,
            label_cell_groups=FALSE,
            label_leaves=FALSE) + ggsave("embryo_umap_selected_markers.png", width=5, height=4, dpi = 600)
@@ -192,9 +192,9 @@ plot_cells(cds, show_trajectory_graph=FALSE) + ggsave("embryo_umap_cluster.png",
 
 
 AFD_lineage_cds = cds[,clusters(cds) %in% c(22, 28, 35)]
-plot_genes_in_pseudotime(AFD_lineage_cds[rowData(AFD_lineage_cds)$gene_short_name %in% c("gcy-8", "dac-1", "oig-8"),], 
+plot_genes_in_pseudotime(AFD_lineage_cds[rowData(AFD_lineage_cds)$gene_short_name %in% c("gcy-8", "dac-1", "oig-8"),],
                          color_cells_by="embryo.time.bin",
-                         min_expr=0.5) + 
+                         min_expr=0.5) +
     ggsave("embryo_AFD_dynamic_genes.png", width=3, height=3, dpi = 600)
 
 
@@ -213,8 +213,8 @@ cell_group_df = tibble::tibble(cell=row.names(colData(cds_subset)), cell_group=c
 agg_mat = aggregate_gene_expression(cds_subset, gene_module_df, cell_group_df)
 gene_module_df$module <- factor(gene_module_df$module, levels = row.names(agg_mat)[module_dendro$order])
 
-plot_cells(cds_subset, 
-           genes=gene_module_df, 
+plot_cells(cds_subset,
+           genes=gene_module_df,
            label_cell_groups=FALSE,
            show_trajectory_graph=FALSE) + ggsave("embryo_umap_AFD_modules.png", width=5, height=4, dpi = 600)
 
@@ -223,8 +223,8 @@ subset_pr_test_res = inner_join(subset_pr_test_res, gene_module_df)
 top_AFD_genes = subset_pr_test_res %>% filter(q_value < 0.05 & module == 3) %>% top_n(3, morans_I)
 top_AWC_genes = subset_pr_test_res %>% filter(q_value < 0.05 & module %in% c(11, 7)) %>% top_n(3, morans_I)
 
-plot_cells(cds_subset, 
-           genes=c(top_AFD_genes %>% pull(gene_short_name), top_AWC_genes %>% pull(gene_short_name)), 
+plot_cells(cds_subset,
+           genes=c(top_AFD_genes %>% pull(gene_short_name), top_AWC_genes %>% pull(gene_short_name)),
            label_cell_groups=FALSE,
            show_trajectory_graph=FALSE) + ggsave("embryo_umap_AFD_AWC_branch_genes.png", width=5, height=4, dpi = 600)
 

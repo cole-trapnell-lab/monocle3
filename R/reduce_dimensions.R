@@ -22,6 +22,8 @@
 #' @param reduction_method A character string specifying the algorithm to use
 #'   for dimensionality reduction. Currently "UMAP", "tSNE", and "PCA" are
 #'   supported.
+#' @param preprocess_method A string indicating the preprocessing method used
+#'   on the data. Options are "PCA" and "LSI". Default is "LSI".
 #' @param umap.metric A string indicating the distance metric to be used when
 #'   calculating UMAP. Default is "cosine". See uwot package's
 #'   \code{\link[umap]{umap}} for details.
@@ -29,13 +31,14 @@
 #'   UMAP function. Default is 0.1.See uwot package's \code{\link[umap]{umap}}
 #'   for details.
 #' @param umap.n_neighbors Integer indicating the number of neighbors to use
-#'   during KNN graph construction. Default is 15L. See uwot package's
+#'   during kNN graph construction. Default is 15L. See uwot package's
 #'   \code{\link[umap]{umap}} for details.
 #' @param umap.fast_sgd Logical indicating whether to use fast SGD. Default is
 #'   TRUE. See uwot package's \code{\link[umap]{umap}} for details.
 #' @param umap.nn_method String indicating the nearest neighbor method to be
-#'   used by umap. Default is "annoy". See uwot package's
+#'   used by UMAP. Default is "annoy". See uwot package's
 #'   \code{\link[umap]{umap}} for details.
+#' @param cores Number of compute cores to use.
 #' @param verbose Logical, whether to emit verbose output.
 #' @param ... additional arguments to pass to the dimensionality reduction
 #'   function.

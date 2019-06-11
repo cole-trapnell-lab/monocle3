@@ -1,7 +1,7 @@
 Package: monocle3
 Title: Clustering, differential expression, and trajectory analysis for single-
     cell RNA-Seq
-Version: 0.0.0.9004
+Version: 0.1.0
 Authors@R: 
     person(given = "Hannah",
            family = "Pliner",
@@ -64,7 +64,6 @@ Imports:
     RcppParallel,
     reshape2 (>= 1.4.3),
     reticulate (>= 1.11.1),
-    rgl (>= 0.100.19),
     RhpcBLASctl,
     Rtsne (>= 0.15),
     S4Vectors,

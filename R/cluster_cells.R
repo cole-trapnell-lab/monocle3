@@ -7,7 +7,7 @@
 #' detection, and returns a cell_data_set with internally stored cluster
 #' assignments. In addition to clusters this function calculates partitions,
 #' which represent superclusters of the Louvain communities that are found
-#' using a KNN pruning method. Cluster assignments can be accessed using the
+#' using a kNN pruning method. Cluster assignments can be accessed using the
 #' \code{\link{clusters}} function and partition assignments can be
 #' accessed using the \code{\link{partitions}} function.
 #'
@@ -25,7 +25,7 @@
 #' @param partition_qval Numeric, the q-value cutoff to determine when to
 #'   partition. Default is 0.05.
 #' @param weight A logical argument to determine whether or not to use Jaccard
-#'   coefficents for two nearest neighbors (based on the overlapping of their
+#'   coefficients for two nearest neighbors (based on the overlapping of their
 #'   kNN) as the weight used for Louvain clustering. Default is FALSE.
 #' @param resolution Parameter that controls the resolution of clustering. If
 #'   NULL (Default), the parameter is determined automatically.
@@ -45,7 +45,7 @@
 #' @references Vincent D. Blondel, Jean-Loup Guillaume, Renaud Lambiotte,
 #'   Etienne Lefebvre: Fast unfolding of communities in large networks.
 #'   J. Stat. Mech. (2008) P10008
-#' @references Jacob H. Levine and et.al. Data-Driven Phenotypic Dissection of
+#' @references Jacob H. Levine and et. al. Data-Driven Phenotypic Dissection of
 #'   AML Reveals Progenitor-like Cells that Correlate with Prognosis.
 #'   Cell, 2015.
 #' @useDynLib monocle3, .registration = TRUE
@@ -64,7 +64,7 @@ cluster_cells <- function(cds,
   method = 'louvain'
   reduction_method <- match.arg(reduction_method)
 
-  assertthat::assert_that(is(cds, "cell_data_set"))
+  assertthat::assert_that(methods::is(cds, "cell_data_set"))
   assertthat::assert_that(is.character(reduction_method))
   assertthat::assert_that(assertthat::is.count(k))
   assertthat::assert_that(is.logical(weight))
@@ -115,21 +115,21 @@ cluster_cells <- function(cds,
 
 
 
-#' Cluster cells based on louvain community detection algorithm.
+#' Cluster cells based on Louvain community detection algorithm.
 #'
 #' @description This function is a wrapper of the louvain function from the
 #' python package (louvain-igraph, https://github.com/vtraag/louvain-igraph)
 #' The following description is from the original package "This package
-#' implements the louvain algorithm in C++ and exposes it to python. It relies
+#' implements the Louvain algorithm in C++ and exposes it to python. It relies
 #' on (python-)igraph for it to function. Besides the relative flexibility of
 #' the implementation, it also scales well, and can be run on graphs of
 #' millions of nodes (as long as they can fit in memory). The core function is
-#' find_partition which finds the optimal partition using the louvain algorithm
+#' find_partition which finds the optimal partition using the Louvain algorithm
 #' [1] for a number of different methods. The methods currently implemented are
 #' (1) modularity [2], (2) Reichardt and Bornholdt's model using the
 #' configuration null model and the Erdös-Rényi null model [3], (3) the
 #' constant Potts model (CPM) [4], (4) Significance [5], and finally (5)
-#' Surprise [6]. In addition, it supports multiplex partition optimisation
+#' Surprise [6]. In addition, it supports multiplex partition optimization
 #' allowing community detection on for example negative links [7] or multiple
 #' time slices [8]. It also provides some support for community detection on
 #' bipartite graphs. See the documentation for more information." Please see
@@ -154,10 +154,10 @@ cluster_cells <- function(cds,
 #'   changed.
 #' @param random_seed the seed used by the random number generator in
 #'   louvain-igraph package
-#' @param verbose bool (optional, default False)
-#' @param return_all Whether to return all slots after louvain
+#' @param verbose boolean (optional, default False)
+#' @param return_all Whether to return all slots after Louvain
 #' @return The cluster id if return_all set to be FALSE, otherwise all slots
-#'   from the louvain function
+#'   from the Louvain function
 #' @encoding UTF-8
 #'
 louvain_R <- function(X, python_home = system('which python', intern = TRUE),
@@ -187,9 +187,9 @@ louvain_R <- function(X, python_home = system('which python', intern = TRUE),
                                   "louvain.py", sep="/"))
   # X <- Matrix::t(X)
   if(length(grep('Matrix', class(X))) == 0){
-    X <- as(as.matrix(X), 'TsparseMatrix')
+    X <- methods::as(as.matrix(X), 'TsparseMatrix')
   } else {
-    X <- as(X, 'TsparseMatrix')
+    X <- methods::as(X, 'TsparseMatrix')
   }
 
   i <- as.integer(X@i)

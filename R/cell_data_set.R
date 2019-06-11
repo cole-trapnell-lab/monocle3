@@ -8,10 +8,10 @@ setOldClass(c("igraph"), prototype=structure(list(), class="igraph"))
 #' This class is initialized from a matrix of expression values along with cell
 #' and feature metadata.
 #'
-#' @field preprocess_aux SimpleList, auxilliary information from preprocessing.
-#' @field reduce_dim_aux SimpleList, auxilliary information from reduced
+#' @field preprocess_aux SimpleList, auxiliary information from preprocessing.
+#' @field reduce_dim_aux SimpleList, auxiliary information from reduced
 #'   dimension.
-#' @field principal_graph_aux SimpleList, auxilliary information from principal
+#' @field principal_graph_aux SimpleList, auxiliary information from principal
 #'   graph construction
 #' @field principal_graph SimpleList of igraph objects containing principal
 #'   graphs for different dimensionality reduction.
@@ -108,7 +108,7 @@ new_cell_data_set <- function(expression_data,
                               rowData = gene_metadata,
                               colData = cell_metadata)
 
-  cds <- new("cell_data_set",
+  cds <- methods::new("cell_data_set",
              assays = SummarizedExperiment::Assays(
                list(counts=expression_data)),
              colData = colData(sce),
@@ -121,7 +121,7 @@ new_cell_data_set <- function(expression_data,
              rowRanges = sce@rowRanges)
 
   metadata(cds)$cds_version <- Biobase::package.version("monocle3")
-  clusters <- setNames(SimpleList(), character(0))
+  clusters <- stats::setNames(SimpleList(), character(0))
   cds <- estimate_size_factors(cds)
   cds
 }

@@ -28,7 +28,7 @@ louvain_iter is greater than 1, the random_seed argument will be ignored.}
 partition. Default is 0.05.}
 
 \item{weight}{A logical argument to determine whether or not to use Jaccard
-coefficents for two nearest neighbors (based on the overlapping of their
+coefficients for two nearest neighbors (based on the overlapping of their
 kNN) as the weight used for Louvain clustering. Default is FALSE.}
 
 \item{resolution}{Parameter that controls the resolution of clustering. If
@@ -56,7 +56,7 @@ a cell_data_set as input, clusters the cells using Louvain community
 detection, and returns a cell_data_set with internally stored cluster
 assignments. In addition to clusters this function calculates partitions,
 which represent superclusters of the Louvain communities that are found
-using a KNN pruning method. Cluster assignments can be accessed using the
+using a kNN pruning method. Cluster assignments can be accessed using the
 \code{\link{clusters}} function and partition assignments can be
 accessed using the \code{\link{partitions}} function.
 }
@@ -69,7 +69,7 @@ Vincent D. Blondel, Jean-Loup Guillaume, Renaud Lambiotte,
 Etienne Lefebvre: Fast unfolding of communities in large networks.
 J. Stat. Mech. (2008) P10008
 
-Jacob H. Levine and et.al. Data-Driven Phenotypic Dissection of
+Jacob H. Levine and et. al. Data-Driven Phenotypic Dissection of
 AML Reveals Progenitor-like Cells that Correlate with Prognosis.
 Cell, 2015.
 }

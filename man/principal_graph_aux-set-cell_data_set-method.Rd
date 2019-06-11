@@ -3,15 +3,15 @@
 \docType{methods}
 \name{principal_graph_aux<-,cell_data_set-method}
 \alias{principal_graph_aux<-,cell_data_set-method}
-\title{Method to set principal graph auxilliary information into CDS}
+\title{Method to set principal graph auxiliary information into CDS}
 \usage{
 \S4method{principal_graph_aux}{cell_data_set}(x) <- value
 }
 \arguments{
 \item{x}{A cell_data_set object.}
 
-\item{value}{A SimpleList of principal graph auxilliary information.}
+\item{value}{A SimpleList of principal graph auxiliary information.}
 }
 \description{
-Method to set principal graph auxilliary information into CDS
+Method to set principal graph auxiliary information into CDS
 }

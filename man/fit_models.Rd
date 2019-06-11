@@ -26,6 +26,8 @@ partitions(). Default is "UMAP".}
 TRUE.}
 
 \item{verbose}{Logical indicating whether to emit progress messages.}
+
+\item{...}{Additional arguments passed to model fitting functions.}
 }
 \value{
 a tibble containing model objects

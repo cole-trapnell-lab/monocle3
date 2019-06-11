@@ -26,14 +26,14 @@ get_genome_in_matrix_path <- function(matrix_path, genome=NULL) {
 
 #' Load data from the 10x Genomics Cell Ranger pipeline
 #'
-#' Loads cellranger data into a CellDataSet object.  Note that if your dataset
+#' Loads cellranger data into a cell_data_set object.  Note that if your dataset
 #' is from version 3.0 and contains non-Gene-Expression data (e.g. Antibodies
 #' or CRISPR features), only the Gene Expression data is returned.
 #'
 #' @param pipestance_path Path to the output directory produced by Cell Ranger
 #' @param genome The desired genome (e.g., 'hg19' or 'mm10')
 #' @param barcode_filtered Load only the cell-containing barcodes
-#' @return a new CellDataSet object
+#' @return a new cell_data_set object
 #' @export
 #' @examples
 #' \dontrun{
@@ -91,7 +91,7 @@ load_cellranger_data <- function(pipestance_path=NULL, genome=NULL,
   #}
   data <- Matrix::readMM(matrix.loc)
 
-  feature.names = read.delim(features.loc,
+  feature.names = utils::read.delim(features.loc,
                              header = FALSE,
                              stringsAsFactors = FALSE)
   # Duplicate row names not allowed
@@ -124,7 +124,7 @@ load_cellranger_data <- function(pipestance_path=NULL, genome=NULL,
   rownames(data) = feature.names[,"id"]
   rownames(feature.names) = feature.names[,"id"]
 
-  barcodes <- read.delim(barcode.loc, stringsAsFactors=FALSE, header=FALSE)
+  barcodes <- utils::read.delim(barcode.loc, stringsAsFactors=FALSE, header=FALSE)
   if (dim(data)[2] != length(barcodes[,1])) {
     stop(sprintf(paste("Mismatch dimension between barcode file: \n\t %s\n",
                        "and matrix file: \n\t %s\n"), barcode.loc,matrix.loc))

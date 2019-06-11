@@ -2,15 +2,15 @@
 % Please edit documentation in R/generics.R
 \name{principal_graph_aux<-}
 \alias{principal_graph_aux<-}
-\title{Generic to set principal graph auxilliary information into CDS}
+\title{Generic to set principal graph auxiliary information into CDS}
 \usage{
 principal_graph_aux(x) <- value
 }
 \arguments{
 \item{x}{A cell_data_set object.}
 
-\item{value}{A SimpleList of principal graph auxilliary information.}
+\item{value}{A SimpleList of principal graph auxiliary information.}
 }
 \description{
-Generic to set principal graph auxilliary information into CDS
+Generic to set principal graph auxiliary information into CDS
 }

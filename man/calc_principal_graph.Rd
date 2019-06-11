@@ -13,7 +13,7 @@ calc_principal_graph(X, C0, maxiter = 10, eps = 1e-05,
 
 \item{C0}{the initialization of centroids}
 
-\item{maxiter}{maximum number of iteraction}
+\item{maxiter}{maximum number of iteration}
 
 \item{eps}{relative objective difference}
 
@@ -22,13 +22,13 @@ is used to avoid name collision with gamma)}
 
 \item{L1.sigma}{bandwidth parameter}
 
-\item{verbose}{emit results from iteraction}
+\item{verbose}{emit results from iteration}
 }
 \value{
 a list of X, C, W, P, objs
 X is the input data
 C is the centers for principal graph
-W is the pricipal graph matrix
+W is the principal graph matrix
 P is the cluster assignment matrix
 objs is the objective value for the function
 }

@@ -26,7 +26,7 @@ gene's expression.}
 gene's expression}
 
 \item{panel_order}{vector of gene names indicating the order in which genes
-should be layed out (left-to-right, top-to-bottom). If
+should be laid out (left-to-right, top-to-bottom). If
 \code{label_by_short_name = TRUE}, use gene_short_name values, otherwise
 use feature IDs.}
 

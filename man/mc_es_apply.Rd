@@ -23,6 +23,9 @@ provide packages needed by FUN will generate errors in worker threads.}
 \item{convert_to_dense}{Whether to force conversion of a sparse matrix to a
 dense one before calling FUN.}
 
+\item{reduction_method}{character, the method used to reduce dimension.
+Default "UMAP".}
+
 \item{...}{Additional parameters for FUN.}
 }
 \value{

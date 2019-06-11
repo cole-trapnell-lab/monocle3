@@ -33,7 +33,7 @@ setValidity( "cell_data_set", function( object ) {
 size_factors <- function( cds ) {
   stopifnot( methods::is( cds, "cell_data_set" ) )
   sf <- colData(cds)$Size_Factor
-  names( sf ) <- colnames( counts(cds) )
+  names( sf ) <- colnames( SingleCellExperiment::counts(cds) )
   sf
 }
 

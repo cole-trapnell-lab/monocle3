@@ -48,7 +48,7 @@ values of the data matrix).}
 \item{rotation} {the matrix of variable loadings (i.e., a matrix whose
 columns contain the eigenvectors).}
 \item {x} {if \code{retx} is \code{TRUE} the value of the rotated data
-(the centred (and scaled if requested) data multiplied by the
+(the centered (and scaled if requested) data multiplied by the
 \code{rotation} matrix) is returned. Hence, \code{cov(x)} is the
 diagonal matrix \code{diag(sdev^2)}.}
 \item{center, scale} {the centering and scaling used, or \code{FALSE}.}

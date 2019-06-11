@@ -14,7 +14,7 @@
 #' @param reference_cells If provided, top_markers will perform the marker
 #' significance test against a "reference set" of cells. Must be either a list
 #' of cell ids from colnames(cds), or a positive integer. If the latter, top_markers()
-#' will randomly select the specified numnber of reference cells. Accelerates
+#' will randomly select the specified number of reference cells. Accelerates
 #' the marker significance test at some cost in sensitivity.
 #' @param cores Number of cores to use.
 #' @param verbose Whether to print verbose progress output.
@@ -86,7 +86,7 @@ top_markers <- function(cds,
   cluster_fraction_expressing_table = tidyr::gather(cluster_fraction_expressing_table, "cell_group", "fraction_expressing", -rowname)
 
   # spec_model_df = data.frame(rowname=row.names(cluster_spec_score_mat),
-  #                            num_expressing=Matrix::rowSums(counts(cds) > 0),
+  #                            num_expressing=Matrix::rowSums(SingleCellExperiment::counts(cds) > 0),
   #                            mean_exprs=Matrix::rowMeans(cluster_agg_exprs),
   #                            max_spec=rowMaxs(cluster_spec_score_mat))
 
@@ -138,7 +138,7 @@ top_markers <- function(cds,
         num_ref_cells_per_group = reference_cells / length(unique(cell_group_df$cell_group))
         reference_cells = cell_group_df %>% dplyr::group_by(cell_group) %>%
           dplyr::sample_n(min(num_ref_cells_per_group, dplyr::n())) %>%
-          pull(cell_id)
+          dplyr::pull(cell_id)
         #reference_cells = sample(colnames(cds), reference_cells)
       } else {
         # TODO: check that reference cells is a list of valid cell ids.
@@ -163,7 +163,7 @@ top_markers <- function(cds,
     #marker_test_res = as.data.frame(marker_test_res)
 
     marker_test_res = dplyr::bind_cols(cluster_marker_score_table, as.data.frame(marker_test_res))
-    marker_test_res$lrtest_q_value = p.adjust(marker_test_res$lrtest_p_value,
+    marker_test_res$lrtest_q_value = stats::p.adjust(marker_test_res$lrtest_p_value,
                                               method="bonferroni",
                                               n=length(cluster_spec_mat))
     marker_test_res = marker_test_res %>% dplyr::select(rowname,
@@ -184,7 +184,7 @@ top_markers <- function(cds,
       as.data.frame %>%
       tibble::rownames_to_column() %>%
       dplyr::select(rowname, gene_short_name) %>%
-      inner_join(marker_test_res, by=c("rowname"="gene_id"))
+      dplyr::inner_join(marker_test_res, by=c("rowname"="gene_id"))
   } else {
     marker_test_res = cluster_marker_score_table
   }
@@ -278,8 +278,8 @@ test_marker_for_cell_group = function(gene_id, cell_group, cell_group_df, cds,
   #print (length(reference_cells))
   results <- tryCatch({
     f_expression <-
-      log(as.numeric(counts(cds)[gene_id,]) / size_factors(cds) + 0.1)
-    #print(sum(counts(cds)[gene_id,] > 0))
+      log(as.numeric(SingleCellExperiment::counts(cds)[gene_id,]) / size_factors(cds) + 0.1)
+    #print(sum(SingleCellExperiment::counts(cds)[gene_id,] > 0))
     is_member <-
       as.character(cell_group_df[colnames(cds),2]) == as.character(cell_group)
     names(is_member) = names(f_expression) = colnames(cds)
@@ -302,12 +302,12 @@ test_marker_for_cell_group = function(gene_id, cell_group, cell_group_df, cds,
                                 acc=1e-3, model=FALSE,
                                 y=FALSE,
                                 verbose=TRUE,
-                                family=binomial())
+                                family=stats::binomial())
     null_model <- speedglm::speedglm(is_member ~ 1,
                                      acc=1e-3, model=FALSE,
                                      y=FALSE,
                                      verbose=TRUE,
-                                     family=binomial())
+                                     family=stats::binomial())
     lr.stat <- lmtest::lrtest(null_model, model)
     #print (summary(model))
     # #print(summary(null_model))
@@ -316,7 +316,7 @@ test_marker_for_cell_group = function(gene_id, cell_group, cell_group_df, cds,
     n=ncol(cds)
     pseudo_R2 <-
       (1-exp(-as.numeric(lr.stat$Chisq[2])/n)) /
-      (1-exp(2*as.numeric(logLik(null_model)/n)))
+      (1-exp(2*as.numeric(stats::logLik(null_model)/n)))
     LR_test_pval = lr.stat$`Pr(>Chisq)`[2]
     # model_summary = summary(model)
     # #print(model_summary)

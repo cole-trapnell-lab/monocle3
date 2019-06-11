@@ -22,7 +22,7 @@ Default is 0.}
 
 \item{ncol}{the number of panels per column in the figure.}
 
-\item{panel_order}{the order in which genes should be layed out
+\item{panel_order}{the order in which genes should be laid out
 (left-to-right, top-to-bottom). Should be gene_short_name if
 \code{label_by_short_name = TRUE} or feature ID if
 \code{label_by_short_name = FALSE}.}

@@ -147,15 +147,15 @@ fit_model_helper <- function(x,
                     "negbinomial" = MASS::glm.nb(model_formula, epsilon=1e-3,
                                                  model=FALSE, y=FALSE, ...),
                     "poisson" = speedglm::speedglm(model_formula,
-                                                   family = poisson(),
+                                                   family = stats::poisson(),
                                                    acc=1e-3, model=FALSE,
                                                    y=FALSE, ...),
                     "quasipoisson" = speedglm::speedglm(model_formula,
-                                                        family = quasipoisson(),
+                                                        family = stats::quasipoisson(),
                                                         acc=1e-3, model=FALSE,
                                                         y=FALSE, ...),
                     "binomial" = speedglm::speedglm(model_formula,
-                                                    family = binomial(),
+                                                    family = stats::binomial(),
                                                     acc=1e-3, model=FALSE,
                                                     y=FALSE, ...),
                     "zipoisson" = pscl::zeroinfl(model_formula,
@@ -191,6 +191,8 @@ fit_model_helper <- function(x,
 #' @param clean_model Logical indicating whether to clean the model. Default is
 #'   TRUE.
 #' @param verbose Logical indicating whether to emit progress messages.
+#' @param ... Additional arguments passed to model fitting functions.
+#'
 #' @return a tibble containing model objects
 #' @export
 fit_models <- function(cds,
@@ -386,7 +388,7 @@ coefficient_table <- function(model_tbl) {
       .y = model_summary)) %>%
     tidyr::unnest(terms)
   M_f = M_f %>% dplyr::group_by(model_component, term) %>%
-    dplyr::mutate(q_value = p.adjust(p_value)) %>% dplyr::ungroup()
+    dplyr::mutate(q_value = stats::p.adjust(p_value)) %>% dplyr::ungroup()
   return(M_f)
 }
 
@@ -408,12 +410,12 @@ compare_models <- function(model_tbl_full, model_tbl_reduced){
   joined_fits <- joined_fits %>% dplyr::mutate(
     dfs = round(abs(df_residual.x  - df_residual.y)),
     LLR = 2 * abs(logLik.x  - logLik.y),
-    p_value = pchisq(LLR, dfs, lower.tail = FALSE)
+    p_value = stats::pchisq(LLR, dfs, lower.tail = FALSE)
   )
 
   joined_fits <- joined_fits %>% dplyr::select(id, gene_short_name,
                                                num_cells_expressed, p_value)
-  joined_fits$q_value <- p.adjust(joined_fits$p_value)
+  joined_fits$q_value <- stats::p.adjust(joined_fits$p_value)
   # joined_fits = joined_fits %>%
   #               dplyr::mutate(lr_test_p_value = purrr::map2_dbl(
   #                             model_summary.x, model_summary.x,
@@ -442,9 +444,9 @@ evaluate_fits <- function(model_tbl){
     mass_glance <- function(m) {
       tibble::tibble(null_deviance = m$null.deviance,
                      df_null = m$df.null,
-                     logLik = as.numeric(logLik(m)),
-                     AIC = AIC(m),
-                     BIC = AIC(m),
+                     logLik = as.numeric(stats::logLik(m)),
+                     AIC = stats::AIC(m),
+                     BIC = stats::AIC(m),
                      deviance = m$deviance,
                      df_residual = m$df.residual)
     }
@@ -452,9 +454,9 @@ evaluate_fits <- function(model_tbl){
     zeroinfl_glance <- function(m) {
       tibble::tibble(null_deviance = NA_real_,
                      df_null = m$df.null,
-                     logLik = as.numeric(logLik(m)),
-                     AIC = AIC(m),
-                     BIC = AIC(m),
+                     logLik = as.numeric(stats::logLik(m)),
+                     AIC = stats::AIC(m),
+                     BIC = stats::AIC(m),
                      deviance = NA_real_,
                      df_residual = m$df.residual)
     }
@@ -493,7 +495,7 @@ evaluate_fits <- function(model_tbl){
 likelihood_ratio_test_pval <- function(model_summary_x, model_summary_y) {
   dfs = round(abs(model_summary_x$df.residual  - model_summary_y$df.residual))
   LLR = 2 * abs(model_summary_x$logLik  - model_summary_y$logLik)
-  p_val = pchisq(LLR, dfs, lower.tail = FALSE)
+  p_val = stats::pchisq(LLR, dfs, lower.tail = FALSE)
 }
 
 #' Predict output of fitted models and return as a matrix
@@ -508,7 +510,7 @@ likelihood_ratio_test_pval <- function(model_summary_x, model_summary_y) {
 model_predictions <- function(model_tbl, new_data, type="response") {
   predict_helper <- function(model, cds){
     tryCatch({
-      predict(model, newdata=new_data, type=type)
+      stats::predict(model, newdata=new_data, type=type)
     }, error = function(e){
       retval = rep_len(NA, nrow(new_data))
       names(retval) = row.names(new_data)

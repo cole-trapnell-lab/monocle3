@@ -14,8 +14,8 @@ context("test-cluster_genes")
 # pr_deg_ids = subset(pr_graph_test_res, q_value < 0.05)$id
 # gene_cluster_df = monocle3:::cluster_genes(test_cds[pr_deg_ids,], resolution=0.001)
 #
-# text_df <- gene_cluster_df %>% dplyr::group_by(cluster) %>% dplyr::summarize(text_x = median(x = dim_1),
-#                                                                              text_y = median(x = dim_2))
+# text_df <- gene_cluster_df %>% dplyr::group_by(cluster) %>% dplyr::summarize(text_x = stats::median(x = dim_1),
+#                                                                              text_y = stats::median(x = dim_2))
 # ggplot2::qplot(dim_1, dim_2, color=cluster, data=gene_cluster_df) +
 #   ggplot2::geom_text(data=text_df, mapping = ggplot2::aes_string(x = "text_x", y = "text_y", label = "cluster"), color=I("black"),  size = 4)
 # png("module_graph.png", res=600, width=8, height=8, units="in")

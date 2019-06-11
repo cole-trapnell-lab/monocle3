@@ -156,7 +156,7 @@ normalize_expr_data <- function(cds,
                                 pseudo_count = NULL) {
   norm_method <- match.arg(norm_method)
 
-  FM <- counts(cds)
+  FM <- SingleCellExperiment::counts(cds)
 
   # If we're going to be using log, and the user hasn't given us a
   # pseudocount set it to 1 by default.
@@ -172,7 +172,7 @@ normalize_expr_data <- function(cds,
 
     FM <- Matrix::t(Matrix::t(FM)/size_factors(cds))
 
-    if (pseudo_count != 1 || is_sparse_matrix(counts(cds)) == FALSE){
+    if (pseudo_count != 1 || is_sparse_matrix(SingleCellExperiment::counts(cds)) == FALSE){
       FM <- FM + pseudo_count
       FM <- log2(FM)
     } else {
@@ -221,7 +221,7 @@ tfidf <- function(count_matrix, frequencies=TRUE, log_scale_tf=TRUE,
     options(DelayedArray.block.size=block_size)
     DelayedArray:::set_verbose_block_processing(TRUE)
 
-    tf = DelayedArray(tf)
+    tf = DelayedArray::DelayedArray(tf)
     idf = as.matrix(idf)
 
     tf_idf_counts = tf * idf
@@ -230,6 +230,6 @@ tfidf <- function(count_matrix, frequencies=TRUE, log_scale_tf=TRUE,
 
   rownames(tf_idf_counts) = rownames(count_matrix)
   colnames(tf_idf_counts) = colnames(count_matrix)
-  tf_idf_counts = as(tf_idf_counts, "sparseMatrix")
+  tf_idf_counts = methods::as(tf_idf_counts, "sparseMatrix")
   return(tf_idf_counts)
 }

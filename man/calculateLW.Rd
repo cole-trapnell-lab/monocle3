@@ -5,18 +5,13 @@
 \title{Function to calculate the neighbors list with spatial weights for the chosen
 coding scheme from a cell dataset object}
 \usage{
-calculateLW(cds, k, neighbor_graph, reduction_method,
-  interactive = FALSE, verbose = FALSE)
+calculateLW(cds, k, neighbor_graph, reduction_method, verbose = FALSE)
 }
 \arguments{
 \item{cds}{The cell_data_set object where the neighbors list is calculated
 from}
 
 \item{k}{The maximum number of nearest neighbors to compute}
-
-\item{interactive}{Whether or not to allow the user to choose a point or
-region in the scene, then to only identify genes spatially correlated for
-those selected cells.}
 
 \item{verbose}{A logic flag that determines whether or not to print
 execution details}

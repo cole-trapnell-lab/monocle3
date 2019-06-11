@@ -15,10 +15,10 @@ load_cellranger_data(pipestance_path = NULL, genome = NULL,
 \item{barcode_filtered}{Load only the cell-containing barcodes}
 }
 \value{
-a new CellDataSet object
+a new cell_data_set object
 }
 \description{
-Loads cellranger data into a CellDataSet object.  Note that if your dataset
+Loads cellranger data into a cell_data_set object.  Note that if your dataset
 is from version 3.0 and contains non-Gene-Expression data (e.g. Antibodies
 or CRISPR features), only the Gene Expression data is returned.
 }

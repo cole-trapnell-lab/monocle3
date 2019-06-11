@@ -8,7 +8,7 @@ embedding and the principal graph}
 graph_test(cds, neighbor_graph = c("knn", "principal_graph"),
   reduction_method = "UMAP", k = 25, method = c("Moran_I"),
   alternative = "greater", expression_family = "quasipoisson",
-  cores = 1, interactive = FALSE, verbose = FALSE)
+  cores = 1, verbose = FALSE)
 }
 \arguments{
 \item{cds}{a cell_data_set object upon which to perform this operation}
@@ -37,10 +37,6 @@ function used for the test.}
 
 \item{cores}{the number of cores to be used while testing each gene for
 differential expression.}
-
-\item{interactive}{Whether or not to allow the user to choose a point or
-region in the scene, then to only identify genes spatially correlated for
-those selected cells.}
 
 \item{verbose}{Whether to show spatial test (Moran's I) errors and warnings.
 Only valid for cores = 1.}

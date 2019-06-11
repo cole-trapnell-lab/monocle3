@@ -69,7 +69,7 @@ learn_graph <- function(cds,
   reduction_method <- "UMAP"
 
   if (!is.null(learn_graph_control)) {
-    assertthat::assert_that(is(learn_graph_control, "list"))
+    assertthat::assert_that(methods::is(learn_graph_control, "list"))
     assertthat::assert_that(all(names(learn_graph_control) %in%
                                   c("euclidean_distance_ratio",
                                     "geodesic_distance_ratio",
@@ -111,7 +111,7 @@ learn_graph <- function(cds,
   L1.sigma <- ifelse(is.null(learn_graph_control$L1.sigma), 0.01,
                      learn_graph_control$L1.sigma)
 
-  assertthat::assert_that(is(cds, "cell_data_set"))
+  assertthat::assert_that(methods::is(cds, "cell_data_set"))
   assertthat::assert_that(is.logical(use_partition))
   assertthat::assert_that(is.logical(close_loop))
   assertthat::assert_that(is.logical(verbose))
@@ -636,7 +636,7 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE,
           tmp <- Y[, neighbor]
         }
         projection <- rbind(projection, tmp)
-        distance <- c(distance, dist(rbind(Z_i, tmp)))
+        distance <- c(distance, stats::dist(rbind(Z_i, tmp)))
       }
       if(class(projection) != 'matrix') {
         projection <- as.matrix(projection)
@@ -692,7 +692,7 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE,
             reduction_method]])[,data_df[, 'source']])^2))
         data_df <- data_df %>% tibble::rownames_to_column() %>%
           dplyr::mutate(group = paste(source, target, sep = '_')) %>%
-          dplyr::arrange(group, desc(-distance_2_source))
+          dplyr::arrange(group, dplyr::desc(-distance_2_source))
 
         # add the links from the source to the nearest points belong to the
         # principal edge and also all following connections between those
@@ -726,7 +726,7 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE,
         # original graph
         edge_list <- as.data.frame(igraph::get.edgelist(dp_mst_list[[
           as.numeric(cur_partition)]]), stringsAsFactors=FALSE)
-        dp <- as.matrix(dist(t(rge_res_Y)[cur_centroid_name,]))
+        dp <- as.matrix(stats::dist(t(rge_res_Y)[cur_centroid_name,]))
         edge_list$weight <- dp[cbind(edge_list[, 1], edge_list[, 2])]
         colnames(edge_list) <- c("new_source", "new_target", 'weight')
 
@@ -845,16 +845,16 @@ projPointOnLine <- function(point, line) {
 #' L1-graph or the spanning-tree formulization
 #' @param X the input data DxN
 #' @param C0 the initialization of centroids
-#' @param maxiter maximum number of iteraction
+#' @param maxiter maximum number of iteration
 #' @param eps relative objective difference
 #' @param L1.gamma regularization parameter for k-means (the prefix of 'param'
 #'   is used to avoid name collision with gamma)
 #' @param L1.sigma bandwidth parameter
-#' @param verbose emit results from iteraction
+#' @param verbose emit results from iteration
 #' @return a list of X, C, W, P, objs
 #' X is the input data
 #' C is the centers for principal graph
-#' W is the pricipal graph matrix
+#' W is the principal graph matrix
 #' P is the cluster assignment matrix
 #' objs is the objective value for the function
 calc_principal_graph <- function(X, C0,
@@ -931,7 +931,7 @@ repmat = function(X,m,n){
 
 #' Function to calculate the third term in the objective function
 #' @param X input data
-#' @param C center of grap (D * K)
+#' @param C center of graph (D * K)
 #' @param sigma bandwidth parameter
 #' @return a matrix with diagonal element as 1 while other elements as zero
 #'   (eye matrix)
@@ -958,7 +958,7 @@ soft_assignment <- function(X, C, sigma){
 
 #' Function to reproduce the behavior of eye function in matlab
 #' @param X input data
-#' @param W the pricipal graph matrix
+#' @param W the principal graph matrix
 #' @param P the cluster assignment matrix
 #' @param param.gamma regularization parameter for k-means (the prefix of
 #'   'param' is used to avoid name collision with gamma)
@@ -1058,11 +1058,11 @@ connect_tips <- function(pd,
   diameter_dis <- igraph::diameter(mst_g_old)
   reducedDimK_df <- reducedDimK_old
 
-  pb4 <- txtProgressBar(max = length(nrow(valid_connection)), file = "",
+  pb4 <- utils::txtProgressBar(max = length(nrow(valid_connection)), file = "",
                         style = 3, min = 0)
 
   # find the maximum distance between nodes from the MST
-  res <- dist(t(reducedDimK_old))
+  res <- stats::dist(t(reducedDimK_old))
   g <- igraph::graph_from_adjacency_matrix(as.matrix(res), weighted = T,
                                            mode = 'undirected')
   mst <- igraph::minimum.spanning.tree(g)
@@ -1083,7 +1083,7 @@ connect_tips <- function(pd,
                           edge_vec_in_tip_pc_point[2]) >=
         geodesic_distance_ratio * diameter_dis) &
        (euclidean_distance_ratio * max_node_dist >
-        dist(t(reducedDimK_old[, edge_vec]))) ) {
+        stats::dist(t(reducedDimK_old[, edge_vec]))) ) {
       if(verbose) message('edge_vec is ', edge_vec[1], '\t', edge_vec[2])
       if(verbose) message('edge_vec_in_tip_pc_point is ',
                           edge_vec_in_tip_pc_point[1], '\t',
@@ -1091,7 +1091,7 @@ connect_tips <- function(pd,
 
       mst_g <- igraph::add_edges(mst_g, edge_vec_in_tip_pc_point)
     }
-    setTxtProgressBar(pb = pb4, value = pb4$getVal() + 1)
+    utils::setTxtProgressBar(pb = pb4, value = pb4$getVal() + 1)
   }
 
   close(pb4)

@@ -9,7 +9,7 @@ soft_assignment(X, C, sigma)
 \arguments{
 \item{X}{input data}
 
-\item{C}{center of grap (D * K)}
+\item{C}{center of graph (D * K)}
 
 \item{sigma}{bandwidth parameter}
 }

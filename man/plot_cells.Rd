@@ -18,9 +18,9 @@ plot_cells(cds, x = 1, y = 2, reduction_method = c("UMAP", "tSNE",
 \arguments{
 \item{cds}{cell_data_set for the experiment}
 
-\item{x}{the column of reducedDimS(cds) to plot on the horizontal axis}
+\item{x}{the column of reducedDims(cds) to plot on the horizontal axis}
 
-\item{y}{the column of reducedDimS(cds) to plot on the vertical axis}
+\item{y}{the column of reducedDims(cds) to plot on the vertical axis}
 
 \item{reduction_method}{The lower dimensional space in which to plot cells.
 Must be one of "UMAP", "tSNE", and "PCA".}
@@ -36,7 +36,7 @@ If a column in colData(cds), must be a categorical variable.}
 \item{genes}{Facet the plot, showing the expression of each gene in a facet
 panel. Must be either a list of gene ids (or short names), or a dataframe
 with two columns that groups the genes into modules that will be
-aggregrated prior to plotting. If the latter, the first column must be gene
+aggregated prior to plotting. If the latter, the first column must be gene
 ids, and the second must the group for each gene.}
 
 \item{show_trajectory_graph}{Whether to render the principal graph for the
@@ -52,7 +52,7 @@ plotting the trajectory graph.}
 them. Must be one of "log" or "size_only".}
 
 \item{label_cell_groups}{Whether to label cells in each group (as specified
-by group_cells_by) according to the most frequently occuring label(s) (as
+by group_cells_by) according to the most frequently occurring label(s) (as
 specified by color_cells_by) in the group. If false, plot_cells() simply
 adds a traditional color legend.}
 
