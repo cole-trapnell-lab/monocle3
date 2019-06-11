@@ -6,6 +6,7 @@ labels: bug
 assignees: ''
 
 ---
+** If this is a question and not a bug report or enhancement request, please post to our google group at https://groups.google.com/forum/#!forum/monocle-3-users**
 
 **Describe the bug**
 A clear and concise description of what the bug is.
