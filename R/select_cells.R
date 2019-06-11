@@ -486,7 +486,7 @@ plot_principal_graph <- function(data_df,
   }
 
   g <- g +
-    monocle3:::monocle_theme_opts() +
+    monocle_theme_opts() +
     xlab(paste(reduction_method, 1)) +
     ylab(paste(reduction_method, 2)) +
     theme(legend.key = element_blank()) +

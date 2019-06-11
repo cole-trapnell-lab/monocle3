@@ -125,13 +125,13 @@ cluster_cells <- function(cds,
 #' the implementation, it also scales well, and can be run on graphs of
 #' millions of nodes (as long as they can fit in memory). The core function is
 #' find_partition which finds the optimal partition using the Louvain algorithm
-#' [1] for a number of different methods. The methods currently implemented are
-#' (1) modularity [2], (2) Reichardt and Bornholdt's model using the
-#' configuration null model and the Erdös-Rényi null model [3], (3) the
-#' constant Potts model (CPM) [4], (4) Significance [5], and finally (5)
-#' Surprise [6]. In addition, it supports multiplex partition optimization
-#' allowing community detection on for example negative links [7] or multiple
-#' time slices [8]. It also provides some support for community detection on
+#' for a number of different methods. The methods currently implemented are
+#' (1) modularity, (2) Reichardt and Bornholdt's model using the
+#' configuration null model and the Erdös-Rényi null model, (3) the
+#' constant Potts model (CPM), (4) Significance, and finally (5)
+#' Surprise. In addition, it supports multiplex partition optimization
+#' allowing community detection on for example negative links or multiple
+#' time slices. It also provides some support for community detection on
 #' bipartite graphs. See the documentation for more information." Please see
 #' the github above for the citations. Right now we only support
 #' CPMVertexPartition, RBConfigurationVertexPartition, RBERVertexPartition,

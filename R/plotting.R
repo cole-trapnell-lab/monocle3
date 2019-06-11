@@ -1476,7 +1476,7 @@ plot_genes_by_group <- function(cds,
     g <- g + xlab(group_cells_by)
   }
 
-  g <- g + ylab("Gene") + monocle3:::monocle_theme_opts() +
+  g <- g + ylab("Gene") + monocle_theme_opts() +
     theme(axis.text.x = element_text(angle = 30, hjust = 1))
   if(axis_order == 'marker_group') {
     g <- g + coord_flip()

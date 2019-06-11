@@ -358,7 +358,7 @@ select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
                                             y = source_prin_graph_dim_2,
                                             yend = target_prin_graph_dim_2)) +
           labs(x="Component 1", y="Component 2") +
-          monocle3:::monocle_theme_opts()
+          monocle_theme_opts()
       }, height = function() {
         session$clientData$output_plot1_width
       })
