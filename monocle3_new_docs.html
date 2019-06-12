@@ -829,6 +829,23 @@ expressed: acbp-6, Y66D12A.14, ZC412.4, C32E8.6, C41A3.1
 <p>The marker files produced by <code>generate_garnett_marker_file()</code> are just a starting point for classifying your cells with Garnett. You may want to edit this file to add or remove markers based on literature or other information. You also should consider defining subtypes of cells, which can greatly increase the usefulness and accuracy of Garnett. For example, the L2 data contains many different types of neurons. Making a "Neuron" cell type in the file above and then using the <code>subtype of</code> keyword to organize the various subtypes of neurons will make Garnett more able to recognize them and distinguish them from non-neuronal cell types. When two or more of your cell types share most of their top markers in <code>plot_genes_by_group()</code>, consider defining a broader cell type definition of which they are both subtypes. You might also want to define markers for the various subtypes of neurons by subsetting the <code>cds</code> object above and running <code>top_markers()</code> just on them. See the Garnett <a href="https://cole-trapnell-lab.github.io/garnett/docs/">documentation</a> for more on how you can enrich your marker files.</p>
 
 <p>When you're ready run Garnett, load the package:</p>
+   
+<div class= "panel panel-warning">
+<div class= "panel-heading">
+<h3 class= "panel-title" data-toc-skip>Garnett for Monocle 3</h3>
+</div>
+<div class= "panel-body">
+<p>Garnett was originally written to work with Monocle 2. We have created a branch 
+    of Garnett that works with Monocle 3, which will eventually replace the 
+    main branch. In the meantime, you must install and load the Monocle 3 branch of 
+    Garnett!</p>
+</div>
+</div>
+{% highlight R %}
+## Install the monocle3 branch of garnett
+devtools::install_github("cole-trapnell-lab/garnett", ref="monocle3")
+{% endhighlight %}   
+    
 {% highlight R %}
 library(garnett)
 {% endhighlight %}
