@@ -2,6 +2,8 @@ cache: packages
 sudo: required
 warnings_are_errors: true
 language: r
+before_install:
+  - sudo apt-get install -y libudunits2-dev
 r:
 - bioc-devel
 - bioc-release
