@@ -499,7 +499,7 @@ plot_cells <- function(cds,
   markers_exprs <- NULL
   expression_legend_label <- NULL
   if (!is.null(genes)) {
-    if ((is.null(dim(genes)) == FALSE) && dim(genes) >= 2){
+    if (!is.null(dim(genes)) && dim(genes) >= 2){
       markers = unlist(genes[,1], use.names=FALSE)
     } else {
       markers = genes
@@ -508,11 +508,14 @@ plot_cells <- function(cds,
                                             gene_short_name %in% markers |
                                               rownames(rowData(cds)) %in%
                                               markers))
+    if (nrow(markers_rowData) == 0) {
+      stop("None of the provided genes were found in the cds")
+    }
     if (nrow(markers_rowData) >= 1) {
       cds_exprs <- SingleCellExperiment::counts(cds)[row.names(markers_rowData), ,drop=FALSE]
       cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds))
 
-      if ((is.null(dim(genes)) == FALSE) && dim(genes) >= 2){
+      if (!is.null(dim(genes)) && dim(genes) >= 2){
         genes = as.data.frame(genes)
         row.names(genes) = genes[,1]
         genes = genes[row.names(cds_exprs),]
@@ -557,8 +560,10 @@ plot_cells <- function(cds,
 
   if (label_cell_groups && is.null(color_cells_by) == FALSE){
     if (is.null(data_df$cell_color)){
+      if (is.null(genes)){
       message(paste(color_cells_by, "not found in colData(cds), cells will",
                     "not be colored"))
+      }
       text_df = NULL
       label_cell_groups = FALSE
     }else{
@@ -611,7 +616,7 @@ plot_cells <- function(cds,
     }
   }
 
-  if (is.null(markers_exprs) == FALSE && nrow(markers_exprs) > 0){
+  if (!is.null(markers_exprs) && nrow(markers_exprs) > 0){
     data_df <- merge(data_df, markers_exprs, by.x="sample_name",
                      by.y="cell_id")
     data_df$value <- with(data_df, ifelse(value >= min_expr, value, NA))
