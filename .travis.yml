@@ -1,12 +1,10 @@
 cache: packages
 sudo: required
 warnings_are_errors: true
-
 language: r
 r:
 - bioc-devel
 - bioc-release
-
 r_binary_packages:
 - assertthat
 - BiocGenerics
@@ -51,6 +49,8 @@ r_binary_packages:
 - tibble
 - tidyr
 - viridis
-
 after_success:
 - Rscript -e 'covr::codecov()'
+notifications:
+  slack:
+    secure: FzwcueBd+TItK2PT8HPmGhDGPBT3uth9WgMe5b56kWiObqhwowXDcggT36C/oS5iGZ71hGLU5fnh4EcdwyqwuudMtxiS7cDaiSNouA36eOpVShOVQKsHGq5Yr3c2Y2MaglFz3YUtncJGRAkysJdMYsCAo0L0ZLXocDAfU5lLxxZB8zUwRov6zRHxUB1AFsEkIjaLeHT/3AgB3VJgnC6cYDEuo/OV0sGZZ3i39RlScyF8U1La1zLECA96B8CD6NHb59+WEHe6iblessIaknq5Udbk7yhWnVT7rYXTRbJQuZ7E2bpSIj52JLXOyp798AHDX2RWo+QfWQ6saQSVfRdF16bkTbHmSPvxURsjOfWQsn7Z/yRSGMcFCsgL4Z5W9jobXlg/0M9VzuUssXxJmC1MFb41gsTBnYv/BAxvIZ7LMYcmXemRozZ54gLi1u5yLpd4/CrKG3mSwvxfPYzmZgir8LKCejPTZbq94smmCXfNT74CkoZAAAdWj/8hnleWyvHSWmgpkOcm32IwNMzhAgWCPNEWJr4xjkEYCnEmedDunTKHVD9pAd9LuZdR0ODmbTAueIPpD+v5SeD8pvJkmi/xuvAfVuY7Ky79VqCqtqk0YIWeZQZ9kstX7pI1vUCfkfV5FxnyY5Lk3nNgRIczHP5heot1ziGgaXgxl4I4XvmpNvA=
