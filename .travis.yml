@@ -1,0 +1,56 @@
+cache: packages
+sudo: required
+warnings_are_errors: true
+
+language: r
+r:
+- bioc-devel
+- bioc-release
+
+r_binary_packages:
+- assertthat
+- BiocGenerics
+- DelayedArray
+- DelayedMatrixStats
+- dplyr
+- ggplot2
+- ggrepel
+- grr
+- htmlwidgets
+- igraph
+- irlba
+- limma
+- lmtest
+- MASS
+- Matrix
+- Matrix.utils
+- pbapply
+- pbmcapply
+- pheatmap
+- plotly
+- plyr
+- proxy
+- pryr
+- pscl
+- purrr
+- RANN
+- Rcpp
+- RcppParallel
+- reshape2
+- reticulate
+- RhpcBLASctl
+- Rtsne
+- S4Vectors
+- shiny
+- slam
+- spdep
+- speedglm
+- stringr
+- SummarizedExperiment
+- uwot
+- tibble
+- tidyr
+- viridis
+
+after_success:
+- Rscript -e 'covr::codecov()'
