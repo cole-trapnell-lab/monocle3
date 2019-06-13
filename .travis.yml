@@ -5,6 +5,8 @@ language: r
 r:
 - bioc-devel
 - bioc-release
+r_github_packages:
+- VPetukhov/ggrastr
 r_binary_packages:
 - assertthat
 - dplyr
