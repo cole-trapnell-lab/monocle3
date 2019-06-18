@@ -625,23 +625,23 @@ plot_cells <- function(cds,
     na_sub <- data_df[is.na(data_df$value),]
     if(norm_method == "size_only"){
       g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2)) +
-        plotting_func(aes(color=value), size=I(cell_size),
-                      stroke = I(cell_size / 2), na.rm = TRUE) +
         plotting_func(aes(data_dim_1, data_dim_2), size=I(cell_size),
                       stroke = I(cell_size / 2), color = "grey80",
                       data = na_sub) +
+        plotting_func(aes(color=value), size=I(cell_size),
+                      stroke = I(cell_size / 2), na.rm = TRUE) +
         viridis::scale_color_viridis(option = "viridis",
                                      name = expression_legend_label,
                                      na.value = "grey80", end = 0.8) +
         guides(alpha = FALSE) + facet_wrap(~feature_label)
     } else {
       g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2)) +
-        plotting_func(aes(color=log10(value+min_expr)),
-                      size=I(cell_size), stroke = I(cell_size / 2),
-                      na.rm = TRUE) +
         plotting_func(aes(data_dim_1, data_dim_2), size=I(cell_size),
                       stroke = I(cell_size / 2), color = "grey80",
                       data = na_sub) +
+        plotting_func(aes(color=log10(value+min_expr)),
+                      size=I(cell_size), stroke = I(cell_size / 2),
+                      na.rm = TRUE) +
         viridis::scale_color_viridis(option = "viridis",
                                      name = expression_legend_label,
                                      na.value = "grey80", end = 0.8) +
