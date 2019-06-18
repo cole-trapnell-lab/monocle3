@@ -104,7 +104,7 @@ new_cell_data_set <- function(expression_data,
                   "named 'gene_short_name' for certain functions."))
   }
 
-  sce <- SingleCellExperiment(list(counts=expression_data),
+  sce <- SingleCellExperiment(list(counts=as(expression_data, "dgCMatrix")),
                               rowData = gene_metadata,
                               colData = cell_metadata)
 
