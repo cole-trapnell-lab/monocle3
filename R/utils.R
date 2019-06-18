@@ -21,6 +21,14 @@ estimate_size_factors <- function(cds,
                                            'mean-geometric-mean-log-total'))
 {
   method <- match.arg(method)
+  if(any(Matrix::colSums(SingleCellExperiment::counts(cds)) == 0)) {
+    warning(paste("Your CDS object contains cells with zero reads.",
+                  "This causes size factor calculation to fail. Please remove",
+                  "the zero read cells using",
+                  "cds <- cds[,Matrix::rowSums(exprs(cds)) != 0] and then",
+                  "run cds <- estimate_size_factors(cds)"))
+    return(cds)
+  }
   if (is_sparse_matrix(SingleCellExperiment::counts(cds))){
     size_factors(cds) <- estimate_sf_sparse(SingleCellExperiment::counts(cds),
                                             round_exprs=round_exprs,
