@@ -688,8 +688,7 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE,
 
         # sort each cell's distance to the source in each principal edge group
         data_df$distance_2_source <-
-          sqrt(colSums((cur_p - t(reducedDims(cds)[[
-            reduction_method]])[,data_df[, 'source']])^2))
+          sqrt(colSums((cur_p - rge_res_Y[,as.character(data_df[, 'source'])])^2))
         data_df <- data_df %>% tibble::rownames_to_column() %>%
           dplyr::mutate(group = paste(source, target, sep = '_')) %>%
           dplyr::arrange(group, dplyr::desc(-distance_2_source))

@@ -51,7 +51,7 @@ test_that("reduce_dimension runs", {
                tolerance = 1e-4)
 
   expect_error(reduce_dimension(cds, reduction_method = "DDRTree"),
-               "reduction_method must be one of 'UMAP', 'PCA' or 'tSNE'")
+               "reduction_method must be one of 'UMAP', 'PCA', 'tSNE' or 'LSI'")
 })
 
 test_that("reduce_dimension clears old graphs", {
