@@ -13,7 +13,7 @@
 #'
 #' @param cds The cell_data_set upon which to perform clustering.
 #' @param reduction_method The dimensionality reduction method upon which to
-#'   base clustering. Options are "UMAP", "tSNE" and "PCA".
+#'   base clustering. Options are "UMAP", "tSNE", "PCA" and "LSI".
 #' @param k Integer number of nearest neighbors to use when creating the k
 #'   nearest neighbor graph for Louvain clustering. k is related to the
 #'   resolution of the clustering result, a bigger k will result in lower
@@ -52,7 +52,7 @@
 #' @export
 
 cluster_cells <- function(cds,
-                          reduction_method = c("UMAP", "tSNE", "PCA"),
+                          reduction_method = c("UMAP", "tSNE", "PCA", "LSI"),
                           k = 20,
                           louvain_iter = 1,
                           partition_qval = 0.05,

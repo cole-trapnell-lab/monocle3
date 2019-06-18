@@ -45,7 +45,7 @@ monocle_theme_opts <- function()
 #' @export
 plot_cells_3d <- function(cds,
                            dims = c(1,2,3),
-                           reduction_method = c("UMAP", "tSNE"),
+                           reduction_method = c("UMAP", "tSNE", "PCA", "LSI"),
                            color_cells_by="cluster",
                            #group_cells_by=c("cluster", "partition"), #
                            genes=NULL,
@@ -295,7 +295,7 @@ plot_cells_3d <- function(cds,
 #' @param y the column of reducedDims(cds) to plot on the vertical axis
 #' @param cell_size The size of the point for each cell
 #' @param reduction_method The lower dimensional space in which to plot cells.
-#'   Must be one of "UMAP", "tSNE", and "PCA".
+#'   Must be one of "UMAP", "tSNE", "PCA" and "LSI".
 #' @param color_cells_by What to use for coloring the cells. Must be either the
 #'   name of a column of colData(cds), or one of "clusters", "partitions", or
 #'   "pseudotime".
@@ -348,7 +348,7 @@ plot_cells_3d <- function(cds,
 plot_cells <- function(cds,
                        x=1,
                        y=2,
-                       reduction_method = c("UMAP", "tSNE", "PCA"),
+                       reduction_method = c("UMAP", "tSNE", "PCA", "LSI"),
                        color_cells_by="cluster",
                        group_cells_by=c("cluster", "partition"),
                        genes=NULL,

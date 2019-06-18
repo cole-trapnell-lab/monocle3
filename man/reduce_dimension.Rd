@@ -6,7 +6,7 @@
 space with non-linear dimension reduction methods}
 \usage{
 reduce_dimension(cds, max_components = 2, reduction_method = c("UMAP",
-  "tSNE", "PCA"), preprocess_method = c("PCA", "LSI"),
+  "tSNE", "PCA", "LSI"), preprocess_method = c("PCA", "LSI"),
   umap.metric = "cosine", umap.min_dist = 0.1,
   umap.n_neighbors = 15L, umap.fast_sgd = FALSE,
   umap.nn_method = "annoy", cores = 1, verbose = FALSE, ...)
@@ -17,8 +17,8 @@ reduce_dimension(cds, max_components = 2, reduction_method = c("UMAP",
 \item{max_components}{the dimensionality of the reduced space. Default is 2.}
 
 \item{reduction_method}{A character string specifying the algorithm to use
-for dimensionality reduction. Currently "UMAP", "tSNE", and "PCA" are
-supported.}
+for dimensionality reduction. Currently "UMAP", "tSNE", "PCA" and "LSI"
+are supported.}
 
 \item{preprocess_method}{A string indicating the preprocessing method used
 on the data. Options are "PCA" and "LSI". Default is "LSI".}
