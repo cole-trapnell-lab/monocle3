@@ -77,13 +77,33 @@ test_that("plot_genes_in_pseudotime doesn't error", {
   expect_equal(1, 1)
 })
 
-test_that("plot_cells_3d doesn't error", {
+test_that("plot_cells doesn't error", {
   cds <- preprocess_cds(cds)
-  cds <- reduce_dimension(cds, max_components = 3)
+  plot_cells(cds, reduction_method = "PCA", x=2, y=5)
+  cds <- reduce_dimension(cds, max_components = 2)
+  plot_cells(cds)
   cds <- cluster_cells(cds)
+  plot_cells(cds)
   cds <- learn_graph(cds)
+  plot_cells(cds)
   cds <- order_cells(cds, root_pr_nodes = "Y_1")
-  expect_equal(1, 1)
+  plot_cells(cds, color_cells_by = "pseudotime")
+  plot_cells(cds, color_cells_by = "partition")
+  plot_cells(cds, color_cells_by = "cluster")
+  plot_cells(cds, group_cells_by="cluster", color_cells_by="partition")
+  plot_cells(cds, genes = c("NDRG4"), min_expr = 1, rasterize = TRUE)
+  plot_cells(cds, genes = c("NDRG4", "MT-ATP8", "ENSG00000240216.7"))
+  plot_cells(cds, show_trajectory_graph = FALSE)
+  plot_cells(cds, trajectory_graph_color = "blue",
+             trajectory_graph_segment_size = 3)
+  plot_cells(cds, label_cell_groups = FALSE)
+  plot_cells(cds, label_groups_by_cluster = FALSE, group_cells_by="partition")
+  plot_cells(cds, group_label_size = 10)
+  plot_cells(cds, labels_per_group = 4)
+  plot_cells(cds, label_branch_points = FALSE, label_roots = FALSE,
+             label_leaves = FALSE, graph_label_size = 5)
+  plot_cells(cds, cell_size = 1, alpha = .1)
+
 })
 
 

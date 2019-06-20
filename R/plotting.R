@@ -388,16 +388,16 @@ plot_cells <- function(cds,
                             msg = paste("color_cells_by must one of",
                                         "'cluster', 'partition', 'pseudotime,",
                                         "or a column in the colData table."))
-  }
-  if(color_cells_by == "pseudotime") {
-    tryCatch({pseudotime(cds, reduction_method = reduction_method)},
-             error = function(x) {
-      stop(paste("No pseudotime for", reduction_method, "calculated. Please",
-                 "run order_cells with reduction_method =", reduction_method,
-                 "before attempting to color by pseudotime."))})
 
-  }
+    if(color_cells_by == "pseudotime") {
+      tryCatch({pseudotime(cds, reduction_method = reduction_method)},
+               error = function(x) {
+                 stop(paste("No pseudotime for", reduction_method, "calculated. Please",
+                            "run order_cells with reduction_method =", reduction_method,
+                            "before attempting to color by pseudotime."))})
 
+    }
+  }
   assertthat::assert_that(!is.null(color_cells_by) || !is.null(markers),
                           msg = paste("Either color_cells_by or markers must",
                                       "be NULL, cannot color by both!"))
@@ -548,8 +548,11 @@ plot_cells <- function(cds,
                                by.x = "feature_id", by.y="row.names")
         markers_exprs$feature_label <-
           as.character(markers_exprs$gene_short_name)
-        markers_exprs$feature_label[is.na(markers_exprs$feature_label)] <-
-          markers_exprs$feature_id
+
+        markers_exprs$feature_label <- ifelse(is.na(markers_exprs$feature_label) | !as.character(markers_exprs$feature_label) %in% markers,
+                                              as.character(markers_exprs$feature_id),
+                                              as.character(markers_exprs$feature_label))
+
         markers_exprs$feature_label <- factor(markers_exprs$feature_label,
                                               levels = markers)
         if (norm_method == "size_only")
@@ -581,8 +584,10 @@ plot_cells <- function(cds,
             dplyr::summarize(fraction_of_group = dplyr::n(),
                              text_x = stats::median(x = data_dim_1),
                              text_y = stats::median(x = data_dim_2))
-          text_df = text_df %>% dplyr::select(per) %>% dplyr::distinct()
-          text_df = dplyr::inner_join(text_df, median_coord_df)
+          text_df = suppressMessages(text_df %>% dplyr::select(per) %>%
+                                       dplyr::distinct())
+          text_df = suppressMessages(dplyr::inner_join(text_df,
+                                                       median_coord_df))
           text_df = text_df %>% dplyr::group_by(cell_group) %>%
             dplyr::top_n(labels_per_group, per)
         } else {
@@ -592,8 +597,10 @@ plot_cells <- function(cds,
             dplyr::summarize(fraction_of_group = dplyr::n(),
                              text_x = stats::median(x = data_dim_1),
                              text_y = stats::median(x = data_dim_2))
-          text_df = text_df %>% dplyr::select(per) %>% dplyr::distinct()
-          text_df = dplyr::inner_join(text_df, median_coord_df)
+          text_df = suppressMessages(text_df %>% dplyr::select(per) %>%
+                                       dplyr::distinct())
+          text_df = suppressMessages(dplyr::inner_join(text_df,
+                                                       median_coord_df))
           text_df = text_df %>% dplyr::group_by(cell_color) %>%
             dplyr::top_n(labels_per_group, per)
         }

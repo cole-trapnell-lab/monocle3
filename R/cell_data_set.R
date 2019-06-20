@@ -77,7 +77,7 @@ new_cell_data_set <- function(expression_data,
                             msg = paste("cell_metadata must be NULL or have",
                                         "the same number of rows as columns",
                                         "in expression_data"))
-    assertthat::assert_that(
+    assertthat::assert_that(!is.null(row.names(cell_metadata)) &
       all(row.names(cell_metadata) == colnames(expression_data)),
       msg = paste("row.names of cell_metadata must be equal to colnames of",
                   "expression_data"))
@@ -88,7 +88,7 @@ new_cell_data_set <- function(expression_data,
                             msg = paste("gene_metadata must be NULL or have",
                                         "the same number of rows as rows",
                                         "in expression_data"))
-    assertthat::assert_that(all(
+    assertthat::assert_that(!is.null(row.names(gene_metadata)) & all(
       row.names(gene_metadata) == row.names(expression_data)),
       msg = paste("row.names of gene_metadata must be equal to row.names of",
                   "expression_data"))
