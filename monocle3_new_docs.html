@@ -78,7 +78,23 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
 BiocManager::install()
 {% endhighlight %}
 
-<p>To install monocle3 through the cole-trapnell-lab GitHub, execute:</p>
+<p>Next, install a few Bioconductor dependencies that aren't automatically installed:</p>
+{% highlight R %}
+BiocManager::install(c('BiocGenerics', 'DelayedArray', 'DelayedMatrixStats', 
+                       'limma', 'S4Vectors', 'SingleCellExperiment', 
+                       'SummarizedExperiment'))
+{% endhighlight %}
+
+<p>Optional: If you would like to use the resolution parameter in cluster_cells, you 
+  will also need to install one Python package. This can be done with the following code in R:</p>
+  
+  {% highlight R %}
+install.packages("reticulate")
+reticulate::py_install("louvain")
+{% endhighlight %}
+
+
+<p>Now, install monocle3 through the cole-trapnell-lab GitHub, execute:</p>
 
 {% highlight R %}
 devtools::install_github('cole-trapnell-lab/monocle3')
