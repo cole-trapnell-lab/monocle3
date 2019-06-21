@@ -1392,6 +1392,86 @@ compare_models(time_batch_models, time_models) %>% select(gene_short_name, q_val
 </table>
 </div>
 
+<h3>Choosing a distribution for modeling gene expression</h3>
+<p>Monocle uses <a href="https://en.wikipedia.org/wiki/Generalized_linear_model">generalized linear models</a> to capture how a gene's expression depends on each variable in the experiment. These models require you to specify a distribution that describes gene expression values. Most studies that use this approach to analyze their gene expression data use the <a href="https://en.wikipedia.org/wiki/Negative_binomial_distribution">negative binomial distribution</a>, which is often appropriate for sequencing read or UMI count data. The negative binomial is at the core of many packages for RNA-seq analysis, such as <a href="https://bioconductor.org/packages/release/bioc/html/DESeq2.html">DESeq2</a>. 
+  
+<p>Monocle's <code>fit_models()</code> supports the negative binomial distribution and several others listed in the table below. The default is the <a href="https://en.wikipedia.org/wiki/Poisson_regression">"quasipoisson"</a>, which is very similar to the negative binomial. Quasipoisson is a a bit less accurate than the negative binomial but much faster to fit, making it well suited to datasets with thousands of cells.</p>
+
+There are several allowed values for <code>expression_family</code>:
+</p>
+<p>
+<table class= "table">
+<thead>
+<tr>
+<th>expression_family</th>
+<th>Distribution</th>
+<th>Accuracy</th>
+<th>Speed</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>quasipoisson</code></td>
+<td><a href="https://en.wikipedia.org/wiki/Poisson_regression">Quasi-poisson</a></td>
+<td>++</td>
+<td>++</td>
+<td>Default for <code>fit_models()</code>. Recommended for  most users.</td>
+</tr>
+<tr>
+<td><code>negbinomial</code></td>
+<td><a href="https://en.wikipedia.org/wiki/Negative_binomial_distribution">Negative binomial</a></td>
+<td>+++</td>
+<td>+</td>
+<td>Recommended for users with small datasets (fewer than 1,000 cells).</td>
+</tr>
+<tr>
+<td><code>poisson</code></td>
+<td><a href="https://en.wikipedia.org/wiki/Poisson_regression">Poisson</a></td>
+<td>-</td>
+<td>+++</td>
+<td>Not recommended. For debugging and testing only.</td>
+</tr>
+<tr>
+<td><code>binomial</code></td>
+<td><a href="https://en.wikipedia.org/wiki/Logistic_regression">Binomial</a></td>
+<td>++</td>
+<td>++</td>
+<td>Recommended for single-cell ATAC-seq</td>
+</tr>
+<tr>
+<!-- <td><code>gaussian</code></td>
+<td>If you want to use Monocle on data you have already transformed to be normally distributed, you can use this function, though some Monocle features may not work well.</td>
+</tr> -->
+</tbody>
+</table>
+</p>
+
+<p>
+<div class= "panel panel-warning">
+<div class= "panel-heading">
+<h3 class= "panel-title" data-toc-skip>Likelihood based analysis and quasipoisson</h3>
+</div>
+<div class= "panel-body">
+The quasi-poisson distribution doesn't have a real likelihood function, so some of Monocle's methods won't work with it. Several of the columns in results tables from <code>evaluate_fits()</code> and <code>compare_models()</code> will be <code>NA</code>.
+</div>
+</div>
+</p> 
+
+<!-- <p>
+<div class= "panel panel-danger">
+<div class= "panel-heading">
+<h3 class= "panel-title" data-toc-skip>Use the right distribution!</h3>
+</div>
+<div class= "panel-body">
+<strong>Using the wrong expressionFamily for your data will lead to bad results</strong>, errors from Monocle, or both.
+However, if you have FPKM/TPM data, you can still use negative binomial if you first convert your relative expression values to transcript counts using <code><a href = "https://rdrr.io/bioc/monocle/man/relative2abs.html">relative2abs()</a></code>.
+This often leads to much more accurate results than using <code>tobit()</code>. See the section on  <a href = "{{ site.baseurl }}/docs/#converting-tpm-fpkm-values-into-mrna-counts-alternative"> Converting TPM to mRNA Counts</a> for details.
+</div>
+</div>
+</p> 
+   -->
+
 <!-- <h3 data-toc-text= "Choosing a distribution for your data">Choosing a distribution for your data <span class= "label label-danger">Required</span></h3>
 
 <p> Monocle works well with both relative expression data and count-based measures (e.g. UMIs).
@@ -1408,54 +1488,8 @@ HSMM <- new_cell_data_set(count_matrix,
       expressionFamily=negbinomial.size())
 {% endhighlight %}
 </p>
-<p>
-There are several allowed values for <code>expressionFamily</code>, which expects a "family function" from the VGAM package:
-</p>
-<p>
-<table class= "table">
-<thead>
-<tr>
-<th>Family function</th>
-<th>Data type</th>
-<th>Notes</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>negbinomial.size()</code></td>
-<td>UMIs, Transcript counts from experiments with spike-ins or <code><a href = "https://rdrr.io/bioc/monocle/man/relative2abs.html">relative2abs()</a></code>, raw read counts</td>
-<td>Negative binomial distribution with fixed variance (which is automatically calculated by Monocle). Recommended for most users.</td>
-</tr>
-<tr>
-<td><code>negbinomial()</code></td>
-<td>UMIs, Transcript counts from experiments with spike-ins or <code><a href = "https://rdrr.io/bioc/monocle/man/relative2abs.html">relative2abs</a></code>, raw read counts</td>
-<td>Slightly more accurate than <code>negbinomial.size()</code>, but much, much slower. Not recommended except for very small datasets.</td>
-</tr>
-<tr>
-<td><code>tobit()</code></td>
-<td>FPKM, TPM</td>
-<td>Tobits are truncated normal distributions. Using <code>tobit()</code> will tell Monocle to log-transform your data where appropriate. Do not transform it yourself.</td>
-</tr>
-<tr>
-<td><code>gaussianff()</code></td>
-<td>log-transformed FPKM/TPMs, Ct values from single-cell qPCR</td>
-<td>If you want to use Monocle on data you have already transformed to be normally distributed, you can use this function, though some Monocle features may not work well.</td>
-</tr>
-</tbody>
-</table>
-</p>
-<p>
-<div class= "panel panel-danger">
-<div class= "panel-heading">
-<h3 class= "panel-title" data-toc-skip>Use the right distribution!</h3>
-</div>
-<div class= "panel-body">
-<strong>Using the wrong expressionFamily for your data will lead to bad results</strong>, errors from Monocle, or both.
-However, if you have FPKM/TPM data, you can still use negative binomial if you first convert your relative expression values to transcript counts using <code><a href = "https://rdrr.io/bioc/monocle/man/relative2abs.html">relative2abs()</a></code>.
-This often leads to much more accurate results than using <code>tobit()</code>. See the section on  <a href = "{{ site.baseurl }}/docs/#converting-tpm-fpkm-values-into-mrna-counts-alternative"> Converting TPM to mRNA Counts</a> for details.
-</div>
-</div>
-</p> -->
+
+
 
 <!--
   FIXME: Put this back when we have resolved https://github.com/cole-trapnell-lab/monocle3/issues/31
