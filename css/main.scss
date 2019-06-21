@@ -84,3 +84,15 @@ footer {
     text-align: center;
     width: 100%;
 }
+.jumbotron
+{   
+    padding-top: 80px;
+    padding-bottom:0px;
+    background-size: cover;
+    background: contain;
+    width: 100%; /* make sure to define width to fill container */
+    height: 400px; /* define the height in pixels or make sure   */
+                   /* you have something in your div with height */
+                   /* so you can see your image */
+    /*max-width:1400px;   define the max width */
+ }
