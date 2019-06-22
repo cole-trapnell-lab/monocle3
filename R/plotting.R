@@ -45,7 +45,7 @@ monocle_theme_opts <- function()
 #' @export
 plot_cells_3d <- function(cds,
                            dims = c(1,2,3),
-                           reduction_method = c("UMAP", "tSNE"),
+                           reduction_method = c("UMAP", "tSNE", "PCA", "LSI"),
                            color_cells_by="cluster",
                            #group_cells_by=c("cluster", "partition"), #
                            genes=NULL,
@@ -136,7 +136,7 @@ plot_cells_3d <- function(cds,
     }
     markers_rowData <-
       as.data.frame(subset(rowData(cds), gene_short_name %in% markers |
-                             rownames(rowData(cds)) %in% markers))
+                             row.names(rowData(cds)) %in% markers))
     if (nrow(markers_rowData) >= 1) {
       cds_exprs <- SingleCellExperiment::counts(cds)[row.names(markers_rowData), ,drop=FALSE]
       cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds))
@@ -249,7 +249,8 @@ plot_cells_3d <- function(cds,
       as.data.frame() %>%
       dplyr::select_(prin_graph_dim_1 = x, prin_graph_dim_2 = y,
                      prin_graph_dim_3 = z) %>%
-      dplyr::mutate(sample_name = rownames(.), sample_state = rownames(.))
+      dplyr::mutate(sample_name = rownames(.),
+                    sample_state = rownames(.))
 
     dp_mst <- cds@principal_graph[[reduction_method]]
 
@@ -294,7 +295,7 @@ plot_cells_3d <- function(cds,
 #' @param y the column of reducedDims(cds) to plot on the vertical axis
 #' @param cell_size The size of the point for each cell
 #' @param reduction_method The lower dimensional space in which to plot cells.
-#'   Must be one of "UMAP", "tSNE", and "PCA".
+#'   Must be one of "UMAP", "tSNE", "PCA" and "LSI".
 #' @param color_cells_by What to use for coloring the cells. Must be either the
 #'   name of a column of colData(cds), or one of "clusters", "partitions", or
 #'   "pseudotime".
@@ -347,7 +348,7 @@ plot_cells_3d <- function(cds,
 plot_cells <- function(cds,
                        x=1,
                        y=2,
-                       reduction_method = c("UMAP", "tSNE", "PCA"),
+                       reduction_method = c("UMAP", "tSNE", "PCA", "LSI"),
                        color_cells_by="cluster",
                        group_cells_by=c("cluster", "partition"),
                        genes=NULL,
@@ -387,16 +388,16 @@ plot_cells <- function(cds,
                             msg = paste("color_cells_by must one of",
                                         "'cluster', 'partition', 'pseudotime,",
                                         "or a column in the colData table."))
-  }
-  if(color_cells_by == "pseudotime") {
-    tryCatch({pseudotime(cds, reduction_method = reduction_method)},
-             error = function(x) {
-      stop(paste("No pseudotime for", reduction_method, "calculated. Please",
-                 "run order_cells with reduction_method =", reduction_method,
-                 "before attempting to color by pseudotime."))})
 
-  }
+    if(color_cells_by == "pseudotime") {
+      tryCatch({pseudotime(cds, reduction_method = reduction_method)},
+               error = function(x) {
+                 stop(paste("No pseudotime for", reduction_method, "calculated. Please",
+                            "run order_cells with reduction_method =", reduction_method,
+                            "before attempting to color by pseudotime."))})
 
+    }
+  }
   assertthat::assert_that(!is.null(color_cells_by) || !is.null(markers),
                           msg = paste("Either color_cells_by or markers must",
                                       "be NULL, cannot color by both!"))
@@ -474,7 +475,8 @@ plot_cells <- function(cds,
     ica_space_df <- t(cds@principal_graph_aux[[reduction_method]]$dp_mst) %>%
       as.data.frame() %>%
       dplyr::select_(prin_graph_dim_1 = x, prin_graph_dim_2 = y) %>%
-      dplyr::mutate(sample_name = rownames(.), sample_state = rownames(.))
+      dplyr::mutate(sample_name = rownames(.),
+                    sample_state = rownames(.))
 
     dp_mst <- cds@principal_graph[[reduction_method]]
 
@@ -499,20 +501,23 @@ plot_cells <- function(cds,
   markers_exprs <- NULL
   expression_legend_label <- NULL
   if (!is.null(genes)) {
-    if ((is.null(dim(genes)) == FALSE) && dim(genes) >= 2){
+    if (!is.null(dim(genes)) && dim(genes) >= 2){
       markers = unlist(genes[,1], use.names=FALSE)
     } else {
       markers = genes
     }
     markers_rowData <- as.data.frame(subset(rowData(cds),
                                             gene_short_name %in% markers |
-                                              rownames(rowData(cds)) %in%
+                                              row.names(rowData(cds)) %in%
                                               markers))
+    if (nrow(markers_rowData) == 0) {
+      stop("None of the provided genes were found in the cds")
+    }
     if (nrow(markers_rowData) >= 1) {
       cds_exprs <- SingleCellExperiment::counts(cds)[row.names(markers_rowData), ,drop=FALSE]
       cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds))
 
-      if ((is.null(dim(genes)) == FALSE) && dim(genes) >= 2){
+      if (!is.null(dim(genes)) && dim(genes) >= 2){
         genes = as.data.frame(genes)
         row.names(genes) = genes[,1]
         genes = genes[row.names(cds_exprs),]
@@ -543,8 +548,11 @@ plot_cells <- function(cds,
                                by.x = "feature_id", by.y="row.names")
         markers_exprs$feature_label <-
           as.character(markers_exprs$gene_short_name)
-        markers_exprs$feature_label[is.na(markers_exprs$feature_label)] <-
-          markers_exprs$feature_id
+
+        markers_exprs$feature_label <- ifelse(is.na(markers_exprs$feature_label) | !as.character(markers_exprs$feature_label) %in% markers,
+                                              as.character(markers_exprs$feature_id),
+                                              as.character(markers_exprs$feature_label))
+
         markers_exprs$feature_label <- factor(markers_exprs$feature_label,
                                               levels = markers)
         if (norm_method == "size_only")
@@ -557,8 +565,10 @@ plot_cells <- function(cds,
 
   if (label_cell_groups && is.null(color_cells_by) == FALSE){
     if (is.null(data_df$cell_color)){
+      if (is.null(genes)){
       message(paste(color_cells_by, "not found in colData(cds), cells will",
                     "not be colored"))
+      }
       text_df = NULL
       label_cell_groups = FALSE
     }else{
@@ -574,8 +584,10 @@ plot_cells <- function(cds,
             dplyr::summarize(fraction_of_group = dplyr::n(),
                              text_x = stats::median(x = data_dim_1),
                              text_y = stats::median(x = data_dim_2))
-          text_df = text_df %>% dplyr::select(per) %>% dplyr::distinct()
-          text_df = dplyr::inner_join(text_df, median_coord_df)
+          text_df = suppressMessages(text_df %>% dplyr::select(per) %>%
+                                       dplyr::distinct())
+          text_df = suppressMessages(dplyr::inner_join(text_df,
+                                                       median_coord_df))
           text_df = text_df %>% dplyr::group_by(cell_group) %>%
             dplyr::top_n(labels_per_group, per)
         } else {
@@ -585,8 +597,10 @@ plot_cells <- function(cds,
             dplyr::summarize(fraction_of_group = dplyr::n(),
                              text_x = stats::median(x = data_dim_1),
                              text_y = stats::median(x = data_dim_2))
-          text_df = text_df %>% dplyr::select(per) %>% dplyr::distinct()
-          text_df = dplyr::inner_join(text_df, median_coord_df)
+          text_df = suppressMessages(text_df %>% dplyr::select(per) %>%
+                                       dplyr::distinct())
+          text_df = suppressMessages(dplyr::inner_join(text_df,
+                                                       median_coord_df))
           text_df = text_df %>% dplyr::group_by(cell_color) %>%
             dplyr::top_n(labels_per_group, per)
         }
@@ -611,12 +625,16 @@ plot_cells <- function(cds,
     }
   }
 
-  if (is.null(markers_exprs) == FALSE && nrow(markers_exprs) > 0){
+  if (!is.null(markers_exprs) && nrow(markers_exprs) > 0){
     data_df <- merge(data_df, markers_exprs, by.x="sample_name",
                      by.y="cell_id")
     data_df$value <- with(data_df, ifelse(value >= min_expr, value, NA))
+    na_sub <- data_df[is.na(data_df$value),]
     if(norm_method == "size_only"){
       g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2)) +
+        plotting_func(aes(data_dim_1, data_dim_2), size=I(cell_size),
+                      stroke = I(cell_size / 2), color = "grey80",
+                      data = na_sub) +
         plotting_func(aes(color=value), size=I(cell_size),
                       stroke = I(cell_size / 2), na.rm = TRUE) +
         viridis::scale_color_viridis(option = "viridis",
@@ -625,8 +643,10 @@ plot_cells <- function(cds,
         guides(alpha = FALSE) + facet_wrap(~feature_label)
     } else {
       g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2)) +
-        plotting_func(aes(color=log10(value+min_expr),
-                          alpha = ifelse(!is.na(value), "2", "1")),
+        plotting_func(aes(data_dim_1, data_dim_2), size=I(cell_size),
+                      stroke = I(cell_size / 2), color = "grey80",
+                      data = na_sub) +
+        plotting_func(aes(color=log10(value+min_expr)),
                       size=I(cell_size), stroke = I(cell_size / 2),
                       na.rm = TRUE) +
         viridis::scale_color_viridis(option = "viridis",

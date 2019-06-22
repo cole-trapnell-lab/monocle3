@@ -205,7 +205,18 @@ fit_models <- function(cds,
                      ...) {
 
   model_form <- stats::as.formula(model_formula_str)
+  coldata_df = colData(cds)
+  tryCatch({
+    coldata_df$cluster = clusters(cds, reduction_method)[colnames(cds)]
+    coldata_df$partition = partitions(cds, reduction_method)[colnames(cds)]
+    coldata_df$pseudotime = pseudotime(cds, reduction_method)
+  }, error = function(e) {} )
 
+  tryCatch({
+    model.frame(model_form, data=coldata_df[1,])
+  }, error = function(e) {
+    stop ("Error: model formula refers to something not found in colData(cds)")
+  })
   # FIXME: These checks are too stringent, because they don't catch formula
   # that include functions of columns in colData. For example, the formula
   # `~ splines::ns(pseudotime, df=3) triggers the error.

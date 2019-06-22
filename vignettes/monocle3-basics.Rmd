@@ -22,66 +22,17 @@ library(ggplot2)
 ```
 
 ```{r}
-load("~/Desktop/pd2")
-load("~/Desktop/fd2")
-load("~/Desktop/exprs2")
+expression_matrix <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_expression.rds"))
+cell_metadata <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_colData.rds"))
+gene_annotation <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_rowData.rds"))
+cds <- new_cell_data_set(expression_matrix,
+                         cell_metadata = cell_metadata,
+                         gene_metadata = gene_annotation)
 
-cds <- new_cell_data_set(exprs, cell_metadata = pd, gene_metadata = fd)
+# subset 10k for speed
+set.seed(10)
+cds <- cds[,sample(1:nrow(colData(cds)), 10000)]
 ```
-
-
-```{r}
-colData(cds)$cell_type2 <- plyr::revalue(as.character(colData(cds)$cluster),
-                                        c("1" = 'Erythrocyte',
-                                        "2" = 'Erythrocyte',
-                                        "3" = 'Erythrocyte',
-                                        "4" = 'Erythrocyte',
-                                        "5" = 'Erythrocyte',
-                                        "6" = 'Erythrocyte',
-                                        "7" = 'Multipotent progenitors',
-                                        "8" = 'Megakaryocytes',
-                                        "9" = 'GMP',
-                                        "10" = 'GMP',
-                                        "11" = 'Dendritic cells',
-                                        "12" = 'Basophils',
-                                        "13" = 'Basophils',
-                                        "14" = 'Monocytes',
-                                        "15" = 'Monocytes',
-                                        "16" = 'Neutrophils',
-                                        "17" = 'Neutrophils',
-                                        "18" = 'Eosinophls',
-                                        "19" = 'lymphoid'))
-
-cell_type_color <- c("Basophils" = "#E088B8",
-                    "Dendritic cells" = "#46C7EF",
-                    "Eosinophls" = "#EFAD1E",
-                    "Erythrocyte" = "#8CB3DF",
-                    "Monocytes" = "#53C0AD",
-                    "Multipotent progenitors" = "#4EB859",
-                    "GMP" = "#D097C4",
-                    "Megakaryocytes" = "#ACC436",
-                    "Neutrophils" = "#F5918A",
-                    'NA' = '#000080')
-```
-
-```{r}
-# Pass TRUE if you want to see progress output on some of Monocle 3's operations
-DelayedArray:::set_verbose_block_processing(TRUE)
-
-# Passing a higher value will make some computations faster but use more memory. Adjust with caution!
-options(DelayedArray.block.size=1000e6)
-
-cds <- estimate_size_factors(cds)
-```
-
-
-```{r}
-cds_subset <- cds[c("Cdk1", "Zwint", "Znhit1"),]
-plot_genes_violin(cds_subset, group_cells_by ="cell_type2")
-plot_percent_cells_positive(cds_subset, group_cells_by="cell_type2")
-
-```
-
 
 ```{r}
 cds <- preprocess_cds(cds, num_dim = 20)
@@ -95,18 +46,7 @@ plot_pc_variance_explained(cds)
 
 ```{r}
 cds <- reduce_dimension(cds, reduction_method = 'UMAP')
-cds <- reduce_dimension(cds, reduction_method = 'tSNE')
 ```
-
-```{r}
-cds <- cluster_cells(cds,
-                     method = 'louvain',
-                     res = 1e-6,
-                     louvain_iter = 1,
-                     verbose = T)
-    
-```
-
 
 ```{r}
 cds <- cluster_cells(cds)
@@ -117,72 +57,5 @@ cds <- learn_graph(cds)
 ```
 
 ```{r}
-plot_cells(cds,
-           color_cells_by = "cell_type2") +
-  ggplot2::scale_color_manual(values = cell_type_color)
-```
-
-
-```{r}
-# a helper function to identify the root principal points:
-get_correct_root_state <- function(cds, cell_phenotype, root_type){
-  cell_ids <- which(colData(cds)[, cell_phenotype] == root_type)
-
-  closest_vertex <-
-    cds@principal_graph_aux[["UMAP"]]$pr_graph_cell_proj_closest_vertex
-  closest_vertex <- as.matrix(closest_vertex[colnames(cds), ])
-  root_pr_nodes <-
-    igraph::V(cds@principal_graph[["UMAP"]])$name[as.numeric(names
-      (which.max(table(closest_vertex[cell_ids,]))))]
-
-  root_pr_nodes
-}
-```
-
-```{r}
-MPP_node_ids = get_correct_root_state(cds,
-                                      cell_phenotype =
-                                        'cell_type2', "Multipotent progenitors")
-cds <- order_cells(cds, root_pr_nodes = MPP_node_ids)
 plot_cells(cds)
-```
-
-
-```{r}
-cds <- cluster_cells(cds,
-                        method = 'louvain',
-                        res = 1e-6,
-                        louvain_iter = 1,
-                        verbose = T)
-    
-```
-
-
-
-
-
-
-
-```{r}
-cds <- reduce_dimension(cds, max_components = 3,
-                       reduction_method = 'UMAP',
-                       umap.metric="cosine",
-                       verbose = F)
-
-cds <- cluster_cells(cds)
- 
-cds <- learn_graph(cds,
-                   verbose = F)
-
- cds <- order_cells(cds,
-                   root_pr_nodes =
-                     get_correct_root_state(cds,
-                                            cell_phenotype = 'cell_type2',
-                                            "Multipotent progenitors"))
-
-```
-
-
-```{r}
-pr_graph_test <- graph_test(cds, k=3, cores=1)
 ```

@@ -82,6 +82,23 @@ test_that("cluster_cells works", {
   cds <- cluster_cells(cds, reduction_method = "PCA", k=22, weight = T,
                        louvain_iter = 2, partition_qval = .1, resolution = 20)
   expect_equal(length(unique(clusters(cds, reduction_method = "PCA"))), 500)
+
+  cds <- preprocess_cds(cds, method = "LSI")
+  cds <- cluster_cells(cds, reduction_method = "LSI")
+  expect_is(cds@clusters[["LSI"]], "list")
+  expect_equal(length(cds@clusters[["LSI"]]), 3)
+  expect_equal(length(cds@clusters[["LSI"]]$louvain_res$optim_res$membership),
+               nrow(colData(cds)))
+  expect_equal(cds@clusters[["LSI"]]$louvain_res$optim_res$membership[1], 6)
+
+  # non-standard opts
+  cds <- cluster_cells(cds, reduction_method = "LSI", k=22, weight = T,
+                       louvain_iter = 2, partition_qval = .1)
+  expect_is(cds@clusters[["LSI"]], "list")
+  expect_equal(length(cds@clusters[["LSI"]]), 3)
+  expect_equal(length(cds@clusters[["LSI"]]$louvain_res$optim_res$membership),
+               nrow(colData(cds)))
+  expect_equal(cds@clusters[["LSI"]]$louvain_res$optim_res$membership[1], 1)
 })
 
 cds <- load_a549()

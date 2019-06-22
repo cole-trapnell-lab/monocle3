@@ -20,8 +20,8 @@
 #' @param cds the cell_data_set upon which to perform this operation.
 #' @param max_components the dimensionality of the reduced space. Default is 2.
 #' @param reduction_method A character string specifying the algorithm to use
-#'   for dimensionality reduction. Currently "UMAP", "tSNE", and "PCA" are
-#'   supported.
+#'   for dimensionality reduction. Currently "UMAP", "tSNE", "PCA" and "LSI"
+#'   are supported.
 #' @param preprocess_method A string indicating the preprocessing method used
 #'   on the data. Options are "PCA" and "LSI". Default is "LSI".
 #' @param umap.metric A string indicating the distance metric to be used when
@@ -50,7 +50,7 @@
 #' @export
 reduce_dimension <- function(cds,
                              max_components=2,
-                             reduction_method=c("UMAP", 'tSNE', 'PCA'),
+                             reduction_method=c("UMAP", 'tSNE', 'PCA', 'LSI'),
                              preprocess_method=c("PCA", "LSI"),
                              umap.metric = "cosine",
                              umap.min_dist = 0.1,
@@ -65,7 +65,7 @@ reduce_dimension <- function(cds,
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
-    msg = "reduction_method must be one of 'UMAP', 'PCA' or 'tSNE'")
+    msg = "reduction_method must be one of 'UMAP', 'PCA', 'tSNE' or 'LSI'")
 
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(preprocess_method) == "",TRUE, TRUE),
@@ -96,6 +96,19 @@ reduce_dimension <- function(cds,
                                         "reduction_method = 'PCA'."))
   }
 
+  if(reduction_method == "LSI") {
+    assertthat::assert_that(preprocess_method == "LSI",
+                            msg = paste("preprocess_method must be 'LSI' when",
+                                        "reduction_method = 'LSI'"))
+    assertthat::assert_that(!is.null(reducedDims(cds)[["LSI"]]),
+                            msg = paste("When reduction_method = 'LSI', the",
+                                        "cds must have been preprocessed for",
+                                        "LSI. Please run preprocess_cds with",
+                                        "method = 'LSI' before running",
+                                        "reduce_dimension with",
+                                        "reduction_method = 'LSI'."))
+  }
+
   #ensure results from RNG sensitive algorithms are the same on all calls
   set.seed(2016)
 
@@ -109,6 +122,8 @@ reduce_dimension <- function(cds,
 
   if(reduction_method == "PCA") {
     if (verbose) message("Returning preprocessed PCA matrix")
+  } else if(reduction_method == "LSI") {
+    if (verbose) message("Returning preprocessed LSI matrix")
   } else if (reduction_method == "tSNE") {
     if (verbose) message("Reduce dimension by tSNE ...")
 

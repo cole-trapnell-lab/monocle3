@@ -5,7 +5,7 @@
 \title{Plot a dataset and trajectory in 3 dimensions}
 \usage{
 plot_cells_3d(cds, dims = c(1, 2, 3), reduction_method = c("UMAP",
-  "tSNE"), color_cells_by = "cluster", genes = NULL,
+  "tSNE", "PCA", "LSI"), color_cells_by = "cluster", genes = NULL,
   show_trajectory_graph = TRUE, trajectory_graph_color = "black",
   trajectory_graph_segment_size = 5, norm_method = c("log",
   "size_only"), cell_size = 25, alpha = 1, min_expr = 0.1)

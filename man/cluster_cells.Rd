@@ -4,15 +4,15 @@
 \alias{cluster_cells}
 \title{Cluster cells using Louvain community detection}
 \usage{
-cluster_cells(cds, reduction_method = c("UMAP", "tSNE", "PCA"), k = 20,
-  louvain_iter = 1, partition_qval = 0.05, weight = FALSE,
+cluster_cells(cds, reduction_method = c("UMAP", "tSNE", "PCA", "LSI"),
+  k = 20, louvain_iter = 1, partition_qval = 0.05, weight = FALSE,
   resolution = NULL, random_seed = 0L, verbose = F, ...)
 }
 \arguments{
 \item{cds}{The cell_data_set upon which to perform clustering.}
 
 \item{reduction_method}{The dimensionality reduction method upon which to
-base clustering. Options are "UMAP", "tSNE" and "PCA".}
+base clustering. Options are "UMAP", "tSNE", "PCA" and "LSI".}
 
 \item{k}{Integer number of nearest neighbors to use when creating the k
 nearest neighbor graph for Louvain clustering. k is related to the
