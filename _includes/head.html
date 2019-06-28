@@ -6,8 +6,7 @@
     <title>{% if page.title %}{{ page.title | escape }}{% else %}{{ site.title | escape }}{% endif %}</title>
     <meta name="description" content="{{ page.excerpt | default: site.description | strip_html | normalize_whitespace | truncate: 160 | escape }}">
  
-    <!--<link rel="shortcut icon" type="image/png" href="{{site.baseurl}}/images/favicon.png"/>-->
- 
+<link rel="shortcut icon" type="image/png" href="{{site.baseurl}}/images/favicon.png"/> 
    <link rel="stylesheet" href="{{ "/css/main.css" | relative_url }}">
    <link rel="stylesheet" href="{{site.baseurl}}/node_modules/prismjs/themes/base16-atelierlakeside.light.css" />
    <link rel="stylesheet" href="https://cdn.rawgit.com/afeld/bootstrap-toc/v0.4.1/dist/bootstrap-toc.min.css">
