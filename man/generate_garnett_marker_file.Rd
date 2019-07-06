@@ -5,7 +5,7 @@
 \title{Generate a Garnett marker file from top_markers output.}
 \usage{
 generate_garnett_marker_file(marker_test_res, file = "./marker_file.txt",
-  max_genes_per_group = 10)
+  max_genes_per_group = 10, remove_duplicate_genes = FALSE)
 }
 \arguments{
 \item{marker_test_res}{Tibble of top markers, output of
@@ -16,6 +16,10 @@ generate_garnett_marker_file(marker_test_res, file = "./marker_file.txt",
 
 \item{max_genes_per_group}{Numeric, the maximum number of genes to output
 per cell type entry. Default is 10.}
+
+\item{remove_duplicate_genes}{Logical indicating whether marker genes that
+mark multiple cell groups should be excluded. Default is FALSE. When
+FALSE, a message will be emitted when duplicates are present.}
 }
 \value{
 None, marker file is written to \code{file} parameter location.

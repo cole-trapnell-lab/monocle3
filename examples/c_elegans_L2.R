@@ -35,7 +35,7 @@ cds = preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ plate")
 cds = reduce_dimension(cds, umap.fast_sgd=FALSE, cores=1)
 plot_cells(cds, color_cells_by="plate", label_cell_groups=FALSE) + ggsave("L2_umap_corrected_plate.png", width=5, height=4, dpi = 600)
 
-# exmaple of using t-SNE:
+# example of using t-SNE:
 cds = reduce_dimension(cds, reduction_method="tSNE")
 plot_cells(cds, reduction_method="tSNE", color_cells_by="cao_cell_type") + ggsave("L2_tsne_corrected_cao_type.png", width=5, height=4, dpi = 600)
 
@@ -205,8 +205,8 @@ garnett_markers = assigned_type_marker_test_res %>%
     filter(marker_test_q_value < 0.01 & specificity >= 0.5) %>%
     group_by(cell_group) %>%
     top_n(5, marker_score)
-garnett_markers = garnett_markers %>% group_by(gene_short_name) %>% 
-    filter(n() == 1) 
+garnett_markers = garnett_markers %>% group_by(gene_short_name) %>%
+    filter(n() == 1)
 
 plot_genes_by_group(cds,
                     unique(as.character(garnett_markers$gene_id)),
@@ -234,8 +234,8 @@ cds = classify_cells(cds, worm_classifier,
                            cluster_extend = TRUE,
                            cds_gene_id_type = "ENSEMBL")
 
-plot_cells(cds, 
-           group_cells_by="partition", 
+plot_cells(cds,
+           group_cells_by="partition",
            color_cells_by="cluster_ext_type") + ggsave("L2_umap_corrected_garnett_ext_type_our_annotations.png", width=5, height=4, dpi = 600)
 
 # Plot the overlap between clusters and annotated cell types:
@@ -250,8 +250,8 @@ cds = classify_cells(cds, ceWhole,
                            cluster_extend = TRUE,
                            cds_gene_id_type = "ENSEMBL")
 
-plot_cells(cds, 
-           group_cells_by="cluster", 
+plot_cells(cds,
+           group_cells_by="cluster",
            color_cells_by="cluster_ext_type") + ggsave("L2_umap_corrected_garnett_ext_type_cao_annoutations.png", width=5, height=4, dpi = 600)
 
 # Plot the overlap between clusters and annotated cell types:

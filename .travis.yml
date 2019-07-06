@@ -4,6 +4,7 @@ warnings_are_errors: true
 language: r
 before_install:
   - sudo apt-get install -y libudunits2-dev
+  - sudo apt-get install -y gdal-bin
 r:
 - bioc-devel
 - bioc-release
