@@ -160,7 +160,7 @@ cluster_cells <- function(cds,
 #'   from the Louvain function
 #' @encoding UTF-8
 #'
-louvain_R <- function(X, python_home = system('which python', intern = TRUE),
+louvain_R <- function(X, python_home = Sys.which('python'),
                       partition_method = 'CPMVertexPartition',
                       initial_membership = NULL,
                       weights = NULL,

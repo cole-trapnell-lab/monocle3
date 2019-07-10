@@ -5,7 +5,7 @@
 \alias{louvain_R}
 \title{Cluster cells based on Louvain community detection algorithm.}
 \usage{
-louvain_R(X, python_home = system("which python", intern = TRUE),
+louvain_R(X, python_home = Sys.which("python"),
   partition_method = "CPMVertexPartition", initial_membership = NULL,
   weights = NULL, res = 0.6, node_sizes = NULL, random_seed = 0L,
   verbose = FALSE, return_all = FALSE)
