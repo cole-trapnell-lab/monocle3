@@ -213,6 +213,10 @@ pr_test_res <- graph_test(cds,  neighbor_graph="principal_graph", cores=4)
 pr_deg_ids <- row.names(subset(pr_test_res, q_value < 0.05))
 {% endhighlight %}
 
+<form action="{{site.baseurl}}/getting_started/">
+  <input type="submit" value="Test 1"></input>
+</form>
+
 <h2>Getting started with Monocle 3</h2>
 
 Monocle 3 takes as input cell by gene expression matrix. Monocle 3 is designed
@@ -339,9 +343,9 @@ available memeory.
 </div>
 </p>
 
-Monocle's sparse matrix support is provided by the <code>Matrix</code> package.
+<p> Monocle's sparse matrix support is provided by the <code>Matrix</code> package.
 Other sparse matrix packages, such as <code>slam</code> or
-<code>SparseM</code> are not supported.
+<code>SparseM</code> are not supported. </p>
 
 <h2>Clustering and classifying your cells</h2>
 
@@ -1151,7 +1155,7 @@ cds_3d = order_cells(cds_3d, root_pr_nodes=get_earliest_principal_node(cds))
 cds_3d_plot_obj = plot_cells_3d(cds_3d, color_cells_by="partition")
 {% endhighlight %}
 
-<strong>XXX PUT 3D PLOT BACK!!</strong>
+<p><strong>XXX PUT 3D PLOT BACK!!</strong></p>
 
 <!-- <iframe src="{{site.baseurl}}/images/manual_images/emb_3d_by_partition.html"
   height="600" width="100%"
@@ -1159,7 +1163,6 @@ cds_3d_plot_obj = plot_cells_3d(cds_3d, color_cells_by="partition")
   frameBorder="0">
 </iframe>
  -->
-
 
 <h2>Differential expression analysis </h2>
 Differential gene expression analysis is a common task in RNA-Seq experiments.  Monocle can help you find genes that are differentially expressed between groups of cells and assesses the statistical signficance of those changes. Monocle 3 includes a powerful system for finding genes that vary across cells of different types, were collected at different developmental time points, or that have been perturbed in different ways.
@@ -1780,6 +1783,7 @@ plot_cells(cds_subset,
 <div class= "text-center">
   <img src= "{{site.baseurl}}/images/manual_images/embryo_umap_AFD_modules.png" width= 760>
 </div>
+
 
 <h2>Major updates in Monocle 3</h2>
 

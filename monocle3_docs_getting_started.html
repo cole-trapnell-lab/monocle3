@@ -1,0 +1,162 @@
+---
+permalink: /getting_started/
+sidemenu: true
+description: "Documentation for Monocle 3, getting started section."
+modified: 2019-06-07
+tags: [monocle, manual, vignette]
+---
+
+<div class= "container">
+<div class= "row">
+<div class= "col-sm-4">
+  <nav id= "toc" data-spy= "affix" data-toggle= "toc"></nav>
+</div>
+<!-- main content area -->
+<div class= "col-sm-8">
+
+<div class="btn-group">
+  <button onClick="window.location.href = '{{site.baseurl}}/getting_started/';">Getting Started</button>
+  <button onClick="window.location.href = '{{site.baseurl}}/cluster/';">Clustering</button>
+  <button onClick="window.location.href = '{{site.baseurl}}/trajectory/';">Constructing Trajectories</button>
+  <button onClick="window.location.href = '{{site.baseurl}}/differential_expression_analysis/';">Differential Expression Analysis</button>
+  <button onClick="window.location.href = '{{site.baseurl}}/end/';">Citations</button>
+</div>
+
+<h2>Getting started with Monocle 3</h2>
+
+Monocle 3 takes as input cell by gene expression matrix. Monocle 3 is designed
+for use with absolute transcript counts (e.g. from UMI experiments). Monocle 3
+works "out-of-the-box" with the transcript count matrices produced by
+<a href= "https://support.10xgenomics.com/single-cell/software/overview/welcome">Cell Ranger</a>,
+the software pipeline for analyzing experiments from the 10X Genomics Chromium
+instrument. Monocle 3 also works well with data from other RNA-Seq workflows
+such as <a href= "https://science.sciencemag.org/content/357/6352/661">sci-RNA-Seq</a>
+and instruments like the Biorad ddSEQ.
+
+<h3>The cell_data_set class</h3>
+
+Monocle holds single-cell expression data in objects of the
+<code>cell_data_set</code> class. The class is derived from the Bioconductor
+<code><a href="http://bioconductor.org/packages/release/bioc/html/SingleCellExperiment.html">SingleCellExperiment</a></code> class,
+which provides a common interface familiar to those who have analyzed other
+single-cell experiments with Bioconductor. The class requires three input files:
+<p>
+<ul>
+<li> <code>expression_matrix</code>, a numeric matrix of expression values,
+  where rows are genes, and columns are cells </li>
+<li> <code>cell_metadata</code>, a data frame, where rows are cells, and
+  columns are cell attributes (such as cell type, culture condition, day
+  captured, etc.)</li>
+<li> <code>gene_metadata</code>, an data frame, where rows are features (e.g.
+  genes), and columns are gene attributes, such as biotype, gc content,
+  etc.</li>
+</ul>
+</p>
+<p>
+<div class= "panel panel-warning">
+<div class= "panel-heading">
+
+<h3 class= "panel-title" data-toc-skip>Required dimensions for input files</h3>
+
+</div>
+<div class= "panel-body">
+The expression value matrix <strong>must</strong>:
+<ul>
+<li>have the same number of columns as the <code>cell_metadata</code> has
+  rows.</li>
+<li>have the same number of rows as the <code>gene_metadata</code> has
+  rows.</li>
+</ul>
+Additionally:
+<ul>
+<li>row names of the <code>cell_metadata</code> object should match the column
+  names of the expression matrix. </li>
+<li>row names of the <code>gene_metadata</code> object should match row names
+  of the expression matrix.</li>
+<li> one of the columns of the <code>gene_metadata</code> should be named
+  "gene_short_name", which represents the gene symbol or simple name (generally
+  used for plotting) for each gene.</li>
+</ul>
+
+</div>
+</div>
+<h3>Generate a cell_data_set</h3>
+
+<p>You can create a new <code>cell_data_set</code> (CDS) object as follows:</p>
+
+<p>
+{% highlight R %}
+# Load the data
+expression_matrix <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_expression.rds"))
+cell_metadata <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_colData.rds"))
+gene_annotation <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_rowData.rds"))
+
+# Make the CDS object
+cds <- new_cell_data_set(expression_matrix,
+                                   cell_metadata = cell_metadata,
+                                   gene_metadata = gene_annotation)
+{% endhighlight %}
+</p>
+
+<h3>Generate a cell_data_set from 10X output</h3>
+<p>To input data from 10X Genomics Cell Ranger, you can use the
+  <code>load_cellranger_data</code> function:</p>
+
+{% highlight R %}
+# Provide the path to the Cell Ranger output.
+cds <- load_cellranger_data("~/Downloads/10x_data")
+{% endhighlight %}
+
+
+<h3 data-toc-text= "Working with large data sets">Working with large data sets</h3>
+
+<p> Some single-cell RNA-Seq experiments report measurements from tens of
+  thousands of cells or more. As instrumentation improves and costs drop,
+  experiments will become ever larger and more complex, with many conditions,
+  controls, and replicates. A matrix of expression data with 50,000 cells and a
+  measurement for each of the 25,000+ genes in the human genome can take up a
+  lot of memory. However, because current protocols typically don't capture all
+  or even most of the mRNA molecules in each cell, many of the entries of
+  expression matrices are zero. Using <i>sparse matrices</i> can help you work
+  with huge datasets on a typical computer. We generally recommend the use of
+  sparse matrices for most users, as it speeds up many computations even for
+  more modestly sized datasets. </p>
+
+<p> To work with your data in a sparse format, simply provide it to Monocle 3
+  as a sparse matrix from the <code>Matrix</code> package: </p>
+
+<p>
+{% highlight R %}
+cds <- new_cell_data_set(as(umi_matrix, "sparseMatrix"),
+      cell_metadata = cell_metadata,
+      gene_metadata = gene_metadata)
+{% endhighlight %}
+</p>
+
+<p>
+<div class= "panel panel-warning">
+<div class= "panel-heading">
+<h3 class= "panel-title" data-toc-skip>Don't accidentally convert to a dense expression matrix</h3>
+</div>
+<div class= "panel-body">
+The output from a number of RNA-Seq pipelines, including Cell Ranger, is
+already in a sparseMatrix format (e.g. MTX). If so, you should just pass it
+directly to <code>new_cell_data_set</code> without first converting it to a
+dense matrix (via <code>as.matrix()</code>, because that may exceed your
+available memeory.
+</div>
+</div>
+</p>
+
+<p> Monocle's sparse matrix support is provided by the <code>Matrix</code> package.
+Other sparse matrix packages, such as <code>slam</code> or
+<code>SparseM</code> are not supported. </p>
+
+<div class="btn-toolbar">
+  <button class="button first-button" onClick="window.location.href = '{{site.baseurl}}/cluster/';">Next &raquo;</button>
+</div>
+
+
+</div>
+</div>
+</div>

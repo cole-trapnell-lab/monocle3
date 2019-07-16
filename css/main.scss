@@ -85,7 +85,7 @@ footer {
     width: 100%;
 }
 .jumbotron
-{   
+{
     padding-top: 80px;
     padding-bottom:0px;
     background-size: cover;
@@ -95,4 +95,83 @@ footer {
                    /* you have something in your div with height */
                    /* so you can see your image */
     /*max-width:1400px;   define the max width */
+ }
+
+ .btn-toolbar {
+   //white-space: normal;
+   display: flex;
+ }
+
+
+ /*.btn-toolbar button {
+   background-color: #2D3E50;
+   border: 1px solid white;
+   color: white;
+   margin-left: 4px;
+   margin-right: 490px;
+   margin-top: 1%;
+   padding: 18px 36px;
+   // display: flex;
+   cursor: pointer;
+   font-size: 18px
+ } */
+
+ .btn-group button {
+    background-color: #4CAF50; /* Green background */
+    border: 1px solid green; /* Green border */
+    color: white; /* White text */
+    padding: 10px 12px; /* Some padding */
+    cursor: pointer; /* Pointer/hand icon */
+    float: left; /* Float the buttons side by side */
+  }
+
+  .btn-group button:not(:last-child) {
+    border-right: none; /* Prevent double borders */
+  }
+
+  .btn-group:after {
+    content: "";
+    clear: both;
+    display: table;
+  }
+
+  .btn-group button:hover {
+    background-color: #3e8e41;
+  }
+
+ .btn-toolbar button {
+   background-color: #2D3E50;
+   border: 1px solid white;
+   color: white;
+   margin-top: 1%;
+   padding: 18px 60px;
+   white-space: nowrap;
+   text-align: center;
+   // display: flex;
+   cursor: pointer;
+   font-size: 18px
+ }
+
+ .first-button {
+   margin-left: 590px;
+ }
+
+ // 4px, 490px
+ .other-button {
+   margin-left: 4px;
+   margin-right: 370px;
+ }
+
+ .btn-group button:not(:last-child) {
+  border-right: none; /* Prevent double borders */
+}
+
+.btn-group:after {
+ content: "";
+ clear: both;
+ display: table;
+}
+
+ .btn-toolbar button:hover {
+   background-color: #51657A;
  }
