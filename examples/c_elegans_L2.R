@@ -291,6 +291,12 @@ plot_cells(neurons_cds,
            color_cells_by="partition",
            show_trajectory_graph=FALSE) + ggsave("L2_umap_neurons_selected_modules.png", width=5, height=4, dpi = 600)
 
+### Alternative clustering in PCA space:
+cds_pca_clust = cluster_cells(cds, reduction_method="PCA", resolution=c(10^seq(-6,-1)))
+plot_cells(cds_pca_clust, reduction_method="PCA") + ggsave("L2_umap_color_cells_by_cluster_in_pca_space.png", width=5, height=4, dpi = 600)
+plot_cells(cds_pca_clust, reduction_method="PCA", color_cells_by="partition", group_cells_by="partition") + ggsave("L2_umap_color_cells_by_partition_in_pca_space.png", width=5, height=4, dpi = 600)
+
+
 
 # ########
 # # Look at a specific set of clusters
