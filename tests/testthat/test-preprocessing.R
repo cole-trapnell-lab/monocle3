@@ -106,9 +106,11 @@ make_fake_batched_cds <- function(){
                    batch_2_coldata_type_C)
 
   batched_cds = suppressWarnings(new_cell_data_set(expr_data, col_data))
+  return (batched_cds)
 }
 
 test_that("Alignment works on synthetic data", {
+  batched_cds = make_fake_batched_cds()
   batched_cds = preprocess_cds(batched_cds, num_dim=2)
   batched_cds = cluster_cells(batched_cds, k=30, reduction_method="PCA", resolution=1e-6)
   #plot_cells(batched_cds, reduction_method="PCA", color_cells_by="cluster")
