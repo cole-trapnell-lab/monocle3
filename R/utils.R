@@ -569,3 +569,135 @@ load_mtx_data <- function(mat_path,
   cds <- cds[,colData(cds)$n.umi >= umi_cutoff]
   return(cds)
 }
+
+
+#' Combine a list of cell_data_set objects
+#'
+#' This function will combine a list of cell_data_set objects into a new
+#' cell_data_set object.
+#'
+#' @param cds_list List of cds objects to be combined.
+#' @param keep_all_genes Logical indicating what to do if there is a mismatch
+#'   in the gene sets of the CDSs. If TRUE, all genes are kept and cells from
+#'   CDSs missing a given gene will be filled in with zeroes. If FALSE, only
+#'   the genes in common among all of the CDSs will be kept. Default is TRUE.
+#' @param cell_names_unique Logical indicating whether all of the cell IDs
+#'   across all of the CDSs are unique. If FALSE, the CDS name is appended to
+#'   each cell ID to prevent collisions. Default is FALSE.
+#'
+#' @return A combined cell_data_set object.
+#' @export
+#'
+combine_cds <- function(cds_list,
+                        keep_all_genes = TRUE,
+                        cell_names_unique = FALSE) {
+
+  assertthat::assert_that(is.list(cds_list),
+                          msg=paste("cds_list must be a list."))
+
+  assertthat::assert_that(all(sapply(cds_list, class) == "cell_data_set"),
+                          msg=paste("All members of cds_list must be",
+                                    "cell_data_set class."))
+
+  if(length(cds_list) == 1) return(cds_list[[1]])
+
+  assertthat::assert_that(is.logical(keep_all_genes))
+  assertthat::assert_that(is.logical(cell_names_unique))
+
+  list_named <- TRUE
+  if(is.null(names(cds_list))) {
+    list_named <- FALSE
+  }
+
+  exprs_list <- list()
+  fd_list <- list()
+  pd_list <- list()
+  gene_list <- c()
+  overlap_list <- c(row.names(fData(cds_list[[1]])))
+  pdata_cols <- c()
+  fdata_cols <- c()
+  all_cells <- c()
+
+  for(cds in cds_list) {
+    gene_list <-  c(gene_list, row.names(fData(cds)))
+    overlap_list <- intersect(overlap_list, row.names(fData(cds)))
+    if (!keep_all_genes) {
+      gene_list <- overlap_list
+    }
+
+    pdata_cols <- c(pdata_cols, names(pData(cds)))
+    fdata_cols <- c(fdata_cols, names(fData(cds)))
+    all_cells <- c(all_cells, row.names(pData(cds)))
+  }
+
+  gene_list <- unique(gene_list)
+  if(length(overlap_list) == 0) {
+    if (keep_all_genes) {
+      warning(paste("No genes are shared amongst all the CDS objects."))
+    } else {
+      stop(paste("No genes are shared amongst all the CDS objects. To generate",
+                 "a combined CDS with all genes, use keep_all_genes = TRUE"))
+    }
+  }
+  pdata_cols <- unique(pdata_cols)
+  fdata_cols <- unique(fdata_cols)
+  if (sum(duplicated(all_cells)) != 0 & cell_names_unique) {
+    stop(paste("Cell names are not unique across CDSs - cell_names_unique",
+               "must be TRUE."))
+  }
+  all_cells <- unique(all_cells)
+  for(i in 1:length(cds_list)) {
+    pd <- as.data.frame(pData(cds_list[[i]]))
+    exp <- exprs(cds_list[[i]])
+    exp <- exp[intersect(row.names(exp), gene_list),]
+    if (!cell_names_unique) {
+      if(list_named) {
+        row.names(pd) <- paste(row.names(pd), names(cds_list)[[i]], sep="_")
+        pd$sample <- names(cds_list)[[i]]
+      } else {
+        row.names(pd) <- paste(row.names(pd), i, sep="_")
+        pd$sample <- i
+      }
+      colnames(exp) <- row.names(pd)
+    }
+    not_in <- pdata_cols[!pdata_cols %in% names(pd)]
+    for (n in not_in) {
+      pd[,n] <- NA
+    }
+
+    fd <- as.data.frame(fData(cds_list[[i]]))
+    fd <- fd[intersect(row.names(fd), gene_list),]
+    not_in <- fdata_cols[!fdata_cols %in% names(fd)]
+    for (n in not_in) {
+      fd[,n] <- NA
+    }
+    not_in_g <- gene_list[!gene_list %in% row.names(fd)]
+    for (n in not_in_g) {
+      fd[n,] <- NA
+    }
+    if (length(not_in_g) > 0) {
+      extra_rows <- Matrix::Matrix(0, ncol=ncol(exp),
+                                   sparse=TRUE,
+                                   nrow=length(not_in_g))
+      row.names(extra_rows) <- not_in_g
+      colnames(extra_rows) <- colnames(exp)
+      exp <- rbind(exp, extra_rows)
+    }
+
+
+    exprs_list[[i]] <- exp
+    fd_list[[i]] <- fd
+    pd_list[[i]] <- pd
+
+  }
+
+  all_fd <- do.call(cbind, fd_list)
+  all_fd <- all_fd[,fdata_cols]
+  all_pd <- do.call(rbind, pd_list)
+  all_exp <- do.call(cbind, exprs_list)
+
+  all_exp <- all_exp[row.names(all_fd), row.names(all_pd)]
+
+
+  new_cell_data_set(all_exp, cell_metadata = all_pd, gene_metadata = all_fd)
+}

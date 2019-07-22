@@ -338,24 +338,55 @@ test_marker_for_cell_group = function(gene_id, cell_group, cell_group_df, cds,
 #'   "./marker_file.txt".
 #' @param max_genes_per_group Numeric, the maximum number of genes to output
 #'   per cell type entry. Default is 10.
+#' @param remove_duplicate_genes Logical indicating whether marker genes that
+#'   mark multiple cell groups should be excluded. Default is FALSE. When
+#'   FALSE, a message will be emitted when duplicates are present.
 #'
 #' @return None, marker file is written to \code{file} parameter location.
 #' @export
 #'
 generate_garnett_marker_file <- function(marker_test_res,
                                          file = "./marker_file.txt",
-                                         max_genes_per_group = 10) {
+                                         max_genes_per_group = 10,
+                                         remove_duplicate_genes = FALSE) {
   marker_test_res <- as.data.frame(marker_test_res)
   if(is.null(marker_test_res$group_name)) {
     marker_test_res$group_name <- paste("Cell type", marker_test_res$cell_group)
   }
   group_list <- unique(marker_test_res$group_name)
 
-  #good_markers <- marker_test_res[marker_test_res$marker_test_q_value <= qval_cutoff,]
-  good_markers = marker_test_res %>% dplyr::group_by(group_name) %>% dplyr::top_n(max_genes_per_group, marker_score)
+  good_markers <- marker_test_res %>% dplyr::group_by(group_name) %>%
+    dplyr::top_n(max_genes_per_group, marker_score)
+
+  dups <- good_markers$gene_id[duplicated(good_markers$gene_id)]
+
+  if ("gene_short_name" %in% colnames(good_markers)) {
+    dups_gsn <- good_markers$gene_short_name[duplicated(good_markers$gene_short_name)]
+  }
 
 
-  #good_markers = good_markers %>% dplyr::ungr
+  if(remove_duplicate_genes) {
+    good_markers <- good_markers[!good_markers$gene_id %in% dups,]
+  } else {
+    if (length(dups) > 0) {
+      if("gene_short_name" %in% colnames(good_markers)) {
+        message(paste("The following marker genes mark multiple cell groups.",
+                      "Prior to using Garnett, we recommend either excluding",
+                      "these genes using remove_duplicate_genes = TRUE, or",
+                      "modifying your marker file to make the cell types with",
+                      "the shared marker subtypes in a hierarchy.",
+                      paste(dups_gsn, collapse = ", ")))
+      } else {
+        message(paste("The following marker genes mark multiple cell groups.",
+                      "Prior to using Garnett, we recommend either excluding",
+                      "these genes using remove_duplicate_genes = TRUE, or",
+                      "modifying your marker file to make the cell types with",
+                      "the shared marker subtypes in a hierarchy.",
+                      paste(dups, collapse = ", ")))
+      }
+    }
+  }
+
   output <- list()
 
   for (group in group_list) {
