@@ -111,9 +111,9 @@ make_fake_batched_cds <- function(){
 
 test_that("Alignment works on synthetic data", {
   batched_cds = make_fake_batched_cds()
-  batched_cds = preprocess_cds(batched_cds, num_dim=2)
-  batched_cds = cluster_cells(batched_cds, k=30, reduction_method="PCA", resolution=1e-6)
-  #plot_cells(batched_cds, reduction_method="PCA", color_cells_by="cluster")
+  batched_cds = preprocess_cds(batched_cds, num_dim=3)
+  batched_cds = cluster_cells(batched_cds, reduction_method="PCA", resolution=1e-3)
+  plot_cells(batched_cds, reduction_method="PCA", color_cells_by="partition")
 
   expect_equal(length(unique(clusters(batched_cds, reduction_method="PCA"))), 4)
 
@@ -124,6 +124,13 @@ test_that("Alignment works on synthetic data", {
 
   batched_cds = preprocess_cds(batched_cds, num_dim=2, residual_model_formula_str="~batch")
   batched_cds = cluster_cells(batched_cds, k=30, reduction_method="PCA", resolution=1e-6)
+  plot_cells(batched_cds, reduction_method="PCA", color_cells_by="batch")
+
+  expect_equal(length(unique(clusters(batched_cds, reduction_method="PCA"))), 6)
+
+  batched_cds = preprocess_cds(batched_cds, num_dim=3, alignment_group="batch")
+  batched_cds = cluster_cells(batched_cds, reduction_method="PCA", resolution=1e-3)
+  plot_cells(batched_cds, reduction_method="PCA", color_cells_by="batch")
 
   expect_equal(length(unique(clusters(batched_cds, reduction_method="PCA"))), 6)
 

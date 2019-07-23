@@ -25,7 +25,13 @@
 #'   NULL.
 #' @param residual_model_formula_str NULL or a string model formula specifying
 #'   any effects to subtract from the data before dimensionality reduction.
-#'   Default is NULL.
+#'   Uses a linear model to subtract effects. For non-linear effects, use
+#'   alignment_group. Default is NULL.
+#' @param alignment_group String specifying a column of colData to use for
+#'  aligning groups of cells. The column specified must be a factor.
+#'  Alignment can be used to subtract batch effects in a non-linear way.
+#'  For correcting continuous effects, use residual_model_formula_str.
+#'  Default is NULL.
 #' @param pseudo_count NULL or the amount to increase expression values before
 #'   normalization and dimensionality reduction. If NULL (default), a
 #'   pseudo_count of 1 is added for log normalization and 0 is added for size
@@ -44,6 +50,8 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
                            norm_method = c("log", "size_only"),
                            use_genes = NULL,
                            residual_model_formula_str=NULL,
+                           alignment_group=NULL,
+                           alignment_k=20,
                            pseudo_count=NULL,
                            scaling = TRUE,
                            verbose=FALSE,
@@ -70,6 +78,13 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
   assertthat::assert_that(sum(is.na(size_factors(cds))) == 0,
                           msg = paste("One or more cells has a size factor of",
                                       "NA."))
+
+  if(!is.null(alignment_group)) {
+    assertthat::assert_that(alignment_group %in% colnames(colData(cds)),
+                            msg = "alignment_group must be the name of a column of colData(cds)")
+    assertthat::assert_that(is.factor(colData(cds)[,alignment_group]),
+                            msg = "alignment_group must be a factor")
+  }
 
   method <- match.arg(method)
   norm_method <- match.arg(norm_method)
@@ -130,7 +145,7 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
   row.names(preproc_res) <- colnames(cds)
 
   if (!is.null(residual_model_formula_str)) {
-    if (verbose) message("Removing batch effects")
+    if (verbose) message("Removing residual effects")
     X.model_mat <- Matrix::sparse.model.matrix(
       stats::as.formula(residual_model_formula_str),
       data = colData(cds),
@@ -141,6 +156,30 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
     beta[is.na(beta)] <- 0
     preproc_res <- Matrix::t(as.matrix(Matrix::t(preproc_res)) -
                                  beta %*% Matrix::t(X.model_mat[, -1]))
+  }
+
+  if(!is.null(alignment_group)) {
+    if (verbose) message("Aligning cells from different batches")
+    pca_mat = t(as.matrix(preproc_res))
+
+    # align_group_matrices = split.data.frame(as.data.frame(t(pca_mat)), colData(cds)[,alignment_group])
+    # align_group_matrices = lapply(lapply(align_group_matrices, as.matrix), t)
+    # corrected_PCA = do.call(batchelor::mnnCorrect,
+    #                           c(align_group_matrices,
+    #                             k=alignment_k,
+    #                             cos.norm.in=FALSE,
+    #                             cos.norm.out=FALSE))
+    # for (i in seq(1, length(align_group_matrices))){
+    #   colnames(corrected_PCA$corrected[[i]]) = colnames(align_group_matrices[[i]])
+    #   row.names(corrected_PCA$corrected[[i]]) = row.names(align_group_matrices)
+    # }
+    # corrected_PCA <- t(do.call("cbind", corrected_PCA[["corrected"]]))
+    # corrected_PCA = corrected_PCA[row.names(reducedDims(cds)[["PCA"]]),]
+    corrected_PCA = batchelor::fastMNN(as.matrix(preproc_res), batch=colData(cds)[,alignment_group],
+                                          k=alignment_k,
+                                          cos.norm=FALSE,
+                                          pc.input = TRUE)
+    preproc_res = corrected_PCA$corrected
   }
 
   reducedDims(cds)[[method]] <- as.matrix(preproc_res)

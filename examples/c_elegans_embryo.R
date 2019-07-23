@@ -235,6 +235,6 @@ cds_3d = cluster_cells(cds_3d)
 cds_3d = learn_graph(cds_3d)
 cds_3d = order_cells(cds_3d, root_pr_nodes=get_earliest_principal_node(cds))
 
-cds_3d_plot_obj = plot_cells_3d(cds_3d, color_cells_by="partition")
+cds_3d_plot_obj = plot_cells_3d(cds_3d, color_cells_by="cell.type")
 
 htmlwidgets::saveWidget(cds_3d_plot_obj, "emb_3d_by_partition.html")
