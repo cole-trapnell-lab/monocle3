@@ -52,7 +52,7 @@
 #' @export
 
 cluster_cells <- function(cds,
-                          reduction_method = c("UMAP", "tSNE", "PCA", "LSI"),
+                          reduction_method = c("UMAP", "tSNE", "PCA", "LSI", "Aligned"),
                           k = 20,
                           louvain_iter = 1,
                           partition_qval = 0.05,

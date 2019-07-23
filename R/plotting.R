@@ -45,7 +45,7 @@ monocle_theme_opts <- function()
 #' @export
 plot_cells_3d <- function(cds,
                            dims = c(1,2,3),
-                           reduction_method = c("UMAP", "tSNE", "PCA", "LSI"),
+                           reduction_method = c("UMAP", "tSNE", "PCA", "LSI", "Aligned"),
                            color_cells_by="cluster",
                            #group_cells_by=c("cluster", "partition"), #
                            genes=NULL,
@@ -348,7 +348,7 @@ plot_cells_3d <- function(cds,
 plot_cells <- function(cds,
                        x=1,
                        y=2,
-                       reduction_method = c("UMAP", "tSNE", "PCA", "LSI"),
+                       reduction_method = c("UMAP", "tSNE", "PCA", "LSI", "Aligned"),
                        color_cells_by="cluster",
                        group_cells_by=c("cluster", "partition"),
                        genes=NULL,
