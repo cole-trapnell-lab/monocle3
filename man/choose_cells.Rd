@@ -4,7 +4,7 @@
 \alias{choose_cells}
 \title{Choose cells interactively to subset a cds}
 \usage{
-choose_cells(cds, reduction_method = c("UMAP", "tSNE", "PCA"),
+choose_cells(cds, reduction_method = c("UMAP", "tSNE", "PCA", "Aligned"),
   return_list = FALSE)
 }
 \arguments{

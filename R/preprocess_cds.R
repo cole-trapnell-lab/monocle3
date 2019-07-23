@@ -51,7 +51,6 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
                            use_genes = NULL,
                            residual_model_formula_str=NULL,
                            alignment_group=NULL,
-                           alignment_k=20,
                            pseudo_count=NULL,
                            scaling = TRUE,
                            verbose=FALSE,
@@ -143,44 +142,6 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
   }
 
   row.names(preproc_res) <- colnames(cds)
-
-  if (!is.null(residual_model_formula_str)) {
-    if (verbose) message("Removing residual effects")
-    X.model_mat <- Matrix::sparse.model.matrix(
-      stats::as.formula(residual_model_formula_str),
-      data = colData(cds),
-      drop.unused.levels = TRUE)
-
-    fit <- limma::lmFit(Matrix::t(preproc_res), X.model_mat, ...)
-    beta <- fit$coefficients[, -1, drop = FALSE]
-    beta[is.na(beta)] <- 0
-    preproc_res <- Matrix::t(as.matrix(Matrix::t(preproc_res)) -
-                                 beta %*% Matrix::t(X.model_mat[, -1]))
-  }
-
-  if(!is.null(alignment_group)) {
-    if (verbose) message("Aligning cells from different batches")
-    pca_mat = t(as.matrix(preproc_res))
-
-    # align_group_matrices = split.data.frame(as.data.frame(t(pca_mat)), colData(cds)[,alignment_group])
-    # align_group_matrices = lapply(lapply(align_group_matrices, as.matrix), t)
-    # corrected_PCA = do.call(batchelor::mnnCorrect,
-    #                           c(align_group_matrices,
-    #                             k=alignment_k,
-    #                             cos.norm.in=FALSE,
-    #                             cos.norm.out=FALSE))
-    # for (i in seq(1, length(align_group_matrices))){
-    #   colnames(corrected_PCA$corrected[[i]]) = colnames(align_group_matrices[[i]])
-    #   row.names(corrected_PCA$corrected[[i]]) = row.names(align_group_matrices)
-    # }
-    # corrected_PCA <- t(do.call("cbind", corrected_PCA[["corrected"]]))
-    # corrected_PCA = corrected_PCA[row.names(reducedDims(cds)[["PCA"]]),]
-    corrected_PCA = batchelor::fastMNN(as.matrix(preproc_res), batch=colData(cds)[,alignment_group],
-                                          k=alignment_k,
-                                          cos.norm=FALSE,
-                                          pc.input = TRUE)
-    preproc_res = corrected_PCA$corrected
-  }
 
   reducedDims(cds)[[method]] <- as.matrix(preproc_res)
 

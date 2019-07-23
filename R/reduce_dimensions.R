@@ -20,7 +20,7 @@
 #' @param cds the cell_data_set upon which to perform this operation.
 #' @param max_components the dimensionality of the reduced space. Default is 2.
 #' @param reduction_method A character string specifying the algorithm to use
-#'   for dimensionality reduction. Currently "UMAP", "tSNE", "PCA" and "LSI"
+#'   for dimensionality reduction. Currently "UMAP", "tSNE", "PCA", "LSI", and "Aligned"
 #'   are supported.
 #' @param preprocess_method A string indicating the preprocessing method used
 #'   on the data. Options are "PCA" and "LSI". Default is "LSI".
@@ -50,8 +50,9 @@
 #' @export
 reduce_dimension <- function(cds,
                              max_components=2,
-                             reduction_method=c("UMAP", 'tSNE', 'PCA', 'LSI'),
-                             preprocess_method=c("PCA", "LSI"),
+                             reduction_method=c("UMAP", "tSNE", "PCA", "LSI", "Aligned"),
+                             #preprocess_method=c("PCA", "LSI", "Aligned"),
+                             preprocess_method=NULL,
                              umap.metric = "cosine",
                              umap.min_dist = 0.1,
                              umap.n_neighbors = 15L,
@@ -65,15 +66,26 @@ reduce_dimension <- function(cds,
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
-    msg = "reduction_method must be one of 'UMAP', 'PCA', 'tSNE' or 'LSI'")
-
-  assertthat::assert_that(
-    tryCatch(expr = ifelse(match.arg(preprocess_method) == "",TRUE, TRUE),
-             error = function(e) FALSE),
-    msg = "preprocess_method must be one of 'PCA' or 'LSI'")
+    msg = "reduction_method must be one of 'UMAP', 'PCA', 'tSNE', 'LSI', 'Aligned'")
 
   reduction_method <- match.arg(reduction_method)
-  preprocess_method <- match.arg(preprocess_method)
+
+  if (is.null(preprocess_method)){
+    if ("Aligned" %in% names(reducedDims(cds))){
+      preprocess_method = "Aligned"
+      message(paste("No preprocess_method specified, and aligned coordinates have been computed previously. Using preprocess_method = 'Aligned'"))
+    }else{
+      preprocess_method = "Aligned"
+      message(paste("No preprocess_method specified, using preprocess_method = 'PCA'"))
+    }
+  }else{
+    assertthat::assert_that(
+      preprocess_method %in% c("PCA", "LSI", "Aligned"),
+      msg = "preprocess_method must be one of 'PCA' or 'LSI'")
+  }
+
+  #preprocess_method <- match.arg(preprocess_method)
+
 
   assertthat::assert_that(assertthat::is.count(max_components))
 
@@ -107,6 +119,18 @@ reduce_dimension <- function(cds,
                                         "method = 'LSI' before running",
                                         "reduce_dimension with",
                                         "reduction_method = 'LSI'."))
+  }
+
+  if(reduction_method == "Aligned") {
+    assertthat::assert_that(preprocess_method == "Aligned",
+                            msg = paste("preprocess_method must be 'Aligned' when",
+                                        "reduction_method = 'Aligned'"))
+    assertthat::assert_that(!is.null(reducedDims(cds)[["Aligned"]]),
+                            msg = paste("When reduction_method = 'Aligned', the",
+                                        "cds must have been aligned.",
+                                        "Please run align_cds before running",
+                                        "reduce_dimension with",
+                                        "reduction_method = 'Aligned'."))
   }
 
   #ensure results from RNG sensitive algorithms are the same on all calls
