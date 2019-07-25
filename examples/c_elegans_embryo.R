@@ -15,7 +15,12 @@ cds <- new_cell_data_set(expression_matrix,
 
 ## Step 1: Normalize and pre-process the data
 #cds <- estimate_size_factors(cds)
-cds <- preprocess_cds(cds, num_dim = 75, residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+cds <- preprocess_cds(cds, num_dim = 100)
+
+## Step 2: Correct for batch effects (optional)
+cds <- align_cds(cds, 
+                 residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading",
+                 alignment_group="batch")
 
 set.seed(42)
 ## Step 2: Reduce the dimensionality of the data
@@ -96,9 +101,9 @@ plot_cells(cds,
 #graph_test(cds_subset)
 
 
-# plot_percent_cells_positive(cds_subset, color_cells_by="cell.type") +
-#     guides(fill=FALSE) +
-#     theme(axis.text.x=element_text(angle=45, hjust=1))
+plot_percent_cells_positive(cds[rowData(cds)$gene_short_name %in% ciliated_genes,], group_cells_by="time.point") +
+    guides(fill=FALSE) +
+    theme(axis.text.x=element_text(angle=45, hjust=1))
 
 # plot_genes_violin(cds[rowData(cds)$gene_short_name %in% ciliated_genes,], color_cells_by="cell.type") +
 #     guides(fill=FALSE) +
@@ -235,6 +240,6 @@ cds_3d = cluster_cells(cds_3d)
 cds_3d = learn_graph(cds_3d)
 cds_3d = order_cells(cds_3d, root_pr_nodes=get_earliest_principal_node(cds))
 
-cds_3d_plot_obj = plot_cells_3d(cds_3d, color_cells_by="cell.type")
+cds_3d_plot_obj = plot_cells_3d(cds_3d, color_cells_by="partition")
 
 htmlwidgets::saveWidget(cds_3d_plot_obj, "emb_3d_by_partition.html")

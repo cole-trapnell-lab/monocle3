@@ -75,7 +75,7 @@ reduce_dimension <- function(cds,
       preprocess_method = "Aligned"
       message(paste("No preprocess_method specified, and aligned coordinates have been computed previously. Using preprocess_method = 'Aligned'"))
     }else{
-      preprocess_method = "Aligned"
+      preprocess_method = "PCA"
       message(paste("No preprocess_method specified, using preprocess_method = 'PCA'"))
     }
   }else{
