@@ -8,7 +8,8 @@ as a barplot}
 plot_percent_cells_positive(cds_subset, group_cells_by = NULL,
   min_expr = 0, nrow = NULL, ncol = 1, panel_order = NULL,
   plot_as_count = FALSE, label_by_short_name = TRUE,
-  normalize = TRUE, plot_limits = NULL)
+  normalize = TRUE, plot_limits = NULL, bootstrap_samples = 100,
+  conf_int_alpha = 0.95)
 }
 \arguments{
 \item{cds_subset}{Subset cell_data_set to be plotted.}
@@ -40,6 +41,12 @@ factor. Default is TRUE.}
 
 \item{plot_limits}{A pair of number specifying the limits of the y axis. If
 \code{NULL}, scale to the range of the data. Example \code{c(0,100)}.}
+
+\item{bootstrap_samples}{The number of bootstrap replicates to generate when
+plotting error bars. Default is 100.}
+
+\item{conf_int_alpha}{The size of the confidence interval to use when plotting
+error bars. Default is 0.95.}
 }
 \value{
 a ggplot2 plot object

@@ -1188,6 +1188,10 @@ plot_genes_violin <- function (cds_subset,
 #'   factor. Default is TRUE.
 #' @param plot_limits A pair of number specifying the limits of the y axis. If
 #'   \code{NULL}, scale to the range of the data. Example \code{c(0,100)}.
+#' @param bootstrap_samples The number of bootstrap replicates to generate when
+#'   plotting error bars. Default is 100.
+#' @param conf_int_alpha The size of the confidence interval to use when plotting
+#'   error bars. Default is 0.95.
 #' @return a ggplot2 plot object
 #' @import ggplot2
 #' @export
@@ -1205,7 +1209,9 @@ plot_percent_cells_positive <- function(cds_subset,
                                         plot_as_count = FALSE,
                                         label_by_short_name=TRUE,
                                         normalize = TRUE,
-                                        plot_limits = NULL){
+                                        plot_limits = NULL,
+                                        bootstrap_samples=100,
+                                        conf_int_alpha = .95){
 
   assertthat::assert_that(methods::is(cds_subset, "cell_data_set"))
 
@@ -1268,23 +1274,53 @@ plot_percent_cells_positive <- function(cds_subset,
     group_cells_by <- "all_cell"
   }
 
+  # marker_counts <-
+  #   plyr::ddply(marker_exprs_melted,
+  #               c("feature_label", group_cells_by),
+  #               function(x) {
+  #                 data.frame(target = sum(x$expression > min_expr),
+  #                            target_fraction = sum(x$expression >
+  #                                                    min_expr)/nrow(x))
+  #               })
+
+  marker_counts_bootstrap = rsample::bootstraps(marker_exprs_melted, times = bootstrap_samples)
+
+  group_mean_bootstrap <- function(split) {
+    rsample::analysis(split) %>%
+      dplyr::group_by_("feature_label", group_cells_by) %>%
+      dplyr::summarize(target = sum(expression > min_expr),
+                       target_fraction = sum(expression > min_expr)/dplyr::n())
+  }
+
   marker_counts <-
-    plyr::ddply(marker_exprs_melted,
-                c("feature_label", group_cells_by),
-                function(x) {
-                  data.frame(target = sum(x$expression > min_expr),
-                             target_fraction = sum(x$expression >
-                                                     min_expr)/nrow(x))
-                })
+    marker_counts_bootstrap %>%
+    dplyr::mutate(summary_stats = purrr::map(splits, group_mean_bootstrap)) %>%
+    tidyr::unnest(summary_stats)
+  marker_counts <- marker_counts %>% dplyr::ungroup() %>%
+    dplyr::group_by_("feature_label", group_cells_by) %>%
+    dplyr::summarize(target_mean = mean(target),
+              target_fraction_mean = mean(target_fraction),
+              target_low = quantile(target, conf_int_alpha / 2),
+              target_high = quantile(target, 1 - conf_int_alpha / 2),
+              target_fraction_low = quantile(target_fraction, (1 - conf_int_alpha) / 2),
+              target_fraction_high = quantile(target_fraction, 1 - (1 - conf_int_alpha) / 2))
+
+
+  # marker_counts <-
+  #   marker_exprs_melted %>% dplyr::group_by_("feature_label", group_cells_by) %>%
+  #   dplyr::summarize(target = sum(expression > min_expr),
+  #             target_fraction = sum(expression > min_expr)/dplyr::n())
 
   if (!plot_as_count){
-    marker_counts$target_fraction <- marker_counts$target_fraction * 100
-    qp <- ggplot(aes_string(x=group_cells_by, y="target_fraction",
+    marker_counts$target_fraction_mean <- marker_counts$target_fraction_mean * 100
+    marker_counts$target_fraction_low <- marker_counts$target_fraction_low * 100
+    marker_counts$target_fraction_high <- marker_counts$target_fraction_high * 100
+    qp <- ggplot(aes_string(x=group_cells_by, y="target_fraction_mean",
                             fill=group_cells_by),
                  data=marker_counts) +
       ylab("Cells (percent)")
   } else {
-    qp <- ggplot(aes_string(x=group_cells_by, y="target", fill=group_cells_by),
+    qp <- ggplot(aes_string(x=group_cells_by, y="target_mean", fill=group_cells_by),
                  data=marker_counts) +
       ylab("Cells")
   }
@@ -1299,7 +1335,10 @@ plot_percent_cells_positive <- function(cds_subset,
   }
 
   qp <- qp + facet_wrap(~feature_label, nrow=nrow, ncol=ncol, scales="free_y")
-  qp <-  qp + geom_bar(stat="identity") + monocle_theme_opts()
+  qp <-  qp +
+    geom_bar(stat="identity") +
+    geom_linerange(aes(ymin=target_fraction_low, ymax=target_fraction_high))+
+    monocle_theme_opts()
 
   return(qp)
 }
