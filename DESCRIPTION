@@ -86,3 +86,5 @@ Suggests:
     spelling
 VignetteBuilder: knitr
 Language: en-US
+Remotes:
+    VPetukhov/ggrastr
