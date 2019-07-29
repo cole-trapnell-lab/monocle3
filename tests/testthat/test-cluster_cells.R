@@ -68,7 +68,7 @@ test_that("cluster_cells works", {
   expect_equal(cds@clusters[["PCA"]]$louvain_res$optim_res$membership[1], 2)
 
   cds <- cluster_cells(cds, reduction_method = "PCA", k=22, weight = T,
-                       louvain_iter = 2, partition_qval = .1, resolution = .1)
+                       louvain_iter = 2, partition_qval = .1, resolution = .88)
   expect_is(cds@clusters[["PCA"]], "list")
   expect_equal(length(cds@clusters[["PCA"]]), 3)
   expect_equal(length(cds@clusters[["PCA"]]$louvain_res$optim_res$membership),
@@ -80,7 +80,7 @@ test_that("cluster_cells works", {
                        louvain_iter = 2, partition_qval = .1, resolution = .01)
   expect_equal(length(unique(clusters(cds, reduction_method = "PCA"))), 1)
   cds <- cluster_cells(cds, reduction_method = "PCA", k=22, weight = T,
-                       louvain_iter = 2, partition_qval = .1, resolution = 20)
+                       louvain_iter = 2, partition_qval = .1, resolution = 100)
   expect_equal(length(unique(clusters(cds, reduction_method = "PCA"))), 500)
 
   cds <- preprocess_cds(cds, method = "LSI")

@@ -6,7 +6,7 @@
 \usage{
 cluster_cells(cds, reduction_method = c("UMAP", "tSNE", "PCA", "LSI"),
   k = 20, louvain_iter = 1, partition_qval = 0.05, weight = FALSE,
-  resolution = NULL, random_seed = 0L, verbose = F, ...)
+  resolution = NULL, random_seed = 1L, verbose = F, ...)
 }
 \arguments{
 \item{cds}{The cell_data_set upon which to perform clustering.}
@@ -40,8 +40,6 @@ larger than 1.}
 
 \item{verbose}{A logic flag to determine whether or not we should print the
 run details.}
-
-\item{...}{Additional arguments passed to louvain-igraph Python package.}
 }
 \value{
 an updated cell_data_set object, with cluster and partition
