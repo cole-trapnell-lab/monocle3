@@ -701,3 +701,22 @@ combine_cds <- function(cds_list,
 
   new_cell_data_set(all_exp, cell_metadata = all_pd, gene_metadata = all_fd)
 }
+
+#' Clear CDS slots
+#'
+#' Function to clear all CDS slots besides colData, rowData and expression data.
+#'
+#' @param cds cell_data_set to be cleared
+#'
+#' @return A cell_data_set with only expression, rowData and colData present.
+#' @export
+#'
+clear_cds_slots <- function(cds) {
+  cds@preprocess_aux <- SimpleList()
+  cds@reduce_dim_aux <- SimpleList()
+  cds@principal_graph_aux <- SimpleList()
+  cds@principal_graph <- SimpleList()
+  cds@clusters <- SimpleList()
+  cds@reducedDims <- SimpleList()
+  cds
+}
