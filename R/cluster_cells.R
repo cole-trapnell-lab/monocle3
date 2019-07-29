@@ -34,7 +34,6 @@
 #'   larger than 1.
 #' @param verbose A logic flag to determine whether or not we should print the
 #'   run details.
-#' @param ... Additional arguments passed to louvain-igraph Python package.
 #'
 #' @return an updated cell_data_set object, with cluster and partition
 #'   information stored internally and accessible using
@@ -58,7 +57,7 @@ cluster_cells <- function(cds,
                           partition_qval = 0.05,
                           weight = FALSE,
                           resolution = NULL,
-                          random_seed = 0L,
+                          random_seed = 1L,
                           verbose = F,
                           ...) {
   method = 'louvain'
@@ -106,121 +105,11 @@ cluster_cells <- function(cds,
     partitions <- rep(1, nrow(colData(cds)))
   }
   clusters <- factor(igraph::membership(louvain_res$optim_res))
+  names(clusters) <- row.names(reduced_dim_res)
   cds@clusters[[reduction_method]] <- list(louvain_res = louvain_res,
                                            partitions = partitions,
                                            clusters = clusters)
   return(cds)
-}
-
-
-
-
-#' Cluster cells based on Louvain community detection algorithm.
-#'
-#' @description This function is a wrapper of the louvain function from the
-#' python package (louvain-igraph, https://github.com/vtraag/louvain-igraph)
-#' The following description is from the original package "This package
-#' implements the Louvain algorithm in C++ and exposes it to python. It relies
-#' on (python-)igraph for it to function. Besides the relative flexibility of
-#' the implementation, it also scales well, and can be run on graphs of
-#' millions of nodes (as long as they can fit in memory). The core function is
-#' find_partition which finds the optimal partition using the Louvain algorithm
-#' for a number of different methods. The methods currently implemented are
-#' (1) modularity, (2) Reichardt and Bornholdt's model using the
-#' configuration null model and the Erdös-Rényi null model, (3) the
-#' constant Potts model (CPM), (4) Significance, and finally (5)
-#' Surprise. In addition, it supports multiplex partition optimization
-#' allowing community detection on for example negative links or multiple
-#' time slices. It also provides some support for community detection on
-#' bipartite graphs. See the documentation for more information." Please see
-#' the github above for the citations. Right now we only support
-#' CPMVertexPartition, RBConfigurationVertexPartition, RBERVertexPartition,
-#' ModularityVertexPartition SignificanceVertexPartition and
-#' SurpriseVertexPartition partition methods.
-#'
-#' @param X the dataset upon which to perform louvain-igraph
-#' @param python_home The python home directory where louvain-igraph is
-#'   installed
-#' @param partition_method character - either the default "CPMVertexPartition"
-#'   or "RBConfigurationVertexPartition" / "RBERVertexPartition".
-#' @param initial_membership (list of int) – Initial membership for the
-#'   partition. If None then defaults to a singleton partition.
-#' @param weights (list of double, or edge attribute) – Weights of edges. Can
-#'   be either an iterable or an edge attribute.
-#' @param res (double) – Resolution parameter.
-#' @param node_sizes  (list of int, or vertex attribute) – Sizes of nodes are
-#'   necessary to know the size of communities in aggregate graphs. Usually
-#'   this is set to 1 for all nodes, but in specific cases this could be
-#'   changed.
-#' @param random_seed the seed used by the random number generator in
-#'   louvain-igraph package
-#' @param verbose boolean (optional, default False)
-#' @param return_all Whether to return all slots after Louvain
-#' @return The cluster id if return_all set to be FALSE, otherwise all slots
-#'   from the Louvain function
-#' @encoding UTF-8
-#'
-louvain_R <- function(X, python_home = system('which python', intern = TRUE),
-                      partition_method = 'CPMVertexPartition',
-                      initial_membership = NULL,
-                      weights = NULL,
-                      res = 0.6,
-                      node_sizes = NULL,
-                      random_seed = 0L,
-                      verbose = FALSE,
-                      return_all = FALSE) {
-
-  reticulate::use_python(python_home)
-
-  tryCatch({
-    reticulate::import("louvain")
-  }, warning = function(w) {
-  }, error = function(e) {
-    print (e)
-    stop(paste("Could not find louvain Python package. Please pass the python",
-               "home directory where louvain is installed with python_home",
-               "argument."))
-  }, finally = {
-  })
-
-  reticulate::source_python(paste(system.file(package="monocle3"),
-                                  "louvain.py", sep="/"))
-  # X <- Matrix::t(X)
-  if(length(grep('Matrix', class(X))) == 0){
-    X <- methods::as(as.matrix(X), 'TsparseMatrix')
-  } else {
-    X <- methods::as(X, 'TsparseMatrix')
-  }
-
-  i <- as.integer(X@i)
-  j <- as.integer(X@j)
-  val <- X@x
-
-  dim <- as.integer(X@Dim)
-
-  if(is.null(partition_method) == F) {
-    partition_method <- as.character(partition_method)
-  }
-  if(!is.null(random_seed)) {
-    random_seed <- as.integer(random_seed)
-  }
-
-  louvain_res <- louvain(i, j, val, dim,
-                         as.character(partition_method),
-                         initial_membership,
-                         weights,
-                         as.numeric(res),
-                         node_sizes,
-                         random_seed,
-                         as.logical(verbose))
-  if(return_all) {
-    return(louvain_res)
-  } else {
-    res = list(membership = louvain_res$membership + 1,
-               modularity = louvain_res$modularity)
-    names(res$membership) = colnames(X)
-    return(res)
-  }
 }
 
 louvain_clustering <- function(data,
@@ -229,7 +118,7 @@ louvain_clustering <- function(data,
                                weight = F,
                                louvain_iter = 1,
                                resolution = NULL,
-                               random_seed = 0L,
+                               random_seed = 1L,
                                verbose = F, ...) {
   extra_arguments <- list(...)
   cell_names <- row.names(pd)
@@ -285,6 +174,7 @@ louvain_clustering <- function(data,
   optim_res <- NULL
   best_max_resolution <- 'No resolution'
 
+  random_seed <- as.numeric(random_seed)
   if(louvain_iter >= 2) {
     random_seed <- NULL
   }
@@ -296,16 +186,11 @@ louvain_clustering <- function(data,
     if(!is.null(resolution)) {
       for(i in 1:length(resolution)) {
         cur_resolution <- resolution[i]
-        louvain_args <- c(list(X = igraph::get.adjacency(g),
-                               res = as.numeric(cur_resolution),
-                               random_seed = random_seed,
-                               verbose = verbose),
-                          extra_arguments[names(extra_arguments) %in%
-                                            c("python_home",
-                                              "partition_method",
-                                              "initial_membership", "weights",
-                                              "node_sizes", 'return_all')])
-        Q <- do.call(louvain_R, louvain_args)
+        Q <- leidenbase::leiden_find_partition(g,
+                                               resolution_parameter = cur_resolution,
+                                               seed = random_seed)
+
+        Q$modularity <- Q$community_modularity
         Qt <- max(Q$modularity)
         if(verbose) {
           message('Current iteration is ', iter, '; current resolution is ',
