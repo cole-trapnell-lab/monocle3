@@ -140,7 +140,7 @@ one way to do a certain step, we've labeled the options as follows:
 </tbody>
 </table> -->
 
-<h3>Workflow steps at a glance</h3>
+<h2>Workflow steps at a glance</h2>
 
 <div class= "text-center">
   <img src= "{{site.baseurl}}/images/monocle3_new_workflow.png" width= 760>
@@ -148,17 +148,13 @@ one way to do a certain step, we've labeled the options as follows:
 
 <p>Below, you can see snippets of code that highlight the main steps of
   Monocle 3. Click on the section headers to jump to the detailed sections
-  describing each one. </p>
+  describing each one and allowing you to try the steps on example data. </p>
 
 <h4><a href="{{ site.baseurl }}/monocle3_docs/#the-cell-data-set-class">Store data in a cell_data_set object</a></h4>
 The first step in working with Monocle 3 is to load up your data into
 Monocle 3's main class, <code><a href = "{{ site.baseurl }}/monocle3_docs/#the-cell-data-set-class">cell_data_set</a></code>:
 
 {% highlight R %}
-expression_matrix <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_expression.rds"))
-cell_metadata <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_colData.rds"))
-gene_annotation <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_rowData.rds"))
-
 cds <- new_cell_data_set(expression_matrix,
                          cell_metadata = cell_metadata,
                          gene_metadata = gene_annotation)
@@ -368,7 +364,6 @@ site.
 You can load the data into Monocle 3 like this:
 
 {% highlight R %}
-### FIXME: Put these files on the web so they're accessible to others:
 expression_matrix <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_expression.rds"))
 cell_metadata <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_colData.rds"))
 gene_annotation <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_rowData.rds"))
@@ -390,7 +385,7 @@ cds <- new_cell_data_set(expression_matrix,
   specify the number of principal components you want Monocle to compute. </p>
 
 {% highlight R %}
-cds = preprocess_cds(cds, num_dim = 100)
+cds <- preprocess_cds(cds, num_dim = 100)
 {% endhighlight %}
 
 <p>It's a good idea to check that you're using enough PCs to capture most of
@@ -406,14 +401,20 @@ plot_pc_variance_explained(cds)
     <img src= "{{site.baseurl}}/images/manual_images/L2_pc_variance_explained.png" width= 450>
 </div>
 <!-- Hannah Marker -->
-<p>We can see that using more than 100 PCs would capture only a small amount of additional variation, and each additional PC makes downstream steps in Monocle slower.</p>
+<p>We can see that using more than 100 PCs would capture only a small amount of additional variation, and each additional 
+  PC makes downstream steps in Monocle slower.</p>
 
 <h3>Reduce dimensionality and visualize the cells</h3>
 
-<p>Now we're ready to visualize the cells. To do so, you can use either <a href="https://en.wikipedia.org/wiki/T-distributed_stochastic_neighbor_embedding">t-SNE</a>, which is very popular in single-cell RNA-seq, or <a href="https://github.com/lmcinnes/umap">UMAP</a>, which is increasingly common. Monocle uses UMAP by default, as we feel that it is both faster and better suited for clustering and trajectory analysis in RNA-seq. To reduce the dimensionality of the data down into the X, Y plane so we can plot it easily, call <code>reduce_dimension()</code>:</p>
+<p>Now we're ready to visualize the cells. To do so, you can use either 
+  <a href="https://en.wikipedia.org/wiki/T-distributed_stochastic_neighbor_embedding">t-SNE</a>, 
+  which is very popular in single-cell RNA-seq, or <a href="https://github.com/lmcinnes/umap">UMAP</a>, 
+  which is increasingly common. Monocle 3 uses UMAP by default, as we feel that it is both faster and better suited for 
+  clustering and trajectory analysis in RNA-seq. To reduce the dimensionality of the data down into the X, Y plane so 
+  we can plot it easily, call <code>reduce_dimension()</code>:</p>
 
 {% highlight R %}
-cds = reduce_dimension(cds)
+cds <- reduce_dimension(cds)
 {% endhighlight %}
 
 <p>To plot the data, use Monocle's main plotting function, <code>plot_cells()</code>:</p>
@@ -426,7 +427,11 @@ plot_cells(cds)
   <img src= "{{site.baseurl}}/images/manual_images/L2_umap_no_color.png" width= 760>
 </div>
 
-<p>Each point in the plot above represents a different cell in the <code>cell_data_set</code> object <code>cds</code></p>. As you can see the cells form many groups, some with thousands of cells, some with only a few. Cao & Packer annotated each cell according to type manually by looking at which genes it expresses. We can color the cells in the UMAP plot by the authors' original annotations using the <code>color_cells_by</code> argument to <code>plot_cells()</code>.
+<p>Each point in the plot above represents a different cell in the <code>cell_data_set</code> 
+  object <code>cds</code></p>. As you can see the cells form many groups, some with thousands of 
+  cells, some with only a few. Cao & Packer annotated each cell according to type manually by looking 
+  at which genes it expresses. We can color the cells in the UMAP plot by the authors' original annotations 
+  using the <code>color_cells_by</code> argument to <code>plot_cells()</code>.
 
 {% highlight R %}
 plot_cells(cds, color_cells_by="cao_cell_type")
@@ -464,7 +469,7 @@ plot_cells(cds, genes=c("cpna-2", "egl-21", "ram-2", "inos-1"))
 
 <p>If you want, you can also use t-SNE to visualize your data. First, call reduce_dimension with <code>reduction_method="tSNE"</code>.</p>
 {% highlight R %}
-cds = reduce_dimension(cds, reduction_method="tSNE")
+cds <- reduce_dimension(cds, reduction_method="tSNE")
 {% endhighlight %}
 
 <p>Then, when you call <code>plot_cells()</code>, pass <code>reduction_method="tSNE"</code> to it as well:</p>
