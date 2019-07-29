@@ -20,7 +20,7 @@ test_that("Cell Ranger 3.0 No Data Fails", {
 test_that("Cell Ranger 2.0 Filtered Data Loading", {
   cds = load_cellranger_data(v2dname)
   expect_equal(as.character(fData(cds)$gene_short_name[1]), "MS4A1")
-  expect_equal(as.character(pData(cds)$barcode[1]), "ATGCCAGAACGACT-1")
+  expect_equal(as.character(pData(cds)$barcode[1]), "GAACCTGATGAACC-1")
   expect_equal(dim(fData(cds)), c(240,2))
   expect_is(cds, "cell_data_set")
 })
@@ -43,7 +43,7 @@ test_that("load_cellranger_matrix on 2.0 raw matrices", {
   unlink(odir, recursive = TRUE)
   unlink(odir2, recursive = TRUE)
   expect_equal(as.character(fData(cds)$gene_short_name[1]), "MS4A1")
-  expect_equal(as.character(pData(cds)$barcode[1]), "ATGCCAGAACGACT-1")
+  expect_equal(as.character(pData(cds)$barcode[1]), "GAACCTGATGAACC-1")
   expect_equal(dim(fData(cds)), c(240,2))
   expect_is(cds, "cell_data_set")
 })
@@ -77,7 +77,7 @@ test_that("load_cellranger_matrix on 3.0 with genome", {
 test_that("Cell Ranger 2.0 Filtered Data Loading with genome", {
   cds = load_cellranger_data(v2dname, genome="hg19")
   expect_equal(as.character(fData(cds)$gene_short_name[1]), "MS4A1")
-  expect_equal(as.character(pData(cds)$barcode[1]), "ATGCCAGAACGACT-1")
+  expect_equal(as.character(pData(cds)$barcode[1]), "GAACCTGATGAACC-1")
   expect_equal(dim(fData(cds)), c(240,2))
   expect_is(cds, "cell_data_set")
 })

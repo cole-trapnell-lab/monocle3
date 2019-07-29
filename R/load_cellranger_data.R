@@ -33,6 +33,7 @@ get_genome_in_matrix_path <- function(matrix_path, genome=NULL) {
 #' @param pipestance_path Path to the output directory produced by Cell Ranger
 #' @param genome The desired genome (e.g., 'hg19' or 'mm10')
 #' @param barcode_filtered Load only the cell-containing barcodes
+#' @param umi_cutoff Numeric, desired cutoff to include a cell. Default is 100.
 #' @return a new cell_data_set object
 #' @export
 #' @examples
@@ -41,7 +42,7 @@ get_genome_in_matrix_path <- function(matrix_path, genome=NULL) {
 #' gene_bc_matrix <- load_cellranger_data("/home/user/cellranger_output")
 #' }
 load_cellranger_data <- function(pipestance_path=NULL, genome=NULL,
-                                 barcode_filtered=TRUE) {
+                                 barcode_filtered=TRUE, umi_cutoff = 100) {
   # check for correct directory structure
   if (!dir.exists(pipestance_path))
     stop("Could not find the pipestance path: '", pipestance_path,"'.
@@ -132,8 +133,11 @@ load_cellranger_data <- function(pipestance_path=NULL, genome=NULL,
   barcodes$V1 = make.unique(barcodes$V1)
   colnames(data) = barcodes[,1]
   pd = data.frame(barcode=barcodes[,1], row.names=barcodes[,1])
+  data <- data[,Matrix::colSums(data) > umi_cutoff]
+  pd <- pd[colnames(data),, drop=FALSE]
   gbm <- new_cell_data_set(data,
                         cell_metadata = pd,
                         gene_metadata =  feature.names)
+
   return(gbm)
 }
