@@ -93,7 +93,8 @@ order_cells <- function(cds,
   } else if(!is.null(root_cells)){
     closest_vertex <- cds@principal_graph_aux[[
       reduction_method]]$pr_graph_cell_proj_closest_vertex
-    root_pr_nodes <- paste("Y_", closest_vertex[root_cells,], sep="")
+    root_pr_nodes <- unique(paste("Y_", closest_vertex[root_cells,], sep=""))
+    #principal_graph(cds)[[reduction_method]]
   }
 
   cds@principal_graph_aux[[reduction_method]]$root_pr_nodes <- root_pr_nodes
