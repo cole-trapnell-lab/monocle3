@@ -16,7 +16,6 @@ r_binary_packages:
 - dplyr
 - ggplot2
 - ggrepel
-- htmlwidgets
 - igraph
 - irlba
 - lmtest
@@ -33,9 +32,7 @@ r_binary_packages:
 - purrr
 - RANN
 - Rcpp
-- RcppParallel
 - reshape2
-- reticulate
 - RhpcBLASctl
 - shiny
 - slam
