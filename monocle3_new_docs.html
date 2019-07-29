@@ -287,6 +287,9 @@ cds <- new_cell_data_set(expression_matrix,
 <p>To input data from 10X Genomics Cell Ranger, you can use the
   <code>load_cellranger_data</code> function:</p>
 
+    <p><strong>Note:</strong> <code>load_cellranger_data</code> takes an argument <code>umi_cutoff</code>
+    that determines how many reads a cell must have to be included. <strong>By default, this is set to 100</strong>
+    if you would like to include all cells, set <code>umi_cutoff</code to 0.<p>
 {% highlight R %}
 # Provide the path to the Cell Ranger output.
 cds <- load_cellranger_data("~/Downloads/10x_data")
