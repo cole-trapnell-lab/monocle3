@@ -1287,7 +1287,7 @@ plot_percent_cells_positive <- function(cds_subset,
 
   group_mean_bootstrap <- function(split) {
     rsample::analysis(split) %>%
-      dplyr::group_by_("feature_label", group_cells_by) %>%
+      dplyr::group_by(!!as.name("feature_label"), !!as.name(group_cells_by)) %>%
       dplyr::summarize(target = sum(expression > min_expr),
                        target_fraction = sum(expression > min_expr)/dplyr::n())
   }
@@ -1297,7 +1297,7 @@ plot_percent_cells_positive <- function(cds_subset,
     dplyr::mutate(summary_stats = purrr::map(splits, group_mean_bootstrap)) %>%
     tidyr::unnest(summary_stats)
   marker_counts <- marker_counts %>% dplyr::ungroup() %>%
-    dplyr::group_by_("feature_label", group_cells_by) %>%
+    dplyr::group_by(!!as.name("feature_label"), !!as.name(group_cells_by)) %>%
     dplyr::summarize(target_mean = mean(target),
               target_fraction_mean = mean(target_fraction),
               target_low = quantile(target, conf_int_alpha / 2),
@@ -1307,7 +1307,7 @@ plot_percent_cells_positive <- function(cds_subset,
 
 
   # marker_counts <-
-  #   marker_exprs_melted %>% dplyr::group_by_("feature_label", group_cells_by) %>%
+  #   marker_exprs_melted %>% dplyr::group_by(!!as.name("feature_label"), !!as.name(group_cells_by)) %>%
   #   dplyr::summarize(target = sum(expression > min_expr),
   #             target_fraction = sum(expression > min_expr)/dplyr::n())
 

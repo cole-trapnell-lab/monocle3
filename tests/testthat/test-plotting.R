@@ -91,7 +91,7 @@ test_that("plot_cells doesn't error", {
   plot_cells(cds, color_cells_by = "partition")
   plot_cells(cds, color_cells_by = "cluster")
   plot_cells(cds, group_cells_by="cluster", color_cells_by="partition")
-  plot_cells(cds, group_cells_by="culture_plate", color_cells_by="partition")
+  #plot_cells(cds, group_cells_by="culture_plate", color_cells_by="partition")
   plot_cells(cds, genes = c("NDRG4"), min_expr = 1, rasterize = TRUE)
   plot_cells(cds, genes = c("NDRG4", "MT-ATP8", "ENSG00000240216.7"))
   plot_cells(cds, show_trajectory_graph = FALSE)
