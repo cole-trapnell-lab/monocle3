@@ -44,6 +44,7 @@ Imports:
     grr,
     igraph (>= 1.2.4),
     irlba (>= 2.3.3),
+    leidenbase,
     limma (>= 3.38.3),
     lmtest (>= 0.9-36),
     MASS (>= 7.3-51.4),
@@ -86,3 +87,4 @@ VignetteBuilder: knitr
 Language: en-US
 Remotes:
     VPetukhov/ggrastr
+    cole-trapnell-lab/leidenbase
