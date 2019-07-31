@@ -1,5 +1,6 @@
 context("test-cluster_cells")
 
+set.seed(200)
 cds <- load_a549()
 
 test_that("test cluster_cells error messages work", {
