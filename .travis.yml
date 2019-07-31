@@ -45,6 +45,12 @@ r_binary_packages:
 - tibble
 - tidyr
 - viridis
+
+script:
+  - |
+    R CMD build .
+    travis_wait 20 R CMD check monocle3*tar.gz
+
 after_success:
 - Rscript -e 'covr::codecov()'
 notifications:
