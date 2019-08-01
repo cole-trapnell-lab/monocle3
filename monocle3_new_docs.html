@@ -367,6 +367,9 @@ site.
 You can load the data into Monocle 3 like this:
 
 {% highlight R %}
+library(monocle3)
+library(dplyr) # imported for some downstream data manipulation
+    
 expression_matrix <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_expression.rds"))
 cell_metadata <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_colData.rds"))
 gene_annotation <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_rowData.rds"))
@@ -875,6 +878,8 @@ devtools::install_github("cole-trapnell-lab/garnett", ref="monocle3")
 
 {% highlight R %}
 library(garnett)
+# install gene database for worm
+BiocManager::install("org.Ce.eg.db")
 {% endhighlight %}
 
 <p>Now train a Garnett classifier based on your marker file like this:</p>
@@ -1582,7 +1587,17 @@ XXX TODO SHOW OUTPUT XXX -->
 <h3>Graph-autocorrelation analysis for comparing clusters</h3>
 
 <p>In the L2 worm data, we identified a number of clusters that were very distinct as neurons: </p>
-{% highlight R %}
+{% highlight R %}    
+# reload the data
+expression_matrix <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_expression.rds"))
+cell_metadata <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_colData.rds"))
+gene_annotation <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_rowData.rds"))
+
+# Make the CDS object
+cds <- new_cell_data_set(expression_matrix,
+                                   cell_metadata = cell_metadata,
+                                   gene_metadata = gene_annotation)
+
 neurons_cds = cds[,colData(cds)$assigned_cell_type == "Neurons"]
 plot_cells(neurons_cds, color_cells_by="partition")
 {% endhighlight %}
@@ -1729,7 +1744,7 @@ plot_cells(cds, show_trajectory_graph=FALSE)
 <p>The function <code>plot_genes_in_pseudotime()</code> takes a small set of genes and shows you their dynamics as a function of pseudotime:</p>
 {% highlight R %}
 AFD_genes = c("gcy-8", "dac-1", "oig-8")
-AFD_lineage_cds = cds[rowData(AFD_lineage_cds)$gene_short_name %in% AFD_genes,
+AFD_lineage_cds = cds[rowData(cds)$gene_short_name %in% AFD_genes,
                       clusters(cds) %in% c(22, 28, 35)]
 
 plot_genes_in_pseudotime(AFD_lineage_cds,
