@@ -2,11 +2,12 @@
 % Please edit documentation in R/cluster_cells.R
 \name{cluster_cells}
 \alias{cluster_cells}
-\title{Cluster cells using Louvain community detection}
+\title{Cluster cells using Louvain/Leiden community detection}
 \usage{
 cluster_cells(cds, reduction_method = c("UMAP", "tSNE", "PCA", "LSI"),
-  k = 20, louvain_iter = 1, partition_qval = 0.05, weight = FALSE,
-  resolution = NULL, random_seed = 1L, verbose = F, ...)
+  k = 20, clustering_algorithm = c("louvain", "leiden"),
+  num_iter = 1, partition_qval = 0.05, weight = FALSE,
+  resolution = NULL, random_seed = 0L, verbose = F, ...)
 }
 \arguments{
 \item{cds}{The cell_data_set upon which to perform clustering.}
@@ -15,14 +16,18 @@ cluster_cells(cds, reduction_method = c("UMAP", "tSNE", "PCA", "LSI"),
 base clustering. Options are "UMAP", "tSNE", "PCA" and "LSI".}
 
 \item{k}{Integer number of nearest neighbors to use when creating the k
-nearest neighbor graph for Louvain clustering. k is related to the
+nearest neighbor graph for Louvain/Leiden clustering. k is related to the
 resolution of the clustering result, a bigger k will result in lower
 resolution and vice versa. Default is 20.}
 
-\item{louvain_iter}{Integer number of iterations used for Louvain
+\item{clustering_algorithm}{String indicating the clustering algorithm to be
+used. Options are "louvain", and "leiden". Default is "louvain".
+Resoultion parameter ignored if set to "louvain".}
+
+\item{num_iter}{Integer number of iterations used for Louvain/Leiden
 clustering. The clustering result giving the largest modularity score will
 be used as the final clustering result. Default is 1. Note that if
-louvain_iter is greater than 1, the random_seed argument will be ignored.}
+num_iter is greater than 1, the random_seed argument will be ignored.}
 
 \item{partition_qval}{Numeric, the q-value cutoff to determine when to
 partition. Default is 0.05.}
@@ -32,14 +37,17 @@ coefficients for two nearest neighbors (based on the overlapping of their
 kNN) as the weight used for Louvain clustering. Default is FALSE.}
 
 \item{resolution}{Parameter that controls the resolution of clustering. If
-NULL (Default), the parameter is determined automatically.}
+NULL (Default), the parameter is determined automatically. Only used when
+clustering_algorithm is "leiden".}
 
 \item{random_seed}{The seed used by the random number generator in
-louvain-igraph package. This argument will be ignored if louvain_iter is
+louvain-igraph package. This argument will be ignored if num_iter is
 larger than 1.}
 
 \item{verbose}{A logic flag to determine whether or not we should print the
 run details.}
+
+\item{...}{Extra arguments to pass to clustering algorithm.}
 }
 \value{
 an updated cell_data_set object, with cluster and partition
@@ -50,12 +58,12 @@ information stored internally and accessible using
 Unsupervised clustering of cells is a common step in many single-cell
 expression workflows. In an experiment containing a mixture of cell types,
 each cluster might correspond to a different cell type. This function takes
-a cell_data_set as input, clusters the cells using Louvain community
+a cell_data_set as input, clusters the cells using Louvain/Leiden community
 detection, and returns a cell_data_set with internally stored cluster
 assignments. In addition to clusters this function calculates partitions,
-which represent superclusters of the Louvain communities that are found
-using a kNN pruning method. Cluster assignments can be accessed using the
-\code{\link{clusters}} function and partition assignments can be
+which represent superclusters of the Louvain/Leiden communities that are
+found using a kNN pruning method. Cluster assignments can be accessed using
+the \code{\link{clusters}} function and partition assignments can be
 accessed using the \code{\link{partitions}} function.
 }
 \references{

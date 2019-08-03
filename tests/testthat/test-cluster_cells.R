@@ -23,91 +23,91 @@ test_that("cluster_cells works", {
   cds <- cluster_cells(cds)
   expect_is(cds@clusters[["UMAP"]], "list")
   expect_equal(length(cds@clusters[["UMAP"]]), 3)
-  expect_equal(length(cds@clusters[["UMAP"]]$louvain_res$optim_res$membership),
+  expect_equal(length(cds@clusters[["UMAP"]]$clust_res$optim_res$membership),
                nrow(colData(cds)))
-  expect_equal(cds@clusters[["UMAP"]]$louvain_res$optim_res$membership[1], 6)
   expect_equal(length(unique(clusters(cds, reduction_method = "UMAP"))), 11)
 
   # non-standard opts
-  cds <- cluster_cells(cds, k=22, weight = T, louvain_iter = 2,
+  cds <- cluster_cells(cds, k=22, weight = T, num_iter = 2,
                          partition_qval = .1)
   expect_is(cds@clusters[["UMAP"]], "list")
   expect_equal(length(cds@clusters[["UMAP"]]), 3)
-  expect_equal(length(cds@clusters[["UMAP"]]$louvain_res$optim_res$membership),
+  expect_equal(length(cds@clusters[["UMAP"]]$clust_res$optim_res$membership),
                nrow(colData(cds)))
-  expect_equal(cds@clusters[["UMAP"]]$louvain_res$optim_res$membership[1], 3)
   expect_equal(length(unique(clusters(cds, reduction_method = "UMAP"))), 11)
+  expect_equal(cds@clusters[["UMAP"]]$clust_res$optim_res$membership[1], 3)
 
   cds <- cluster_cells(cds, reduction_method = "tSNE")
   expect_is(cds@clusters[["tSNE"]], "list")
   expect_equal(length(cds@clusters[["tSNE"]]), 3)
-  expect_equal(length(cds@clusters[["tSNE"]]$louvain_res$optim_res$membership),
+  expect_equal(length(cds@clusters[["tSNE"]]$clust_res$optim_res$membership),
                nrow(colData(cds)))
-  expect_equal(cds@clusters[["tSNE"]]$louvain_res$optim_res$membership[1], 3)
   expect_equal(length(unique(clusters(cds, reduction_method = "tSNE"))), 7)
+  expect_equal(cds@clusters[["tSNE"]]$clust_res$optim_res$membership[1], 3)
 
   # non-standard opts
   cds <- cluster_cells(cds, reduction_method = "tSNE", k=22, weight = T,
-                         louvain_iter = 2, partition_qval = .1)
+                         num_iter = 2, partition_qval = .1)
   expect_is(cds@clusters[["tSNE"]], "list")
   expect_equal(length(cds@clusters[["tSNE"]]), 3)
-  expect_equal(length(cds@clusters[["tSNE"]]$louvain_res$optim_res$membership),
+  expect_equal(length(cds@clusters[["tSNE"]]$clust_res$optim_res$membership),
                nrow(colData(cds)))
-  expect_equal(cds@clusters[["tSNE"]]$louvain_res$optim_res$membership[1], 8)
   expect_equal(length(unique(clusters(cds, reduction_method = "tSNE"))), 11)
+  expect_equal(cds@clusters[["tSNE"]]$clust_res$optim_res$membership[1], 8)
 
   cds <- cluster_cells(cds, reduction_method = "PCA")
   expect_is(cds@clusters[["PCA"]], "list")
   expect_equal(length(cds@clusters[["PCA"]]), 3)
-  expect_equal(length(cds@clusters[["PCA"]]$louvain_res$optim_res$membership),
+  expect_equal(length(cds@clusters[["PCA"]]$clust_res$optim_res$membership),
                nrow(colData(cds)))
-  expect_equal(cds@clusters[["PCA"]]$louvain_res$optim_res$membership[1], 5)
   expect_equal(length(unique(clusters(cds, reduction_method = "PCA"))), 7)
+  expect_equal(cds@clusters[["PCA"]]$clust_res$optim_res$membership[1], 5)
 
   # non-standard opts
   cds <- cluster_cells(cds, reduction_method = "PCA", k=22, weight = T,
-                         louvain_iter = 2, partition_qval = .1)
+                         num_iter = 2, partition_qval = .1)
   expect_is(cds@clusters[["PCA"]], "list")
   expect_equal(length(cds@clusters[["PCA"]]), 3)
-  expect_equal(length(cds@clusters[["PCA"]]$louvain_res$optim_res$membership),
+  expect_equal(length(cds@clusters[["PCA"]]$clust_res$optim_res$membership),
                nrow(colData(cds)))
-  expect_equal(cds@clusters[["PCA"]]$louvain_res$optim_res$membership[1], 2)
   expect_equal(length(unique(clusters(cds, reduction_method = "PCA"))), 7)
+  expect_equal(cds@clusters[["PCA"]]$clust_res$optim_res$membership[1], 2)
 
   cds <- cluster_cells(cds, reduction_method = "PCA", k=22, weight = T,
-                       louvain_iter = 2, partition_qval = .1, resolution = .88)
+                       random_seed = 1,
+                       num_iter = 1, partition_qval = .1, resolution = .88)
   expect_is(cds@clusters[["PCA"]], "list")
   expect_equal(length(cds@clusters[["PCA"]]), 3)
-  expect_equal(length(cds@clusters[["PCA"]]$louvain_res$optim_res$membership),
+  expect_equal(length(cds@clusters[["PCA"]]$clust_res$optim_res$membership),
                nrow(colData(cds)))
-  expect_equal(as.numeric(cds@clusters[["PCA"]]$louvain_res$optim_res$membership[1]), 1)
+  expect_equal(as.numeric(cds@clusters[["PCA"]]$clust_res$optim_res$membership[1]), 1)
   expect_equal(length(unique(clusters(cds, reduction_method = "PCA"))), 4)
 
   cds <- cluster_cells(cds, reduction_method = "PCA", k=22, weight = T,
-                       louvain_iter = 2, partition_qval = .1, resolution = .01)
+                       num_iter = 2, partition_qval = .1, resolution = .01)
   expect_equal(length(unique(clusters(cds, reduction_method = "PCA"))), 1)
   cds <- cluster_cells(cds, reduction_method = "PCA", k=22, weight = T,
-                       louvain_iter = 2, partition_qval = .1, resolution = 100)
+                       num_iter = 2, partition_qval = .1, resolution = 100)
   expect_equal(length(unique(clusters(cds, reduction_method = "PCA"))), 500)
 
   cds <- preprocess_cds(cds, method = "LSI")
   cds <- cluster_cells(cds, reduction_method = "LSI")
   expect_is(cds@clusters[["LSI"]], "list")
   expect_equal(length(cds@clusters[["LSI"]]), 3)
-  expect_equal(length(cds@clusters[["LSI"]]$louvain_res$optim_res$membership),
+  expect_equal(length(cds@clusters[["LSI"]]$clust_res$optim_res$membership),
                nrow(colData(cds)))
-  expect_equal(cds@clusters[["LSI"]]$louvain_res$optim_res$membership[1], 6)
   expect_equal(length(unique(clusters(cds, reduction_method = "LSI"))), 8)
+  expect_equal(cds@clusters[["LSI"]]$clust_res$optim_res$membership[1], 6)
 
   # non-standard opts
   cds <- cluster_cells(cds, reduction_method = "LSI", k=22, weight = T,
-                       louvain_iter = 2, partition_qval = .1)
+                       num_iter = 2, partition_qval = .1)
   expect_is(cds@clusters[["LSI"]], "list")
   expect_equal(length(cds@clusters[["LSI"]]), 3)
-  expect_equal(length(cds@clusters[["LSI"]]$louvain_res$optim_res$membership),
+  expect_equal(length(cds@clusters[["LSI"]]$clust_res$optim_res$membership),
                nrow(colData(cds)))
-  expect_equal(cds@clusters[["LSI"]]$louvain_res$optim_res$membership[1], 1)
   expect_equal(length(unique(clusters(cds, reduction_method = "LSI"))), 9)
+  expect_equal(cds@clusters[["LSI"]]$clust_res$optim_res$membership[1], 1)
 })
 
 cds <- load_a549()
