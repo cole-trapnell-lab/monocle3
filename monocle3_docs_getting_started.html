@@ -22,22 +22,196 @@ tags: [monocle, manual, vignette]
   <button onClick="window.location.href = '{{site.baseurl}}/end/';">Citations</button>
 </div>
 
-<h2>Major updates in Monocle 3</h2>
+<h2>Introduction</h2>
 
-<p>Monocle 3 has been re-engineered to analyze large, complex single-cell datasets. The algorithms at the core of Monocle 3 are highly scalable and can handle millions of cells. Monocle 3 adds some powerful new features that enable the analysis of organism- or embryo-scale experiments:</p>
+<p>Single-cell transcriptome sequencing (sc-RNA-seq) experiments allow us to
+  discover new cell types and help us understand how they arise in development.
+  The <strong>Monocle 3</strong> package provides a toolkit for analyzing
+  single-cell gene expression experiments.
+</p>
 
+<p>Monocle 3 can help you perform three main types of analysis:
 <ul>
-    <li>A better structured workflow to learn developmental trajectories.
-    <li>Support for the <a href="https://github.com/lmcinnes/umap">UMAP</a> algorithm to initialize trajectory inference.
-    <li>Support for trajectories with multiple roots.
-    <li>Ways to learn trajectories that have loops or points of convergence.
-    <li>Algorithms that automatically partition cells to learn disjoint or parallel trajectories using ideas from <a href="https://www.biorxiv.org/content/early/2017/10/25/208819">"approximate graph abstraction"</a>.
-    <li>A new statistical test for genes that have trajectory-dependent expression. This replaces both the old <code>differentialGeneTest()</code> function and <code>BEAM()</code>.
-    <li>A 3D interface to visualize trajectories and gene expression.
+<li><strong>Clustering, classifying, and counting cells.</strong> Single-cell
+  RNA-Seq experiments allow you to discover new (and possibly rare) subtypes of
+  cells. Monocle 3 helps you identify them.</li>
+<li><strong>Constructing single-cell trajectories.</strong> In development,
+  disease, and throughout life, cells transition from one state to another.
+  Monocle 3 helps you discover these transitions.</li>
+<li><strong>Differential expression analysis.</strong> Characterizing new cell
+  types and states begins with comparisons to other, better understood cells.
+  Monocle 3 includes a sophisticated, but easy-to-use system for differential
+  expression.</li>
 </ul>
+</p>
 
-<p>Most of the algorithmic details in Monocle 3 are described in <a href="http://dx.doi.org/10.1038/s41586-019-0969-x">Cao & Spielmann <emph>et al</emph></a>. </p>
+<div class= "panel panel-warning">
+<div class= "panel-heading">
+<h3 class= "panel-title" data-toc-skip>Under construction</h3>
+</div>
+<div class= "panel-body">
+<p>Monocle 3 is currently in the
+  <a href="https://en.wikipedia.org/wiki/Software_release_life_cycle#Beta">beta phase</a>
+  of its development. This means there are likely bugs and performance issues
+  that will need to be addressed. We are working hard towards a stable release,
+  but please be patient while Monocle 3 is under construction.</p>
 
+<p>The documentation on this page is also still under construction. Not all
+  features currently implemented have been completely documented.</p>
+</div>
+</div>
+
+<p>For more information on the algorithms at the core of
+  <strong>Monocle</strong>, or to learn more about how to use single-cell
+  RNA-Seq to study complex biological processes, explore
+  <a href= "{{ site.baseurl }}/papers/">our publications</a>.</p>
+
+<p>Before we look at Monocle 3's functions for each of these common analysis
+  tasks, let's see how to install Monocle.
+</p>
+
+<h2>Installing Monocle 3</h2>
+
+<h3> Required software </h3>
+
+<p>Monocle 3 runs in the <a href= "http://www.r-project.org/">R statistical
+computing environment</a>. You will need R version 3.5 or higher,
+<a href="http://bioconductor.org/">Bioconductor</a> version 3.5, and
+monocle3 0.1.0 or higher to have access to the latest features.</p>
+
+<p>To install Bioconductor, open R and run:</p>
+{% highlight R %}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install()
+{% endhighlight %}
+
+<p>Next, install a few Bioconductor dependencies that aren't automatically installed:</p>
+{% highlight R %}
+BiocManager::install(c('BiocGenerics', 'DelayedArray', 'DelayedMatrixStats',
+                       'limma', 'S4Vectors', 'SingleCellExperiment',
+                       'SummarizedExperiment'))
+{% endhighlight %}
+
+<p>Optional: If you would like to use the resolution parameter in cluster_cells, you
+  will also need to install one Python package. This can be done with the following code in R:</p>
+
+  {% highlight R %}
+install.packages("reticulate")
+reticulate::py_install("louvain")
+{% endhighlight %}
+
+
+<p>Now, install monocle3 through the cole-trapnell-lab GitHub, execute:</p>
+
+{% highlight R %}
+devtools::install_github('cole-trapnell-lab/monocle3')
+{% endhighlight %}
+
+<h3> Testing the installation </h3>
+
+<p> To ensure that Monocle 3 was installed correctly, start a new R session and
+  run: </p>
+
+{% highlight R %}
+library(monocle3)
+{% endhighlight %}
+
+<h2>Getting Help</h2>
+
+<p>Questions about Monocle 3 should be posted on our <a
+href= "https://groups.google.com/d/forum/monocle-3-users">Google Group</a>.
+Please do not email technical questions to Monocle contributors
+directly.</p>
+
+<!-- <h2>Recommended analysis protocol</h2>
+<p>Monocle is a powerful toolkit for analyzing single-cell RNA-seq.  You don't need
+to use all of its features for every analysis, and there are more than one way
+to do some steps. The workflow is broken up into broad steps. When there's more than
+one way to do a certain step, we've labeled the options as follows:
+<table class= "table">
+<tbody>
+<tr>
+<td><span class= "label label-danger">Required</span></td>
+<td>You need to do this.</td>
+</tr>
+<tr>
+<td><span class= "label label-info">Recommended</span> </td>
+<td>Of the ways you could do this, we recommend you try this one first.</td>
+</tr>
+<tr>
+<td><span class= "label label-success">Alternative</span></td>
+<td>Of the ways you could do this, this way might work better than the one we usually recommend.</td>
+</tr>
+</tbody>
+</table> -->
+
+<h2>Workflow steps at a glance</h2>
+
+<div class= "text-center">
+  <img src= "{{site.baseurl}}/images/monocle3_new_workflow.png" width= 760>
+</div>
+
+<p>Below, you can see snippets of code that highlight the main steps of
+  Monocle 3. Click on the section headers to jump to the detailed sections
+  describing each one and allowing you to try the steps on example data. </p>
+
+<h4><a href="{{ site.baseurl }}/monocle3_docs/#the-cell-data-set-class">Store data in a cell_data_set object</a></h4>
+The first step in working with Monocle 3 is to load up your data into
+Monocle 3's main class, <code><a href = "{{ site.baseurl }}/monocle3_docs/#the-cell-data-set-class">cell_data_set</a></code>:
+
+{% highlight R %}
+cds <- new_cell_data_set(expression_matrix,
+                         cell_metadata = cell_metadata,
+                         gene_metadata = gene_annotation)
+{% endhighlight %}
+
+<h4><a href= "{{ site.baseurl }}/monocle3_docs/#clustering-and-classifying-your-cells">Cluster your cells</a></h4>
+
+You can easily cluster your cells to find new types:
+
+{% highlight R %}
+## Step 1: Normalize and pre-process the data
+cds <- preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ batch")
+
+## Step 2: Reduce the dimensions using UMAP
+cds <- reduce_dimension(cds)
+
+## Step 3: Cluster the cells
+cds <- cluster_cells(cds)
+{% endhighlight %}
+
+<h4><span class= "label label-info">Optional</span> <a href= "{{ site.baseurl }}/monocle3_docs/#constructing-single-cell-trajectories">Order cells in pseudotime along a trajectory</a> </h4>
+Now, put your cells in order by how much progress they've made through whatever
+process you're studying, such as differentiation, reprogramming, or an immune
+response.
+
+{% highlight R %}
+## Step 4: Learn a graph
+cds <- learn_graph(cds)
+
+## Step 5: Order cells
+cds <- order_cells(cds)
+
+plot_cells(cds)
+{% endhighlight %}
+
+<h4><span class= "label label-info">Optional</span> <a href= "{{ site.baseurl }}/monocle3_docs/#differential-expression-analysis">Perform differential expression analysis</a> </h4>
+Compare groups of cells in myriad ways to find differentially expressed genes,
+controlling for batch effects and treatments as you like:
+
+{% highlight R %}
+# With regression:
+gene_fits <- fit_models(cds, model_formula_str = "~embryo.time")
+fit_coefs <- coefficient_table(gene_fits)
+emb_time_terms <- fit_coefs %>% filter(term == "embryo.time")
+emb_time_terms <- emb_time_terms %>% mutate(q_value = p.adjust(p_value))
+sig_genes <- emb_time_terms %>% filter (q_value < 0.05) %>% pull(gene_short_name)
+
+# With graph autocorrelation:
+pr_test_res <- graph_test(cds,  neighbor_graph="principal_graph", cores=4)
+pr_deg_ids <- row.names(subset(pr_test_res, q_value < 0.05))
+{% endhighlight %}
 
 <h2>Getting started with Monocle 3</h2>
 
@@ -119,6 +293,9 @@ cds <- new_cell_data_set(expression_matrix,
 <p>To input data from 10X Genomics Cell Ranger, you can use the
   <code>load_cellranger_data</code> function:</p>
 
+    <p><strong>Note:</strong> <code>load_cellranger_data</code> takes an argument <code>umi_cutoff</code>
+    that determines how many reads a cell must have to be included. <strong>By default, this is set to 100</strong>.
+    If you would like to include all cells, set <code>umi_cutoff</code to 0.<p>
 {% highlight R %}
 # Provide the path to the Cell Ranger output.
 cds <- load_cellranger_data("~/Downloads/10x_data")
@@ -165,9 +342,9 @@ available memeory.
 </div>
 </p>
 
-<p> Monocle's sparse matrix support is provided by the <code>Matrix</code> package.
+Monocle's sparse matrix support is provided by the <code>Matrix</code> package.
 Other sparse matrix packages, such as <code>slam</code> or
-<code>SparseM</code> are not supported. </p>
+<code>SparseM</code> are not supported.
 
 <div class="btn-toolbar">
   <button class="button first-button" onClick="window.location.href = '{{site.baseurl}}/cluster/';">Next &raquo;</button>
