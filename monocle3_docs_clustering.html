@@ -281,8 +281,7 @@ plot_genes_by_group(cds,
 <div class= "text-center">
   <img src= "{{site.baseurl}}/images/manual_images/L2_plot_top3_partition_marker.png" width= 760>
 </div>
-There are many ways to compare and contrast clusters (and other groupings) of cells. We will explore them in great detail in the <a href = "{{
-  site.baseurl }}/docs/#differential-expression-analysis">Differential expression analysis</a> section a bit later.
+There are many ways to compare and contrast clusters (and other groupings) of cells. We will explore them in great detail in the <a href = "{{site.baseurl}}/differential_expression_analysis/">Differential expression analysis</a> section a bit later.
 <h3>Annotate your cells according to type</h2>
 <p>Identifying the type of each cell in your dataset is critical for many downstream analyses. There are several ways of doing this. One commonly used approach is to first cluster the cells and then assign a cell type to each cluster based on its gene expression profile. We've already seen how to use <code>top_markers()</code>. Reviewing literature associated with a marker gene often give strong indications of the identity of clusters that express it. In Cao & Packer <emph>>et al</emph>, the authors consulted literature and gene expression databases for markers restricted to each cluster in order to assign the identities contained in <code>colData(cds)$cao_cell_type</code>.</p>
 <p>To assign cell types based on clustering, we begin by creating a new column in <code>colData(cds)</code> and initialize it with the values of <code>clusters(cds)</code>:</p>

@@ -41,13 +41,13 @@ tags: [monocle, manual, vignette]
   changes, Monocle can place each cell at its proper position in the trajectory.
   You can then use Monocle's differential analysis toolkit to find genes regulated
   over the course of the trajectory, as described in the section <a href = "{{
-  site.baseurl }}/monocle3_docs/#finding-genes-that-change-as-a-function-of-pseudotime">
+  site.baseurl }}/differential_expression_analysis/#finding-genes-that-change-as-a-function-of-pseudotime">
   Finding genes that change as a function of pseudotime </a>. If there are
   multiple outcomes for the process, Monocle will reconstruct a "branched"
   trajectory. These branches correspond to cellular "decisions", and Monocle
   provides powerful tools for identifying the genes affected by them and involved
   in making them. You can see how to analyze branches in the section <a href = "{{
-  site.baseurl }}/monocle3_docs/#analyzing-branches-in-single-cell-trajectories"> Analyzing
+  site.baseurl }}/differential_expression_analysis/#analyzing-branches-in-single-cell-trajectories"> Analyzing
   branches in single-cell trajectories </a>.
   <!-- Monocle relies on a machine learning
   technique called <em>reversed graph embedding</em> to construct single-cell
@@ -97,7 +97,7 @@ tags: [monocle, manual, vignette]
     <img src= "{{site.baseurl}}/images/manual_images/embryo_ciliated_markers.png" width= 760>
   </div>
   <p>We will learn how to identify the genes that are restricted to each outcome of the trajectory later on in the section <a href = "{{
-    site.baseurl }}/monocle3_docs/#finding-genes-that-change-as-a-function-of-pseudotime">
+  site.baseurl }}/differential_expression_analysis/#finding-genes-that-change-as-a-function-of-pseudotime">
     Finding genes that change as a function of pseudotime</a>.</p>
   <h3>Cluster your cells </h3>
   <p>Although cells may continuously transition from one state to the next with no discrete boundary between them, Monocle does not assume that all cells in the dataset descend from a common transcriptional "ancestor". In many experiments, there might in fact be multiple distinct trajectories. For example, in a tissue responding to an infection, tissue resident immune cells and stromal cells will have very different initial transcriptomes, and will respond to infection quite differently, so they should be a part of the same trajectory. </p>
