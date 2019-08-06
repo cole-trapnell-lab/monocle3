@@ -1419,7 +1419,6 @@ plot_genes_by_group <- function(cds,
   }
 
   norm_method = match.arg(norm_method)
-  #group_cells_by=match.arg(group_cells_by)
 
   gene_ids = as.data.frame(fData(cds)) %>%
     tibble::rownames_to_column() %>%
@@ -1454,6 +1453,12 @@ plot_genes_by_group <- function(cds,
   } else{
     cell_group <- colData(cds)[,group_cells_by]
   }
+
+  if (length(unique(cell_group)) < 2) {
+    stop(paste("Only one type in group_cells_by. To use plot_genes_by_group,",
+               "please specify a group with more than one type. "))
+  }
+
   names(cell_group) = colnames(cds)
 
   exprs_mat$Group <- cell_group[exprs_mat$Cell]
@@ -1474,13 +1479,13 @@ plot_genes_by_group <- function(cds,
   row.names(res) <- group_id
 
   if(ordering_type == 'cluster_row_col') {
-    row_dist <- stats::as.dist((1 - stats::cor(t(res[, -1])))/2)
+    row_dist <- stats::as.dist((1 - stats::cor(t(res)))/2)
     row_dist[is.na(row_dist)] <- 1
 
-    col_dist <- stats::as.dist((1 - stats::cor(res[, -1]))/2)
+    col_dist <- stats::as.dist((1 - stats::cor(res))/2)
     col_dist[is.na(col_dist)] <- 1
 
-    ph <- pheatmap::pheatmap(res[, -1],
+    ph <- pheatmap::pheatmap(res,
                              useRaster = T,
                              cluster_cols=TRUE,
                              cluster_rows=TRUE,
@@ -1493,7 +1498,7 @@ plot_genes_by_group <- function(cds,
                              filename=NA)
 
     ExpVal$Gene <- factor(ExpVal$Gene,
-                          levels = colnames(res)[-1][ph$tree_col$order])
+                          levels = colnames(res)[ph$tree_col$order])
     ExpVal$Group <- factor(ExpVal$Group,
                            levels = row.names(res)[ph$tree_row$order])
 
