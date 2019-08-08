@@ -44,26 +44,26 @@ monocle_theme_opts <- function()
 #'
 #' @export
 plot_cells_3d <- function(cds,
-                           dims = c(1,2,3),
-                           reduction_method = c("UMAP", "tSNE", "PCA", "LSI"),
-                           color_cells_by="cluster",
-                           #group_cells_by=c("cluster", "partition"), #
-                           genes=NULL,
-                           show_trajectory_graph=TRUE,
-                           trajectory_graph_color="black",
-                           trajectory_graph_segment_size=5,
-                           norm_method = c("log", "size_only"),
-                           #label_cell_groups = TRUE,#
-                           #label_groups_by_cluster=TRUE,#
-                           #group_label_size=2,#
-                           #labels_per_group=1,#
-                           #label_branch_points=TRUE,#
-                           #label_roots=TRUE,#
-                           #label_leaves=TRUE,#
-                           #graph_label_size=2,#
-                           cell_size=25,
-                           alpha = 1,
-                           min_expr=0.1) {
+                          dims = c(1,2,3),
+                          reduction_method = c("UMAP", "tSNE", "PCA", "LSI"),
+                          color_cells_by="cluster",
+                          #group_cells_by=c("cluster", "partition"), #
+                          genes=NULL,
+                          show_trajectory_graph=TRUE,
+                          trajectory_graph_color="black",
+                          trajectory_graph_segment_size=5,
+                          norm_method = c("log", "size_only"),
+                          #label_cell_groups = TRUE,#
+                          #label_groups_by_cluster=TRUE,#
+                          #group_label_size=2,#
+                          #labels_per_group=1,#
+                          #label_branch_points=TRUE,#
+                          #label_roots=TRUE,#
+                          #label_leaves=TRUE,#
+                          #graph_label_size=2,#
+                          cell_size=25,
+                          alpha = 1,
+                          min_expr=0.1) {
 
   reduction_method <- match.arg(reduction_method)
   assertthat::assert_that(methods::is(cds, "cell_data_set"))
@@ -147,8 +147,8 @@ plot_cells_3d <- function(cds,
         genes <- genes[row.names(cds_exprs),]
         agg_mat <-
           as.matrix(my.aggregate.Matrix(cds_exprs,
-                                                   as.factor(genes[,2]),
-                                                   fun="sum"))
+                                        as.factor(genes[,2]),
+                                        fun="sum"))
         agg_mat <- t(scale(t(log10(agg_mat + 1))))
         agg_mat[agg_mat < -2] <- -2
         agg_mat[agg_mat > 2] <- 2
@@ -223,14 +223,14 @@ plot_cells_3d <- function(cds,
 
       p <- plotly::plot_ly(data_df) %>%
         plotly::add_trace(x = ~data_dim_1, y = ~data_dim_2, z = ~data_dim_3,
-                  type = 'scatter3d', size=I(cell_size), alpha = I(alpha),
-                  mode="markers", marker=list(
-                    colorbar = list(title = color_cells_by, len=0.5),
-                    color=~cell_color,
-                    line=list(width = 1,
-                              color = ~cell_color,
-                              colorscale="Viridis"),
-                    colorscale="Viridis"))
+                          type = 'scatter3d', size=I(cell_size), alpha = I(alpha),
+                          mode="markers", marker=list(
+                            colorbar = list(title = color_cells_by, len=0.5),
+                            color=~cell_color,
+                            line=list(width = 1,
+                                      color = ~cell_color,
+                                      colorscale="Viridis"),
+                            colorscale="Viridis"))
     } else {
       p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
                            z = ~data_dim_3, type = 'scatter3d',
@@ -259,15 +259,15 @@ plot_cells_3d <- function(cds,
       dplyr::select_(source = "from", target = "to") %>%
       dplyr::left_join(ica_space_df %>%
                          dplyr::select_(source="sample_name",
-                                    source_prin_graph_dim_1="prin_graph_dim_1",
-                                    source_prin_graph_dim_2="prin_graph_dim_2",
-                                    source_prin_graph_dim_3="prin_graph_dim_3"),
+                                        source_prin_graph_dim_1="prin_graph_dim_1",
+                                        source_prin_graph_dim_2="prin_graph_dim_2",
+                                        source_prin_graph_dim_3="prin_graph_dim_3"),
                        by = "source") %>%
       dplyr::left_join(ica_space_df %>%
                          dplyr::select_(target="sample_name",
-                                    target_prin_graph_dim_1="prin_graph_dim_1",
-                                    target_prin_graph_dim_2="prin_graph_dim_2",
-                                    target_prin_graph_dim_3="prin_graph_dim_3"),
+                                        target_prin_graph_dim_1="prin_graph_dim_1",
+                                        target_prin_graph_dim_2="prin_graph_dim_2",
+                                        target_prin_graph_dim_3="prin_graph_dim_3"),
                        by = "target")
 
     for (i in 1:nrow(edge_df)) {
@@ -294,6 +294,8 @@ plot_cells_3d <- function(cds,
 #' @param x the column of reducedDims(cds) to plot on the horizontal axis
 #' @param y the column of reducedDims(cds) to plot on the vertical axis
 #' @param cell_size The size of the point for each cell
+#' @param cell_stroke The stroke used for plotting each cell - default is 1/2
+#'   of the cell_size
 #' @param reduction_method The lower dimensional space in which to plot cells.
 #'   Must be one of "UMAP", "tSNE", "PCA" and "LSI".
 #' @param color_cells_by What to use for coloring the cells. Must be either the
@@ -365,6 +367,7 @@ plot_cells <- function(cds,
                        label_leaves=TRUE,
                        graph_label_size=2,
                        cell_size=0.35,
+                       cell_stroke= I(cell_size / 2),
                        alpha = 1,
                        min_expr=0.1,
                        rasterize=FALSE) {
@@ -392,8 +395,9 @@ plot_cells <- function(cds,
     if(color_cells_by == "pseudotime") {
       tryCatch({pseudotime(cds, reduction_method = reduction_method)},
                error = function(x) {
-                 stop(paste("No pseudotime for", reduction_method, "calculated. Please",
-                            "run order_cells with reduction_method =", reduction_method,
+                 stop(paste("No pseudotime for", reduction_method,
+                            "calculated. Please run order_cells with",
+                            "reduction_method =", reduction_method,
                             "before attempting to color by pseudotime."))})
 
     }
@@ -522,7 +526,8 @@ plot_cells <- function(cds,
         row.names(genes) = genes[,1]
         genes = genes[row.names(cds_exprs),]
 
-        agg_mat = as.matrix(my.aggregate.Matrix(cds_exprs, as.factor(genes[,2]), fun="sum"))
+        agg_mat = as.matrix(my.aggregate.Matrix(cds_exprs, as.factor(genes[,2]),
+                                                fun="sum"))
 
         agg_mat = t(scale(t(log10(agg_mat + 1))))
         agg_mat[agg_mat < -2] = -2
@@ -566,8 +571,8 @@ plot_cells <- function(cds,
   if (label_cell_groups && is.null(color_cells_by) == FALSE){
     if (is.null(data_df$cell_color)){
       if (is.null(genes)){
-      message(paste(color_cells_by, "not found in colData(cds), cells will",
-                    "not be colored"))
+        message(paste(color_cells_by, "not found in colData(cds), cells will",
+                      "not be colored"))
       }
       text_df = NULL
       label_cell_groups = FALSE
@@ -633,10 +638,10 @@ plot_cells <- function(cds,
     if(norm_method == "size_only"){
       g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2)) +
         plotting_func(aes(data_dim_1, data_dim_2), size=I(cell_size),
-                      stroke = I(cell_size / 2), color = "grey80",
+                      stroke = I(cell_stroke), color = "grey80",
                       data = na_sub) +
         plotting_func(aes(color=value), size=I(cell_size),
-                      stroke = I(cell_size / 2), na.rm = TRUE) +
+                      stroke = I(cell_stroke), na.rm = TRUE) +
         viridis::scale_color_viridis(option = "viridis",
                                      name = expression_legend_label,
                                      na.value = "grey80", end = 0.8) +
@@ -644,10 +649,10 @@ plot_cells <- function(cds,
     } else {
       g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2)) +
         plotting_func(aes(data_dim_1, data_dim_2), size=I(cell_size),
-                      stroke = I(cell_size / 2), color = "grey80",
+                      stroke = I(cell_stroke), color = "grey80",
                       data = na_sub) +
         plotting_func(aes(color=log10(value+min_expr)),
-                      size=I(cell_size), stroke = I(cell_size / 2),
+                      size=I(cell_size), stroke = I(cell_stroke),
                       na.rm = TRUE) +
         viridis::scale_color_viridis(option = "viridis",
                                      name = expression_legend_label,
@@ -662,23 +667,25 @@ plot_cells <- function(cds,
     # don't color the cells
     if(color_cells_by %in% c("cluster", "partition")){
       if (is.null(data_df$cell_color)){
-        g <- g + geom_point(color=I("gray"), size=I(cell_size), na.rm = TRUE,
+        g <- g + geom_point(color=I("gray"), size=I(cell_size),
+                            stroke = I(cell_stroke), na.rm = TRUE,
                             alpha = I(alpha))
         message(paste("cluster_cells() has not been called yet, can't",
                       "color cells by cluster"))
       } else{
         g <- g + geom_point(aes(color = cell_color), size=I(cell_size),
-                            na.rm = TRUE, alpha = alpha)
+                            stroke = I(cell_stroke), na.rm = TRUE,
+                            alpha = alpha)
       }
       g <- g + guides(color = guide_legend(title = color_cells_by,
                                            override.aes = list(size = 4)))
     } else if (class(data_df$cell_color) == "numeric"){
       g <- g + geom_point(aes(color = cell_color), size=I(cell_size),
-                          na.rm = TRUE, alpha = alpha)
+                          stroke = I(cell_stroke), na.rm = TRUE, alpha = alpha)
       g <- g + viridis::scale_color_viridis(name = color_cells_by, option="C")
     } else {
       g <- g + geom_point(aes(color = cell_color), size=I(cell_size),
-                          na.rm = TRUE, alpha = alpha)
+                          stroke = I(cell_stroke), na.rm = TRUE, alpha = alpha)
       g <- g + guides(color = guide_legend(title = color_cells_by,
                                            override.aes = list(size = 4)))
     }
@@ -762,7 +769,7 @@ plot_cells <- function(cds,
                                       size=I(group_label_size))
     # If we're coloring by gene expression, don't hide the legend
     if (is.null(markers_exprs))
-        g <- g + theme(legend.position="none")
+      g <- g + theme(legend.position="none")
   }
 
   g <- g +
@@ -1188,6 +1195,10 @@ plot_genes_violin <- function (cds_subset,
 #'   factor. Default is TRUE.
 #' @param plot_limits A pair of number specifying the limits of the y axis. If
 #'   \code{NULL}, scale to the range of the data. Example \code{c(0,100)}.
+#' @param bootstrap_samples The number of bootstrap replicates to generate when
+#'   plotting error bars. Default is 100.
+#' @param conf_int_alpha The size of the confidence interval to use when plotting
+#'   error bars. Default is 0.95.
 #' @return a ggplot2 plot object
 #' @import ggplot2
 #' @export
@@ -1205,7 +1216,9 @@ plot_percent_cells_positive <- function(cds_subset,
                                         plot_as_count = FALSE,
                                         label_by_short_name=TRUE,
                                         normalize = TRUE,
-                                        plot_limits = NULL){
+                                        plot_limits = NULL,
+                                        bootstrap_samples=100,
+                                        conf_int_alpha = .95){
 
   assertthat::assert_that(methods::is(cds_subset, "cell_data_set"))
 
@@ -1268,23 +1281,53 @@ plot_percent_cells_positive <- function(cds_subset,
     group_cells_by <- "all_cell"
   }
 
+  # marker_counts <-
+  #   plyr::ddply(marker_exprs_melted,
+  #               c("feature_label", group_cells_by),
+  #               function(x) {
+  #                 data.frame(target = sum(x$expression > min_expr),
+  #                            target_fraction = sum(x$expression >
+  #                                                    min_expr)/nrow(x))
+  #               })
+
+  marker_counts_bootstrap = rsample::bootstraps(marker_exprs_melted, times = bootstrap_samples)
+
+  group_mean_bootstrap <- function(split) {
+    rsample::analysis(split) %>%
+      dplyr::group_by_("feature_label", group_cells_by) %>%
+      dplyr::summarize(target = sum(expression > min_expr),
+                       target_fraction = sum(expression > min_expr)/dplyr::n())
+  }
+
   marker_counts <-
-    plyr::ddply(marker_exprs_melted,
-                c("feature_label", group_cells_by),
-                function(x) {
-                  data.frame(target = sum(x$expression > min_expr),
-                             target_fraction = sum(x$expression >
-                                                     min_expr)/nrow(x))
-                })
+    marker_counts_bootstrap %>%
+    dplyr::mutate(summary_stats = purrr::map(splits, group_mean_bootstrap)) %>%
+    tidyr::unnest(summary_stats)
+  marker_counts <- marker_counts %>% dplyr::ungroup() %>%
+    dplyr::group_by_("feature_label", group_cells_by) %>%
+    dplyr::summarize(target_mean = mean(target),
+                     target_fraction_mean = mean(target_fraction),
+                     target_low = quantile(target, conf_int_alpha / 2),
+                     target_high = quantile(target, 1 - conf_int_alpha / 2),
+                     target_fraction_low = quantile(target_fraction, (1 - conf_int_alpha) / 2),
+                     target_fraction_high = quantile(target_fraction, 1 - (1 - conf_int_alpha) / 2))
+
+
+  # marker_counts <-
+  #   marker_exprs_melted %>% dplyr::group_by_("feature_label", group_cells_by) %>%
+  #   dplyr::summarize(target = sum(expression > min_expr),
+  #             target_fraction = sum(expression > min_expr)/dplyr::n())
 
   if (!plot_as_count){
-    marker_counts$target_fraction <- marker_counts$target_fraction * 100
-    qp <- ggplot(aes_string(x=group_cells_by, y="target_fraction",
+    marker_counts$target_fraction_mean <- marker_counts$target_fraction_mean * 100
+    marker_counts$target_fraction_low <- marker_counts$target_fraction_low * 100
+    marker_counts$target_fraction_high <- marker_counts$target_fraction_high * 100
+    qp <- ggplot(aes_string(x=group_cells_by, y="target_fraction_mean",
                             fill=group_cells_by),
                  data=marker_counts) +
       ylab("Cells (percent)")
   } else {
-    qp <- ggplot(aes_string(x=group_cells_by, y="target", fill=group_cells_by),
+    qp <- ggplot(aes_string(x=group_cells_by, y="target_mean", fill=group_cells_by),
                  data=marker_counts) +
       ylab("Cells")
   }
@@ -1299,7 +1342,10 @@ plot_percent_cells_positive <- function(cds_subset,
   }
 
   qp <- qp + facet_wrap(~feature_label, nrow=nrow, ncol=ncol, scales="free_y")
-  qp <-  qp + geom_bar(stat="identity") + monocle_theme_opts()
+  qp <-  qp +
+    geom_bar(stat="identity") +
+    geom_linerange(aes(ymin=target_fraction_low, ymax=target_fraction_high))+
+    monocle_theme_opts()
 
   return(qp)
 }
@@ -1373,7 +1419,6 @@ plot_genes_by_group <- function(cds,
   }
 
   norm_method = match.arg(norm_method)
-  #group_cells_by=match.arg(group_cells_by)
 
   gene_ids = as.data.frame(fData(cds)) %>%
     tibble::rownames_to_column() %>%
@@ -1408,6 +1453,12 @@ plot_genes_by_group <- function(cds,
   } else{
     cell_group <- colData(cds)[,group_cells_by]
   }
+
+  if (length(unique(cell_group)) < 2) {
+    stop(paste("Only one type in group_cells_by. To use plot_genes_by_group,",
+               "please specify a group with more than one type. "))
+  }
+
   names(cell_group) = colnames(cds)
 
   exprs_mat$Group <- cell_group[exprs_mat$Cell]
@@ -1428,13 +1479,13 @@ plot_genes_by_group <- function(cds,
   row.names(res) <- group_id
 
   if(ordering_type == 'cluster_row_col') {
-    row_dist <- stats::as.dist((1 - stats::cor(t(res[, -1])))/2)
+    row_dist <- stats::as.dist((1 - stats::cor(t(res)))/2)
     row_dist[is.na(row_dist)] <- 1
 
-    col_dist <- stats::as.dist((1 - stats::cor(res[, -1]))/2)
+    col_dist <- stats::as.dist((1 - stats::cor(res))/2)
     col_dist[is.na(col_dist)] <- 1
 
-    ph <- pheatmap::pheatmap(res[, -1],
+    ph <- pheatmap::pheatmap(res,
                              useRaster = T,
                              cluster_cols=TRUE,
                              cluster_rows=TRUE,
@@ -1447,7 +1498,7 @@ plot_genes_by_group <- function(cds,
                              filename=NA)
 
     ExpVal$Gene <- factor(ExpVal$Gene,
-                          levels = colnames(res)[-1][ph$tree_col$order])
+                          levels = colnames(res)[ph$tree_col$order])
     ExpVal$Group <- factor(ExpVal$Group,
                            levels = row.names(res)[ph$tree_row$order])
 

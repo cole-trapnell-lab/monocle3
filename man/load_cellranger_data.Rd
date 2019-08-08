@@ -5,7 +5,7 @@
 \title{Load data from the 10x Genomics Cell Ranger pipeline}
 \usage{
 load_cellranger_data(pipestance_path = NULL, genome = NULL,
-  barcode_filtered = TRUE)
+  barcode_filtered = TRUE, umi_cutoff = 100)
 }
 \arguments{
 \item{pipestance_path}{Path to the output directory produced by Cell Ranger}
@@ -13,6 +13,8 @@ load_cellranger_data(pipestance_path = NULL, genome = NULL,
 \item{genome}{The desired genome (e.g., 'hg19' or 'mm10')}
 
 \item{barcode_filtered}{Load only the cell-containing barcodes}
+
+\item{umi_cutoff}{Numeric, desired cutoff to include a cell. Default is 100.}
 }
 \value{
 a new cell_data_set object

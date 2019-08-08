@@ -90,7 +90,7 @@ test_that("combine_cds works", {
                paste("No genes are shared amongst all the CDS objects. To generate a",
                      "combined CDS with all genes, use keep_all_genes = TRUE"))
 
-
+  skip_on_travis()
   # triples
   expect_warning(expect_error(comb <- combine_cds(list(cds, cds2, cds3),
                                                   keep_all_genes = TRUE,

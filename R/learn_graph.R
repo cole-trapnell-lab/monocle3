@@ -226,19 +226,19 @@ multi_component_RGE <- function(cds,
       num_clusters_in_partition <-
         length(unique(clusters(cds)[colnames(X_subset)]))
       num_cells_in_partition = ncol(X_subset)
-      ncenter <- cal_ncenter(num_clusters_in_partition, num_cells_in_partition)
-      if(is.null(ncenter) || ncenter >= ncol(X_subset)) {
-        ncenter <- ncol(X_subset) - 1
+      curr_ncenter <- cal_ncenter(num_clusters_in_partition, num_cells_in_partition)
+      if(is.null(curr_ncenter) || curr_ncenter >= ncol(X_subset)) {
+        curr_ncenter <- ncol(X_subset) - 1
       }
     } else {
-      ncenter <- min(ncol(X_subset) - 1, ncenter)
+      curr_ncenter <- min(ncol(X_subset) - 1, ncenter)
     }
     if (verbose)
-      message(paste("Using", ncenter, "nodes for principal graph"))
+      message(paste("Using", curr_ncenter, "nodes for principal graph"))
 
     kmean_res <- NULL
 
-    centers <- t(X_subset)[seq(1, ncol(X_subset), length.out=ncenter), ,
+    centers <- t(X_subset)[seq(1, ncol(X_subset), length.out=curr_ncenter), ,
                            drop = F]
     centers <- centers + matrix(stats::rnorm(length(centers), sd = 1e-10),
                                 nrow = nrow(centers)) # add random noise
@@ -246,7 +246,7 @@ multi_component_RGE <- function(cds,
     kmean_res <- tryCatch({
       stats::kmeans(t(X_subset), centers=centers, iter.max = 100)
     }, error = function(err) {
-      stats::kmeans(t(X_subset), centers = ncenter, iter.max = 100)
+      stats::kmeans(t(X_subset), centers = curr_ncenter, iter.max = 100)
     })
 
     if (kmean_res$ifault != 0){

@@ -5,6 +5,7 @@ language: r
 before_install:
   - sudo apt-get install -y libudunits2-dev
   - sudo apt-get install -y gdal-bin
+  - sudo apt-get install -y libgdal1-dev
 r:
 - bioc-devel
 - bioc-release
@@ -44,6 +45,12 @@ r_binary_packages:
 - tibble
 - tidyr
 - viridis
+
+script:
+  - |
+    R CMD build .
+    travis_wait 20 R CMD check monocle3*tar.gz
+
 after_success:
 - Rscript -e 'covr::codecov()'
 notifications:

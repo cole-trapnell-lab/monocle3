@@ -75,12 +75,12 @@ graph_test <- function(cds,
 
     test_res <- tryCatch({
       if(method == "Moran_I") {
-        mt <- my.moran.test(exprs_val, lw, wc, alternative = alternative)
+        mt <- suppressWarnings(my.moran.test(exprs_val, lw, wc, alternative = alternative))
         data.frame(status = 'OK', p_value = mt$p.value,
                    morans_test_statistic = mt$statistic,
                    morans_I = mt$estimate[["Moran I statistic"]])
       } else if(method == 'Geary_C') {
-        gt <- my.geary.test(exprs_val, lw, wc, alternative = alternative)
+        gt <- suppressWarnings(my.geary.test(exprs_val, lw, wc, alternative = alternative))
         data.frame(status = 'OK', p_value = gt$p.value,
                    geary_test_statistic = gt$statistic,
                    geary_C = gt$estimate[["Geary C statistic"]])
