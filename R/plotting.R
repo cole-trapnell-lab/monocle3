@@ -551,8 +551,13 @@ plot_cells <- function(cds,
         colnames(markers_exprs)[1:2] <- c('feature_id','cell_id')
         markers_exprs <- merge(markers_exprs, markers_rowData,
                                by.x = "feature_id", by.y="row.names")
-        markers_exprs$feature_label <-
-          as.character(markers_exprs$gene_short_name)
+        if (is.null(markers_exprs$gene_short_name)) {
+          markers_exprs$feature_label <-
+            as.character(markers_exprs$feature_id)
+        } else {
+          markers_exprs$feature_label <-
+            as.character(markers_exprs$gene_short_name)
+        }
 
         markers_exprs$feature_label <- ifelse(is.na(markers_exprs$feature_label) | !as.character(markers_exprs$feature_label) %in% markers,
                                               as.character(markers_exprs$feature_id),
