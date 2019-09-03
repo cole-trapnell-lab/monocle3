@@ -1004,10 +1004,10 @@ connect_tips <- function(pd,
 
     data <- t(reducedDimS_old[, ])
 
-    louvain_res <- louvain_clustering(data, pd[, ], k = k, weight = weight,
+    cluster_result <- louvain_clustering(data, pd[, ], k = k, weight = weight,
                                       verbose = verbose)
 
-    louvain_res$optim_res$membership <- tmp[, 1]
+    cluster_result$optim_res$membership <- tmp[, 1]
   } else { # use kmean clustering result
     tip_pc_points <- which(igraph::degree(mst_g_old) == 1)
     tip_pc_points_kmean_clusters <-
@@ -1015,14 +1015,14 @@ connect_tips <- function(pd,
 
     data <- t(reducedDimS_old[, ]) # raw_data_tip_pc_points
 
-    louvain_res <- louvain_clustering(data, pd[row.names(data), ], k = k,
+    cluster_result <- louvain_clustering(data, pd[row.names(data), ], k = k,
                                       weight = weight, verbose = verbose)
 
-    louvain_res$optim_res$membership <- kmean_res$cluster
+    cluster_result$optim_res$membership <- kmean_res$cluster
   }
 
   # identify edges between only tip cells
-  cluster_graph_res <- compute_partitions(louvain_res$g, louvain_res$optim_res,
+  cluster_graph_res <- compute_partitions(cluster_result$g, cluster_result$optim_res,
                                           qval_thresh=qval_thresh,
                                           verbose = verbose)
   dimnames(cluster_graph_res$cluster_mat) <-
@@ -1072,7 +1072,7 @@ connect_tips <- function(pd,
   for(i in 1:nrow(valid_connection)) {
     # cluster id for the tip point; if kmean_res return valid_connection[i, ]
     # is itself; otherwise the id identified in the tmp file
-    edge_vec <- sort(unique(louvain_res$optim_res$membership))[
+    edge_vec <- sort(unique(cluster_result$optim_res$membership))[
       valid_connection[i, ]]
     edge_vec_in_tip_pc_point <- igraph::V(mst_g_old)$name[edge_vec]
 
