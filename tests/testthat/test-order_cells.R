@@ -23,7 +23,7 @@ test_that("order_cells error messages work", {
 cds <- estimate_size_factors(cds)
 cds <- preprocess_cds(cds, num_dim = 20)
 cds <- reduce_dimension(cds, umap.fast_sgd=FALSE)
-cds <- cluster_cells(cds)
+cds <- cluster_cells(cds, cluster_method = "louvain")
 cds <- learn_graph(cds)
 
 test_that("order_cells works", {
@@ -46,7 +46,7 @@ test_that("order_cells works", {
 })
 
 cds <- reduce_dimension(cds, max_components = 3, umap.fast_sgd=FALSE)
-cds <- cluster_cells(cds)
+cds <- cluster_cells(cds, cluster_method = "louvain")
 cds <- learn_graph(cds)
 
 test_that("order_cells works 3d", {
@@ -66,5 +66,50 @@ test_that("order_cells works 3d", {
   expect_equal(max(pseudotime(cds)), 7.610501, tol = 1e-5)
   expect_equal(min(pseudotime(cds)), 0)
   expect_equal(as.numeric(pseudotime(cds)[1]), 2.01724, tol = 1e-5)
+})
+
+cds <- cluster_cells(cds, random_seed = 100)
+cds <- learn_graph(cds)
+
+test_that("order_cells works", {
+  cds <- order_cells(cds, root_pr_nodes = "Y_1")
+  expect_equal(max(pseudotime(cds)), 11.99964, tol = 1e-5)
+  expect_equal(min(pseudotime(cds)), 0)
+  expect_equal(as.numeric(pseudotime(cds)[1]), 0.01962027, tol = 1e-5)
+  cds <- order_cells(cds, root_pr_nodes = c("Y_1", "Y_10"))
+  expect_equal(max(pseudotime(cds)), 9.865796, tol = 1e-5)
+  expect_equal(min(pseudotime(cds)), 0)
+  expect_equal(as.numeric(pseudotime(cds)[1]), 0.01962027, tol = 1e-5)
+  cds <- order_cells(cds, root_cells = "G07_B02_RT_587")
+  expect_equal(max(pseudotime(cds)), 13.76537, tol = 1e-5)
+  expect_equal(min(pseudotime(cds)), 0)
+  expect_equal(as.numeric(pseudotime(cds)[1]), 1.785358 , tol = 1e-5)
+  cds <- order_cells(cds, root_cells = c("G07_B02_RT_587", "F06_A01_RT_598"))
+  expect_equal(max(pseudotime(cds)), 8.088301, tol = 1e-5)
+  expect_equal(min(pseudotime(cds)), 0)
+  expect_equal(as.numeric(pseudotime(cds)[1]), 1.785358 , tol = 1e-5)
+})
+
+cds <- reduce_dimension(cds, max_components = 3, umap.fast_sgd=FALSE)
+cds <- cluster_cells(cds)
+cds <- learn_graph(cds)
+
+test_that("order_cells works 3d", {
+  cds <- order_cells(cds, root_pr_nodes = "Y_1")
+  expect_equal(max(pseudotime(cds)), 12.78498, tol = 1e-5)
+  expect_equal(min(pseudotime(cds)), 0)
+  expect_equal(as.numeric(pseudotime(cds)[1]),  0.006199175, tol = 1e-5)
+  cds <- order_cells(cds, root_pr_nodes = c("Y_1", "Y_10"))
+  expect_equal(max(pseudotime(cds)),  12.34967, tol = 1e-5)
+  expect_equal(min(pseudotime(cds)), 0)
+  expect_equal(as.numeric(pseudotime(cds)[1]),  0.006199175, tol = 1e-5)
+  cds <- order_cells(cds, root_cells = "G07_B02_RT_587")
+  expect_equal(max(pseudotime(cds)), 14.4743, tol = 1e-5)
+  expect_equal(min(pseudotime(cds)), 0)
+  expect_equal(as.numeric(pseudotime(cds)[1]), 2.640936, tol = 1e-5)
+  cds <- order_cells(cds, root_cells = c("G07_B02_RT_587", "F06_A01_RT_598"))
+  expect_equal(max(pseudotime(cds)), 7.117443, tol = 1e-5)
+  expect_equal(min(pseudotime(cds)), 0)
+  expect_equal(as.numeric(pseudotime(cds)[1]), 2.640936, tol = 1e-5)
 })
 

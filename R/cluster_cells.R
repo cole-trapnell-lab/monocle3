@@ -248,7 +248,6 @@ louvain_clustering <- function(data,
   }
 
   if(igraph::vcount(g) < 3000) {
-
     coord <- NULL
     edge_links <- NULL
   } else {
@@ -436,6 +435,7 @@ leiden_clustering <- function(data,
   }
 
   if(igraph::vcount(g) < 3000) {
+    coord <- NULL
     edge_links <- NULL
   } else {
     coord <- NULL

@@ -236,13 +236,13 @@ test_that("fit_models() can handle cluster in model formulae",{
   test_cds = cds
   test_cds = preprocess_cds(test_cds)
   test_cds = reduce_dimension(test_cds)
-  test_cds = cluster_cells(test_cds)
+  test_cds = cluster_cells(test_cds, random_seed = 100)
 
   pos_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "ANGPTL4",]
   pos_ctrl_gene_fit = fit_models(pos_ctrl_gene, model_formula_str = "~cluster", expression_family = "quasipoisson")
   expect_equal(pos_ctrl_gene_fit$status[[1]], "OK")
   pos_ctrl_coefs = coefficient_table(pos_ctrl_gene_fit)
-  expect_equal(pos_ctrl_coefs$estimate[2], -1.74, tolerance=1e-1)
+  expect_equal(pos_ctrl_coefs$estimate[2], 1.45, tolerance=1e-1)
 })
 
 
