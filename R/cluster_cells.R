@@ -390,7 +390,7 @@ leiden_clustering <- function(data,
         quality              = quality,
         modularity           = modularity,
         significance         = significance,
-        number_clusters      = max(cluster_result[['membership']]) ) )
+        cluster_count        = max(cluster_result[['membership']]) ) )
     if(verbose)
       message('    Current resolution is ', cur_resolution_parameter,
               '; Modularity is ', modularity,
@@ -414,10 +414,17 @@ leiden_clustering <- function(data,
   if(verbose)
   {
     message('    Done. Run time: ', t_end - t_start, 's\n')
-    print( table_results )
+    message('  Clustering statistics')
+    print( cbind(' '=' ',table_results),row.names=FALSE )
+    message()
+    message('  Cell counts by cluster')
+    membership<-best_result[['membership']]
+    membership_frequency<-aggregate(data.frame(cell_count = membership), list(cluster = membership), length)
+    membership_frequency<-cbind(' '=' ',membership_frequency,cell_fraction=sprintf("%.3f",membership_frequency[['cell_count']]/sum(membership_frequency[['cell_count']])))
+    print( membership_frequency,row.names=FALSE)
     message()
     message('  Maximal modularity is ', best_modularity, ' for resolution parameter ', best_resolution_parameter)
-    message("\n  Run kNN based graph clustering DONE.\n  -Number of clusters:", max(best_result[['membership']]))
+    message("\n  Run kNN based graph clustering DONE.\n  -Number of clusters: ", max(best_result[['membership']]))
   }
 
   if(igraph::vcount(g) < 3000) {
