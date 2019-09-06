@@ -415,7 +415,15 @@ leiden_clustering <- function(data,
   {
     message('    Done. Run time: ', t_end - t_start, 's\n')
     message('  Clustering statistics')
-    print( cbind(' '=' ',table_results),row.names=FALSE )
+    selected <- vector( mode='character', length = length( resolution_parameter ) )
+    for( irespar in 1:length( resolution_parameter ) )
+    {
+      if( identical( table_results[['resolution_parameter']][irespar], best_resolution_parameter ) )
+        selected[irespar] <- '*'
+      else
+        selected[irespar] <- ' '
+    }
+    print( cbind(' '=' ',table_results, selected ),row.names=FALSE )
     message()
     message('  Cell counts by cluster')
     membership<-best_result[['membership']]
@@ -428,7 +436,6 @@ leiden_clustering <- function(data,
   }
 
   if(igraph::vcount(g) < 3000) {
-    coord <- NULL
     edge_links <- NULL
   } else {
     coord <- NULL
