@@ -11,6 +11,7 @@ r:
 - bioc-release
 r_github_packages:
 - VPetukhov/ggrastr
+- cole-trapnell-lab/leidenbase
 r_binary_packages:
 - assertthat
 - dplyr
