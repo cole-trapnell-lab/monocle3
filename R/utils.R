@@ -599,6 +599,11 @@ combine_cds <- function(cds_list,
                           msg=paste("All members of cds_list must be",
                                     "cell_data_set class."))
 
+  num_cells <- sapply(cds_list, ncol)
+  if(sum(num_cells == 0) != 0) {
+    message("Some CDS' have no cells, these will be skipped.")
+    cds_list <- cds_list[num_cells != 0]
+  }
   if(length(cds_list) == 1) return(cds_list[[1]])
 
   assertthat::assert_that(is.logical(keep_all_genes))
