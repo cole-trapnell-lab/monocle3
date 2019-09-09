@@ -654,7 +654,7 @@ combine_cds <- function(cds_list,
   for(i in 1:length(cds_list)) {
     pd <- as.data.frame(pData(cds_list[[i]]))
     exp <- exprs(cds_list[[i]])
-    exp <- exp[intersect(row.names(exp), gene_list),]
+    exp <- exp[intersect(row.names(exp), gene_list),, drop=FALSE]
     if (!cell_names_unique) {
       if(list_named) {
         row.names(pd) <- paste(row.names(pd), names(cds_list)[[i]], sep="_")
