@@ -15,15 +15,29 @@ test_that("preprocessing stays the same", {
   expect_equivalent(nrow(reducedDims(cds)$LSI), nrow(colData(cds)))
   expect_equivalent(reducedDims(cds)$LSI[1,1], 11.112528, tol = 1e-5)
 
-  cds <- preprocess_cds(cds, method = "PCA", norm_method = "size_only", num_dim = 20)
+  cds <- preprocess_cds(cds, method = "PCA", norm_method = "size_only",
+                        num_dim = 20)
   expect_equivalent(ncol(reducedDims(cds)$PCA), 20)
   expect_equivalent(nrow(reducedDims(cds)$PCA), nrow(colData(cds)))
   expect_equivalent(reducedDims(cds)$PCA[1,1], 2.222207, tol = 1e-5)
 
-  cds <- preprocess_cds(cds, method = "LSI", norm_method = "size_only", num_dim = 20)
+  cds <- preprocess_cds(cds, method = "LSI", norm_method = "size_only",
+                        num_dim = 20)
   expect_equivalent(ncol(reducedDims(cds)$LSI), 20)
   expect_equivalent(nrow(reducedDims(cds)$LSI), nrow(colData(cds)))
   expect_equivalent(reducedDims(cds)$LSI[1,1], 9.283694, tol = 1e-5)
+
+  cds <- preprocess_cds(cds, method = "PCA", norm_method = "none",
+                        num_dim = 20)
+  expect_equivalent(ncol(reducedDims(cds)$PCA), 20)
+  expect_equivalent(nrow(reducedDims(cds)$PCA), nrow(colData(cds)))
+  expect_equivalent(reducedDims(cds)$PCA[1,1], -2.42836, tol = 1e-5)
+
+  cds <- preprocess_cds(cds, method = "LSI", norm_method = "none",
+                        num_dim = 20)
+  expect_equivalent(ncol(reducedDims(cds)$LSI), 20)
+  expect_equivalent(nrow(reducedDims(cds)$LSI), nrow(colData(cds)))
+  expect_equivalent(reducedDims(cds)$LSI[1,1], 9.602744, tol = 1e-5)
 
   # non-standard options
   cds <- preprocess_cds(cds, method = "PCA", scaling=FALSE,
