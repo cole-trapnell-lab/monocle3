@@ -35,6 +35,11 @@ monocle_theme_opts <- function()
 #'   Default is 1.
 #' @param min_expr numeric indicating the minimum marker gene value to be
 #'   colored. Default is 0.1.
+#' @param color_palette List of colors to pass to plotly for coloring cells by
+#'   categorical variables. Default is NULL. When NULL, plotly uses default
+#'   colors.
+#' @param color_scale The name of the color scale passed to plotly for coloring
+#'   cells by numeric scale. Default is "Viridis".
 #' @return a plotly plot object
 #' @export
 #' @examples
@@ -53,6 +58,8 @@ plot_cells_3d <- function(cds,
                           trajectory_graph_color="black",
                           trajectory_graph_segment_size=5,
                           norm_method = c("log", "size_only"),
+                          color_palette = NULL,
+                          color_scale = "Viridis",
                           #label_cell_groups = TRUE,#
                           #label_groups_by_cluster=TRUE,#
                           #group_label_size=2,#
@@ -184,25 +191,36 @@ plot_cells_3d <- function(cds,
     sub1 <- data_df[!is.na(data_df$expression),]
     sub2 <- data_df[is.na(data_df$expression),]
     if(norm_method == "size_only"){
-
-      p <- plotly::plot_ly(sub1, x = ~data_dim_1, y = ~data_dim_2,
-                           z = ~data_dim_3, type = 'scatter3d',
-                           color = ~expression, size=I(cell_size),
-                           mode="markers", name = "Expression",
-                           alpha = I(alpha)) %>%
-        plotly::add_markers(x = sub2$data_dim_1, y = sub2$data_dim_2,
-                            color = I("lightgrey"), z = sub2$data_dim_3,
-                            marker=list(opacity = .4), showlegend=FALSE)
-    } else {
-      sub1$log10_expression <- log10(sub1$expression + min_expr)
-      p <- plotly::plot_ly(sub1, x = ~data_dim_1, y = ~data_dim_2,
-                           z = ~data_dim_3, type = 'scatter3d',
-                           color = ~log10_expression, mode="markers",
-                           size=I(cell_size), name = "Log10\nExpression",
-                           alpha = I(alpha)) %>%
+      p <- plotly::plot_ly(sub1) %>%
+        plotly::add_trace(x = ~data_dim_1, y = ~data_dim_2, z = ~data_dim_3,
+                          type = 'scatter3d', size=I(cell_size), alpha = I(alpha),
+                          mode="markers", marker=list(
+                            colorbar = list(title = "Expression", len=0.5),
+                            color=~expression,
+                            colors=color_scale,
+                            line=list(width = 1,
+                                      color = ~expression,
+                                      colorscale=color_scale),
+                            colorscale=color_scale)) %>%
         plotly::add_markers(x = sub2$data_dim_1, y = sub2$data_dim_2,
                             z = sub2$data_dim_3, color = I("lightgrey"),
                             marker=list(opacity = .4), showlegend=FALSE)
+    } else {
+      sub1$log10_expression <- log10(sub1$expression + min_expr)
+      p <- plotly::plot_ly(sub1) %>%
+        plotly::add_trace(x = ~data_dim_1, y = ~data_dim_2, z = ~data_dim_3,
+                          type = 'scatter3d', size=I(cell_size), alpha = I(alpha),
+                          mode="markers", marker=list(
+                            colorbar = list(title = "Log10\nExpression", len=0.5),
+                            color=~log10_expression,
+                            colors=color_scale,
+                            line=list(width = 1,
+                                      color = ~log10_expression,
+                                      colorscale=color_scale),
+                            colorscale=color_scale)) %>%
+        plotly::add_markers(x = sub2$data_dim_1, y = sub2$data_dim_2,
+                           z = sub2$data_dim_3, color = I("lightgrey"),
+                           marker=list(opacity = .4), showlegend=FALSE)
     }
   } else {
     if(color_cells_by %in% c("cluster", "partition")){
@@ -214,9 +232,14 @@ plot_cells_3d <- function(cds,
         message(paste("cluster_cells() has not been called yet, can't color",
                       "cells by cluster or partition"))
       } else{
+        if(is.null(color_palette)) {
+          N <- length(unique(data_df$cell_color))
+          color_palette <- RColorBrewer::brewer.pal(N, "Set2")
+        }
         p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
                              z = ~data_dim_3, type = 'scatter3d',
                              size=I(cell_size), color=~cell_color,
+                             colors = color_palette,
                              mode="markers", alpha = I(alpha))
       }
     } else if(class(data_df$cell_color) == "numeric") {
@@ -227,14 +250,20 @@ plot_cells_3d <- function(cds,
                           mode="markers", marker=list(
                             colorbar = list(title = color_cells_by, len=0.5),
                             color=~cell_color,
+                            colors=color_scale,
                             line=list(width = 1,
                                       color = ~cell_color,
-                                      colorscale="Viridis"),
-                            colorscale="Viridis"))
+                                      colorscale=color_scale),
+                            colorscale=color_scale))
     } else {
+      if(is.null(color_palette)) {
+        N <- length(unique(data_df$cell_color))
+        color_palette <- RColorBrewer::brewer.pal(N, "Set2")
+      }
       p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
                            z = ~data_dim_3, type = 'scatter3d',
                            size=I(cell_size), color=~cell_color,
+                           colors = color_palette,
                            mode="markers", alpha = I(alpha))
     }
   }
