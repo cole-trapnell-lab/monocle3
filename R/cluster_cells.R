@@ -126,6 +126,7 @@ cluster_cells <- function(cds,
                                              partitions = partitions,
                                              clusters = clusters)
   } else if(cluster_method=='leiden'){
+    cds <- add_citation(cds, "leiden")
     cluster_result <- leiden_clustering(data = reduced_dim_res,
                                         pd = colData(cds),
                                         k = k,
@@ -150,7 +151,8 @@ cluster_cells <- function(cds,
                                              partitions = partitions,
                                              clusters = clusters)
   }
-
+  cds <- add_citation(cds, "clusters")
+  cds <- add_citation(cds, "partitions")
   return(cds)
 }
 

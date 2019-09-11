@@ -5,7 +5,7 @@
 \title{Preprocess a cds to prepare for trajectory inference}
 \usage{
 preprocess_cds(cds, method = c("PCA", "LSI"), num_dim = 50,
-  norm_method = c("log", "size_only"), use_genes = NULL,
+  norm_method = c("log", "size_only", "none"), use_genes = NULL,
   residual_model_formula_str = NULL, pseudo_count = NULL,
   scaling = TRUE, verbose = FALSE, ...)
 }
@@ -21,8 +21,9 @@ modules / topics. Default is "PCA".}
 \item{num_dim}{the dimensionality of the reduced space.}
 
 \item{norm_method}{Determines how to transform expression values prior to
-reducing dimensionality. Options are "log" and "size_only". Default is
-"log".}
+reducing dimensionality. Options are "log", "size_only", and "none".
+Default is "log". Users should only use "none" if they are confident that
+their data is already normalized.}
 
 \item{use_genes}{NULL or a list of gene IDs. If a list of gene IDs, only
 this subset of genes is used for dimensionality reduction. Default is

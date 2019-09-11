@@ -136,6 +136,7 @@ reduce_dimension <- function(cds,
     reducedDims(cds)$tSNE <- tsne_data
 
   } else if (reduction_method == c("UMAP")) {
+    cds <- add_citation(cds, "UMAP")
     if (verbose)
       message("Running Uniform Manifold Approximation and Projection")
 
