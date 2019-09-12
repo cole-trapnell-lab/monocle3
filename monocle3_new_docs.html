@@ -1934,33 +1934,21 @@ run in a mode that corresponds to the first.
 <h4>Cite your analysis using <code>get_citations</code></h4>
 <p>
   Monocle 3 utilizes methods published by other groups. Please be sure to cite those original 
-  methods papers when you use them in your analyses. To make this easier, we provide a functional
+  methods papers when you use them in your analyses. To make this easier, we provide a function
   <code>get_citations</code> that will print a data frame with the methods and citations that you 
   used in constructing your CDS object. As you use new methods, they will be added to your citation 
   metadata.
 </p>
-{% highlight R %}
-
-
-{% endhighlight %}
-
-If you use Monocle to analyze your experiments, please cite:
 
 {% highlight R %}
+get_citations(cds)
 
-citation("monocle3")
-
-## Cole Trapnell and Davide Cacchiarelli et al (2014): The dynamics and regulators of cell fate decisions are
-## revealed by pseudo-temporal ordering of single cells. Nature Biotechnology
-##
-## Xiaojie Qiu et al (2017): Single-cell mRNA quantification and differential analysis with Census. Nature Methods
-##
-## Xiaojie Qiu et al (2017): Reverse graph embedding resolves complex single-cell developmental trajectories.
-## Nature Methods
-##
-## Junyue Cao, Malte Spielmann et al (2019): The single-cell transcriptional landscape of mammalian organogenesis.
-## Nature
-
+# Your analysis used methods from the following recent work. Please cite them wherever you are presenting your analyses.
+#    method       citations
+# 1 Monocle       Trapnell C. et. al. The dynamics and regulators of cell fate decisions are revealed by pseudotemporal ordering of single cells. Nat. Biotechnol. 32, 381–386 (2014). https://doi.org/10.1038/nbt.2859
+# 2 Monocle       Qiu, X. et. al. Reversed graph embedding resolves complex single-cell trajectories. Nat. Methods 14, 979–982 (2017). https://doi.org/10.1038/nmeth.4402
+# 3 Monocle       Cao, J. et. al. The single-cell transcriptional landscape of mammalian organogenesis. Nature 566, 496–502 (2019). https://doi.org/10.1038/s41586-019-0969-x
+# 4    UMAP       McInnes, L., Healy, J. & Melville, J. UMAP: Uniform Manifold Approximation and Projection for dimension reduction. Preprint at https://arxiv.org/abs/1802.03426 (2018).
 {% endhighlight %}
 
 
