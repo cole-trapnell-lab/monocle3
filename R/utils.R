@@ -736,7 +736,7 @@ add_citation <- function(cds, citation_key) {
     clusters = c("clustering", "Levine, J. H. et. al. Data-driven phenotypic dissection of AML reveals progenitor-like cells that correlate with prognosis. Cell 162, 184–197 (2015). https://doi.org/10.1016/j.cell.2015.05.047"),
     leiden = c("leiden", "Traag, V.A., Waltman, L. & van Eck, N.J. From Louvain to Leiden: guaranteeing well-connected communities. Scientific Reportsvolume 9, Article number: 5233 (2019). https://doi.org/10.1038/s41598-019-41695-z" )
   )
-  if (is.null(metadata(cds)$citations)) {
+  if (is.null(metadata(cds)$citations) | citation_key == "Monocle") {
     metadata(cds)$citations <- data.frame(method = c("Monocle", "Monocle", "Monocle"),
                                           citations = c("Trapnell C. et. al. The dynamics and regulators of cell fate decisions are revealed by pseudotemporal ordering of single cells. Nat. Biotechnol. 32, 381–386 (2014). https://doi.org/10.1038/nbt.2859",
                                                         "Qiu, X. et. al. Reversed graph embedding resolves complex single-cell trajectories. Nat. Methods 14, 979–982 (2017). https://doi.org/10.1038/nmeth.4402",
@@ -763,8 +763,9 @@ add_citation <- function(cds, citation_key) {
 get_citations <- function(cds) {
   message(paste("Your analysis used methods from the following recent work.",
                 "Please cite them wherever you are presenting your analyses."))
-
+  if(is.null(metadata(cds)$citations)) {
+    cds <- add_citation(cds, "Monocle")
+  }
   metadata(cds)$citations
-
 }
 
