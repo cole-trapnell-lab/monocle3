@@ -31,7 +31,8 @@ plot_cells(cds, genes=c("cpna-2", "egl-21", "ram-2", "inos-1")) + ggsave("L2_uma
 
 
 #### With batch correction:
-cds = preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ plate")
+cds = preprocess_cds(cds, num_dim = 100)
+cds = align_cds(cds, num_dim = 100, alignment_group = "plate")
 cds = reduce_dimension(cds, umap.fast_sgd=FALSE, cores=1)
 plot_cells(cds, color_cells_by="plate", label_cell_groups=FALSE) + ggsave("L2_umap_corrected_plate.png", width=5, height=4, dpi = 600)
 
@@ -41,7 +42,7 @@ plot_cells(cds, reduction_method="tSNE", color_cells_by="cao_cell_type") + ggsav
 
 
 ## Step 3: (Optional) Cluster cells
-cds = cluster_cells(cds, resolution=0.0001)
+cds = cluster_cells(cds)
 plot_cells(cds) + ggsave("L2_umap_color_cells_by_cluster.png", width=5, height=4, dpi = 600)
 plot_cells(cds, color_cells_by="partition", group_cells_by="partition") + ggsave("L2_umap_color_cells_by_partition.png", width=5, height=4, dpi = 600)
 
