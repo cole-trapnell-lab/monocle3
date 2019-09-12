@@ -85,18 +85,11 @@ BiocManager::install(c('BiocGenerics', 'DelayedArray', 'DelayedMatrixStats',
                        'SummarizedExperiment'))
 {% endhighlight %}
 
-<p>Optional: If you would like to use the resolution parameter in cluster_cells, you
-  will also need to install one Python package. This can be done with the following code in R:</p>
-
-  {% highlight R %}
-install.packages("reticulate")
-reticulate::py_install("louvain")
-{% endhighlight %}
-
-
 <p>Now, install monocle3 through the cole-trapnell-lab GitHub, execute:</p>
 
 {% highlight R %}
+install.packages("devtools")
+devtools::install_github('cole-trapnell-lab/leidenbase')
 devtools::install_github('cole-trapnell-lab/monocle3')
 {% endhighlight %}
 
@@ -347,6 +340,32 @@ Monocle's sparse matrix support is provided by the <code>Matrix</code> package.
 Other sparse matrix packages, such as <code>slam</code> or
 <code>SparseM</code> are not supported.
 
+<h3 data-toc-text= "Combining CDS objects">Combining CDS objects</h3>
+<p>
+  If you have multiple CDS objects that you would like to analyze together, use our 
+  <code>combine_cds</code>. <code>combine_cds</code> takes a list of CDS objects and
+  combines them into a single CDS object.
+</p>
+
+{% highlight R %}
+# make a fake second cds object for demonstration
+cds2 <- cds[1:100,]
+
+big_cds <- combine_cds(list(cds, cds2))
+{% endhighlight %}
+
+<h4>Options</h4>
+<p>
+<code>keep_all_genes</code>: When TRUE (default), all genes are kept even if they don't match 
+between the different CDSs. Cells that do not have a given gene in their CDS will 
+be marked as having zero expression. When FALSE, only the genes in common among all
+CDSs will be kept. 
+</p>
+<p>
+<code>cell_names_unique</code>: When FALSE (default), the cell names in the CDSs are not
+assumed to be unique, and so a CDS specifier is appended to each cell name. When TRUE, 
+no specifier is added.
+</p>
 <h2>Clustering and classifying your cells</h2>
 
 <p>Single-cell experiments are often performed on tissues containing many cell
@@ -1959,26 +1978,46 @@ get_citations(cds)
 {% endhighlight %}
 
 <h2>Installation troubleshooting</h2>
+<p>
+  Below are a few of the most common errors that users encounter when installing 
+  Monocle 3. If you discover new difficulties, please open an issue on Github describing
+  the problem.
+</p>
 <h3>Errors involving Gdal</h3>
 <h4>Example error messages</h4>
-
-
-<h4>Solution</h4>
-<p>One of Monocle 3's dependencies requires a </p>
-
-<h3>Errors involving Xcode</h3>
-<h4>Example error messages</h4>
-
-
-<h4>Solution</h4>
-
-<h3>Errors involving reticulate:</h3>
-<h4>Example error messages</h4>
-
+{% highlight bash %}
+configure: error: gdal-config not found or not executable.
+ERROR: configuration failed for package ‘sf’
+* removing ‘/Library/Frameworks/R.framework/Versions/3.4/Resources/library/sf’
+Warning in install.packages :
+  installation of package ‘sf’ had non-zero exit status
+{% endhighlight %}
 
 <h4>Solution</h4>
 <p>
-  Many users report issues getting the package 'reticulate' to find their Python installation. These issues
+  One of Monocle 3's dependencies requires a package called gdal. For information on how to
+  install it on your system, see the sf installation instructions <a href="https://github.com/r-spatial/sf">here</a>.
+</p>
+
+<h3>Errors involving Xcode</h3>
+
+<h4>Solution</h4>
+<p>
+  For Mac users only, Xcode command line tools is required. To install, open terminal and type
+  <code>xcode-select --install</code> and then follow the prompts. When it has completed installation,
+  restart the Monocle 3 installation instructions.
+</p>
+
+<h3>Errors involving reticulate</h3>
+<h4>Example error messages</h4>
+
+{% highlight bash %}
+Error in system("which python", intern = TRUE) : 'which' not found
+{% endhighlight %}
+
+<h4>Solution</h4>
+<p>
+  Many users report issues configuring 'reticulate' to find their Python installation. These issues
   seem to be particularly problematic for Windows users. Because of this, we have rewritten the functions that
   required Python so that <strong>Reticulate and Python are no longer required for installation</strong>. If you
   are still getting errors relating to Python or Reticulate, please make sure you are attempting to install 
