@@ -172,7 +172,7 @@ emb_time_terms %>% filter (q_value < 0.05) %>% select(gene_short_name, term, q_v
 ciliated_cds_pr_test_res = graph_test(cds,  neighbor_graph="principal_graph", cores=4)
 pr_deg_ids = row.names(subset(ciliated_cds_pr_test_res, q_value < 0.05))
 
-gene_module_df = monocle3:::find_gene_modules(cds[pr_deg_ids,], resolution=c(0,10^seq(-6,-1)))
+gene_module_df = monocle3:::find_gene_modules(cds[pr_deg_ids,], resolution=1e-3)
 cell_group_df = tibble::tibble(cell=row.names(colData(cds)), cell_group=colData(cds)$cell.type)
 agg_mat = aggregate_gene_expression(cds, gene_module_df, cell_group_df)
 row.names(agg_mat) = stringr::str_c("Module ", row.names(agg_mat))
@@ -182,7 +182,7 @@ pheatmap::pheatmap(agg_mat,
                     file="emb_pseudotime_module_heatmap.png")
 
 plot_cells(cds,
-           genes=gene_module_df %>% filter(module %in% c(29,20, 11,22)),
+           genes=gene_module_df,
            label_cell_groups=FALSE,
            show_trajectory_graph=FALSE) + ggsave("embryo_umap_selected_pseudotime_modules.png", width=5, height=4, dpi = 600)
 
