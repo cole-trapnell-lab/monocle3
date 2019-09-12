@@ -32,7 +32,7 @@ find_gene_modules <- function(cds,
                           umap.metric = "cosine",
                           umap.min_dist = 0.1,
                           umap.n_neighbors = 15L,
-                          umap.fast_sgd = TRUE,
+                          umap.fast_sgd = FALSE,
                           umap.nn_method = "annoy",
                           k = 20,
                           louvain_iter = 1,
@@ -87,13 +87,13 @@ find_gene_modules <- function(cds,
   if(verbose)
     message("Running louvain clustering algorithm ...")
 
-  cluster_result <- louvain_clustering(data = reduced_dim_res,
+  cluster_result <- leiden_clustering(data = reduced_dim_res,
                                     pd = rowData(cds)[
                                       row.names(reduced_dim_res),,drop=FALSE],
                                     k = k,
                                     weight = weight,
                                     louvain_iter = louvain_iter,
-                                    resolution = resolution,
+                                    resolution_parameter = resolution,
                                     random_seed = random_seed,
                                     verbose = verbose, ...)
 
