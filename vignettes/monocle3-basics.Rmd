@@ -22,16 +22,7 @@ library(ggplot2)
 ```
 
 ```{r}
-expression_matrix <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_expression.rds"))
-cell_metadata <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_colData.rds"))
-gene_annotation <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_rowData.rds"))
-cds <- new_cell_data_set(expression_matrix,
-                         cell_metadata = cell_metadata,
-                         gene_metadata = gene_annotation)
-
-# subset 10k for speed
-set.seed(10)
-cds <- cds[,sample(1:nrow(colData(cds)), 10000)]
+cds <- load_a549()
 ```
 
 ```{r}
