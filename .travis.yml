@@ -9,6 +9,8 @@ before_install:
 r:
 - bioc-devel
 - bioc-release
+r_packages:
+  - covr
 r_github_packages:
 - VPetukhov/ggrastr
 - cole-trapnell-lab/leidenbase
