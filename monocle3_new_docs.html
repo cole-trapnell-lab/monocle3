@@ -109,6 +109,13 @@ devtools::install_github('cole-trapnell-lab/monocle3')
 library(monocle3)
 {% endhighlight %}
 
+<h3>Installation help:</h3>
+<p>
+  If you have trouble installing Monocle 3, please see our 
+  <a href= "{{ site.baseurl }}/monocle3_docs/#installation-troubleshooting">installation troubleshooting</a> 
+  section below.
+</p>
+
 <h2>Getting Help</h2>
 
 <p>Questions about Monocle 3 should be posted on our <a
@@ -1950,6 +1957,34 @@ get_citations(cds)
 # 3 Monocle       Cao, J. et. al. The single-cell transcriptional landscape of mammalian organogenesis. Nature 566, 496–502 (2019). https://doi.org/10.1038/s41586-019-0969-x
 # 4    UMAP       McInnes, L., Healy, J. & Melville, J. UMAP: Uniform Manifold Approximation and Projection for dimension reduction. Preprint at https://arxiv.org/abs/1802.03426 (2018).
 {% endhighlight %}
+
+<h2>Installation troubleshooting</h2>
+<h3>Errors involving Gdal</h3>
+<h4>Example error messages</h4>
+
+
+<h4>Solution</h4>
+<p>One of Monocle 3's dependencies requires a </p>
+
+<h3>Errors involving Xcode</h3>
+<h4>Example error messages</h4>
+
+
+<h4>Solution</h4>
+
+<h3>Errors involving reticulate:</h3>
+<h4>Example error messages</h4>
+
+
+<h4>Solution</h4>
+<p>
+  Many users report issues getting the package 'reticulate' to find their Python installation. These issues
+  seem to be particularly problematic for Windows users. Because of this, we have rewritten the functions that
+  required Python so that <strong>Reticulate and Python are no longer required for installation</strong>. If you
+  are still getting errors relating to Python or Reticulate, please make sure you are attempting to install 
+  Monocle 3 version 0.2.0 or later.
+</p>
+
 
 
 <h2>Acknowledgements </h2>
