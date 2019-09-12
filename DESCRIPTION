@@ -82,7 +82,8 @@ Suggests:
     ggrastr,
     knitr,
     rmarkdown,
-    spelling
+    spelling,
+    scran
 VignetteBuilder: knitr
 Language: en-US
 Remotes:

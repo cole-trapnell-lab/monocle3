@@ -26,7 +26,13 @@
 #'   NULL.
 #' @param residual_model_formula_str NULL or a string model formula specifying
 #'   any effects to subtract from the data before dimensionality reduction.
-#'   Default is NULL.
+#'   Uses a linear model to subtract effects. For non-linear effects, use
+#'   alignment_group. Default is NULL.
+#' @param alignment_group String specifying a column of colData to use for
+#'  aligning groups of cells. The column specified must be a factor.
+#'  Alignment can be used to subtract batch effects in a non-linear way.
+#'  For correcting continuous effects, use residual_model_formula_str.
+#'  Default is NULL.
 #' @param pseudo_count NULL or the amount to increase expression values before
 #'   normalization and dimensionality reduction. If NULL (default), a
 #'   pseudo_count of 1 is added for log normalization and 0 is added for size
@@ -45,6 +51,7 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
                            norm_method = c("log", "size_only", "none"),
                            use_genes = NULL,
                            residual_model_formula_str=NULL,
+                           alignment_group=NULL,
                            pseudo_count=NULL,
                            scaling = TRUE,
                            verbose=FALSE,
@@ -71,6 +78,13 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
   assertthat::assert_that(sum(is.na(size_factors(cds))) == 0,
                           msg = paste("One or more cells has a size factor of",
                                       "NA."))
+
+  if(!is.null(alignment_group)) {
+    assertthat::assert_that(alignment_group %in% colnames(colData(cds)),
+                            msg = "alignment_group must be the name of a column of colData(cds)")
+    assertthat::assert_that(is.factor(colData(cds)[,alignment_group]),
+                            msg = "alignment_group must be a factor")
+  }
 
   method <- match.arg(method)
   norm_method <- match.arg(norm_method)
@@ -120,20 +134,6 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
   }
 
   row.names(preproc_res) <- colnames(cds)
-
-  if (!is.null(residual_model_formula_str)) {
-    if (verbose) message("Removing batch effects")
-    X.model_mat <- Matrix::sparse.model.matrix(
-      stats::as.formula(residual_model_formula_str),
-      data = colData(cds),
-      drop.unused.levels = TRUE)
-
-    fit <- limma::lmFit(Matrix::t(preproc_res), X.model_mat, ...)
-    beta <- fit$coefficients[, -1, drop = FALSE]
-    beta[is.na(beta)] <- 0
-    preproc_res <- Matrix::t(as.matrix(Matrix::t(preproc_res)) -
-                                 beta %*% Matrix::t(X.model_mat[, -1]))
-  }
 
   reducedDims(cds)[[method]] <- as.matrix(preproc_res)
 

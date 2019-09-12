@@ -5,7 +5,7 @@
 \title{Plots the cells along with their trajectories.}
 \usage{
 plot_cells(cds, x = 1, y = 2, reduction_method = c("UMAP", "tSNE",
-  "PCA", "LSI"), color_cells_by = "cluster",
+  "PCA", "LSI", "Aligned"), color_cells_by = "cluster",
   group_cells_by = c("cluster", "partition"), genes = NULL,
   show_trajectory_graph = TRUE, trajectory_graph_color = "grey28",
   trajectory_graph_segment_size = 0.75, norm_method = c("log",

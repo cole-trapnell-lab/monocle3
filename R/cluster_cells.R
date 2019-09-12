@@ -59,7 +59,7 @@
 #' @export
 
 cluster_cells <- function(cds,
-                          reduction_method = c("UMAP", "tSNE", "PCA", "LSI"),
+                          reduction_method = c("UMAP", "tSNE", "PCA", "LSI", "Aligned"),
                           k = 20,
                           cluster_method = c('leiden', 'louvain'),
                           num_iter = 2,

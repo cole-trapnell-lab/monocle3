@@ -6,8 +6,8 @@
 \usage{
 preprocess_cds(cds, method = c("PCA", "LSI"), num_dim = 50,
   norm_method = c("log", "size_only", "none"), use_genes = NULL,
-  residual_model_formula_str = NULL, pseudo_count = NULL,
-  scaling = TRUE, verbose = FALSE, ...)
+  residual_model_formula_str = NULL, alignment_group = NULL,
+  pseudo_count = NULL, scaling = TRUE, verbose = FALSE, ...)
 }
 \arguments{
 \item{cds}{the cell_data_set upon which to perform this operation}
@@ -31,6 +31,13 @@ NULL.}
 
 \item{residual_model_formula_str}{NULL or a string model formula specifying
 any effects to subtract from the data before dimensionality reduction.
+Uses a linear model to subtract effects. For non-linear effects, use
+alignment_group. Default is NULL.}
+
+\item{alignment_group}{String specifying a column of colData to use for
+aligning groups of cells. The column specified must be a factor.
+Alignment can be used to subtract batch effects in a non-linear way.
+For correcting continuous effects, use residual_model_formula_str.
 Default is NULL.}
 
 \item{pseudo_count}{NULL or the amount to increase expression values before
