@@ -66,7 +66,7 @@ cluster_cells <- function(cds,
                           partition_qval = 0.05,
                           weight = FALSE,
                           resolution = NULL,
-                          random_seed = 0L,
+                          random_seed = NULL,
                           verbose = F,
                           ...) {
 
@@ -99,6 +99,9 @@ cluster_cells <- function(cds,
 
   reduced_dim_res <- reducedDims(cds)[[reduction_method]]
 
+  if(is.null(random_seed)) {
+    random_seed <- sample.int(.Machine$integer.max, 1)
+  }
   if(verbose)
     message("Running ", cluster_method, " clustering algorithm ...")
 
