@@ -15,7 +15,7 @@ cds <- new_cell_data_set(expression_matrix,
 
 ## Step 1: Normalize and pre-process the data
 #cds <- estimate_size_factors(cds)
-cds <- preprocess_cds(cds, num_dim = 100)
+cds <- preprocess_cds(cds, num_dim = 50)
 
 ## Step 2: Correct for batch effects (optional)
 cds <- align_cds(cds, 
@@ -30,12 +30,15 @@ plot_cells(cds, label_groups_by_cluster=FALSE, color_cells_by = "cell.type") + g
 
 ## Step 3: Cluster cells
 #cds <- cluster_cells(cds, resolution=c(0, 1e-5, 1e-4, 1e-3, 1e-2))
-cds <- cluster_cells(cds)
+cds <- cluster_cells(cds, resolution=5e-6)
 plot_cells(cds, group_cells_by="partition", color_cells_by = "partition")+ ggsave("embryo_umap_partition.png", width=5, height=4, dpi = 600)
 
 ## Step 4: Learn cell trajectories
-#cds <- learn_graph(cds, learn_graph_control=list(ncenter=1000))
+#
 cds <- learn_graph(cds)
+
+# Default is too coarse, need to set ncenter explicitly:
+cds <- learn_graph(cds, learn_graph_control=list(ncenter=1000))
 
 plot_cells(cds,
            color_cells_by = "cell.type",
