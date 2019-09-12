@@ -268,7 +268,7 @@ leiden_clustering <- function(data,
                               k = 20,
                               weight = NULL,
                               num_iter = 2,
-                              resolution_parameter = 0.1,
+                              resolution_parameter = 0.0001,
                               random_seed = NULL,
                               verbose = FALSE, ...) {
   extra_arguments <- list(...)

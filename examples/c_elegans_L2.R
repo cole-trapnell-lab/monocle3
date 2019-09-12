@@ -41,7 +41,7 @@ plot_cells(cds, reduction_method="tSNE", color_cells_by="cao_cell_type") + ggsav
 
 
 ## Step 3: (Optional) Cluster cells
-cds = cluster_cells(cds, resolution=c(10^seq(-6,-1)))
+cds = cluster_cells(cds, resolution=0.0001)
 plot_cells(cds) + ggsave("L2_umap_color_cells_by_cluster.png", width=5, height=4, dpi = 600)
 plot_cells(cds, color_cells_by="partition", group_cells_by="partition") + ggsave("L2_umap_color_cells_by_partition.png", width=5, height=4, dpi = 600)
 
