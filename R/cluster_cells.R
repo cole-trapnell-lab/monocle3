@@ -132,7 +132,7 @@ cluster_cells <- function(cds,
                                         k = k,
                                         weight = weight,
                                         num_iter = num_iter,
-                                        resolution = resolution,
+                                        resolution_parameter = resolution,
                                         random_seed = random_seed,
                                         verbose = verbose, ...)
     if(length(unique(cluster_result$optim_res$membership)) > 1) {
@@ -297,7 +297,7 @@ leiden_clustering <- function(data,
   }
   else if( is.null( resolution_parameter ) )
   {
-    resolution_parameter = 0.1
+    resolution_parameter = 0.0001
   }
   if( is.null( num_iter ) )
     num_iter = 2
