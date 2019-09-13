@@ -204,6 +204,7 @@ plot_cells_3d <- function(cds,
                             colorscale=color_scale)) %>%
         plotly::add_markers(x = sub2$data_dim_1, y = sub2$data_dim_2,
                             z = sub2$data_dim_3, color = I("lightgrey"),
+                            size=I(cell_size),
                             marker=list(opacity = .4), showlegend=FALSE)
     } else {
       sub1$log10_expression <- log10(sub1$expression + min_expr)
@@ -220,6 +221,7 @@ plot_cells_3d <- function(cds,
                             colorscale=color_scale)) %>%
         plotly::add_markers(x = sub2$data_dim_1, y = sub2$data_dim_2,
                            z = sub2$data_dim_3, color = I("lightgrey"),
+                           size=I(cell_size),
                            marker=list(opacity = .4), showlegend=FALSE)
     }
   } else {
