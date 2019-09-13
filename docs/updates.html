@@ -1,0 +1,67 @@
+---
+permalink: /docs/updates/
+sidemenu: true
+description: "Major updates in Monocle 3."
+modified: 2019-09-13
+tags: [monocle, manual, vignette]
+---
+
+<div class= "container">
+  <div class= "row">
+    <div class= "col-sm-4">
+      <ul class="section-nav" id= "toc" data-spy= "affix" data-toggle= "toc">
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/introduction">Introduction</a></li>
+        <li class="toc-entry toc-h2"><a class="active" href="{{ site.baseurl }}/docs/updates">Major updates in Monocle 3</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/installation">Installing Monocle 3</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/help">Getting help</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/starting">Getting started with Monocle 3</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/clustering">Clustering and classifying your cells</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/trajectories">Constructing single-cell trajectories</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/differential">Differential expression analysis</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/cicero">Single-cell ATAC-seq data</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/citations">Citations and acknowledgments</a></li>
+      </ul>
+    </div>
+    <!-- main content area -->
+    <div class= "col-sm-8">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{{ site.baseurl }}/">Home</a></li>
+          <li class="breadcrumb-item"><a href="{{ site.baseurl }}/docs/introduction">Docs</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Updates</li>
+        </ol>
+      </nav>
+      
+      
+      <h2>Major updates in Monocle 3</h2>
+      
+      <p>
+        Monocle 3 has been re-engineered to analyze large, complex single-cell datasets. 
+        The algorithms at the core of Monocle 3 are highly scalable and can handle millions of cells. 
+        Monocle 3 adds some powerful new features that enable the analysis of organism- or embryo-scale experiments:
+      </p>
+      
+      <ul>
+        <li>A better structured workflow to learn developmental trajectories.</li>
+        <li>Support for the <a href="https://github.com/lmcinnes/umap">UMAP</a> algorithm to initialize trajectory inference.</li>
+        <li>Support for trajectories with multiple roots.</li>
+        <li>Ways to learn trajectories that have loops or points of convergence.</li>
+        <li>
+          Algorithms that automatically partition cells to learn disjoint or parallel trajectories using ideas 
+          from <a href="https://www.biorxiv.org/content/early/2017/10/25/208819">"approximate graph abstraction"</a>.
+        </li>
+        <li>
+          A new statistical test for genes that have trajectory-dependent expression. This replaces both the old 
+          <code>differentialGeneTest()</code> function and <code>BEAM()</code>.
+        </li>
+        <li>A 3D interface to visualize trajectories and gene expression.</li>
+      </ul>
+      
+      <p>
+        Most of the algorithmic details in Monocle 3 are described in 
+        <a href="http://dx.doi.org/10.1038/s41586-019-0969-x">Cao & Spielmann <emph>et al</emph></a>. 
+      </p>
+    </div>
+  </div>
+</div>
+
