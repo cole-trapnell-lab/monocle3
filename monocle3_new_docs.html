@@ -158,20 +158,27 @@ Monocle 3's main class, <code><a href = "{{ site.baseurl }}/monocle3_docs/#the-c
 cds <- new_cell_data_set(expression_matrix,
                          cell_metadata = cell_metadata,
                          gene_metadata = gene_annotation)
+
+## Step 1: Normalize and pre-process the data
+cds <- preprocess_cds(cds, num_dim = 100)
+{% endhighlight %}
+
+<h4><span class= "label label-info">Optional</span> <a href= "{{ site.baseurl }}/monocle3_docs/#check-for-and-remove-batch-effects">Remove batch effects</a> </h4>
+You can subtracted unwatched batch effects or align cells from similar (but not exactly) the same conditions using several different methods in Monocle 3.
+
+{% highlight R %}
+## Step 2: Remove batch effects with cell alignment
+cds <- align_cds(cds, alignment_group = "batch")
 {% endhighlight %}
 
 <h4><a href= "{{ site.baseurl }}/monocle3_docs/#clustering-and-classifying-your-cells">Cluster your cells</a></h4>
 
 You can easily cluster your cells to find new types:
-
 {% highlight R %}
-## Step 1: Normalize and pre-process the data
-cds <- preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ batch")
-
-## Step 2: Reduce the dimensions using UMAP
+## Step 3: Reduce the dimensions using UMAP
 cds <- reduce_dimension(cds)
 
-## Step 3: Cluster the cells
+## Step 4: Cluster the cells
 cds <- cluster_cells(cds)
 {% endhighlight %}
 
@@ -181,10 +188,10 @@ process you're studying, such as differentiation, reprogramming, or an immune
 response.
 
 {% highlight R %}
-## Step 4: Learn a graph
+## Step 5: Learn a graph
 cds <- learn_graph(cds)
 
-## Step 5: Order cells
+## Step 6: Order cells
 cds <- order_cells(cds)
 
 plot_cells(cds)
@@ -529,23 +536,25 @@ plot_cells(cds, color_cells_by="plate", label_cell_groups=FALSE)
   <img src= "{{site.baseurl}}/images/manual_images/L2_umap_plate.png" width= 760>
 </div>
 
-<p>Dramatic batch effects are not evident in this data. If the data contained more substantial variation due to plate, we'd expect to see groups of cells that really only come from one plate. Nevertheless, we can try and remove what batch effect is by re-running the <code>preprocess_cds()</code> function: </p>
+<p>Dramatic batch effects are not evident in this data. If the data contained more substantial variation due to plate, we'd expect to see groups of cells that really only come from one plate. Nevertheless, we can try and remove what batch effect is by running the <code>align_cds()</code> function: </p>
 
 {% highlight R %}
-cds = preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ plate")
+cds = align_cds(cds, num_dim = 100, alignment_group = "~ plate")
 cds = reduce_dimension(cds)
 plot_cells(cds, color_cells_by="plate", label_cell_groups=FALSE)
 {% endhighlight %}
+
+When run with the <code>alignment_group</code> argument, <code>align_cds()</code> tries to remove batch effects using <a href="https://doi.org/10.1038/nbt.4091">mutual nearest neighbor alignment</a>, a technique introduced by John Marioni's lab. Monocle 3 does so by calling Aaron Lun's excellent package <a href="https://bioconductor.org/packages/release/bioc/html/batchelor.html">batchelor</a>. If you use <code>align_cds()</code>, be sure to call <a href="{{ site.baseurl }}/monocle3_docs/#citations"><code>get_citations()</code></a> to see how you should cite the software on which Monocle depends. 
 
 <div class= "text-center">
   <img src= "{{site.baseurl}}/images/manual_images/L2_umap_corrected_plate.png" width= 760>
 </div>
 
 <h3>Group cells into clusters</h3>
-Grouping cells into clusters is an important step in identifying the cell types represented in your data. Monocle uses a technique called <a href="https://en.wikipedia.org/wiki/Louvain_Modularity">Louvain community detection</a> to group cells. This approach was introduced by <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4508757/">Levine et al</a> as part of the phenoGraph algorithm. You can cluster your cells using the <code>cluster_cells()</code> function, like this:
+Grouping cells into clusters is an important step in identifying the cell types represented in your data. Monocle uses a technique called <a href="https://doi.org/10.1038/s41598-019-41695-z">community detection</a> to group cells. This approach was introduced by <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4508757/">Levine et al</a> as part of the phenoGraph algorithm. You can cluster your cells using the <code>cluster_cells()</code> function, like this:
 
 {% highlight R %}
-cds = cluster_cells(cds, resolution=c(10^seq(-6,-1)))
+cds = cluster_cells(cds, resolution=1e-5)
 plot_cells(cds)
 {% endhighlight %}
 
@@ -1010,11 +1019,14 @@ cds <- new_cell_data_set(expression_matrix,
 {% endhighlight %}
 
 <h3>Pre-process the data</h3>
-<p>Pre-processing works exactly as in clustering analysis. This time, we will use a different strategy for batch correction, which replicates what <emph>Packer & Zhu et al</emph> did in their original analysis:</p>
+<p>Pre-processing works exactly as in clustering analysis. This time, we will use a different strategy for batch correction, which includes what <emph>Packer & Zhu et al</emph> did in their original analysis:</p>
 
 {% highlight R %}
-cds <- preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+cds <- preprocess_cds(cds, num_dim = 50)
+cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
 {% endhighlight %}
+
+<p>Note that in addition to using the <code>alignment_group</code> argument to <code>align_cds()</code>, which aligns groups of cells (i.e. batches), we are also using <code>residual_model_formula_str</code>. This argument is for subtracting continuous effects. You can use this to control for things like the fraction of mitochondrial reads in each cell, which is sometimes used as a QC metric for each cell. In this experiment (as in many scRNA-seq experiments), some cells spontanously lyse, releasing their mRNAs into the cell suspension immediately prior to loading into the single-cell library prep. This "supernatant RNA" contaminates each cells' transcriptome profile to a certain extent. Fortunately, it is fairly straightforward to estimate the level of background contamination in each batch of cells and subtract it, which is what Packer et al did in the original study.  Each of the columns <code>bg.300.loading</code>, <code>bg.400.loading</code>, corresponds to a background signal that a cell might be contaminated with. Passing these colums as terms in the <code>residual_model_formula_str</code> tells <code>align_cds()</code> to subtract these signals prior to dimensionality reduction, clustering, and trajectory inference. Note that you can call <code>align_cds()</code> with <code>alignment_group</code>, <code>residual_model_formula</code>, or both.
 
 <h3>Reduce dimensionality and visualize the results</h3>
 Next, we reduce the dimensionality of the data. However, unlike clustering, which works well with both UMAP and t-SNE, here we strongly urge you to use UMAP, the default method:
@@ -2057,16 +2069,25 @@ Error in system("which python", intern = TRUE) : 'which' not found
       Data-driven phenotypic dissection of AML reveals progenitor-like cells that correlate with prognosis</a>.<br/>Cell, 2015.<br/><br/>  </li>
 
   <li>F. Alexander Wolf,, Fiona K. Hamey, Mireya Plass, Jordi Solana, Joakim S. Dahlin, Berthold Göttgens, Nikolaus Rajewsky, Lukas Simon and Fabian J. Theis<br/>
-    <a href = "https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1663-x">
-      PAGA: graph abstraction reconciles clustering with trajectory inference through a topology preserving map of single cells</a>.<br/>Genome biology, 2018.<br/><br/>  </li>
+      <a href = "https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1663-x">
+          PAGA: graph abstraction reconciles clustering with trajectory inference through a topology preserving map of single cells</a>.<br/>Genome biology, 2018.<br/><br/>  </li>
+    
+  <li>Traag, V.A., Waltman, L. & van Eck, N.J.<br/>
+    <a href = "https://doi.org/10.1038/s41598-019-41695-z">
+      From Louvain to Leiden: guaranteeing well-connected communities</a>.<br/>Scientific Reports, 2019.<br/><br/></li>
 
+  <li>Laleh Haghverdi, Aaron T L Lun, Michael D Morgan & John C Marioni<br/>
+      <a href = "https://www.nature.com/articles/nbt.4091">
+        Batch effects in single-cell RNA-sequencing data are corrected by matching mutual nearest neighbors</a>.<br/>Nature Biotechnology, 2018.<br/><br/>  </li>
+
+              
   <li>Junyue Cao*, Malte Spielmann*, Xiaojie Qiu, Xingfan Huang, Daniel M. Ibrahim, Andrew J. Hill, Fan Zhang, Stefan Mundlos, Lena Christiansen, Frank J. Steemers, Cole Trapnell**, and Jay Shendure** <br/>
     <a href = "http://dx.doi.org/10.1038/s41586-019-0969-x">
           The single-cell transcriptional landscape of mammalian organogenesis</a>.<br/>Nature, 2019.<br/><br/>  </li>
 
   <li>Jonathan S. Packer*, Qin Zhu*, Chau Huynh, Priya Sivaramakrishnan, Elicia Preston, Hannah Dueck, Derek Stefanik, Kai Tan, Cole Trapnell, Junhyong Kim**, Robert H. Waterston**, John I. Murray** <br/>
-    <a href = "http://dx.doi.org/10.1101/565549">
-      A lineage-resolved molecular atlas of C. elegans embryogenesis at single cell resolution</a>.<br/>bioRxiv, 2019.<br/><br/>  </li>
+    <a href = "http://dx.doi.org/10.1126/science.aax1971">
+      A lineage-resolved molecular atlas of C. elegans embryogenesis at single cell resolution</a>.<br/>Science, 2019.<br/><br/>  </li>
 
   <li>Nadav Sharon*, Raghav Chawla*, Jonas Mueller, Jordan Vanderhooft, Luke James Whitehorn, Benjamin Rosenthal, Mads Gurtler, Ralph R. Estanboulieh, Dmitry Shvartsman, David K. Gifford, Cole Trapnell** and Doug Melton**<br/>
         <a href = "http://dx.doi.org/10.1016/j.cell.2018.12.003">
