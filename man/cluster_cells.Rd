@@ -7,7 +7,7 @@
 cluster_cells(cds, reduction_method = c("UMAP", "tSNE", "PCA", "LSI",
   "Aligned"), k = 20, cluster_method = c("leiden", "louvain"),
   num_iter = 2, partition_qval = 0.05, weight = FALSE,
-  resolution = NULL, random_seed = 0L, verbose = F, ...)
+  resolution = NULL, random_seed = NULL, verbose = F, ...)
 }
 \arguments{
 \item{cds}{The cell_data_set upon which to perform clustering.}
