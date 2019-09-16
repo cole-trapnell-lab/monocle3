@@ -241,17 +241,19 @@ plot_cells(cds, color_cells_by="plate", label_cell_groups=FALSE)
         <img src= "{{site.baseurl}}/images/manual_images/L2_umap_plate.png" width= 760>
       </div>
       
-      <p>
-        Dramatic batch effects are not evident in this data. If the data contained more substantial variation due to plate, 
-        we'd expect to see groups of cells that really only come from one plate. Nevertheless, we can try and remove what 
-        batch effect is by re-running the <code>preprocess_cds()</code> function: 
-      </p>
+
+      <p>Dramatic batch effects are not evident in this data. If the data contained more substantial variation due to plate, we'd expect to see groups of cells that really only come from one plate. Nevertheless, we can try and remove what batch effect is by running the <code>align_cds()</code> function: </p>
+
       
-{% highlight R %}
-cds <- preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ plate")
-cds <- reduce_dimension(cds)
-plot_cells(cds, color_cells_by="plate", label_cell_groups=FALSE)
-{% endhighlight %}
+      {% highlight R %}
+      cds = align_cds(cds, num_dim = 100, alignment_group = "~ plate")
+      cds = reduce_dimension(cds)
+      plot_cells(cds, color_cells_by="plate", label_cell_groups=FALSE)
+      {% endhighlight %}
+      
+
+      <p>When run with the <code>alignment_group</code> argument, <code>align_cds()</code> tries to remove batch effects using <a href="https://doi.org/10.1038/nbt.4091">mutual nearest neighbor alignment</a>, a technique introduced by John Marioni's lab. Monocle 3 does so by calling Aaron Lun's excellent package <a href="https://bioconductor.org/packages/release/bioc/html/batchelor.html">batchelor</a>. If you use <code>align_cds()</code>, be sure to call <a href="{{ site.baseurl }}/monocle3_docs/#citations"><code>get_citations()</code></a> to see how you should cite the software on which Monocle depends. </p>
+
       
       <div class= "text-center">
         <img src= "{{site.baseurl}}/images/manual_images/L2_umap_corrected_plate.png" width= 760>
@@ -259,15 +261,11 @@ plot_cells(cds, color_cells_by="plate", label_cell_groups=FALSE)
       
       <h3 id="group-cells">Group cells into clusters</h3>
       <p>
-        Grouping cells into clusters is an important step in identifying the cell types represented in your data. Monocle 
-        uses a technique called <a href="https://en.wikipedia.org/wiki/Louvain_Modularity">Louvain community detection</a> 
-        to group cells. This approach was introduced by 
-        <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4508757/">Levine et al</a> as part of the phenoGraph algorithm. 
-        You can cluster your cells using the <code>cluster_cells()</code> function, like this:
+        Grouping cells into clusters is an important step in identifying the cell types represented in your data. Monocle uses a technique called <a href="https://doi.org/10.1038/s41598-019-41695-z">community detection</a> to group cells. This approach was introduced by <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4508757/">Levine et al</a> as part of the phenoGraph algorithm. You can cluster your cells using the <code>cluster_cells()</code> function, like this:
       </p>
       
 {% highlight R %}
-cds <- cluster_cells(cds, resolution=c(10^seq(-6,-1)))
+cds = cluster_cells(cds, resolution=1e-5)
 plot_cells(cds)
 {% endhighlight %}
       

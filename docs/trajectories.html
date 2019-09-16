@@ -93,17 +93,21 @@ cds <- new_cell_data_set(expression_matrix,
       
       <h3 id="pre-process">Pre-process the data</h3>
       <p>
-        Pre-processing works exactly as in clustering analysis. This time, we will use a different strategy for batch correction, 
-        which replicates what <emph>Packer & Zhu et al</emph> did in their original analysis:
+        Pre-processing works exactly as in clustering analysis. This time, we will use a different strategy for batch correction, which includes what <emph>Packer & Zhu et al</emph> did in their original analysis:
       </p>
       <p>
         Note: Your data will not have the loading batch information demonstrated here, you will correct batch using your own batch
         information.
       </p>
+
 {% highlight R %}
-cds <- preprocess_cds(cds, num_dim = 100, 
-                      residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+cds <- preprocess_cds(cds, num_dim = 50)
+cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
 {% endhighlight %}
+
+
+      <p>Note that in addition to using the <code>alignment_group</code> argument to <code>align_cds()</code>, which aligns groups of cells (i.e. batches), we are also using <code>residual_model_formula_str</code>. This argument is for subtracting continuous effects. You can use this to control for things like the fraction of mitochondrial reads in each cell, which is sometimes used as a QC metric for each cell. In this experiment (as in many scRNA-seq experiments), some cells spontanously lyse, releasing their mRNAs into the cell suspension immediately prior to loading into the single-cell library prep. This "supernatant RNA" contaminates each cells' transcriptome profile to a certain extent. Fortunately, it is fairly straightforward to estimate the level of background contamination in each batch of cells and subtract it, which is what Packer et al did in the original study.  Each of the columns <code>bg.300.loading</code>, <code>bg.400.loading</code>, corresponds to a background signal that a cell might be contaminated with. Passing these colums as terms in the <code>residual_model_formula_str</code> tells <code>align_cds()</code> to subtract these signals prior to dimensionality reduction, clustering, and trajectory inference. Note that you can call <code>align_cds()</code> with <code>alignment_group</code>, <code>residual_model_formula</code>, or both.
+
       
       <h3 id="reduce-dimension">Reduce dimensionality and visualize the results</h3>
       <p>

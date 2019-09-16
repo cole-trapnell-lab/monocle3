@@ -57,38 +57,45 @@ tags: [monocle, manual, vignette]
       <h4><a href="{{ site.baseurl }}/docs/starting/#cell_data_set">Store data in a cell_data_set object</a></h4>
       The first step in working with Monocle 3 is to load up your data into
       Monocle 3's main class, <code><a href = "{{ site.baseurl }}/docs/starting/#cell_data_set">cell_data_set</a></code>:
-      
+ 
 {% highlight R %}
 cds <- new_cell_data_set(expression_matrix,
                          cell_metadata = cell_metadata,
                          gene_metadata = gene_annotation)
-{% endhighlight %}
-      
-      <h4><a href= "{{ site.baseurl }}/docs/clustering">Cluster your cells</a></h4>
-      
-      You can easily cluster your cells to find new types:
-      
-{% highlight R %}
-## Step 1: Normalize and pre-process the data
-cds <- preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ batch")
 
-## Step 2: Reduce the dimensions using UMAP
+## Step 1: Normalize and pre-process the data
+cds <- preprocess_cds(cds, num_dim = 100)
+{% endhighlight %}
+
+<h4><span class= "label label-info">Optional</span> <a href= "{{ site.baseurl }}/monocle3_docs/#check-for-and-remove-batch-effects">Remove batch effects</a> </h4>
+You can subtracted unwatched batch effects or align cells from similar (but not exactly) the same conditions using several different methods in Monocle 3.
+
+{% highlight R %}
+## Step 2: Remove batch effects with cell alignment
+cds <- align_cds(cds, alignment_group = "batch")
+{% endhighlight %}
+
+<h4><a href= "{{ site.baseurl }}/monocle3_docs/#clustering-and-classifying-your-cells">Cluster your cells</a></h4>
+
+You can easily cluster your cells to find new types:
+{% highlight R %}
+## Step 3: Reduce the dimensions using UMAP
 cds <- reduce_dimension(cds)
 
-## Step 3: Cluster the cells
+## Step 4: Cluster the cells
 cds <- cluster_cells(cds)
 {% endhighlight %}
-      
-      <h4><span class= "label label-info">Optional</span> <a href= "{{ site.baseurl }}/docs/trajectories">Order cells in pseudotime along a trajectory</a> </h4>
-      Now, put your cells in order by how much progress they've made through whatever
-      process you're studying, such as differentiation, reprogramming, or an immune
-      response.
-      
+
+<h4><span class= "label label-info">Optional</span> <a href= "{{ site.baseurl }}/monocle3_docs/#constructing-single-cell-trajectories">Order cells in pseudotime along a trajectory</a> </h4>
+Now, put your cells in order by how much progress they've made through whatever
+process you're studying, such as differentiation, reprogramming, or an immune
+response.
+
 {% highlight R %}
-## Step 4: Learn a graph
+## Step 5: Learn a graph
 cds <- learn_graph(cds)
 
-## Step 5: Order cells
+## Step 6: Order cells
 cds <- order_cells(cds)
 
 plot_cells(cds)
