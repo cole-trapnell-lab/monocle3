@@ -246,11 +246,11 @@ plot_cells(cds, color_cells_by="plate", label_cell_groups=FALSE)
       <p>Dramatic batch effects are not evident in this data. If the data contained more substantial variation due to plate, we'd expect to see groups of cells that really only come from one plate. Nevertheless, we can try and remove what batch effect is by running the <code>align_cds()</code> function: </p>
 
       
-      {% highlight R %}
-      cds = align_cds(cds, num_dim = 100, alignment_group = "~ plate")
-      cds = reduce_dimension(cds)
-      plot_cells(cds, color_cells_by="plate", label_cell_groups=FALSE)
-      {% endhighlight %}
+{% highlight R %}
+cds = align_cds(cds, num_dim = 100, alignment_group = "~ plate")
+cds = reduce_dimension(cds)
+plot_cells(cds, color_cells_by="plate", label_cell_groups=FALSE)
+{% endhighlight %}
       
 
       <p>When run with the <code>alignment_group</code> argument, <code>align_cds()</code> tries to remove batch effects using <a href="https://doi.org/10.1038/nbt.4091">mutual nearest neighbor alignment</a>, a technique introduced by John Marioni's lab. Monocle 3 does so by calling Aaron Lun's excellent package <a href="https://bioconductor.org/packages/release/bioc/html/batchelor.html">batchelor</a>. If you use <code>align_cds()</code>, be sure to call <a href="{{ site.baseurl }}/monocle3_docs/#citations"><code>get_citations()</code></a> to see how you should cite the software on which Monocle depends. </p>
@@ -271,7 +271,7 @@ plot_cells(cds)
 {% endhighlight %}
       
       <div class= "text-center">
-        <img src= "{{site.baseurl}}/images/manual_images/L2_umap_color_by_cluster.png" width= 760>
+        <img src= "{{site.baseurl}}/images/manual_images/L2_umap_color_cells_by_cluster.png" width= 760>
       </div>
       
       <p>
@@ -423,41 +423,45 @@ colData(cds)$assigned_cell_type <- as.character(partitions(cds))
         remap each cluster to a different cell type:
       </p>
 {% highlight R %}
-colData(cds)$assigned_cell_type <- dplyr::recode(colData(cds)$assigned_cell_type,
-                                                 "1"="Body wall muscle",
-                                                 "2"="Germline",
-                                                 "3"="Unclassified neurons",
-                                                 "4"="Seam cells",
-                                                 "5"="Coelomocytes",
-                                                 "6"="Pharyngeal epithelia",
-                                                 "7"="Vulval precursors",
-                                                 "8"="Non-seam hypodermis",
-                                                 "9"="Intestinal/rectal muscle",
-                                                 "10"="Touch receptor neurons",
-                                                 "11"="Pharyngeal neurons",
-                                                 "12"="Am/PH sheath cells",
-                                                 "13"="NA",
-                                                 "14"="Unclassified neurons",
-                                                 "15"="flp-1(+) interneurons",
-                                                 "16"="Canal associated neurons",
-                                                 "17"="Pharyngeal gland",
-                                                 "18"="Other interneurons",
-                                                 "19"="Ciliated sensory neurons",
-                                                 "20"="Ciliated sensory neurons",
-                                                 "21"="Ciliated sensory neurons",
-                                                 "22"="Ciliated sensory neurons",
-                                                 "23"="Ciliated sensory neurons",
-                                                 "24"="Ciliated sensory neurons",
-                                                 "25"="Oxygen sensory neurons",
-                                                 "26"="Ciliated sensory neurons",
-                                                 "27"="Unclassified neurons",
-                                                 "28"="Pharyngeal gland",
-                                                 "29"="Ciliated sensory neurons",
-                                                 "30"="Ciliated sensory neurons",
-                                                 "31"="Ciliated sensory neurons",
-                                                 "32"="Ciliated sensory neurons",
-                                                 "33"="Pharyngeal muscle",
-                                                 "34"="Failed QC")
+colData(cds)$assigned_cell_type = dplyr::recode(colData(cds)$assigned_cell_type,
+                                                "1"="Germline",
+                                                "2"="Body wall muscle",
+                                                "3"="Unclassified neurons",
+                                                "4"="Vulval precursors",
+                                                "5"="Failed QC",
+                                                "6"="Seam cells",
+                                                "7"="Pharyngeal epithelia",
+                                                "8"="Coelomocytes",
+                                                "9"="Am/PH sheath cells",
+                                                "10"="Failed QC",
+                                                "11"="Touch receptor neurons",
+                                                "12"="Intestinal/rectal muscle",
+                                                "13"="Pharyngeal neurons",
+                                                "14"="NA",
+                                                "15"="flp-1(+) interneurons",
+                                                "16"="Canal associated neurons",
+                                                "17"="Ciliated sensory neurons",
+                                                "18"="Other interneurons",
+                                                "19"="Pharyngeal gland",
+                                                "20"="Failed QC",
+                                                "21"="Ciliated sensory neurons",
+                                                "22"="Oxygen sensory neurons",
+                                                "23"="Ciliated sensory neurons",
+                                                "24"="Ciliated sensory neurons",
+                                                "25"="Ciliated sensory neurons",
+                                                "26"="Ciliated sensory neurons",
+                                                "27"="Oxygen sensory neurons",
+                                                "28"="Ciliated sensory neurons",
+                                                "29"="Unclassified neurons",
+                                                "30"="Socket cells",
+                                                "31"="Failed QC",
+                                                "32"="Pharyngeal gland",
+                                                "33"="Ciliated sensory neurons",
+                                                "34"="Ciliated sensory neurons",
+                                                "35"="Ciliated sensory neurons",
+                                                "36"="Failed QC",
+                                                "37"="Ciliated sensory neurons",
+                                                "38"="Pharyngeal muscle")
 {% endhighlight %}
       
       <p>Let's see how the new annotations look:</p>
@@ -527,10 +531,11 @@ plot_cells(cds_subset, genes=gene_module_df,
       <p>
         You can explore the genes in each module or conduct <a href="http://geneontology.org/">gene ontology enrichment analysis</a> 
         on them to glean insights about which cell types are present. Suppose after doing this we have a good idea of what the cell 
-        types in the partition are. Let's see how they overlap with the clusters in the partition:
+        types in the partition are. Let's recluster the cells at finer resolution and then see how they overlap with the clusters in the partition:
       </p>
 
 {% highlight R %}
+cds_subset = cluster_cells(cds_subset, resolution=1e-2)
 plot_cells(cds_subset, color_cells_by="cluster")
 {% endhighlight %}
       
@@ -542,11 +547,16 @@ plot_cells(cds_subset, color_cells_by="cluster")
 {% highlight R %}
 colData(cds_subset)$assigned_cell_type <- as.character(clusters(cds_subset)[colnames(cds_subset)])
 colData(cds_subset)$assigned_cell_type <- dplyr::recode(colData(cds_subset)$assigned_cell_type,
-                                                        "30"="Vulval precursors",
-                                                        "65"="Distal tip cells",
-                                                        "24"="Sex myoblasts",
-                                                        "51"="Sex myoblasts",
-                                                        "33"="Somatic gonad progenitors")
+                                                        "1"="Somatic gonad precursors",
+                                                        "2"="Somatic gonad precursors",
+                                                        "3"="Vulval precursors",
+                                                        "4"="Sex myoblasts",
+                                                        "5"="Sex myoblasts",
+                                                        "6"="Vulval precursors",
+                                                        "7"="Failed QC",
+                                                        "8"="Vulval precursors",
+                                                        "10"="Unclassified neurons",
+                                                        "11"="Distal tip cells")
 plot_cells(cds_subset, group_cells_by="cluster", color_cells_by="assigned_cell_type")
 {% endhighlight %}
       
@@ -630,7 +640,7 @@ expressed: daf-10, flp-1, nlp-10, zig-2, H05L03.3
 
 > Cell type Sex myoblasts
 expressed: egl-15, C04E12.2
-      
+
 > Cell type Intestinal/rectal muscle
 expressed: egl-20, lbp-2, bgal-1, ttr-10, T23B12.8
 

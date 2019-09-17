@@ -461,7 +461,7 @@ cds <- new_cell_data_set(expression_matrix,
                          cell_metadata = cell_metadata,
                          gene_metadata = gene_annotation)
 
-neurons_cds <- cds[,colData(cds)$assigned_cell_type == "Neurons"]
+neurons_cds <- cds[,grepl("neurons", colData(cds)$assigned_cell_type, ignore.case=TRUE)]
 plot_cells(neurons_cds, color_cells_by="partition")
 {% endhighlight %}
       
@@ -545,7 +545,7 @@ pheatmap::pheatmap(agg_mat, cluster_rows=TRUE, cluster_cols=TRUE,
       
 {% highlight R %}
 plot_cells(neurons_cds, 
-           genes=gene_module_df %>% filter(module %in% c(16,38,33,42)),
+           genes=gene_module_df %>% filter(module %in% c(8, 28, 33, 37)),
            group_cells_by="partition",
            color_cells_by="partition",
            show_trajectory_graph=FALSE)
@@ -694,7 +694,7 @@ cds_subset <- choose_cells(cds)
         set of genes.
       </p>
 {% highlight R %}
-subset_pr_test_res <- graph_test(cds_subset, cores=4)
+subset_pr_test_res <- graph_test(cds_subset, neighbor_graph="principal_graph", cores=4)
 pr_deg_ids <- row.names(subset(subset_pr_test_res, q_value < 0.05))
 {% endhighlight %}
       
