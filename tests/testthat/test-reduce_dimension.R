@@ -1,5 +1,5 @@
 context("test-reduce_dimension")
-
+skip_on_travis()
 cds <- load_a549()
 cds <- estimate_size_factors(cds)
 
