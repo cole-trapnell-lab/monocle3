@@ -213,7 +213,7 @@ fit_models <- function(cds,
   }, error = function(e) {} )
 
   tryCatch({
-    model.frame(model_form, data=coldata_df[1,])
+    stats::model.frame(model_form, data=coldata_df[1,])
   }, error = function(e) {
     stop ("Error: model formula refers to something not found in colData(cds)")
   })

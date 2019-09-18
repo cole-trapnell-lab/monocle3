@@ -110,7 +110,7 @@ new_cell_data_set <- function(expression_data,
 
   cds <- methods::new("cell_data_set",
              assays = SummarizedExperiment::Assays(
-               list(counts=as(expression_data, "dgCMatrix"))),
+               list(counts=methods::as(expression_data, "dgCMatrix"))),
              colData = colData(sce),
              int_elementMetadata =sce@int_elementMetadata,
              int_colData = sce@int_colData,
