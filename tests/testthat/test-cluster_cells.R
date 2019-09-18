@@ -1,5 +1,5 @@
 context("test-cluster_cells")
-skip_on_travis()
+
 set.seed(200)
 cds <- load_a549()
 
