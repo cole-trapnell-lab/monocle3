@@ -631,7 +631,7 @@ pheatmap::pheatmap(agg_mat,
       </p>
 {% highlight R %}
 plot_cells(cds,
-           genes=gene_module_df %>% filter(module %in% c(29,20, 11,22)),
+           genes=gene_module_df %>% filter(module %in% c(27, 10, 7, 30)),
            label_cell_groups=FALSE,
            show_trajectory_graph=FALSE)
 {% endhighlight %}
@@ -642,7 +642,7 @@ plot_cells(cds,
       
       <p>
         Monocle offers another plotting function that can sometimes give a clearer view of a gene's dynamics along a single path. 
-        Let's pick one such path, the AFD cells, which are found in clusters 22, 38, and 35:
+        Let's pick one such path, the AFD cells:
       </p>
 {% highlight R %}
 plot_cells(cds, show_trajectory_graph=FALSE)
@@ -659,7 +659,7 @@ plot_cells(cds, show_trajectory_graph=FALSE)
 {% highlight R %}
 AFD_genes <- c("gcy-8", "dac-1", "oig-8")
 AFD_lineage_cds <- cds[rowData(cds)$gene_short_name %in% AFD_genes,
-                       clusters(cds) %in% c(22, 28, 35)]
+                       colData(cds)$cell.type %in% c("AFD")]
 
 plot_genes_in_pseudotime(AFD_lineage_cds,
                          color_cells_by="embryo.time.bin",
@@ -704,7 +704,7 @@ pr_deg_ids <- row.names(subset(subset_pr_test_res, q_value < 0.05))
       </p>
       
 {% highlight R %}
-gene_module_df <- find_gene_modules(cds_subset[pr_deg_ids,], resolution=1e-2)
+gene_module_df <- find_gene_modules(cds_subset[pr_deg_ids,], resolution=0.001)
 {% endhighlight %}
       
       <p>
@@ -713,9 +713,7 @@ gene_module_df <- find_gene_modules(cds_subset[pr_deg_ids,], resolution=1e-2)
       </p>
       
 {% highlight R %}
-cell_group_df <- tibble::tibble(cell=row.names(colData(cds_subset)), 
-                                cell_group=clusters(cds_subset)[colnames(cds_subset)])
-agg_mat <- aggregate_gene_expression(cds_subset, gene_module_df, cell_group_df)
+agg_mat <- aggregate_gene_expression(cds_subset, gene_module_df)
 module_dendro <- hclust(dist(agg_mat))
 gene_module_df$module <- factor(gene_module_df$module, 
                                 levels = row.names(agg_mat)[module_dendro$order])
