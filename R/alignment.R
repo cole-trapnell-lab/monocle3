@@ -14,7 +14,7 @@
 #'
 #' Haghverdi L, Lun ATL, Morgan MD, Marioni JC (2018). "Batch effects in
 #' single-cell RNA-sequencing data are corrected by matching mutual nearest
-#' neighbors." Nat. Biotechnol., 36(5), 421–427. doi: 10.1038/nbt.4091
+#' neighbors." Nat. Biotechnol., 36(5), 421-427. doi: 10.1038/nbt.4091
 #'
 #' @param cds the cell_data_set upon which to perform this operation
 #' @param preprocess_method a string specifying the low-dimensional space
@@ -71,7 +71,7 @@ align_cds <- function(cds,
                   "Morgan MD, Marioni JC (2018). 'Batch effects in",
                   "single-cell RNA-sequencing data are corrected by matching",
                   "mutual nearest neighbors.' Nat. Biotechnol., 36(5),",
-                  "421–427. doi: 10.1038/nbt.4091"))
+                  "421-427. doi: 10.1038/nbt.4091"))
     corrected_PCA = batchelor::fastMNN(as.matrix(preproc_res),
                                        batch=colData(cds)[,alignment_group],
                                        k=alignment_k,
