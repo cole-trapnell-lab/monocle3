@@ -1,5 +1,5 @@
 context("test-order_cells")
-
+skip_on_travis()
 cds <- load_a549()
 
 test_that("order_cells error messages work", {
