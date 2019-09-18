@@ -641,33 +641,27 @@ plot_cells(cds,
       </div>
       
       <p>
-        Monocle offers another plotting function that can sometimes give a clearer view of a gene's dynamics along a single path. 
+        Monocle offers another plotting function that can sometimes give a clearer view of a gene's dynamics along a single path. You can select a path with <code>choose_cells()</code> or by subsetting the cell data set by cluster, cell type, or other annotation that's restricted to the path.
         Let's pick one such path, the AFD cells:
-      </p>
-{% highlight R %}
-plot_cells(cds, show_trajectory_graph=FALSE)
-{% endhighlight %}
-      
-      <div class= "text-center">
-        <img src= "{{site.baseurl}}/images/manual_images/embryo_umap_cluster.png" width= 760>
-      </div>
-      
-      <p>
-        The function <code>plot_genes_in_pseudotime()</code> takes a small set of genes and shows you their dynamics as a function of 
-        pseudotime:
       </p>
 {% highlight R %}
 AFD_genes <- c("gcy-8", "dac-1", "oig-8")
 AFD_lineage_cds <- cds[rowData(cds)$gene_short_name %in% AFD_genes,
                        colData(cds)$cell.type %in% c("AFD")]
+{% endhighlight %}
 
+      <p>
+        The function <code>plot_genes_in_pseudotime()</code> takes a small set of genes and shows you their dynamics as a function of 
+        pseudotime:
+      </p>
+{% highlight R %}
 plot_genes_in_pseudotime(AFD_lineage_cds,
                          color_cells_by="embryo.time.bin",
                          min_expr=0.5)
 {% endhighlight %}
       
       <div class= "text-center">
-        <img src= "{{site.baseurl}}/images/manual_images/embryo_AFD_dynamic_genes.png" width= 500>
+        <img src= "{{site.baseurl}}/images/manual_images/embryo_AFD_dynamic_genes.png" width= 760>
       </div>
       
       <p>You can see that <emph>dac-1</emph> is activated before the other two genes.</p>
