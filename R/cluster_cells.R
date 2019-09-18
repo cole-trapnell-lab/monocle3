@@ -419,10 +419,12 @@ leiden_clustering <- function(data,
   {
     message('    Done. Run time: ', t_end - t_start, 's\n')
     message('  Clustering statistics')
-    selected <- vector( mode='character', length = length( resolution_parameter ) )
+    selected <- vector( mode='character',
+                        length = length( resolution_parameter ) )
     for( irespar in 1:length( resolution_parameter ) )
     {
-      if( identical( table_results[['resolution_parameter']][irespar], best_resolution_parameter ) )
+      if( identical( table_results[['resolution_parameter']][irespar],
+                     best_resolution_parameter ) )
         selected[irespar] <- '*'
       else
         selected[irespar] <- ' '
@@ -431,12 +433,17 @@ leiden_clustering <- function(data,
     message()
     message('  Cell counts by cluster')
     membership<-best_result[['membership']]
-    membership_frequency<-aggregate(data.frame(cell_count = membership), list(cluster = membership), length)
-    membership_frequency<-cbind(' '=' ',membership_frequency,cell_fraction=sprintf("%.3f",membership_frequency[['cell_count']]/sum(membership_frequency[['cell_count']])))
+    membership_frequency <- stats::aggregate(data.frame(cell_count = membership),
+                                             list(cluster = membership),
+                                             length)
+    membership_frequency <- cbind(' '=' ',membership_frequency,
+                                  cell_fraction=sprintf("%.3f",membership_frequency[['cell_count']]/sum(membership_frequency[['cell_count']])))
     print( membership_frequency,row.names=FALSE)
     message()
-    message('  Maximal modularity is ', best_modularity, ' for resolution parameter ', best_resolution_parameter)
-    message("\n  Run kNN based graph clustering DONE.\n  -Number of clusters: ", max(best_result[['membership']]))
+    message('  Maximal modularity is ', best_modularity,
+            ' for resolution parameter ', best_resolution_parameter)
+    message("\n  Run kNN based graph clustering DONE.\n  -Number of clusters: ",
+            max(best_result[['membership']]))
   }
 
   if(igraph::vcount(g) < 3000) {
@@ -448,7 +455,8 @@ leiden_clustering <- function(data,
   }
 
   igraph::V(g)$names <- as.character(igraph::V(g))
-  out_result <- list(membership = best_result[['membership']], modularity = best_result[['modularity']] )
+  out_result <- list(membership = best_result[['membership']],
+                     modularity = best_result[['modularity']] )
   names(out_result$membership) = cell_names
 
   return(list(g = g, relations = relations, distMatrix = distMatrix,

@@ -12,7 +12,8 @@ align_cds(cds, preprocess_method = c("PCA", "LSI"),
 \item{cds}{the cell_data_set upon which to perform this operation}
 
 \item{preprocess_method}{a string specifying the low-dimensional space
-in which to perform alignment, currently either PCA or LSI. Default is "PCA".}
+in which to perform alignment, currently either PCA or LSI. Default is
+"PCA".}
 
 \item{alignment_group}{String specifying a column of colData to use for
 aligning groups of cells. The column specified must be a factor.
@@ -43,11 +44,13 @@ can be used to remove batch effects, subtract the effects of treatments,
 or even potentially compare across species.
 \code{align_cds} executes alignment and stores these adjusted coordinates.
 
-This function can be used to subtract both continuous and discrete batch effects.
-For continuous effects, \code{align_cds} fits a linear model to the cells's PCA or LSI
-coordinates and subtracts them using Limma. For discrete effects, you must provide a
-grouping of the cells, and then these groups are aligned using Batchelor, a "mutual nearest neighbor"
-algorithm described in:
+This function can be used to subtract both continuous and discrete batch
+effects. For continuous effects, \code{align_cds} fits a linear model to the
+cells' PCA or LSI coordinates and subtracts them using Limma. For discrete
+effects, you must provide a grouping of the cells, and then these groups are
+aligned using Batchelor, a "mutual nearest neighbor" algorithm described in:
 
-Haghverdi L, Lun ATL, Morgan MD, Marioni JC (2018). “Batch effects in single-cell RNA-sequencing data are corrected by matching mutual nearest neighbors.” Nat. Biotechnol., 36(5), 421–427. doi: 10.1038/nbt.4091
+Haghverdi L, Lun ATL, Morgan MD, Marioni JC (2018). "Batch effects in
+single-cell RNA-sequencing data are corrected by matching mutual nearest
+neighbors." Nat. Biotechnol., 36(5), 421–427. doi: 10.1038/nbt.4091
 }
