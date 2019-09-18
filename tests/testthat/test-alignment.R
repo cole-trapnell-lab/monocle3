@@ -77,7 +77,7 @@ test_that("Alignment works on synthetic data", {
   expect_equal(length(unique(partitions(batched_cds, reduction_method="Aligned"))), 6)
 
   batched_cds = preprocess_cds(batched_cds, num_dim=3)
-  batched_cds = align_cds(batched_cds, alignment_group="batch")
+  batched_cds = suppressWarnings(align_cds(batched_cds, alignment_group="batch"))
   batched_cds = cluster_cells(batched_cds, k=10, reduction_method="Aligned", resolution=1e-3)
   plot_cells(batched_cds, reduction_method="Aligned", color_cells_by="batch")
 

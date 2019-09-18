@@ -52,7 +52,7 @@ test_that("preprocessing stays the same", {
                         residual_model_formula_str = "~PCR_plate")
   expect_equal(ncol(reducedDims(cds)$PCA), 20)
   expect_equal(nrow(reducedDims(cds)$PCA), nrow(colData(cds)))
-  expect_equal(reducedDims(cds)$PCA[2,1], 2.274213, tol = 1e-5)
+  expect_equal(reducedDims(cds)$PCA[2,1], 1.982232, tol = 1e-5)
 
 
   # with use_genes
