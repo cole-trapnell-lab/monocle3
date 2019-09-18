@@ -39,14 +39,14 @@ test_that("cluster_cells works", {
 
   # non-standard opts
   cds <- cluster_cells(cds, k=22, resolution = c(0.75, 0.3), weight = T,
-                       num_iter = 2, partition_qval = .1, verbose = TRUE,
+                       num_iter = 1, partition_qval = .1, verbose = TRUE,
                        random_seed = 100)
   expect_is(cds@clusters[["UMAP"]], "list")
   expect_equal(length(cds@clusters[["UMAP"]]), 3)
   expect_equal(length(cds@clusters[["UMAP"]]$cluster_result$optim_res$membership),
                nrow(colData(cds)))
   expect_equal(cds@clusters[["UMAP"]]$cluster_result$optim_res$membership[[1]],
-               14)
+               12)
   expect_equal(length(unique(clusters(cds, reduction_method = "UMAP"))), 17)
 
   ## louvain
@@ -61,7 +61,7 @@ test_that("cluster_cells works", {
 
   # non-standard opts
   cds <- cluster_cells(cds, cluster_method = "louvain", k=22, weight = T,
-                       num_iter = 2, partition_qval = .1, verbose = TRUE,
+                       num_iter = 1, partition_qval = .1, verbose = TRUE,
                        random_seed = 100)
   expect_is(cds@clusters[["UMAP"]], "list")
   expect_equal(length(cds@clusters[["UMAP"]]), 3)
@@ -84,14 +84,14 @@ test_that("cluster_cells works", {
 
   # non-standard opts
   cds <- cluster_cells(cds, reduction_method = "tSNE", k=22,
-                       resolution = c(0.75, 0.3), weight = T, num_iter = 2,
+                       resolution = c(0.75, 0.3), weight = T, num_iter = 1,
                        partition_qval = .1, verbose = TRUE, random_seed = 100)
   expect_is(cds@clusters[["tSNE"]], "list")
   expect_equal(length(cds@clusters[["tSNE"]]), 3)
   expect_equal(length(cds@clusters[["tSNE"]]$cluster_result$optim_res$membership),
                nrow(colData(cds)))
   expect_equal(cds@clusters[["tSNE"]]$cluster_result$optim_res$membership[[1]],
-               14)
+               15)
   expect_equal(length(unique(clusters(cds, reduction_method = "tSNE"))), 18)
 
   ### PCA
