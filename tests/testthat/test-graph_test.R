@@ -1,5 +1,6 @@
 context("test-graph_test")
 skip_if_offline()
+skip_on_travis()
 cds <- monocle3:::load_worm_embryo()
 set.seed(42)
 
