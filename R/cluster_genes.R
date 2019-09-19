@@ -32,7 +32,7 @@ find_gene_modules <- function(cds,
                           umap.metric = "cosine",
                           umap.min_dist = 0.1,
                           umap.n_neighbors = 15L,
-                          umap.fast_sgd = TRUE,
+                          umap.fast_sgd = FALSE,
                           umap.nn_method = "annoy",
                           k = 20,
                           louvain_iter = 1,
@@ -87,28 +87,28 @@ find_gene_modules <- function(cds,
   if(verbose)
     message("Running louvain clustering algorithm ...")
 
-  louvain_res <- louvain_clustering(data = reduced_dim_res,
+  cluster_result <- leiden_clustering(data = reduced_dim_res,
                                     pd = rowData(cds)[
                                       row.names(reduced_dim_res),,drop=FALSE],
                                     k = k,
                                     weight = weight,
                                     louvain_iter = louvain_iter,
-                                    resolution = resolution,
+                                    resolution_parameter = resolution,
                                     random_seed = random_seed,
                                     verbose = verbose, ...)
 
-  cluster_graph_res <- compute_partitions(louvain_res$g,
-                                          louvain_res$optim_res,
+  cluster_graph_res <- compute_partitions(cluster_result$g,
+                                          cluster_result$optim_res,
                                           partition_qval, verbose)
   partitions <-
     igraph::components(cluster_graph_res$cluster_g)$membership[
-      louvain_res$optim_res$membership]
+      cluster_result$optim_res$membership]
   names(partitions) <- row.names(reduced_dim_res)
   partitions <- as.factor(partitions)
 
   gene_module_df <- tibble::tibble(id = row.names(preprocess_mat),
                                    module = factor(
-                                     igraph::membership(louvain_res$optim_res)),
+                                     igraph::membership(cluster_result$optim_res)),
                                    supermodule = partitions)
   gene_module_df <- tibble::as_tibble(cbind(gene_module_df, umap_res))
 

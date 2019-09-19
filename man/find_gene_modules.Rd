@@ -6,7 +6,7 @@
 \usage{
 find_gene_modules(cds, reduction_method = c("UMAP"),
   max_components = 2, umap.metric = "cosine", umap.min_dist = 0.1,
-  umap.n_neighbors = 15L, umap.fast_sgd = TRUE,
+  umap.n_neighbors = 15L, umap.fast_sgd = FALSE,
   umap.nn_method = "annoy", k = 20, louvain_iter = 1,
   partition_qval = 0.05, weight = FALSE, resolution = NULL,
   random_seed = 0L, cores = 1, verbose = F, ...)

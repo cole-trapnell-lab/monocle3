@@ -9,14 +9,16 @@ before_install:
 r:
 - bioc-devel
 - bioc-release
+r_packages:
+  - covr
 r_github_packages:
 - VPetukhov/ggrastr
+- cole-trapnell-lab/leidenbase
 r_binary_packages:
 - assertthat
 - dplyr
 - ggplot2
 - ggrepel
-- htmlwidgets
 - igraph
 - irlba
 - lmtest
@@ -33,9 +35,7 @@ r_binary_packages:
 - purrr
 - RANN
 - Rcpp
-- RcppParallel
 - reshape2
-- reticulate
 - RhpcBLASctl
 - shiny
 - slam

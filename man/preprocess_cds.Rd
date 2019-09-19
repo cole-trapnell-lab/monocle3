@@ -5,9 +5,9 @@
 \title{Preprocess a cds to prepare for trajectory inference}
 \usage{
 preprocess_cds(cds, method = c("PCA", "LSI"), num_dim = 50,
-  norm_method = c("log", "size_only"), use_genes = NULL,
-  residual_model_formula_str = NULL, pseudo_count = NULL,
-  scaling = TRUE, verbose = FALSE, ...)
+  norm_method = c("log", "size_only", "none"), use_genes = NULL,
+  residual_model_formula_str = NULL, alignment_group = NULL,
+  pseudo_count = NULL, scaling = TRUE, verbose = FALSE, ...)
 }
 \arguments{
 \item{cds}{the cell_data_set upon which to perform this operation}
@@ -21,8 +21,9 @@ modules / topics. Default is "PCA".}
 \item{num_dim}{the dimensionality of the reduced space.}
 
 \item{norm_method}{Determines how to transform expression values prior to
-reducing dimensionality. Options are "log" and "size_only". Default is
-"log".}
+reducing dimensionality. Options are "log", "size_only", and "none".
+Default is "log". Users should only use "none" if they are confident that
+their data is already normalized.}
 
 \item{use_genes}{NULL or a list of gene IDs. If a list of gene IDs, only
 this subset of genes is used for dimensionality reduction. Default is
@@ -30,6 +31,13 @@ NULL.}
 
 \item{residual_model_formula_str}{NULL or a string model formula specifying
 any effects to subtract from the data before dimensionality reduction.
+Uses a linear model to subtract effects. For non-linear effects, use
+alignment_group. Default is NULL.}
+
+\item{alignment_group}{String specifying a column of colData to use for
+aligning groups of cells. The column specified must be a factor.
+Alignment can be used to subtract batch effects in a non-linear way.
+For correcting continuous effects, use residual_model_formula_str.
 Default is NULL.}
 
 \item{pseudo_count}{NULL or the amount to increase expression values before

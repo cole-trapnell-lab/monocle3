@@ -5,10 +5,12 @@
 \title{Plot a dataset and trajectory in 3 dimensions}
 \usage{
 plot_cells_3d(cds, dims = c(1, 2, 3), reduction_method = c("UMAP",
-  "tSNE", "PCA", "LSI"), color_cells_by = "cluster", genes = NULL,
-  show_trajectory_graph = TRUE, trajectory_graph_color = "black",
-  trajectory_graph_segment_size = 5, norm_method = c("log",
-  "size_only"), cell_size = 25, alpha = 1, min_expr = 0.1)
+  "tSNE", "PCA", "LSI", "Aligned"), color_cells_by = "cluster",
+  genes = NULL, show_trajectory_graph = TRUE,
+  trajectory_graph_color = "black", trajectory_graph_segment_size = 5,
+  norm_method = c("log", "size_only"), color_palette = NULL,
+  color_scale = "Viridis", cell_size = 25, alpha = 1,
+  min_expr = 0.1)
 }
 \arguments{
 \item{cds}{cell_data_set to plot}
@@ -34,6 +36,13 @@ graph backbone. Default is 5.}
 \item{norm_method}{string indicating the method used to transform gene
 expression when gene markers are provided. Default is "log". "size_only"
 is also supported.}
+
+\item{color_palette}{List of colors to pass to plotly for coloring cells by
+categorical variables. Default is NULL. When NULL, plotly uses default
+colors.}
+
+\item{color_scale}{The name of the color scale passed to plotly for coloring
+cells by numeric scale. Default is "Viridis".}
 
 \item{cell_size}{numeric indicating the size of the point to be plotted.
 Default is 25.}

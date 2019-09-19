@@ -35,6 +35,11 @@ monocle_theme_opts <- function()
 #'   Default is 1.
 #' @param min_expr numeric indicating the minimum marker gene value to be
 #'   colored. Default is 0.1.
+#' @param color_palette List of colors to pass to plotly for coloring cells by
+#'   categorical variables. Default is NULL. When NULL, plotly uses default
+#'   colors.
+#' @param color_scale The name of the color scale passed to plotly for coloring
+#'   cells by numeric scale. Default is "Viridis".
 #' @return a plotly plot object
 #' @export
 #' @examples
@@ -45,7 +50,7 @@ monocle_theme_opts <- function()
 #' @export
 plot_cells_3d <- function(cds,
                           dims = c(1,2,3),
-                          reduction_method = c("UMAP", "tSNE", "PCA", "LSI"),
+                          reduction_method = c("UMAP", "tSNE", "PCA", "LSI", "Aligned"),
                           color_cells_by="cluster",
                           #group_cells_by=c("cluster", "partition"), #
                           genes=NULL,
@@ -53,6 +58,8 @@ plot_cells_3d <- function(cds,
                           trajectory_graph_color="black",
                           trajectory_graph_segment_size=5,
                           norm_method = c("log", "size_only"),
+                          color_palette = NULL,
+                          color_scale = "Viridis",
                           #label_cell_groups = TRUE,#
                           #label_groups_by_cluster=TRUE,#
                           #group_label_size=2,#
@@ -184,25 +191,38 @@ plot_cells_3d <- function(cds,
     sub1 <- data_df[!is.na(data_df$expression),]
     sub2 <- data_df[is.na(data_df$expression),]
     if(norm_method == "size_only"){
-
-      p <- plotly::plot_ly(sub1, x = ~data_dim_1, y = ~data_dim_2,
-                           z = ~data_dim_3, type = 'scatter3d',
-                           color = ~expression, size=I(cell_size),
-                           mode="markers", name = "Expression",
-                           alpha = I(alpha)) %>%
+      p <- plotly::plot_ly(sub1) %>%
+        plotly::add_trace(x = ~data_dim_1, y = ~data_dim_2, z = ~data_dim_3,
+                          type = 'scatter3d', size=I(cell_size), alpha = I(alpha),
+                          mode="markers", marker=list(
+                            colorbar = list(title = "Expression", len=0.5),
+                            color=~expression,
+                            colors=color_scale,
+                            line=list(width = 1,
+                                      color = ~expression,
+                                      colorscale=color_scale),
+                            colorscale=color_scale)) %>%
         plotly::add_markers(x = sub2$data_dim_1, y = sub2$data_dim_2,
-                            color = I("lightgrey"), z = sub2$data_dim_3,
+                            z = sub2$data_dim_3, color = I("lightgrey"),
+                            size=I(cell_size),
                             marker=list(opacity = .4), showlegend=FALSE)
     } else {
       sub1$log10_expression <- log10(sub1$expression + min_expr)
-      p <- plotly::plot_ly(sub1, x = ~data_dim_1, y = ~data_dim_2,
-                           z = ~data_dim_3, type = 'scatter3d',
-                           color = ~log10_expression, mode="markers",
-                           size=I(cell_size), name = "Log10\nExpression",
-                           alpha = I(alpha)) %>%
+      p <- plotly::plot_ly(sub1) %>%
+        plotly::add_trace(x = ~data_dim_1, y = ~data_dim_2, z = ~data_dim_3,
+                          type = 'scatter3d', size=I(cell_size), alpha = I(alpha),
+                          mode="markers", marker=list(
+                            colorbar = list(title = "Log10\nExpression", len=0.5),
+                            color=~log10_expression,
+                            colors=color_scale,
+                            line=list(width = 1,
+                                      color = ~log10_expression,
+                                      colorscale=color_scale),
+                            colorscale=color_scale)) %>%
         plotly::add_markers(x = sub2$data_dim_1, y = sub2$data_dim_2,
-                            z = sub2$data_dim_3, color = I("lightgrey"),
-                            marker=list(opacity = .4), showlegend=FALSE)
+                           z = sub2$data_dim_3, color = I("lightgrey"),
+                           size=I(cell_size),
+                           marker=list(opacity = .4), showlegend=FALSE)
     }
   } else {
     if(color_cells_by %in% c("cluster", "partition")){
@@ -214,9 +234,14 @@ plot_cells_3d <- function(cds,
         message(paste("cluster_cells() has not been called yet, can't color",
                       "cells by cluster or partition"))
       } else{
+        if(is.null(color_palette)) {
+          N <- length(unique(data_df$cell_color))
+          color_palette <- RColorBrewer::brewer.pal(N, "Set2")
+        }
         p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
                              z = ~data_dim_3, type = 'scatter3d',
                              size=I(cell_size), color=~cell_color,
+                             colors = color_palette,
                              mode="markers", alpha = I(alpha))
       }
     } else if(class(data_df$cell_color) == "numeric") {
@@ -227,14 +252,20 @@ plot_cells_3d <- function(cds,
                           mode="markers", marker=list(
                             colorbar = list(title = color_cells_by, len=0.5),
                             color=~cell_color,
+                            colors=color_scale,
                             line=list(width = 1,
                                       color = ~cell_color,
-                                      colorscale="Viridis"),
-                            colorscale="Viridis"))
+                                      colorscale=color_scale),
+                            colorscale=color_scale))
     } else {
+      if(is.null(color_palette)) {
+        N <- length(unique(data_df$cell_color))
+        color_palette <- RColorBrewer::brewer.pal(N, "Set2")
+      }
       p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
                            z = ~data_dim_3, type = 'scatter3d',
                            size=I(cell_size), color=~cell_color,
+                           colors = color_palette,
                            mode="markers", alpha = I(alpha))
     }
   }
@@ -350,7 +381,7 @@ plot_cells_3d <- function(cds,
 plot_cells <- function(cds,
                        x=1,
                        y=2,
-                       reduction_method = c("UMAP", "tSNE", "PCA", "LSI"),
+                       reduction_method = c("UMAP", "tSNE", "PCA", "LSI", "Aligned"),
                        color_cells_by="cluster",
                        group_cells_by=c("cluster", "partition"),
                        genes=NULL,
@@ -551,8 +582,13 @@ plot_cells <- function(cds,
         colnames(markers_exprs)[1:2] <- c('feature_id','cell_id')
         markers_exprs <- merge(markers_exprs, markers_rowData,
                                by.x = "feature_id", by.y="row.names")
-        markers_exprs$feature_label <-
-          as.character(markers_exprs$gene_short_name)
+        if (is.null(markers_exprs$gene_short_name)) {
+          markers_exprs$feature_label <-
+            as.character(markers_exprs$feature_id)
+        } else {
+          markers_exprs$feature_label <-
+            as.character(markers_exprs$gene_short_name)
+        }
 
         markers_exprs$feature_label <- ifelse(is.na(markers_exprs$feature_label) | !as.character(markers_exprs$feature_label) %in% markers,
                                               as.character(markers_exprs$feature_id),
@@ -638,25 +674,27 @@ plot_cells <- function(cds,
     if(norm_method == "size_only"){
       g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2)) +
         plotting_func(aes(data_dim_1, data_dim_2), size=I(cell_size),
-                      stroke = I(cell_stroke), color = "grey80",
+                      stroke = I(cell_stroke), color = "grey80", alpha = alpha,
                       data = na_sub) +
         plotting_func(aes(color=value), size=I(cell_size),
                       stroke = I(cell_stroke), na.rm = TRUE) +
         viridis::scale_color_viridis(option = "viridis",
                                      name = expression_legend_label,
-                                     na.value = "grey80", end = 0.8) +
+                                     na.value = "grey80", end = 0.8,
+                                     alpha = alpha) +
         guides(alpha = FALSE) + facet_wrap(~feature_label)
     } else {
       g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2)) +
         plotting_func(aes(data_dim_1, data_dim_2), size=I(cell_size),
                       stroke = I(cell_stroke), color = "grey80",
-                      data = na_sub) +
+                      data = na_sub, alpha = alpha) +
         plotting_func(aes(color=log10(value+min_expr)),
                       size=I(cell_size), stroke = I(cell_stroke),
-                      na.rm = TRUE) +
+                      na.rm = TRUE, alpha = alpha) +
         viridis::scale_color_viridis(option = "viridis",
                                      name = expression_legend_label,
-                                     na.value = "grey80", end = 0.8) +
+                                     na.value = "grey80", end = 0.8,
+                                     alpha = alpha) +
         guides(alpha = FALSE) + facet_wrap(~feature_label)
     }
   } else {
@@ -1294,7 +1332,7 @@ plot_percent_cells_positive <- function(cds_subset,
 
   group_mean_bootstrap <- function(split) {
     rsample::analysis(split) %>%
-      dplyr::group_by_("feature_label", group_cells_by) %>%
+      dplyr::group_by(!!as.name("feature_label"), !!as.name(group_cells_by)) %>%
       dplyr::summarize(target = sum(expression > min_expr),
                        target_fraction = sum(expression > min_expr)/dplyr::n())
   }
@@ -1304,17 +1342,17 @@ plot_percent_cells_positive <- function(cds_subset,
     dplyr::mutate(summary_stats = purrr::map(splits, group_mean_bootstrap)) %>%
     tidyr::unnest(summary_stats)
   marker_counts <- marker_counts %>% dplyr::ungroup() %>%
-    dplyr::group_by_("feature_label", group_cells_by) %>%
+    dplyr::group_by(!!as.name("feature_label"), !!as.name(group_cells_by)) %>%
     dplyr::summarize(target_mean = mean(target),
                      target_fraction_mean = mean(target_fraction),
-                     target_low = quantile(target, conf_int_alpha / 2),
-                     target_high = quantile(target, 1 - conf_int_alpha / 2),
-                     target_fraction_low = quantile(target_fraction, (1 - conf_int_alpha) / 2),
-                     target_fraction_high = quantile(target_fraction, 1 - (1 - conf_int_alpha) / 2))
+                     target_low = stats::quantile(target, conf_int_alpha / 2),
+                     target_high = stats::quantile(target, 1 - conf_int_alpha / 2),
+                     target_fraction_low = stats::quantile(target_fraction, (1 - conf_int_alpha) / 2),
+                     target_fraction_high = stats::quantile(target_fraction, 1 - (1 - conf_int_alpha) / 2))
 
 
   # marker_counts <-
-  #   marker_exprs_melted %>% dplyr::group_by_("feature_label", group_cells_by) %>%
+  #   marker_exprs_melted %>% dplyr::group_by(!!as.name("feature_label"), !!as.name(group_cells_by)) %>%
   #   dplyr::summarize(target = sum(expression > min_expr),
   #             target_fraction = sum(expression > min_expr)/dplyr::n())
 

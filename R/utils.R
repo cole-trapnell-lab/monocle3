@@ -599,6 +599,11 @@ combine_cds <- function(cds_list,
                           msg=paste("All members of cds_list must be",
                                     "cell_data_set class."))
 
+  num_cells <- sapply(cds_list, ncol)
+  if(sum(num_cells == 0) != 0) {
+    message("Some CDS' have no cells, these will be skipped.")
+    cds_list <- cds_list[num_cells != 0]
+  }
   if(length(cds_list) == 1) return(cds_list[[1]])
 
   assertthat::assert_that(is.logical(keep_all_genes))
@@ -649,7 +654,7 @@ combine_cds <- function(cds_list,
   for(i in 1:length(cds_list)) {
     pd <- as.data.frame(pData(cds_list[[i]]))
     exp <- exprs(cds_list[[i]])
-    exp <- exp[intersect(row.names(exp), gene_list),]
+    exp <- exp[intersect(row.names(exp), gene_list),, drop=FALSE]
     if (!cell_names_unique) {
       if(list_named) {
         row.names(pd) <- paste(row.names(pd), names(cds_list)[[i]], sep="_")
@@ -720,3 +725,47 @@ clear_cds_slots <- function(cds) {
   cds@reducedDims <- SimpleList()
   cds
 }
+
+
+add_citation <- function(cds, citation_key) {
+  citation_map <- list(
+    UMAP = c("UMAP", "McInnes, L., Healy, J. & Melville, J. UMAP: Uniform Manifold Approximation and Projection for dimension reduction. Preprint at https://arxiv.org/abs/1802.03426 (2018)."),
+    MNN_correct = c("MNN Correct", "Haghverdi, L. et. al. Batch effects in single-cell RNA-sequencing data are corrected by matching mutual nearest neighbors. Nat. Biotechnol. 36, 421-427 (2018). https://doi.org/10.1038/nbt.4091"),
+    partitions = c("paritioning", c("Levine, J. H., et. al. Data-driven phenotypic dissection of AML reveals progenitor-like cells that correlate with prognosis. Cell 162, 184-197 (2015). https://doi.org/10.1016/j.cell.2015.05.047",
+                                  "Wolf, F. A. et. al. PAGA: graph abstraction reconciles clustering with trajectory inference through a topology preserving map of single cells. Genome Biol. 20, 59 (2019). https://doi.org/10.1186/s13059-019-1663-x")),
+    clusters = c("clustering", "Levine, J. H. et. al. Data-driven phenotypic dissection of AML reveals progenitor-like cells that correlate with prognosis. Cell 162, 184-197 (2015). https://doi.org/10.1016/j.cell.2015.05.047"),
+    leiden = c("leiden", "Traag, V.A., Waltman, L. & van Eck, N.J. From Louvain to Leiden: guaranteeing well-connected communities. Scientific Reportsvolume 9, Article number: 5233 (2019). https://doi.org/10.1038/s41598-019-41695-z" )
+  )
+  if (is.null(metadata(cds)$citations) | citation_key == "Monocle") {
+    metadata(cds)$citations <- data.frame(method = c("Monocle", "Monocle", "Monocle"),
+                                          citations = c("Trapnell C. et. al. The dynamics and regulators of cell fate decisions are revealed by pseudotemporal ordering of single cells. Nat. Biotechnol. 32, 381-386 (2014). https://doi.org/10.1038/nbt.2859",
+                                                        "Qiu, X. et. al. Reversed graph embedding resolves complex single-cell trajectories. Nat. Methods 14, 979-982 (2017). https://doi.org/10.1038/nmeth.4402",
+                                                        "Cao, J. et. al. The single-cell transcriptional landscape of mammalian organogenesis. Nature 566, 496-502 (2019). https://doi.org/10.1038/s41586-019-0969-x"))
+  }
+  metadata(cds)$citations <- rbind(metadata(cds)$citations,
+                                   data.frame(method = citation_map[[citation_key]][1],
+                                              citations = citation_map[[citation_key]][2]))
+  cds
+}
+
+#' Access citations for methods used during analysis.
+#'
+#' @param cds The cds object to access citations from.
+#'
+#' @return A data frame with the methods used and the papers to be cited.
+#' @export
+#'
+#' @examples {
+#' \dontrun{
+#' get_citations(cds)
+#' }
+#' }
+get_citations <- function(cds) {
+  message(paste("Your analysis used methods from the following recent work.",
+                "Please cite them wherever you are presenting your analyses."))
+  if(is.null(metadata(cds)$citations)) {
+    cds <- add_citation(cds, "Monocle")
+  }
+  metadata(cds)$citations
+}
+

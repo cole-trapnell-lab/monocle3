@@ -2,11 +2,12 @@
 % Please edit documentation in R/cluster_cells.R
 \name{cluster_cells}
 \alias{cluster_cells}
-\title{Cluster cells using Louvain community detection}
+\title{Cluster cells using Louvain/Leiden community detection}
 \usage{
-cluster_cells(cds, reduction_method = c("UMAP", "tSNE", "PCA", "LSI"),
-  k = 20, louvain_iter = 1, partition_qval = 0.05, weight = FALSE,
-  resolution = NULL, random_seed = 0L, verbose = F, ...)
+cluster_cells(cds, reduction_method = c("UMAP", "tSNE", "PCA", "LSI",
+  "Aligned"), k = 20, cluster_method = c("leiden", "louvain"),
+  num_iter = 2, partition_qval = 0.05, weight = FALSE,
+  resolution = NULL, random_seed = NULL, verbose = F, ...)
 }
 \arguments{
 \item{cds}{The cell_data_set upon which to perform clustering.}
@@ -15,14 +16,19 @@ cluster_cells(cds, reduction_method = c("UMAP", "tSNE", "PCA", "LSI"),
 base clustering. Options are "UMAP", "tSNE", "PCA" and "LSI".}
 
 \item{k}{Integer number of nearest neighbors to use when creating the k
-nearest neighbor graph for Louvain clustering. k is related to the
+nearest neighbor graph for Louvain/Leiden clustering. k is related to the
 resolution of the clustering result, a bigger k will result in lower
 resolution and vice versa. Default is 20.}
 
-\item{louvain_iter}{Integer number of iterations used for Louvain
+\item{cluster_method}{String indicating the clustering method to use.
+Options are "louvain" or "leiden". Default is "leiden". Resolution
+parameter is ignored if set to "louvain".}
+
+\item{num_iter}{Integer number of iterations used for Louvain/Leiden
 clustering. The clustering result giving the largest modularity score will
 be used as the final clustering result. Default is 1. Note that if
-louvain_iter is greater than 1, the random_seed argument will be ignored.}
+num_iter is greater than 1, the random_seed argument will be ignored
+for the louvain method.}
 
 \item{partition_qval}{Numeric, the q-value cutoff to determine when to
 partition. Default is 0.05.}
@@ -35,13 +41,13 @@ kNN) as the weight used for Louvain clustering. Default is FALSE.}
 NULL (Default), the parameter is determined automatically.}
 
 \item{random_seed}{The seed used by the random number generator in
-louvain-igraph package. This argument will be ignored if louvain_iter is
+louvain-igraph package. This argument will be ignored if num_iter is
 larger than 1.}
 
 \item{verbose}{A logic flag to determine whether or not we should print the
 run details.}
 
-\item{...}{Additional arguments passed to louvain-igraph Python package.}
+\item{...}{Additional arguments passed to the leidenbase package.}
 }
 \value{
 an updated cell_data_set object, with cluster and partition
@@ -52,10 +58,10 @@ information stored internally and accessible using
 Unsupervised clustering of cells is a common step in many single-cell
 expression workflows. In an experiment containing a mixture of cell types,
 each cluster might correspond to a different cell type. This function takes
-a cell_data_set as input, clusters the cells using Louvain community
+a cell_data_set as input, clusters the cells using Louvain/Leiden community
 detection, and returns a cell_data_set with internally stored cluster
 assignments. In addition to clusters this function calculates partitions,
-which represent superclusters of the Louvain communities that are found
+which represent superclusters of the Louvain/Leiden communities that are found
 using a kNN pruning method. Cluster assignments can be accessed using the
 \code{\link{clusters}} function and partition assignments can be
 accessed using the \code{\link{partitions}} function.
@@ -68,6 +74,10 @@ doi:10.1126/science.1242072
 Vincent D. Blondel, Jean-Loup Guillaume, Renaud Lambiotte,
 Etienne Lefebvre: Fast unfolding of communities in large networks.
 J. Stat. Mech. (2008) P10008
+
+V. A. Traag and L. Waltman and N. J. van Eck: From Louvain
+to Leiden: guaranteeing well-connected communities. Scientific Reports,
+9(1) (2019). doi: 10.1038/s41598-019-41695-z.
 
 Jacob H. Levine and et. al. Data-Driven Phenotypic Dissection of
 AML Reveals Progenitor-like Cells that Correlate with Prognosis.

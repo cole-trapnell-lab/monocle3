@@ -9,7 +9,7 @@
 #' @export
 #'
 choose_cells <- function(cds,
-                         reduction_method = c("UMAP", "tSNE", "PCA"),
+                         reduction_method = c("UMAP", "tSNE", "PCA", "Aligned"),
                          return_list = FALSE) {
   reduction_method <- match.arg(reduction_method)
   assertthat::assert_that(methods::is(cds, "cell_data_set"))

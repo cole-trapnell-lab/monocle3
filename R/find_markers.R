@@ -396,15 +396,22 @@ generate_garnett_marker_file <- function(marker_test_res,
       next
     }
 
+    good_name <- gsub("\\(|\\)|:|>|,|#", ".", group)
+    if (good_name != group) {
+      warning(paste("Group name contained an illegal character for a Garnett ",
+                    "marker file. ", group, " will be substituted for ",
+                    good_name, "."))
+    }
+
     sub <- good_markers[good_markers$group_name == group,]
     if (nrow(sub) > max_genes_per_group) {
       sub <- sub[order(sub$marker_test_q_value),][1:max_genes_per_group,]
     }
     if ("gene_short_name" %in% colnames(sub)){
-      entry <- paste0("> ", group, "\n", "expressed: ",
+      entry <- paste0("> ", good_name, "\n", "expressed: ",
                       paste(sub$gene_short_name, collapse = ", "), "\n")
     } else {
-      entry <- paste0("> ", group, "\n", "expressed: ",
+      entry <- paste0("> ", good_name, "\n", "expressed: ",
                       paste(sub$gene_id, collapse = ", "), "\n")
     }
 

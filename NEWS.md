@@ -1,3 +1,21 @@
+
+# monocle3 0.2.0
+
+### Major changes
+* Added mutual-nearest-neighbor batch correction (MNNCorrect).
+* Switched to leiden-based clustering, dropped reticulate/python dependency.
+* Added a mechanism to get the citations used during an analysis get_citations().
+
+### Other Changes
+* Added non-standard color options for plot_cell_3d.
+* Added norm_method = 'none' option for importing pre-normalized data.
+
+### Bug fixes
+* Fixed a bug that effected cell size in plot_cells_3d.
+* Added a check for illegal characters in generate_garnett_marker_file.
+* Fixed a bug in the alpha parameter in plot_cells.
+* Fixed multiple minor reported bugs.
+
 # monocle3 0.1.3
 
 ### Changes

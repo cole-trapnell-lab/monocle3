@@ -15,7 +15,12 @@ cds <- new_cell_data_set(expression_matrix,
 
 ## Step 1: Normalize and pre-process the data
 #cds <- estimate_size_factors(cds)
-cds <- preprocess_cds(cds, num_dim = 75, residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+cds <- preprocess_cds(cds, num_dim = 50)
+
+## Step 2: Correct for batch effects (optional)
+cds <- align_cds(cds, 
+                 residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading",
+                 alignment_group="batch")
 
 set.seed(42)
 ## Step 2: Reduce the dimensionality of the data
@@ -25,12 +30,15 @@ plot_cells(cds, label_groups_by_cluster=FALSE, color_cells_by = "cell.type") + g
 
 ## Step 3: Cluster cells
 #cds <- cluster_cells(cds, resolution=c(0, 1e-5, 1e-4, 1e-3, 1e-2))
-cds <- cluster_cells(cds)
+cds <- cluster_cells(cds, resolution=5e-6)
 plot_cells(cds, group_cells_by="partition", color_cells_by = "partition")+ ggsave("embryo_umap_partition.png", width=5, height=4, dpi = 600)
 
 ## Step 4: Learn cell trajectories
-#cds <- learn_graph(cds, learn_graph_control=list(ncenter=1000))
+#
 cds <- learn_graph(cds)
+
+# Default is too coarse, need to set ncenter explicitly:
+cds <- learn_graph(cds, learn_graph_control=list(ncenter=1000))
 
 plot_cells(cds,
            color_cells_by = "cell.type",
@@ -96,9 +104,9 @@ plot_cells(cds,
 #graph_test(cds_subset)
 
 
-# plot_percent_cells_positive(cds_subset, color_cells_by="cell.type") +
-#     guides(fill=FALSE) +
-#     theme(axis.text.x=element_text(angle=45, hjust=1))
+plot_percent_cells_positive(cds[rowData(cds)$gene_short_name %in% ciliated_genes,], group_cells_by="time.point") +
+    guides(fill=FALSE) +
+    theme(axis.text.x=element_text(angle=45, hjust=1))
 
 # plot_genes_violin(cds[rowData(cds)$gene_short_name %in% ciliated_genes,], color_cells_by="cell.type") +
 #     guides(fill=FALSE) +
@@ -164,7 +172,7 @@ emb_time_terms %>% filter (q_value < 0.05) %>% select(gene_short_name, term, q_v
 ciliated_cds_pr_test_res = graph_test(cds,  neighbor_graph="principal_graph", cores=4)
 pr_deg_ids = row.names(subset(ciliated_cds_pr_test_res, q_value < 0.05))
 
-gene_module_df = monocle3:::find_gene_modules(cds[pr_deg_ids,], resolution=c(0,10^seq(-6,-1)))
+gene_module_df = monocle3:::find_gene_modules(cds[pr_deg_ids,], resolution=1e-3)
 cell_group_df = tibble::tibble(cell=row.names(colData(cds)), cell_group=colData(cds)$cell.type)
 agg_mat = aggregate_gene_expression(cds, gene_module_df, cell_group_df)
 row.names(agg_mat) = stringr::str_c("Module ", row.names(agg_mat))
@@ -174,7 +182,7 @@ pheatmap::pheatmap(agg_mat,
                     file="emb_pseudotime_module_heatmap.png")
 
 plot_cells(cds,
-           genes=gene_module_df %>% filter(module %in% c(29,20, 11,22)),
+           genes=gene_module_df,
            label_cell_groups=FALSE,
            show_trajectory_graph=FALSE) + ggsave("embryo_umap_selected_pseudotime_modules.png", width=5, height=4, dpi = 600)
 
