@@ -1,5 +1,5 @@
 context("test-learn_graph")
-skip_on_travis()
+
 cds <- load_a549()
 
 test_that("test learn_graph error messages work", {

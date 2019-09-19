@@ -233,7 +233,7 @@ test_that("fit_models() flags non-convergence for zero-inflated negative binomia
 })
 
 test_that("fit_models() can handle cluster in model formulae",{
-  skip_on_travis()
+
   test_cds = cds
   test_cds = preprocess_cds(test_cds)
   test_cds = reduce_dimension(test_cds)
