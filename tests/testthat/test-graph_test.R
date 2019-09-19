@@ -1,6 +1,15 @@
 context("test-graph_test")
 skip_if_offline()
 
+skip_not_travis <- function ()
+{
+  if (identical(Sys.getenv("TRAVIS"), "true")) {
+    return(invisible(TRUE))
+  }
+  skip("Not on Travis")
+}
+
+
 cds <- monocle3:::load_worm_embryo()
 set.seed(42)
 
@@ -28,6 +37,25 @@ cds <- learn_graph(cds, learn_graph_control=list(ncenter=1000), close_loop=TRUE)
 # })
 
 test_that("test graph_test returns Dex-dependent genes",{
+  skip_on_travis()
+  test_cds = cds
+  pos_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "che-1",]
+  pr_test_res = graph_test(pos_ctrl_gene)
+  expect_equal(pr_test_res$status[1], "OK")
+  expect_equal(pr_test_res$morans_I, 0.661, tolerance=1e-2)
+  expect_equal(pr_test_res$morans_test_statistic, 204.72, tolerance=1e-1)
+  expect_lt(pr_test_res$p_value[1], 0.05)
+
+  neg_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "R02D3.1",]
+  pr_test_res = graph_test(neg_ctrl_gene)
+  expect_equal(pr_test_res$status[1], "OK")
+  expect_equal(pr_test_res$morans_I, -0.00241, tolerance=1e-4)
+  expect_equal(pr_test_res$morans_test_statistic, -0.661, tolerance=1e-1)
+  expect_gt(pr_test_res$p_value[1], 0.05)
+})
+
+test_that("test graph_test returns Dex-dependent genes",{
+  skip_not_travis()
   test_cds = cds
   pos_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "che-1",]
   pr_test_res = graph_test(pos_ctrl_gene)
@@ -39,8 +67,8 @@ test_that("test graph_test returns Dex-dependent genes",{
   neg_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "R02D3.1",]
   pr_test_res = graph_test(neg_ctrl_gene)
   expect_equal(pr_test_res$status[1], "OK")
-  expect_equal(pr_test_res$morans_I, -0.00282, tolerance=1e-4)
-  expect_equal(pr_test_res$morans_test_statistic, -0.784, tolerance=1e-1)
+  expect_equal(pr_test_res$morans_I, -0.000724, tolerance=1e-4)
+  expect_equal(pr_test_res$morans_test_statistic, -0.166, tolerance=1e-1)
   expect_gt(pr_test_res$p_value[1], 0.05)
 })
 
