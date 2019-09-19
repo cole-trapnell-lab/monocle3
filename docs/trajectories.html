@@ -1,0 +1,377 @@
+---
+permalink: /docs/trajectories/
+sidemenu: true
+description: "Constructing single-cell trajectories."
+modified: 2019-09-13
+tags: [monocle, manual, vignette]
+---
+
+<div class= "container">
+  <div class= "row">
+    <div class= "col-sm-4">
+      <ul class="section-nav" id= "toc" data-spy= "affix" data-toggle= "toc">
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/introduction">Introduction</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/updates">Major updates in Monocle 3</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/installation">Installing Monocle 3</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/help">Getting help</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/starting">Getting started with Monocle 3</a></li>
+<!--        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/alignment">Pre-process your data</a></li>  -->
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/clustering">Clustering and classifying your cells</a></li>
+        <li class="toc-entry toc-h2"><a class="active" href="{{ site.baseurl }}/docs/trajectories">Constructing single-cell trajectories</a>
+          <ul>
+            <li class="toc-entry toc-h3"><a href="#pre-process">Pre-process the data</a></li>
+            <li class="toc-entry toc-h3"><a href="#reduce-dimension">Reduce dimensionality and visualize the results</a></li>
+            <li class="toc-entry toc-h3"><a href="#cluster-cells">Cluster your cells</a></li>
+            <li class="toc-entry toc-h3"><a href="#learn-graph">Learn the trajectory graph</a></li>
+            <li class="toc-entry toc-h3"><a href="#order-cells">Order the cells in pseudotime</a></li>
+            <li class="toc-entry toc-h3"><a href="#3d-trajectories">Working with 3D trajectories</a></li>
+          </ul>
+        </li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/differential">Differential expression analysis</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/cicero">Single-cell ATAC-seq data</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/citations">Citations and acknowledgments</a></li>
+      </ul>
+    </div>
+    <!-- main content area -->
+    <div class= "col-sm-8">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{{ site.baseurl }}/">Home</a></li>
+          <li class="breadcrumb-item"><a href="{{ site.baseurl }}/docs/introduction">Docs</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Trajectories</li>
+        </ol>
+      </nav>
+      
+      <h2>Constructing single-cell trajectories </h2>
+      
+      <p>   
+        During development, in response to stimuli, and throughout life, cells
+        transition from one functional "state" to another. Cells in different states
+        express different sets of genes, producing a dynamic repetoire of proteins and
+        metabolites that carry out their work. As cells move between states, they undergo a
+        process of transcriptional re-configuration, with some genes being silenced and
+        others newly activated. These transient states are often hard to characterize
+        because purifying cells in between more stable endpoint states can be difficult
+        or impossible. Single-cell RNA-Seq can enable you to see these states without
+        the need for purification. However, to do so, we must determine where each cell
+        is in the range of possible states. 
+      </p>
+      
+      <p>   
+        Monocle introduced the strategy of using RNA-Seq for <em>single-cell trajectory analysis</em>. 
+        Rather than purifying cells into discrete states
+        experimentally, Monocle uses an algorithm to learn the sequence of gene
+        expression changes each cell must go through as part of a dynamic biological
+        process. Once it has learned the overall "trajectory" of gene expression
+        changes, Monocle can place each cell at its proper position in the trajectory.
+        You can then use Monocle's differential analysis toolkit to find genes regulated
+        over the course of the trajectory, as described in the section 
+        <a href = "{{ site.baseurl }}/docs/differential/#pseudo-dep">Finding genes that change as a function of pseudotime </a>. 
+        If there are
+        multiple outcomes for the process, Monocle will reconstruct a "branched"
+        trajectory. These branches correspond to cellular "decisions", and Monocle
+        provides powerful tools for identifying the genes affected by them and involved
+        in making them. You can see how to analyze branches in the section 
+        <a href = "{{ site.baseurl }}/docs/differential/#branches">Analyzing branches in single-cell trajectories </a>.
+      </p>
+      <p>
+        The workflow for reconstructing trajectories is very similar to the workflow for clustering, but it has a few additional 
+        steps. To illustrate the workflow, we will use another <emph>C. elegans</emph> data set, this one from 
+        <a href="http://dx.doi.org/10.1101/565549">Packer & Zhu et al</a>. Their study includes a time series analysis of whole 
+        developing embyros. We will examine a small subset of the data which includes most of the neurons. We will load it as we 
+        did with the L2 data:
+      </p>
+      
+{% highlight R %}
+expression_matrix <- readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_expression.rds"))
+cell_metadata <- readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_colData.rds"))
+gene_annotation <- readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_rowData.rds"))
+
+cds <- new_cell_data_set(expression_matrix,
+                         cell_metadata = cell_metadata,
+                         gene_metadata = gene_annotation)
+{% endhighlight %}
+      
+      <h3 id="pre-process">Pre-process the data</h3>
+      <p>
+        Pre-processing works exactly as in clustering analysis. This time, we will use a different strategy for batch correction, which includes what <emph>Packer & Zhu et al</emph> did in their original analysis:
+      </p>
+      <p>
+        Note: Your data will not have the loading batch information demonstrated here, you will correct batch using your own batch
+        information.
+      </p>
+
+{% highlight R %}
+cds <- preprocess_cds(cds, num_dim = 50)
+cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+{% endhighlight %}
+
+
+      <p>Note that in addition to using the <code>alignment_group</code> argument to <code>align_cds()</code>, which aligns groups of cells (i.e. batches), we are also using <code>residual_model_formula_str</code>. This argument is for subtracting continuous effects. You can use this to control for things like the fraction of mitochondrial reads in each cell, which is sometimes used as a QC metric for each cell. In this experiment (as in many scRNA-seq experiments), some cells spontanously lyse, releasing their mRNAs into the cell suspension immediately prior to loading into the single-cell library prep. This "supernatant RNA" contaminates each cells' transcriptome profile to a certain extent. Fortunately, it is fairly straightforward to estimate the level of background contamination in each batch of cells and subtract it, which is what Packer et al did in the original study.  Each of the columns <code>bg.300.loading</code>, <code>bg.400.loading</code>, corresponds to a background signal that a cell might be contaminated with. Passing these colums as terms in the <code>residual_model_formula_str</code> tells <code>align_cds()</code> to subtract these signals prior to dimensionality reduction, clustering, and trajectory inference. Note that you can call <code>align_cds()</code> with <code>alignment_group</code>, <code>residual_model_formula</code>, or both.
+
+      
+      <h3 id="reduce-dimension">Reduce dimensionality and visualize the results</h3>
+      <p>
+        Next, we reduce the dimensionality of the data. However, unlike clustering, which works well with both UMAP and t-SNE, 
+        here we strongly urge you to use UMAP, the default method:
+      </p>
+      
+{% highlight R %}
+cds <- reduce_dimension(cds)
+plot_cells(cds, label_groups_by_cluster=FALSE,  color_cells_by = "cell.type")
+{% endhighlight %}
+      
+      <p>
+        As you can see, despite the fact that we are only looking at a small slice of this dataset, Monocle reconstructs a 
+        trajectory with numerous branches. Overlaying the manual annotations on the UMAP reveals that these branches are 
+        principally occupied by one cell type.
+      </p>
+      
+      <div class= "text-center">
+        <img src= "{{site.baseurl}}/images/manual_images/embryo_umap_packer_cell_type.png" width= 760>
+      </div>
+      
+      <p>
+        As with clustering analysis, you can use <code>plot_cells()</code> to visualize how individual genes vary along the 
+        trajectory. Let's look at some genes with interesting patterns of expression in ciliated neurons:
+      </p>
+{% highlight R %}
+ciliated_genes <- c("che-1",
+                    "hlh-17",
+                    "nhr-6",
+                    "dmd-6",
+                    "ceh-36",
+                    "ham-1")
+
+plot_cells(cds,
+           genes=ciliated_genes,
+           label_cell_groups=FALSE,
+           show_trajectory_graph=FALSE)
+{% endhighlight %}
+      
+      <div class= "text-center">
+        <img src= "{{site.baseurl}}/images/manual_images/embryo_ciliated_markers.png" width= 760>
+      </div>
+      
+      <p>
+        We will learn how to identify the genes that are restricted to each outcome of the trajectory later on in the section 
+        <a href = "{{ site.baseurl }}/docs/differential/#pseudo-dep">Finding genes that change as a function of pseudotime</a>.
+      </p>
+      
+      
+      <h3 id="cluster-cells">Cluster your cells</h3>
+      <p>
+        Although cells may continuously transition from one state to the next with no discrete boundary between them, Monocle 
+        does not assume that all cells in the dataset descend from a common transcriptional "ancestor". In many experiments, 
+        there might in fact be multiple distinct trajectories. For example, in a tissue responding to an infection, tissue 
+        resident immune cells and stromal cells will have very different initial transcriptomes, and will respond to infection 
+        quite differently, so they should be a part of the same trajectory. 
+      </p>
+      
+      <p>
+        Monocle is able to learn when cells should be placed in the same trajectory as opposed to separate trajectories through 
+        its clustering procedure. Recall that we run <code>cluster_cells()</code>, each cell is assigned not only to a cluster 
+        but also to a <emph>partition</emph>. When you are learning trajectories, each partition will eventually become a separate 
+        trajectory. We run <code>cluster_cells()</code>as before.
+      </p>
+{% highlight R %}
+cds <- cluster_cells(cds)
+plot_cells(cds, color_cells_by = "partition")
+{% endhighlight %}
+      
+      <div class= "text-center">
+        <img src= "{{site.baseurl}}/images/manual_images/embryo_umap_partition.png" width= 760>
+      </div>
+      
+      <h3 id="learn-graph">Learn the trajectory graph</h3>
+      <p>
+        Next, we will fit a <emph>principal graph</emph> within each parition using the <code>learn_graph()</code> function:
+      </p>
+{% highlight R %}
+cds <- learn_graph(cds)
+plot_cells(cds,
+           color_cells_by = "cell.type",
+           label_groups_by_cluster=FALSE,
+           label_leaves=FALSE,
+           label_branch_points=FALSE)
+{% endhighlight %}
+      
+      <div class= "text-center">
+        <img src= "{{site.baseurl}}/images/manual_images/embryo_pr_graph_packer_cell_type.png" width= 760>
+      </div>
+      
+      <p>This graph will be used in many downstream steps, such as branch analysis and differential expression.</p>
+      
+      <h3 id="order-cells">Order the cells in pseudotime</h3>
+      <p>
+        Once we've learned a graph, we are ready to order the cells according to their progress through the developmental 
+        program. Monocle measures this progress in <emph>pseudotime</emph>. The box below defines pseudotime.
+      </p>
+      
+      <div class= "panel panel-info">
+        <div class= "panel-heading">
+          <h3 class= "panel-title" data-toc-skip>What is pseudotime?</h3>
+        </div>
+        <div class= "panel-body">
+          <p>
+            <emph>Pseudotime</emph> is a measure of how much progress an individual cell has made through a process such as cell 
+            differentiation. 
+          </p>
+          
+          <p>
+            In many biological processes, cells do not progress in perfect synchrony.  In single-cell expression studies of processes 
+            such as cell differentiation, captured cells might be widely distributed in terms of progress.  That is, in a population 
+            of cells captured at exactly the same time, some cells might be far along, while others might not yet even have begun 
+            the process.  This asynchrony creates major problems when you want to understand the sequence of regulatory changes that 
+            occur as cells transition from one state to the next. Tracking the expression across cells captured at the same time 
+            produces a very compressed sense of a gene's kinetics, and the apparent variability of that gene's expression will be 
+            very high.
+          </p>
+          
+          <p>
+            By ordering each cell according to its progress along a learned trajectory, Monocle alleviates the problems that 
+            arise due to asynchrony. Instead of tracking changes in expression as a function of time, Monocle tracks changes as 
+            a function of progress along the trajectory, which we term ``pseudotime''. Pseudotime is an abstract unit of progress: 
+            it's simply the distance between a cell and the start of the trajectory, measured along the shortest path. The 
+            trajectory's total length is defined in terms of the total amount of transcriptional change that a cell undergoes as 
+            it moves from the starting state to the end state.
+          </p>
+        </div>
+      </div>
+      
+      <p>
+        In order to place the cells in order, we need to tell Monocle where the "beginning" of the biological process is. We do so 
+        by choosing regions of the graph that we mark as "roots" of the trajectory. In time series experiments, this can usually 
+        be accomplished by finding spots in the UMAP space that are occupied by cells from early time points:
+      </p>
+{% highlight R %}
+plot_cells(cds,
+           color_cells_by = "embryo.time.bin",
+           label_cell_groups=FALSE,
+           label_leaves=TRUE,
+           label_branch_points=TRUE,
+           graph_label_size=1.5)
+{% endhighlight %}
+      
+      <div class= "text-center">
+        <img src= "{{site.baseurl}}/images/manual_images/embryo_pr_graph_by_time.png" width= 760>
+      </div>
+      
+      <p>
+        The black lines show the structure of the graph. Note that the graph is not fully connected: cells in different partitions 
+        are in distinct components of the graph. The circles with numbers in them denote special points within the graph. Each 
+        <emph>leaf</emph>, denoted by light gray circles, corresponds to a different outcome (i.e. cell fate) of the trajectory. 
+        Black circles indicate branch nodes, in which cells can travel to one of several outcomes. You can control whether or not 
+        these are shown in the plot with the <code>label_leaves</code> and <code>label_branch_points</code> arguments to 
+        <code>plot_cells</code>.
+      </p>
+      
+      <p>
+        Now that we have a sense of where the early cells fall, we can call <code>order_cells()</code>, which will calculate where 
+        each cell falls in pseudotime. In order to do so <code>order_cells()</code>needs you to specify the <emph>root nodes</emph> 
+        of the trajectory graph. If you don't provide them as an argument, it will launch a graphical user interface for selecting 
+        one or more root nodes.
+      </p>
+      
+{% highlight R %}
+cds <- order_cells(cds)
+{% endhighlight %}
+      
+      <div class= "text-center">
+        <img src= "{{site.baseurl}}/images/manual_images/choose_root_recording.gif" width= 760>
+      </div>
+      
+      <p>
+        In the above example, we just chose one location, but you could pick as many as you want. Plotting the cells and coloring 
+        them by pseudotime shows how they were ordered:
+      </p>
+      
+{% highlight R %}
+plot_cells(cds,
+           color_cells_by = "pseudotime",
+           label_cell_groups=FALSE,
+           label_leaves=FALSE,
+           label_branch_points=FALSE,
+           graph_label_size=1.5)
+{% endhighlight %}
+      
+      <div class= "text-center">
+        <img src= "{{site.baseurl}}/images/manual_images/embryo_pr_graph_by_pseudotime.png" width= 760>
+      </div>
+      <p>
+        Note that some of the cells are gray. This means they have <emph>infinite</emph> pseudotime, because they were not reachable 
+        from the root nodes that were picked. In general, any cell on a parition that lacks a root node will be assigned an infinite 
+        pseudotime. In general, you should choose at least one root per partition.
+      </p>
+      
+      <p>
+        It's often desirable to specify the root of the trajectory programmatically, rather than manually picking it. The function 
+        below does so by first grouping the cells according to which trajectory graph node they are nearest to. Then, it calcuates 
+        what fraction of the cells at each node come from the earliest time point. Then it picks the node that is most heavily occupied 
+        by early cells and returns that as the root.
+      </p>
+      
+{% highlight R %}
+# a helper function to identify the root principal points:
+get_earliest_principal_node <- function(cds, time_bin="130-170"){
+  cell_ids <- which(colData(cds)[, "embryo.time.bin"] == time_bin)
+  
+  closest_vertex <-
+  cds@principal_graph_aux[["UMAP"]]$pr_graph_cell_proj_closest_vertex
+  closest_vertex <- as.matrix(closest_vertex[colnames(cds), ])
+  root_pr_nodes <-
+  igraph::V(principal_graph(cds)[["UMAP"]])$name[as.numeric(names
+  (which.max(table(closest_vertex[cell_ids,]))))]
+  
+  root_pr_nodes
+}
+cds <- order_cells(cds, root_pr_nodes=get_earliest_principal_node(cds))
+{% endhighlight %}
+      
+      <p>
+        Passing the programatically selected root node to <code>order_cells()</code> via the <code>root_pr_node</code>argument 
+        yields:
+      </p>
+{% highlight R %}
+plot_cells(cds,
+           color_cells_by = "pseudotime",
+           label_cell_groups=FALSE,
+           label_leaves=FALSE,
+           label_branch_points=FALSE,
+           graph_label_size=1.5)
+{% endhighlight %}
+
+      <div class= "text-center">
+        <img src= "{{site.baseurl}}/images/manual_images/embryo_pr_graph_by_pseudotime_programmatically_ordered.png" width= 760>
+      </div>
+      
+      <p>
+        Note that we we could easily do this on a per-partition basis by first grouping the cells by partition 
+        using the <code>partitions()</code> function. This would result in all cells being assigned a finite pseudotime.
+      </p>
+      
+      <h3 id="3d-trajectories">Working with 3D trajectories</h3>
+      
+{% highlight R %}
+cds_3d <- reduce_dimension(cds, max_components = 3)
+cds_3d <- cluster_cells(cds_3d)
+cds_3d <- learn_graph(cds_3d)
+cds_3d <- order_cells(cds_3d, root_pr_nodes=get_earliest_principal_node(cds))
+
+cds_3d_plot_obj <- plot_cells_3d(cds_3d, color_cells_by="partition")
+{% endhighlight %}
+      <p>
+      <strong>XXX PUT 3D PLOT BACK!!</strong>
+      
+      <!-- <iframe src="{{site.baseurl}}/images/manual_images/emb_3d_by_partition.html"
+        height="600" width="100%"
+        scrolling="no" seamless="seamless"
+        frameBorder="0">
+      </iframe>
+    -->
+  </p>
+    <a href="{{ site.baseurl }}/docs/clustering" class="btn btn-info btn-sm btn-prev" role="button">Previous</a>
+    <a href="{{ site.baseurl }}/docs/differential" class="btn btn-success btn-sm btn-next" role="button">Next</a>
+    </div>
+  </div>
+</div>
