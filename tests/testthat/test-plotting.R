@@ -85,7 +85,7 @@ test_that("plot_cells doesn't error", {
   cds <- cluster_cells(cds)
   plot_cells(cds)
   cds <- learn_graph(cds)
-  plot_cells(cds)
+  suppressWarnings(plot_cells(cds))
   cds <- order_cells(cds, root_pr_nodes = "Y_1")
   plot_cells(cds, color_cells_by = "pseudotime")
   plot_cells(cds, color_cells_by = "partition")
