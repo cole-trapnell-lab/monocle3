@@ -373,15 +373,15 @@ extract_coefficient_helper = function(model, model_summary,
     coef_mat = dplyr::bind_rows(count_coef_mat, zero_coef_mat)
     return (coef_mat)
   } else {
-    coef_mat = matrix(NA, nrow = 1, ncol = 5)
+    coef_mat = matrix(NA_real_, nrow = 1, ncol = 5)
     colnames(coef_mat) = c('estimate',
                            'std_err',
                            'test_val',
                            'p_value',
                            'normalized_effect')
     coef_mat = tibble::as_tibble(coef_mat)
-    coef_mat$term = NA
-    coef_mat$model_component = NA
+    coef_mat$term = NA_character_
+    coef_mat$model_component = NA_character_
     return(coef_mat)
   }
 }
