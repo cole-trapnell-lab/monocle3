@@ -519,7 +519,7 @@ likelihood_ratio_test_pval <- function(model_summary_x, model_summary_y) {
 #'
 #' @export
 model_predictions <- function(model_tbl, new_data, type="response") {
-  predict_helper <- function(model, cds){
+  predict_helper <- function(model, new_data){
     tryCatch({
       stats::predict(model, newdata=new_data, type=type)
     }, error = function(e){
