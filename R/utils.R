@@ -189,7 +189,7 @@ mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1,
                        as.data.frame(coldata_df), envir=e1)
   environment(FUN) <- e1
 
-  # Note: use outfile argument to makeCluster for debugging
+
   platform <- Sys.info()[['sysname']]
 
   # Temporarily disable OpenMP threading in functions to be run in parallel
@@ -206,6 +206,7 @@ mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1,
   }
   RhpcBLASctl::blas_set_num_threads(1)
 
+  # Note: use outfile argument to makeCluster for debugging
   if (platform == "Windows")
     cl <- parallel::makeCluster(cores)
   if (platform %in% c("Linux", "Darwin"))
@@ -220,9 +221,17 @@ mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1,
 
   if (is.null(required_packages) == FALSE){
     BiocGenerics::clusterCall(cl, function(pkgs) {
+      options(conflicts.policy =
+                list(error = FALSE,
+                     warn = FALSE,
+                     generics.ok = TRUE,
+                     can.mask = c("base", "methods", "utils",
+                                  "grDevices", "graphics",
+                                  "stats"),
+                     depends.ok = TRUE))
       for (req in pkgs) {
-        library(req, character.only=TRUE, warn.conflicts=FALSE, quietly=TRUE,
-                verbose=FALSE)
+        suppressMessages(library(req, character.only=TRUE, warn.conflicts=FALSE, quietly=TRUE,
+                verbose=FALSE))
       }
     }, required_packages)
   }
