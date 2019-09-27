@@ -278,7 +278,7 @@ calculateLW <- function(cds,
   knn_res <- NULL
   principal_g <- NULL
 
-  cell_coords <- reducedDims(cds)$UMAP
+  cell_coords <- reducedDims(cds)[[reduction_method]]
   if (neighbor_graph == "knn") {
     knn_res <- RANN::nn2(cell_coords, cell_coords,
                          min(k + 1, nrow(cell_coords)),
@@ -294,7 +294,6 @@ calculateLW <- function(cds,
   exprs_mat <- exprs(cds)
   if(neighbor_graph == "knn") {
     if(is.null(knn_res)) {
-      cell_coords <- reducedDims(cds)$UMAP
       knn_res <- RANN::nn2(cell_coords, cell_coords,
                            min(k + 1, nrow(cell_coords)),
                            searchtype = "standard")[[1]]
