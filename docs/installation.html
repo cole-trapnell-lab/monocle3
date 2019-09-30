@@ -40,50 +40,50 @@ tags: [monocle, manual, vignette]
         </ol>
       </nav>
       <h2>Installing Monocle 3</h2>
-      
+
       <h3 id="required-software"> Required software </h3>
-      
+
       <p>Monocle 3 runs in the <a href= "http://www.r-project.org/">R statistical
         computing environment</a>. You will need R version 3.5 or higher,
         <a href="http://bioconductor.org/">Bioconductor</a> version 3.5, and
         monocle3 0.1.0 or higher to have access to the latest features.
       </p>
-      
+
       <p>To install Bioconductor, open R and run:</p>
 {% highlight R %}
 if (!requireNamespace("BiocManager", quietly = TRUE))
 install.packages("BiocManager")
 BiocManager::install()
 {% endhighlight %}
-      
+
       <p>Next, install a few Bioconductor dependencies that aren't automatically installed:</p>
 {% highlight R %}
 BiocManager::install(c('BiocGenerics', 'DelayedArray', 'DelayedMatrixStats',
                        'limma', 'S4Vectors', 'SingleCellExperiment',
                        'SummarizedExperiment', 'batchelor'))
 {% endhighlight %}
-      
+
       <p>Now, install monocle3 through the cole-trapnell-lab GitHub, execute:</p>
-      
+
 {% highlight R %}
 install.packages("devtools")
 devtools::install_github('cole-trapnell-lab/leidenbase')
 devtools::install_github('cole-trapnell-lab/monocle3')
 {% endhighlight %}
-      
+
       <h3 id="testing-installation"> Testing the installation </h3>
-      
+
       <p> To ensure that Monocle 3 was installed correctly, start a new R session and
-        run: 
+        run:
       </p>
-      
+
 {% highlight R %}
 library(monocle3)
 {% endhighlight %}
-      
+
       <h3 id="troubleshooting">Installation troubleshooting</h3>
       <p>
-        Below are a few of the most common errors that users encounter when installing 
+        Below are a few of the most common errors that users encounter when installing
         Monocle 3. If you discover new difficulties, please open an issue on Github describing
         the problem.
       </p>
@@ -96,35 +96,56 @@ ERROR: configuration failed for package ‘sf’
 Warning in install.packages :
 installation of package ‘sf’ had non-zero exit status
 {% endhighlight %}
-      
+
       <h5><strong>Solution:</strong></h5>
       <p>
         One of Monocle 3's dependencies requires a package called gdal. For information on how to
         install it on your system, see the sf installation instructions <a href="https://github.com/r-spatial/sf">here</a>.
       </p>
-      
+
       <h4>Errors involving Xcode:</h4>
-      
+
       <h5><strong>Solution:</strong></h5>
       <p>
         For Mac users only, Xcode command line tools is required. To install, open terminal and type
         <code>xcode-select --install</code> and then follow the prompts. When it has completed installation,
         restart the Monocle 3 installation instructions.
       </p>
+
+      <h4>Errors involving gfortran:</h4>
+      <h5><strong>Example error messages:</strong></h5>
+      {% highlight bash %}
+      make: gfortran: No such file or directory
+      make: *** [cigraph/src/AMD/Source/amd.o] Error 1
+      ERROR: compilation failed for package 'leidenbase'
+      {% endhighlight %}
+
+      <h5><strong>Solution:</strong></h5>
+      <p>
+      The above error indicates that you need to install gfortran on your computer. In order to do so,
+
+      1. Make sure that you have Xcode command line tools installed on your computer
+      2. Remove other gfortran installations if they exist
+          - You can launch a terminal window and type "which gfortran"
+          - If you see a path returned (e.g. /usr/local/gfortran) you have a previous installation of gfortran that needs to be removed
+      3. Download new gfortran binaries for your operating system
+          - Then decompress the folder (eg: gunzip gfortran-8.3-bin.tar.gz)
+          - Then do, sudo tar -xvf gfortran-8.3-bin.tar -C /. This installs everything in /usr/local/gfortran
+      </p>
       
       <h4>Errors involving reticulate:</h4>
       <h5><strong>Example error messages:</strong></h5>
-      
+
 {% highlight bash %}
 Error in system("which python", intern = TRUE) : 'which' not found
 {% endhighlight %}
-      
+
       <h5><strong>Solution:</strong></h5>
       <p>
         Many users report issues configuring 'reticulate' to find their Python installation. These issues
         seem to be particularly problematic for Windows users. Because of this, we have rewritten the functions that
         required Python so that <strong>Reticulate and Python are no longer required for installation</strong>. If you
-        are still getting errors relating to Python or Reticulate, please make sure you are attempting to install 
+        are still getting errors relating to Python or Reticulate, please make sure you are attempting to install
         Monocle 3 version 0.2.0 or later.
       </p>
       <a href="{{ site.baseurl }}/docs/updates" class="btn btn-info btn-sm btn-prev" role="button">Previous</a>
