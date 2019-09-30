@@ -123,16 +123,16 @@ installation of package ‘sf’ had non-zero exit status
       <h5><strong>Solution:</strong></h5>
       <p>
       The above error indicates that you need to install gfortran on your computer. In order to do so,
-
-      1. Make sure that you have Xcode command line tools installed on your computer
-      2. Remove other gfortran installations if they exist
-          - You can launch a terminal window and type "which gfortran"
-          - If you see a path returned (e.g. /usr/local/gfortran) you have a previous installation of gfortran that needs to be removed
-      3. Download new gfortran binaries for your operating system
-          - Then decompress the folder (eg: gunzip gfortran-8.3-bin.tar.gz)
-          - Then do, sudo tar -xvf gfortran-8.3-bin.tar -C /. This installs everything in /usr/local/gfortran
+        <ul>
+          <li> Make sure that you have Xcode command line tools installed on your computer.
+          </li>
+          <li> Remove other gfortran installations if they exist. For this, you can launch a terminal window and type "which gfortran". If you see a path returned (e.g. /usr/local/gfortran) you have a previous installation of gfortran that needs to be removed.
+          </li>
+          <li> Download new gfortran binaries for your operating system and decompress the folder (eg: gunzip gfortran-8.3-bin.tar.gz). Then do, sudo tar -xvf gfortran-8.3-bin.tar -C /. This installs everything in /usr/local/gfortran.
+          </li>
+        </ul>
       </p>
-      
+
       <h4>Errors involving reticulate:</h4>
       <h5><strong>Example error messages:</strong></h5>
 
