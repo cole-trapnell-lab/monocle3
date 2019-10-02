@@ -576,6 +576,7 @@ load_mtx_data <- function(mat_path,
                           gene_metadata = gene.annotations)
   colData(cds)$n.umi <- Matrix::colSums(exprs(cds))
   cds <- cds[,colData(cds)$n.umi >= umi_cutoff]
+  cds <- estimate_size_factors(cds)
   return(cds)
 }
 
