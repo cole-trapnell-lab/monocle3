@@ -557,12 +557,7 @@ plot_cells <- function(cds,
         row.names(genes) = genes[,1]
         genes = genes[row.names(cds_exprs),]
 
-        agg_mat = as.matrix(my.aggregate.Matrix(cds_exprs, as.factor(genes[,2]),
-                                                fun="sum"))
-
-        agg_mat = t(scale(t(log10(agg_mat + 1))))
-        agg_mat[agg_mat < -2] = -2
-        agg_mat[agg_mat > 2] = 2
+        agg_mat = as.matrix(aggregate_gene_expression(cds, genes))
         markers_exprs = agg_mat
         markers_exprs <- reshape2::melt(markers_exprs)
         colnames(markers_exprs)[1:2] <- c('feature_id','cell_id')
