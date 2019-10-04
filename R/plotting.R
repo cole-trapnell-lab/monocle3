@@ -1340,10 +1340,10 @@ plot_percent_cells_positive <- function(cds_subset,
     dplyr::group_by(!!as.name("feature_label"), !!as.name(group_cells_by)) %>%
     dplyr::summarize(target_mean = mean(target),
                      target_fraction_mean = mean(target_fraction),
-                     target_low = quantile(target, conf_int_alpha / 2),
-                     target_high = quantile(target, 1 - conf_int_alpha / 2),
-                     target_fraction_low = quantile(target_fraction, (1 - conf_int_alpha) / 2),
-                     target_fraction_high = quantile(target_fraction, 1 - (1 - conf_int_alpha) / 2))
+                     target_low = stats::quantile(target, conf_int_alpha / 2),
+                     target_high = stats::quantile(target, 1 - conf_int_alpha / 2),
+                     target_fraction_low = stats::quantile(target_fraction, (1 - conf_int_alpha) / 2),
+                     target_fraction_high = stats::quantile(target_fraction, 1 - (1 - conf_int_alpha) / 2))
 
 
   # marker_counts <-

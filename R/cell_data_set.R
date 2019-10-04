@@ -104,13 +104,13 @@ new_cell_data_set <- function(expression_data,
                   "named 'gene_short_name' for certain functions."))
   }
 
-  sce <- SingleCellExperiment(list(counts=as(expression_data, "dgCMatrix")),
+  sce <- SingleCellExperiment(list(counts=methods::as(expression_data, "dgCMatrix")),
                               rowData = gene_metadata,
                               colData = cell_metadata)
 
   cds <- methods::new("cell_data_set",
              assays = SummarizedExperiment::Assays(
-               list(counts=as(expression_data, "dgCMatrix"))),
+               list(counts=methods::as(expression_data, "dgCMatrix"))),
              colData = colData(sce),
              int_elementMetadata =sce@int_elementMetadata,
              int_colData = sce@int_colData,

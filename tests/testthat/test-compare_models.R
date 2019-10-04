@@ -12,7 +12,7 @@ test_that("compare_models() correctly deems NB better than Poisson",{
   nb_cds = test_cds
   nb_fit = fit_models(nb_cds, model_formula_str = "~log_dose", expression_family = "negbinomial")
   nb_reduced_fit = fit_models(nb_cds, model_formula_str = "~1", expression_family = "negbinomial")
-  nb_comparison = compare_models(nb_fit, nb_reduced_fit)
+  nb_comparison = suppressWarnings(compare_models(nb_fit, nb_reduced_fit))
   expect_equal(nb_comparison$p_value[1], 0.0000228, tolerance=1e-3)
 
   nb_fit = fit_models(nb_cds, model_formula_str = "~log_dose", clean_model = FALSE, expression_family = "negbinomial")

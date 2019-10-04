@@ -189,7 +189,7 @@ mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1,
                        as.data.frame(coldata_df), envir=e1)
   environment(FUN) <- e1
 
-  # Note: use outfile argument to makeCluster for debugging
+
   platform <- Sys.info()[['sysname']]
 
   # Temporarily disable OpenMP threading in functions to be run in parallel
@@ -206,6 +206,7 @@ mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1,
   }
   RhpcBLASctl::blas_set_num_threads(1)
 
+  # Note: use outfile argument to makeCluster for debugging
   if (platform == "Windows")
     cl <- parallel::makeCluster(cores)
   if (platform %in% c("Linux", "Darwin"))
@@ -220,9 +221,17 @@ mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1,
 
   if (is.null(required_packages) == FALSE){
     BiocGenerics::clusterCall(cl, function(pkgs) {
+      options(conflicts.policy =
+                list(error = FALSE,
+                     warn = FALSE,
+                     generics.ok = TRUE,
+                     can.mask = c("base", "methods", "utils",
+                                  "grDevices", "graphics",
+                                  "stats"),
+                     depends.ok = TRUE))
       for (req in pkgs) {
-        library(req, character.only=TRUE, warn.conflicts=FALSE, quietly=TRUE,
-                verbose=FALSE)
+        suppressMessages(library(req, character.only=TRUE, warn.conflicts=FALSE, quietly=TRUE,
+                verbose=FALSE))
       }
     }, required_packages)
   }
@@ -567,6 +576,7 @@ load_mtx_data <- function(mat_path,
                           gene_metadata = gene.annotations)
   colData(cds)$n.umi <- Matrix::colSums(exprs(cds))
   cds <- cds[,colData(cds)$n.umi >= umi_cutoff]
+  cds <- estimate_size_factors(cds)
   return(cds)
 }
 
@@ -730,17 +740,17 @@ clear_cds_slots <- function(cds) {
 add_citation <- function(cds, citation_key) {
   citation_map <- list(
     UMAP = c("UMAP", "McInnes, L., Healy, J. & Melville, J. UMAP: Uniform Manifold Approximation and Projection for dimension reduction. Preprint at https://arxiv.org/abs/1802.03426 (2018)."),
-    MNN_correct = c("MNN Correct", "Haghverdi, L. et. al. Batch effects in single-cell RNA-sequencing data are corrected by matching mutual nearest neighbors. Nat. Biotechnol. 36, 421–427 (2018). https://doi.org/10.1038/nbt.4091"),
-    partitions = c("paritioning", c("Levine, J. H., et. al. Data-driven phenotypic dissection of AML reveals progenitor-like cells that correlate with prognosis. Cell 162, 184–197 (2015). https://doi.org/10.1016/j.cell.2015.05.047",
+    MNN_correct = c("MNN Correct", "Haghverdi, L. et. al. Batch effects in single-cell RNA-sequencing data are corrected by matching mutual nearest neighbors. Nat. Biotechnol. 36, 421-427 (2018). https://doi.org/10.1038/nbt.4091"),
+    partitions = c("paritioning", c("Levine, J. H., et. al. Data-driven phenotypic dissection of AML reveals progenitor-like cells that correlate with prognosis. Cell 162, 184-197 (2015). https://doi.org/10.1016/j.cell.2015.05.047",
                                   "Wolf, F. A. et. al. PAGA: graph abstraction reconciles clustering with trajectory inference through a topology preserving map of single cells. Genome Biol. 20, 59 (2019). https://doi.org/10.1186/s13059-019-1663-x")),
-    clusters = c("clustering", "Levine, J. H. et. al. Data-driven phenotypic dissection of AML reveals progenitor-like cells that correlate with prognosis. Cell 162, 184–197 (2015). https://doi.org/10.1016/j.cell.2015.05.047"),
+    clusters = c("clustering", "Levine, J. H. et. al. Data-driven phenotypic dissection of AML reveals progenitor-like cells that correlate with prognosis. Cell 162, 184-197 (2015). https://doi.org/10.1016/j.cell.2015.05.047"),
     leiden = c("leiden", "Traag, V.A., Waltman, L. & van Eck, N.J. From Louvain to Leiden: guaranteeing well-connected communities. Scientific Reportsvolume 9, Article number: 5233 (2019). https://doi.org/10.1038/s41598-019-41695-z" )
   )
   if (is.null(metadata(cds)$citations) | citation_key == "Monocle") {
     metadata(cds)$citations <- data.frame(method = c("Monocle", "Monocle", "Monocle"),
-                                          citations = c("Trapnell C. et. al. The dynamics and regulators of cell fate decisions are revealed by pseudotemporal ordering of single cells. Nat. Biotechnol. 32, 381–386 (2014). https://doi.org/10.1038/nbt.2859",
-                                                        "Qiu, X. et. al. Reversed graph embedding resolves complex single-cell trajectories. Nat. Methods 14, 979–982 (2017). https://doi.org/10.1038/nmeth.4402",
-                                                        "Cao, J. et. al. The single-cell transcriptional landscape of mammalian organogenesis. Nature 566, 496–502 (2019). https://doi.org/10.1038/s41586-019-0969-x"))
+                                          citations = c("Trapnell C. et. al. The dynamics and regulators of cell fate decisions are revealed by pseudotemporal ordering of single cells. Nat. Biotechnol. 32, 381-386 (2014). https://doi.org/10.1038/nbt.2859",
+                                                        "Qiu, X. et. al. Reversed graph embedding resolves complex single-cell trajectories. Nat. Methods 14, 979-982 (2017). https://doi.org/10.1038/nmeth.4402",
+                                                        "Cao, J. et. al. The single-cell transcriptional landscape of mammalian organogenesis. Nature 566, 496-502 (2019). https://doi.org/10.1038/s41586-019-0969-x"))
   }
   metadata(cds)$citations <- rbind(metadata(cds)$citations,
                                    data.frame(method = citation_map[[citation_key]][1],
