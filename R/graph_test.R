@@ -37,7 +37,7 @@
 #'   Only valid for cores = 1.
 #' @return a data frame containing the p values and q-values from the Moran's I
 #'   test on the parallel arrays of models.
-#' @seealso \code{\link[spdep]{moran.test}} \code{\link[spdep]{geary.test}}
+#' @seealso \code{\link[sdmoran]{moran.test}} \code{\link[sdmoran]{geary.test}}
 #' @export
 graph_test <- function(cds,
                        neighbor_graph = c("knn", "principal_graph"),
@@ -61,7 +61,7 @@ graph_test <- function(cds,
   exprs_mat <- SingleCellExperiment::counts(cds)[, attr(lw, "region.id"), drop=FALSE]
   sz <- size_factors(cds)[attr(lw, "region.id")]
 
-  wc <- spdep::spweights.constants(lw, zero.policy = TRUE, adjust.n = TRUE)
+  wc <- sdmoran::spweights.constants(lw, zero.policy = TRUE, adjust.n = TRUE)
   test_res <- pbmcapply::pbmclapply(row.names(exprs_mat),
                                     FUN = function(x, sz, alternative,
                                                    method, expression_family) {
@@ -75,12 +75,12 @@ graph_test <- function(cds,
 
     test_res <- tryCatch({
       if(method == "Moran_I") {
-        mt <- suppressWarnings(my.moran.test(exprs_val, lw, wc, alternative = alternative))
+        mt <- suppressWarnings(sdmoran::moran.test.alt(exprs_val, lw, wc, alternative = alternative))
         data.frame(status = 'OK', p_value = mt$p.value,
                    morans_test_statistic = mt$statistic,
                    morans_I = mt$estimate[["Moran I statistic"]])
       } else if(method == 'Geary_C') {
-        gt <- suppressWarnings(my.geary.test(exprs_val, lw, wc, alternative = alternative))
+        gt <- suppressWarnings(sdmoran::geary.test.alt(exprs_val, lw, wc, alternative = alternative))
         data.frame(status = 'OK', p_value = gt$p.value,
                    geary_test_statistic = gt$statistic,
                    geary_C = gt$estimate[["Geary C statistic"]])
@@ -112,144 +112,6 @@ graph_test <- function(cds,
   test_res[row.names(cds), ]
 }
 
-my.moran.test <- function (x, listw, wc, alternative = "greater",
-                           randomisation = TRUE) {
-  zero.policy = TRUE
-  adjust.n = TRUE
-  na.action = stats::na.fail
-  drop.EI2 = FALSE
-  xname <- deparse(substitute(x))
-  wname <- deparse(substitute(listw))
-  NAOK <- deparse(substitute(na.action)) == "na.pass"
-  x <- na.action(x)
-  na.act <- attr(x, "na.action")
-  if (!is.null(na.act)) {
-    subset <- !(1:length(listw$neighbours) %in% na.act)
-    listw <- subset(listw, subset, zero.policy = zero.policy)
-  }
-  n <- length(listw$neighbours)
-  if (n != length(x))
-    stop("objects of different length")
-
-  S02 <- wc$S0 * wc$S0
-  res <- spdep::moran(x, listw, wc$n, wc$S0, zero.policy = zero.policy,
-                      NAOK = NAOK)
-  I <- res$I
-  K <- res$K
-
-  EI <- (-1)/wc$n1
-  if (randomisation) {
-    VI <- wc$n * (wc$S1 * (wc$nn - 3 * wc$n + 3) - wc$n *
-                    wc$S2 + 3 * S02)
-    tmp <- K * (wc$S1 * (wc$nn - wc$n) - 2 * wc$n * wc$S2 +
-                  6 * S02)
-    if (tmp > VI)
-      warning(paste0("Kurtosis overflow,\ndistribution of variable does ",
-                     "not meet test assumptions"))
-    VI <- (VI - tmp)/(wc$n1 * wc$n2 * wc$n3 * S02)
-    if (!drop.EI2)
-      VI <- (VI - EI^2)
-    if (VI < 0)
-      warning(paste0("Negative variance,\ndistribution of variable does ",
-                     "not meet test assumptions"))
-  }
-  else {
-    VI <- (wc$nn * wc$S1 - wc$n * wc$S2 + 3 * S02)/(S02 *
-                                                      (wc$nn - 1))
-    if (!drop.EI2)
-      VI <- (VI - EI^2)
-    if (VI < 0)
-      warning(paste0("Negative variance,\ndistribution of variable does ",
-                     "not meet test assumptions"))
-  }
-  ZI <- (I - EI)/sqrt(VI)
-  statistic <- ZI
-  names(statistic) <- "Moran I statistic standard deviate"
-  if (alternative == "two.sided")
-    PrI <- 2 * stats::pnorm(abs(ZI), lower.tail = FALSE)
-  else if (alternative == "greater")
-    PrI <- stats::pnorm(ZI, lower.tail = FALSE)
-  else PrI <- stats::pnorm(ZI)
-  if (!is.finite(PrI) || PrI < 0 || PrI > 1)
-    warning("Out-of-range p-value: reconsider test arguments")
-  vec <- c(I, EI, VI)
-  names(vec) <- c("Moran I statistic", "Expectation", "Variance")
-  method <- paste("Moran I test under", ifelse(randomisation,
-                                               "randomisation", "normality"))
-
-  res <- list(statistic = statistic, p.value = PrI, estimate = vec)
-  if (!is.null(na.act))
-    attr(res, "na.action") <- na.act
-  class(res) <- "htest"
-  res
-}
-
-my.geary.test <- function (x, listw, wc, randomisation = TRUE,
-                           alternative = "greater")
-{
-  zero.policy = TRUE
-  adjust.n = TRUE
-  spChk = NULL
-  alternative <- match.arg(alternative, c("less", "greater",
-                                          "two.sided"))
-  if (!inherits(listw, "listw"))
-    stop(paste(deparse(substitute(listw)), "is not a listw object"))
-  if (!is.numeric(x))
-    stop(paste(deparse(substitute(x)), "is not a numeric vector"))
-  if (any(is.na(x)))
-    stop("NA in X")
-  n <- length(listw$neighbours)
-  if (n != length(x))
-    stop("objects of different length")
-  if (is.null(spChk))
-    spChk <- spdep::get.spChkOption()
-  if (spChk && !spdep::chkIDs(x, listw))
-    stop("Check of data and weights ID integrity failed")
-  S02 <- wc$S0 * wc$S0
-  res <- spdep::geary(x, listw, wc$n, wc$n1, wc$S0, zero.policy)
-  C <- res$C
-  if (is.na(C))
-    stop("NAs generated in geary - check zero.policy")
-  K <- res$K
-  EC <- 1
-  if (randomisation) {
-    VC <- (wc$n1 * wc$S1 * (wc$nn - 3 * n + 3 - K * wc$n1))
-    VC <- VC - ((1/4) * (wc$n1 * wc$S2 * (wc$nn + 3 * n -
-                                            6 - K * (wc$nn - n + 2))))
-    VC <- VC + (S02 * (wc$nn - 3 - K * (wc$n1^2)))
-    VC <- VC/(n * wc$n2 * wc$n3 * S02)
-  }
-  else {
-    VC <- ((2 * wc$S1 + wc$S2) * wc$n1 - 4 * S02)/(2 * (n +
-                                                          1) * S02)
-  }
-  ZC <- (EC - C)/sqrt(VC)
-  statistic <- ZC
-  names(statistic) <- "Geary C statistic standard deviate"
-  PrC <- NA
-  if (is.finite(ZC)) {
-    if (alternative == "two.sided")
-      PrC <- 2 * stats::pnorm(abs(ZC), lower.tail = FALSE)
-    else if (alternative == "greater")
-      PrC <- stats::pnorm(ZC, lower.tail = FALSE)
-    else PrC <- stats::pnorm(ZC)
-    if (!is.finite(PrC) || PrC < 0 || PrC > 1)
-      warning("Out-of-range p-value: reconsider test arguments")
-  }
-  vec <- c(C, EC, VC)
-  names(vec) <- c("Geary C statistic", "Expectation", "Variance")
-  method <- paste("Geary C test under", ifelse(randomisation,
-                                               "randomisation", "normality"))
-  data.name <- paste(deparse(substitute(x)), "\nweights:",
-                     deparse(substitute(listw)), "\n")
-  res <- list(statistic = statistic, p.value = PrC, estimate = vec,
-              alternative = ifelse(alternative == "two.sided", alternative,
-                                   paste("Expectation", alternative,
-                                         "than statistic")),
-              method = method, data.name = data.name)
-  class(res) <- "htest"
-  res
-}
 
 #' Function to calculate the neighbors list with spatial weights for the chosen
 #' coding scheme from a cell dataset object
@@ -420,7 +282,7 @@ calculateLW <- function(cds,
   attr(knn_list, "region.id") <- region_id_names
   attr(knn_list, "call") <- match.call()
   # attr(knn_list, "type") <- "queen"
-  lw <- spdep::nb2listw(knn_list, zero.policy = TRUE)
+  lw <- sdmoran::nb2listw(knn_list, zero.policy = TRUE)
   lw
 }
 
