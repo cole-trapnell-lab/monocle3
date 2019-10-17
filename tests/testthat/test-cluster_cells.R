@@ -167,8 +167,8 @@ test_that("cluster_cells works", {
   expect_equal(length(cds@clusters[["LSI"]]$cluster_result$optim_res$membership),
                nrow(colData(cds)))
   expect_equal(cds@clusters[["LSI"]]$cluster_result$optim_res$membership[[1]],
-               12)
-  expect_equal(length(unique(clusters(cds, reduction_method = "LSI"))), 67)
+               10)
+  expect_equal(length(unique(clusters(cds, reduction_method = "LSI"))), 61)
 })
 
 cds <- load_a549()
@@ -345,8 +345,8 @@ test_that("cluster_cells works", {
   expect_equal(length(cds@clusters[["LSI"]]$cluster_result$optim_res$membership),
                nrow(colData(cds)))
   expect_equal(cds@clusters[["LSI"]]$cluster_result$optim_res$membership[[1]],
-               12)
-  expect_equal(length(unique(clusters(cds, reduction_method = "LSI"))), 67)
+               10)
+  expect_equal(length(unique(clusters(cds, reduction_method = "LSI"))), 61)
 })
 
 cds <- load_a549()
