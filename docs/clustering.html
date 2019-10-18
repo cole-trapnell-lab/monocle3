@@ -247,7 +247,7 @@ plot_cells(cds, color_cells_by="plate", label_cell_groups=FALSE)
 
       
 {% highlight R %}
-cds = align_cds(cds, num_dim = 100, alignment_group = "~ plate")
+cds = align_cds(cds, num_dim = 100, alignment_group = "plate")
 cds = reduce_dimension(cds)
 plot_cells(cds, color_cells_by="plate", label_cell_groups=FALSE)
 {% endhighlight %}
