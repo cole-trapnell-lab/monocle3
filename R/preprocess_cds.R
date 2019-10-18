@@ -200,7 +200,7 @@ tfidf <- function(count_matrix, frequencies=TRUE, log_scale_tf=TRUE,
   }
 
   # IDF w/ "inverse document frequency smooth" method
-  idf = log(1 + ncol(count_matrix) / Matrix::rowSums(count_matrix))
+  idf = log(1 + ncol(count_matrix) / Matrix::rowSums(count_matrix > 0))
 
   # Try to just to the multiplication and fall back on delayed array
   # TODO hopefully this actually falls back and not get jobs killed in SGE
