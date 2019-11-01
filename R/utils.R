@@ -686,7 +686,7 @@ combine_cds <- function(cds_list,
     }
 
     fd <- as.data.frame(fData(cds_list[[i]]))
-    fd <- fd[intersect(row.names(fd), gene_list),]
+    fd <- fd[intersect(row.names(fd), gene_list),, drop=FALSE]
     not_in <- fdata_cols[!fdata_cols %in% names(fd)]
     for (n in not_in) {
       fd[,n] <- NA
@@ -712,7 +712,7 @@ combine_cds <- function(cds_list,
   }
 
   all_fd <- do.call(cbind, fd_list)
-  all_fd <- all_fd[,fdata_cols]
+  all_fd <- all_fd[,fdata_cols, drop=FALSE]
   all_pd <- do.call(rbind, pd_list)
   all_exp <- do.call(cbind, exprs_list)
 
