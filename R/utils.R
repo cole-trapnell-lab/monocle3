@@ -548,14 +548,14 @@ load_mtx_data <- function(mat_path,
   assertthat::assert_that(assertthat::is.readable(cell_anno_path))
   assertthat::assert_that(is.numeric(umi_cutoff))
   df <- utils::read.table(mat_path, col.names = c("gene.idx", "cell.idx", "count"),
-                   colClasses = c("integer", "integer", "integer"))
+                          colClasses = c("integer", "integer", "integer"))
 
   gene.annotations <- utils::read.table(gene_anno_path,
-                                 col.names = c("id", "gene_short_name"),
-                                 colClasses = c("character", "character"))
+                                        col.names = c("id", "gene_short_name"),
+                                        colClasses = c("character", "character"))
 
   cell.annotations <- utils::read.table(cell_anno_path, col.names = c("cell"),
-                                 colClasses = c("character"))
+                                        colClasses = c("character"))
 
   rownames(gene.annotations) <- gene.annotations$id
   rownames(cell.annotations) <- cell.annotations$cell
@@ -567,13 +567,18 @@ load_mtx_data <- function(mat_path,
                              count = c(1, 1)))
 
   mat <- Matrix::sparseMatrix(i = df$gene.idx, j = df$cell.idx, x = df$count)
-  mat <- mat[, 1:(ncol(mat)-1)]
+
+  if(ncol(mat) == 1) {
+    mat <- mat[,0, drop=FALSE]
+  } else {
+    mat <- mat[, 1:(ncol(mat)-1), drop=FALSE]
+  }
 
   rownames(mat) <- gene.annotations$id
   colnames(mat) <- cell.annotations$cell
 
   cds <- new_cell_data_set(mat, cell_metadata = cell.annotations,
-                          gene_metadata = gene.annotations)
+                           gene_metadata = gene.annotations)
   colData(cds)$n.umi <- Matrix::colSums(exprs(cds))
   cds <- cds[,colData(cds)$n.umi >= umi_cutoff]
   cds <- estimate_size_factors(cds)
@@ -681,7 +686,7 @@ combine_cds <- function(cds_list,
     }
 
     fd <- as.data.frame(fData(cds_list[[i]]))
-    fd <- fd[intersect(row.names(fd), gene_list),]
+    fd <- fd[intersect(row.names(fd), gene_list),, drop=FALSE]
     not_in <- fdata_cols[!fdata_cols %in% names(fd)]
     for (n in not_in) {
       fd[,n] <- NA
@@ -707,7 +712,7 @@ combine_cds <- function(cds_list,
   }
 
   all_fd <- do.call(cbind, fd_list)
-  all_fd <- all_fd[,fdata_cols]
+  all_fd <- all_fd[,fdata_cols, drop=FALSE]
   all_pd <- do.call(rbind, pd_list)
   all_exp <- do.call(cbind, exprs_list)
 
