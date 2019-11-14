@@ -166,7 +166,7 @@ plot_cells_3d <- function(cds,
         markers_exprs$feature_label <- markers_exprs$feature_id
         #markers_linear <- TRUE
       } else {
-        cds_exprs@x <- round(cds_exprs@x)
+        cds_exprs@x <- round(10000*cds_exprs@x)/10000
         markers_exprs <- matrix(cds_exprs, nrow=nrow(markers_rowData))
         colnames(markers_exprs) <- colnames(SingleCellExperiment::counts(cds))
         row.names(markers_exprs) <- row.names(markers_rowData)
@@ -569,7 +569,7 @@ plot_cells <- function(cds,
         norm_method = "size_only"
         expression_legend_label = "Expression score"
       } else {
-        cds_exprs@x = round(cds_exprs@x)
+        cds_exprs@x = round(10000*cds_exprs@x)/10000
         markers_exprs = matrix(cds_exprs, nrow=nrow(markers_rowData))
         colnames(markers_exprs) = colnames(SingleCellExperiment::counts(cds))
         row.names(markers_exprs) = row.names(markers_rowData)
@@ -1280,7 +1280,7 @@ plot_percent_cells_positive <- function(cds_subset,
 
   if (normalize) {
     marker_exprs <- Matrix::t(Matrix::t(marker_exprs)/size_factors(cds_subset))
-    marker_exprs_melted <- reshape2::melt(round(as.matrix(marker_exprs)))
+    marker_exprs_melted <- reshape2::melt(round(10000*as.matrix(marker_exprs))/10000)
   } else {
     marker_exprs_melted <- reshape2::melt(as.matrix(marker_exprs))
   }
