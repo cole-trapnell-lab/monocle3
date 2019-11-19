@@ -4,6 +4,18 @@ cds2 <- monocle3:::load_worm_embryo()
 
 test_that("combine_cds works", {
   # all genes shared
+  testthat::expect_warning(combine_cds(list(cds, cds),
+                                       keep_all_genes = TRUE,
+                                       cell_names_unique = FALSE),
+                           paste0("The combine_cds function adds a column ",
+                                  "called 'sample' which indicates which ",
+                                  "initial cds a cell comes from. One or ",
+                                  "more of your input cds objects contains a ",
+                                  "'sample' column, which will be ",
+                                  "overwritten. We recommend you rename this ",
+                                  "column."))
+  names(pData(cds))[names(pData(cds)) == "sample"] <- "sample_type"
+  names(pData(cds2))[names(pData(cds2)) == "sample"] <- "sample_type"
   comb <- combine_cds(list(cds, cds),
                       keep_all_genes = TRUE,
                       cell_names_unique = FALSE)

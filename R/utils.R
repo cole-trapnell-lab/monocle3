@@ -614,6 +614,25 @@ combine_cds <- function(cds_list,
                           msg=paste("All members of cds_list must be",
                                     "cell_data_set class."))
 
+  if (any(sapply(cds_list, function(cds) "sample" %in% names(colData(cds))))) {
+    warning(paste0("The combine_cds function adds a column called 'sample' ",
+                   "which indicates which initial cds a cell comes from. One ",
+                   "or more of your input cds objects contains a 'sample' ",
+                   "column, which will be overwritten. We recommend you ",
+                   "rename this column."))
+  }
+  assertthat::assert_that(!any(sapply(cds_list, function(cds)
+    sum(is.na(names(colData(cds)))) != 0)),
+                          msg = paste0("One of the input CDS' has a colData ",
+                                       "column name that is NA, please ",
+                                       "remove or rename that column before ",
+                                       "proceeding."))
+  assertthat::assert_that(!any(sapply(cds_list, function(cds)
+    sum(is.na(names(rowData(cds)))) != 0)),
+    msg = paste0("One of the input CDS' has a colData ",
+                 "column name that is NA, please ",
+                 "remove or rename that column before ",
+                 "proceeding."))
   num_cells <- sapply(cds_list, ncol)
   if(sum(num_cells == 0) != 0) {
     message("Some CDS' have no cells, these will be skipped.")
