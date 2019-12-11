@@ -172,3 +172,26 @@ footer {
   width: 70px;
   float: right;
 }
+
+
+input[type=search] {
+  background: #2C3E50;
+  border: solid 1px #ccc;
+  padding: 6px 6px 6px 6px;
+  text-align: center;
+  width: 12%;
+  height: auto;
+  margin-top: 14px;
+  float: right;
+}
+input[type=search]:focus {
+	width: 20%;
+	background-color: #ccc;
+	border-color: #333;
+  border: solid 1px #fff;
+  padding: 6px 6px 6px 6px;
+  height: auto;
+  margin-top: 14px;
+  float: right;
+  text-align: left;
+}
