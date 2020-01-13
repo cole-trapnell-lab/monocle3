@@ -707,6 +707,11 @@ combine_cds <- function(cds_list,
     fd <- as.data.frame(fData(cds_list[[i]]))
     fd <- fd[intersect(row.names(fd), gene_list),, drop=FALSE]
     not_in <- fdata_cols[!fdata_cols %in% names(fd)]
+    for(col in names(fd)) {
+      if(class(fd[,col]) == "factor") {
+        fd[,col] <- as.character(fd[,col])
+      }
+    }
     for (n in not_in) {
       fd[,n] <- NA
     }
@@ -714,6 +719,7 @@ combine_cds <- function(cds_list,
     for (n in not_in_g) {
       fd[n,] <- NA
     }
+
     if (length(not_in_g) > 0) {
       extra_rows <- Matrix::Matrix(0, ncol=ncol(exp),
                                    sparse=TRUE,
@@ -729,9 +735,30 @@ combine_cds <- function(cds_list,
     pd_list[[i]] <- pd
 
   }
+  all_fd <- array(NA,dim(fd_list[[1]]),dimnames(fd_list[[1]]))
 
-  all_fd <- do.call(cbind, fd_list)
+  for (fd in fd_list) {
+    for (i in row.names(fd)) {
+      for (j in colnames(fd)) {
+        all_fd[i,j] <- ifelse((!is.na(all_fd[i,j]) & all_fd[i,j] == "conf") |
+                                (!is.na(all_fd[i,j]) & !is.na(fd[i,j]) & all_fd[i,j] != fd[i,j]),
+                               "conf",
+                               ifelse(is.na(all_fd[i,j]),
+                                      fd[i,j],
+                                      all_fd[i,j]))
+      }
+    }
+  }
+  confs <- sum(all_fd == "conf")
+  if (confs > 0) {
+   warning(paste0("When combining rowData, conflicting values were found - ",
+                  "conflicts will be labelled 'conf' in the combined cds ",
+                  "to prevent conflicts, either change conflicting values to ",
+                  "match, or rename columns from different cds' to be unique."))
+  }
+  #all_fd <- do.call(cbind, fd_list)
   all_fd <- all_fd[,fdata_cols, drop=FALSE]
+
   all_pd <- do.call(rbind, pd_list)
   all_exp <- do.call(cbind, exprs_list)
 
