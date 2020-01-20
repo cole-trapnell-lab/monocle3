@@ -79,13 +79,6 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
                           msg = paste("One or more cells has a size factor of",
                                       "NA."))
 
-  if(!is.null(alignment_group)) {
-    assertthat::assert_that(alignment_group %in% colnames(colData(cds)),
-                            msg = "alignment_group must be the name of a column of colData(cds)")
-    assertthat::assert_that(is.factor(colData(cds)[,alignment_group]),
-                            msg = "alignment_group must be a factor")
-  }
-
   method <- match.arg(method)
   norm_method <- match.arg(norm_method)
 
@@ -136,6 +129,7 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
   row.names(preproc_res) <- colnames(cds)
 
   reducedDims(cds)[[method]] <- as.matrix(preproc_res)
+  cds@preprocess_aux$beta = NULL
 
   cds
 }
