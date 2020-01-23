@@ -708,6 +708,7 @@ expressed: acbp-6, Y66D12A.14, ZC412.4, C32E8.6, C41A3.1
       </div>
 {% highlight R %}
 ## Install the monocle3 branch of garnett
+BiocManager::install(c("org.Mm.eg.db", "org.Hm.eg.db"))
 devtools::install_github("cole-trapnell-lab/garnett", ref="monocle3")
 {% endhighlight %}
 
@@ -762,7 +763,7 @@ plot_cells(cds,
       </p>
       
 {% highlight R %}
-load(url("https://cole-trapnell-lab.github.io/garnett/classifiers/ceWhole"))
+ceWhole <- readRDS(url("https://cole-trapnell-lab.github.io/garnett/classifiers/ceWhole_20191017.RDS"))
 cds <- classify_cells(cds, ceWhole,
                       db = org.Ce.eg.db,
                       cluster_extend = TRUE,
