@@ -785,7 +785,7 @@ clear_cds_slots <- function(cds) {
   cds@principal_graph_aux <- SimpleList()
   cds@principal_graph <- SimpleList()
   cds@clusters <- SimpleList()
-  cds@reducedDims <- SimpleList()
+  reducedDims(cds) <- SimpleList()
   cds
 }
 
