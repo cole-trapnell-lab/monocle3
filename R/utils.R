@@ -749,7 +749,9 @@ combine_cds <- function(cds_list,
       }
     }
   }
+
   confs <- sum(all_fd == "conf", na.rm=TRUE)
+
   if (confs > 0) {
    warning(paste0("When combining rowData, conflicting values were found - ",
                   "conflicts will be labelled 'conf' in the combined cds ",

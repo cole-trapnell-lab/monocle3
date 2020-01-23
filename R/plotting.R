@@ -401,7 +401,8 @@ plot_cells <- function(cds,
                        cell_stroke= I(cell_size / 2),
                        alpha = 1,
                        min_expr=0.1,
-                       rasterize=FALSE) {
+                       rasterize=FALSE,
+                       scale_to_range=FALSE) {
   reduction_method <- match.arg(reduction_method)
   assertthat::assert_that(methods::is(cds, "cell_data_set"))
   assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
@@ -557,7 +558,7 @@ plot_cells <- function(cds,
         row.names(genes) = genes[,1]
         genes = genes[row.names(cds_exprs),]
 
-        agg_mat = as.matrix(aggregate_gene_expression(cds, genes))
+        agg_mat = as.matrix(aggregate_gene_expression(cds, genes, norm_method=norm_method, scale_agg_values=FALSE))
         markers_exprs = agg_mat
         markers_exprs <- reshape2::melt(markers_exprs)
         colnames(markers_exprs)[1:2] <- c('feature_id','cell_id')
@@ -595,6 +596,14 @@ plot_cells <- function(cds,
           expression_legend_label = "Expression"
         else
           expression_legend_label = "log10(Expression)"
+      }
+
+      if (scale_to_range){
+        markers_exprs = dplyr::group_by(markers_exprs, feature_label) %>%
+          dplyr::mutate(max_val_for_feature = max(value),
+                        min_val_for_feature = min(value)) %>%
+          dplyr::mutate(value = 100 * (value - min_val_for_feature) / (max_val_for_feature - min_val_for_feature))
+        expression_legend_label = "% Max"
       }
     }
   }
