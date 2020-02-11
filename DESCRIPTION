@@ -90,4 +90,5 @@ VignetteBuilder: knitr
 Language: en-US
 Remotes:
     VPetukhov/ggrastr,
+    cran/Matrix.utils,
     cole-trapnell-lab/leidenbase
