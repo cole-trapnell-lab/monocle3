@@ -25,7 +25,7 @@ estimate_size_factors <- function(cds,
     warning(paste("Your CDS object contains cells with zero reads.",
                   "This causes size factor calculation to fail. Please remove",
                   "the zero read cells using",
-                  "cds <- cds[,Matrix::rowSums(exprs(cds)) != 0] and then",
+                  "cds <- cds[,Matrix::colSums(exprs(cds)) != 0] and then",
                   "run cds <- estimate_size_factors(cds)"))
     return(cds)
   }
