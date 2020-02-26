@@ -4,8 +4,12 @@
 \alias{generate_garnett_marker_file}
 \title{Generate a Garnett marker file from top_markers output.}
 \usage{
-generate_garnett_marker_file(marker_test_res, file = "./marker_file.txt",
-  max_genes_per_group = 10, remove_duplicate_genes = FALSE)
+generate_garnett_marker_file(
+  marker_test_res,
+  file = "./marker_file.txt",
+  max_genes_per_group = 10,
+  remove_duplicate_genes = FALSE
+)
 }
 \arguments{
 \item{marker_test_res}{Tibble of top markers, output of

@@ -4,8 +4,13 @@
 \alias{order_cells}
 \title{Orders cells according to pseudotime.}
 \usage{
-order_cells(cds, reduction_method = "UMAP", root_pr_nodes = NULL,
-  root_cells = NULL, verbose = FALSE)
+order_cells(
+  cds,
+  reduction_method = "UMAP",
+  root_pr_nodes = NULL,
+  root_cells = NULL,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{cds}{the cell_data_set upon which to perform this operation}

@@ -5,11 +5,20 @@
 \title{Plots the number of cells expressing one or more genes above a given value
 as a barplot}
 \usage{
-plot_percent_cells_positive(cds_subset, group_cells_by = NULL,
-  min_expr = 0, nrow = NULL, ncol = 1, panel_order = NULL,
-  plot_as_count = FALSE, label_by_short_name = TRUE,
-  normalize = TRUE, plot_limits = NULL, bootstrap_samples = 100,
-  conf_int_alpha = 0.95)
+plot_percent_cells_positive(
+  cds_subset,
+  group_cells_by = NULL,
+  min_expr = 0,
+  nrow = NULL,
+  ncol = 1,
+  panel_order = NULL,
+  plot_as_count = FALSE,
+  label_by_short_name = TRUE,
+  normalize = TRUE,
+  plot_limits = NULL,
+  bootstrap_samples = 100,
+  conf_int_alpha = 0.95
+)
 }
 \arguments{
 \item{cds_subset}{Subset cell_data_set to be plotted.}

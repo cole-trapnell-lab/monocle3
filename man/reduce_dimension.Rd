@@ -5,11 +5,20 @@
 \title{Compute a projection of a cell_data_set object into a lower dimensional
 space with non-linear dimension reduction methods}
 \usage{
-reduce_dimension(cds, max_components = 2, reduction_method = c("UMAP",
-  "tSNE", "PCA", "LSI", "Aligned"), preprocess_method = NULL,
-  umap.metric = "cosine", umap.min_dist = 0.1,
-  umap.n_neighbors = 15L, umap.fast_sgd = FALSE,
-  umap.nn_method = "annoy", cores = 1, verbose = FALSE, ...)
+reduce_dimension(
+  cds,
+  max_components = 2,
+  reduction_method = c("UMAP", "tSNE", "PCA", "LSI", "Aligned"),
+  preprocess_method = NULL,
+  umap.metric = "cosine",
+  umap.min_dist = 0.1,
+  umap.n_neighbors = 15L,
+  umap.fast_sgd = FALSE,
+  umap.nn_method = "annoy",
+  cores = 1,
+  verbose = FALSE,
+  ...
+)
 }
 \arguments{
 \item{cds}{the cell_data_set upon which to perform this operation.}

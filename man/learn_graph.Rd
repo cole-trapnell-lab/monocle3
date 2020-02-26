@@ -5,8 +5,13 @@
 \title{Learn principal graph from the reduced dimension space using reversed graph
 embedding}
 \usage{
-learn_graph(cds, use_partition = TRUE, close_loop = TRUE,
-  learn_graph_control = NULL, verbose = FALSE)
+learn_graph(
+  cds,
+  use_partition = TRUE,
+  close_loop = TRUE,
+  learn_graph_control = NULL,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{cds}{the cell_data_set upon which to perform this operation}

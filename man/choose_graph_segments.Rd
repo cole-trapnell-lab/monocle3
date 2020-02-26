@@ -4,8 +4,7 @@
 \alias{choose_graph_segments}
 \title{Choose cells interactively along the path of a principal graph}
 \usage{
-choose_graph_segments(cds, reduction_method = "UMAP",
-  return_list = FALSE)
+choose_graph_segments(cds, reduction_method = "UMAP", return_list = FALSE)
 }
 \arguments{
 \item{cds}{CDS object to be subsetted.}

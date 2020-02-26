@@ -130,7 +130,7 @@ my.aggregate.Matrix = function (x, groupings = NULL, form = NULL, fun = "sum", .
   if (is.null(form))
     form <- stats::as.formula("~0+.")
   form <- stats::as.formula(form)
-  mapping <- dMcast_monocle3(groupings2, form)
+  mapping <- Matrix.utils::dMcast(groupings2, form)
   colnames(mapping) <- substring(colnames(mapping), 2)
   result <- Matrix::t(mapping) %*% x
   if (fun == "mean")
@@ -139,72 +139,6 @@ my.aggregate.Matrix = function (x, groupings = NULL, form = NULL, fun = "sum", .
                                                              groupings2$A))
   return(result)
 }
-
-# Copied from Matrix.utils after removed from CRAN
-dMcast_monocle3 <- function (data, formula, fun.aggregate = "sum", value.var = NULL,
-          as.factors = FALSE, factor.nas = TRUE, drop.unused.levels = TRUE)
-{
-  values <- 1
-  if (!is.null(value.var))
-    values <- data[, value.var]
-  alltms <- terms(formula, data = data)
-  response <- rownames(attr(alltms, "factors"))[attr(alltms,
-                                                     "response")]
-  tm <- attr(alltms, "term.labels")
-  interactionsIndex <- grep(":", tm)
-  interactions <- tm[interactionsIndex]
-  simple <- setdiff(tm, interactions)
-  i2 <- strsplit(interactions, ":")
-  newterms <- unlist(lapply(i2, function(x) paste("paste(",
-                                                  paste(x, collapse = ","), ",", "sep='_'", ")")))
-  newterms <- c(simple, newterms)
-  newformula <- as.formula(paste("~0+", paste(newterms, collapse = "+")))
-  allvars <- all.vars(alltms)
-  data <- data[, c(allvars), drop = FALSE]
-  if (as.factors)
-    data <- data.frame(lapply(data, as.factor))
-  characters <- unlist(lapply(data, is.character))
-  data[, characters] <- lapply(data[, characters, drop = FALSE],
-                               as.factor)
-  factors <- unlist(lapply(data, is.factor))
-  data[, factors] <- lapply(data[, factors, drop = FALSE],
-                            function(x) {
-                              if (factor.nas)
-                                if (any(is.na(x))) {
-                                  levels(x) <- c(levels(x), "NA")
-                                  x[is.na(x)] <- "NA"
-                                }
-                              if (drop.unused.levels)
-                                if (nlevels(x) != length(na.omit(unique(x))))
-                                  x <- factor(as.character(x))
-                                y <- contrasts(x, contrasts = FALSE, sparse = TRUE)
-                                attr(x, "contrasts") <- y
-                                return(x)
-                            })
-  attr(data, "na.action") <- na.pass
-  result <- sparse.model.matrix(newformula, data, drop.unused.levels = FALSE,
-                                row.names = FALSE)
-  brokenNames <- grep("paste(", colnames(result), fixed = TRUE)
-  colnames(result)[brokenNames] <- lapply(colnames(result)[brokenNames],
-                                          function(x) {
-                                            x <- gsub("paste(", replacement = "", x = x, fixed = TRUE)
-                                            x <- gsub(pattern = ", ", replacement = "_", x = x,
-                                                      fixed = TRUE)
-                                            x <- gsub(pattern = "_sep = \"_\")", replacement = "",
-                                                      x = x, fixed = TRUE)
-                                            return(x)
-                                          })
-  result <- result * values
-  if (isTRUE(response > 0)) {
-    responses = all.vars(terms(as.formula(paste(response,
-                                                "~0"))))
-    result <- aggregate.Matrix(result, data[, responses,
-                                            drop = FALSE], fun = fun.aggregate)
-  }
-  return(result)
-}
-
-
 
 #' Creates a matrix with aggregated expression values for arbitrary groups of
 #' genes

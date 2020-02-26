@@ -4,9 +4,17 @@
 \alias{plot_genes_violin}
 \title{Plot expression for one or more genes as a violin plot}
 \usage{
-plot_genes_violin(cds_subset, group_cells_by = NULL, min_expr = 0,
-  nrow = NULL, ncol = 1, panel_order = NULL,
-  label_by_short_name = TRUE, normalize = TRUE, log_scale = TRUE)
+plot_genes_violin(
+  cds_subset,
+  group_cells_by = NULL,
+  min_expr = 0,
+  nrow = NULL,
+  ncol = 1,
+  panel_order = NULL,
+  label_by_short_name = TRUE,
+  normalize = TRUE,
+  log_scale = TRUE
+)
 }
 \arguments{
 \item{cds_subset}{Subset cell_data_set to be plotted.}

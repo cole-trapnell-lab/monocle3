@@ -716,37 +716,36 @@ combine_cds <- function(cds_list,
       fd[,n] <- NA
     }
     not_in_g <- gene_list[!gene_list %in% row.names(fd)]
-    for (n in not_in_g) {
-      fd[n,] <- NA
-    }
 
     if (length(not_in_g) > 0) {
+      not_in_g_df <- as.data.frame(matrix(NA, nrow = length(not_in_g), ncol=ncol(fd)))
+      row.names(not_in_g_df) <- not_in_g
+      names(not_in_g_df) <- names(fd)
+      fd <- rbind(fd, not_in_g_df)
+
       extra_rows <- Matrix::Matrix(0, ncol=ncol(exp),
                                    sparse=TRUE,
                                    nrow=length(not_in_g))
       row.names(extra_rows) <- not_in_g
       colnames(extra_rows) <- colnames(exp)
       exp <- rbind(exp, extra_rows)
+      exp <- exp
     }
 
 
-    exprs_list[[i]] <- exp
-    fd_list[[i]] <- fd
+    exprs_list[[i]] <- exp[gene_list,]
+    fd_list[[i]] <- fd[gene_list,]
     pd_list[[i]] <- pd
 
   }
   all_fd <- array(NA,dim(fd_list[[1]]),dimnames(fd_list[[1]]))
 
   for (fd in fd_list) {
-    for (i in row.names(fd)) {
-      for (j in colnames(fd)) {
-        all_fd[i,j] <- ifelse((!is.na(all_fd[i,j]) & all_fd[i,j] == "conf") |
-                                (!is.na(all_fd[i,j]) & !is.na(fd[i,j]) & all_fd[i,j] != fd[i,j]),
-                               "conf",
-                               ifelse(is.na(all_fd[i,j]),
-                                      fd[i,j],
-                                      all_fd[i,j]))
-      }
+    for (j in colnames(fd)) {
+      col_info <- all_fd[,j]
+      col_info[is.na(col_info)] <- fd[is.na(col_info),j]
+      col_info[col_info != fd[,j]] <- "conf"
+      all_fd[,j] <- col_info
     }
   }
 

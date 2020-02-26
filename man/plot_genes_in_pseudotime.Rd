@@ -4,12 +4,19 @@
 \alias{plot_genes_in_pseudotime}
 \title{Plots expression for one or more genes as a function of pseudotime}
 \usage{
-plot_genes_in_pseudotime(cds_subset, min_expr = NULL, cell_size = 0.75,
-  nrow = NULL, ncol = 1, panel_order = NULL,
+plot_genes_in_pseudotime(
+  cds_subset,
+  min_expr = NULL,
+  cell_size = 0.75,
+  nrow = NULL,
+  ncol = 1,
+  panel_order = NULL,
   color_cells_by = "pseudotime",
   trend_formula = "~ splines::ns(pseudotime, df=3)",
-  label_by_short_name = TRUE, vertical_jitter = NULL,
-  horizontal_jitter = NULL)
+  label_by_short_name = TRUE,
+  vertical_jitter = NULL,
+  horizontal_jitter = NULL
+)
 }
 \arguments{
 \item{cds_subset}{subset cell_data_set including only the genes to be

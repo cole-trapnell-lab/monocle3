@@ -4,8 +4,12 @@
 \alias{find_nearest_vertex}
 \title{Finds the nearest principal graph node}
 \usage{
-find_nearest_vertex(data_matrix, target_points, block_size = 50000,
-  process_targets_in_blocks = FALSE)
+find_nearest_vertex(
+  data_matrix,
+  target_points,
+  block_size = 50000,
+  process_targets_in_blocks = FALSE
+)
 }
 \arguments{
 \item{data_matrix}{the input matrix}
