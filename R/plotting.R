@@ -368,6 +368,8 @@ plot_cells_3d <- function(cds,
 #' @param min_expr Minimum expression threshold for plotting genes
 #' @param rasterize Whether to plot cells as a rastered bitmap. Requires the
 #'   ggrastr package.
+#' @param scale_to_range Logical indicating whether to scale expression to
+#'   percent of maximum expression.
 #'
 #' @return a ggplot2 plot object
 #' @export

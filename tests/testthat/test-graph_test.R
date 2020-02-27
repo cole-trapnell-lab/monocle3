@@ -90,5 +90,5 @@ test_that("test graph_test returns few genes under UMAP coordinate randomization
   pr_test_res = graph_test(test_cds, neighbor_graph="principal_graph", k=50)
 
   num_degs = sum(pr_test_res$q_value < 0.05)
-  expect_equal(num_degs, 2)
+  expect_equal(num_degs, 0)
 })

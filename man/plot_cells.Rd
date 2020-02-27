@@ -103,6 +103,9 @@ of the cell_size}
 
 \item{rasterize}{Whether to plot cells as a rastered bitmap. Requires the
 ggrastr package.}
+
+\item{scale_to_range}{Logical indicating whether to scale expression to
+percent of maximum expression.}
 }
 \value{
 a ggplot2 plot object
