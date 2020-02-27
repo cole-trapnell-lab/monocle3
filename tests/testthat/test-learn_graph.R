@@ -34,7 +34,7 @@ test_that("learn_graph stays the same", {
   cds <- learn_graph(cds)
   expect_is(principal_graph(cds)[["UMAP"]], "igraph")
   expect_equal(length(principal_graph(cds)[["UMAP"]]), 10)
-  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "13")
+  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "19")
 
   # Force partition
   temp <- rep(c(1,2), length.out=length(partitions(cds)))
@@ -43,17 +43,17 @@ test_that("learn_graph stays the same", {
   cds <- learn_graph(cds, use_partition = FALSE)
   expect_is(principal_graph(cds)[["UMAP"]], "igraph")
   expect_equal(length(principal_graph(cds)[["UMAP"]]), 10)
-  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "13")
+  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "19")
 
   cds <- learn_graph(cds)
   expect_is(principal_graph(cds)[["UMAP"]], "igraph")
   expect_equal(length(principal_graph(cds)[["UMAP"]]), 10)
-  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "6")
+  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "16")
 
   cds <- learn_graph(cds, close_loop = TRUE)
   expect_is(principal_graph(cds)[["UMAP"]], "igraph")
   expect_equal(length(principal_graph(cds)[["UMAP"]]), 10)
-  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "6")
+  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "16")
 
   cds <- learn_graph(cds, learn_graph_control = list(prune_graph = FALSE))
   expect_is(principal_graph(cds)[["UMAP"]], "igraph")
@@ -89,7 +89,7 @@ test_that("learn_graph stays the same", {
   cds <- learn_graph(cds)
   expect_is(principal_graph(cds)[["UMAP"]], "igraph")
   expect_equal(length(principal_graph(cds)[["UMAP"]]), 10)
-  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "8")
+  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "3")
 
   # Force partition
   temp <- rep(c(1,2), length.out=length(partitions(cds)))
@@ -98,22 +98,22 @@ test_that("learn_graph stays the same", {
   cds <- learn_graph(cds, use_partition = FALSE)
   expect_is(principal_graph(cds)[["UMAP"]], "igraph")
   expect_equal(length(principal_graph(cds)[["UMAP"]]), 10)
-  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "8")
+  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "3")
 
   cds <- learn_graph(cds)
   expect_is(principal_graph(cds)[["UMAP"]], "igraph")
   expect_equal(length(principal_graph(cds)[["UMAP"]]), 10)
-  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "5")
+  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "4")
 
   cds <- learn_graph(cds, close_loop = TRUE)
   expect_is(principal_graph(cds)[["UMAP"]], "igraph")
   expect_equal(length(principal_graph(cds)[["UMAP"]]), 10)
-  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "5")
+  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "4")
 
   cds <- learn_graph(cds, learn_graph_control = list(prune_graph = FALSE))
   expect_is(principal_graph(cds)[["UMAP"]], "igraph")
   expect_equal(length(principal_graph(cds)[["UMAP"]]), 10)
-  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "8")
+  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "60")
 })
 
 
