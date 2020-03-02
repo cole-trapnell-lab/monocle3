@@ -5,8 +5,15 @@
 \title{Function to automatically learn the structure of data by either using
 L1-graph or the spanning-tree formulization}
 \usage{
-calc_principal_graph(X, C0, maxiter = 10, eps = 1e-05,
-  L1.gamma = 0.5, L1.sigma = 0.01, verbose = T)
+calc_principal_graph(
+  X,
+  C0,
+  maxiter = 10,
+  eps = 1e-05,
+  L1.gamma = 0.5,
+  L1.sigma = 0.01,
+  verbose = T
+)
 }
 \arguments{
 \item{X}{the input data DxN}

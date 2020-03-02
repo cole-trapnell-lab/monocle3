@@ -4,8 +4,15 @@
 \alias{fit_model_helper}
 \title{Helper function for model fitting}
 \usage{
-fit_model_helper(x, model_formula_str, expression_family,
-  disp_func = NULL, clean_model = TRUE, verbose = FALSE, ...)
+fit_model_helper(
+  x,
+  model_formula_str,
+  expression_family,
+  disp_func = NULL,
+  clean_model = TRUE,
+  verbose = FALSE,
+  ...
+)
 }
 \arguments{
 \item{x}{test}

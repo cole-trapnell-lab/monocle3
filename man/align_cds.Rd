@@ -4,9 +4,15 @@
 \alias{align_cds}
 \title{Align cells from different groups within a cds}
 \usage{
-align_cds(cds, preprocess_method = c("PCA", "LSI"),
-  alignment_group = NULL, alignment_k = 20,
-  residual_model_formula_str = NULL, verbose = FALSE, ...)
+align_cds(
+  cds,
+  preprocess_method = c("PCA", "LSI"),
+  alignment_group = NULL,
+  alignment_k = 20,
+  residual_model_formula_str = NULL,
+  verbose = FALSE,
+  ...
+)
 }
 \arguments{
 \item{cds}{the cell_data_set upon which to perform this operation}

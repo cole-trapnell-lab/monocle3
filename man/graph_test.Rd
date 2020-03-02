@@ -5,10 +5,17 @@
 \title{Test genes for differential expression based on the low dimensional
 embedding and the principal graph}
 \usage{
-graph_test(cds, neighbor_graph = c("knn", "principal_graph"),
-  reduction_method = "UMAP", k = 25, method = c("Moran_I"),
-  alternative = "greater", expression_family = "quasipoisson",
-  cores = 1, verbose = FALSE)
+graph_test(
+  cds,
+  neighbor_graph = c("knn", "principal_graph"),
+  reduction_method = "UMAP",
+  k = 25,
+  method = c("Moran_I"),
+  alternative = "greater",
+  expression_family = "quasipoisson",
+  cores = 1,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{cds}{a cell_data_set object upon which to perform this operation}

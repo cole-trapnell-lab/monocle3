@@ -4,9 +4,11 @@
 \alias{estimate_size_factors}
 \title{Function to calculate size factors for single-cell RNA-seq data}
 \usage{
-estimate_size_factors(cds, round_exprs = TRUE,
-  method = c("mean-geometric-mean-total",
-  "mean-geometric-mean-log-total"))
+estimate_size_factors(
+  cds,
+  round_exprs = TRUE,
+  method = c("mean-geometric-mean-total", "mean-geometric-mean-log-total")
+)
 }
 \arguments{
 \item{cds}{The cell_data_set}

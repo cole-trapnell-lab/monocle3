@@ -166,7 +166,7 @@ plot_cells_3d <- function(cds,
         markers_exprs$feature_label <- markers_exprs$feature_id
         #markers_linear <- TRUE
       } else {
-        cds_exprs@x <- round(cds_exprs@x)
+        cds_exprs@x <- round(10000*cds_exprs@x)/10000
         markers_exprs <- matrix(cds_exprs, nrow=nrow(markers_rowData))
         colnames(markers_exprs) <- colnames(SingleCellExperiment::counts(cds))
         row.names(markers_exprs) <- row.names(markers_rowData)
@@ -368,6 +368,8 @@ plot_cells_3d <- function(cds,
 #' @param min_expr Minimum expression threshold for plotting genes
 #' @param rasterize Whether to plot cells as a rastered bitmap. Requires the
 #'   ggrastr package.
+#' @param scale_to_range Logical indicating whether to scale expression to
+#'   percent of maximum expression.
 #'
 #' @return a ggplot2 plot object
 #' @export
@@ -401,7 +403,8 @@ plot_cells <- function(cds,
                        cell_stroke= I(cell_size / 2),
                        alpha = 1,
                        min_expr=0.1,
-                       rasterize=FALSE) {
+                       rasterize=FALSE,
+                       scale_to_range=FALSE) {
   reduction_method <- match.arg(reduction_method)
   assertthat::assert_that(methods::is(cds, "cell_data_set"))
   assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
@@ -557,12 +560,7 @@ plot_cells <- function(cds,
         row.names(genes) = genes[,1]
         genes = genes[row.names(cds_exprs),]
 
-        agg_mat = as.matrix(my.aggregate.Matrix(cds_exprs, as.factor(genes[,2]),
-                                                fun="sum"))
-
-        agg_mat = t(scale(t(log10(agg_mat + 1))))
-        agg_mat[agg_mat < -2] = -2
-        agg_mat[agg_mat > 2] = 2
+        agg_mat = as.matrix(aggregate_gene_expression(cds, genes, norm_method=norm_method, scale_agg_values=FALSE))
         markers_exprs = agg_mat
         markers_exprs <- reshape2::melt(markers_exprs)
         colnames(markers_exprs)[1:2] <- c('feature_id','cell_id')
@@ -574,7 +572,7 @@ plot_cells <- function(cds,
         norm_method = "size_only"
         expression_legend_label = "Expression score"
       } else {
-        cds_exprs@x = round(cds_exprs@x)
+        cds_exprs@x = round(10000*cds_exprs@x)/10000
         markers_exprs = matrix(cds_exprs, nrow=nrow(markers_rowData))
         colnames(markers_exprs) = colnames(SingleCellExperiment::counts(cds))
         row.names(markers_exprs) = row.names(markers_rowData)
@@ -600,6 +598,14 @@ plot_cells <- function(cds,
           expression_legend_label = "Expression"
         else
           expression_legend_label = "log10(Expression)"
+      }
+
+      if (scale_to_range){
+        markers_exprs = dplyr::group_by(markers_exprs, feature_label) %>%
+          dplyr::mutate(max_val_for_feature = max(value),
+                        min_val_for_feature = min(value)) %>%
+          dplyr::mutate(value = 100 * (value - min_val_for_feature) / (max_val_for_feature - min_val_for_feature))
+        expression_legend_label = "% Max"
       }
     }
   }
@@ -1285,7 +1291,7 @@ plot_percent_cells_positive <- function(cds_subset,
 
   if (normalize) {
     marker_exprs <- Matrix::t(Matrix::t(marker_exprs)/size_factors(cds_subset))
-    marker_exprs_melted <- reshape2::melt(round(as.matrix(marker_exprs)))
+    marker_exprs_melted <- reshape2::melt(round(10000*as.matrix(marker_exprs))/10000)
   } else {
     marker_exprs_melted <- reshape2::melt(as.matrix(marker_exprs))
   }

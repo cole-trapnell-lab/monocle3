@@ -4,8 +4,16 @@
 \alias{mc_es_apply}
 \title{Multicore apply-like function for cell_data_set}
 \usage{
-mc_es_apply(cds, MARGIN, FUN, required_packages, cores = 1,
-  convert_to_dense = TRUE, reduction_method = "UMAP", ...)
+mc_es_apply(
+  cds,
+  MARGIN,
+  FUN,
+  required_packages,
+  cores = 1,
+  convert_to_dense = TRUE,
+  reduction_method = "UMAP",
+  ...
+)
 }
 \arguments{
 \item{cds}{A cell_data_set object.}

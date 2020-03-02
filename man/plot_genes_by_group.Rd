@@ -5,13 +5,21 @@
 \title{Create a dot plot to visualize the mean gene expression and percentage of
 expressed cells in each group of cells}
 \usage{
-plot_genes_by_group(cds, markers, group_cells_by = "cluster",
-  reduction_method = "UMAP", norm_method = c("log", "size_only"),
-  lower_threshold = 0, max.size = 10,
+plot_genes_by_group(
+  cds,
+  markers,
+  group_cells_by = "cluster",
+  reduction_method = "UMAP",
+  norm_method = c("log", "size_only"),
+  lower_threshold = 0,
+  max.size = 10,
   ordering_type = c("cluster_row_col", "maximal_on_diag", "none"),
   axis_order = c("group_marker", "marker_group"),
-  flip_percentage_mean = FALSE, pseudocount = 1, scale_max = 3,
-  scale_min = -3)
+  flip_percentage_mean = FALSE,
+  pseudocount = 1,
+  scale_max = 3,
+  scale_min = -3
+)
 }
 \arguments{
 \item{cds}{A cell_data_set for plotting.}

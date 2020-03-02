@@ -67,7 +67,10 @@ find_gene_modules <- function(cds,
                                       "before running cluster_cells"))
 
   preprocess_mat <- cds@preprocess_aux$gene_loadings
-  preprocess_mat = preprocess_mat[rownames(cds),]
+  if (is.null(cds@preprocess_aux$beta) == FALSE){
+    preprocess_mat = preprocess_mat %*% cds@preprocess_aux$beta
+  }
+  preprocess_mat = preprocess_mat[intersect(rownames(cds), row.names(preprocess_mat)),]
 
   umap_res = uwot::umap(as.matrix(preprocess_mat),
                         n_components = max_components,
@@ -136,7 +139,6 @@ my.aggregate.Matrix = function (x, groupings = NULL, form = NULL, fun = "sum", .
                                                              groupings2$A))
   return(result)
 }
-
 
 #' Creates a matrix with aggregated expression values for arbitrary groups of
 #' genes

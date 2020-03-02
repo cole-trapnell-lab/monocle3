@@ -50,8 +50,16 @@ align_cds <- function(cds,
   preprocess_method <- match.arg(preprocess_method)
 
   preproc_res <- reducedDims(cds)[[preprocess_method]]
+  assertthat::assert_that(!is.null(preproc_res),
+                          msg = paste0("Preprocessing for '",
+                                      preprocess_method, "' does not exist. ",
+                                      "Please make sure you have run ",
+                                      "preprocess_cds with",
+                                      "preprocess_method = '",
+                                      preprocess_method,
+                                      "' before calling align_cds."))
 
-  if (!is.null(residual_model_formula_str)) {
+    if (!is.null(residual_model_formula_str)) {
     if (verbose) message("Removing residual effects")
     X.model_mat <- Matrix::sparse.model.matrix(
       stats::as.formula(residual_model_formula_str),
@@ -63,6 +71,7 @@ align_cds <- function(cds,
     beta[is.na(beta)] <- 0
     preproc_res <- Matrix::t(as.matrix(Matrix::t(preproc_res)) -
                                beta %*% Matrix::t(X.model_mat[, -1]))
+    cds@preprocess_aux$beta = beta
   }
 
   if(!is.null(alignment_group)) {

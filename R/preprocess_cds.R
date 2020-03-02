@@ -79,13 +79,6 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
                           msg = paste("One or more cells has a size factor of",
                                       "NA."))
 
-  if(!is.null(alignment_group)) {
-    assertthat::assert_that(alignment_group %in% colnames(colData(cds)),
-                            msg = "alignment_group must be the name of a column of colData(cds)")
-    assertthat::assert_that(is.factor(colData(cds)[,alignment_group]),
-                            msg = "alignment_group must be a factor")
-  }
-
   method <- match.arg(method)
   norm_method <- match.arg(norm_method)
 
@@ -136,6 +129,7 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
   row.names(preproc_res) <- colnames(cds)
 
   reducedDims(cds)[[method]] <- as.matrix(preproc_res)
+  cds@preprocess_aux$beta = NULL
 
   cds
 }
@@ -200,7 +194,7 @@ tfidf <- function(count_matrix, frequencies=TRUE, log_scale_tf=TRUE,
   }
 
   # IDF w/ "inverse document frequency smooth" method
-  idf = log(1 + ncol(count_matrix) / Matrix::rowSums(count_matrix))
+  idf = log(1 + ncol(count_matrix) / Matrix::rowSums(count_matrix > 0))
 
   # Try to just to the multiplication and fall back on delayed array
   # TODO hopefully this actually falls back and not get jobs killed in SGE

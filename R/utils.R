@@ -189,7 +189,7 @@ mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1,
                        as.data.frame(coldata_df), envir=e1)
   environment(FUN) <- e1
 
-  # Note: use outfile argument to makeCluster for debugging
+
   platform <- Sys.info()[['sysname']]
 
   # Temporarily disable OpenMP threading in functions to be run in parallel
@@ -206,6 +206,7 @@ mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1,
   }
   RhpcBLASctl::blas_set_num_threads(1)
 
+  # Note: use outfile argument to makeCluster for debugging
   if (platform == "Windows")
     cl <- parallel::makeCluster(cores)
   if (platform %in% c("Linux", "Darwin"))
@@ -220,9 +221,17 @@ mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1,
 
   if (is.null(required_packages) == FALSE){
     BiocGenerics::clusterCall(cl, function(pkgs) {
+      options(conflicts.policy =
+                list(error = FALSE,
+                     warn = FALSE,
+                     generics.ok = TRUE,
+                     can.mask = c("base", "methods", "utils",
+                                  "grDevices", "graphics",
+                                  "stats"),
+                     depends.ok = TRUE))
       for (req in pkgs) {
-        library(req, character.only=TRUE, warn.conflicts=FALSE, quietly=TRUE,
-                verbose=FALSE)
+        suppressMessages(library(req, character.only=TRUE, warn.conflicts=FALSE, quietly=TRUE,
+                verbose=FALSE))
       }
     }, required_packages)
   }
@@ -539,14 +548,14 @@ load_mtx_data <- function(mat_path,
   assertthat::assert_that(assertthat::is.readable(cell_anno_path))
   assertthat::assert_that(is.numeric(umi_cutoff))
   df <- utils::read.table(mat_path, col.names = c("gene.idx", "cell.idx", "count"),
-                   colClasses = c("integer", "integer", "integer"))
+                          colClasses = c("integer", "integer", "integer"))
 
   gene.annotations <- utils::read.table(gene_anno_path,
-                                 col.names = c("id", "gene_short_name"),
-                                 colClasses = c("character", "character"))
+                                        col.names = c("id", "gene_short_name"),
+                                        colClasses = c("character", "character"))
 
   cell.annotations <- utils::read.table(cell_anno_path, col.names = c("cell"),
-                                 colClasses = c("character"))
+                                        colClasses = c("character"))
 
   rownames(gene.annotations) <- gene.annotations$id
   rownames(cell.annotations) <- cell.annotations$cell
@@ -558,15 +567,21 @@ load_mtx_data <- function(mat_path,
                              count = c(1, 1)))
 
   mat <- Matrix::sparseMatrix(i = df$gene.idx, j = df$cell.idx, x = df$count)
-  mat <- mat[, 1:(ncol(mat)-1)]
+
+  if(ncol(mat) == 1) {
+    mat <- mat[,0, drop=FALSE]
+  } else {
+    mat <- mat[, 1:(ncol(mat)-1), drop=FALSE]
+  }
 
   rownames(mat) <- gene.annotations$id
   colnames(mat) <- cell.annotations$cell
 
   cds <- new_cell_data_set(mat, cell_metadata = cell.annotations,
-                          gene_metadata = gene.annotations)
+                           gene_metadata = gene.annotations)
   colData(cds)$n.umi <- Matrix::colSums(exprs(cds))
   cds <- cds[,colData(cds)$n.umi >= umi_cutoff]
+  cds <- estimate_size_factors(cds)
   return(cds)
 }
 
@@ -599,6 +614,25 @@ combine_cds <- function(cds_list,
                           msg=paste("All members of cds_list must be",
                                     "cell_data_set class."))
 
+  if (any(sapply(cds_list, function(cds) "sample" %in% names(colData(cds))))) {
+    warning(paste0("The combine_cds function adds a column called 'sample' ",
+                   "which indicates which initial cds a cell comes from. One ",
+                   "or more of your input cds objects contains a 'sample' ",
+                   "column, which will be overwritten. We recommend you ",
+                   "rename this column."))
+  }
+  assertthat::assert_that(!any(sapply(cds_list, function(cds)
+    sum(is.na(names(colData(cds)))) != 0)),
+                          msg = paste0("One of the input CDS' has a colData ",
+                                       "column name that is NA, please ",
+                                       "remove or rename that column before ",
+                                       "proceeding."))
+  assertthat::assert_that(!any(sapply(cds_list, function(cds)
+    sum(is.na(names(rowData(cds)))) != 0)),
+    msg = paste0("One of the input CDS' has a colData ",
+                 "column name that is NA, please ",
+                 "remove or rename that column before ",
+                 "proceeding."))
   num_cells <- sapply(cds_list, ncol)
   if(sum(num_cells == 0) != 0) {
     message("Some CDS' have no cells, these will be skipped.")
@@ -671,33 +705,61 @@ combine_cds <- function(cds_list,
     }
 
     fd <- as.data.frame(fData(cds_list[[i]]))
-    fd <- fd[intersect(row.names(fd), gene_list),]
+    fd <- fd[intersect(row.names(fd), gene_list),, drop=FALSE]
     not_in <- fdata_cols[!fdata_cols %in% names(fd)]
+    for(col in names(fd)) {
+      if(class(fd[,col]) == "factor") {
+        fd[,col] <- as.character(fd[,col])
+      }
+    }
     for (n in not_in) {
       fd[,n] <- NA
     }
     not_in_g <- gene_list[!gene_list %in% row.names(fd)]
-    for (n in not_in_g) {
-      fd[n,] <- NA
-    }
+
     if (length(not_in_g) > 0) {
+      not_in_g_df <- as.data.frame(matrix(NA, nrow = length(not_in_g), ncol=ncol(fd)))
+      row.names(not_in_g_df) <- not_in_g
+      names(not_in_g_df) <- names(fd)
+      fd <- rbind(fd, not_in_g_df)
+
       extra_rows <- Matrix::Matrix(0, ncol=ncol(exp),
                                    sparse=TRUE,
                                    nrow=length(not_in_g))
       row.names(extra_rows) <- not_in_g
       colnames(extra_rows) <- colnames(exp)
       exp <- rbind(exp, extra_rows)
+      exp <- exp
     }
 
 
-    exprs_list[[i]] <- exp
-    fd_list[[i]] <- fd
+    exprs_list[[i]] <- exp[gene_list,]
+    fd_list[[i]] <- fd[gene_list,]
     pd_list[[i]] <- pd
 
   }
+  all_fd <- array(NA,dim(fd_list[[1]]),dimnames(fd_list[[1]]))
 
-  all_fd <- do.call(cbind, fd_list)
-  all_fd <- all_fd[,fdata_cols]
+  for (fd in fd_list) {
+    for (j in colnames(fd)) {
+      col_info <- all_fd[,j]
+      col_info[is.na(col_info)] <- fd[is.na(col_info),j]
+      col_info[col_info != fd[,j]] <- "conf"
+      all_fd[,j] <- col_info
+    }
+  }
+
+  confs <- sum(all_fd == "conf", na.rm=TRUE)
+
+  if (confs > 0) {
+   warning(paste0("When combining rowData, conflicting values were found - ",
+                  "conflicts will be labelled 'conf' in the combined cds ",
+                  "to prevent conflicts, either change conflicting values to ",
+                  "match, or rename columns from different cds' to be unique."))
+  }
+  #all_fd <- do.call(cbind, fd_list)
+  all_fd <- all_fd[,fdata_cols, drop=FALSE]
+
   all_pd <- do.call(rbind, pd_list)
   all_exp <- do.call(cbind, exprs_list)
 
@@ -722,7 +784,7 @@ clear_cds_slots <- function(cds) {
   cds@principal_graph_aux <- SimpleList()
   cds@principal_graph <- SimpleList()
   cds@clusters <- SimpleList()
-  cds@reducedDims <- SimpleList()
+  reducedDims(cds) <- SimpleList()
   cds
 }
 
