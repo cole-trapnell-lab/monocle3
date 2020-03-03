@@ -615,7 +615,7 @@ load_mtx_data <- function(mat_path,
   assertthat::assert_that( ! any( duplicated( feature_names ) ), msg='duplicate feature names in feature annotation file' )
   assertthat::assert_that( ! any( duplicated( cell_names ) ), msg='duplicate cell names in cell annotation file' )
 
-  mat <- readMM( mat_path )
+  mat <- Matrix::readMM( mat_path )
 
   assertthat::assert_that( length( feature_names ) == nrow( mat ), msg='feature annotation count != matrix row count' )
   assertthat::assert_that( length( cell_names ) == ncol( mat ), msg='cell annotation count != matrix column count' )
