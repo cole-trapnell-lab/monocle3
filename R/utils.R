@@ -3,6 +3,16 @@ is_sparse_matrix <- function(x){
   class(x) %in% c("dgCMatrix", "dgTMatrix")
 }
 
+
+
+# Test whether a matrix is one of our supported sparse matrices
+is_sparse_matrix <- function(x){
+  class(x) %in% c("dgCMatrix", "dgTMatrix", "lgCMatrix")
+}
+
+
+
+
 #' Function to calculate size factors for single-cell RNA-seq data
 #'
 #' @param cds The cell_data_set
@@ -30,11 +40,11 @@ estimate_size_factors <- function(cds,
     return(cds)
   }
   if (is_sparse_matrix(SingleCellExperiment::counts(cds))){
-    size_factors(cds) <- estimate_sf_sparse(SingleCellExperiment::counts(cds),
+    sizeFactors(cds) <- estimate_sf_sparse(SingleCellExperiment::counts(cds),
                                             round_exprs=round_exprs,
                                             method=method)
   }else{
-    size_factors(cds) <- estimate_sf_dense(SingleCellExperiment::counts(cds),
+    sizeFactors(cds) <- estimate_sf_dense(SingleCellExperiment::counts(cds),
                                            round_exprs=round_exprs,
                                            method=method)
   }
@@ -317,13 +327,6 @@ load_worm_embryo <- function(){
 }
 
 
-# Test whether a matrix is one of our supported sparse matrices
-is_sparse_matrix <- function(x){
-  class(x) %in% c("dgCMatrix", "dgTMatrix", "lgCMatrix")
-}
-
-
-
 #' Principal Components Analysis
 #'
 #' Efficient computation of a truncated principal components analysis of a
@@ -529,6 +532,110 @@ normalized_counts <- function(cds,
 }
 
 
+
+#' Load data from matrix market format
+#'
+#' @param mat_path Path to the .mtx Matrix Market sparse matrix file. The
+#' values are read and stored  as a sparse matrix with nrows and ncols, as
+#' inferred from the file.
+#' @param feature_anno_path Path to a feature annotation file. The
+#' feature_anno_path file must have nrows lines and at least one column.
+#' The values in the first column label the matrix rows and each must be
+#' distinct in the column. Values in additional columns are stored in
+#' the cell_data_set 'gene' metadata. For gene features, we urge use of
+#' official gene IDs for labels, such as Ensembl or Wormbase IDs. In this
+#' case, the second column has typically a 'short' gene name in the second
+#' column. Additional information such as gene_biotype may be stored in
+#' additional columns starting with column 3.
+#' @param cell_anno_path Path to a cell annotation file. The cell_anno_path
+#' file must have ncols lines and at least one column. The values in the
+#' first column label the matrix columns and each must be distinct in the
+#' column. Values in additional columns are stored in the cell_data_set
+#' cells metadata.
+#' @param feature_metadata_column_names A character vector of feature
+#' metadata column names. There must be one name for each column in the file
+#' at feature_anno_path. The default is c( 'gene_id', 'gene_short_name'),
+#' which column names are recommended for RNA-seq. For no feature metadata
+#' column names, set feature_metadata_column_names to NULL.
+#' @param umi_cutoff UMI per cell cutoff, default is 100. Columns (cells)
+#' with less than umi_cutoff total counts are removed from the matrix.
+#'
+#' Notes:
+#'   o  this function estimates size factors.
+#'
+#' @return cds object
+#' @export
+#'
+#
+# Perhaps establish a convention of feature_annotation file headers and add a featureFileHeader flag
+# to flag the presence of the headers, or read the first line of the file and check for the header
+# strings.
+#
+load_mtx_data <- function(mat_path,
+                          feature_anno_path,
+                          cell_anno_path,
+                          feature_metadata_column_names = c( 'gene_id', 'gene_short_name'),
+                          umi_cutoff = 100) {
+  assertthat::assert_that(assertthat::is.readable(mat_path), msg='unable to read matrix file')
+  assertthat::assert_that(assertthat::is.readable(feature_anno_path), msg='unable to read feature annotation file')
+  assertthat::assert_that(assertthat::is.readable(cell_anno_path), msg='unable to read cell annotation file78')
+  assertthat::assert_that(is.numeric(umi_cutoff))
+
+  feature_annotations <- read.table( feature_anno_path, stringsAsFactors=FALSE )
+  cell_annotations <- read.table( cell_anno_path, stringsAsFactors=FALSE )
+
+  feature_names <- feature_annotations[,1]
+  if( ncol( feature_annotations ) == 1 )
+  {
+    feature_metadata <- NULL
+  }
+  else
+  {
+    feature_metadata <- feature_annotations[,-1, drop=FALSE]
+    rownames( feature_metadata ) <- feature_names
+    if( ! is.null( feature_metadata_column_names ) )
+    {
+      assertthat::assert_that( length( feature_metadata_column_names ) - 1 == ncol( feature_metadata ),
+                               msg='feature metadata column name count != feature annotation column count' )
+      colnames( feature_metadata ) <- feature_metadata_column_names[-1]
+    }
+  }
+
+  cell_names <- cell_annotations[,1]
+  if( ncol( cell_annotations ) == 1 )
+  {
+    cell_metadata = NULL
+  }
+  else
+  {
+    cell_metadata <- cell_annotations[,-1,drop=FALSE]
+    rownames( cell_metadata ) <- cell_names
+  }
+
+  assertthat::assert_that( ! any( duplicated( feature_names ) ), msg='duplicate feature names in feature annotation file' )
+  assertthat::assert_that( ! any( duplicated( cell_names ) ), msg='duplicate cell names in cell annotation file' )
+
+  mat <- readMM( mat_path )
+
+  assertthat::assert_that( length( feature_names ) == nrow( mat ), msg='feature annotation count != matrix row count' )
+  assertthat::assert_that( length( cell_names ) == ncol( mat ), msg='cell annotation count != matrix column count' )
+
+  rownames( mat ) <- feature_names
+  colnames( mat ) <- cell_names
+
+  cds <- new_cell_data_set( mat,
+                            cell_metadata = cell_metadata,
+                            gene_metadata = feature_metadata )
+
+  colData(cds)$n.umi <- Matrix::colSums(exprs(cds))
+  cds <- cds[,colData(cds)$n.umi >= umi_cutoff]
+  cds <- estimate_size_factors(cds)
+
+  return( cds )
+}
+
+
+
 #' Load data from matrix market format
 #'
 #' @param mat_path Path to the .mtx matrix market file.
@@ -539,7 +646,7 @@ normalized_counts <- function(cds,
 #' @return cds object
 #' @export
 #'
-load_mtx_data <- function(mat_path,
+load_mtx_data.original <- function(mat_path,
                           gene_anno_path,
                           cell_anno_path,
                           umi_cutoff = 100) {
@@ -584,6 +691,7 @@ load_mtx_data <- function(mat_path,
   cds <- estimate_size_factors(cds)
   return(cds)
 }
+
 
 
 #' Combine a list of cell_data_set objects
