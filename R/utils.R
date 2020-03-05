@@ -629,7 +629,7 @@ combine_cds <- function(cds_list,
                                        "proceeding."))
   assertthat::assert_that(!any(sapply(cds_list, function(cds)
     sum(is.na(names(rowData(cds)))) != 0)),
-    msg = paste0("One of the input CDS' has a colData ",
+    msg = paste0("One of the input CDS' has a rowData ",
                  "column name that is NA, please ",
                  "remove or rename that column before ",
                  "proceeding."))
