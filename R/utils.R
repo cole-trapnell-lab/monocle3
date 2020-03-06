@@ -40,11 +40,11 @@ estimate_size_factors <- function(cds,
     return(cds)
   }
   if (is_sparse_matrix(SingleCellExperiment::counts(cds))){
-    sizeFactors(cds) <- estimate_sf_sparse(SingleCellExperiment::counts(cds),
+    size_factors(cds) <- estimate_sf_sparse(SingleCellExperiment::counts(cds),
                                             round_exprs=round_exprs,
                                             method=method)
   }else{
-    sizeFactors(cds) <- estimate_sf_dense(SingleCellExperiment::counts(cds),
+    size_factors(cds) <- estimate_sf_dense(SingleCellExperiment::counts(cds),
                                            round_exprs=round_exprs,
                                            method=method)
   }
@@ -533,11 +533,63 @@ normalized_counts <- function(cds,
 
 
 
-#' Load data from matrix market format
+#' Test if a file has a Matrix Market header.
+#' @param matpath Path to test file.
+#' @return TRUE if matpath file has Matrix Market header.
+#' @noRd
+is_matrix_market_file <- function( matpath )
+{
+  first_line <- read.table( matpath, nrows=1 )
+  grepl( "%%MatrixMarket", first_line$V1 )
+}
+
+
+
+#' Load matrix dimension metadata from file.
+#' @param anno_path Path to matdim annotation file.
+#' @return list consisting of matdim_names, which label matrix dimension,
+#' and metadata, if present in the file, which are
+#' additional dimension metadata.
+#' @noRd
+load_annotations_data <- function( anno_path, metadata_column_names, header=FALSE, sep="", annotation_type=NULL )
+{
+  assertthat::assert_that( ! is.null( annotation_type ) )
+  annotations <- read.table( anno_path, header=header, sep=sep, stringsAsFactors=FALSE )
+
+  metadata = NULL
+  if( .row_names_info( annotations ) < 0 )
+  {
+    names <- annotations[,1]
+    if( ncol( annotations ) > 1 )
+      metadata <- annotations[,-1,drop=FALSE]
+  }
+  else
+  {
+    names <- rownames( annotations )
+    if( ncol( annotations ) > 1 )
+      metadata <- annotations
+  }
+
+  if( ! is.null( metadata_column_names ) )
+  {
+    assertthat::assert_that( length( metadata_column_names ) == ncol( metadata ),
+                             msg=paste( annotation_type,'metadata column name count !=', annotation_type, 'annotation column count' ) )
+    colnames( metadata ) <- metadata_column_names
+  }
+
+  if( ! is.null( metadata ) )
+    rownames(metadata)<-names
+
+  list( names=names, metadata=metadata )
+}
+
+
+
+#' Load data from matrix market format files.
 #'
-#' @param mat_path Path to the .mtx Matrix Market sparse matrix file. The
-#' values are read and stored  as a sparse matrix with nrows and ncols, as
-#' inferred from the file.
+#' @param mat_path Path to the Matrix Market .mtx matrix file. The
+#' values are read and stored  as a sparse matrix with nrows and ncols,
+#' as inferred from the file.
 #' @param feature_anno_path Path to a feature annotation file. The
 #' feature_anno_path file must have nrows lines and at least one column.
 #' The values in the first column label the matrix rows and each must be
@@ -546,19 +598,33 @@ normalized_counts <- function(cds,
 #' official gene IDs for labels, such as Ensembl or Wormbase IDs. In this
 #' case, the second column has typically a 'short' gene name in the second
 #' column. Additional information such as gene_biotype may be stored in
-#' additional columns starting with column 3.
+#' additional columns starting with column 3. Required.
 #' @param cell_anno_path Path to a cell annotation file. The cell_anno_path
 #' file must have ncols lines and at least one column. The values in the
 #' first column label the matrix columns and each must be distinct in the
 #' column. Values in additional columns are stored in the cell_data_set
-#' cells metadata.
+#' cells metadata. Required.
+#' @param header Logical set to TRUE if both feature_anno_path and
+#' cell_anno_path files have column headers, or set to FALSE if both
+#' files do not have column headers (only these cases are supported).
+#' The files may have either ncols or ncols-1 header fields. In both
+#' cases, the first column is used as the matrix dimension names. The
+#' default is FALSE.
 #' @param feature_metadata_column_names A character vector of feature
-#' metadata column names. There must be one name for each column in the file
-#' at feature_anno_path. The default is c( 'gene_id', 'gene_short_name'),
-#' which column names are recommended for RNA-seq. For no feature metadata
-#' column names, set feature_metadata_column_names to NULL.
-#' @param umi_cutoff UMI per cell cutoff, default is 100. Columns (cells)
-#' with less than umi_cutoff total counts are removed from the matrix.
+#' metadata column names. There must be nrows-1 names in the file
+#' at feature_anno_path. For no feature metadata column names, set
+#' feature_metadata_column_names to NULL. These values replace the
+#' feature_anno_path file header values. The default is NULL.
+#' @param cell_metadata_column_names A character vector of cell
+#' metadata column names. There must be ncols-1 names in the file
+#' at cell_anno_path. For no cell metadata column names,
+#' set cell_metadata_column_names to NULL. These values replace the
+#' cell_anno_path file header values. The default is NULL.
+#' @param umi_cutoff UMI per cell cutoff. Columns (cells) with less
+#' than umi_cutoff total counts are removed from the matrix. The
+#' default is 100.
+#' @param sep field separator character in annotation files. The default
+#' is whitespace.
 #'
 #' Notes:
 #'   o  this function estimates size factors.
@@ -571,61 +637,36 @@ normalized_counts <- function(cds,
 # to flag the presence of the headers, or read the first line of the file and check for the header
 # strings.
 #
-load_mtx_data <- function(mat_path,
+load_mm_data <- function( mat_path,
                           feature_anno_path,
                           cell_anno_path,
-                          feature_metadata_column_names = c( 'gene_id', 'gene_short_name'),
-                          umi_cutoff = 100) {
+                          header = FALSE,
+                          feature_metadata_column_names = NULL,
+                          cell_metadata_column_names = NULL,
+                          umi_cutoff = 100,
+                          sep="") {
   assertthat::assert_that(assertthat::is.readable(mat_path), msg='unable to read matrix file')
   assertthat::assert_that(assertthat::is.readable(feature_anno_path), msg='unable to read feature annotation file')
   assertthat::assert_that(assertthat::is.readable(cell_anno_path), msg='unable to read cell annotation file78')
   assertthat::assert_that(is.numeric(umi_cutoff))
 
-  feature_annotations <- read.table( feature_anno_path, stringsAsFactors=FALSE )
-  cell_annotations <- read.table( cell_anno_path, stringsAsFactors=FALSE )
+  feature_annotations <- load_annotations_data( feature_anno_path, feature_metadata_column_names, header, sep, annotation_type='features' )
+  cell_annotations <- load_annotations_data( cell_anno_path, cell_metadata_column_names, header, sep, annotation_type='cells' )
 
-  feature_names <- feature_annotations[,1]
-  if( ncol( feature_annotations ) == 1 )
-  {
-    feature_metadata <- NULL
-  }
-  else
-  {
-    feature_metadata <- feature_annotations[,-1, drop=FALSE]
-    rownames( feature_metadata ) <- feature_names
-    if( ! is.null( feature_metadata_column_names ) )
-    {
-      assertthat::assert_that( length( feature_metadata_column_names ) - 1 == ncol( feature_metadata ),
-                               msg='feature metadata column name count != feature annotation column count' )
-      colnames( feature_metadata ) <- feature_metadata_column_names[-1]
-    }
-  }
-
-  cell_names <- cell_annotations[,1]
-  if( ncol( cell_annotations ) == 1 )
-  {
-    cell_metadata = NULL
-  }
-  else
-  {
-    cell_metadata <- cell_annotations[,-1,drop=FALSE]
-    rownames( cell_metadata ) <- cell_names
-  }
-
-  assertthat::assert_that( ! any( duplicated( feature_names ) ), msg='duplicate feature names in feature annotation file' )
-  assertthat::assert_that( ! any( duplicated( cell_names ) ), msg='duplicate cell names in cell annotation file' )
+  assertthat::assert_that( ! any( duplicated( feature_annotations$names ) ), msg='duplicate feature names in feature annotation file' )
+  assertthat::assert_that( ! any( duplicated( cell_annotations$names ) ), msg='duplicate cell names in cell annotation file' )
 
   mat <- Matrix::readMM( mat_path )
 
-  assertthat::assert_that( length( feature_names ) == nrow( mat ), msg='feature annotation count != matrix row count' )
-  assertthat::assert_that( length( cell_names ) == ncol( mat ), msg='cell annotation count != matrix column count' )
+  assertthat::assert_that( length( feature_annotations$names ) == nrow( mat ), msg='feature name count != matrix row count' )
+  assertthat::assert_that( length( cell_annotations$names ) == ncol( mat ), msg='cell name count != matrix column count' )
 
-  rownames( mat ) <- feature_names
-  colnames( mat ) <- cell_names
+  rownames( mat ) <- feature_annotations$names
+  colnames( mat ) <- cell_annotations$names
 
   cds <- new_cell_data_set( mat,
-                            cell_metadata = cell_metadata,
-                            gene_metadata = feature_metadata )
+                            cell_metadata = cell_annotations$metadata,
+                            gene_metadata = feature_annotations$metadata )
 
   colData(cds)$n.umi <- Matrix::colSums(exprs(cds))
   cds <- cds[,colData(cds)$n.umi >= umi_cutoff]
@@ -646,14 +687,21 @@ load_mtx_data <- function(mat_path,
 #' @return cds object
 #' @export
 #'
-load_mtx_data.original <- function(mat_path,
-                          gene_anno_path,
-                          cell_anno_path,
-                          umi_cutoff = 100) {
+load_mtx_data <- function( mat_path,
+                           gene_anno_path,
+                           cell_anno_path,
+                           umi_cutoff = 100) {
   assertthat::assert_that(assertthat::is.readable(mat_path))
   assertthat::assert_that(assertthat::is.readable(gene_anno_path))
   assertthat::assert_that(assertthat::is.readable(cell_anno_path))
   assertthat::assert_that(is.numeric(umi_cutoff))
+
+  if( is_matrix_market_file( mat_pat ) )
+  {
+    cds <- load_mm_data( mat_path, gene_anno_path, cell_anno_path, umi_cutoff=umi_cutoff )
+    return( cds )
+  }
+
   df <- utils::read.table(mat_path, col.names = c("gene.idx", "cell.idx", "count"),
                           colClasses = c("integer", "integer", "integer"))
 
