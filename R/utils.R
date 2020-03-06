@@ -611,20 +611,21 @@ load_annotations_data <- function( anno_path, metadata_column_names, header=FALS
 #' cases, the first column is used as the matrix dimension names. The
 #' default is FALSE.
 #' @param feature_metadata_column_names A character vector of feature
-#' metadata column names. There must be nrows-1 names in the file
-#' at feature_anno_path. For no feature metadata column names, set
-#' feature_metadata_column_names to NULL. These values replace the
-#' feature_anno_path file header values. The default is NULL.
+#' metadata column names. The number of names must one less than the
+#' number of columns in the feature_anno_path file. For no feature
+#' metadata column names, set feature_metadata_column_names to NULL.
+#' These values replace the feature_anno_path file header values. The
+#' default is NULL.
 #' @param cell_metadata_column_names A character vector of cell
-#' metadata column names. There must be ncols-1 names in the file
-#' at cell_anno_path. For no cell metadata column names,
-#' set cell_metadata_column_names to NULL. These values replace the
-#' cell_anno_path file header values. The default is NULL.
+#' metadata column names. The number of names must one less than the 
+#' number of columns in the cell_anno_path file. For no cell metadata
+#' column names, set cell_metadata_column_names to NULL. These values
+#' replace the cell_anno_path file header values. The default is NULL.
 #' @param umi_cutoff UMI per cell cutoff. Columns (cells) with less
 #' than umi_cutoff total counts are removed from the matrix. The
 #' default is 100.
-#' @param sep field separator character in annotation files. The default
-#' is whitespace.
+#' @param sep field separator character in annotation files. The
+#' default is the tab character for tab-separated-value files.
 #'
 #' Notes:
 #'   o  this function estimates size factors.
@@ -644,7 +645,7 @@ load_mm_data <- function( mat_path,
                           feature_metadata_column_names = NULL,
                           cell_metadata_column_names = NULL,
                           umi_cutoff = 100,
-                          sep="") {
+                          sep="\t") {
   assertthat::assert_that(assertthat::is.readable(mat_path), msg='unable to read matrix file')
   assertthat::assert_that(assertthat::is.readable(feature_anno_path), msg='unable to read feature annotation file')
   assertthat::assert_that(assertthat::is.readable(cell_anno_path), msg='unable to read cell annotation file78')

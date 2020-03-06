@@ -1,3 +1,8 @@
+# == Cell Ranger data
+
+#
+# Expected values.
+#
 # pdir <- "../testdata/cr3.0/outs/filtered_feature_bc_matrix"
 # sum( assay( cds ) )
 cr_assay_sum <- 80147
@@ -13,8 +18,11 @@ cr_feature_V3 <- c( "Gene Expression", "Gene Expression", "Gene Expression", "An
 cr_matrix_colname <- c( "AAAGTAGCACAGTCGC-1", "AAATGCCCACCCAGTG-1", "AACCGCGCAGGCGATA-1", "AACTCAGAGAACTCGG-1", "AATCCAGCAGTAACGG-1" )
 
 
+#
+# Test.
+#
 test_that( "load cell ranger matrix 3.0", {
-  pdir <- "/home/brent/git/monocle3/tests/testdata/cr3.0/outs/filtered_feature_bc_matrix/"
+  pdir <- "../testdata/cr3.0/outs/filtered_feature_bc_matrix/"
   pmat <- paste0( pdir, "matrix.mtx.gz" )
   prow <- paste0( pdir, "features.tsv.gz" )
   pcol <- paste0( pdir, "barcodes.tsv.gz" )
@@ -28,7 +36,10 @@ test_that( "load cell ranger matrix 3.0", {
 
 
 
+# == Matrix Market data derived from Cell Ranger
 
+# Expected values.
+#
 # pdir <- "../testdata/MatrixMarket"
 # as.vector( rownames( assay( cds ) ) )
 mm_matrix_rowname <- c( "ENSG00000243485", "ENSG00000237613", "ENSG00000268674", "CD3_GCCTGACTAGATCCA", "CD19_CGTGCAACACTCGTA" )
@@ -48,8 +59,11 @@ mm_cell_umi_token <- c( "umi=10",  "umi=11",  "umi=12",  "umi=13",  "umi=14" )
 mm_assay_sum <- 80147
 
 
+#
+# Tests.
+#
 test_that( "load MatrixMarket with annotations file ncol=1:nheader=0:header=FALSE", {
-  pdir <- "/home/brent/git/monocle3/tests/testdata/MatrixMarket/"
+  pdir <- "../testdata/MatrixMarket/"
   pmat <- paste0( pdir, "matrix.mtx.gz" )
   prow <- paste0( pdir, "features_c1h0.txt" )
   pcol <- paste0( pdir, "barcodes_c1h0.txt" )
@@ -61,7 +75,7 @@ test_that( "load MatrixMarket with annotations file ncol=1:nheader=0:header=FALS
 
 
 test_that( "load MatrixMarket with annotations file ncol=1:nheader=1:header=TRUE", {
-  pdir <- "/home/brent/git/monocle3/tests/testdata/MatrixMarket/"
+  pdir <- "../testdata/MatrixMarket/"
   pmat <- paste0( pdir, "matrix.mtx.gz" )
   prow <- paste0( pdir, "features_c1h1.txt" )
   pcol <- paste0( pdir, "barcodes_c1h1.txt" )
@@ -75,7 +89,7 @@ test_that( "load MatrixMarket with annotations file ncol=1:nheader=1:header=TRUE
 
 
 test_that( "load MatrixMarket with annotations file ncol=3:nheader=0:header=FALSE", {
-  pdir <- "/home/brent/git/monocle3/tests/testdata/MatrixMarket/"
+  pdir <- "../testdata/MatrixMarket/"
   pmat <- paste0( pdir, "matrix.mtx.gz" )
   prow <- paste0( pdir, "features_c3h0.txt" )
   pcol <- paste0( pdir, "barcodes_c3h0.txt" )
@@ -91,7 +105,7 @@ test_that( "load MatrixMarket with annotations file ncol=3:nheader=0:header=FALS
 
 
 test_that( "load MatrixMarket with annotations file ncol=3:nheader=2:header=TRUE", {
-  pdir <- "/home/brent/git/monocle3/tests/testdata/MatrixMarket/"
+  pdir <- "../testdata/MatrixMarket/"
   pmat <- paste0( pdir, "matrix.mtx.gz" )
   prow <- paste0( pdir, "features_c3h2.txt" )
   pcol <- paste0( pdir, "barcodes_c3h2.txt" )
@@ -107,7 +121,7 @@ test_that( "load MatrixMarket with annotations file ncol=3:nheader=2:header=TRUE
 
 
 test_that( "load MatrixMarket with annotations file ncol=3:nheader=3:header=TRUE", {
-  pdir <- "/home/brent/git/monocle3/tests/testdata/MatrixMarket/"
+  pdir <- "../testdata/MatrixMarket/"
   pmat <- paste0( pdir, "matrix.mtx.gz" )
   prow <- paste0( pdir, "features_c3h3.txt" )
   pcol <- paste0( pdir, "barcodes_c3h3.txt" )
@@ -119,5 +133,24 @@ test_that( "load MatrixMarket with annotations file ncol=3:nheader=3:header=TRUE
   expect_true( all( fData( cds )$source == mm_feature_source ) )
   expect_true( all( as.vector( pData( cds )$cell_number ) == mm_cell_cell_number ) )
   expect_true( all( as.vector( pData( cds )$umi_token ) == mm_cell_umi_token ) )
+} )
+
+
+test_that( "load MatrixMarket with annotations file ncol=3:nheader=3:header=TRUE and replace metadata dimension labels", {
+  pdir <- "../testdata/MatrixMarket/"
+  pmat <- paste0( pdir, "matrix.mtx.gz" )
+  prow <- paste0( pdir, "features_c3h3.txt" )
+  pcol <- paste0( pdir, "barcodes_c3h3.txt" )
+  cds <- load_mm_data( pmat, prow, pcol,
+                       feature_metadata_column_names=c('features1','features2'),
+                       cell_metadata_column_names=c('cells1','cells2'),
+                       header=TRUE )
+  expect_equal( sum( assay( cds ) ), mm_assay_sum )
+  expect_true( all( as.vector( rownames( assay( cds ) ) ) == mm_matrix_rowname ) )
+  expect_true( all( as.vector( colnames( assay( cds ) ) ) == mm_matrix_colname ) )
+  expect_true( all( fData( cds )$features1 == mm_feature_gene_short_name ) )
+  expect_true( all( fData( cds )$features2 == mm_feature_source ) )
+  expect_true( all( as.vector( pData( cds )$cells1 ) == mm_cell_cell_number ) )
+  expect_true( all( as.vector( pData( cds )$cells2 ) == mm_cell_umi_token ) )
 } )
 
