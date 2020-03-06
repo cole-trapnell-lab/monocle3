@@ -3,9 +3,6 @@ is_sparse_matrix <- function(x){
   class(x) %in% c("dgCMatrix", "dgTMatrix", "lgCMatrix")
 }
 
-
-
-
 #' Function to calculate size factors for single-cell RNA-seq data
 #'
 #' @param cds The cell_data_set
