@@ -619,10 +619,11 @@ load_annotations_data <- function( anno_path, metadata_column_names, header=FALS
 #' @param sep field separator character in annotation files. The
 #' default is the tab character for tab-separated-value files.
 #'
-#' Notes:
-#'   o  this function estimates size factors.
-#'
 #' @return cds object
+#'
+#' @section Comments:
+#' * load_mm_data estimates size factors.
+#'
 #' @export
 #'
 #

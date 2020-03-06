@@ -44,27 +44,23 @@ cases, the first column is used as the matrix dimension names. The
 default is FALSE.}
 
 \item{feature_metadata_column_names}{A character vector of feature
-metadata column names. The number of names must one less than the
-number of columns in the feature_anno_path file. For no feature
-metadata column names, set feature_metadata_column_names to NULL.
-These values replace the feature_anno_path file header values. The
-default is NULL.}
+metadata column names. The number of names must be one less than the
+number of columns in the feature_anno_path file. These values
+will replace those read from the feature_anno_path file header,
+if present. The default is NULL.}
 
 \item{cell_metadata_column_names}{A character vector of cell
-metadata column names. The number of names must one less than the
-number of columns in the cell_anno_path file. For no cell metadata
-column names, set cell_metadata_column_names to NULL. These values
-replace the cell_anno_path file header values. The default is NULL.}
+metadata column names. The number of names must be one less than the
+number of columns in the cell_anno_path file. These values will
+replace those read from the cell_anno_path file header, if present.
+The default is NULL.}
 
 \item{umi_cutoff}{UMI per cell cutoff. Columns (cells) with less
 than umi_cutoff total counts are removed from the matrix. The
 default is 100.}
 
 \item{sep}{field separator character in annotation files. The
-default is the tab character for tab-separated-value files.
-
-Notes:
-o  this function estimates size factors.}
+default is the tab character for tab-separated-value files.}
 }
 \value{
 cds object
@@ -72,3 +68,10 @@ cds object
 \description{
 Load data from matrix market format files.
 }
+\section{Comments}{
+
+\itemize{
+\item load_mm_data estimates size factors.
+}
+}
+
