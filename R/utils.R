@@ -1,10 +1,3 @@
-# Check if class is a sparseMatrix from Matrix package
-is_sparse_matrix <- function(x){
-  class(x) %in% c("dgCMatrix", "dgTMatrix")
-}
-
-
-
 # Test whether a matrix is one of our supported sparse matrices
 is_sparse_matrix <- function(x){
   class(x) %in% c("dgCMatrix", "dgTMatrix", "lgCMatrix")
@@ -611,16 +604,15 @@ load_annotations_data <- function( anno_path, metadata_column_names, header=FALS
 #' cases, the first column is used as the matrix dimension names. The
 #' default is FALSE.
 #' @param feature_metadata_column_names A character vector of feature
-#' metadata column names. The number of names must one less than the
-#' number of columns in the feature_anno_path file. For no feature
-#' metadata column names, set feature_metadata_column_names to NULL.
-#' These values replace the feature_anno_path file header values. The
-#' default is NULL.
+#' metadata column names. The number of names must be one less than the
+#' number of columns in the feature_anno_path file. These values
+#' will replace those read from the feature_anno_path file header,
+#' if present. The default is NULL.  
 #' @param cell_metadata_column_names A character vector of cell
-#' metadata column names. The number of names must one less than the 
-#' number of columns in the cell_anno_path file. For no cell metadata
-#' column names, set cell_metadata_column_names to NULL. These values
-#' replace the cell_anno_path file header values. The default is NULL.
+#' metadata column names. The number of names must be one less than the 
+#' number of columns in the cell_anno_path file. These values will
+#' replace those read from the cell_anno_path file header, if present.
+#' The default is NULL.
 #' @param umi_cutoff UMI per cell cutoff. Columns (cells) with less
 #' than umi_cutoff total counts are removed from the matrix. The
 #' default is 100.
