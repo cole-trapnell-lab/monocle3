@@ -18,7 +18,7 @@ load_mm_data(
 \arguments{
 \item{mat_path}{Path to the Matrix Market .mtx matrix file. The
 values are read and stored  as a sparse matrix with nrows and ncols,
-as inferred from the file.}
+as inferred from the file. Required.}
 
 \item{feature_anno_path}{Path to a feature annotation file. The
 feature_anno_path file must have nrows lines and at least one column.
