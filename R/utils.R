@@ -579,7 +579,7 @@ load_annotations_data <- function( anno_path, metadata_column_names, header=FALS
 #'
 #' @param mat_path Path to the Matrix Market .mtx matrix file. The
 #' values are read and stored  as a sparse matrix with nrows and ncols,
-#' as inferred from the file.
+#' as inferred from the file. Required.
 #' @param feature_anno_path Path to a feature annotation file. The
 #' feature_anno_path file must have nrows lines and at least one column.
 #' The values in the first column label the matrix rows and each must be
