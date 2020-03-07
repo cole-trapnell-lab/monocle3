@@ -687,7 +687,7 @@ load_mtx_data <- function( mat_path,
   assertthat::assert_that(assertthat::is.readable(cell_anno_path))
   assertthat::assert_that(is.numeric(umi_cutoff))
 
-  if( is_matrix_market_file( mat_pat ) )
+  if( is_matrix_market_file( mat_path ) )
   {
     cds <- load_mm_data( mat_path, gene_anno_path, cell_anno_path, umi_cutoff=umi_cutoff )
     return( cds )
