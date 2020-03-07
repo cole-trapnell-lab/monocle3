@@ -1,21 +1,21 @@
-# == Cell Ranger data
+# == Cell Ranger 3.0 data
 
 #
 # Expected values.
 #
 # pdir <- "../testdata/cr3.0/outs/filtered_feature_bc_matrix"
 # sum( assay( cds ) )
-cr_assay_sum <- 80147
+cr3_assay_sum <- 80147
 
 # as.vector(rownames(assay(cds)))
-cr_matrix_rowname <- c( "ENSG00000243485", "ENSG00000237613", "ENSG00000268674", "CD3_GCCTGACTAGATCCA", "CD19_CGTGCAACACTCGTA" )
+cr3_matrix_rowname <- c( "ENSG00000243485", "ENSG00000237613", "ENSG00000268674", "CD3_GCCTGACTAGATCCA", "CD19_CGTGCAACACTCGTA" )
 # fData(cds)$V2
-cr_feature_V2 <- c( "RP11-34P13.3", "FAM138A", "FAM231B", "CD3", "CD19" )
+cr3_feature_V2 <- c( "RP11-34P13.3", "FAM138A", "FAM231B", "CD3", "CD19" )
 # fData(cds)$V3
-cr_feature_V3 <- c( "Gene Expression", "Gene Expression", "Gene Expression", "Antibody Capture", "Antibody Capture" )
+cr3_feature_V3 <- c( "Gene Expression", "Gene Expression", "Gene Expression", "Antibody Capture", "Antibody Capture" )
 
 # as.vector(pData(assay(cds)))
-cr_matrix_colname <- c( "AAAGTAGCACAGTCGC-1", "AAATGCCCACCCAGTG-1", "AACCGCGCAGGCGATA-1", "AACTCAGAGAACTCGG-1", "AATCCAGCAGTAACGG-1" )
+cr3_matrix_colname <- c( "AAAGTAGCACAGTCGC-1", "AAATGCCCACCCAGTG-1", "AACCGCGCAGGCGATA-1", "AACTCAGAGAACTCGG-1", "AATCCAGCAGTAACGG-1" )
 
 
 #
@@ -27,11 +27,45 @@ test_that( "load cell ranger matrix 3.0", {
   prow <- paste0( pdir, "features.tsv.gz" )
   pcol <- paste0( pdir, "barcodes.tsv.gz" )
   cds <- load_mm_data( pmat, prow, pcol, header=FALSE )
-  expect_equal( sum( assay( cds ) ), cr_assay_sum )
-  expect_true( all( as.vector( rownames( assay( cds ) ) ) == cr_matrix_rowname ) )
-  expect_true( all( as.vector( colnames( assay( cds ) ) ) == cr_matrix_colname ) )
-  expect_true( all( fData( cds )$V2 == cr_feature_V2 ) )
-  expect_true( all( fData( cds )$V3 == cr_feature_V3 ) )
+  expect_equal( sum( assay( cds ) ), cr3_assay_sum )
+  expect_true( all( as.vector( rownames( assay( cds ) ) ) == cr3_matrix_rowname ) )
+  expect_true( all( as.vector( colnames( assay( cds ) ) ) == cr3_matrix_colname ) )
+  expect_true( all( fData( cds )$V2 == cr3_feature_V2 ) )
+  expect_true( all( fData( cds )$V3 == cr3_feature_V3 ) )
+} )
+
+
+
+# == Cell Ranger 2.0 data
+
+#
+# Expected values.
+#
+# pdir <- "../testdata/cr2.0/outs/filtered_gene_bc_matrices/hg19/"
+# sum( assay( cds ) )
+cr2_assay_sum <- 22265
+
+# as.vector(rownames(assay(cds)))[1:5]
+cr2_matrix_rowname <- c( "ENSGXXXX00", "ENSGXXXX01", "ENSGXXXX02", "ENSGXXXX03", "ENSGXXXX04" )
+# fData(cds)$V2[1:5]
+cr2_feature_V2 <- c( "MS4A1", "CD79B", "CD79A", "HLA-DRA", "TCL1A" )
+
+# as.vector(colnames(assay(cds)))[1:5]
+cr2_matrix_colname <- c( "GAACCTGATGAACC-1", "TGACTGGATTCTCA-1", "AGTCAGACTGCACA-1", "AATGTTGACAGTCA-1", "AGAGATGATCTCGC-1" )
+
+#
+# Test.
+#
+test_that( "load cell ranger matrix 3.0", {
+  pdir <- "../testdata/cr2.0/outs/filtered_gene_bc_matrices/hg19/"
+  pmat <- paste0( pdir, "matrix.mtx" )
+  prow <- paste0( pdir, "genes.tsv" )
+  pcol <- paste0( pdir, "barcodes.tsv" )
+  cds <- load_mm_data( pmat, prow, pcol, header=FALSE )
+  expect_equal( sum( assay( cds ) ), cr2_assay_sum )
+  expect_true( all( as.vector( rownames( assay( cds ) ) )[1:5] == cr2_matrix_rowname ) )
+  expect_true( all( as.vector( colnames( assay( cds ) ) )[1:5] == cr2_matrix_colname ) )
+  expect_true( all( fData( cds )$V2[1:5] == cr2_feature_V2 ) )
 } )
 
 

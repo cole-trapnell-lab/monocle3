@@ -59,7 +59,7 @@ The default is NULL.}
 than umi_cutoff total counts are removed from the matrix. The
 default is 100.}
 
-\item{sep}{field separator character in annotation files. The
+\item{sep}{field separator character in the annotation files. The
 default is the tab character for tab-separated-value files.}
 }
 \value{

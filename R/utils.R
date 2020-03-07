@@ -541,7 +541,7 @@ is_matrix_market_file <- function( matpath )
 #' and metadata, if present in the file, which are
 #' additional dimension metadata.
 #' @noRd
-load_annotations_data <- function( anno_path, metadata_column_names, header=FALSE, sep="", annotation_type=NULL )
+load_annotations_data <- function( anno_path, metadata_column_names=NULL, header=FALSE, sep="", annotation_type=NULL )
 {
   assertthat::assert_that( ! is.null( annotation_type ) )
   annotations <- read.table( anno_path, header=header, sep=sep, stringsAsFactors=FALSE )
@@ -560,7 +560,7 @@ load_annotations_data <- function( anno_path, metadata_column_names, header=FALS
       metadata <- annotations
   }
 
-  if( ! is.null( metadata_column_names ) )
+  if( ! ( is.null( metadata_column_names ) || is.null( metadata ) ) )
   {
     assertthat::assert_that( length( metadata_column_names ) == ncol( metadata ),
                              msg=paste( annotation_type,'metadata column name count !=', annotation_type, 'annotation column count' ) )
@@ -613,7 +613,7 @@ load_annotations_data <- function( anno_path, metadata_column_names, header=FALS
 #' @param umi_cutoff UMI per cell cutoff. Columns (cells) with less
 #' than umi_cutoff total counts are removed from the matrix. The
 #' default is 100.
-#' @param sep field separator character in annotation files. The
+#' @param sep field separator character in the annotation files. The
 #' default is the tab character for tab-separated-value files.
 #'
 #' @return cds object
@@ -623,11 +623,6 @@ load_annotations_data <- function( anno_path, metadata_column_names, header=FALS
 #'
 #' @export
 #'
-#
-# Perhaps establish a convention of feature_annotation file headers and add a featureFileHeader flag
-# to flag the presence of the headers, or read the first line of the file and check for the header
-# strings.
-#
 load_mm_data <- function( mat_path,
                           feature_anno_path,
                           cell_anno_path,
@@ -638,7 +633,7 @@ load_mm_data <- function( mat_path,
                           sep="\t") {
   assertthat::assert_that(assertthat::is.readable(mat_path), msg='unable to read matrix file')
   assertthat::assert_that(assertthat::is.readable(feature_anno_path), msg='unable to read feature annotation file')
-  assertthat::assert_that(assertthat::is.readable(cell_anno_path), msg='unable to read cell annotation file78')
+  assertthat::assert_that(assertthat::is.readable(cell_anno_path), msg='unable to read cell annotation file')
   assertthat::assert_that(is.numeric(umi_cutoff))
 
   feature_annotations <- load_annotations_data( feature_anno_path, feature_metadata_column_names, header, sep, annotation_type='features' )
@@ -689,7 +684,18 @@ load_mtx_data <- function( mat_path,
 
   if( is_matrix_market_file( mat_path ) )
   {
-    cds <- load_mm_data( mat_path, gene_anno_path, cell_anno_path, umi_cutoff=umi_cutoff )
+    #
+    # Read an feature annotation file with two tab-separated
+    # columns where the second column has short gene names.
+    # Read a cell annotation file with one column that has the
+    # matrix row names.
+    #
+    cds <- load_mm_data( mat_path,
+                         gene_anno_path,
+                         cell_anno_path,
+                         feature_metadata_column_names=c('gene_short_name'),
+                         umi_cutoff=umi_cutoff,
+                         sep="\t" )
     return( cds )
   }
 
