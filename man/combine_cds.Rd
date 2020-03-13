@@ -4,7 +4,12 @@
 \alias{combine_cds}
 \title{Combine a list of cell_data_set objects}
 \usage{
-combine_cds(cds_list, keep_all_genes = TRUE, cell_names_unique = FALSE)
+combine_cds(
+  cds_list,
+  keep_all_genes = TRUE,
+  cell_names_unique = FALSE,
+  sample_col_name = "sample"
+)
 }
 \arguments{
 \item{cds_list}{List of cds objects to be combined.}
@@ -17,6 +22,10 @@ the genes in common among all of the CDSs will be kept. Default is TRUE.}
 \item{cell_names_unique}{Logical indicating whether all of the cell IDs
 across all of the CDSs are unique. If FALSE, the CDS name is appended to
 each cell ID to prevent collisions. Default is FALSE.}
+
+\item{sample_col_name}{A string to be the column name for the colData column
+that indicates which original cds the cell derives from. Default is
+"sample".}
 }
 \value{
 A combined cell_data_set object.

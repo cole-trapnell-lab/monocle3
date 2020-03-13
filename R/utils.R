@@ -604,9 +604,9 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
 #' metadata column names. The number of names must be one less than the
 #' number of columns in the feature_anno_path file. These values
 #' will replace those read from the feature_anno_path file header,
-#' if present. The default is NULL.  
+#' if present. The default is NULL.
 #' @param cell_metadata_column_names A character vector of cell
-#' metadata column names. The number of names must be one less than the 
+#' metadata column names. The number of names must be one less than the
 #' number of columns in the cell_anno_path file. These values will
 #' replace those read from the cell_anno_path file header, if present.
 #' The default is NULL.
@@ -752,13 +752,17 @@ load_mtx_data <- function( mat_path,
 #' @param cell_names_unique Logical indicating whether all of the cell IDs
 #'   across all of the CDSs are unique. If FALSE, the CDS name is appended to
 #'   each cell ID to prevent collisions. Default is FALSE.
+#' @param sample_col_name A string to be the column name for the colData column
+#'   that indicates which original cds the cell derives from. Default is
+#'   "sample".
 #'
 #' @return A combined cell_data_set object.
 #' @export
 #'
 combine_cds <- function(cds_list,
                         keep_all_genes = TRUE,
-                        cell_names_unique = FALSE) {
+                        cell_names_unique = FALSE,
+                        sample_col_name = "sample") {
 
   assertthat::assert_that(is.list(cds_list),
                           msg=paste("cds_list must be a list."))
@@ -766,13 +770,16 @@ combine_cds <- function(cds_list,
   assertthat::assert_that(all(sapply(cds_list, class) == "cell_data_set"),
                           msg=paste("All members of cds_list must be",
                                     "cell_data_set class."))
+  assertthat::assert_that(is.character(sample_col_name))
 
-  if (any(sapply(cds_list, function(cds) "sample" %in% names(colData(cds))))) {
-    warning(paste0("The combine_cds function adds a column called 'sample' ",
-                   "which indicates which initial cds a cell comes from. One ",
-                   "or more of your input cds objects contains a 'sample' ",
-                   "column, which will be overwritten. We recommend you ",
-                   "rename this column."))
+  if (sample_col_name == "sample" &
+      any(sapply(cds_list, function(cds) "sample" %in% names(colData(cds))))) {
+    warning(paste0("By default, the combine_cds function adds a column called",
+                   "'sample' which indicates which initial cds a cell came ",
+                   "from. One or more of your input cds objects contains a ",
+                   "'sample' column, which will be overwritten. We recommend ",
+                   "you rename this column or provide an alternative column ",
+                   "name using the 'sample_col_name' parameter."))
   }
   assertthat::assert_that(!any(sapply(cds_list, function(cds)
     sum(is.na(names(colData(cds)))) != 0)),
@@ -845,10 +852,10 @@ combine_cds <- function(cds_list,
     if (!cell_names_unique) {
       if(list_named) {
         row.names(pd) <- paste(row.names(pd), names(cds_list)[[i]], sep="_")
-        pd$sample <- names(cds_list)[[i]]
+        pd[,sample_col_name] <- names(cds_list)[[i]]
       } else {
         row.names(pd) <- paste(row.names(pd), i, sep="_")
-        pd$sample <- i
+        pd[,sample_col_name] <- i
       }
       colnames(exp) <- row.names(pd)
     }

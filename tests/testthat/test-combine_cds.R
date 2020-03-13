@@ -47,18 +47,29 @@ test_that("combine_cds works", {
   testthat::expect_warning(combine_cds(list(cds, cds),
                                        keep_all_genes = TRUE,
                                        cell_names_unique = FALSE),
-                           paste0("The combine_cds function adds a column ",
-                                  "called 'sample' which indicates which ",
-                                  "initial cds a cell comes from. One or ",
-                                  "more of your input cds objects contains a ",
-                                  "'sample' column, which will be ",
+                           paste0("By default, the combine_cds function adds ",
+                                  "a column called'sample' which indicates ",
+                                  "which initial cds a cell came from. One ",
+                                  "or more of your input cds objects ",
+                                  "contains a 'sample' column, which will be ",
                                   "overwritten. We recommend you rename this ",
-                                  "column."))
+                                  "column or provide an alternative column ",
+                                  "name using the 'sample_col_name' ",
+                                  "parameter."))
   names(pData(cds))[names(pData(cds)) == "sample"] <- "sample_type"
   names(pData(cds2))[names(pData(cds2)) == "sample"] <- "sample_type"
+
+  comb_h <- combine_cds(list(cds, cds),
+                      keep_all_genes = TRUE,
+                      cell_names_unique = FALSE,
+                      sample_col_name = "hannah")
+
   comb <- combine_cds(list(cds, cds),
                       keep_all_genes = TRUE,
                       cell_names_unique = FALSE)
+
+  testthat::expect_true("hannah" %in% names(colData(comb_h)))
+  testthat::expect_true(all(colData(comb)$sample == colData(comb_h)$hannah))
 
   check_comb(cds, cds, comb, keep_all_genes = TRUE)
 
