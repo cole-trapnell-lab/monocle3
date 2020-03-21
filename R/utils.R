@@ -635,19 +635,8 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
 #' separated by spaces. The first column has official gene names, the
 #' second has short gene names, and the third has gene biotypes.
 #' }
-
-# #' @section Example:
-# #'
-# #' \code{ cds <- load_mm_data( 'data.mtx',
-# #'                            'features.txt',
-# #'                            'cells.txt',
-# #'                            feature_metadata_column_names = c('gene_short_name',
-# #'                            'gene_biotype') ) }
-# #'
-# #' In this example, the features.txt file has three columns,
-# #' separated by tabs. The first column has official gene names, the
-# #' second has short gene names, and the third has gene biotypes.
-# #'
+#'
+#'
 #' @export
 #'
 load_mm_data <- function( mat_path,
