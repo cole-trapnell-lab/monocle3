@@ -556,8 +556,7 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
   else
   {
     names <- rownames( annotations )
-    if( ncol( annotations ) > 1 )
-      metadata <- annotations
+    metadata <- annotations
   }
 
   if( ! ( is.null( metadata_column_names ) || is.null( metadata ) ) )
@@ -586,9 +585,9 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
 #' distinct in the column. Values in additional columns are stored in
 #' the cell_data_set 'gene' metadata. For gene features, we urge use of
 #' official gene IDs for labels, such as Ensembl or Wormbase IDs. In this
-#' case, the second column has typically a 'short' gene name in the second
-#' column. Additional information such as gene_biotype may be stored in
-#' additional columns starting with column 3. Required.
+#' case, the second column has typically a 'short' gene name. Additional
+#' information such as gene_biotype may be stored in additional columns
+#' starting with column 3. Required.
 #' @param cell_anno_path Path to a cell annotation file. The cell_anno_path
 #' file must have ncols lines and at least one column. The values in the
 #' first column label the matrix columns and each must be distinct in the
@@ -621,6 +620,34 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
 #' @section Comments:
 #' * load_mm_data estimates size factors.
 #'
+#' @examples
+#' \dontrun{
+#' library( monocle3 )
+#' pdata <- 'tests/testdata/MatrixMarket/'
+#' pmat  <- paste0( pdata, 'matrix.mtx.gz' )
+#' pfeat <- paste0( pdata, 'features_c3h0.txt' )
+#' pcell <- paste0( pdata, 'barcodes_c1h0.txt' )
+#' cds <- load_mm_data( pmat, pfeat, pcell,
+#'                      feature_metadata_column_names = c('gene_short_name',
+#'                      'gene_biotype'), sep='' )
+#'
+#' In this example, the features_c3h0.txt file has three columns,
+#' separated by spaces. The first column has official gene names, the
+#' second has short gene names, and the third has gene biotypes.
+#' }
+
+# #' @section Example:
+# #'
+# #' \code{ cds <- load_mm_data( 'data.mtx',
+# #'                            'features.txt',
+# #'                            'cells.txt',
+# #'                            feature_metadata_column_names = c('gene_short_name',
+# #'                            'gene_biotype') ) }
+# #'
+# #' In this example, the features.txt file has three columns,
+# #' separated by tabs. The first column has official gene names, the
+# #' second has short gene names, and the third has gene biotypes.
+# #'
 #' @export
 #'
 load_mm_data <- function( mat_path,
