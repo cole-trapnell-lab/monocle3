@@ -4,10 +4,19 @@
 \alias{preprocess_cds}
 \title{Preprocess a cds to prepare for trajectory inference}
 \usage{
-preprocess_cds(cds, method = c("PCA", "LSI"), num_dim = 50,
-  norm_method = c("log", "size_only", "none"), use_genes = NULL,
-  residual_model_formula_str = NULL, alignment_group = NULL,
-  pseudo_count = NULL, scaling = TRUE, verbose = FALSE, ...)
+preprocess_cds(
+  cds,
+  method = c("PCA", "LSI"),
+  num_dim = 50,
+  norm_method = c("log", "size_only", "none"),
+  use_genes = NULL,
+  residual_model_formula_str = NULL,
+  alignment_group = NULL,
+  pseudo_count = NULL,
+  scaling = TRUE,
+  verbose = FALSE,
+  ...
+)
 }
 \arguments{
 \item{cds}{the cell_data_set upon which to perform this operation}

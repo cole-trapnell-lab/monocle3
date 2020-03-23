@@ -4,8 +4,12 @@
 \alias{load_cellranger_data}
 \title{Load data from the 10x Genomics Cell Ranger pipeline}
 \usage{
-load_cellranger_data(pipestance_path = NULL, genome = NULL,
-  barcode_filtered = TRUE, umi_cutoff = 100)
+load_cellranger_data(
+  pipestance_path = NULL,
+  genome = NULL,
+  barcode_filtered = TRUE,
+  umi_cutoff = 100
+)
 }
 \arguments{
 \item{pipestance_path}{Path to the output directory produced by Cell Ranger}

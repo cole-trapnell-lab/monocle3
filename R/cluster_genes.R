@@ -140,7 +140,6 @@ my.aggregate.Matrix = function (x, groupings = NULL, form = NULL, fun = "sum", .
   return(result)
 }
 
-
 #' Creates a matrix with aggregated expression values for arbitrary groups of
 #' genes
 #'

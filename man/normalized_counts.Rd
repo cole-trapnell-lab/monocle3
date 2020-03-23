@@ -5,8 +5,11 @@
 \title{Return a size-factor normalized and (optionally) log-transformed expression
 matrix}
 \usage{
-normalized_counts(cds, norm_method = c("log", "binary", "size_only"),
-  pseudocount = 1)
+normalized_counts(
+  cds,
+  norm_method = c("log", "binary", "size_only"),
+  pseudocount = 1
+)
 }
 \arguments{
 \item{cds}{A CDS object to calculate normalized expression matrix from.}

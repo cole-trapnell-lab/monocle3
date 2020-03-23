@@ -4,10 +4,16 @@
 \alias{top_markers}
 \title{Identify the genes most specifically expressed in groups of cells}
 \usage{
-top_markers(cds, group_cells_by = "cluster",
-  genes_to_test_per_group = 25, reduction_method = "UMAP",
-  marker_sig_test = TRUE, reference_cells = NULL, cores = 1,
-  verbose = FALSE)
+top_markers(
+  cds,
+  group_cells_by = "cluster",
+  genes_to_test_per_group = 25,
+  reduction_method = "UMAP",
+  marker_sig_test = TRUE,
+  reference_cells = NULL,
+  cores = 1,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{cds}{A cell_data_set object to calculate top markers for.}

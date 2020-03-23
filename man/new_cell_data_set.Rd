@@ -4,8 +4,7 @@
 \alias{new_cell_data_set}
 \title{Create a new cell_data_set object.}
 \usage{
-new_cell_data_set(expression_data, cell_metadata = NULL,
-  gene_metadata = NULL)
+new_cell_data_set(expression_data, cell_metadata = NULL, gene_metadata = NULL)
 }
 \arguments{
 \item{expression_data}{expression data matrix for an experiment, can be a

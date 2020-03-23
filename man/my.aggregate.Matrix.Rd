@@ -4,8 +4,7 @@
 \alias{my.aggregate.Matrix}
 \title{A function to aggregate columns within a matrix.}
 \usage{
-my.aggregate.Matrix(x, groupings = NULL, form = NULL, fun = "sum",
-  ...)
+my.aggregate.Matrix(x, groupings = NULL, form = NULL, fun = "sum", ...)
 }
 \description{
 A function to aggregate columns within a matrix.
