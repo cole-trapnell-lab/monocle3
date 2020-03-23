@@ -158,6 +158,10 @@ fit_model_helper <- function(x,
                                                     family = stats::binomial(),
                                                     acc=1e-3, model=FALSE,
                                                     y=FALSE, ...),
+                    "gaussian" = speedglm::speedglm(model_formula,
+                                                    family = stats::gaussian(),
+                                                    acc=1e-3, model=FALSE,
+                                                    y=FALSE, ...),
                     "zipoisson" = pscl::zeroinfl(model_formula,
                                                  dist="poisson", ...),
                     "zinegbinomial" = pscl::zeroinfl(model_formula,
@@ -184,7 +188,9 @@ fit_model_helper <- function(x,
 #' @param model_formula_str A formula string specifying the model to fit for
 #'   the genes.
 #' @param expression_family Specifies the family function used for expression
-#'   responses. Default is "quasipoisson".
+#'   responses. Can be one of "quasipoisson", "negbinomial", "poisson",
+#'   "binomial", "gaussian", "zipoisson", or "zinegbinomial". Default is
+#'   "quasipoisson".
 #' @param reduction_method Which method to use with clusters() and
 #'   partitions(). Default is "UMAP".
 #' @param cores The number of processor cores to use during fitting.

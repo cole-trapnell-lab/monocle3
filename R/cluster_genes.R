@@ -68,7 +68,7 @@ find_gene_modules <- function(cds,
 
   preprocess_mat <- cds@preprocess_aux$gene_loadings
   if (is.null(cds@preprocess_aux$beta) == FALSE){
-    preprocess_mat = preprocess_mat %*% cds@preprocess_aux$beta
+    preprocess_mat = preprocess_mat %*% (-cds@preprocess_aux$beta)
   }
   preprocess_mat = preprocess_mat[intersect(rownames(cds), row.names(preprocess_mat)),]
 

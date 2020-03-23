@@ -14,7 +14,7 @@ plot_cells(cds, x = 1, y = 2, reduction_method = c("UMAP", "tSNE",
   labels_per_group = 1, label_branch_points = TRUE,
   label_roots = TRUE, label_leaves = TRUE, graph_label_size = 2,
   cell_size = 0.35, cell_stroke = I(cell_size/2), alpha = 1,
-  min_expr = 0.1, rasterize = FALSE)
+  min_expr = 0.1, rasterize = FALSE, scale_to_range = FALSE)
 }
 \arguments{
 \item{cds}{cell_data_set for the experiment}
