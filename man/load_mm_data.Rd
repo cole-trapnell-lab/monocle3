@@ -12,6 +12,7 @@ load_mm_data(
   feature_metadata_column_names = NULL,
   cell_metadata_column_names = NULL,
   umi_cutoff = 100,
+  quote = "\\"'",
   sep = "\\t"
 )
 }
@@ -59,6 +60,10 @@ The default is NULL.}
 than umi_cutoff total counts are removed from the matrix. The
 default is 100.}
 
+\item{quote}{A character string specifying the quoting characters
+used in the feature_anno_path and cell_anno_path files. The default
+is "\"'".}
+
 \item{sep}{field separator character in the annotation files. The
 default is the tab character for tab-separated-value files.}
 }
@@ -76,13 +81,12 @@ Load data from matrix market format files.
 }
 
 \examples{
-\dontrun{
+\donttest{
 library( monocle3 )
-pdata <- 'tests/testdata/MatrixMarket/'
-pmat  <- paste0( pdata, 'matrix.mtx.gz' )
-pfeat <- paste0( pdata, 'features_c3h0.txt' )
-pcell <- paste0( pdata, 'barcodes_c1h0.txt' )
-cds <- load_mm_data( pmat, pfeat, pcell,
+pmat<-system.file("extdata", "matrix.mtx.gz", package = "monocle3")
+prow<-system.file("extdata", "features_c3h0.txt", package = "monocle3")
+pcol<-system.file("extdata", "barcodes_c2h0.txt", package = "monocle3")
+cds <- load_mm_data( pmat, prow, pcol,
                      feature_metadata_column_names = c('gene_short_name',
                      'gene_biotype'), sep='' )
 
@@ -90,4 +94,5 @@ In this example, the features_c3h0.txt file has three columns,
 separated by spaces. The first column has official gene names, the
 second has short gene names, and the third has gene biotypes.
 }
+
 }

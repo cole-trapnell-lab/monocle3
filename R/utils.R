@@ -541,10 +541,10 @@ is_matrix_market_file <- function( matpath )
 #' and metadata, if present in the file, which are
 #' additional dimension metadata.
 #' @noRd
-load_annotations_data <- function( anno_path, metadata_column_names=NULL, header=FALSE, sep="", annotation_type=NULL )
+load_annotations_data <- function( anno_path, metadata_column_names=NULL, header=FALSE, sep="", quote="\"'", annotation_type=NULL )
 {
   assertthat::assert_that( ! is.null( annotation_type ) )
-  annotations <- read.table( anno_path, header=header, sep=sep, stringsAsFactors=FALSE )
+  annotations <- read.table( anno_path, header=header, sep=sep, quote=quote, stringsAsFactors=FALSE )
 
   metadata = NULL
   if( .row_names_info( annotations ) < 0 )
@@ -609,6 +609,9 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
 #' number of columns in the cell_anno_path file. These values will
 #' replace those read from the cell_anno_path file header, if present.
 #' The default is NULL.
+#' @param quote A character string specifying the quoting characters
+#' used in the feature_anno_path and cell_anno_path files. The default
+#' is "\"'".
 #' @param umi_cutoff UMI per cell cutoff. Columns (cells) with less
 #' than umi_cutoff total counts are removed from the matrix. The
 #' default is 100.
@@ -621,13 +624,12 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
 #' * load_mm_data estimates size factors.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' library( monocle3 )
-#' pdata <- 'tests/testdata/MatrixMarket/'
-#' pmat  <- paste0( pdata, 'matrix.mtx.gz' )
-#' pfeat <- paste0( pdata, 'features_c3h0.txt' )
-#' pcell <- paste0( pdata, 'barcodes_c1h0.txt' )
-#' cds <- load_mm_data( pmat, pfeat, pcell,
+#' pmat<-system.file("extdata", "matrix.mtx.gz", package = "monocle3")
+#' prow<-system.file("extdata", "features_c3h0.txt", package = "monocle3")
+#' pcol<-system.file("extdata", "barcodes_c2h0.txt", package = "monocle3")
+#' cds <- load_mm_data( pmat, prow, pcol,
 #'                      feature_metadata_column_names = c('gene_short_name',
 #'                      'gene_biotype'), sep='' )
 #'
@@ -635,7 +637,6 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
 #' separated by spaces. The first column has official gene names, the
 #' second has short gene names, and the third has gene biotypes.
 #' }
-#'
 #'
 #' @export
 #'
@@ -646,14 +647,15 @@ load_mm_data <- function( mat_path,
                           feature_metadata_column_names = NULL,
                           cell_metadata_column_names = NULL,
                           umi_cutoff = 100,
+			  quote="\"'",
                           sep="\t") {
   assertthat::assert_that(assertthat::is.readable(mat_path), msg='unable to read matrix file')
   assertthat::assert_that(assertthat::is.readable(feature_anno_path), msg='unable to read feature annotation file')
   assertthat::assert_that(assertthat::is.readable(cell_anno_path), msg='unable to read cell annotation file')
   assertthat::assert_that(is.numeric(umi_cutoff))
 
-  feature_annotations <- load_annotations_data( feature_anno_path, feature_metadata_column_names, header, sep, annotation_type='features' )
-  cell_annotations <- load_annotations_data( cell_anno_path, cell_metadata_column_names, header, sep, annotation_type='cells' )
+  feature_annotations <- load_annotations_data( feature_anno_path, feature_metadata_column_names, header, sep, quote=quote, annotation_type='features' )
+  cell_annotations <- load_annotations_data( cell_anno_path, cell_metadata_column_names, header, sep, quote=quote, annotation_type='cells' )
 
   assertthat::assert_that( ! any( duplicated( feature_annotations$names ) ), msg='duplicate feature names in feature annotation file' )
   assertthat::assert_that( ! any( duplicated( cell_annotations$names ) ), msg='duplicate cell names in cell annotation file' )
