@@ -81,7 +81,7 @@ Load data from matrix market format files.
 }
 
 \examples{
-\donttest{
+\dontrun{
 library( monocle3 )
 pmat<-system.file("extdata", "matrix.mtx.gz", package = "monocle3")
 prow<-system.file("extdata", "features_c3h0.txt", package = "monocle3")
