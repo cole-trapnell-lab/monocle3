@@ -624,7 +624,7 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
 #' * load_mm_data estimates size factors.
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' library( monocle3 )
 #' pmat<-system.file("extdata", "matrix.mtx.gz", package = "monocle3")
 #' prow<-system.file("extdata", "features_c3h0.txt", package = "monocle3")
