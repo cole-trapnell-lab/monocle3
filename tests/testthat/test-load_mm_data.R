@@ -56,7 +56,7 @@ cr2_matrix_colname <- c( "GAACCTGATGAACC-1", "TGACTGGATTCTCA-1", "AGTCAGACTGCACA
 #
 # Test.
 #
-test_that( "load cell ranger matrix 3.0", {
+test_that( "load cell ranger matrix 2.0", {
   pdir <- "../testdata/cr2.0/outs/filtered_gene_bc_matrices/hg19/"
   pmat <- paste0( pdir, "matrix.mtx" )
   prow <- paste0( pdir, "genes.tsv" )
@@ -79,6 +79,7 @@ test_that( "load cell ranger matrix 3.0", {
 mm_matrix_rowname <- c( "ENSG00000243485", "ENSG00000237613", "ENSG00000268674", "CD3_GCCTGACTAGATCCA", "CD19_CGTGCAACACTCGTA" )
 # as.vector( fData( cds )$gene_short_name )
 mm_feature_gene_short_name <- c( "RP11-34P13.3", "FAM138A", "FAM231B", "CD3", "CD19" )
+mm_feature_gene_short_name_wquote <- c( "RP1\'1-34P13.3", "FAM\'138A", "FAM\'231B", "CD3", "CD19" )
 # as.vector( fData( cds )$source )
 mm_feature_source <- c( "Gene_Expression", "Gene_Expression", "Gene_Expression", "Antibody_Capture", "Antibody_Capture" )
 
@@ -184,6 +185,39 @@ test_that( "load MatrixMarket with annotations file ncol=3:nheader=3:header=TRUE
   expect_true( all( as.vector( colnames( assay( cds ) ) ) == mm_matrix_colname ) )
   expect_true( all( fData( cds )$features1 == mm_feature_gene_short_name ) )
   expect_true( all( fData( cds )$features2 == mm_feature_source ) )
+  expect_true( all( as.vector( pData( cds )$cells1 ) == mm_cell_cell_number ) )
+  expect_true( all( as.vector( pData( cds )$cells2 ) == mm_cell_umi_token ) )
+} )
+
+
+test_that( "load MatrixMarket with annotations file ncol=2:nheader=1:header=TRUE", {
+  pdir <- "../testdata/MatrixMarket/"
+  pmat <- paste0( pdir, "matrix.mtx.gz" )
+  prow <- paste0( pdir, "features_c2h1.txt" )
+  pcol <- paste0( pdir, "barcodes_c3h3.txt" )
+  cds <- load_mm_data( pmat, prow, pcol,
+                       header=TRUE, sep="" )
+  expect_equal( sum( assay( cds ) ), mm_assay_sum )
+  expect_true( all( as.vector( rownames( assay( cds ) ) ) == mm_matrix_rowname ) )
+  expect_true( all( as.vector( colnames( assay( cds ) ) ) == mm_matrix_colname ) )
+  expect_true( all( fData( cds )$gene_short_name == mm_feature_gene_short_name ) )
+  expect_true( all( as.vector( pData( cds )$cells1 ) == mm_cell_cell_number ) )
+  expect_true( all( as.vector( pData( cds )$cells2 ) == mm_cell_umi_token ) )
+} )
+
+
+test_that( "load MatrixMarket with annotations file ncol=2:nheader=1:header=FALSE and there is a single quote in the gene names", {
+  pdir <- "../testdata/MatrixMarket/"
+  pmat <- paste0( pdir, "matrix.mtx.gz" )
+  prow <- paste0( pdir, "features_c3h2q.txt" )
+  pcol <- paste0( pdir, "barcodes_c3h3.txt" )
+  cds <- load_mm_data( pmat, prow, pcol,
+                       quote="\"",
+                       header=TRUE, sep="" )
+  expect_equal( sum( assay( cds ) ), mm_assay_sum )
+  expect_true( all( as.vector( rownames( assay( cds ) ) ) == mm_matrix_rowname ) )
+  expect_true( all( as.vector( colnames( assay( cds ) ) ) == mm_matrix_colname ) )
+  expect_true( all( fData( cds )$gene_short_name == mm_feature_gene_short_name_wquote ) )
   expect_true( all( as.vector( pData( cds )$cells1 ) == mm_cell_cell_number ) )
   expect_true( all( as.vector( pData( cds )$cells2 ) == mm_cell_umi_token ) )
 } )

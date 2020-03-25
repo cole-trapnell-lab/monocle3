@@ -74,7 +74,7 @@ Imports:
     speedglm (>= 0.3-2),
     stringr (>= 1.4.0),
     SummarizedExperiment (>= 1.11.5),
-    uwot (>= 0.1.3),
+    uwot (>= 0.1.8),
     tibble (>= 2.1.1),
     tidyr (>= 0.8.3),
     viridis (>= 0.5.1)
