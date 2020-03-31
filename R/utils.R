@@ -562,7 +562,14 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
   if( ! ( is.null( metadata_column_names ) || is.null( metadata ) ) )
   {
     assertthat::assert_that( length( metadata_column_names ) == ncol( metadata ),
-                             msg=paste( annotation_type,'metadata column name count !=', annotation_type, 'annotation column count' ) )
+                             msg=paste0( annotation_type,
+                                         ' metadata column name count (',
+                                         length( metadata_column_names ),
+                                         ') != ',
+                                         annotation_type,
+                                         'annotation column count (',
+                                         ncol( metadata ),
+                                         ')' ) )
     colnames( metadata ) <- metadata_column_names
   }
 
@@ -662,8 +669,18 @@ load_mm_data <- function( mat_path,
 
   mat <- Matrix::readMM( mat_path )
 
-  assertthat::assert_that( length( feature_annotations$names ) == nrow( mat ), msg='feature name count != matrix row count' )
-  assertthat::assert_that( length( cell_annotations$names ) == ncol( mat ), msg='cell name count != matrix column count' )
+  assertthat::assert_that( length( feature_annotations$names ) == nrow( mat ),
+                           msg=paste0( 'feature name count (',
+                                       length( feature_annotations$names ),
+                                       ') != matrix row count (',
+                                       nrow( mat ),
+                                       ')' ) )
+  assertthat::assert_that( length( cell_annotations$names ) == ncol( mat ),
+                           msg=paste0( 'cell name count (',
+                                       length( cell_annotations$names ),
+                                       ') != matrix column count (',
+                                       ncol( mat ),
+                                       ')' ) )
 
   rownames( mat ) <- feature_annotations$names
   colnames( mat ) <- cell_annotations$names
