@@ -1194,7 +1194,7 @@ plot_genes_violin <- function (cds_subset,
   cds_exprs[,group_cells_by] <- as.factor(cds_exprs[,group_cells_by])
   q <- q + geom_violin(aes_string(fill = group_cells_by), scale="width") +
     guides(fill=FALSE)
-  q <- q + stat_summary(fun.y=mean, geom="point", size=1, color="black")
+  q <- q + stat_summary(fun=mean, geom="point", size=1, color="black")
   q <- q + facet_wrap(~feature_label, nrow = nrow,
                       ncol = ncol, scales = "free_y")
   if (min_expr < 1) {
