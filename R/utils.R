@@ -928,8 +928,8 @@ combine_cds <- function(cds_list,
     }
 
 
-    exprs_list[[i]] <- exp[gene_list,]
-    fd_list[[i]] <- fd[gene_list,]
+    exprs_list[[i]] <- exp[gene_list, , drop=FALSE]
+    fd_list[[i]] <- fd[gene_list, , drop=FALSE]
     pd_list[[i]] <- pd
 
   }
@@ -958,7 +958,7 @@ combine_cds <- function(cds_list,
   all_pd <- do.call(rbind, pd_list)
   all_exp <- do.call(cbind, exprs_list)
 
-  all_exp <- all_exp[row.names(all_fd), row.names(all_pd)]
+  all_exp <- all_exp[row.names(all_fd), row.names(all_pd), drop=FALSE]
 
 
   new_cell_data_set(all_exp, cell_metadata = all_pd, gene_metadata = all_fd)
