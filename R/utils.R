@@ -809,7 +809,7 @@ combine_cds <- function(cds_list,
 
   if (sample_col_name == "sample" &
       any(sapply(cds_list, function(cds) "sample" %in% names(colData(cds))))) {
-    warning(paste0("By default, the combine_cds function adds a column called",
+    warning(paste0("By default, the combine_cds function adds a column called ",
                    "'sample' which indicates which initial cds a cell came ",
                    "from. One or more of your input cds objects contains a ",
                    "'sample' column, which will be overwritten. We recommend ",
@@ -877,7 +877,7 @@ combine_cds <- function(cds_list,
   fdata_cols <- unique(fdata_cols)
   if (sum(duplicated(all_cells)) != 0 & cell_names_unique) {
     stop(paste("Cell names are not unique across CDSs - cell_names_unique",
-               "must be TRUE."))
+               "must be FALSE."))
   }
   all_cells <- unique(all_cells)
   for(i in 1:length(cds_list)) {
