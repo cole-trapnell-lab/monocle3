@@ -44,16 +44,16 @@ tags: [monocle, manual, vignette]
       <h3 id="required-software"> Required software </h3>
 
       <p>Monocle 3 runs in the <a href= "http://www.r-project.org/">R statistical
-        computing environment</a>. You will need R version 3.5 or higher,
-        <a href="http://bioconductor.org/">Bioconductor</a> version 3.5, and
-        monocle3 0.1.0 or higher to have access to the latest features.
+        computing environment</a>. You will need R version 3.6.1 or higher,
+        <a href="http://bioconductor.org/">Bioconductor</a> version 3.10, and
+        monocle3 0.2.0 or higher to have access to the latest features.
       </p>
 
       <p>To install Bioconductor, open R and run:</p>
 {% highlight R %}
 if (!requireNamespace("BiocManager", quietly = TRUE))
 install.packages("BiocManager")
-BiocManager::install()
+BiocManager::install(version = "3.10")
 {% endhighlight %}
 
       <p>Next, install a few Bioconductor dependencies that aren't automatically installed:</p>
@@ -69,6 +69,12 @@ BiocManager::install(c('BiocGenerics', 'DelayedArray', 'DelayedMatrixStats',
 install.packages("devtools")
 devtools::install_github('cole-trapnell-lab/leidenbase')
 devtools::install_github('cole-trapnell-lab/monocle3')
+{% endhighlight %}
+
+      <p>If you wish to install the develop branch of monocle3, execute:</p>
+
+{% highlight R %}
+devtools::install_github('cole-trapnell-lab/monocle3', ref="develop")
 {% endhighlight %}
 
       <h3 id="testing-installation"> Testing the installation </h3>
@@ -114,11 +120,11 @@ installation of package ‘sf’ had non-zero exit status
 
       <h4>Errors involving gfortran:</h4>
       <h5><strong>Example error messages:</strong></h5>
-      {% highlight bash %}
-      make: gfortran: No such file or directory
-      make: *** [cigraph/src/AMD/Source/amd.o] Error 1
-      ERROR: compilation failed for package 'leidenbase'
-      {% endhighlight %}
+{% highlight bash %}
+make: gfortran: No such file or directory
+make: *** [cigraph/src/AMD/Source/amd.o] Error 1
+ERROR: compilation failed for package 'leidenbase'
+{% endhighlight %}
 
       <h5><strong>Solution:</strong></h5>
       <p>
@@ -128,7 +134,9 @@ installation of package ‘sf’ had non-zero exit status
           </li>
           <li> Remove other gfortran installations if they exist. For this, you can launch a terminal window and type "which gfortran". If you see a path returned (e.g. /usr/local/gfortran) you have a previous installation of gfortran that needs to be removed.
           </li>
-          <li> Download new gfortran binaries for your operating system and decompress the folder (eg: gunzip gfortran-8.3-bin.tar.gz). Then do, sudo tar -xvf gfortran-8.3-bin.tar -C /. This installs everything in /usr/local/gfortran.
+          <li> Download new gfortran binaries for your operating system from <a href="https://gcc.gnu.org/wiki/GFortranBinaries">here</a> and decompress the folder (eg: gunzip gfortran-8.3-bin.tar.gz).
+          </li>
+          <li> Then run, sudo tar -xvf gfortran-8.3-bin.tar -C / which will install everything in /usr/local/gfortran.
           </li>
         </ul>
       </p>
