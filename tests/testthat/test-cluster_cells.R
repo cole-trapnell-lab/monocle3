@@ -14,6 +14,7 @@ cds <- load_a549()
 
 test_that("test cluster_cells error messages work", {
   skip_on_travis()
+  set.seed(200)
   expect_error(cds <- cluster_cells(cds),
                paste("No dimensionality reduction for UMAP calculated. Please",
                      "run reduce_dimensions with reduction_method = UMAP",
@@ -23,22 +24,24 @@ test_that("test cluster_cells error messages work", {
                paste("No dimensionality reduction for UMAP calculated. Please",
                      "run reduce_dimensions with reduction_method = UMAP",
                      "before running cluster_cells"))
-  cds <- reduce_dimension(cds)
+  cds <- reduce_dimension(cds, approx_pow=TRUE)
   expect_error(cds <- cluster_cells(cds, reduction_method = "tSNE"),
                paste("No dimensionality reduction for tSNE calculated. Please",
                      "run reduce_dimensions with reduction_method = tSNE",
                      "before running cluster_cells"))
 })
 
+set.seed(200)
 cds <- preprocess_cds(cds)
-cds <- reduce_dimension(cds, umap.fast_sgd=FALSE, cores=1)
-cds <- reduce_dimension(cds, reduction_method = "tSNE")
+cds <- reduce_dimension(cds, umap.fast_sgd=FALSE, cores=1, approx_pow=TRUE)
+cds <- reduce_dimension(cds, reduction_method = "tSNE", approx_pow=TRUE)
 cds <- cluster_cells(cds)
 
 test_that("cluster_cells works", {
   skip_on_travis()
   ### UMAP
   ## leiden
+  set.seed(200)
   cds <- cluster_cells(cds, random_seed = 100)
   expect_is(cds@clusters[["UMAP"]], "list")
   expect_equal(length(cds@clusters[["UMAP"]]), 3)
@@ -57,8 +60,8 @@ test_that("cluster_cells works", {
   expect_equal(length(cds@clusters[["UMAP"]]$cluster_result$optim_res$membership),
                nrow(colData(cds)))
   expect_equal(cds@clusters[["UMAP"]]$cluster_result$optim_res$membership[[1]],
-               9)
-  expect_equal(length(unique(clusters(cds, reduction_method = "UMAP"))), 20)
+               4)
+  expect_equal(length(unique(clusters(cds, reduction_method = "UMAP"))), 17)
 
   ## louvain
   cds <- cluster_cells(cds, cluster_method = "louvain", random_seed = 100)
@@ -67,7 +70,7 @@ test_that("cluster_cells works", {
   expect_equal(length(cds@clusters[["UMAP"]]$cluster_result$optim_res$membership),
                nrow(colData(cds)))
   expect_equal(cds@clusters[["UMAP"]]$cluster_result$optim_res$membership[[1]],
-               3)
+               5)
   expect_equal(length(unique(clusters(cds, reduction_method = "UMAP"))), 10)
 
   # non-standard opts
@@ -80,7 +83,7 @@ test_that("cluster_cells works", {
                nrow(colData(cds)))
   expect_equal(cds@clusters[["UMAP"]]$cluster_result$optim_res$membership[[1]],
                9)
-  expect_equal(length(unique(clusters(cds, reduction_method = "UMAP"))), 11)
+  expect_equal(length(unique(clusters(cds, reduction_method = "UMAP"))), 10)
 
   ### tSNE
   ##leiden
@@ -102,8 +105,8 @@ test_that("cluster_cells works", {
   expect_equal(length(cds@clusters[["tSNE"]]$cluster_result$optim_res$membership),
                nrow(colData(cds)))
   expect_equal(cds@clusters[["tSNE"]]$cluster_result$optim_res$membership[[1]],
-               10)
-  expect_equal(length(unique(clusters(cds, reduction_method = "tSNE"))), 20)
+               7)
+  expect_equal(length(unique(clusters(cds, reduction_method = "tSNE"))), 18)
 
   ### PCA
 
@@ -171,13 +174,15 @@ test_that("cluster_cells works", {
   expect_equal(length(unique(clusters(cds, reduction_method = "LSI"))), 61)
 })
 
+set.seed(200)
 cds <- load_a549()
 cds <- estimate_size_factors(cds)
 cds <- preprocess_cds(cds, num_dim = 20)
-cds <- reduce_dimension(cds, umap.fast_sgd=FALSE, cores=1)
+cds <- reduce_dimension(cds, umap.fast_sgd=FALSE, cores=1, approx_pow=TRUE)
 
 test_that("cluster_cells works", {
   skip_on_travis()
+  set.seed(200)
   cds <- cluster_cells(cds, random_seed = 100)
   expect_equal(sum(clusters(cds) == 1), 500)
   expect_equal(as.character(clusters(cds)[1]), "1")
@@ -192,6 +197,7 @@ cds <- load_a549()
 
 test_that("test cluster_cells error messages work", {
   skip_not_travis()
+  set.seed(200)
   expect_error(cds <- cluster_cells(cds),
                paste("No dimensionality reduction for UMAP calculated. Please",
                      "run reduce_dimensions with reduction_method = UMAP",
@@ -201,20 +207,22 @@ test_that("test cluster_cells error messages work", {
                paste("No dimensionality reduction for UMAP calculated. Please",
                      "run reduce_dimensions with reduction_method = UMAP",
                      "before running cluster_cells"))
-  cds <- reduce_dimension(cds)
+  cds <- reduce_dimension(cds, approx_pow=TRUE)
   expect_error(cds <- cluster_cells(cds, reduction_method = "tSNE"),
                paste("No dimensionality reduction for tSNE calculated. Please",
                      "run reduce_dimensions with reduction_method = tSNE",
                      "before running cluster_cells"))
 })
 
+set.seed(200)
 cds <- preprocess_cds(cds)
-cds <- reduce_dimension(cds, umap.fast_sgd=FALSE, cores=1)
-cds <- reduce_dimension(cds, reduction_method = "tSNE")
+cds <- reduce_dimension(cds, umap.fast_sgd=FALSE, cores=1, approx_pow=TRUE)
+cds <- reduce_dimension(cds, reduction_method = "tSNE", approx_pow=TRUE)
 cds <- cluster_cells(cds)
 
 test_that("cluster_cells works", {
   skip_not_travis()
+  set.seed(200)
   ### UMAP
   ## leiden
   cds <- cluster_cells(cds, random_seed = 100)
@@ -235,8 +243,8 @@ test_that("cluster_cells works", {
   expect_equal(length(cds@clusters[["UMAP"]]$cluster_result$optim_res$membership),
                nrow(colData(cds)))
   expect_equal(cds@clusters[["UMAP"]]$cluster_result$optim_res$membership[[1]],
-               1)
-  expect_equal(length(unique(clusters(cds, reduction_method = "UMAP"))), 19)
+               4)
+  expect_equal(length(unique(clusters(cds, reduction_method = "UMAP"))), 17)
 
   ## louvain
   cds <- cluster_cells(cds, cluster_method = "louvain", random_seed = 100)
@@ -245,8 +253,8 @@ test_that("cluster_cells works", {
   expect_equal(length(cds@clusters[["UMAP"]]$cluster_result$optim_res$membership),
                nrow(colData(cds)))
   expect_equal(cds@clusters[["UMAP"]]$cluster_result$optim_res$membership[[1]],
-               9)
-  expect_equal(length(unique(clusters(cds, reduction_method = "UMAP"))), 9)
+               5)
+  expect_equal(length(unique(clusters(cds, reduction_method = "UMAP"))), 10)
 
   # non-standard opts
   cds <- cluster_cells(cds, cluster_method = "louvain", k=22, weight = T,
@@ -257,7 +265,7 @@ test_that("cluster_cells works", {
   expect_equal(length(cds@clusters[["UMAP"]]$cluster_result$optim_res$membership),
                nrow(colData(cds)))
   expect_equal(cds@clusters[["UMAP"]]$cluster_result$optim_res$membership[[1]],
-               10)
+               9)
   expect_equal(length(unique(clusters(cds, reduction_method = "UMAP"))), 10)
 
   ### tSNE
@@ -280,8 +288,8 @@ test_that("cluster_cells works", {
   expect_equal(length(cds@clusters[["tSNE"]]$cluster_result$optim_res$membership),
                nrow(colData(cds)))
   expect_equal(cds@clusters[["tSNE"]]$cluster_result$optim_res$membership[[1]],
-               14)
-  expect_equal(length(unique(clusters(cds, reduction_method = "tSNE"))), 19)
+               7)
+  expect_equal(length(unique(clusters(cds, reduction_method = "tSNE"))), 18)
 
   ### PCA
 
@@ -349,13 +357,15 @@ test_that("cluster_cells works", {
   expect_equal(length(unique(clusters(cds, reduction_method = "LSI"))), 61)
 })
 
+set.seed(200)
 cds <- load_a549()
 cds <- estimate_size_factors(cds)
 cds <- preprocess_cds(cds, num_dim = 20)
-cds <- reduce_dimension(cds, umap.fast_sgd=FALSE, cores=1)
+cds <- reduce_dimension(cds, umap.fast_sgd=FALSE, cores=1, approx_pow=TRUE)
 
 test_that("cluster_cells works", {
   skip_not_travis()
+  set.seed(200)
   cds <- cluster_cells(cds, random_seed = 100)
   expect_equal(sum(clusters(cds) == 1), 500)
   expect_equal(as.character(clusters(cds)[1]), "1")

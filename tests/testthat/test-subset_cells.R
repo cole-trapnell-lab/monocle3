@@ -8,7 +8,7 @@
 #   cds <- preprocess_cds(cds)
 #   expect_error(cds <- subset_along_path(cds),
 #                "No dimensionality reduction for UMAP calculated. Please run reduce_dimensions with reduction_method = UMAP and partition_cells before running learn_graph.")
-#   cds <- reduce_dimension(cds)
+#   cds <- reduce_dimension(cds, approx_pow=TRUE)
 #   expect_error(cds <- subset_along_path(cds),
 #                "No cell partition for UMAP calculated. Please run partition_cells with reduction_method = UMAP before running learn_graph.")
 #   cds <- partition_cells(cds)
@@ -20,8 +20,8 @@
 # })
 #
 # cds <- preprocess_cds(cds)
-# cds <- reduce_dimension(cds)
-# cds <- reduce_dimension(cds)
+# cds <- reduce_dimension(cds, approx_pow=TRUE)
+# cds <- reduce_dimension(cds, approx_pow=TRUE)
 # cds <- partition_cells(cds)
 # cds <- learn_graph(cds)
 #

@@ -8,15 +8,16 @@ skip_not_travis <- function ()
 }
 
 cds <- load_a549()
+set.seed(42)
 
 test_that("test learn_graph error messages work", {
-  skip_on_travis()
+#  skip_on_travis()
   expect_error(cds <- learn_graph(cds),
                "No dimensionality reduction for UMAP calculated. Please run reduce_dimensions with reduction_method = UMAP and cluster_cells before running learn_graph.")
   cds <- preprocess_cds(cds)
   expect_error(cds <- learn_graph(cds),
                "No dimensionality reduction for UMAP calculated. Please run reduce_dimensions with reduction_method = UMAP and cluster_cells before running learn_graph.")
-  cds <- reduce_dimension(cds)
+  cds <- reduce_dimension(cds, approx_pow=TRUE)
   expect_error(cds <- learn_graph(cds),
                "No cell clusters for UMAP calculated. Please run cluster_cells with reduction_method = UMAP before running learn_graph.")
   #expect_error(cds <- learn_graph(cds, learn_graph_control = list(FALSE)), "")
@@ -25,12 +26,13 @@ test_that("test learn_graph error messages work", {
 
 set.seed(42)
 cds <- preprocess_cds(cds)
-cds <- reduce_dimension(cds)
-cds <- reduce_dimension(cds, umap.fast_sgd=FALSE, cores=1)
+cds <- reduce_dimension(cds, approx_pow=TRUE)
+cds <- reduce_dimension(cds, umap.fast_sgd=FALSE, cores=1, approx_pow=TRUE)
 cds <- cluster_cells(cds, resolution = .01)
 
 test_that("learn_graph stays the same", {
-  skip_on_travis()
+#  skip_on_travis()
+  set.seed(42)
   cds <- learn_graph(cds)
   expect_is(principal_graph(cds)[["UMAP"]], "igraph")
   expect_equal(length(principal_graph(cds)[["UMAP"]]), 10)
@@ -48,12 +50,12 @@ test_that("learn_graph stays the same", {
   cds <- learn_graph(cds)
   expect_is(principal_graph(cds)[["UMAP"]], "igraph")
   expect_equal(length(principal_graph(cds)[["UMAP"]]), 10)
-  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "16")
+  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "17")
 
   cds <- learn_graph(cds, close_loop = TRUE)
   expect_is(principal_graph(cds)[["UMAP"]], "igraph")
   expect_equal(length(principal_graph(cds)[["UMAP"]]), 10)
-  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "16")
+  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "17")
 
   cds <- learn_graph(cds, learn_graph_control = list(prune_graph = FALSE))
   expect_is(principal_graph(cds)[["UMAP"]], "igraph")
@@ -66,12 +68,13 @@ cds <- load_a549()
 
 test_that("test learn_graph error messages work", {
   skip_not_travis()
+  set.seed(42)
   expect_error(cds <- learn_graph(cds),
                "No dimensionality reduction for UMAP calculated. Please run reduce_dimensions with reduction_method = UMAP and cluster_cells before running learn_graph.")
   cds <- preprocess_cds(cds)
   expect_error(cds <- learn_graph(cds),
                "No dimensionality reduction for UMAP calculated. Please run reduce_dimensions with reduction_method = UMAP and cluster_cells before running learn_graph.")
-  cds <- reduce_dimension(cds)
+  cds <- reduce_dimension(cds, approx_pow=TRUE)
   expect_error(cds <- learn_graph(cds),
                "No cell clusters for UMAP calculated. Please run cluster_cells with reduction_method = UMAP before running learn_graph.")
   #expect_error(cds <- learn_graph(cds, learn_graph_control = list(FALSE)), "")
@@ -80,16 +83,17 @@ test_that("test learn_graph error messages work", {
 
 set.seed(42)
 cds <- preprocess_cds(cds)
-cds <- reduce_dimension(cds)
-cds <- reduce_dimension(cds, umap.fast_sgd=FALSE, cores=1)
+cds <- reduce_dimension(cds, approx_pow=TRUE)
+cds <- reduce_dimension(cds, umap.fast_sgd=FALSE, cores=1, approx_pow=TRUE)
 cds <- cluster_cells(cds, resolution = .01)
 
 test_that("learn_graph stays the same", {
   skip_not_travis()
+  set.seed(42)
   cds <- learn_graph(cds)
   expect_is(principal_graph(cds)[["UMAP"]], "igraph")
   expect_equal(length(principal_graph(cds)[["UMAP"]]), 10)
-  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "3")
+  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "19")
 
   # Force partition
   temp <- rep(c(1,2), length.out=length(partitions(cds)))
@@ -98,22 +102,22 @@ test_that("learn_graph stays the same", {
   cds <- learn_graph(cds, use_partition = FALSE)
   expect_is(principal_graph(cds)[["UMAP"]], "igraph")
   expect_equal(length(principal_graph(cds)[["UMAP"]]), 10)
-  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "3")
+  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "19")
 
   cds <- learn_graph(cds)
   expect_is(principal_graph(cds)[["UMAP"]], "igraph")
   expect_equal(length(principal_graph(cds)[["UMAP"]]), 10)
-  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "8")
+  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "17")
 
   cds <- learn_graph(cds, close_loop = TRUE)
   expect_is(principal_graph(cds)[["UMAP"]], "igraph")
   expect_equal(length(principal_graph(cds)[["UMAP"]]), 10)
-  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "8")
+  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "17")
 
   cds <- learn_graph(cds, learn_graph_control = list(prune_graph = FALSE))
   expect_is(principal_graph(cds)[["UMAP"]], "igraph")
   expect_equal(length(principal_graph(cds)[["UMAP"]]), 10)
-  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "13")
+  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "8")
 })
 
 

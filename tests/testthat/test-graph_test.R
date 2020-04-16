@@ -14,7 +14,7 @@ cds <- monocle3:::load_worm_embryo()
 set.seed(42)
 
 cds <- preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
-cds <- reduce_dimension(cds, umap.fast_sgd=FALSE, cores=1)
+cds <- reduce_dimension(cds, umap.fast_sgd=FALSE, cores=1, approx_pow=TRUE)
 cds <- cluster_cells(cds)
 cds <- learn_graph(cds, learn_graph_control=list(ncenter=1000), close_loop=TRUE)
 #plot_cells(cds, color_cells_by="cell.type")
@@ -25,10 +25,10 @@ cds <- learn_graph(cds, learn_graph_control=list(ncenter=1000), close_loop=TRUE)
 #   cds <- preprocess_cds(cds)
 #   expect_error(cds <- graph_test(cds),
 #                "No dimensionality reduction for UMAP calculated. Please run reduce_dimensions with reduction_method = UMAP and partition_cells before running learn_graph.")
-#   cds <- reduce_dimension(cds)
+#   cds <- reduce_dimension(cds, approx_pow=TRUE)
 #   expect_error(cds <- graph_test(cds),
 #                "No cell partition for UMAP calculated. Please run partition_cells with reduction_method = UMAP before running learn_graph.")
-#   cds <- reduce_dimension(cds)
+#   cds <- reduce_dimension(cds, approx_pow=TRUE)
 #   expect_error(cds <- graph_test(cds),
 #                "No cell partition for UMAP calculated. Please run partition_cells with reduction_method = UMAP before running learn_graph.")
 #
@@ -38,37 +38,39 @@ cds <- learn_graph(cds, learn_graph_control=list(ncenter=1000), close_loop=TRUE)
 
 test_that("test graph_test returns Dex-dependent genes",{
   skip_on_travis()
+  set.seed(42)
   test_cds = cds
   pos_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "che-1",]
   pr_test_res = graph_test(pos_ctrl_gene)
   expect_equal(pr_test_res$status[1], "OK")
-  expect_equal(pr_test_res$morans_I, 0.661, tolerance=1e-2)
+  expect_equal(pr_test_res$morans_I, 0.677, tolerance=1e-2)
   expect_equal(pr_test_res$morans_test_statistic, 204.72, tolerance=1e-1)
   expect_lt(pr_test_res$p_value[1], 0.05)
 
   neg_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "R02D3.1",]
   pr_test_res = graph_test(neg_ctrl_gene)
   expect_equal(pr_test_res$status[1], "OK")
-  expect_equal(pr_test_res$morans_I, -0.00397, tolerance=1e-4)
-  expect_equal(pr_test_res$morans_test_statistic, -1.12, tolerance=1e-1)
+  expect_equal(pr_test_res$morans_I, -0.00163, tolerance=1e-4)
+  expect_equal(pr_test_res$morans_test_statistic, -0.431, tolerance=1e-2)
   expect_gt(pr_test_res$p_value[1], 0.05)
 })
 
 test_that("test graph_test returns Dex-dependent genes",{
   skip_not_travis()
+  set.seed(42)
   test_cds = cds
   pos_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "che-1",]
   pr_test_res = graph_test(pos_ctrl_gene)
   expect_equal(pr_test_res$status[1], "OK")
-  expect_equal(pr_test_res$morans_I, 0.657, tolerance=1e-2)
+  expect_equal(pr_test_res$morans_I, 0.677, tolerance=1e-2)
   expect_equal(pr_test_res$morans_test_statistic, 204.72, tolerance=1e-1)
   expect_lt(pr_test_res$p_value[1], 0.05)
 
   neg_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "R02D3.1",]
   pr_test_res = graph_test(neg_ctrl_gene)
   expect_equal(pr_test_res$status[1], "OK")
-  expect_equal(pr_test_res$morans_I, -0.00138, tolerance=1e-4)
-  expect_equal(pr_test_res$morans_test_statistic, -0.36, tolerance=1e-1)
+  expect_equal(pr_test_res$morans_I, -0.00163, tolerance=1e-4)
+  expect_equal(pr_test_res$morans_test_statistic, -0.431, tolerance=1e-2)
   expect_gt(pr_test_res$p_value[1], 0.05)
 })
 
@@ -79,6 +81,7 @@ test_that("test graph_test returns few genes under UMAP coordinate randomization
                      "dmd-6",
                      "ceh-36",
                      "ham-1")
+  set.seed(42)
   cds_subset = cds[rowData(cds)$gene_short_name %in% ciliated_genes,]
 
   test_cds = cds_subset
