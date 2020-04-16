@@ -21,7 +21,6 @@ test_that("test cluster_cells error messages work", {
 })
 
 cds <- preprocess_cds(cds)
-#cds <- reduce_dimension(cds, umap.fast_sgd=FALSE, cores=1)
 temp <- readRDS("../testdata/reduced_dims/a549_umap.RDS")
 reducedDims(cds)$UMAP <- temp
 cds <- reduce_dimension(cds, reduction_method = "tSNE")

@@ -296,7 +296,8 @@ test_that("fit_models() can handle cluster in model formulae",{
 
   test_cds = cds
   test_cds = preprocess_cds(test_cds)
-  test_cds = reduce_dimension(test_cds)
+  temp <- readRDS("../testdata/reduced_dims/a549_umap.RDS")
+  reducedDims(test_cds)$UMAP <- temp
   set.seed(100)
   test_cds = cluster_cells(test_cds, resolution = .01)
 
@@ -305,7 +306,7 @@ test_that("fit_models() can handle cluster in model formulae",{
                                  expression_family = "quasipoisson")
   expect_equal(pos_ctrl_gene_fit$status[[1]], "OK")
   pos_ctrl_coefs = coefficient_table(pos_ctrl_gene_fit)
-  expect_equal(pos_ctrl_coefs$estimate[2], -0.9550378, tolerance=1e-1)
+  expect_equal(pos_ctrl_coefs$estimate[2], -0.4018406, tolerance=1e-1)
 })
 
 
