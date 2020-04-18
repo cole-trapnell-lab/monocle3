@@ -84,7 +84,9 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
 
   #ensure results from RNG sensitive algorithms are the same on all calls
   set.seed(2016)
+  cat( 'checksum: preprocess_cds: start: normalize_expr_data in (cds): ', R.cache::getChecksum( cds ), '\n' )
   FM <- normalize_expr_data(cds, norm_method, pseudo_count)
+  cat( 'checksum: preprocess_cds: end: normalize_expr_data out (FM): ', R.cache::getChecksum( FM ), '\n' )
 
   if (nrow(FM) == 0) {
     stop("Error: all rows have standard deviation zero")
@@ -100,9 +102,14 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
   if(method == 'PCA') {
     if (verbose) message("Remove noise by PCA ...")
 
+  cat( 'checksum: preprocess_cds: PCA: start: sparse_prcomp_irlba in (FM): ', R.cache::getChecksum( FM ), '\n' )
+
     irlba_res <- sparse_prcomp_irlba(Matrix::t(FM),
                                      n = min(num_dim,min(dim(FM)) - 1),
                                      center = scaling, scale. = scaling)
+
+  cat( 'checksum: preprocess_cds: PCA: end: sparse_prcomp_irlba out (irlba_res): ', R.cache::getChecksum( irlba_res ), '\n' )
+
     preproc_res <- irlba_res$x
     row.names(preproc_res) <- colnames(cds)
 
@@ -113,9 +120,15 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
 
   } else if(method == "LSI") {
 
+
+  cat( 'checksum: preprocess_cds: LSI: start: tfidf in (FM): ', R.cache::getChecksum( FM ), '\n' )
+
     preproc_res <- tfidf(FM)
+  cat( 'checksum: preprocess_cds: LSI: end: tfidf in (preproc_res): ', R.cache::getChecksum( preproc_res ), '\n' )
+  cat( 'checksum: preprocess_cds: LSI: start: irlba in (preproc_res): ', R.cache::getChecksum( preproc_res ), '\n' )
     irlba_res <- irlba::irlba(Matrix::t(preproc_res),
                               nv = min(num_dim,min(dim(FM)) - 1))
+  cat( 'checksum: preprocess_cds: LSI: end: irlba in (irlba_res): ', R.cache::getChecksum( irlba_res ), '\n' )
 
     preproc_res <- irlba_res$u %*% diag(irlba_res$d)
     row.names(preproc_res) <- colnames(cds)

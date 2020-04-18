@@ -60,6 +60,7 @@ Imports:
     proxy (>= 0.4-23),
     pscl (>= 1.5.2),
     purrr (>= 0.3.2),
+    R.cache (>= 0.14.0),
     RANN (>= 2.6.1),
     RColorBrewer,
     Rcpp (>= 1.0.1),

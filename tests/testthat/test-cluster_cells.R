@@ -35,7 +35,7 @@ set.seed(200)
 cds <- preprocess_cds(cds)
 cds <- reduce_dimension(cds, umap.fast_sgd=FALSE, cores=1, approx_pow=TRUE)
 cds <- reduce_dimension(cds, reduction_method = "tSNE", approx_pow=TRUE)
-cds <- cluster_cells(cds)
+cds <- cluster_cells(cds, random_seed=100)
 
 test_that("cluster_cells works", {
   skip_on_travis()
