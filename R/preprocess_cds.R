@@ -84,9 +84,9 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
 
   #ensure results from RNG sensitive algorithms are the same on all calls
   set.seed(2016)
-  cat( 'checksum: preprocess_cds: start: normalize_expr_data in (cds): ', R.cache::getChecksum( cds ), '\n' )
+  cat( 'checksum: preprocess_cds: start: normalize_expr_data in (cds): ', digest::digest( cds ), '\n' )
   FM <- normalize_expr_data(cds, norm_method, pseudo_count)
-  cat( 'checksum: preprocess_cds: end: normalize_expr_data out (FM): ', R.cache::getChecksum( FM ), '\n' )
+  cat( 'checksum: preprocess_cds: end: normalize_expr_data out (FM): ', digest::digest( FM ), '\n' )
 
   if (nrow(FM) == 0) {
     stop("Error: all rows have standard deviation zero")
@@ -102,13 +102,13 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
   if(method == 'PCA') {
     if (verbose) message("Remove noise by PCA ...")
 
-  cat( 'checksum: preprocess_cds: PCA: start: sparse_prcomp_irlba in (FM): ', R.cache::getChecksum( FM ), '\n' )
+  cat( 'checksum: preprocess_cds: PCA: start: sparse_prcomp_irlba in (FM): ', digest::digest( FM ), '\n' )
 
     irlba_res <- sparse_prcomp_irlba(Matrix::t(FM),
                                      n = min(num_dim,min(dim(FM)) - 1),
                                      center = scaling, scale. = scaling)
 
-  cat( 'checksum: preprocess_cds: PCA: end: sparse_prcomp_irlba out (irlba_res): ', R.cache::getChecksum( irlba_res ), '\n' )
+  cat( 'checksum: preprocess_cds: PCA: end: sparse_prcomp_irlba out (irlba_res): ', digest::digest( irlba_res ), '\n' )
 
     preproc_res <- irlba_res$x
     row.names(preproc_res) <- colnames(cds)
@@ -121,14 +121,14 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
   } else if(method == "LSI") {
 
 
-  cat( 'checksum: preprocess_cds: LSI: start: tfidf in (FM): ', R.cache::getChecksum( FM ), '\n' )
+  cat( 'checksum: preprocess_cds: LSI: start: tfidf in (FM): ', digest::digest( FM ), '\n' )
 
     preproc_res <- tfidf(FM)
-  cat( 'checksum: preprocess_cds: LSI: end: tfidf in (preproc_res): ', R.cache::getChecksum( preproc_res ), '\n' )
-  cat( 'checksum: preprocess_cds: LSI: start: irlba in (preproc_res): ', R.cache::getChecksum( preproc_res ), '\n' )
+  cat( 'checksum: preprocess_cds: LSI: end: tfidf in (preproc_res): ', digest::digest( preproc_res ), '\n' )
+  cat( 'checksum: preprocess_cds: LSI: start: irlba in (preproc_res): ', digest::digest( preproc_res ), '\n' )
     irlba_res <- irlba::irlba(Matrix::t(preproc_res),
                               nv = min(num_dim,min(dim(FM)) - 1))
-  cat( 'checksum: preprocess_cds: LSI: end: irlba in (irlba_res): ', R.cache::getChecksum( irlba_res ), '\n' )
+  cat( 'checksum: preprocess_cds: LSI: end: irlba in (irlba_res): ', digest::digest( irlba_res ), '\n' )
 
     preproc_res <- irlba_res$u %*% diag(irlba_res$d)
     row.names(preproc_res) <- colnames(cds)
@@ -155,7 +155,11 @@ normalize_expr_data <- function(cds,
                                 pseudo_count = NULL) {
   norm_method <- match.arg(norm_method)
 
+  cat( 'checksum: normalize_expr_data: start: (cds): ', digest::digest( cds ), '\n' )
+
   FM <- SingleCellExperiment::counts(cds)
+
+  cat( 'checksum: normalize_expr_data: start: (FM): ', digest::digest( FM ), '\n' )
 
   # If we're going to be using log, and the user hasn't given us a
   # pseudocount set it to 1 by default.
@@ -169,17 +173,25 @@ normalize_expr_data <- function(cds,
   if (norm_method == "log") {
     # If we are using log, normalize by size factor before log-transforming
 
+  cat( 'checksum: normalize_expr_data: start: scale in (FM): ', digest::digest( FM ), '\n' )
+
     FM <- Matrix::t(Matrix::t(FM)/size_factors(cds))
+
+  cat( 'checksum: normalize_expr_data: end: scale in (FM): ', digest::digest( FM ), '\n' )
 
     if (pseudo_count != 1 || is_sparse_matrix(SingleCellExperiment::counts(cds)) == FALSE){
       FM <- FM + pseudo_count
+  cat( 'checksum: normalize_expr_data: start: log2 in (FM): ', digest::digest( FM ), '\n' )
       FM <- log2(FM)
+  cat( 'checksum: normalize_expr_data: end: log2 in (FM): ', digest::digest( FM ), '\n' )
     } else {
       FM@x = log2(FM@x + 1)
     }
 
   } else if (norm_method == "size_only") {
+  cat( 'checksum: normalize_expr_data: start: scale in (FM): ', digest::digest( FM ), '\n' )
     FM <- Matrix::t(Matrix::t(FM)/size_factors(cds))
+  cat( 'checksum: normalize_expr_data: end: scale in (FM): ', digest::digest( FM ), '\n' )
     FM <- FM + pseudo_count
   }
   return (FM)

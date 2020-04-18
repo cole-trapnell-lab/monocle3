@@ -164,7 +164,7 @@ reduce_dimension <- function(cds,
     if (verbose)
       message("Running Uniform Manifold Approximation and Projection")
 
-    cat( 'checksum: reduce_dimensions: start: umap in (as.matrix(preprocess_mat)): ', R.cache::getChecksum( as.matrix(preprocess_mat) ), '\n')
+    cat( 'checksum: reduce_dimensions: start: umap in (as.matrix(preprocess_mat)): ', digest::digest( as.matrix(preprocess_mat) ), '\n')
 
     umap_res = uwot::umap(as.matrix(preprocess_mat),
                           n_components = max_components,
@@ -177,7 +177,7 @@ reduce_dimension <- function(cds,
                           nn_method = umap.nn_method,
                           ...)
 
-    cat( 'checksum: reduce_dimensions: end: umap out (umap_res): ', R.cache::getChecksum( umap_res ), '\n' )
+    cat( 'checksum: reduce_dimensions: end: umap out (umap_res): ', digest::digest( umap_res ), '\n' )
     
     row.names(umap_res) <- colnames(cds)
     reducedDims(cds)$UMAP <- umap_res

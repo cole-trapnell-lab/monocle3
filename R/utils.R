@@ -439,9 +439,9 @@ sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
   }
   if (!missing(...)) args <- c(args, list(...))
 
-  cat( 'checksum: utils.R: sparse_prcomp_irlba: start: irlba::irlba in (args): ', R.cache::getChecksum( args ), '\n' )
+  cat( 'checksum: utils.R: sparse_prcomp_irlba: start: irlba::irlba in (args): ', digest::digest( args ), '\n' )
   s <- do.call(irlba::irlba, args=args)
-  cat( 'checksum: utils.R: sparse_prcomp_irlba: end: irlba::irlba out (s): ', R.cache::getChecksum( s ), '\n' )
+  cat( 'checksum: utils.R: sparse_prcomp_irlba: end: irlba::irlba out (s): ', digest::digest( s ), '\n' )
   ans$sdev <- s$d / sqrt(max(1, nrow(x) - 1))
   ans$rotation <- s$v
   colnames(ans$rotation) <- paste("PC", seq(1, ncol(ans$rotation)), sep="")
