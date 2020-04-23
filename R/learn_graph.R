@@ -211,7 +211,7 @@ multi_component_RGE <- function(cds,
 
   for(cur_comp in sort(unique(partition_list))) {
     if(verbose) {
-      message(paste0('Processing louvain component ', cur_comp))
+      message(paste0('Processing partition component ', cur_comp))
     }
 
     X_subset <- X[, partition_list == cur_comp]
@@ -658,8 +658,23 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE,
   dp_mst_df <- NULL
   partitions <- cds@clusters[[reduction_method]]$partitions
 
+  # Sanity test.
+  # If this fails there may be a problem with getting cell names from
+  # cds@clusters[[reduction_method]]$partitions
+  # although that seems utterly implausible. I am replacing
+  #   subset_cds_col_names <- colnames(cds)[cds@clusters[[reduction_method]]$partitions == cur_partition]
+  # in the loop with the partition element names as
+  #   subset_cds_col_names <- names(partitions[partitions==cur_partition])
+  # so that this functions works when learn_graph() is run with use_partition=FALSE.
+  assertthat::assert_that( !is.null( names(cds@clusters$UMAP$partitions) ), msg='names(cds@clusters$UMAP$partitions) == NULL' )
+  assertthat::assert_that( !( length( colnames(cds) ) != length(names(cds@clusters$UMAP$partitions))), msg='length( colnames(cds) ) != length(names(cds@clusters$UMAP$partitions))' )
+  assertthat::assert_that( !any( colnames(cds)!=names(cds@clusters$UMAP$partitions) ), msg='colnames(cds)!=names(cds@clusters$UMAP$partitions)' )
+
   if(length(dp_mst_list) == 1 & length(unique(partitions)) > 1) {
-    partitions <- 1
+    #
+    # Adjust for condition learn_graph(use_partition=FALSE).
+    #
+    partitions[partitions!='1'] <- '1'
   }
 
   if(!is.null(partitions)) {
@@ -671,8 +686,8 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE,
                 cur_partition)
       }
 
-      subset_cds_col_names <- colnames(cds)[cds@clusters[[
-        reduction_method]]$partitions == cur_partition]
+      subset_cds_col_names <- names(partitions[partitions==cur_partition])
+
       cur_z <- Z[, subset_cds_col_names]
       cur_p <- P[, subset_cds_col_names]
 
