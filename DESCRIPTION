@@ -40,7 +40,7 @@ Imports:
     DelayedArray (>= 0.8.0),
     DelayedMatrixStats (>= 1.4.0),
     dplyr (>= 0.8.0.1),
-    ggplot2 (>= 3.1.1),
+    ggplot2 (>= 3.3.0),
     ggrepel (>= 0.8.1),
     grr,
     igraph (>= 1.2.4),
