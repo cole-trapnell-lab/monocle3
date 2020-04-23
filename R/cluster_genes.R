@@ -10,7 +10,7 @@
 #' @param umap.fast_sgd Whether to allow UMAP to perform fast stochastic gradient descent. Defaults to TRUE. Setting FALSE will result in slower, but deterministic behavior (if cores=1).
 #' @param umap.nn_method The method used for nearest neighbor network construction during UMAP.
 #' @param k number of kNN used in creating the k nearest neighbor graph for Louvain clustering. The number of kNN is related to the resolution of the clustering result, bigger number of kNN gives low resolution and vice versa. Default to be 20
-#' @param louvain_iter Integer number of iterations used for Louvain clustering. The clustering result gives the largest modularity score will be used as the final clustering result.  Default to be 1. Note that if louvain_iter is large than 1, the `seed` argument will be ignored.
+#' @param leiden_iter Integer number of iterations used for Leiden clustering. The clustering result with the largest modularity score is used as the final clustering result.  Default to be 1.
 #' @param partition_qval Significance threshold used in Louvain community graph partitioning.
 #' @param weight A logic argument to determine whether or not we will use
 #'   Jaccard coefficient for two nearest neighbors (based on the overlapping of
@@ -18,7 +18,7 @@
 #' @param resolution Resolution parameter passed to Louvain. Can be a list. If
 #'   so, this method will evaluate modularity at each resolution and use the
 #'   one with the highest value.
-#' @param random_seed  the seed used by the random number generator in louvain-igraph package. This argument will be ignored if louvain_iter is larger than 1.
+#' @param random_seed  the seed used by the random number generator in Leiden.
 #' @param cores number of cores computer should use to execute function
 #' @param verbose Whether or not verbose output is printed.
 #' @param ... Additional arguments passed to UMAP and Louvain analysis.
@@ -35,7 +35,7 @@ find_gene_modules <- function(cds,
                           umap.fast_sgd = FALSE,
                           umap.nn_method = "annoy",
                           k = 20,
-                          louvain_iter = 1,
+                          leiden_iter = 1,
                           partition_qval = 0.05,
                           weight = FALSE,
                           resolution = NULL,
@@ -43,7 +43,7 @@ find_gene_modules <- function(cds,
                           cores=1,
                           verbose = F,
                           ...) {
-  method = 'louvain'
+  method = 'leiden'
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
@@ -55,7 +55,7 @@ find_gene_modules <- function(cds,
   assertthat::assert_that(is.character(reduction_method))
   assertthat::assert_that(assertthat::is.count(k))
   assertthat::assert_that(is.logical(weight))
-  assertthat::assert_that(assertthat::is.count(louvain_iter))
+  assertthat::assert_that(assertthat::is.count(leiden_iter))
   ## TO DO what is resolution?
   assertthat::assert_that(is.numeric(partition_qval))
   assertthat::assert_that(is.logical(verbose))
@@ -88,14 +88,14 @@ find_gene_modules <- function(cds,
   reduced_dim_res <- umap_res
 
   if(verbose)
-    message("Running louvain clustering algorithm ...")
+    message("Running leiden clustering algorithm ...")
 
   cluster_result <- leiden_clustering(data = reduced_dim_res,
                                     pd = rowData(cds)[
                                       row.names(reduced_dim_res),,drop=FALSE],
                                     k = k,
                                     weight = weight,
-                                    louvain_iter = louvain_iter,
+                                    num_iter = leiden_iter,
                                     resolution_parameter = resolution,
                                     random_seed = random_seed,
                                     verbose = verbose, ...)
