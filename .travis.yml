@@ -15,7 +15,8 @@ r_packages:
 r_github_packages:
 - VPetukhov/ggrastr
 - cole-trapnell-lab/leidenbase
-
+r_binary_packages:
+- devtools
 
 before_script:
   - export PKG_NAME=$(Rscript -e 'cat(paste0(devtools::as.package(".")$package))')
