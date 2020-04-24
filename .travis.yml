@@ -15,38 +15,7 @@ r_packages:
 r_github_packages:
 - VPetukhov/ggrastr
 - cole-trapnell-lab/leidenbase
-r_binary_packages:
-- assertthat
-- dplyr
-- devtools
-- ggrepel
-- igraph
-- irlba
-- lmtest
-- MASS
-- Matrix
-- pbapply
-- pbmcapply
-- pheatmap
-- plotly
-- plyr
-- proxy
-- pryr
-- pscl
-- purrr
-- RANN
-- Rcpp
-- reshape2
-- RhpcBLASctl
-- roxygen2
-- shiny
-- slam
-- spdep
-- speedglm
-- stringr
-- tibble
-- tidyr
-- viridis
+
 
 before_script:
   - export PKG_NAME=$(Rscript -e 'cat(paste0(devtools::as.package(".")$package))')
