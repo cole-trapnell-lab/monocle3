@@ -14,7 +14,7 @@ find_gene_modules(
   umap.fast_sgd = FALSE,
   umap.nn_method = "annoy",
   k = 20,
-  louvain_iter = 1,
+  leiden_iter = 1,
   partition_qval = 0.05,
   weight = FALSE,
   resolution = NULL,
@@ -43,7 +43,7 @@ find_gene_modules(
 
 \item{k}{number of kNN used in creating the k nearest neighbor graph for Louvain clustering. The number of kNN is related to the resolution of the clustering result, bigger number of kNN gives low resolution and vice versa. Default to be 20}
 
-\item{louvain_iter}{Integer number of iterations used for Louvain clustering. The clustering result gives the largest modularity score will be used as the final clustering result.  Default to be 1. Note that if louvain_iter is large than 1, the \code{seed} argument will be ignored.}
+\item{leiden_iter}{Integer number of iterations used for Leiden clustering. The clustering result with the largest modularity score is used as the final clustering result.  Default to be 1.}
 
 \item{partition_qval}{Significance threshold used in Louvain community graph partitioning.}
 
@@ -55,7 +55,7 @@ their kNN) as the weight used for Louvain clustering. Default to be FALSE.}
 so, this method will evaluate modularity at each resolution and use the
 one with the highest value.}
 
-\item{random_seed}{the seed used by the random number generator in louvain-igraph package. This argument will be ignored if louvain_iter is larger than 1.}
+\item{random_seed}{the seed used by the random number generator in Leiden.}
 
 \item{cores}{number of cores computer should use to execute function}
 
