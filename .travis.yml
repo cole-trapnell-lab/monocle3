@@ -15,10 +15,10 @@ r_packages:
 r_github_packages:
 - VPetukhov/ggrastr
 - cole-trapnell-lab/leidenbase
-# r_binary_packages:
+r_binary_packages:
 # - assertthat
 # - dplyr
-# - devtools
+- devtools
 # - ggplot2
 # - ggrepel
 # - igraph
