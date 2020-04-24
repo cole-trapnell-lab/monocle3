@@ -40,6 +40,9 @@
 #'   pruning to remove small insignificant branches. Default is TRUE.}
 #'   \item{scale:}{}
 #'   \item{ncenter:}{}
+#'   \item{rann.k:}{Maximum number of nearest neighbors to compute in the
+#'   reverse graph embedding. Set rann.k=NULL
+#'   to let learn_graph estimate rann.k. Default is 25.}
 #'   \item{maxiter:}{}
 #'   \item{eps:}{}
 #'   \item{L1.gamma:}{}
@@ -78,6 +81,7 @@ learn_graph <- function(cds,
                                     "prune_graph",
                                     "scale",
                                     "ncenter",
+                                    "rann.k",
                                     "maxiter",
                                     "eps",
                                     "L1.gamma",
@@ -102,6 +106,8 @@ learn_graph <- function(cds,
   ncenter <- learn_graph_control$ncenter
   scale <- ifelse(is.null(learn_graph_control$scale), FALSE,
                   learn_graph_control$scale)
+  rann.k <- ifelse(is.null(learn_graph_control$rann.k), 25,
+                   learn_graph_control$rann.k)
   maxiter <- ifelse(is.null(learn_graph_control$maxiter), 10,
                     learn_graph_control$maxiter)
   eps <- ifelse(is.null(learn_graph_control$eps), 1e-5,
@@ -125,6 +131,7 @@ learn_graph <- function(cds,
     assertthat::assert_that(assertthat::is.count(ncenter))
   }
   assertthat::assert_that(assertthat::is.count(maxiter))
+  assertthat::assert_that(assertthat::is.count(rann.k))
   assertthat::assert_that(is.numeric(eps))
   assertthat::assert_that(is.numeric(L1.sigma))
   assertthat::assert_that(is.numeric(L1.sigma))
@@ -156,6 +163,7 @@ learn_graph <- function(cds,
                         irlba_pca_res = reducedDims(cds)[[reduction_method]],
                         max_components = max_components,
                         ncenter = ncenter,
+                        rann.k = rann.k,
                         maxiter = maxiter,
                         eps = eps,
                         L1.gamma = L1.gamma,
@@ -190,6 +198,7 @@ multi_component_RGE <- function(cds,
                                 max_components,
                                 ncenter,
                                 irlba_pca_res,
+                                rann.k=25,
                                 maxiter,
                                 eps,
                                 L1.gamma,
@@ -256,11 +265,14 @@ multi_component_RGE <- function(cds,
                                           process_targets_in_blocks=TRUE)
     medioids <- X_subset[, unique(nearest_center)]
     reduced_dim_res <- t(medioids)
-    k <- 25
     mat <- t(X_subset)
-    if (is.null(k)) {
+    if (is.null(rann.k)) {
       k <- round(sqrt(nrow(mat))/2)
       k <- max(10, k)
+    }
+    else
+    {
+      k <- rann.k
     }
     if (verbose)
       message("Finding kNN using RANN with ", k, " neighbors")
