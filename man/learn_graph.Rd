@@ -76,6 +76,9 @@ cells corresponding to the tip principal points. Default is FALSE.}
 pruning to remove small insignificant branches. Default is TRUE.}
 \item{scale:}{}
 \item{ncenter:}{}
+\item{rann.k:}{Maximum number of nearest neighbors to compute in the
+reverse graph embedding. Set rann.k=NULL
+to let learn_graph estimate rann.k. Default is 25.}
 \item{maxiter:}{}
 \item{eps:}{}
 \item{L1.gamma:}{}

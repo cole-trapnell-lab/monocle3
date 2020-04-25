@@ -16,6 +16,8 @@
 #' of cell ids from colnames(cds), or a positive integer. If the latter, top_markers()
 #' will randomly select the specified number of reference cells. Accelerates
 #' the marker significance test at some cost in sensitivity.
+#' @param speedglm.maxiter Maximum number of iterations allowed for fitting GLM
+#' models when testing markers for cell group.
 #' @param cores Number of cores to use.
 #' @param verbose Whether to print verbose progress output.
 #'
@@ -26,6 +28,7 @@ top_markers <- function(cds,
                         reduction_method="UMAP",
                         marker_sig_test=TRUE,
                         reference_cells=NULL,
+                        speedglm.maxiter=25,
                         cores=1,
                         verbose=FALSE
 ){
@@ -148,7 +151,8 @@ top_markers <- function(cds,
     marker_test_res = tryCatch({pbmcapply::pbmcmapply(test_marker_for_cell_group,
                                                       cluster_marker_score_table$rowname,
                                                       cluster_marker_score_table$cell_group,
-                                                      MoreArgs=list(cell_group_df, cds, reference_cells),
+                                                      MoreArgs=list(cell_group_df, cds, reference_cells,
+                                                      speedglm.maxiter),
                                                       ignore.interactive = TRUE,
                                                       mc.cores=cores)},
                                finally = {
@@ -272,7 +276,7 @@ enrichment_matrix <- function(agg_expr_matrix, cores=1){
 }
 
 test_marker_for_cell_group = function(gene_id, cell_group, cell_group_df, cds,
-                                      reference_cells=NULL){
+                                      reference_cells=NULL, speedglm.maxiter=25){
   #print(gene_id)
   #print(cell_group)
   #print (length(reference_cells))
@@ -297,17 +301,20 @@ test_marker_for_cell_group = function(gene_id, cell_group, cell_group_df, cds,
     if (sum(is.na(f_expression)) > 0 || sum(is.na(is_member)) > 0){
       stop("Expression and group membership can't be NA")
     }
-
     model <- speedglm::speedglm(is_member ~ f_expression,
                                 acc=1e-3, model=FALSE,
                                 y=FALSE,
                                 verbose=TRUE,
-                                family=stats::binomial())
+                                family=stats::binomial(),
+                                maxit=speedglm.maxiter)
+    assertthat::assert_that(model$convergence == TRUE, msg=paste0('speedglm model failed to converge in ',speedglm.maxiter, ' iterations.'))
     null_model <- speedglm::speedglm(is_member ~ 1,
                                      acc=1e-3, model=FALSE,
                                      y=FALSE,
                                      verbose=TRUE,
-                                     family=stats::binomial())
+                                     family=stats::binomial(),
+                                     maxit=speedglm.maxiter)
+    assertthat::assert_that(model$convergence == TRUE, msg=paste0('speedglm null model failed to converge in ',speedglm.maxiter, ' iterations.'))
     lr.stat <- lmtest::lrtest(null_model, model)
     #print (summary(model))
     # #print(summary(null_model))

@@ -11,6 +11,7 @@ top_markers(
   reduction_method = "UMAP",
   marker_sig_test = TRUE,
   reference_cells = NULL,
+  speedglm.maxiter = 25,
   cores = 1,
   verbose = FALSE
 )
@@ -37,6 +38,9 @@ significance test against a "reference set" of cells. Must be either a list
 of cell ids from colnames(cds), or a positive integer. If the latter, top_markers()
 will randomly select the specified number of reference cells. Accelerates
 the marker significance test at some cost in sensitivity.}
+
+\item{speedglm.maxiter}{Maximum number of iterations allowed for fitting GLM
+models when testing markers for cell group.}
 
 \item{cores}{Number of cores to use.}
 
