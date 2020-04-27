@@ -24,6 +24,7 @@ tags: [monocle, manual, vignette]
             <li class="toc-entry toc-h3"><a href="#cluster-cells">Cluster your cells</a></li>
             <li class="toc-entry toc-h3"><a href="#learn-graph">Learn the trajectory graph</a></li>
             <li class="toc-entry toc-h3"><a href="#order-cells">Order the cells in pseudotime</a></li>
+            <li class="toc-entry toc-h3"><a href="#subset-branch">Subset cells by branch</a></li>
             <li class="toc-entry toc-h3"><a href="#3d-trajectories">Working with 3D trajectories</a></li>
           </ul>
         </li>
@@ -349,6 +350,19 @@ plot_cells(cds,
         Note that we could easily do this on a per-partition basis by first grouping the cells by partition 
         using the <code>partitions()</code> function. This would result in all cells being assigned a finite pseudotime.
       </p>
+      <h3 id="subset-branch">Subset cells by branch</h3>
+      <p>
+        It is often useful to subset cells based on their branch in the trajectory. The function <code>choose_graph_segments</code>
+        allows you to do so interactively.
+      </p>
+{% highlight R %}
+cds_sub <- choose_graph_segments(cds)
+{% endhighlight %}
+            
+      <div class= "text-center">
+        <img src= "{{site.baseurl}}/images/choose_graph_segments.gif" width= 760>
+      </div>
+
       
       <h3 id="3d-trajectories">Working with 3D trajectories</h3>
       
