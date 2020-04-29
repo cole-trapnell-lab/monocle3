@@ -50,6 +50,9 @@
 #' }
 #'
 #' @param cds the cell_data_set upon which to perform this operation
+#' @param reduction_method A character string specifying the algorithm to use
+#'   for dimensionality reduction. We recommend strongly that you use only
+#'   UMAP. All other reduction_method values are unsupported.
 #' @param use_partition logical parameter that determines whether to use
 #'   partitions calculated during \code{cluster_cells} and therefore to learn
 #'   disjoint graph in each partition. When \code{use_partition = FALSE}, a
@@ -65,11 +68,18 @@
 #' @return an updated cell_data_set object
 #' @export
 learn_graph <- function(cds,
+                        reduction_method=c('UMAP','tSNE','PCA','LSI','Aligned'),
                         use_partition = TRUE,
                         close_loop = TRUE,
                         learn_graph_control = NULL,
                         verbose = FALSE) {
-  reduction_method <- "UMAP"
+#  reduction_method <- "UMAP"
+  reduction_method <- match.arg(reduction_method)
+  if( reduction_method != 'UMAP' )
+  {
+    message( 'The reduction_method ', reduction_method,
+             ' is not supported, we recommend using only the UMAP reduction_method!')
+  }
 
   if (!is.null(learn_graph_control)) {
     assertthat::assert_that(methods::is(learn_graph_control, "list"))
@@ -118,6 +128,7 @@ learn_graph <- function(cds,
                      learn_graph_control$L1.sigma)
 
   assertthat::assert_that(methods::is(cds, "cell_data_set"))
+  assertthat::assert_that(reduction_method %in% c('UMAP','tSNE','PCA','LSI','Aligned'), msg=paste0('unsupported or invalid reduction method \'', reduction_method, '\''))
   assertthat::assert_that(is.logical(use_partition))
   assertthat::assert_that(is.logical(close_loop))
   assertthat::assert_that(is.logical(verbose))
@@ -218,7 +229,7 @@ multi_component_RGE <- function(cds,
   merge_rge_res <- NULL
   max_ncenter <- 0
 
-  for(cur_comp in sort(unique(partition_list))) {
+  for(cur_comp in sort(unique(partition_list))) {  #  for loop 1  start
     if(verbose) {
       message(paste0('Processing partition component ', cur_comp))
     }
@@ -233,7 +244,7 @@ multi_component_RGE <- function(cds,
 
     if(is.null(ncenter)) {
       num_clusters_in_partition <-
-        length(unique(clusters(cds)[colnames(X_subset)]))
+        length(unique(clusters(cds, reduction_method)[colnames(X_subset)]))
       num_cells_in_partition = ncol(X_subset)
       curr_ncenter <- cal_ncenter(num_clusters_in_partition, num_cells_in_partition)
       if(is.null(curr_ncenter) || curr_ncenter >= ncol(X_subset)) {
@@ -381,7 +392,7 @@ multi_component_RGE <- function(cds,
 
     dp_mst <- igraph::graph.union(dp_mst, cur_dp_mst)
     reducedDimK_coord <- cbind(reducedDimK_coord, curr_reducedDimK_coord)
-  }
+  }  #  for loop 1  end
 
   row.names(pr_graph_cell_proj_closest_vertex) <- cell_name_vec
 
@@ -678,9 +689,9 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE,
   # in the loop with the partition element names as
   #   subset_cds_col_names <- names(partitions[partitions==cur_partition])
   # so that this functions works when learn_graph() is run with use_partition=FALSE.
-  assertthat::assert_that( !is.null( names(cds@clusters$UMAP$partitions) ), msg='names(cds@clusters$UMAP$partitions) == NULL' )
-  assertthat::assert_that( !( length( colnames(cds) ) != length(names(cds@clusters$UMAP$partitions))), msg='length( colnames(cds) ) != length(names(cds@clusters$UMAP$partitions))' )
-  assertthat::assert_that( !any( colnames(cds)!=names(cds@clusters$UMAP$partitions) ), msg='colnames(cds)!=names(cds@clusters$UMAP$partitions)' )
+  assertthat::assert_that( !is.null( names(cds@clusters[[reduction_method]]$partitions) ), msg='names(cds@clusters[[reduction_method]]$partitions) == NULL' )
+  assertthat::assert_that( !( length( colnames(cds) ) != length(names(cds@clusters[[reduction_method]]$partitions))), msg='length( colnames(cds) ) != length(names(cds@clusters[[reduction_method]]$partitions))' )
+  assertthat::assert_that( !any( colnames(cds)!=names(cds@clusters[[reduction_method]]$partitions) ), msg='colnames(cds)!=names(cds@clusters[[reduction_method]]$partitions)' )
 
   if(length(dp_mst_list) == 1 & length(unique(partitions)) > 1) {
     #

@@ -748,7 +748,7 @@ plot_cells <- function(cds,
 
 
     if (label_branch_points){
-      mst_branch_nodes <- branch_nodes(cds)
+      mst_branch_nodes <- branch_nodes(cds, reduction_method)
       branch_point_df <- ica_space_df %>%
         dplyr::slice(match(names(mst_branch_nodes), sample_name)) %>%
         dplyr::mutate(branch_point_idx = seq_len(dplyr::n()))
@@ -767,7 +767,7 @@ plot_cells <- function(cds,
     }
 
     if (label_leaves){
-      mst_leaf_nodes <- leaf_nodes(cds)
+      mst_leaf_nodes <- leaf_nodes(cds, reduction_method)
       leaf_df <- ica_space_df %>%
         dplyr::slice(match(names(mst_leaf_nodes), sample_name)) %>%
         dplyr::mutate(leaf_idx = seq_len(dplyr::n()))
@@ -786,7 +786,7 @@ plot_cells <- function(cds,
     }
 
     if (label_roots){
-      mst_root_nodes <- root_nodes(cds)
+      mst_root_nodes <- root_nodes(cds, reduction_method)
       root_df <- ica_space_df %>%
         dplyr::slice(match(names(mst_root_nodes), sample_name)) %>%
         dplyr::mutate(root_idx = seq_len(dplyr::n()))
