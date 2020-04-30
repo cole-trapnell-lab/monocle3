@@ -50,9 +50,6 @@
 #' }
 #'
 #' @param cds the cell_data_set upon which to perform this operation
-#' @param reduction_method A character string specifying the algorithm to use
-#'   for dimensionality reduction. We recommend strongly that you use only
-#'   UMAP. All other reduction_method values are unsupported.
 #' @param use_partition logical parameter that determines whether to use
 #'   partitions calculated during \code{cluster_cells} and therefore to learn
 #'   disjoint graph in each partition. When \code{use_partition = FALSE}, a
@@ -68,19 +65,11 @@
 #' @return an updated cell_data_set object
 #' @export
 learn_graph <- function(cds,
-                        reduction_method=c('UMAP','tSNE','PCA','LSI','Aligned'),
                         use_partition = TRUE,
                         close_loop = TRUE,
                         learn_graph_control = NULL,
                         verbose = FALSE) {
-#  reduction_method <- "UMAP"
-  reduction_method <- match.arg(reduction_method)
-  if( reduction_method != 'UMAP' )
-  {
-    message( 'The reduction_method ', reduction_method,
-             ' is not supported, we recommend using only the UMAP reduction_method!')
-  }
-
+  reduction_method <- "UMAP"
   if (!is.null(learn_graph_control)) {
     assertthat::assert_that(methods::is(learn_graph_control, "list"))
     assertthat::assert_that(all(names(learn_graph_control) %in%
@@ -128,7 +117,7 @@ learn_graph <- function(cds,
                      learn_graph_control$L1.sigma)
 
   assertthat::assert_that(methods::is(cds, "cell_data_set"))
-  assertthat::assert_that(reduction_method %in% c('UMAP','tSNE','PCA','LSI','Aligned'), msg=paste0('unsupported or invalid reduction method \'', reduction_method, '\''))
+  assertthat::assert_that(reduction_method %in% c('UMAP'), msg=paste0('unsupported or invalid reduction method \'', reduction_method, '\''))
   assertthat::assert_that(is.logical(use_partition))
   assertthat::assert_that(is.logical(close_loop))
   assertthat::assert_that(is.logical(verbose))

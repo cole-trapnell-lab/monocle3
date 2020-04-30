@@ -7,7 +7,6 @@ embedding}
 \usage{
 learn_graph(
   cds,
-  reduction_method = c("UMAP", "tSNE", "PCA", "LSI", "Aligned"),
   use_partition = TRUE,
   close_loop = TRUE,
   learn_graph_control = NULL,
@@ -16,10 +15,6 @@ learn_graph(
 }
 \arguments{
 \item{cds}{the cell_data_set upon which to perform this operation}
-
-\item{reduction_method}{A character string specifying the algorithm to use
-for dimensionality reduction. We recommend strongly that you use only
-UMAP. All other reduction_method values are unsupported.}
 
 \item{use_partition}{logical parameter that determines whether to use
 partitions calculated during \code{cluster_cells} and therefore to learn

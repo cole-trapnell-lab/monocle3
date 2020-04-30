@@ -31,9 +31,9 @@ order_cells <- function(cds,
                         verbose = FALSE){
 
   assertthat::assert_that(methods::is(cds, "cell_data_set"))
-#  assertthat::assert_that(assertthat::are_equal("UMAP", reduction_method),
-#                          msg = paste("Currently only 'UMAP' is accepted as a",
-#                                      "reduction_method."))
+  assertthat::assert_that(assertthat::are_equal("UMAP", reduction_method),
+                          msg = paste("Currently only 'UMAP' is accepted as a",
+                                      "reduction_method."))
   assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
                           msg = paste0("No dimensionality reduction for ",
                                       reduction_method, " calculated. ",
