@@ -2,7 +2,7 @@ cache: packages
 sudo: required
 warnings_are_errors: true
 os: linux
-dist: bionic
+dist: xenial
 language: r
 before_install:
   - sudo apt-get install -y libudunits2-dev
@@ -18,6 +18,7 @@ r_github_packages:
 r_binary_packages:
 #  - assertthat
 #  - dplyr
+  - Rcpp
   - devtools
 #  - ggplot2
 #  - ggrepel

@@ -650,7 +650,7 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE,
         projection <- rbind(projection, tmp)
         distance <- c(distance, stats::dist(rbind(Z_i, tmp)))
       }
-      if(class(projection) != 'matrix') {
+      if(class(projection)[1] != 'matrix') {
         projection <- as.matrix(projection)
       }
 
