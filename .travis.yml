@@ -12,13 +12,13 @@ r:
 - bioc-release
 r_packages:
   - covr
+  - Rcpp
 r_github_packages:
 - VPetukhov/ggrastr
 - cole-trapnell-lab/leidenbase
 r_binary_packages:
 #  - assertthat
 #  - dplyr
-  - Rcpp
   - devtools
 #  - ggplot2
 #  - ggrepel
