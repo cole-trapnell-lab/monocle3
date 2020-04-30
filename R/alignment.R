@@ -89,7 +89,6 @@ align_cds <- function(cds,
     preproc_res = corrected_PCA$corrected
     cds <- add_citation(cds, "MNN_correct")
   }
-
   reducedDims(cds)[["Aligned"]] <- as.matrix(preproc_res)
 
   cds
