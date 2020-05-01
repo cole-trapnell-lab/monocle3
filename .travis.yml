@@ -10,18 +10,19 @@ before_install:
   - sudo apt-get install -y libgdal1-dev
 r:
 - bioc-release
-r_packages:
-  - covr
+#r_packages:
+#  - covr
 r_github_packages:
 - VPetukhov/ggrastr
 - cole-trapnell-lab/leidenbase
-r_binary_packages:
-#r_packages:
+#r_binary_packages:
+r_packages:
  - covr
  - assertthat
  - dplyr
  - devtools
  - ggplot2
+ - ggrastr
  - ggrepel
  - igraph
  - irlba
