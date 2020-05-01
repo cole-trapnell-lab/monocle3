@@ -22,7 +22,6 @@ r_packages:
  - dplyr
  - devtools
  - ggplot2
- - ggrastr
  - ggrepel
  - igraph
  - irlba
