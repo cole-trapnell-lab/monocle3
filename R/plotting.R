@@ -261,6 +261,7 @@ plot_cells_3d <- function(cds,
       if(is.null(color_palette)) {
         N <- length(unique(data_df$cell_color))
         color_palette <- RColorBrewer::brewer.pal(N, "Set2")
+        names(color_palette) = unique(data_df$cell_color)
       }
       p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
                            z = ~data_dim_3, type = 'scatter3d',
