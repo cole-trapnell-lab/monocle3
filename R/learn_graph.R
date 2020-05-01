@@ -70,7 +70,6 @@ learn_graph <- function(cds,
                         learn_graph_control = NULL,
                         verbose = FALSE) {
   reduction_method <- "UMAP"
-
   if (!is.null(learn_graph_control)) {
     assertthat::assert_that(methods::is(learn_graph_control, "list"))
     assertthat::assert_that(all(names(learn_graph_control) %in%
@@ -118,6 +117,7 @@ learn_graph <- function(cds,
                      learn_graph_control$L1.sigma)
 
   assertthat::assert_that(methods::is(cds, "cell_data_set"))
+  assertthat::assert_that(reduction_method %in% c('UMAP'), msg=paste0('unsupported or invalid reduction method \'', reduction_method, '\''))
   assertthat::assert_that(is.logical(use_partition))
   assertthat::assert_that(is.logical(close_loop))
   assertthat::assert_that(is.logical(verbose))
@@ -218,7 +218,7 @@ multi_component_RGE <- function(cds,
   merge_rge_res <- NULL
   max_ncenter <- 0
 
-  for(cur_comp in sort(unique(partition_list))) {
+  for(cur_comp in sort(unique(partition_list))) {  #  for loop 1  start
     if(verbose) {
       message(paste0('Processing partition component ', cur_comp))
     }
@@ -233,7 +233,7 @@ multi_component_RGE <- function(cds,
 
     if(is.null(ncenter)) {
       num_clusters_in_partition <-
-        length(unique(clusters(cds)[colnames(X_subset)]))
+        length(unique(clusters(cds, reduction_method)[colnames(X_subset)]))
       num_cells_in_partition = ncol(X_subset)
       curr_ncenter <- cal_ncenter(num_clusters_in_partition, num_cells_in_partition)
       if(is.null(curr_ncenter) || curr_ncenter >= ncol(X_subset)) {
@@ -381,7 +381,7 @@ multi_component_RGE <- function(cds,
 
     dp_mst <- igraph::graph.union(dp_mst, cur_dp_mst)
     reducedDimK_coord <- cbind(reducedDimK_coord, curr_reducedDimK_coord)
-  }
+  }  #  for loop 1  end
 
   row.names(pr_graph_cell_proj_closest_vertex) <- cell_name_vec
 
@@ -650,7 +650,7 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE,
         projection <- rbind(projection, tmp)
         distance <- c(distance, stats::dist(rbind(Z_i, tmp)))
       }
-      if(class(projection) != 'matrix') {
+      if(class(projection)[1] != 'matrix') {
         projection <- as.matrix(projection)
       }
 
@@ -678,9 +678,9 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE,
   # in the loop with the partition element names as
   #   subset_cds_col_names <- names(partitions[partitions==cur_partition])
   # so that this functions works when learn_graph() is run with use_partition=FALSE.
-  assertthat::assert_that( !is.null( names(cds@clusters$UMAP$partitions) ), msg='names(cds@clusters$UMAP$partitions) == NULL' )
-  assertthat::assert_that( !( length( colnames(cds) ) != length(names(cds@clusters$UMAP$partitions))), msg='length( colnames(cds) ) != length(names(cds@clusters$UMAP$partitions))' )
-  assertthat::assert_that( !any( colnames(cds)!=names(cds@clusters$UMAP$partitions) ), msg='colnames(cds)!=names(cds@clusters$UMAP$partitions)' )
+  assertthat::assert_that( !is.null( names(cds@clusters[[reduction_method]]$partitions) ), msg='names(cds@clusters[[reduction_method]]$partitions) == NULL' )
+  assertthat::assert_that( !( length( colnames(cds) ) != length(names(cds@clusters[[reduction_method]]$partitions))), msg='length( colnames(cds) ) != length(names(cds@clusters[[reduction_method]]$partitions))' )
+  assertthat::assert_that( !any( colnames(cds)!=names(cds@clusters[[reduction_method]]$partitions) ), msg='colnames(cds)!=names(cds@clusters[[reduction_method]]$partitions)' )
 
   if(length(dp_mst_list) == 1 & length(unique(partitions)) > 1) {
     #
