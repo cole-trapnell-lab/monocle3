@@ -206,8 +206,8 @@ gene_annotation <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_
 
 # Make the CDS object
 cds <- new_cell_data_set(expression_matrix,
-cell_metadata = cell_metadata,
-gene_metadata = gene_annotation)
+                         cell_metadata = cell_metadata,
+                         gene_metadata = gene_annotation)
 {% endhighlight %}
       </p>
       
@@ -220,10 +220,28 @@ gene_metadata = gene_annotation)
         that determines how many reads a cell must have to be included. <strong>By default, this is set to 100</strong>.
         If you would like to include all cells, set <code>umi_cutoff</code> to 0.
       </p>
+      <p>
+        For <code>load_cellranger_data</code> to find the correct files, you must provide a path to the folder containing the
+        un-modified Cell Ranger 'outs' folder. Your file structure should look like: 10x_data/outs/filtered_feature_bc_matrix/
+        where filtered_feature_bc_matrix contains files features.tsv.gz, barcodes.tsv.gz and matrix.mtx.gz. 
+        (<code>load_cellranger_data</code> can also handle Cell Ranger V2 data where "features" is substituted for "gene" and 
+        the files are not gzipped.)
+      </p>
 {% highlight R %}
 # Provide the path to the Cell Ranger output.
 cds <- load_cellranger_data("~/Downloads/10x_data")
 {% endhighlight %}
+
+      <p>
+        Alternatively, you can use <code>load_mm_data</code> to load any data in MatrixMarket format by providing the matrix files
+        and two metadata files (features information and cell information). For more details, run <code>?load_mm_data</code>
+      </p>
+{% highlight R %}
+cds <- load_mm_data(mat_path = "~/Downloads/matrix.mtx", 
+                    feature_anno_path = "~/Downloads/features.tsv", 
+                    cell_anno_path = "~/Downloads/barcodes.tsv")
+{% endhighlight %}
+
       <h3 id="large-datasets">Working with large data sets</h3>
           
       <p> Some single-cell RNA-Seq experiments report measurements from tens of
