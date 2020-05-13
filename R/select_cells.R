@@ -261,7 +261,7 @@ choose_graph_segments <- function(cds,
       princ_points$chosen[vals$chosen] <- "Chosen"
       data_df$chosen_cells <- "gray"
       data_df$chosen_cells[vals$chosen_cells] <- "purple"
-      suppressMessages(plot_principal_graph(data_df, princ_points,
+      suppressMessages(plot_principal_graph(cds, data_df, princ_points,
                                             label_branch_points = FALSE,
                                             label_leaves = FALSE,
                                             label_roots = FALSE))
@@ -356,7 +356,8 @@ traverse_graph <- function(g, starting_cell, end_cells){
 }
 
 
-plot_principal_graph <- function(data_df,
+plot_principal_graph <- function(cds,
+                                 data_df,
                                  princ_points,
                                  reduction_method = "UMAP",
                                  trajectory_graph_color="black",
