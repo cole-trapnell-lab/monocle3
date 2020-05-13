@@ -411,7 +411,7 @@ plot_genes_by_group(cds,
       
       <p>
         To assign cell types based on clustering, we begin by creating a new column in <code>colData(cds)</code> and 
-        initialize it with the values of <code>clusters(cds)</code>:
+        initialize it with the values of <code>partitions(cds)</code> (can also use clusters(cds) depending on your dataset):
       </p>
       
 {% highlight R %}
