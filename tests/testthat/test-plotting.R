@@ -8,6 +8,7 @@ test_that("plot_genes_violin doesn't error", {
                       "ENSG00000223519.8"),]
 
   plot_genes_violin(cds_subset, group_cells_by="culture_plate")
+  plot_genes_violin(cds_subset, group_cells_by="culture_plate", pseudocount = 10)
   plot_genes_violin(cds_subset, group_cells_by="culture_plate", min_expr = 10)
   plot_genes_violin(cds_subset, group_cells_by="culture_plate", ncol=2)
   # TO DO

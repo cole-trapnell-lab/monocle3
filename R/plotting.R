@@ -220,9 +220,9 @@ plot_cells_3d <- function(cds,
                                       colorscale=color_scale),
                             colorscale=color_scale)) %>%
         plotly::add_markers(x = sub2$data_dim_1, y = sub2$data_dim_2,
-                           z = sub2$data_dim_3, color = I("lightgrey"),
-                           size=I(cell_size),
-                           marker=list(opacity = .4), showlegend=FALSE)
+                            z = sub2$data_dim_3, color = I("lightgrey"),
+                            size=I(cell_size),
+                            marker=list(opacity = .4), showlegend=FALSE)
     }
   } else {
     if(color_cells_by %in% c("cluster", "partition")){
@@ -1091,6 +1091,7 @@ plot_pc_variance_explained <- function(cds) {
 #'   factor. Default is TRUE.
 #' @param log_scale Logical, whether or not to scale data logarithmically.
 #'   Default is TRUE.
+#' @param pseudocount A pseudo-count added to the gene expression. Default is 0.
 #' @return a ggplot2 plot object
 #' @import ggplot2
 #' @export
@@ -1109,7 +1110,8 @@ plot_genes_violin <- function (cds_subset,
                                panel_order = NULL,
                                label_by_short_name = TRUE,
                                normalize = TRUE,
-                               log_scale = TRUE) {
+                               log_scale = TRUE,
+                               pseudocount = 0) {
 
   assertthat::assert_that(methods::is(cds_subset, "cell_data_set"))
 
@@ -1126,7 +1128,7 @@ plot_genes_violin <- function (cds_subset,
   }
 
   assertthat::assert_that(assertthat::is.count(ncol))
-
+  assertthat::assert_that(assertthat::is.number(pseudocount))
   assertthat::assert_that(is.logical(label_by_short_name))
   if (label_by_short_name) {
     assertthat::assert_that("gene_short_name" %in% names(rowData(cds_subset)),
@@ -1152,12 +1154,15 @@ plot_genes_violin <- function (cds_subset,
                                       "pass only the subset of the CDS to be",
                                       "plotted."))
 
-  if (normalize) {
+  if (pseudocount > 0) {
+    cds_exprs <- SingleCellExperiment::counts(cds_subset) + 1
+  } else {
     cds_exprs <- SingleCellExperiment::counts(cds_subset)
+  }
+  if (normalize) {
     cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds_subset))
     cds_exprs <- reshape2::melt(as.matrix(cds_exprs))
   } else {
-    cds_exprs <- SingleCellExperiment::counts(cds_subset)
     cds_exprs <- reshape2::melt(as.matrix(cds_exprs))
   }
 
