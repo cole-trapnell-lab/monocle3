@@ -211,6 +211,9 @@ fit_models <- function(cds,
                      ...) {
 
   model_form <- stats::as.formula(model_formula_str)
+  if (!"num_cells_expressed" %in% names(rowData(cds))) {
+    cds <- detect_genes(cds)
+  }
   coldata_df = colData(cds)
   tryCatch({
     coldata_df$cluster = clusters(cds, reduction_method)[colnames(cds)]
