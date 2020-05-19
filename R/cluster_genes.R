@@ -192,7 +192,7 @@ aggregate_gene_expression <- function(cds,
     agg_mat = as.matrix(my.aggregate.Matrix(agg_mat[gene_group_df[,1],],
                                             as.factor(gene_group_df[,2]),
                                             fun="sum"))
-    if (scale_agg_values){
+	if (scale_agg_values){
       agg_mat <- t(scale(t(agg_mat)))
       agg_mat[agg_mat < min_agg_value] <- min_agg_value
       agg_mat[agg_mat > max_agg_value] <- max_agg_value
@@ -212,7 +212,7 @@ aggregate_gene_expression <- function(cds,
   }
 
   if (exclude.na){
-    agg_mat = agg_mat[row.names(agg_mat) != "NA", colnames(agg_mat) != "NA"]
+    agg_mat <- agg_mat[rownames(agg_mat) != "NA", colnames(agg_mat) != "NA",drop=FALSE]
   }
   return(agg_mat)
 }
