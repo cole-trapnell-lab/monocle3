@@ -284,6 +284,7 @@ fit_models <- function(cds,
     fits
   }
 
+  rowData(cds)$gene_id <- row.names(rowData(cds))
   fits <- tibble::as_tibble(purrr::transpose(fits))
   M_f <- tibble::as_tibble(rowData(cds))
   M_f <- dplyr::bind_cols(M_f, fits)
@@ -423,9 +424,16 @@ coefficient_table <- function(model_tbl) {
 compare_models <- function(model_tbl_full, model_tbl_reduced){
   model_x_eval <- evaluate_fits(model_tbl_full)
   model_y_eval <- evaluate_fits(model_tbl_reduced)
-  joined_fits <- dplyr::full_join(model_x_eval, model_y_eval,
-                                  by=c("id", "gene_short_name",
-                                       "num_cells_expressed"))
+  if ("gene_short_name" %in% names(model_x_eval) &
+      "gene_short_name" %in% names(model_y_eval)) {
+    joined_fits <- dplyr::full_join(model_x_eval, model_y_eval,
+                                    by=c("gene_id", "gene_short_name",
+                                         "num_cells_expressed"))
+
+  } else {
+    joined_fits <- dplyr::full_join(model_x_eval, model_y_eval,
+                                    by=c("gene_id", "num_cells_expressed"))
+  }
 
   joined_fits <- joined_fits %>% dplyr::mutate(
     dfs = round(abs(df_residual.x  - df_residual.y)),
@@ -433,8 +441,9 @@ compare_models <- function(model_tbl_full, model_tbl_reduced){
     p_value = stats::pchisq(LLR, dfs, lower.tail = FALSE)
   )
 
-  joined_fits <- joined_fits %>% dplyr::select(id, gene_short_name,
-                                               num_cells_expressed, p_value)
+  joined_fits <- joined_fits %>%
+    dplyr::select_if(names(.) %in% c("gene_id", "gene_short_name",
+                                     "num_cells_expressed", "p_value"))
   joined_fits$q_value <- stats::p.adjust(joined_fits$p_value)
   # joined_fits = joined_fits %>%
   #               dplyr::mutate(lr_test_p_value = purrr::map2_dbl(
