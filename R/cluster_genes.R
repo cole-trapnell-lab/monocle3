@@ -145,9 +145,11 @@ my.aggregate.Matrix = function (x, groupings = NULL, form = NULL, fun = "sum", .
 #'
 #' @param cds The cell_data_set on which this function operates
 #' @param gene_group_df A dataframe in which the first column contains gene ids
-#'   and the second contains groups. If NULL, genes are not grouped.
+#'   or short gene names and the second contains groups. If NULL, genes are not
+#'   grouped.
 #' @param cell_group_df A dataframe in which the first column contains cell ids
-#'   and the second contains groups. If NULL, cells are not grouped.
+#'   or short gene names and the second contains groups. If NULL, cells are not
+#'   grouped.
 #' @param norm_method How to transform gene expression values before
 #'   aggregating them. If "log", a pseudocount is added. If "size_only", values
 #'   are divided by cell size factors prior to aggregation.
@@ -185,6 +187,17 @@ aggregate_gene_expression <- function(cds,
                                      fData(cds)$gene_short_name |
                                      gene_group_df[,1] %in%
                                      row.names(fData(cds)),,drop=FALSE]
+
+    # Convert gene short names to rownames if necessary. The more
+    # straightforward single call to recode took much longer.
+    short_name_mask <- gene_group_df[[1]] %in% fData(cds)$gene_short_name
+    if (any(short_name_mask)) {
+      geneids <- as.character(gene_group_df[[1]])
+      geneids[short_name_mask] <- row.names(fData(cds))[match(
+                  geneids[short_name_mask], fData(cds)$gene_short_name)]
+      gene_group_df[[1]] <- geneids
+    }
+
     # gene_group_df = gene_group_df[row.names(fData(cds)),]
 
     # FIXME: this should allow genes to be part of multiple groups. group_by
