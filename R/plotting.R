@@ -544,10 +544,9 @@ plot_cells <- function(cds,
     } else {
       markers = genes
     }
-    markers_rowData <- as.data.frame(subset(rowData(cds),
-                                            gene_short_name %in% markers |
-                                              row.names(rowData(cds)) %in%
-                                              markers))
+	markers_rowData <- rowData(cds)[(rowData(cds)$gene_short_name %in% markers) |
+							        (row.names(rowData(cds)) %in% markers),,drop=FALSE]
+	markers_rowData <- as.data.frame(markers_rowData)
     if (nrow(markers_rowData) == 0) {
       stop("None of the provided genes were found in the cds")
     }
