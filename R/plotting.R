@@ -685,7 +685,7 @@ plot_cells <- function(cds,
                       stroke = I(cell_stroke), na.rm = TRUE) +
         viridis::scale_color_viridis(option = "viridis",
                                      name = expression_legend_label,
-                                     na.value = "grey80", end = 0.8,
+                                     na.value = NA, end = 0.8,
                                      alpha = alpha) +
         guides(alpha = FALSE) + facet_wrap(~feature_label)
     } else {
@@ -698,7 +698,7 @@ plot_cells <- function(cds,
                       na.rm = TRUE, alpha = alpha) +
         viridis::scale_color_viridis(option = "viridis",
                                      name = expression_legend_label,
-                                     na.value = "grey80", end = 0.8,
+                                     na.value = NA, end = 0.8,
                                      alpha = alpha) +
         guides(alpha = FALSE) + facet_wrap(~feature_label)
     }
