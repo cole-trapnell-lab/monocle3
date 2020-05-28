@@ -72,6 +72,10 @@ find_gene_modules <- function(cds,
   }
   preprocess_mat = preprocess_mat[intersect(rownames(cds), row.names(preprocess_mat)),]
 
+  # uwot::umap uses a random number generator
+  if( random_seed != 0L )
+    set.seed( random_seed )
+
   umap_res = uwot::umap(as.matrix(preprocess_mat),
                         n_components = max_components,
                         metric = umap.metric,
