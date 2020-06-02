@@ -227,8 +227,7 @@ fit_models <- function(cds,
   #  o  watch for NA, NaN, Inf in terms
   #  o  is.na counts NA and NaN
   #  o  splines::ns(pseudotime, df=3) fails if there are Inf values, at least,
-  #     which causes model.frame( model_formula, ...) to fail, which is reported
-  #     as referring to something not in colData(cds)
+  #     which causes model.frame( model_formula, ...) to fail
   #  o  model.frame catches mis-spelled functions
   err_msg <- NULL
   mf_terms <- all.vars(model_form)
@@ -237,14 +236,12 @@ fit_models <- function(cds,
     if(!( mf_term %in% names(coldata_df)))
     {
       err_msg <- paste0(err_msg,'  \'', mf_term, '\': not in cds\n')
-      err_flag <- TRUE
       next
     }
     mf_length  <- length(coldata_df[[mf_term]])
     mf_num_inf <- sum(is.infinite(coldata_df[[mf_term]]))
     mf_num_nan <- sum(is.nan(coldata_df[[mf_term]]))
     mf_num_na  <- sum(is.na(coldata_df[[mf_term]]))
-    err_flag   <- FALSE
     if( mf_num_inf > 0 )
       err_msg <- paste0(err_msg, '  \'', mf_term, '\': ' , mf_num_inf, ' of ', mf_length, ' values are Inf\n')
     if( mf_num_nan > 0 )

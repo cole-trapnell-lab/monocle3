@@ -189,6 +189,22 @@ aggregate_gene_expression <- function(cds,
                                      fData(cds)$gene_short_name |
                                      gene_group_df[,1] %in%
                                      row.names(fData(cds)),,drop=FALSE]
+
+gene_group_df_1<<-gene_group_df
+
+    # Convert gene short names to rownames if necessary. The more
+    # straightforward single call to recode took much longer.
+    # Thanks to Christopher Johnstone who posted this to github.
+    short_name_mask <- gene_group_df[[1]] %in% fData(cds)$gene_short_name
+    if (any(short_name_mask)) {
+      geneids <- as.character(gene_group_df[[1]])
+      geneids[short_name_mask] <- row.names(fData(cds))[match(
+                  geneids[short_name_mask], fData(cds)$gene_short_name)]
+      gene_group_df[[1]] <- geneids
+    }
+
+gene_group_df_2<<-gene_group_df
+
     # gene_group_df = gene_group_df[row.names(fData(cds)),]
 
     # FIXME: this should allow genes to be part of multiple groups. group_by
