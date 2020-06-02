@@ -175,7 +175,7 @@ test_that("fit_models() returns correct output for zero-inflated Poisson regress
   expect_equal(pos_ctrl_coefs$estimate,
                c(0.44972255,  0.22109280, -0.26023259,  0.04879729),
                tolerance=1e-1)
-  expect_equal(pos_ctrl_coefs$normalized_effect,
+  expect_equal(unname(pos_ctrl_coefs$normalized_effect),
                c(0.00000000, 0.08186624, NA, NA), tolerance=1e-1)
   expect_lt(pos_ctrl_coefs$p_value[2], 0.05)
 
@@ -196,7 +196,7 @@ test_that("fit_models() returns correct output for zero-inflated Poisson regress
   expect_equal(neg_ctrl_coefs$estimate,
                c(-0.09332179, 0.24146532,  3.61660409,  0.29317205),
                tolerance=1e-1)
-  expect_equal(neg_ctrl_coefs$normalized_effect,
+  expect_equal(unname(neg_ctrl_coefs$normalized_effect),
                c(0.0000000, 0.1382822, NA, NA), tolerance=1e-1)
   expect_gt(neg_ctrl_coefs$p_value[2], 0.05)
   require("pryr")
@@ -215,7 +215,7 @@ test_that("fit_models() returns correct output for zero-inflated negative binomi
   expect_equal(pos_ctrl_coefs$estimate,
                c(0.06830067, 0.26434083, 0.20449738, -1.42580412, 0.09301560),
                tolerance=1e-1)
-  expect_equal(pos_ctrl_coefs$normalized_effect,
+  expect_equal(unname(pos_ctrl_coefs$normalized_effect),
                c(0.000000000, 0.1685858, 0.1325289, NA, NA), tolerance=1e-1)
   expect_lt(pos_ctrl_coefs$p_value[2], 0.05)
 
@@ -236,7 +236,7 @@ test_that("fit_models() returns correct output for zero-inflated negative binomi
   expect_equal(neg_ctrl_coefs$estimate,
                c(-0.09336894, 0.24145643, 9.47768779, 3.61656471, 0.29316920),
                tolerance=1e-1)
-  expect_equal(neg_ctrl_coefs$normalized_effect,
+  expect_equal(unname(neg_ctrl_coefs$normalized_effect),
                c(0.0000000,  0.1684627, 1.0532056, NA, NA), tolerance=1e-1)
   expect_gt(neg_ctrl_coefs$p_value[2], 0.05)
   require("pryr")
