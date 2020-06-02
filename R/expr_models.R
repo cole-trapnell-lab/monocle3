@@ -229,65 +229,37 @@ fit_models <- function(cds,
   #  o  splines::ns(pseudotime, df=3) fails if there are Inf values, at least,
   #     which causes model.frame( model_formula, ...) to fail, which is reported
   #     as referring to something not in colData(cds)
-#   mf_terms <- all.vars(model_form)
-#   for( mf_term in mf_terms )
-#   {
-#     if(!( mf_term %in% names(coldata_df)))
-#     {
-#       message(paste0('Error: term \'', mf_term, '\': not in cds\n' ))
-#       err_flag <- TRUE
-#       next
-#     } 
-#     mf_length  <- length(coldata_df[[mf_term]])
-#     mf_num_inf <- sum(is.infinite(coldata_df[[mf_term]]))
-#     mf_num_nan <- sum(is.nan(coldata_df[[mf_term]]))
-#     mf_num_na  <- sum(is.na(coldata_df[[mf_term]]))
-#     err_flag   <- FALSE
-#     if( mf_num_inf > 0 )
-#     {
-#       message( paste0( 'Error: term \'', mf_term, '\': ' , mf_num_inf, ' of ', mf_length, ' values are Inf\n' ))
-#       err_flag <- TRUE
-#     }
-#     if( mf_num_nan > 0 )
-#     {
-#       message( paste0( 'Error: term \'', mf_term, '\': ' , mf_num_nan, ' of ', mf_length, ' values are NaN\n' ))
-#       err_flag <- TRUE
-#     }
-#     if( mf_num_na - mf_num_nan > 0 )
-#     {
-#       message( paste0( 'Error: term \'', mf_term, '\': ' , mf_num_na - mf_num_nan, ' of ', mf_length, ' values are NA\n' ))
-#       err_flag <- TRUE
-#     }
-#   }
-#   if( err_flag )
-#     stop( 'unable to run fit_models' )
-#   rm( mf_terms, mf_term, mf_length, mf_num_inf, mf_num_nan, mf_num_na )
-
+  #  o  model.frame catches mis-spelled functions
+  err_msg <- NULL
+  mf_terms <- all.vars(model_form)
+  for( mf_term in mf_terms )
+  {
+    if(!( mf_term %in% names(coldata_df)))
+    {
+      err_msg <- paste0(err_msg,'  \'', mf_term, '\': not in cds\n')
+      err_flag <- TRUE
+      next
+    }
+    mf_length  <- length(coldata_df[[mf_term]])
+    mf_num_inf <- sum(is.infinite(coldata_df[[mf_term]]))
+    mf_num_nan <- sum(is.nan(coldata_df[[mf_term]]))
+    mf_num_na  <- sum(is.na(coldata_df[[mf_term]]))
+    err_flag   <- FALSE
+    if( mf_num_inf > 0 )
+      err_msg <- paste0(err_msg, '  \'', mf_term, '\': ' , mf_num_inf, ' of ', mf_length, ' values are Inf\n')
+    if( mf_num_nan > 0 )
+      err_msg <- paste0(err_msg, '  \'', mf_term, '\': ' , mf_num_nan, ' of ', mf_length, ' values are NaN\n')
+    if( mf_num_na - mf_num_nan > 0 )
+      err_msg <- paste0(err_msg, '  \'', mf_term, '\': ' , mf_num_na - mf_num_nan, ' of ', mf_length, ' values are NA\n')
+  }
+  if(length(err_msg) > 0)
+    stop( '\n-- bad fit_models terms --\n', err_msg )
+  rm( err_msg, mf_terms, mf_term, mf_length, mf_num_inf, mf_num_nan, mf_num_na )
   tryCatch({
     stats::model.frame(model_form, data=coldata_df)
   }, error = function(e) {
-    stop ("Error: model formula refers to something not found in colData(cds)")
+    stop ("Error in model formula")
   })
-  # FIXME: These checks are too stringent, because they don't catch formula
-  # that include functions of columns in colData. For example, the formula
-  # `~ splines::ns(pseudotime, df=3) triggers the error.
-  # if (length(model_form[[2]]) == 1) {
-  #   if (!as.character(model_form[[2]]) %in%
-  #       c(names(colData(cds)), "~", "1", "|", "+", "-",
-  #         ":", "*", "^", "I")) {
-  #     stop(paste(as.character(model_form[[2]][[i]]),
-  #                             "formula element is missing"))
-  #   }
-  # } else {
-  #   for(i in 1:length(model_form[[2]])) {
-  #     if (!as.character(model_form[[2]][[i]]) %in%
-  #         c(names(colData(cds)), "~", "1", "|", "+", "-",
-  #           ":", "*", "^", "I")) {
-  #       stop(paste(as.character(model_form[[2]][[i]]),
-  #                               "formula element is missing"))
-  #     }
-  #   }
-  # }
 
   disp_func <- NULL
 
