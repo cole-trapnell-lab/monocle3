@@ -21,7 +21,8 @@ aggregate_gene_expression(
 \item{cds}{The cell_data_set on which this function operates}
 
 \item{gene_group_df}{A dataframe in which the first column contains gene ids
-and the second contains groups. If NULL, genes are not grouped.}
+or short gene names and the second contains groups. If NULL, genes are not
+grouped.}
 
 \item{cell_group_df}{A dataframe in which the first column contains cell ids
 and the second contains groups. If NULL, cells are not grouped.}
