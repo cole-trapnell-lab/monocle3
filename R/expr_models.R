@@ -234,7 +234,7 @@ fit_models <- function(cds,
   {
     if(!( mf_term %in% names(coldata_df)))
     {
-      cat(paste0('Error: term \'', mf_term, '\': not in cds\n' ))
+      message(paste0('Error: term \'', mf_term, '\': not in cds\n' ))
       err_flag <- TRUE
       next
     } 
@@ -245,17 +245,17 @@ fit_models <- function(cds,
     err_flag   <- FALSE
     if( mf_num_inf > 0 )
     {
-      cat( paste0( 'Error: term \'', mf_term, '\': ' , mf_num_inf, ' of ', mf_length, ' values are Inf\n' ) )
+      message( paste0( 'Error: term \'', mf_term, '\': ' , mf_num_inf, ' of ', mf_length, ' values are Inf\n' ))
       err_flag <- TRUE
     }
     if( mf_num_nan > 0 )
     {
-      cat( paste0( 'Error: term \'', mf_term, '\': ' , mf_num_nan, ' of ', mf_length, ' values are NaN\n' ) )
+      message( paste0( 'Error: term \'', mf_term, '\': ' , mf_num_nan, ' of ', mf_length, ' values are NaN\n' ))
       err_flag <- TRUE
     }
     if( mf_num_na - mf_num_nan > 0 )
     {
-      cat( paste0( 'Error: term \'', mf_term, '\': ' , mf_num_na - mf_num_nan, ' of ', mf_length, ' values are NA\n' ) )
+      message( paste0( 'Error: term \'', mf_term, '\': ' , mf_num_na - mf_num_nan, ' of ', mf_length, ' values are NA\n' ))
       err_flag <- TRUE
     }
   }
@@ -263,11 +263,11 @@ fit_models <- function(cds,
     stop( 'unable to run fit_models' )
   rm( mf_terms, mf_term, mf_length, mf_num_inf, mf_num_nan, mf_num_na )
 
-  # tryCatch({
-  #   stats::model.frame(model_form, data=coldata_df)
-  # }, error = function(e) {
-  #   stop ("Error: model formula refers to something not found in colData(cds)")
-  # })
+#  tryCatch({
+#    stats::model.frame(model_form, data=coldata_df)
+#  }, error = function(e) {
+#    stop ("Error: model formula refers to something not found in colData(cds)")
+#  })
   # FIXME: These checks are too stringent, because they don't catch formula
   # that include functions of columns in colData. For example, the formula
   # `~ splines::ns(pseudotime, df=3) triggers the error.
