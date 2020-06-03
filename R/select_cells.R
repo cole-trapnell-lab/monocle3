@@ -128,6 +128,9 @@ choose_cells <- function(cds,
 #'   Currently only "UMAP" is supported.
 #' @param return_list Logical, return a list of cells instead of a subsetted
 #'   CDS object.
+#' @param clear_cds Logical, clear CDS slots before returning.
+#'   After clearing the cds, re-run processing from preprocess_cds(), ...
+#'   Default is TRUE.
 #'
 #' @return A subset CDS object. If return_list = FALSE, a list of cell and
 #'   graph node names.
@@ -135,7 +138,8 @@ choose_cells <- function(cds,
 #'
 choose_graph_segments <- function(cds,
                                  reduction_method = "UMAP",
-                                 return_list = FALSE) {
+                                 return_list = FALSE,
+                                 clear_cds = TRUE) {
 
   assertthat::assert_that(methods::is(cds, "cell_data_set"))
   assertthat::assert_that(assertthat::are_equal("UMAP", reduction_method),
@@ -316,7 +320,10 @@ choose_graph_segments <- function(cds,
   if(return_list) {
     return(sel)
   } else {
-    return(cds[,sel$cells])
+    cds<-cds[,sel$cells]
+    if( clear_cds )
+      cds<-clear_cds_slots(cds)
+    return(cds)
   }
 }
 
