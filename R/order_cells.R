@@ -37,7 +37,7 @@ order_cells <- function(cds,
   assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
                           msg = paste0("No dimensionality reduction for ",
                                       reduction_method, " calculated. ",
-                                      "Please run reduce_dimensions with ",
+                                      "Please run reduce_dimension with ",
                                       "reduction_method = ", reduction_method,
                                       ", cluster_cells, and learn_graph ",
                                       "before running order_cells."))
