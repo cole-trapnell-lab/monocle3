@@ -12,10 +12,10 @@ cds <- load_a549()
 test_that("test learn_graph error messages work", {
   skip_on_travis()
   expect_error(cds <- learn_graph(cds),
-               "No dimensionality reduction for UMAP calculated. Please run reduce_dimensions with reduction_method = UMAP and cluster_cells before running learn_graph.")
+               "No dimensionality reduction for UMAP calculated. Please run reduce_dimension with reduction_method = UMAP and cluster_cells before running learn_graph.")
   cds <- preprocess_cds(cds)
   expect_error(cds <- learn_graph(cds),
-               "No dimensionality reduction for UMAP calculated. Please run reduce_dimensions with reduction_method = UMAP and cluster_cells before running learn_graph.")
+               "No dimensionality reduction for UMAP calculated. Please run reduce_dimension with reduction_method = UMAP and cluster_cells before running learn_graph.")
   cds <- reduce_dimension(cds)
   expect_error(cds <- learn_graph(cds),
                "No cell clusters for UMAP calculated. Please run cluster_cells with reduction_method = UMAP before running learn_graph.")
@@ -67,10 +67,10 @@ cds <- load_a549()
 test_that("test learn_graph error messages work", {
   skip_not_travis()
   expect_error(cds <- learn_graph(cds),
-               "No dimensionality reduction for UMAP calculated. Please run reduce_dimensions with reduction_method = UMAP and cluster_cells before running learn_graph.")
+               "No dimensionality reduction for UMAP calculated. Please run reduce_dimension with reduction_method = UMAP and cluster_cells before running learn_graph.")
   cds <- preprocess_cds(cds)
   expect_error(cds <- learn_graph(cds),
-               "No dimensionality reduction for UMAP calculated. Please run reduce_dimensions with reduction_method = UMAP and cluster_cells before running learn_graph.")
+               "No dimensionality reduction for UMAP calculated. Please run reduce_dimension with reduction_method = UMAP and cluster_cells before running learn_graph.")
   cds <- reduce_dimension(cds)
   expect_error(cds <- learn_graph(cds),
                "No cell clusters for UMAP calculated. Please run cluster_cells with reduction_method = UMAP before running learn_graph.")

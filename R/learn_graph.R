@@ -17,7 +17,7 @@
 #' technical factors) to "subtract" from the data so it doesn't contribute to
 #' the trajectory. The function \code{learn_graph} is the fourth step in the
 #' trajectory building process after \code{preprocess_cds},
-#' \code{reduce_dimensions}, and \code{cluster_cells}. After
+#' \code{reduce_dimension}, and \code{cluster_cells}. After
 #' \code{learn_graph}, \code{order_cells} is typically called.
 #'
 #' @section Optional \code{learn_graph_control} parameters:
@@ -139,7 +139,7 @@ learn_graph <- function(cds,
   assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
                           msg = paste("No dimensionality reduction for",
                                       reduction_method, "calculated.",
-                                      "Please run reduce_dimensions with",
+                                      "Please run reduce_dimension with",
                                       "reduction_method =", reduction_method,
                                       "and cluster_cells before running",
                                       "learn_graph."))
