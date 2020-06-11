@@ -47,20 +47,68 @@ test_that("combine_cds works", {
   testthat::expect_warning(combine_cds(list(cds, cds),
                                        keep_all_genes = TRUE,
                                        cell_names_unique = FALSE),
-                           paste0("The combine_cds function adds a column ",
-                                  "called 'sample' which indicates which ",
-                                  "initial cds a cell comes from. One or ",
-                                  "more of your input cds objects contains a ",
-                                  "'sample' column, which will be ",
+                           paste0("By default, the combine_cds function adds ",
+                                  "a column called 'sample' which indicates ",
+                                  "which initial cds a cell came from. One ",
+                                  "or more of your input cds objects ",
+                                  "contains a 'sample' column, which will be ",
                                   "overwritten. We recommend you rename this ",
-                                  "column."))
+                                  "column or provide an alternative column ",
+                                  "name using the 'sample_col_name' ",
+                                  "parameter."))
   names(pData(cds))[names(pData(cds)) == "sample"] <- "sample_type"
   names(pData(cds2))[names(pData(cds2)) == "sample"] <- "sample_type"
+
+  comb_h <- combine_cds(list(cds, cds),
+                      keep_all_genes = TRUE,
+                      cell_names_unique = FALSE,
+                      sample_col_name = "hannah")
+
   comb <- combine_cds(list(cds, cds),
                       keep_all_genes = TRUE,
                       cell_names_unique = FALSE)
 
-  check_comb(cds, cds, comb, keep_all_genes = TRUE)
+  testthat::expect_true("hannah" %in% names(colData(comb_h)))
+  testthat::expect_true(all(colData(comb)$sample == colData(comb_h)$hannah))
+
+  # cds' have only 1 column in fData
+  cds_1f <- cds
+  fData(cds_1f) <- fData(cds_1f)[,"gene_short_name", drop=FALSE]
+
+  comb <- combine_cds(list(cds_1f, cds),
+                      keep_all_genes = TRUE,
+                      cell_names_unique = FALSE)
+  check_comb(cds_1f, cds, comb, keep_all_genes = TRUE)
+
+  comb <- combine_cds(list(cds, cds_1f),
+                      keep_all_genes = TRUE,
+                      cell_names_unique = FALSE)
+  check_comb(cds, cds_1f, comb, keep_all_genes = TRUE)
+  comb <- combine_cds(list(cds_1f, cds_1f),
+                      keep_all_genes = TRUE,
+                      cell_names_unique = FALSE)
+  check_comb(cds_1f, cds_1f, comb, keep_all_genes = TRUE)
+
+  # cds has only 1 column in pData
+  cds_1p <- cds
+  pData(cds_1p) <- pData(cds_1p)[,1, drop=FALSE]
+  comb <- combine_cds(list(cds_1p, cds),
+                      keep_all_genes = TRUE,
+                      cell_names_unique = FALSE)
+  check_comb(cds_1p, cds, comb, keep_all_genes = TRUE)
+
+  comb <- combine_cds(list(cds, cds_1p),
+                      keep_all_genes = TRUE,
+                      cell_names_unique = FALSE)
+  check_comb(cds, cds_1p, comb, keep_all_genes = TRUE)
+
+  comb <- combine_cds(list(cds_1p, cds_1p),
+                      keep_all_genes = TRUE,
+                      cell_names_unique = FALSE)
+  check_comb(cds_1p, cds_1p, comb, keep_all_genes = TRUE)
+
+
+
 
   comb <- combine_cds(list(cds, cds),
                       keep_all_genes = FALSE,
@@ -71,11 +119,11 @@ test_that("combine_cds works", {
   testthat::expect_error(comb <- combine_cds(list(cds, cds),
                                              keep_all_genes = TRUE,
                                              cell_names_unique = TRUE),
-                         "Cell names are not unique across CDSs - cell_names_unique must be TRUE.")
+                         "Cell names are not unique across CDSs - cell_names_unique must be FALSE.")
   testthat::expect_error(comb <- combine_cds(list(cds, cds),
                                              keep_all_genes = FALSE,
                                              cell_names_unique = TRUE),
-                         "Cell names are not unique across CDSs - cell_names_unique must be TRUE.")
+                         "Cell names are not unique across CDSs - cell_names_unique must be FALSE.")
 
   # some genes shared
   cds3 <- cds[1:100,]
@@ -95,11 +143,11 @@ test_that("combine_cds works", {
   testthat::expect_error(comb <- combine_cds(list(cds, cds3),
                                              keep_all_genes = TRUE,
                                              cell_names_unique = TRUE),
-                         "Cell names are not unique across CDSs - cell_names_unique must be TRUE.")
+                         "Cell names are not unique across CDSs - cell_names_unique must be FALSE.")
   testthat::expect_error(comb <- combine_cds(list(cds, cds3),
                                              keep_all_genes = FALSE,
                                              cell_names_unique = TRUE),
-                         "Cell names are not unique across CDSs - cell_names_unique must be TRUE.")
+                         "Cell names are not unique across CDSs - cell_names_unique must be FALSE.")
 
   # some genes shared mixed order
   cds3 <- cds[c(50:100, 1:49),]
@@ -128,11 +176,11 @@ test_that("combine_cds works", {
   testthat::expect_error(comb <- combine_cds(list(cds, cds3),
                                              keep_all_genes = TRUE,
                                              cell_names_unique = TRUE),
-                         "Cell names are not unique across CDSs - cell_names_unique must be TRUE.")
+                         "Cell names are not unique across CDSs - cell_names_unique must be FALSE.")
   testthat::expect_error(comb <- combine_cds(list(cds, cds3),
                                              keep_all_genes = FALSE,
                                              cell_names_unique = TRUE),
-                         "Cell names are not unique across CDSs - cell_names_unique must be TRUE.")
+                         "Cell names are not unique across CDSs - cell_names_unique must be FALSE.")
 
   # no genes shared
   testthat::expect_warning(comb6 <- combine_cds(list(cds, cds2),
@@ -164,7 +212,7 @@ test_that("combine_cds works", {
   testthat::expect_warning(expect_error(comb <- combine_cds(list(cds, cds2, cds3),
                                                   keep_all_genes = TRUE,
                                                   cell_names_unique = TRUE),
-                              "Cell names are not unique across CDSs - cell_names_unique must be TRUE."),
+                              "Cell names are not unique across CDSs - cell_names_unique must be FALSE."),
                  "No genes are shared amongst all the CDS objects.")
 
   testthat::expect_error(comb <- combine_cds(list(cds, cds2, cds3),

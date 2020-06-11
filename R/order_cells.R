@@ -37,7 +37,7 @@ order_cells <- function(cds,
   assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
                           msg = paste0("No dimensionality reduction for ",
                                       reduction_method, " calculated. ",
-                                      "Please run reduce_dimensions with ",
+                                      "Please run reduce_dimension with ",
                                       "reduction_method = ", reduction_method,
                                       ", cluster_cells, and learn_graph ",
                                       "before running order_cells."))
@@ -110,14 +110,12 @@ order_cells <- function(cds,
 }
 
 extract_general_graph_ordering <- function(cds,
-                                           root_cell,
+                                           root_pr_nodes,
                                            verbose=T,
                                            reduction_method) {
   Z <- t(reducedDims(cds)[[reduction_method]])
   Y <- cds@principal_graph_aux[[reduction_method]]$dp_mst
   pr_graph <- principal_graph(cds)[[reduction_method]]
-
-  res <- list(subtree = pr_graph, root = root_cell)
 
   parents <- rep(NA, length(igraph::V(pr_graph)))
   states <- rep(NA, length(igraph::V(pr_graph)))
@@ -130,7 +128,7 @@ extract_general_graph_ordering <- function(cds,
   # 1. identify nearest cells to the selected principal node
   # 2. build a cell-wise graph for each Louvain group
   # 3. run the distance function to assign pseudotime for each cell
-  closest_vertex <- find_nearest_vertex(Y[, root_cell, drop = F], Z)
+  closest_vertex <- find_nearest_vertex(Y[, root_pr_nodes, drop = F], Z)
   closest_vertex_id <- colnames(cds)[closest_vertex]
 
   cell_wise_graph <-
@@ -162,14 +160,44 @@ select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
 
   ica_space_df <- as.data.frame(reduced_dim_coords)
   reduced_dims <- as.data.frame(reducedDims(cds)[[reduction_method]])
-  use_3d <- ncol(ica_space_df) >= 3
-  if (use_3d){
-    colnames(ica_space_df) = c("prin_graph_dim_1", "prin_graph_dim_2",
-                               "prin_graph_dim_3")
+
+  #
+  # The line (below in this file) that looks like
+  #   plotly::add_markers(data = reduced_dims, x=~V1, y = ~V2, z = ~V3,
+  # requires columns names of the form V1, V2, ... but in the case of
+  # of reduction_method='PCA', this is not the case, the column names
+  # are something like PC1, PC2, ...
+  # so I replace the column names here, making the change only locally.
+  #
+  colnames(reduced_dims)<-vapply(seq_along(colnames(reduced_dims)),function(i){paste0('V',i)},c('a'))
+
+  num_reduced_dim <- ncol(ica_space_df)
+  if( num_reduced_dim >= 3 )
+  {
+    if( num_reduced_dim > 3 )
+    {
+      message( reduction_method, ' space has ', num_reduced_dim, ' dimensions but is shown in three.' )
+    }
+    use_3d=TRUE
   }
-  else{
-    colnames(ica_space_df) = c("prin_graph_dim_1", "prin_graph_dim_2")
+  else
+  {
+    use_3d=FALSE
   }
+
+#   use_3d <- ncol(ica_space_df) >= 3
+#   if (use_3d){
+#     colnames(ica_space_df) = c("prin_graph_dim_1", "prin_graph_dim_2",
+#                                "prin_graph_dim_3")
+#   }
+#   else{
+#     colnames(ica_space_df) = c("prin_graph_dim_1", "prin_graph_dim_2")
+#   }
+  #
+  # Allow for more than two or three dimensions in the reduced
+  # dimension space.
+  #
+  colnames(ica_space_df) <- vapply(seq_along(ica_space_df),function(i){paste0('prin_graph_dim_',i)},c('a'))
 
   ica_space_df$sample_name <- row.names(ica_space_df)
   ica_space_df$sample_state <- row.names(ica_space_df)
@@ -404,14 +432,14 @@ select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
 branch_nodes <- function(cds,reduction_method="UMAP"){
   g = principal_graph(cds)[[reduction_method]]
   branch_points <- which(igraph::degree(g) > 2)
-  branch_points = branch_points[branch_points %in% root_nodes(cds) == FALSE]
+  branch_points = branch_points[branch_points %in% root_nodes(cds, reduction_method) == FALSE]
   return(branch_points)
 }
 
 leaf_nodes <- function(cds,reduction_method="UMAP"){
   g = principal_graph(cds)[[reduction_method]]
   leaves <- which(igraph::degree(g) == 1)
-  leaves = leaves[leaves %in% root_nodes(cds) == FALSE]
+  leaves = leaves[leaves %in% root_nodes(cds, reduction_method) == FALSE]
   return(leaves)
 }
 

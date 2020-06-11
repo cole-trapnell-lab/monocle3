@@ -4,10 +4,10 @@
 #
 # test_that("test subset_along_path error messages work", {
 #   expect_error(cds <- subset_along_path(cds),
-#                "No dimensionality reduction for UMAP calculated. Please run reduce_dimensions with reduction_method = UMAP and partition_cells before running learn_graph.")
+#                "No dimensionality reduction for UMAP calculated. Please run reduce_dimension with reduction_method = UMAP and partition_cells before running learn_graph.")
 #   cds <- preprocess_cds(cds)
 #   expect_error(cds <- subset_along_path(cds),
-#                "No dimensionality reduction for UMAP calculated. Please run reduce_dimensions with reduction_method = UMAP and partition_cells before running learn_graph.")
+#                "No dimensionality reduction for UMAP calculated. Please run reduce_dimension with reduction_method = UMAP and partition_cells before running learn_graph.")
 #   cds <- reduce_dimension(cds)
 #   expect_error(cds <- subset_along_path(cds),
 #                "No cell partition for UMAP calculated. Please run partition_cells with reduction_method = UMAP before running learn_graph.")

@@ -22,7 +22,9 @@ fit_models(
 the genes.}
 
 \item{expression_family}{Specifies the family function used for expression
-responses. Default is "quasipoisson".}
+responses. Can be one of "quasipoisson", "negbinomial", "poisson",
+"binomial", "gaussian", "zipoisson", or "zinegbinomial". Default is
+"quasipoisson".}
 
 \item{reduction_method}{Which method to use with clusters() and
 partitions(). Default is "UMAP".}

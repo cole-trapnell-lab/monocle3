@@ -108,7 +108,7 @@ setMethod("principal_graph", "cell_data_set", function(x) {
 #' @export
 #' @importClassesFrom S4Vectors List
 setReplaceMethod("principal_graph", "cell_data_set", function(x, value) {
-  value <- methods::as(value, "List")
+  value <- methods::as(value, className("List","S4Vectors"))
   if (is.null(names(value))) {
     names(value) <- character(length(value))
   }
@@ -145,7 +145,7 @@ setMethod("principal_graph_aux", "cell_data_set", function(x) {
 #' @export
 #' @importClassesFrom S4Vectors List
 setReplaceMethod("principal_graph_aux", "cell_data_set", function(x, value) {
-  value <- methods::as(value, "List")
+  value <- methods::as(value, className("List","S4Vectors"))
   if (is.null(names(value))) {
     names(value) <- character(length(value))
   }

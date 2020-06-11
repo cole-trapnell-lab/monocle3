@@ -1,7 +1,7 @@
 Package: monocle3
 Title: Clustering, differential expression, and trajectory analysis for single-
     cell RNA-Seq
-Version: 0.2.1
+Version: 0.2.2
 Authors@R: 
     person(given = "Hannah",
            family = "Pliner",
@@ -27,7 +27,7 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.0.2
+RoxygenNote: 7.1.0
 LinkingTo: 
     Rcpp
 Depends:
@@ -74,7 +74,7 @@ Imports:
     speedglm (>= 0.3-2),
     stringr (>= 1.4.0),
     SummarizedExperiment (>= 1.11.5),
-    uwot (>= 0.1.3),
+    uwot (>= 0.1.8),
     tibble (>= 2.1.1),
     tidyr (>= 0.8.3),
     viridis (>= 0.5.1)

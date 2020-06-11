@@ -77,7 +77,7 @@ plot_cells_3d <- function(cds,
   assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
                           msg = paste("No dimensionality reduction for",
                                       reduction_method, "calculated.",
-                                      "Please run reduce_dimensions with",
+                                      "Please run reduce_dimension with",
                                       "reduction_method =", reduction_method,
                                       "before attempting to plot."))
   low_dim_coords <- reducedDims(cds)[[reduction_method]]
@@ -220,9 +220,9 @@ plot_cells_3d <- function(cds,
                                       colorscale=color_scale),
                             colorscale=color_scale)) %>%
         plotly::add_markers(x = sub2$data_dim_1, y = sub2$data_dim_2,
-                           z = sub2$data_dim_3, color = I("lightgrey"),
-                           size=I(cell_size),
-                           marker=list(opacity = .4), showlegend=FALSE)
+                            z = sub2$data_dim_3, color = I("lightgrey"),
+                            size=I(cell_size),
+                            marker=list(opacity = .4), showlegend=FALSE)
     }
   } else {
     if(color_cells_by %in% c("cluster", "partition")){
@@ -410,7 +410,7 @@ plot_cells <- function(cds,
   assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
                           msg = paste("No dimensionality reduction for",
                                       reduction_method, "calculated.",
-                                      "Please run reduce_dimensions with",
+                                      "Please run reduce_dimension with",
                                       "reduction_method =", reduction_method,
                                       "before attempting to plot."))
   low_dim_coords <- reducedDims(cds)[[reduction_method]]
@@ -544,10 +544,9 @@ plot_cells <- function(cds,
     } else {
       markers = genes
     }
-    markers_rowData <- as.data.frame(subset(rowData(cds),
-                                            gene_short_name %in% markers |
-                                              row.names(rowData(cds)) %in%
-                                              markers))
+	markers_rowData <- rowData(cds)[(rowData(cds)$gene_short_name %in% markers) |
+							        (row.names(rowData(cds)) %in% markers),,drop=FALSE]
+	markers_rowData <- as.data.frame(markers_rowData)
     if (nrow(markers_rowData) == 0) {
       stop("None of the provided genes were found in the cds")
     }
@@ -676,6 +675,7 @@ plot_cells <- function(cds,
     data_df <- merge(data_df, markers_exprs, by.x="sample_name",
                      by.y="cell_id")
     data_df$value <- with(data_df, ifelse(value >= min_expr, value, NA))
+    ya_sub <- data_df[!is.na(data_df$value),]
     na_sub <- data_df[is.na(data_df$value),]
     if(norm_method == "size_only"){
       g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2)) +
@@ -683,10 +683,11 @@ plot_cells <- function(cds,
                       stroke = I(cell_stroke), color = "grey80", alpha = alpha,
                       data = na_sub) +
         plotting_func(aes(color=value), size=I(cell_size),
-                      stroke = I(cell_stroke), na.rm = TRUE) +
+                      stroke = I(cell_stroke),
+                      data = ya_sub[order(ya_sub$value),]) +
         viridis::scale_color_viridis(option = "viridis",
                                      name = expression_legend_label,
-                                     na.value = "grey80", end = 0.8,
+                                     na.value = NA, end = 0.8,
                                      alpha = alpha) +
         guides(alpha = FALSE) + facet_wrap(~feature_label)
     } else {
@@ -696,10 +697,11 @@ plot_cells <- function(cds,
                       data = na_sub, alpha = alpha) +
         plotting_func(aes(color=log10(value+min_expr)),
                       size=I(cell_size), stroke = I(cell_stroke),
-                      na.rm = TRUE, alpha = alpha) +
+                      data = ya_sub[order(ya_sub$value),],
+					  alpha = alpha) +
         viridis::scale_color_viridis(option = "viridis",
                                      name = expression_legend_label,
-                                     na.value = "grey80", end = 0.8,
+                                     na.value = NA, end = 0.8,
                                      alpha = alpha) +
         guides(alpha = FALSE) + facet_wrap(~feature_label)
     }
@@ -748,7 +750,7 @@ plot_cells <- function(cds,
 
 
     if (label_branch_points){
-      mst_branch_nodes <- branch_nodes(cds)
+      mst_branch_nodes <- branch_nodes(cds, reduction_method)
       branch_point_df <- ica_space_df %>%
         dplyr::slice(match(names(mst_branch_nodes), sample_name)) %>%
         dplyr::mutate(branch_point_idx = seq_len(dplyr::n()))
@@ -767,7 +769,7 @@ plot_cells <- function(cds,
     }
 
     if (label_leaves){
-      mst_leaf_nodes <- leaf_nodes(cds)
+      mst_leaf_nodes <- leaf_nodes(cds, reduction_method)
       leaf_df <- ica_space_df %>%
         dplyr::slice(match(names(mst_leaf_nodes), sample_name)) %>%
         dplyr::mutate(leaf_idx = seq_len(dplyr::n()))
@@ -786,7 +788,7 @@ plot_cells <- function(cds,
     }
 
     if (label_roots){
-      mst_root_nodes <- root_nodes(cds)
+      mst_root_nodes <- root_nodes(cds, reduction_method)
       root_df <- ica_space_df %>%
         dplyr::slice(match(names(mst_root_nodes), sample_name)) %>%
         dplyr::mutate(root_idx = seq_len(dplyr::n()))
@@ -1091,6 +1093,7 @@ plot_pc_variance_explained <- function(cds) {
 #'   factor. Default is TRUE.
 #' @param log_scale Logical, whether or not to scale data logarithmically.
 #'   Default is TRUE.
+#' @param pseudocount A pseudo-count added to the gene expression. Default is 0.
 #' @return a ggplot2 plot object
 #' @import ggplot2
 #' @export
@@ -1109,7 +1112,8 @@ plot_genes_violin <- function (cds_subset,
                                panel_order = NULL,
                                label_by_short_name = TRUE,
                                normalize = TRUE,
-                               log_scale = TRUE) {
+                               log_scale = TRUE,
+                               pseudocount = 0) {
 
   assertthat::assert_that(methods::is(cds_subset, "cell_data_set"))
 
@@ -1126,7 +1130,7 @@ plot_genes_violin <- function (cds_subset,
   }
 
   assertthat::assert_that(assertthat::is.count(ncol))
-
+  assertthat::assert_that(assertthat::is.number(pseudocount))
   assertthat::assert_that(is.logical(label_by_short_name))
   if (label_by_short_name) {
     assertthat::assert_that("gene_short_name" %in% names(rowData(cds_subset)),
@@ -1152,12 +1156,15 @@ plot_genes_violin <- function (cds_subset,
                                       "pass only the subset of the CDS to be",
                                       "plotted."))
 
-  if (normalize) {
+  if (pseudocount > 0) {
+    cds_exprs <- SingleCellExperiment::counts(cds_subset) + 1
+  } else {
     cds_exprs <- SingleCellExperiment::counts(cds_subset)
+  }
+  if (normalize) {
     cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds_subset))
     cds_exprs <- reshape2::melt(as.matrix(cds_exprs))
   } else {
-    cds_exprs <- SingleCellExperiment::counts(cds_subset)
     cds_exprs <- reshape2::melt(as.matrix(cds_exprs))
   }
 
@@ -1194,7 +1201,7 @@ plot_genes_violin <- function (cds_subset,
   cds_exprs[,group_cells_by] <- as.factor(cds_exprs[,group_cells_by])
   q <- q + geom_violin(aes_string(fill = group_cells_by), scale="width") +
     guides(fill=FALSE)
-  q <- q + stat_summary(fun.y=mean, geom="point", size=1, color="black")
+  q <- q + stat_summary(fun=mean, geom="point", size=1, color="black")
   q <- q + facet_wrap(~feature_label, nrow = nrow,
                       ncol = ncol, scales = "free_y")
   if (min_expr < 1) {

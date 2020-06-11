@@ -13,7 +13,8 @@ plot_genes_violin(
   panel_order = NULL,
   label_by_short_name = TRUE,
   normalize = TRUE,
-  log_scale = TRUE
+  log_scale = TRUE,
+  pseudocount = 0
 )
 }
 \arguments{
@@ -43,6 +44,8 @@ factor. Default is TRUE.}
 
 \item{log_scale}{Logical, whether or not to scale data logarithmically.
 Default is TRUE.}
+
+\item{pseudocount}{A pseudo-count added to the gene expression. Default is 0.}
 }
 \value{
 a ggplot2 plot object

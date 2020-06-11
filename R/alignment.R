@@ -81,15 +81,12 @@ align_cds <- function(cds,
                   "single-cell RNA-sequencing data are corrected by matching",
                   "mutual nearest neighbors.' Nat. Biotechnol., 36(5),",
                   "421-427. doi: 10.1038/nbt.4091"))
-    corrected_PCA = batchelor::fastMNN(as.matrix(preproc_res),
-                                       batch=colData(cds)[,alignment_group],
-                                       k=alignment_k,
-                                       cos.norm=FALSE,
-                                       pc.input = TRUE)
+    corrected_PCA = batchelor::reducedMNN(as.matrix(preproc_res),
+                                          batch=colData(cds)[,alignment_group],
+                                          k=alignment_k)
     preproc_res = corrected_PCA$corrected
     cds <- add_citation(cds, "MNN_correct")
   }
-
   reducedDims(cds)[["Aligned"]] <- as.matrix(preproc_res)
 
   cds

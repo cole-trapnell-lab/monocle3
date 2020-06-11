@@ -16,7 +16,7 @@ choose_cells <- function(cds,
   assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
                           msg = paste0("No dimensionality reduction for ",
                                        reduction_method, " calculated. ",
-                                       "Please run reduce_dimensions with ",
+                                       "Please run reduce_dimension with ",
                                        "reduction_method = ", reduction_method,
                                        ", cluster_cells, and learn_graph ",
                                        "before running choose_cells"))
@@ -128,6 +128,9 @@ choose_cells <- function(cds,
 #'   Currently only "UMAP" is supported.
 #' @param return_list Logical, return a list of cells instead of a subsetted
 #'   CDS object.
+#' @param clear_cds Logical, clear CDS slots before returning.
+#'   After clearing the cds, re-run processing from preprocess_cds(), ...
+#'   Default is TRUE.
 #'
 #' @return A subset CDS object. If return_list = FALSE, a list of cell and
 #'   graph node names.
@@ -135,7 +138,8 @@ choose_cells <- function(cds,
 #'
 choose_graph_segments <- function(cds,
                                  reduction_method = "UMAP",
-                                 return_list = FALSE) {
+                                 return_list = FALSE,
+                                 clear_cds = TRUE) {
 
   assertthat::assert_that(methods::is(cds, "cell_data_set"))
   assertthat::assert_that(assertthat::are_equal("UMAP", reduction_method),
@@ -144,7 +148,7 @@ choose_graph_segments <- function(cds,
   assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
                           msg = paste0("No dimensionality reduction for ",
                                        reduction_method, " calculated. ",
-                                       "Please run reduce_dimensions with ",
+                                       "Please run reduce_dimension with ",
                                        "reduction_method = ", reduction_method,
                                        ", cluster_cells, and learn_graph ",
                                        "before running choose_graph_segments."))
@@ -261,7 +265,7 @@ choose_graph_segments <- function(cds,
       princ_points$chosen[vals$chosen] <- "Chosen"
       data_df$chosen_cells <- "gray"
       data_df$chosen_cells[vals$chosen_cells] <- "purple"
-      suppressMessages(plot_principal_graph(data_df, princ_points,
+      suppressMessages(plot_principal_graph(cds, data_df, princ_points,
                                             label_branch_points = FALSE,
                                             label_leaves = FALSE,
                                             label_roots = FALSE))
@@ -316,7 +320,10 @@ choose_graph_segments <- function(cds,
   if(return_list) {
     return(sel)
   } else {
-    return(cds[,sel$cells])
+    cds<-cds[,sel$cells]
+    if( clear_cds )
+      cds<-clear_cds_slots(cds)
+    return(cds)
   }
 }
 
@@ -356,7 +363,8 @@ traverse_graph <- function(g, starting_cell, end_cells){
 }
 
 
-plot_principal_graph <- function(data_df,
+plot_principal_graph <- function(cds,
+                                 data_df,
                                  princ_points,
                                  reduction_method = "UMAP",
                                  trajectory_graph_color="black",

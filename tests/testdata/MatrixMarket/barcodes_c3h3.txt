@@ -1,0 +1,6 @@
+cell cell_number umi_token
+AAAGTAGCACAGTCGC-1 cell1 umi=10
+AAATGCCCACCCAGTG-1 cell2 umi=11
+AACCGCGCAGGCGATA-1 cell3 umi=12
+AACTCAGAGAACTCGG-1 cell4 umi=13
+AATCCAGCAGTAACGG-1 cell5 umi=14

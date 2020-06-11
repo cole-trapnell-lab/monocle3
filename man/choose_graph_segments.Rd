@@ -4,7 +4,12 @@
 \alias{choose_graph_segments}
 \title{Choose cells interactively along the path of a principal graph}
 \usage{
-choose_graph_segments(cds, reduction_method = "UMAP", return_list = FALSE)
+choose_graph_segments(
+  cds,
+  reduction_method = "UMAP",
+  return_list = FALSE,
+  clear_cds = TRUE
+)
 }
 \arguments{
 \item{cds}{CDS object to be subsetted.}
@@ -14,6 +19,10 @@ Currently only "UMAP" is supported.}
 
 \item{return_list}{Logical, return a list of cells instead of a subsetted
 CDS object.}
+
+\item{clear_cds}{Logical, clear CDS slots before returning.
+After clearing the cds, re-run processing from preprocess_cds(), ...
+Default is TRUE.}
 }
 \value{
 A subset CDS object. If return_list = FALSE, a list of cell and

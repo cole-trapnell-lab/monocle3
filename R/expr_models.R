@@ -158,6 +158,10 @@ fit_model_helper <- function(x,
                                                     family = stats::binomial(),
                                                     acc=1e-3, model=FALSE,
                                                     y=FALSE, ...),
+                    "gaussian" = speedglm::speedglm(model_formula,
+                                                    family = stats::gaussian(),
+                                                    acc=1e-3, model=FALSE,
+                                                    y=FALSE, ...),
                     "zipoisson" = pscl::zeroinfl(model_formula,
                                                  dist="poisson", ...),
                     "zinegbinomial" = pscl::zeroinfl(model_formula,
@@ -184,7 +188,9 @@ fit_model_helper <- function(x,
 #' @param model_formula_str A formula string specifying the model to fit for
 #'   the genes.
 #' @param expression_family Specifies the family function used for expression
-#'   responses. Default is "quasipoisson".
+#'   responses. Can be one of "quasipoisson", "negbinomial", "poisson",
+#'   "binomial", "gaussian", "zipoisson", or "zinegbinomial". Default is
+#'   "quasipoisson".
 #' @param reduction_method Which method to use with clusters() and
 #'   partitions(). Default is "UMAP".
 #' @param cores The number of processor cores to use during fitting.
@@ -205,6 +211,9 @@ fit_models <- function(cds,
                      ...) {
 
   model_form <- stats::as.formula(model_formula_str)
+  if (!"num_cells_expressed" %in% names(rowData(cds))) {
+    cds <- detect_genes(cds)
+  }
   coldata_df = colData(cds)
   tryCatch({
     coldata_df$cluster = clusters(cds, reduction_method)[colnames(cds)]
@@ -212,31 +221,42 @@ fit_models <- function(cds,
     coldata_df$pseudotime = pseudotime(cds, reduction_method)
   }, error = function(e) {} )
 
+  # Test model formula validity.
+  # Notes:
+  #  o  allow for formulas in model formula: e.g.,  ~ splines::ns(pseudotime, df=3)
+  #  o  watch for NA, NaN, Inf in terms
+  #  o  is.na counts NA and NaN
+  #  o  splines::ns(pseudotime, df=3) fails if there are Inf values, at least,
+  #     which causes model.frame( model_formula, ...) to fail
+  #  o  model.frame catches mis-spelled functions
+  err_msg <- NULL
+  mf_terms <- all.vars(model_form)
+  for( mf_term in mf_terms )
+  {
+    if(!( mf_term %in% names(coldata_df)))
+    {
+      err_msg <- paste0(err_msg,'  \'', mf_term, '\': not in cds\n')
+      next
+    }
+    mf_length  <- length(coldata_df[[mf_term]])
+    mf_num_inf <- sum(is.infinite(coldata_df[[mf_term]]))
+    mf_num_nan <- sum(is.nan(coldata_df[[mf_term]]))
+    mf_num_na  <- sum(is.na(coldata_df[[mf_term]]))
+    if( mf_num_inf > 0 )
+      err_msg <- paste0(err_msg, '  \'', mf_term, '\': ' , mf_num_inf, ' of ', mf_length, ' values are Inf\n')
+    if( mf_num_nan > 0 )
+      err_msg <- paste0(err_msg, '  \'', mf_term, '\': ' , mf_num_nan, ' of ', mf_length, ' values are NaN\n')
+    if( mf_num_na - mf_num_nan > 0 )
+      err_msg <- paste0(err_msg, '  \'', mf_term, '\': ' , mf_num_na - mf_num_nan, ' of ', mf_length, ' values are NA\n')
+  }
+  if(length(err_msg) > 0)
+    stop( '\n-- bad fit_models terms --\n', err_msg )
+  rm( err_msg, mf_terms, mf_term, mf_length, mf_num_inf, mf_num_nan, mf_num_na )
   tryCatch({
-    stats::model.frame(model_form, data=coldata_df[1,])
+    stats::model.frame(model_form, data=coldata_df)
   }, error = function(e) {
-    stop ("Error: model formula refers to something not found in colData(cds)")
+    stop ("Error in model formula")
   })
-  # FIXME: These checks are too stringent, because they don't catch formula
-  # that include functions of columns in colData. For example, the formula
-  # `~ splines::ns(pseudotime, df=3) triggers the error.
-  # if (length(model_form[[2]]) == 1) {
-  #   if (!as.character(model_form[[2]]) %in%
-  #       c(names(colData(cds)), "~", "1", "|", "+", "-",
-  #         ":", "*", "^", "I")) {
-  #     stop(paste(as.character(model_form[[2]][[i]]),
-  #                             "formula element is missing"))
-  #   }
-  # } else {
-  #   for(i in 1:length(model_form[[2]])) {
-  #     if (!as.character(model_form[[2]][[i]]) %in%
-  #         c(names(colData(cds)), "~", "1", "|", "+", "-",
-  #           ":", "*", "^", "I")) {
-  #       stop(paste(as.character(model_form[[2]][[i]]),
-  #                               "formula element is missing"))
-  #     }
-  #   }
-  # }
 
   disp_func <- NULL
 
@@ -275,6 +295,7 @@ fit_models <- function(cds,
     fits
   }
 
+  rowData(cds)$gene_id <- row.names(rowData(cds))
   fits <- tibble::as_tibble(purrr::transpose(fits))
   M_f <- tibble::as_tibble(rowData(cds))
   M_f <- dplyr::bind_cols(M_f, fits)
@@ -414,9 +435,16 @@ coefficient_table <- function(model_tbl) {
 compare_models <- function(model_tbl_full, model_tbl_reduced){
   model_x_eval <- evaluate_fits(model_tbl_full)
   model_y_eval <- evaluate_fits(model_tbl_reduced)
-  joined_fits <- dplyr::full_join(model_x_eval, model_y_eval,
-                                  by=c("id", "gene_short_name",
-                                       "num_cells_expressed"))
+  if ("gene_short_name" %in% names(model_x_eval) &
+      "gene_short_name" %in% names(model_y_eval)) {
+    joined_fits <- dplyr::full_join(model_x_eval, model_y_eval,
+                                    by=c("gene_id", "gene_short_name",
+                                         "num_cells_expressed"))
+
+  } else {
+    joined_fits <- dplyr::full_join(model_x_eval, model_y_eval,
+                                    by=c("gene_id", "num_cells_expressed"))
+  }
 
   joined_fits <- joined_fits %>% dplyr::mutate(
     dfs = round(abs(df_residual.x  - df_residual.y)),
@@ -424,8 +452,9 @@ compare_models <- function(model_tbl_full, model_tbl_reduced){
     p_value = stats::pchisq(LLR, dfs, lower.tail = FALSE)
   )
 
-  joined_fits <- joined_fits %>% dplyr::select(id, gene_short_name,
-                                               num_cells_expressed, p_value)
+  joined_fits <- joined_fits %>%
+    dplyr::select_if(names(.) %in% c("gene_id", "gene_short_name",
+                                     "num_cells_expressed", "p_value"))
   joined_fits$q_value <- stats::p.adjust(joined_fits$p_value)
   # joined_fits = joined_fits %>%
   #               dplyr::mutate(lr_test_p_value = purrr::map2_dbl(
