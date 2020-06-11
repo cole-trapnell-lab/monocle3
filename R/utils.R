@@ -544,7 +544,16 @@ is_matrix_market_file <- function( matpath )
 load_annotations_data <- function( anno_path, metadata_column_names=NULL, header=FALSE, sep="", quote="\"'", annotation_type=NULL )
 {
   assertthat::assert_that( ! is.null( annotation_type ) )
-  annotations <- read.table( anno_path, header=header, sep=sep, quote=quote, stringsAsFactors=FALSE )
+#  annotations <- read.table( anno_path, header=header, sep=sep, quote=quote, stringsAsFactors=FALSE )
+  tryCatch(
+    {
+      annotations <- read.table( anno_path, header=header, sep=sep, quote=quote, stringsAsFactors=FALSE )
+    }, error = function( emsg )
+    {
+      stop( 'load_mm_data: bad status reading ', annotation_type, ' file \'', anno_path, '\'\n  ', emsg,
+            '\n  note: try checking the parameters \'header\', \'sep\', and \'quote\'' )
+    }
+  )
 
   metadata = NULL
   if( .row_names_info( annotations ) < 0 )
@@ -622,8 +631,10 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
 #' @param umi_cutoff UMI per cell cutoff. Columns (cells) with less
 #' than umi_cutoff total counts are removed from the matrix. The
 #' default is 100.
-#' @param sep field separator character in the annotation files. The
-#' default is the tab character for tab-separated-value files.
+#' @param sep field separator character in the annotation files. If
+#' sep = "", the separator is white space, that is, one or more spaces,
+#' tabs, newlines, or carriage returns. The default is the tab
+#' character for tab-separated-value files.
 #'
 #' @return cds object
 #'
@@ -654,7 +665,7 @@ load_mm_data <- function( mat_path,
                           feature_metadata_column_names = NULL,
                           cell_metadata_column_names = NULL,
                           umi_cutoff = 100,
-			  quote="\"'",
+                          quote="\"'",
                           sep="\t") {
   assertthat::assert_that(assertthat::is.readable(mat_path), msg='unable to read matrix file')
   assertthat::assert_that(assertthat::is.readable(feature_anno_path), msg='unable to read feature annotation file')
