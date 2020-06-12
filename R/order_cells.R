@@ -15,8 +15,10 @@
 #' @param reduction_method a string specifying the reduced dimension method to
 #'   use when ordering cells. Currently only "UMAP" is supported.
 #' @param root_pr_nodes NULL or a vector of starting principal points. If
-#'   provided, pseudotime will start (i.e. be zero) at these graph nodes. Both
-#'   \code{root_pr_nodes} and \code{root_cells} cannot be provided.
+#'   provided, pseudotime will start (i.e. be zero) at these graph nodes. You
+#'   can find the principal point names by running plot_cells with
+#'   label_principal_points = TRUE. Both \code{root_pr_nodes} and
+#'   \code{root_cells} cannot be provided.
 #' @param root_cells NULL or a vector of starting cells. If provided,
 #'   pseudotime will start (i.e. be zero) at these cells. Both
 #'   \code{root_pr_nodes} and \code{root_cells} cannot be provided.
@@ -71,16 +73,17 @@ order_cells <- function(cds,
                             msg = paste("All provided root_cells must be",
                                         "present in the cell data set."))
   }
+
   if(is.null(root_cells) & is.null(root_pr_nodes)) {
     assertthat::assert_that(interactive(),
                             msg = paste("When not in interactive mode, either",
-                                        "root_pr_nodes or root_cells must be",
-                                        "provided."))
+                                        "root_pr_nodes or root_cells",
+                                        "must be provided."))
   }
   assertthat::assert_that(!all(c(!is.null(root_cells),
                                  !is.null(root_pr_nodes))),
-                            msg = paste("Please specify either root_pr_nodes",
-                                        "or root_cells, not both."))
+                          msg = paste("Please specify either root_pr_nodes",
+                                      "or root_cells, not both."))
 
   if (is.null(root_pr_nodes) & is.null(root_cells)){
     if (interactive()){

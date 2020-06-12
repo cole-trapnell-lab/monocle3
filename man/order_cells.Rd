@@ -19,8 +19,10 @@ order_cells(
 use when ordering cells. Currently only "UMAP" is supported.}
 
 \item{root_pr_nodes}{NULL or a vector of starting principal points. If
-provided, pseudotime will start (i.e. be zero) at these graph nodes. Both
-\code{root_pr_nodes} and \code{root_cells} cannot be provided.}
+provided, pseudotime will start (i.e. be zero) at these graph nodes. You
+can find the principal point names by running plot_cells with
+label_principal_points = TRUE. Both \code{root_pr_nodes} and
+\code{root_cells} cannot be provided.}
 
 \item{root_cells}{NULL or a vector of starting cells. If provided,
 pseudotime will start (i.e. be zero) at these cells. Both
