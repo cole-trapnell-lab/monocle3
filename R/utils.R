@@ -544,16 +544,16 @@ is_matrix_market_file <- function( matpath )
 load_annotations_data <- function( anno_path, metadata_column_names=NULL, header=FALSE, sep="", quote="\"'", annotation_type=NULL )
 {
   assertthat::assert_that( ! is.null( annotation_type ) )
-#  annotations <- read.table( anno_path, header=header, sep=sep, quote=quote, stringsAsFactors=FALSE )
   tryCatch(
-    {
-      annotations <- read.table( anno_path, header=header, sep=sep, quote=quote, stringsAsFactors=FALSE )
-    }, error = function( emsg )
-    {
-      stop( 'load_mm_data: bad status reading ', annotation_type, ' file \'', anno_path, '\'\n  ', emsg,
-            '\n  note: try checking the parameters \'header\', \'sep\', and \'quote\'' )
-    }
-  )
+  {
+    annotations <- read.table( anno_path, header=header, sep=sep, quote=quote, stringsAsFactors=FALSE )
+  }, error = function( emsg )
+  {
+    stop( 'load_mm_data: bad status reading ', annotation_type, ' file \'', anno_path, '\'\n  ',
+          emsg, '\n',
+          '  note: possible problems include the wrong filename, a missing file,\n',
+          '  and incorrect file format parameters, for example \'header\', \'sep\', and \'quote\'' )
+  })
 
   metadata = NULL
   if( .row_names_info( annotations ) < 0 )
