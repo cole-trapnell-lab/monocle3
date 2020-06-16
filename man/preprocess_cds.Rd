@@ -7,6 +7,7 @@
 preprocess_cds(
   cds,
   method = c("PCA", "LSI"),
+  pca_method = c("irlba", "rsvd"),
   num_dim = 50,
   norm_method = c("log", "size_only", "none"),
   use_genes = NULL,
@@ -26,6 +27,11 @@ currently either PCA or LSI. For LSI (latent semantic indexing), it
 converts the (sparse) expression matrix into tf-idf matrix and then
 performs SVD to decompose the gene expression / cells into certain
 modules / topics. Default is "PCA".}
+
+\item{pca_method}{a string specifying the PCA algorithm to use, which can be
+either irlba or rsvd. irlba is the implicitly restarted Lanczos
+bidiagonalization algorithm and rsvd is the randomized SVD method in the
+irlba package. Default is "irlba".}
 
 \item{num_dim}{the dimensionality of the reduced space.}
 

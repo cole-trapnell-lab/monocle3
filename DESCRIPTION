@@ -66,6 +66,7 @@ Imports:
     reshape2 (>= 1.4.3),
     rsample (>= 0.0.5),
     RhpcBLASctl,
+    rsvd (>= 1.0.3),
     Rtsne (>= 0.15),
     S4Vectors,
     shiny,

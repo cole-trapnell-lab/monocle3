@@ -391,6 +391,7 @@ load_worm_embryo <- function(){
 sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
                                 scale. = FALSE, ...)
 {
+cat( 'sparse_prcomp_irlba: start\n')
   a <- names(as.list(match.call()))
   ans <- list(scale=scale.)
   if ("tol" %in% a)
@@ -440,6 +441,8 @@ sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
   if (!missing(...)) args <- c(args, list(...))
 
   s <- do.call(irlba::irlba, args=args)
+  cat( 'irlba: dim u: ', dim(s$u), '\n')
+  cat( 'irlba: dim v: ', dim(s$v), '\n')
   ans$sdev <- s$d / sqrt(max(1, nrow(x) - 1))
   ans$rotation <- s$v
   colnames(ans$rotation) <- paste("PC", seq(1, ncol(ans$rotation)), sep="")
@@ -451,6 +454,141 @@ sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
   }
   class(ans) <- c("irlba_prcomp", "prcomp")
   ans
+}
+
+
+#' Principal Components Analysis
+#'
+#' Efficient computation of a truncated principal components analysis of a
+#' given data matrix using random SVD method svdr from the
+#' \code{\link{rsvd}} package.
+#'
+#' @param x a numeric or complex matrix (or data frame) which provides the data
+#'   for the principal components analysis.
+#' @param retx a logical value indicating whether the rotated variables should
+#'   be returned.
+#' @param center a logical value indicating whether the variables should be
+#'   shifted to be zero centered. Alternately, a centering vector of length
+#'   equal the number of columns of \code{x} can be supplied.
+#' @param scale. a logical value indicating whether the variables should be
+#'   scaled to have unit variance before the analysis takes place. The default
+#'   is \code{FALSE} for consistency with S, but scaling is often advisable.
+#'   Alternatively, a vector of length equal the number of columns of \code{x}
+#'   can be supplied.
+#'
+#'   The value of \code{scale} determines how column scaling is performed
+#'   (after centering). If \code{scale} is a numeric vector with length equal
+#'   to the number of columns of \code{x}, then each column of \code{x} is
+#'   divided by the corresponding value from \code{scale}. If \code{scale} is
+#'   \code{TRUE} then scaling is done by dividing the (centered) columns of
+#'   \code{x} by their standard deviations if \code{center=TRUE}, and the root
+#'   mean square otherwise.  If \code{scale} is \code{FALSE}, no scaling is done.
+#'   See \code{\link{scale}} for more details.
+#' @param n integer number of principal component vectors to return, must be
+#'   less than \code{min(dim(x))}.
+#' @param ... additional arguments passed to \code{\link{rsvd}}.
+#'
+#' @return
+#' A list with class "prcomp" containing the following components:
+#' \itemize{
+#'    \item{sdev} {the standard deviations of the principal components (i.e.,
+#'      the square roots of the eigenvalues of the covariance/correlation
+#'      matrix, though the calculation is actually done with the singular
+#'      values of the data matrix).}
+#'   \item{rotation} {the matrix of variable loadings (i.e., a matrix whose
+#'     columns contain the eigenvectors).}
+#'   \item {x} {if \code{retx} is \code{TRUE} the value of the rotated data
+#'     (the centered (and scaled if requested) data multiplied by the
+#'     \code{rotation} matrix) is returned. Hence, \code{cov(x)} is the
+#'     diagonal matrix \code{diag(sdev^2)}.}
+#'   \item{center, scale} {the centering and scaling used, or \code{FALSE}.}
+#' }
+#'
+#' @note
+#' The signs of the columns of the rotation matrix are arbitrary, and so may
+#' differ between different programs for PCA, and even between different builds
+#' of R.
+#'
+#' @seealso \code{\link{rsvd_prcomp}}
+sparse_prcomp_rsvd <- function(x, n = 3, retx = TRUE, center = TRUE,
+		scale. = FALSE, ...)
+{
+	cat( 'sparse_prcomp_rsvd: start\n')
+	assertthat::assert_that( is.logical(center) ||
+					         ( is.vector(center) && is.numeric(center) ),
+					         msg = paste0( 'the center parameter must be either logical or a numeric vector') )
+	assertthat::assert_that( is.logical(scale.) ||
+							 ( is.vector(scale.) && is.numeric(scale.) ),
+							 msg = paste0( 'the scale. parameter must be either logical or a numeric vector') )
+	a <- names(as.list(match.call()))
+	ans <- list(scale=scale.)
+	if ("tol" %in% a)
+		warning("The `tol` truncation argument from `prcomp` is not supported by
+						`prcomp_random`. If specified, `tol` is passed to the `svdr`
+						function to control that algorithm's convergence tolerance. See
+						`?svdr` for help.")
+	orig_x <- x
+	if (class(x) != "DelayedMatrix")
+		x = DelayedArray::DelayedArray(x)
+	
+	args <- list(nu=n,nv=n,k=n)
+	if (is.logical(center))
+	{
+		if (center)
+			center <- DelayedMatrixStats::colMeans2(x)
+	}
+	
+	if (is.logical(scale.))
+	{
+		if (is.numeric(args$center))
+		{
+			scale. <- sqrt(DelayedMatrixStats::colVars(x))
+			if (ans$scale) ans$totalvar <- ncol(x)
+			else ans$totalvar <- sum(scale. ^ 2)
+		} else
+		{
+			if (ans$scale)
+			{
+				scale. <-
+						sqrt(DelayedMatrixStats::colSums2(x ^ 2) / (max(1, nrow(x) - 1L)))
+				ans$totalvar <-
+						sum(sqrt(DelayedMatrixStats::colSums2(t(t(x)/scale.) ^ 2) /
+												(nrow(x) - 1L)))
+			} else
+			{
+				ans$totalvar <-
+						sum(DelayedMatrixStats::colSums2(x ^ 2) / (nrow(x) - 1L))
+			}
+		}
+		if (ans$scale) scale <- scale.
+	} else
+	{
+		scale <- scale.
+		ans$totalvar <-
+				sum(sqrt(DelayedMatrixStats::colSums2(t(t(x)/scale.) ^ 2) /
+										(nrow(x) - 1L)))
+	}
+	if (!missing(...)) args <- c(args, list(...))
+
+	if((is.logical(scale.) && scale.) || is.numeric(scale.))
+    	args$A <- scale(orig_x, center = center, scale = scale )
+	else
+		args$A <- orig_x
+	
+	s <- do.call(rsvd::rsvd, args=args)
+	cat( 'rsvd: dim u: ', dim(s$u), '\n')
+	cat( 'rsvd: dim v: ', dim(s$v), '\n')
+	ans$sdev <- s$d / sqrt(max(1, nrow(x) - 1))
+	ans$rotation <- s$v
+	colnames(ans$rotation) <- paste("PC", seq(1, ncol(ans$rotation)), sep="")
+	ans$center <- args$center
+	if (retx)
+	{
+		ans <- c(ans, list(x = sweep(s$u, 2, s$d, FUN=`*`)))
+		colnames(ans$x) <- paste("PC", seq(1, ncol(ans$rotation)), sep="")
+	}
+	class(ans) <- c("rsvd_prcomp", "prcomp")
+	ans
 }
 
 
