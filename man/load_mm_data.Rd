@@ -64,8 +64,10 @@ default is 100.}
 used in the feature_anno_path and cell_anno_path files. The default
 is "\"'".}
 
-\item{sep}{field separator character in the annotation files. The
-default is the tab character for tab-separated-value files.}
+\item{sep}{field separator character in the annotation files. If
+sep = "", the separator is white space, that is, one or more spaces,
+tabs, newlines, or carriage returns. The default is the tab
+character for tab-separated-value files.}
 }
 \value{
 cds object

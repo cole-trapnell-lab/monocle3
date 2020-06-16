@@ -52,7 +52,7 @@ provide a model formula indicating some variables (e.g. batch ID or other
 technical factors) to "subtract" from the data so it doesn't contribute to
 the trajectory. The function \code{learn_graph} is the fourth step in the
 trajectory building process after \code{preprocess_cds},
-\code{reduce_dimensions}, and \code{cluster_cells}. After
+\code{reduce_dimension}, and \code{cluster_cells}. After
 \code{learn_graph}, \code{order_cells} is typically called.
 }
 \section{Optional \code{learn_graph_control} parameters}{

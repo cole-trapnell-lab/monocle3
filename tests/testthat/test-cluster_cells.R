@@ -16,17 +16,17 @@ test_that("test cluster_cells error messages work", {
   skip_on_travis()
   expect_error(cds <- cluster_cells(cds),
                paste("No dimensionality reduction for UMAP calculated. Please",
-                     "run reduce_dimensions with reduction_method = UMAP",
+                     "run reduce_dimension with reduction_method = UMAP",
                      "before running cluster_cells"))
   cds <- preprocess_cds(cds)
   expect_error(cds <- cluster_cells(cds),
                paste("No dimensionality reduction for UMAP calculated. Please",
-                     "run reduce_dimensions with reduction_method = UMAP",
+                     "run reduce_dimension with reduction_method = UMAP",
                      "before running cluster_cells"))
   cds <- reduce_dimension(cds)
   expect_error(cds <- cluster_cells(cds, reduction_method = "tSNE"),
                paste("No dimensionality reduction for tSNE calculated. Please",
-                     "run reduce_dimensions with reduction_method = tSNE",
+                     "run reduce_dimension with reduction_method = tSNE",
                      "before running cluster_cells"))
 })
 
@@ -194,17 +194,17 @@ test_that("test cluster_cells error messages work", {
   skip_not_travis()
   expect_error(cds <- cluster_cells(cds),
                paste("No dimensionality reduction for UMAP calculated. Please",
-                     "run reduce_dimensions with reduction_method = UMAP",
+                     "run reduce_dimension with reduction_method = UMAP",
                      "before running cluster_cells"))
   cds <- preprocess_cds(cds)
   expect_error(cds <- cluster_cells(cds),
                paste("No dimensionality reduction for UMAP calculated. Please",
-                     "run reduce_dimensions with reduction_method = UMAP",
+                     "run reduce_dimension with reduction_method = UMAP",
                      "before running cluster_cells"))
   cds <- reduce_dimension(cds)
   expect_error(cds <- cluster_cells(cds, reduction_method = "tSNE"),
                paste("No dimensionality reduction for tSNE calculated. Please",
-                     "run reduce_dimensions with reduction_method = tSNE",
+                     "run reduce_dimension with reduction_method = tSNE",
                      "before running cluster_cells"))
 })
 
