@@ -394,15 +394,15 @@ plot_cells <- function(cds,
                        norm_method = c("log", "size_only"),
                        label_cell_groups = TRUE,
                        label_groups_by_cluster=TRUE,
-                       group_label_size=4,
+                       group_label_size=2,
                        labels_per_group=1,
                        label_branch_points=TRUE,
                        label_roots=TRUE,
                        label_leaves=TRUE,
                        graph_label_size=2,
-                       cell_size=0.9,
+                       cell_size=0.35,
                        cell_stroke= I(cell_size / 2),
-                       alpha = 0.5,
+                       alpha = 1,
                        min_expr=0.1,
                        rasterize=FALSE,
                        scale_to_range=FALSE) {
@@ -835,7 +835,7 @@ plot_cells <- function(cds,
 #' @param cds_subset subset cell_data_set including only the genes to be
 #'   plotted.
 #' @param min_expr the minimum (untransformed) expression level to plot.
-#' @param the size (in points) of each cell used in the plot.
+#' @param cell_size the size (in points) of each cell used in the plot.
 #' @param nrow the number of rows used when laying out the panels for each
 #'   gene's expression.
 #' @param ncol the number of columns used when laying out the panels for each
