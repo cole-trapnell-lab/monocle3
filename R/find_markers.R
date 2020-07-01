@@ -179,24 +179,26 @@ top_markers <- function(cds,
                                                         pseudo_R2,
                                                         lrtest_p_value,
                                                         lrtest_q_value)
+    
     marker_test_res = marker_test_res %>% dplyr::rename(gene_id=rowname, marker_test_p_value=lrtest_p_value,  marker_test_q_value=lrtest_q_value)
     marker_test_res$pseudo_R2 = unlist(marker_test_res$pseudo_R2)
     marker_test_res$marker_test_p_value = unlist(marker_test_res$marker_test_p_value)
-
-    if ("gene_short_name" %in% colnames(rowData(cds)))
+    if ("gene_short_name" %in% colnames(rowData(cds))){
       marker_test_res = rowData(cds) %>%
       as.data.frame %>%
       tibble::rownames_to_column() %>%
       dplyr::select(rowname, gene_short_name) %>%
       dplyr::inner_join(marker_test_res, by=c("rowname"="gene_id"))
+      marker_test_res = marker_test_res %>% dplyr::rename(gene_id=rowname)
+    }
   } else {
     marker_test_res = cluster_marker_score_table
+    marker_test_res = marker_test_res %>% dplyr::rename(gene_id=rowname)
   }
-
 
   if (verbose)
     message("Done")
-  marker_test_res = marker_test_res %>% dplyr::rename(gene_id=rowname)
+
   return(marker_test_res)
 }
 
