@@ -391,7 +391,6 @@ load_worm_embryo <- function(){
 sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
                                 scale. = FALSE, ...)
 {
-cat( 'sparse_prcomp_irlba: start\n')
   a <- names(as.list(match.call()))
   ans <- list(scale=scale.)
   if ("tol" %in% a)
@@ -441,8 +440,6 @@ cat( 'sparse_prcomp_irlba: start\n')
   if (!missing(...)) args <- c(args, list(...))
 
   s <- do.call(irlba::irlba, args=args)
-  cat( 'irlba: dim u: ', dim(s$u), '\n')
-  cat( 'irlba: dim v: ', dim(s$v), '\n')
   ans$sdev <- s$d / sqrt(max(1, nrow(x) - 1))
   ans$rotation <- s$v
   colnames(ans$rotation) <- paste("PC", seq(1, ncol(ans$rotation)), sep="")
@@ -460,10 +457,10 @@ cat( 'sparse_prcomp_irlba: start\n')
 #' Principal Components Analysis
 #'
 #' Efficient computation of a truncated principal components analysis of a
-#' given data matrix using random SVD method svdr from the
+#' given data matrix using random SVD method rsvd from the
 #' \code{\link{rsvd}} package.
 #'
-#' @param x a numeric or complex matrix (or data frame) which provides the data
+#' @param x a numeric or complex matrix (or data frame), which provides the data
 #'   for the principal components analysis.
 #' @param retx a logical value indicating whether the rotated variables should
 #'   be returned.
@@ -510,23 +507,21 @@ cat( 'sparse_prcomp_irlba: start\n')
 #' of R.
 #'
 #' @seealso \code{\link{rsvd_prcomp}}
-sparse_prcomp_rsvd <- function(x, n = 3, retx = TRUE, center = TRUE,
-		scale. = FALSE, ...)
+sparse_prcomp_rsvd <- function(x, n = 3, retx = TRUE, center = TRUE, scale. = FALSE, ...)
 {
-	cat( 'sparse_prcomp_rsvd: start\n')
-	assertthat::assert_that( is.logical(center) ||
-					         ( is.vector(center) && is.numeric(center) ),
-					         msg = paste0( 'the center parameter must be either logical or a numeric vector') )
-	assertthat::assert_that( is.logical(scale.) ||
-							 ( is.vector(scale.) && is.numeric(scale.) ),
-							 msg = paste0( 'the scale. parameter must be either logical or a numeric vector') )
+	assertthat::assert_that(is.logical(center) ||
+							(is.vector(center) && is.numeric(center)),
+							msg = paste0( 'the center parameter must be either logical or a numeric vector'))
+	assertthat::assert_that(is.logical(scale.) ||
+							(is.vector(scale.) && is.numeric(scale.)),
+							msg = paste0( 'the scale. parameter must be either logical or a numeric vector'))
 	a <- names(as.list(match.call()))
 	ans <- list(scale=scale.)
 	if ("tol" %in% a)
 		warning("The `tol` truncation argument from `prcomp` is not supported by
-						`prcomp_random`. If specified, `tol` is passed to the `svdr`
+						`sparse_prcomp_rsvd`. If specified, `tol` is passed to the `rsvd`
 						function to control that algorithm's convergence tolerance. See
-						`?svdr` for help.")
+						`?rsvd` for help.")
 	orig_x <- x
 	if (class(x) != "DelayedMatrix")
 		x = DelayedArray::DelayedArray(x)
@@ -570,14 +565,13 @@ sparse_prcomp_rsvd <- function(x, n = 3, retx = TRUE, center = TRUE,
 	}
 	if (!missing(...)) args <- c(args, list(...))
 
-	if((is.logical(scale.) && scale.) || is.numeric(scale.))
-    	args$A <- scale(orig_x, center = center, scale = scale )
+	if(((is.logical(center) && center) || is.numeric(center.)) ||
+	   ((is.logical(scale.) && scale.) || is.numeric(scale.)))
+		args$A <- scale(orig_x, center = center, scale = scale )
 	else
 		args$A <- orig_x
 	
 	s <- do.call(rsvd::rsvd, args=args)
-	cat( 'rsvd: dim u: ', dim(s$u), '\n')
-	cat( 'rsvd: dim v: ', dim(s$v), '\n')
 	ans$sdev <- s$d / sqrt(max(1, nrow(x) - 1))
 	ans$rotation <- s$v
 	colnames(ans$rotation) <- paste("PC", seq(1, ncol(ans$rotation)), sep="")

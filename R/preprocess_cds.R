@@ -19,7 +19,7 @@
 #' @param pca_method a string specifying the PCA algorithm to use, which can be
 #'  either irlba or rsvd. irlba is the implicitly restarted Lanczos
 #' bidiagonalization algorithm and rsvd is the randomized SVD method in the
-#' irlba package. Default is "irlba".
+#' rsvd package. Default is "irlba".
 #' @param num_dim the dimensionality of the reduced space.
 #' @param norm_method Determines how to transform expression values prior to
 #'   reducing dimensionality. Options are "log", "size_only", and "none".
@@ -51,7 +51,7 @@
 #' @return an updated cell_data_set object
 #' @export
 preprocess_cds <- function(cds, method = c('PCA', "LSI"),
-		                   pca_method = c( 'irlba', 'rsvd'),
+                           pca_method = c( 'irlba', 'rsvd'),
                            num_dim=50,
                            norm_method = c("log", "size_only", "none"),
                            use_genes = NULL,
@@ -67,9 +67,9 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
              error = function(e) FALSE),
     msg = "method must be one of 'PCA' or 'LSI'")
   assertthat::assert_that(
-		  tryCatch(expr = ifelse(match.arg(pca_method) == "",TRUE, TRUE),
-				  error = function(e) FALSE),
-		  msg = "pca_method must be one of 'irlba' or 'rsvd'")
+    tryCatch(expr = ifelse(match.arg(pca_method) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "pca_method must be one of 'irlba' or 'rsvd'")
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(norm_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
@@ -110,13 +110,13 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
   if(method == 'PCA') {
     if (verbose) message("Remove noise by PCA ...")
 
-	irlba_res <- switch(pca_method,
-		irlba = sparse_prcomp_irlba(Matrix::t(FM),
-                                    n = min(num_dim,min(dim(FM)) - 1),
-                                    center = scaling, scale. = scaling),
-		rsvd = sparse_prcomp_rsvd(Matrix::t(FM),
-				n = min(num_dim,min(dim(FM)) - 1),
-				center = scaling, scale. = scaling)
+  irlba_res <- switch(pca_method,
+    irlba = sparse_prcomp_irlba(Matrix::t(FM),
+                                n = min(num_dim,min(dim(FM)) - 1),
+                                center = scaling, scale. = scaling),
+    rsvd = sparse_prcomp_rsvd(Matrix::t(FM),
+                                n = min(num_dim,min(dim(FM)) - 1),
+                                center = scaling, scale. = scaling)
     )
     preproc_res <- irlba_res$x
     row.names(preproc_res) <- colnames(cds)

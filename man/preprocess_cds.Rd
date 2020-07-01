@@ -31,7 +31,7 @@ modules / topics. Default is "PCA".}
 \item{pca_method}{a string specifying the PCA algorithm to use, which can be
 either irlba or rsvd. irlba is the implicitly restarted Lanczos
 bidiagonalization algorithm and rsvd is the randomized SVD method in the
-irlba package. Default is "irlba".}
+rsvd package. Default is "irlba".}
 
 \item{num_dim}{the dimensionality of the reduced space.}
 
