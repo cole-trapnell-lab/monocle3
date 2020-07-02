@@ -68,9 +68,9 @@ find_gene_modules <- function(cds,
 
   preprocess_mat <- cds@preprocess_aux$gene_loadings
   if (is.null(cds@preprocess_aux$beta) == FALSE){
-    preprocess_mat = preprocess_mat %*% (-cds@preprocess_aux$beta)
+    preprocess_mat <- sweep( preprocess_mat, 2, cds@preprocess_aux$beta[,1], '*')
   }
-  preprocess_mat = preprocess_mat[intersect(rownames(cds), row.names(preprocess_mat)),]
+  preprocess_mat <- preprocess_mat[intersect(rownames(cds), row.names(preprocess_mat)),]
 
   # uwot::umap uses a random number generator
   if( random_seed != 0L )
@@ -218,14 +218,14 @@ aggregate_gene_expression <- function(cds,
 
   if (is.null(cell_group_df) == FALSE){
 
-    cell_group_df = as.data.frame(cell_group_df)
-    cell_group_df = cell_group_df[cell_group_df[,1] %in% row.names(pData(cds)),,
+    cell_group_df <- as.data.frame(cell_group_df)
+    cell_group_df <- cell_group_df[cell_group_df[,1] %in% row.names(pData(cds)),,
                                   drop=FALSE]
-    agg_mat = agg_mat[,cell_group_df[,1]]
-    agg_mat = my.aggregate.Matrix(Matrix::t(agg_mat),
+    agg_mat <- agg_mat[,cell_group_df[,1]]
+    agg_mat <- my.aggregate.Matrix(Matrix::t(agg_mat),
                                   as.factor(cell_group_df[,2]),
                                   fun="mean")
-    agg_mat = Matrix::t(agg_mat)
+    agg_mat <- Matrix::t(agg_mat)
   }
 
   if (exclude.na){
