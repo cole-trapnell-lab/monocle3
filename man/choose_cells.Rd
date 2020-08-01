@@ -7,6 +7,7 @@
 choose_cells(
   cds,
   reduction_method = c("UMAP", "tSNE", "PCA", "Aligned"),
+  clear_cds = FALSE,
   return_list = FALSE
 )
 }
@@ -14,6 +15,10 @@ choose_cells(
 \item{cds}{CDS object to subset}
 
 \item{reduction_method}{The reduction method to plot while choosing cells.}
+
+\item{clear_cds}{Logical, clear CDS slots before returning.
+After clearing the cds, re-run processing from preprocess_cds(), ...
+Default is FALSE.}
 
 \item{return_list}{Logical, return a list of cells instead of a subsetted
 CDS object.}
