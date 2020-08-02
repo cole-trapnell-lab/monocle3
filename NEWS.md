@@ -1,3 +1,13 @@
+# monocle3 0.2.3
+
+### Changes
+* Added clear_cds parameter to choose_cells().
+
+### Bug fixes
+* Documentation and error reports improvements.
+* Fixed issue #316, top_marker()
+* Fixed issue #346, find_gene_modules()
+
 # monocle3 0.2.2
 
 ### Changes
