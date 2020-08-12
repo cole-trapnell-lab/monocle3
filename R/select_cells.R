@@ -4,12 +4,16 @@
 #' @param reduction_method The reduction method to plot while choosing cells.
 #' @param return_list Logical, return a list of cells instead of a subsetted
 #'   CDS object.
+#' @param clear_cds Logical, clear CDS slots before returning.
+#'   After clearing the cds, re-run processing from preprocess_cds(), ...
+#'   Default is FALSE.
 #'
 #' @return A subset CDS object. If return_list = FALSE, a list of cell names.
 #' @export
 #'
 choose_cells <- function(cds,
                          reduction_method = c("UMAP", "tSNE", "PCA", "Aligned"),
+                         clear_cds = FALSE,
                          return_list = FALSE) {
   reduction_method <- match.arg(reduction_method)
   assertthat::assert_that(methods::is(cds, "cell_data_set"))
@@ -116,6 +120,8 @@ choose_cells <- function(cds,
   if(return_list) {
     return(row.names(colData(cds)[sel,]))
   } else {
+    if( clear_cds )
+      return(clear_cds_slots(cds[,sel]))
     return(cds[,sel])
   }
 }
