@@ -26,6 +26,8 @@ setOldClass(c("igraph"), prototype=structure(list(), class="igraph"))
 #' @importFrom SingleCellExperiment reducedDims
 #' @importFrom SummarizedExperiment Assays colData<- rowData<- assays assays<-
 #' @importFrom S4Vectors metadata metadata<- SimpleList
+#' @importFrom SingleCellExperiment int_elementMetadata int_colData int_metadata
+#' @importFrom SummarizedExperiment elementMetadata rowRanges
 setClass("cell_data_set",
           contains = c("SingleCellExperiment"),
           slots = c(preprocess_aux = "SimpleList",
@@ -112,13 +114,13 @@ new_cell_data_set <- function(expression_data,
              assays = SummarizedExperiment::Assays(
                list(counts=methods::as(expression_data, "dgCMatrix"))),
              colData = colData(sce),
-             int_elementMetadata =int_elementMetadata(sce),
-             int_colData = int_colData(sce),
-             int_metadata = int_metadata(sce),
+             int_elementMetadata = SingleCellExperiment::int_elementMetadata(sce),
+             int_colData = SingleCellExperiment::int_colData(sce),
+             int_metadata = SingleCellExperiment::int_metadata(sce),
              metadata = metadata(sce),
              NAMES = NULL,
-             elementMetadata = elementMetadata(sce)[,0],
-             rowRanges = rowRanges(sce))
+             elementMetadata = SummarizedExperiment::elementMetadata(sce)[,0],
+             rowRanges = SummarizedExperiment::rowRanges(sce))
 
   metadata(cds)$cds_version <- Biobase::package.version("monocle3")
   clusters <- stats::setNames(SimpleList(), character(0))
