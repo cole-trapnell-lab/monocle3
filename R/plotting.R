@@ -624,7 +624,7 @@ plot_cells <- function(cds,
           text_df = data_df %>%
             dplyr::group_by(cell_group) %>%
             dplyr::mutate(cells_in_cluster= dplyr::n()) %>%
-            dplyr::group_by(cell_color, add=TRUE) %>%
+            dplyr::group_by(cell_color, .add=TRUE) %>%
             dplyr::mutate(per=dplyr::n()/cells_in_cluster)
           median_coord_df = text_df %>%
             dplyr::summarize(fraction_of_group = dplyr::n(),

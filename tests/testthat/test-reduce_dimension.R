@@ -106,13 +106,13 @@ test_that("reduce_dimension runs", {
   cds <- reduce_dimension(cds, reduction_method = "tSNE")
   expect_equal(nrow(reducedDims(cds)$tSNE), nrow(colData(cds)))
   expect_equal(ncol(reducedDims(cds)$tSNE), 2)
-  expect_equal(as.numeric(reducedDims(cds)$tSNE[1,1]), 0.521,
+  expect_equal(as.numeric(reducedDims(cds)$tSNE[1,1]), 1.83,
                tolerance = 1e-2)
 
   cds <- reduce_dimension(cds,  max_components = 3, reduction_method = "tSNE")
   expect_equal(nrow(reducedDims(cds)$tSNE), nrow(colData(cds)))
   expect_equal(ncol(reducedDims(cds)$tSNE), 3)
-  expect_equal(as.numeric(reducedDims(cds)$tSNE[1,1]),  5.2,
+  expect_equal(as.numeric(reducedDims(cds)$tSNE[1,1]),  1.36,
                tolerance = 1e-1)
 
   cds <- reduce_dimension(cds, reduction_method = "PCA")
@@ -130,7 +130,7 @@ test_that("reduce_dimension runs", {
   cds <- reduce_dimension(cds, reduction_method = "tSNE", preprocess_method = "LSI")
   expect_equal(nrow(reducedDims(cds)$tSNE), nrow(colData(cds)))
   expect_equal(ncol(reducedDims(cds)$tSNE), 2)
-  expect_equal(as.numeric(reducedDims(cds)$tSNE[1,1]), -2.15,
+  expect_equal(as.numeric(reducedDims(cds)$tSNE[1,1]), 0.204,
                tolerance = 1e-2)
 
   expect_error(reduce_dimension(cds, reduction_method = "DDRTree"),
