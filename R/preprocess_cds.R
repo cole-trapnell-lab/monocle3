@@ -108,7 +108,7 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
 
     irlba_rotation <- irlba_res$rotation
     row.names(irlba_rotation) <- rownames(FM)
-    cds@preprocess_aux$gene_loadings <- irlba_rotation
+    cds@preprocess_aux$gene_loadings <- irlba_rotation %*% diag(irlba_res$sdev)
     cds@preprocess_aux$prop_var_expl <- irlba_res$sdev^2 / sum(irlba_res$sdev^2)
 
   } else if(method == "LSI") {
@@ -122,7 +122,7 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
 
     irlba_rotation = irlba_res$v
     row.names(irlba_rotation) = rownames(FM)
-    cds@preprocess_aux$gene_loadings = irlba_rotation
+    cds@preprocess_aux$gene_loadings = irlba_rotation %*% diag(irlba_res$sdev)
 
   }
 
