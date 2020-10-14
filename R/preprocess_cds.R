@@ -122,7 +122,7 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
 
     irlba_rotation = irlba_res$v
     row.names(irlba_rotation) = rownames(FM)
-    cds@preprocess_aux$gene_loadings = irlba_rotation %*% diag(irlba_res$sdev)
+    cds@preprocess_aux$gene_loadings = irlba_rotation %*% diag( irlba_res$d/sqrt( max(1, ncol(preproc_res) - 1) ) )
 
   }
 
