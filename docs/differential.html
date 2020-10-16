@@ -106,7 +106,7 @@ cds_subset <- cds[rowData(cds)$gene_short_name %in% ciliated_genes,]
       <p>
         where $y_i$ is a random variable corresponding to the expression values of gene $i$, $x_t$ is the time each cell was 
         collected (in minutes), and the $\beta_t$ capture the effect of time on expression, and $\beta_0$ is an intercept term. We 
-        can identify genes that vary over time by fitting this model to each one, and then testing whether it's $\beta_t$ is 
+        can identify genes that vary over time by fitting this model to each one, and then testing whether its $\beta_t$ is 
         significantly different from zero. To do so, we first call the <code>fit_models()</code> function:
       </p>
       
@@ -185,8 +185,8 @@ emb_time_terms <- fit_coefs %>% filter(term == "embryo.time")
 {% endhighlight %}
       
       <p>
-        Now, let's pull out the genes that have a significant time component. <code>coefficient_table()</code> calculates tests 
-        each coefficient for whether it is significantly different than zero under the 
+        Now, let's pull out the genes that have a significant time component. <code>coefficient_table()</code> tests 
+        whether each coefficient differs significantly from zero under the 
         <a href="https://en.wikipedia.org/wiki/Wald_test">Wald test</a>. By default, <code>coefficient_table()</code> adjusts these 
         p-values for <code<>multiple hypothesis testing</code> using the method of 
         <a href="https://en.wikipedia.org/wiki/False_discovery_rate">Benjamini and Hochberg</a>. These adjusted values can be found 
@@ -536,7 +536,7 @@ pr_deg_ids <- row.names(subset(pr_graph_test_res, q_value < 0.05))
       <p>
         The data frame <code>pr_graph_test_res</code> has the Moran's I test results for each gene in the <code>cell_data_set</code>. 
         If you'd like to rank the genes by effect size, sort this table by the <code>morans_I</code>column, which ranges from -1 to +1. 
-        A value of 0 indicates no effect, while +1 indicates perfect positive autocorrelation and suggests that a nearby cells have 
+        A value of 0 indicates no effect, while +1 indicates perfect positive autocorrelation and suggests that nearby cells have 
         very similar values of a gene's expression. Significant values much less than zero are generally rare.
       </p>
       
@@ -580,7 +580,7 @@ pheatmap::pheatmap(agg_mat, cluster_rows=TRUE, cluster_cols=TRUE,
       </div>
       
       <p>
-        Some modules are highly specific to certain paritions of cells, while others are shared across multiple partitions. Note that 
+        Some modules are highly specific to certain partitions of cells, while others are shared across multiple partitions. Note that 
         <code>aggregate_gene_expression</code> can work with arbitrary groupings of cells and genes. You're not limited to looking at 
         modules from <code>find_gene_modules()</code>, <code>clusters()</code>, and <code>partitions()</code>.
       </p>
@@ -608,7 +608,7 @@ plot_cells(neurons_cds,
         Identifying the genes that change as cells progress along a trajectory is a core objective of this type of analysis. 
         Knowing the order in which genes go on and off can inform new models of development. For example, 
         <a href="http://dx.doi.org/10.1016/j.cell.2018.12.003">Sharon and Chawla et al</a> recently analyzed pseudotime-dependent 
-        genes to arrive a whole new model of how islets form in the pancreas.
+        genes to arrive at a whole new model of how islets form in the pancreas.
       </p>
       <p>Let's return to the embryo data:</p>
       
