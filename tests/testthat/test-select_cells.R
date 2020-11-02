@@ -14,6 +14,7 @@ test_that("test choose_graph_segments error messages work", {
   cds <- cluster_cells(cds)
   expect_error(cds <- choose_graph_segments(cds),
                "No principal graph for UMAP calculated. Please run learn_graph with reduction_method = UMAP before running choose_graph_segments.")
+  cds <- learn_graph(cds)
   expect_error(cds_sub <- choose_graph_segments(cds, starting_pr_node = "Y_4"),
                "If not using interactive mode, you must provide ending_pr_nodes.")
   expect_error(cds_sub <- choose_graph_segments(cds, ending_pr_nodes = "Y_4"),
