@@ -38,7 +38,7 @@ test_that("combine_cds works", {
                                sum(exprs(cds2)["ENSG00000260917.1",]),
                              sum(exprs(comb)["ENSG00000260917.1",]))
     }
-
+    testthat::expect_equal(length(unique(pData(comb)$sample)), 2)
 
 
   }

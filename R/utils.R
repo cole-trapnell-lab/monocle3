@@ -904,6 +904,12 @@ combine_cds <- function(cds_list,
         pd[,sample_col_name] <- i
       }
       colnames(exp) <- row.names(pd)
+    } else {
+      if(list_named) {
+        pd[,sample_col_name] <- names(cds_list)[[i]]
+      } else {
+        pd[,sample_col_name] <- i
+      }
     }
     not_in <- pdata_cols[!pdata_cols %in% names(pd)]
     for (n in not_in) {
