@@ -29,7 +29,8 @@ plot_cells(
   alpha = 1,
   min_expr = 0.1,
   rasterize = FALSE,
-  scale_to_range = FALSE
+  scale_to_range = FALSE,
+  label_principal_points = FALSE
 )
 }
 \arguments{
@@ -106,6 +107,10 @@ ggrastr package.}
 
 \item{scale_to_range}{Logical indicating whether to scale expression to
 percent of maximum expression.}
+
+\item{label_principal_points}{Logical indicating whether to label roots,
+leaves, and branch points with principal point names. This is useful for
+order_cells and choose_graph_segments in non-interactive mode.}
 }
 \value{
 a ggplot2 plot object

@@ -370,6 +370,9 @@ plot_cells_3d <- function(cds,
 #'   ggrastr package.
 #' @param scale_to_range Logical indicating whether to scale expression to
 #'   percent of maximum expression.
+#' @param label_principal_points Logical indicating whether to label roots,
+#'   leaves, and branch points with principal point names. This is useful for
+#'   order_cells and choose_graph_segments in non-interactive mode.
 #'
 #' @return a ggplot2 plot object
 #' @export
@@ -404,7 +407,8 @@ plot_cells <- function(cds,
                        alpha = 1,
                        min_expr=0.1,
                        rasterize=FALSE,
-                       scale_to_range=FALSE) {
+                       scale_to_range=FALSE,
+                       label_principal_points = FALSE) {
   reduction_method <- match.arg(reduction_method)
   assertthat::assert_that(methods::is(cds, "cell_data_set"))
   assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
@@ -451,6 +455,19 @@ plot_cells <- function(cds,
     message("No trajectory to plot. Has learn_graph() been called yet?")
     show_trajectory_graph = FALSE
   }
+  if (label_principal_points &&
+      is.null(principal_graph(cds)[[reduction_method]])) {
+    message("Cannot label principal points when no trajectory to plot. Has learn_graph() been called yet?")
+    label_principal_points = FALSE
+  }
+
+  if (label_principal_points) {
+    label_branch_points <- FALSE
+    label_leaves <- FALSE
+    label_roots <- FALSE
+  }
+
+
 
   gene_short_name <- NA
   sample_name <- NA
@@ -749,6 +766,26 @@ plot_cells <- function(cds,
                           data=edge_df)
 
 
+    if (label_principal_points) {
+      mst_branch_nodes <- branch_nodes(cds, reduction_method)
+      mst_leaf_nodes <- leaf_nodes(cds, reduction_method)
+      mst_root_nodes <- root_nodes(cds, reduction_method)
+      pps <- c(mst_branch_nodes, mst_leaf_nodes, mst_root_nodes)
+      princ_point_df <- ica_space_df %>%
+        dplyr::slice(match(names(pps), sample_name))
+
+      g <- g +
+        geom_point(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2"),
+                   shape = 21, stroke=I(trajectory_graph_segment_size),
+                   color="white",
+                   fill="black",
+                   size=I(graph_label_size * 1.5),
+                   na.rm=TRUE, princ_point_df) +
+        ggrepel::geom_text_repel(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2",
+                             label="sample_name"),
+                  size=I(graph_label_size * 1.5), color="Black", na.rm=TRUE,
+                  princ_point_df)
+    }
     if (label_branch_points){
       mst_branch_nodes <- branch_nodes(cds, reduction_method)
       branch_point_df <- ica_space_df %>%
