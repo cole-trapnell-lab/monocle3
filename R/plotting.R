@@ -1468,6 +1468,12 @@ plot_genes_by_group <- function(cds,
                             msg = paste("group_cells_by must be a column in",
                                         "the colData table."))
   }
+  assertthat::assert_that("gene_short_name" %in% names(rowData(cds)), msg =
+                            paste("This function requires a gene_short_name",
+                                  "column in your rowData. If you do not have",
+                                  "gene symbols, you can use other gene ids",
+                                  "by running",
+                                  "rowData(cds)$gene_short_name <- row.names(rowData(cds))"))
 
   norm_method = match.arg(norm_method)
 
@@ -1477,7 +1483,7 @@ plot_genes_by_group <- function(cds,
     dplyr::pull(rowname)
   if(length(gene_ids) < 1)
     stop(paste('Please make sure markers are included in the gene_short_name",
-               "column of the fData!'))
+               "column of the rowData!'))
 
   if(flip_percentage_mean == FALSE){
     major_axis <- 1

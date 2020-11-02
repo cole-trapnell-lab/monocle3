@@ -109,4 +109,21 @@ test_that("plot_cells doesn't error", {
 })
 
 
+test_that("plot_genes_by_group doesn't error", {
+  pData(cds)$temp <- c(1,2)
+  plot_genes_by_group(cds,
+                      c("CPHL1P", "NDRG4",
+                        "HBG2"),
+                      group_cells_by="temp",
+                      ordering_type="maximal_on_diag",
+                      max.size=3)
+  rowData(cds)$gene_short_name <- NULL
+  expect_error(plot_genes_by_group(cds,
+                                   c("CPHL1P", "NDRG4",
+                                     "HBG2"),
+                                   group_cells_by="temp",
+                                   ordering_type="maximal_on_diag",
+                                   max.size=3))
+
+})
 
