@@ -565,7 +565,7 @@ sparse_prcomp_rsvd <- function(x, n = 3, retx = TRUE, center = TRUE, scale. = FA
 	}
 	if (!missing(...)) args <- c(args, list(...))
 
-	if(((is.logical(center) && center) || is.numeric(center.)) ||
+	if(((is.logical(center) && center) || is.numeric(center)) ||
 	   ((is.logical(scale.) && scale.) || is.numeric(scale.)))
 		args$A <- scale(orig_x, center = center, scale = scale )
 	else
