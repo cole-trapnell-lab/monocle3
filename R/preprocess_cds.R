@@ -17,9 +17,10 @@
 #'   performs SVD to decompose the gene expression / cells into certain
 #'   modules / topics. Default is "PCA".
 #' @param pca_method a string specifying the PCA algorithm to use, which can be
-#'  either irlba or rsvd. irlba is the implicitly restarted Lanczos
-#' bidiagonalization algorithm and rsvd is the randomized SVD method in the
-#' rsvd package. Default is "irlba".
+#'  irlba, rsvd, or svdr. irlba is the implicitly restarted Lanczos
+#' bidiagonalization algorithm, rsvd is the randomized SVD method in the
+#' rsvd package, and svdr is the randomized SVD method in the irlba package.
+#' Default is "irlba".
 #' @param num_dim the dimensionality of the reduced space.
 #' @param norm_method Determines how to transform expression values prior to
 #'   reducing dimensionality. Options are "log", "size_only", and "none".
@@ -51,7 +52,7 @@
 #' @return an updated cell_data_set object
 #' @export
 preprocess_cds <- function(cds, method = c('PCA', "LSI"),
-                           pca_method = c( 'irlba', 'rsvd'),
+                           pca_method = c( 'irlba', 'rsvd', 'svdr'),
                            num_dim=50,
                            norm_method = c("log", "size_only", "none"),
                            use_genes = NULL,
@@ -111,12 +112,15 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
     if (verbose) message("Remove noise by PCA ...")
 
   irlba_res <- switch(pca_method,
-    irlba = sparse_prcomp_irlba(Matrix::t(FM),
-                                n = min(num_dim,min(dim(FM)) - 1),
-                                center = scaling, scale. = scaling),
-    rsvd = sparse_prcomp_rsvd(Matrix::t(FM),
-                                n = min(num_dim,min(dim(FM)) - 1),
-                                center = scaling, scale. = scaling)
+      irlba = sparse_prcomp_irlba(Matrix::t(FM),
+                                  n = min(num_dim,min(dim(FM)) - 1),
+                                  center = scaling, scale. = scaling),
+      rsvd = sparse_prcomp_rsvd(Matrix::t(FM),
+                                  n = min(num_dim,min(dim(FM)) - 1),
+                                  center = scaling, scale. = scaling)
+      svdr = sparse_prcomp_svdr(Matrix::t(FM),
+                                  n = min(num_dim,min(dim(FM)) - 1),
+                                  center = scaling, scale. = scaling)
     )
     preproc_res <- irlba_res$x
     row.names(preproc_res) <- colnames(cds)
