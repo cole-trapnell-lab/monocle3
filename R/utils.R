@@ -711,13 +711,13 @@ sparse_prcomp_svdr <- function(x, n = 3, retx = TRUE, center = TRUE, scale. = FA
     #       unacceptable because it alters x and x is the expression matrix
     #       in the cds, I believe. (Additionally, it requires dealing with
     #       sparse matrices in cpp code -- a complication.)
-    args$A <- x %*% scale
+    args$x <- x %*% scale
     # scale the centering vector.
     if(!is.null(center)) {
       center <- center / scale
     }
   } else {
-    args$A <- x
+    args$x <- x
   }
 
   if(!is.null(center)) {
