@@ -117,7 +117,7 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
                                   center = scaling, scale. = scaling),
       rsvd = sparse_prcomp_rsvd(Matrix::t(FM),
                                   n = min(num_dim,min(dim(FM)) - 1),
-                                  center = scaling, scale. = scaling)
+                                  center = scaling, scale. = scaling),
       svdr = sparse_prcomp_svdr(Matrix::t(FM),
                                   n = min(num_dim,min(dim(FM)) - 1),
                                   center = scaling, scale. = scaling)

@@ -652,7 +652,7 @@ sparse_prcomp_svdr <- function(x, n = 3, retx = TRUE, center = TRUE, scale. = FA
     warning("The `tol` truncation argument from `prcomp` is not supported by
             `prcomp_irlba`. If specified, `tol` is passed to the `irlba`
             function to control that algorithm's convergence tolerance. See
-            `?prcomp_irlba` for help."
+            `?prcomp_svdr` for help.")
 
   # list of svdr function parameters
   args <- list(k=n)
@@ -713,7 +713,7 @@ sparse_prcomp_svdr <- function(x, n = 3, retx = TRUE, center = TRUE, scale. = FA
     #       sparse matrices in cpp code -- a complication.)
     args$A <- x %*% scale
     # scale the centering vector.
-    if(!is.null(center) {
+    if(!is.null(center)) {
       center <- center / scale
     }
   } else {
