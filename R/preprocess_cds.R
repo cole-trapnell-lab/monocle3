@@ -70,7 +70,7 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(pca_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
-    msg = "pca_method must be one of 'irlba' or 'rsvd'")
+    msg = "pca_method must be one of 'irlba', 'rsvd'm or 'svdr'")
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(norm_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
