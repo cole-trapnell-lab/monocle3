@@ -57,8 +57,8 @@ test_that("cluster_cells works", {
   expect_equal(length(cds@clusters[["UMAP"]]$cluster_result$optim_res$membership),
                nrow(colData(cds)))
   expect_equal(cds@clusters[["UMAP"]]$cluster_result$optim_res$membership[[1]],
-               9)
-  expect_equal(length(unique(clusters(cds, reduction_method = "UMAP"))), 20)
+               1)
+  expect_equal(length(unique(clusters(cds, reduction_method = "UMAP"))), 19)
 
   ## louvain
   cds <- cluster_cells(cds, cluster_method = "louvain", random_seed = 100)
@@ -67,8 +67,8 @@ test_that("cluster_cells works", {
   expect_equal(length(cds@clusters[["UMAP"]]$cluster_result$optim_res$membership),
                nrow(colData(cds)))
   expect_equal(cds@clusters[["UMAP"]]$cluster_result$optim_res$membership[[1]],
-               3)
-  expect_equal(length(unique(clusters(cds, reduction_method = "UMAP"))), 10)
+               9)
+  expect_equal(length(unique(clusters(cds, reduction_method = "UMAP"))), 9)
 
   # non-standard opts
   cds <- cluster_cells(cds, cluster_method = "louvain", k=22, weight = T,
@@ -79,8 +79,8 @@ test_that("cluster_cells works", {
   expect_equal(length(cds@clusters[["UMAP"]]$cluster_result$optim_res$membership),
                nrow(colData(cds)))
   expect_equal(cds@clusters[["UMAP"]]$cluster_result$optim_res$membership[[1]],
-               9)
-  expect_equal(length(unique(clusters(cds, reduction_method = "UMAP"))), 11)
+               10)
+  expect_equal(length(unique(clusters(cds, reduction_method = "UMAP"))), 10)
 
   ### tSNE
   ##leiden
@@ -102,8 +102,8 @@ test_that("cluster_cells works", {
   expect_equal(length(cds@clusters[["tSNE"]]$cluster_result$optim_res$membership),
                nrow(colData(cds)))
   expect_equal(cds@clusters[["tSNE"]]$cluster_result$optim_res$membership[[1]],
-               10)
-  expect_equal(length(unique(clusters(cds, reduction_method = "tSNE"))), 20)
+               14)
+  expect_equal(length(unique(clusters(cds, reduction_method = "tSNE"))), 18)
 
   ### PCA
 

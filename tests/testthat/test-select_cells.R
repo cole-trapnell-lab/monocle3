@@ -4,10 +4,10 @@ cds <- load_a549()
 
 test_that("test choose_graph_segments error messages work", {
   expect_error(cds <- choose_graph_segments(cds),
-               "No dimensionality reduction for UMAP calculated. Please run reduce_dimensions with reduction_method = UMAP, cluster_cells and learn_graph before running choose_graph_segments.")
+               "No dimensionality reduction for UMAP calculated. Please run reduce_dimension with reduction_method = UMAP, cluster_cells and learn_graph before running choose_graph_segments.")
   cds <- preprocess_cds(cds)
   expect_error(cds <- choose_graph_segments(cds),
-               "No dimensionality reduction for UMAP calculated. Please run reduce_dimensions with reduction_method = UMAP, cluster_cells and learn_graph before running choose_graph_segments.")
+               "No dimensionality reduction for UMAP calculated. Please run reduce_dimension with reduction_method = UMAP, cluster_cells and learn_graph before running choose_graph_segments.")
   cds <- reduce_dimension(cds)
   expect_error(cds <- choose_graph_segments(cds),
                "No cell clusters for UMAP calculated. Please run cluster_cells with reduction_method = UMAP and run learn_graph before running choose_graph_segments.")
