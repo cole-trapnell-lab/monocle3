@@ -61,7 +61,13 @@ reduce_dimension <- function(cds,
                              cores=1,
                              verbose=FALSE,
                              ...){
+
   extra_arguments <- list(...)
+
+  if('ret_model' %in% names(extra_arguments) && extra_arguments$ret_model == TRUE)
+    umap_return_model <- TRUE
+  else
+    umap_return_model <- FALSE
 
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
@@ -175,8 +181,16 @@ reduce_dimension <- function(cds,
                           nn_method = umap.nn_method,
                           ...)
 
-    row.names(umap_res) <- colnames(cds)
-    reducedDims(cds)$UMAP <- umap_res
+    if( !umap_return_model ) {
+      row.names(umap_res) <- colnames(cds)
+      reducedDims(cds)[['UMAP']] <- umap_res
+    } else {
+      row.names(umap_res$embedding) <- colnames(cds)
+      reducedDims(cds)[['UMAP']] <- umap_res$embedding
+      cds@reduce_dim_aux[['UMAP']] <- SimpleList()
+      cds@reduce_dim_aux[['UMAP']][['model']] <- umap_res
+    }
+    
   }
 
   ## Clear out any old graphs:

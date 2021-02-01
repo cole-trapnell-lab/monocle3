@@ -6,6 +6,7 @@
 \usage{
 find_gene_modules(
   cds,
+  preprocess_method = c("PCA", "LSI"),
   reduction_method = c("UMAP"),
   max_components = 2,
   umap.metric = "cosine",
@@ -26,6 +27,10 @@ find_gene_modules(
 }
 \arguments{
 \item{cds}{the cell_data_set upon which to perform this operation}
+
+\item{preprocess_method}{a string specifying the low-dimensional space
+to use for gene loadings, currently either PCA or LSI. Default is
+"PCA".}
 
 \item{reduction_method}{The dimensionality reduction method used to generate the lower dimensional space in which genes will be clustered. Currently only UMAP is supported.}
 

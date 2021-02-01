@@ -97,8 +97,13 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
 
     irlba_rotation <- irlba_res$rotation
     row.names(irlba_rotation) <- rownames(FM)
-    cds@preprocess_aux$gene_loadings <- irlba_rotation %*% diag(irlba_res$sdev)
-    cds@preprocess_aux$prop_var_expl <- irlba_res$sdev^2 / sum(irlba_res$sdev^2)
+    cds@preprocess_aux[['PCA']] <- SimpleList()
+    # we need svd_v downstream so
+    # calculate gene_loadings in cluster_cells.R
+    cds@preprocess_aux[['PCA']]$svd_v <- irlba_rotation
+    cds@preprocess_aux[['PCA']]$svd_sdev <- irlba_res$sdev
+    cds@preprocess_aux[['PCA']]$prop_var_expl <- irlba_res$sdev^2 / sum(irlba_res$sdev^2)
+    cds@preprocess_aux[['PCA']]$beta = NULL
 
   } else if(method == "LSI") {
 
@@ -112,14 +117,18 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
 
     irlba_rotation = irlba_res$v
     row.names(irlba_rotation) = rownames(FM)
-    cds@preprocess_aux$gene_loadings = irlba_rotation %*% diag( irlba_res$d/sqrt( max(1, num_col - 1) ) )
+    cds@preprocess_aux[['LSI']] <- SimpleList()
+    cds@preprocess_aux[['LSI']]$svd_v <- irlba_rotation
+    cds@preprocess_aux[['LSI']]$svd_sdev <- irlba_res$d/sqrt(max(1, num_col - 1))
+    # we need svd_v downstream so
+    # calculate gene_loadings in cluster_cells.R
+    cds@preprocess_aux[['LSI']]$beta = NULL
 
   }
 
   row.names(preproc_res) <- colnames(cds)
 
   reducedDims(cds)[[method]] <- as.matrix(preproc_res)
-  cds@preprocess_aux$beta = NULL
 
   cds
 }
