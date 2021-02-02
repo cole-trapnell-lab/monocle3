@@ -59,6 +59,8 @@ reduce_dimension <- function(cds,
                              umap.fast_sgd = FALSE,
                              umap.nn_method = "annoy",
                              cores=1,
+                             build_nn_index = FALSE,
+                             nn_metric = c("cosine", "euclidean"),
                              verbose=FALSE,
                              ...){
 
@@ -181,19 +183,25 @@ reduce_dimension <- function(cds,
                           nn_method = umap.nn_method,
                           ...)
 
+
+    cds@reduce_dim_aux[['UMAP']] <- SimpleList()
+    cds@reduce_dim_aux[['UMAP']][['model']] <- SimpleList()
+    cds@reduce_dim_aux[['UMAP']][['classifier']] <- SimpleList()
     if( !umap_return_model ) {
-      row.names(umap_res) <- colnames(cds)
-      reducedDims(cds)[['UMAP']] <- umap_res
+        row.names(umap_res) <- colnames(cds)
+        reducedDims(cds)[['UMAP']] <- umap_res
     } else {
-      row.names(umap_res$embedding) <- colnames(cds)
-      reducedDims(cds)[['UMAP']] <- umap_res$embedding
-      cds@reduce_dim_aux[['UMAP']] <- SimpleList()
-      cds@reduce_dim_aux[['UMAP']][['model']] <- umap_res
+        row.names(umap_res$embedding) <- colnames(cds)
+        reducedDims(cds)[['UMAP']] <- umap_res$embedding
+        cds@reduce_dim_aux[['UMAP']][['model']]$umap_model <- umap_res$embedding
     }
-    
+    if( build_nn_index ) {
+        annoy_index <- uwot:::annoy_build(X = reducedDims(cds)[['UMAP']], metric = nn_metric)
+        cds@reduce_dim_aux[['UMAP']][['classifier']]$annoy_index <- annoy_index
+    }    
   }
 
-  ## Clear out any old graphs:
+  ## Clear out old graphs:
   cds@principal_graph_aux[[reduction_method]] <- NULL
   cds@principal_graph[[reduction_method]] <- NULL
   cds@clusters[[reduction_method]] <- NULL

@@ -37,13 +37,16 @@
 #'   residual_model_formula is not NULL
 #' @return an updated cell_data_set object
 #' @export
-preprocess_cds <- function(cds, method = c('PCA', "LSI"),
+preprocess_cds <- function(cds,
+                           method = c('PCA', "LSI"),
                            num_dim=50,
                            norm_method = c("log", "size_only", "none"),
                            use_genes = NULL,
                            pseudo_count=NULL,
                            scaling = TRUE,
                            verbose=FALSE,
+                           build_nn_index=FALSE,
+                           nn_metric = c("cosine", "euclidean"),
                            ...) {
 
   assertthat::assert_that(
@@ -98,15 +101,20 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
     irlba_rotation <- irlba_res$rotation
     row.names(irlba_rotation) <- rownames(FM)
     cds@preprocess_aux[['PCA']] <- SimpleList()
+    cds@preprocess_aux[['PCA']][['model']] <- SimpleList()
+    cds@preprocess_aux[['PCA']][['classifier']] <- SimpleList()
     # we need svd_v downstream so
     # calculate gene_loadings in cluster_cells.R
-    cds@preprocess_aux[['PCA']]$svd_v <- irlba_rotation
-    cds@preprocess_aux[['PCA']]$svd_sdev <- irlba_res$sdev
-    cds@preprocess_aux[['PCA']]$svd_center = irlba_res$center
-    cds@preprocess_aux[['PCA']]$svd_scale = irlba_res$svd_scale
-    cds@preprocess_aux[['PCA']]$prop_var_expl <- irlba_res$sdev^2 / sum(irlba_res$sdev^2)
-    cds@preprocess_aux[['PCA']]$beta = NULL
-
+    cds@preprocess_aux[['PCA']][['model']]$svd_v <- irlba_rotation
+    cds@preprocess_aux[['PCA']][['model']]$svd_sdev <- irlba_res$sdev
+    cds@preprocess_aux[['PCA']][['model']]$svd_center = irlba_res$center
+    cds@preprocess_aux[['PCA']][['model']]$svd_scale = irlba_res$svd_scale
+    cds@preprocess_aux[['PCA']][['model']]$prop_var_expl <- irlba_res$sdev^2 / sum(irlba_res$sdev^2)
+    cds@preprocess_aux[['PCA']]$beta <- NULL
+    if( build_nn_index ) {
+        annoy_index <- uwot:::annoy_build(X = preproc_res, metric = nn_metric)
+        cds@preprocess_aux[['PCA']][['classifier']]$annoy_index <- annoy_index
+    }
   } else if(method == "LSI") {
 
     preproc_res <- tfidf(FM)
@@ -120,12 +128,17 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
     irlba_rotation = irlba_res$v
     row.names(irlba_rotation) = rownames(FM)
     cds@preprocess_aux[['LSI']] <- SimpleList()
-    cds@preprocess_aux[['LSI']]$svd_v <- irlba_rotation
-    cds@preprocess_aux[['LSI']]$svd_sdev <- irlba_res$d/sqrt(max(1, num_col - 1))
+    cds@preprocess_aux[['LSI']][['model']] <- SimpleList()
+    cds@preprocess_aux[['LSI']][['classifier']] <- SimpleList()
+    cds@preprocess_aux[['LSI']][['model']]$svd_v <- irlba_rotation
+    cds@preprocess_aux[['LSI']][['model']]$svd_sdev <- irlba_res$d/sqrt(max(1, num_col - 1))
     # we need svd_v downstream so
     # calculate gene_loadings in cluster_cells.R
-    cds@preprocess_aux[['LSI']]$beta = NULL
-
+    cds@preprocess_aux[['LSI']]$beta <- NULL
+    if( build_nn_index ) {
+        annoy_index <- uwot:::annoy_build(X = preproc_res, metric = nn_metric)
+        cds@preprocess_aux[['LSI']][['classifier']]$annoy_index <- annoy_index
+    }
   }
 
   row.names(preproc_res) <- colnames(cds)
