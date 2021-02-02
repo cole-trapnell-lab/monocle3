@@ -102,6 +102,8 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
     # calculate gene_loadings in cluster_cells.R
     cds@preprocess_aux[['PCA']]$svd_v <- irlba_rotation
     cds@preprocess_aux[['PCA']]$svd_sdev <- irlba_res$sdev
+    cds@preprocess_aux[['PCA']]$svd_center = irlba_res$center
+    cds@preprocess_aux[['PCA']]$svd_scale = irlba_res$svd_scale
     cds@preprocess_aux[['PCA']]$prop_var_expl <- irlba_res$sdev^2 / sum(irlba_res$sdev^2)
     cds@preprocess_aux[['PCA']]$beta = NULL
 
