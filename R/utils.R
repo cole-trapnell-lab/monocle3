@@ -1044,3 +1044,67 @@ get_citations <- function(cds) {
   metadata(cds)$citations
 }
 
+
+#' Save preprocess classifier.
+#'
+#' Save a preprocess classifier consisting of dimensionality reduction and
+#' Annoy nearest neighbor data structures, which are used to transform and
+#' classify new data sets.
+#'
+#' @param cds cell_data_set with existing classifier, which was created using
+#'   cds <- preprocess_cds(cds, build_nn_index=TRUE).
+#' @param method A string indicating the method used to build the classifier
+#'   that you want saved. Default is "PCA".
+#' @param file_root_name. A string giving the root of names given to the two
+#'   files to which the classifier is saved. The files are named <file_root_name>.rds
+#'   and <file_root_name>.annoy_index.
+#' @param comment An optional string that describes the classifier.
+#'
+#' @return None
+#' @export
+save_preprocess_classifier <- function(cds, method = c('PCA', 'LSI'), file_root_name = NULL, comment = NULL) {
+  method <- match.arg(method)
+
+  file_name_rds <- paste0(file_root_name, '.rds')
+  file_name_index <- paste0(file_root_name, '.annoy_index')
+
+  object <- list()
+  object[['method']] <- method
+  object[['bundle']] <- cds@preprocess_aux[[method]]
+  object[['comment']] <- comment
+  saveRDS(object, file_name_rds)
+
+  cds@preprocess_aux[[method]][['classifier']]$annoy_index$ann$save(file_name_index)
+}
+
+
+#' Load preprocess classifier.
+#'
+#' Load into an existing cell_data_set a preprocess classifier consisting
+#' of dimensionality reduction and Annoy nearest neighbor data structures,
+#' which are used to transform and classify new data sets.
+#'
+#' @param cds cell_data_set into which the classifier is to be loaded.
+#' @param file_root_name. A string giving the root of names given to the two
+#'   files to which the classifier was saved. The files are named <file_root_name>.rds
+#'   and <file_root_name>.annoy_index.
+#'
+#' @return None
+#' @export
+load_preprocess_classifier <- function(cds, file_root_name = NULL) {
+  file_name_rds <- paste0(file_root_name, '.rds')
+  file_name_index <- paste0(file_root_name, '.annoy_index')
+
+  object <- readRDS(file_name_rds)
+  method <- object[['method']]
+  metric <- object[['bundle']][['classifier']]$annoy_index$metric
+  ndim <- object[['bundle']][['classifier']]$annoy_ndim
+
+  object[['bundle']][['classifier']]$annoy_index$ann <- uwot:::create_ann(metric, ndim)
+  object[['bundle']][['classifier']]$annoy_index$ann$load(file_name_index)
+
+
+  cds@preprocess_aux[[method]] <- object[['bundle']]
+}
+
+

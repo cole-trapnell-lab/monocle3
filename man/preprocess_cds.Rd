@@ -12,6 +12,8 @@ preprocess_cds(
   use_genes = NULL,
   pseudo_count = NULL,
   scaling = TRUE,
+  build_nn_index = FALSE,
+  nn_metric = c("cosine", "euclidean", "manhattan", "hamming"),
   verbose = FALSE,
   ...
 )
@@ -20,8 +22,8 @@ preprocess_cds(
 \item{cds}{the cell_data_set upon which to perform this operation}
 
 \item{method}{a string specifying the initial dimension method to use,
-currently either PCA or LSI. For LSI (latent semantic indexing), it
-converts the (sparse) expression matrix into tf-idf matrix and then
+currently either "PCA" or "LSI". For "LSI" (latent semantic indexing), it
+converts the (sparse) expression matrix into a tf-idf matrix and then
 performs SVD to decompose the gene expression / cells into certain
 modules / topics. Default is "PCA".}
 
@@ -45,11 +47,15 @@ factor only normalization.}
 each gene before running trajectory reconstruction. Relevant for
 method = PCA only.}
 
+\item{build_nn_index}{logical When this argument is set to TRUE,
+preprocess_cds builds the Annoy classifier index from the
+dimensionally reduced matrix for later use. Default is FALSE.}
+
+\item{nn_metric}{a string specifying the metric used by Annoy, currently
+"cosine", "euclidean", "manhattan", or "hamming". Default is "cosine".}
+
 \item{verbose}{Whether to emit verbose output during dimensionality
 reduction}
-
-\item{...}{additional arguments to pass to limma::lmFit if
-residual_model_formula is not NULL}
 }
 \value{
 an updated cell_data_set object

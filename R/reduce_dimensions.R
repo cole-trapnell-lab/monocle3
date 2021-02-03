@@ -39,6 +39,12 @@
 #'   used by UMAP. Default is "annoy". See uwot package's
 #'   \code{\link[umap]{umap}} for details.
 #' @param cores Number of compute cores to use.
+#' @param build_nn_index logical When this argument is set to TRUE,
+#'   reduce_dimension builds the Annoy classifier index from the 
+#'   dimensionally reduced matrix for later use. Default is FALSE.
+#' @param nn_metric a string specifying the metric used by Annoy for building
+#'   the Annoy index, currently "cosine", "euclidean", "manhattan", or "hamming".
+#'   Default is "cosine".
 #' @param verbose Logical, whether to emit verbose output.
 #' @param ... additional arguments to pass to the dimensionality reduction
 #'   function.
@@ -60,7 +66,7 @@ reduce_dimension <- function(cds,
                              umap.nn_method = "annoy",
                              cores=1,
                              build_nn_index = FALSE,
-                             nn_metric = c("cosine", "euclidean"),
+                             nn_metric = c("cosine", "euclidean", "manhattan", "hamming"),
                              verbose=FALSE,
                              ...){
 
@@ -75,6 +81,12 @@ reduce_dimension <- function(cds,
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
     msg = "reduction_method must be one of 'UMAP', 'PCA', 'tSNE', 'LSI', 'Aligned'")
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(nn_metric) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "nn_metric must be one of 'cosine', 'euclidean', 'manhattan', or 'hamming'")
+  assertthat::assert_that(is.logical(build_nn_index),
+                          msg = paste("build_nn_index must be either TRUE or FALSE"))
 
   reduction_method <- match.arg(reduction_method)
 
@@ -94,6 +106,7 @@ reduce_dimension <- function(cds,
 
   #preprocess_method <- match.arg(preprocess_method)
 
+  nn_metric <- match.arg(nn_metric)
 
   assertthat::assert_that(assertthat::is.count(max_components))
 

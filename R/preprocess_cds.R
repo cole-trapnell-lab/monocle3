@@ -12,8 +12,8 @@
 #'
 #' @param cds the cell_data_set upon which to perform this operation
 #' @param method a string specifying the initial dimension method to use,
-#'   currently either PCA or LSI. For LSI (latent semantic indexing), it
-#'   converts the (sparse) expression matrix into tf-idf matrix and then
+#'   currently either "PCA" or "LSI". For "LSI" (latent semantic indexing), it
+#'   converts the (sparse) expression matrix into a tf-idf matrix and then
 #'   performs SVD to decompose the gene expression / cells into certain
 #'   modules / topics. Default is "PCA".
 #' @param num_dim the dimensionality of the reduced space.
@@ -31,22 +31,25 @@
 #' @param scaling When this argument is set to TRUE (default), it will scale
 #'   each gene before running trajectory reconstruction. Relevant for
 #'   method = PCA only.
+#' @param build_nn_index logical When this argument is set to TRUE,
+#'   preprocess_cds builds the Annoy classifier index from the
+#'   dimensionally reduced matrix for later use. Default is FALSE.
+#' @param nn_metric a string specifying the metric used by Annoy, currently
+#'   "cosine", "euclidean", "manhattan", or "hamming". Default is "cosine".
 #' @param verbose Whether to emit verbose output during dimensionality
 #'   reduction
-#' @param ... additional arguments to pass to limma::lmFit if
-#'   residual_model_formula is not NULL
 #' @return an updated cell_data_set object
 #' @export
 preprocess_cds <- function(cds,
                            method = c('PCA', "LSI"),
-                           num_dim=50,
+                           num_dim = 50,
                            norm_method = c("log", "size_only", "none"),
                            use_genes = NULL,
-                           pseudo_count=NULL,
+                           pseudo_count = NULL,
                            scaling = TRUE,
-                           verbose=FALSE,
-                           build_nn_index=FALSE,
-                           nn_metric = c("cosine", "euclidean"),
+                           build_nn_index = FALSE,
+                           nn_metric = c("cosine", "euclidean", "manhattan", "hamming"),
+                           verbose = FALSE,
                            ...) {
 
   assertthat::assert_that(
@@ -57,6 +60,10 @@ preprocess_cds <- function(cds,
     tryCatch(expr = ifelse(match.arg(norm_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
     msg = "norm_method must be one of 'log', 'size_only' or 'none'")
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(nn_metric) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "nn_metric must be one of 'cosine', 'euclidean', 'manhattan', or 'hamming'")
   assertthat::assert_that(assertthat::is.count(num_dim))
   if(!is.null(use_genes)) {
     assertthat::assert_that(is.character(use_genes))
@@ -70,9 +77,11 @@ preprocess_cds <- function(cds,
   assertthat::assert_that(sum(is.na(size_factors(cds))) == 0,
                           msg = paste("One or more cells has a size factor of",
                                       "NA."))
-
+  assertthat::assert_that(is.logical(build_nn_index),
+                          msg = paste("build_nn_index must be either TRUE or FALSE"))
   method <- match.arg(method)
   norm_method <- match.arg(norm_method)
+  nn_metric <- match.arg(nn_metric)
 
   #ensure results from RNG sensitive algorithms are the same on all calls
   set.seed(2016)
@@ -114,6 +123,7 @@ preprocess_cds <- function(cds,
     if( build_nn_index ) {
         annoy_index <- uwot:::annoy_build(X = preproc_res, metric = nn_metric)
         cds@preprocess_aux[['PCA']][['classifier']]$annoy_index <- annoy_index
+        cds@preprocess_aux[['PCA']][['classifier']]$annoy_ndim <- ncol(preproc_res)
     }
   } else if(method == "LSI") {
 
@@ -138,6 +148,7 @@ preprocess_cds <- function(cds,
     if( build_nn_index ) {
         annoy_index <- uwot:::annoy_build(X = preproc_res, metric = nn_metric)
         cds@preprocess_aux[['LSI']][['classifier']]$annoy_index <- annoy_index
+        cds@preprocess_aux[['LSI']][['classifier']]$annoy_ndim <- ncol(preproc_res)
     }
   }
 
