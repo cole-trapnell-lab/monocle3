@@ -116,8 +116,8 @@ preprocess_cds <- function(cds,
     # calculate gene_loadings in cluster_cells.R
     cds@preprocess_aux[['PCA']][['model']]$svd_v <- irlba_rotation
     cds@preprocess_aux[['PCA']][['model']]$svd_sdev <- irlba_res$sdev
-    cds@preprocess_aux[['PCA']][['model']]$svd_center = irlba_res$center
-    cds@preprocess_aux[['PCA']][['model']]$svd_scale = irlba_res$svd_scale
+    cds@preprocess_aux[['PCA']][['model']]$svd_center <- irlba_res$center
+    cds@preprocess_aux[['PCA']][['model']]$svd_scale <- irlba_res$svd_scale
     cds@preprocess_aux[['PCA']][['model']]$prop_var_expl <- irlba_res$sdev^2 / sum(irlba_res$sdev^2)
     cds@preprocess_aux[['PCA']]$beta <- NULL
     if( build_nn_index ) {
@@ -151,8 +151,6 @@ preprocess_cds <- function(cds,
         cds@preprocess_aux[['LSI']][['classifier']]$annoy_ndim <- ncol(preproc_res)
     }
   }
-
-  row.names(preproc_res) <- colnames(cds)
 
   reducedDims(cds)[[method]] <- as.matrix(preproc_res)
 

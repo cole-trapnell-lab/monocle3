@@ -1103,8 +1103,12 @@ load_preprocess_classifier <- function(cds, file_root_name = NULL) {
   object[['bundle']][['classifier']]$annoy_index$ann <- uwot:::create_ann(metric, ndim)
   object[['bundle']][['classifier']]$annoy_index$ann$load(file_name_index)
 
+  if(length(object[['comment']]) > 0 ) {
+    message('Comment: ', object[['comment']])
+  }
 
   cds@preprocess_aux[[method]] <- object[['bundle']]
+  cds
 }
 
 

@@ -211,6 +211,7 @@ reduce_dimension <- function(cds,
     if( build_nn_index ) {
         annoy_index <- uwot:::annoy_build(X = reducedDims(cds)[['UMAP']], metric = nn_metric)
         cds@reduce_dim_aux[['UMAP']][['classifier']]$annoy_index <- annoy_index
+        cds@reduce_dim_aux[['UMAP']][['classifier']]$annoy_ndim <- ncol(umap_res)
     }    
   }
 
