@@ -281,7 +281,7 @@ test_that("cluster_cells works", {
                nrow(colData(cds)))
   expect_equal(cds@clusters[["tSNE"]]$cluster_result$optim_res$membership[[1]],
                2)
-  expect_equal(length(unique(clusters(cds, reduction_method = "tSNE"))), 18)
+  expect_equal(length(unique(clusters(cds, reduction_method = "tSNE"))), 17)
 
   ### PCA
 

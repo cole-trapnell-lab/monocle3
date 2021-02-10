@@ -62,6 +62,9 @@ test_that("learn_graph stays the same", {
 })
 
 
+#### TRAVIS ####
+
+
 cds <- load_a549()
 
 test_that("test learn_graph error messages work", {
