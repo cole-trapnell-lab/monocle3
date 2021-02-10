@@ -42,6 +42,9 @@
 #' @param build_nn_index logical When this argument is set to TRUE,
 #'   reduce_dimension builds the Annoy classifier index from the 
 #'   dimensionally reduced matrix for later use. Default is FALSE.
+#'   Note: when build_nn_index=TRUE, uwot::umap() ret_model parameter is set
+#'   to TRUE.
+#'   This works only for reduction_method = "UMAP".
 #' @param nn_metric a string specifying the metric used by Annoy for building
 #'   the Annoy index, currently "cosine", "euclidean", "manhattan", or "hamming".
 #'   Default is "cosine".
@@ -77,6 +80,9 @@ reduce_dimension <- function(cds,
   else
     umap_return_model <- FALSE
 
+  if(build_nn_index == TRUE) {
+    umap_return_model <- TRUE
+  }
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
@@ -194,6 +200,7 @@ reduce_dimension <- function(cds,
                           n_threads=cores,
                           verbose=verbose,
                           nn_method = umap.nn_method,
+                          ret_model = umap_return_model,
                           ...)
 
 
@@ -206,12 +213,12 @@ reduce_dimension <- function(cds,
     } else {
         row.names(umap_res$embedding) <- colnames(cds)
         reducedDims(cds)[['UMAP']] <- umap_res$embedding
-        cds@reduce_dim_aux[['UMAP']][['model']]$umap_model <- umap_res$embedding
+        cds@reduce_dim_aux[['UMAP']][['model']]$umap_model <- umap_res
     }
     if( build_nn_index ) {
-        annoy_index <- uwot:::annoy_build(X = reducedDims(cds)[['UMAP']], metric = nn_metric)
+        annoy_index <- uwot:::annoy_build(X = reducedDims(cds)[['UMAP']], metric=nn_metric)
         cds@reduce_dim_aux[['UMAP']][['classifier']]$annoy_index <- annoy_index
-        cds@reduce_dim_aux[['UMAP']][['classifier']]$annoy_ndim <- ncol(umap_res)
+        cds@reduce_dim_aux[['UMAP']][['classifier']]$annoy_ndim <- ncol(reducedDims(cds)[['UMAP']])
     }    
   }
 
