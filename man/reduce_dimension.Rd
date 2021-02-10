@@ -57,7 +57,10 @@ used by UMAP. Default is "annoy". See uwot package's
 
 \item{build_nn_index}{logical When this argument is set to TRUE,
 reduce_dimension builds the Annoy classifier index from the
-dimensionally reduced matrix for later use. Default is FALSE.}
+dimensionally reduced matrix for later use. Default is FALSE.
+Note: when build_nn_index=TRUE, uwot::umap() ret_model parameter is set
+to TRUE.
+This works only for reduction_method = "UMAP".}
 
 \item{nn_metric}{a string specifying the metric used by Annoy for building
 the Annoy index, currently "cosine", "euclidean", "manhattan", or "hamming".
