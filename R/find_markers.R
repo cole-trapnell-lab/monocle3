@@ -160,6 +160,13 @@ top_markers <- function(cds,
                                  RhpcBLASctl::blas_set_num_threads(old_blas_num_threads)
                                })
 
+    #
+    # Check for possible convergence failure or other problems. Issue: #383
+    #
+    if('warning' %in% marker_test_res) {
+        warning('test_marker_for_cell_group() caught warning: possible convergence failure.')
+    }
+
     marker_test_res = t(marker_test_res)
     marker_test_res = as.matrix(marker_test_res)
     colnames(marker_test_res) = c("pseudo_R2", "lrtest_p_value")
