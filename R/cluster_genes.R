@@ -67,9 +67,14 @@ find_gene_modules <- function(cds,
                                       "before running cluster_cells"))
 
   preprocess_mat <- cds@preprocess_aux$gene_loadings
-  if (is.null(cds@preprocess_aux$beta) == FALSE){
-    preprocess_mat <- sweep( preprocess_mat, 2, cds@preprocess_aux$beta[,1], '*')
-  }
+# Notes:
+#   o  cds@preprocess_aux$beta is npc x nfactor, which causes
+#      preprocess_mat to have nfactor columns, often one column
+#   o  I do not know how to adjust gene_loadings for batch effects
+#      so this is disabled for now
+#  if (is.null(cds@preprocess_aux$beta) == FALSE){
+#    preprocess_mat = preprocess_mat %*% (-cds@preprocess_aux$beta)
+#  }
   preprocess_mat <- preprocess_mat[intersect(rownames(cds), row.names(preprocess_mat)),]
 
   # uwot::umap uses a random number generator
