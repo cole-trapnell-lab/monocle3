@@ -59,7 +59,7 @@ align_cds <- function(cds,
                                       preprocess_method,
                                       "' before calling align_cds."))
 
-    if (!is.null(residual_model_formula_str)) {
+  if (!is.null(residual_model_formula_str)) {
     if (verbose) message("Removing residual effects")
     X.model_mat <- Matrix::sparse.model.matrix(
       stats::as.formula(residual_model_formula_str),

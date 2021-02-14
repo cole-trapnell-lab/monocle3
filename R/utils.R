@@ -1045,28 +1045,28 @@ get_citations <- function(cds) {
 }
 
 
-#' Save preprocess classifier.
+#' Save preprocess model.
 #'
-#' Save a preprocess classifier consisting of dimensionality reduction 
-#' model and Annoy nearest neighbor data structures, which are used to
-#' transform and classify new data sets.
+#' Save a preprocess model consisting of dimensionality reduction 
+#' model and Annoy nearest neighbor index objects, which are used to
+#' transform new data sets.
 #'
-#' @param cds cell_data_set with existing classifier, which was created using
+#' @param cds cell_data_set with existing model, which was created using
 #'   cds <- preprocess_cds(cds, build_nn_index=TRUE).
-#' @param method A string indicating the method used to build the classifier
+#' @param method A string indicating the method used to build the model
 #'   that you want saved. Default is "PCA".
 #' @param file_root_name. A string giving the root of names given to the two
-#'   files to which the classifier is saved. The files are named <file_root_name>.rds
+#'   files to which the model is saved. The files are named <file_root_name>.rds
 #'   and <file_root_name>.annoy_index.
-#' @param comment An optional string that describes the classifier.
+#' @param comment An optional string that describes the model.
 #'
 #' @return None
 #' @export
-save_preprocess_classifier <- function(cds, method = c('PCA', 'LSI'), file_root_name = NULL, comment = NULL) {
+save_preprocess_model <- function(cds, method = c('PCA', 'LSI'), file_root_name = NULL, comment = NULL) {
   method <- match.arg(method)
 
   file_name_rds <- paste0(file_root_name, '.rds')
-  file_name_index <- paste0(file_root_name, '.annoy_index')
+  file_name_index <- paste0(file_root_name, '.pca_annoy_index')
 
   object <- list()
   object[['method']] <- method
@@ -1074,34 +1074,34 @@ save_preprocess_classifier <- function(cds, method = c('PCA', 'LSI'), file_root_
   object[['comment']] <- comment
   saveRDS(object, file_name_rds)
 
-  cds@preprocess_aux[[method]][['classifier']]$annoy_index$ann$save(file_name_index)
+  cds@preprocess_aux[[method]][['classifier']][['annoy_index']][['ann']]$save(file_name_index)
 }
 
 
-#' Load preprocess classifier.
+#' Load preprocess model.
 #'
-#' Load into an existing cell_data_set a preprocess classifier consisting
-#' of dimensionality reduction model and Annoy nearest neighbor data
-#' structures, which are used to transform and classify new data sets.
+#' Load into an existing cell_data_set a preprocess model consisting
+#' of dimensionality reduction model and Annoy nearest neighbor index
+#' objects, which are used to transform and classify new data sets.
 #'
-#' @param cds cell_data_set into which the classifier is to be loaded.
+#' @param cds cell_data_set into which the model is to be loaded.
 #' @param file_root_name. A string giving the root of names given to the two
-#'   files to which the classifier was saved. The files are named <file_root_name>.rds
+#'   files to which the model was saved. The files are named <file_root_name>.rds
 #'   and <file_root_name>.annoy_index.
 #'
 #' @return None
 #' @export
-load_preprocess_classifier <- function(cds, file_root_name = NULL) {
+load_preprocess_model <- function(cds, file_root_name = NULL) {
   file_name_rds <- paste0(file_root_name, '.rds')
-  file_name_index <- paste0(file_root_name, '.annoy_index')
+  file_name_index <- paste0(file_root_name, '.pca_annoy_index')
 
   object <- readRDS(file_name_rds)
   method <- object[['method']]
-  metric <- object[['bundle']][['classifier']]$annoy_index$metric
-  ndim <- object[['bundle']][['classifier']]$annoy_ndim
+  metric <- object[['bundle']][['classifier']][['annoy_index']][['metric']]
+  ndim <- object[['bundle']][['classifier']][['annoy_ndim']]
 
-  object[['bundle']][['classifier']]$annoy_index$ann <- uwot:::create_ann(metric, ndim)
-  object[['bundle']][['classifier']]$annoy_index$ann$load(file_name_index)
+  object[['bundle']][['classifier']][['annoy_index']][['ann']] <- uwot:::create_ann(metric, ndim)
+  object[['bundle']][['classifier']][['annoy_index']][['ann']]$load(file_name_index)
 
   if(length(object[['comment']]) > 0 ) {
     message('Comment: ', object[['comment']])
@@ -1112,24 +1112,24 @@ load_preprocess_classifier <- function(cds, file_root_name = NULL) {
 }
 
 
-#' Save reduce_dimension classifier.
+#' Save reduce_dimension model.
 #'
-#' Save a reduce_dimension classifier consisting of dimensionality reduction
-#' models and Annoy nearest neighbor data structures, which are used to transform and
-#' classify new data sets.
+#' Save a reduce_dimension model consisting of dimensionality reduction
+#' models and Annoy nearest neighbor index objects, which are used to
+#' transform and classify new data sets.
 #'
-#' @param cds cell_data_set with existing classifier, which was created using
+#' @param cds cell_data_set with existing model, which was created using
 #'   cds <- reduce_dimension(cds, build_nn_index=TRUE).
-#' @param method A string indicating the method used to build the classifier
+#' @param method A string indicating the method used to build the model
 #'   that you want saved. This must be "UMAP". Default = "UMAP".
 #' @param file_root_name. A string giving the root of names given to the
-#'   two files to which the classifier is saved. The files are named
+#'   two files to which the model is saved. The files are named
 #'   <file_root_name>.rds, and <file_root_name>.annoy_index.
-#' @param comment An optional string that describes the classifier.
+#' @param comment An optional string that describes the model.
 #'
 #' @return None
 #' @export
-save_reduce_dimension_classifier <- function(cds, preprocess_method = c('PCA'), method = c('UMAP'), file_root_name = NULL, comment = NULL) {
+save_reduce_dimension_model <- function(cds, preprocess_method = c('PCA'), method = c('UMAP'), file_root_name = NULL, comment = NULL) {
   preprocess_method <- match.arg(preprocess_method)
   method <- match.arg(method)
 # check method
@@ -1145,25 +1145,25 @@ save_reduce_dimension_classifier <- function(cds, preprocess_method = c('PCA'), 
   object[['comment']] <- comment
   saveRDS(object, file_name_rds)
 
-  cds@reduce_dim_aux[[method]][['model']][['umap_model']]$nn_index$ann$save(file_name_umap_index)
-  cds@reduce_dim_aux[[method]][['classifier']]$annoy_index$ann$save(file_name_nn_index)
+  cds@reduce_dim_aux[[method]][['model']][['umap_model']][['nn_index']][['ann']]$save(file_name_umap_index)
+  cds@reduce_dim_aux[[method]][['classifier']][['annoy_index']][['ann']]$save(file_name_nn_index)
 }
 
 
-#' Load reduce_dimension classifier.
+#' Load reduce_dimension model.
 #'
-#' Load into an existing cell_data_set a reduce_dimension classifier consisting
-#' of dimensionality reduction models and Annoy nearest neighbor data structures,
+#' Load into an existing cell_data_set a reduce_dimension model consisting
+#' of dimensionality reduction models and Annoy nearest neighbor index objects,
 #' which are used to transform and classify new data sets.
 #'
-#' @param cds cell_data_set into which the classifier is to be loaded.
+#' @param cds cell_data_set into which the model is to be loaded.
 #' @param file_root_name. A string giving the root of names given to the two
-#'   files to which the classifier was saved. The files are named <file_root_name>.rds
+#'   files to which the model was saved. The files are named <file_root_name>.rds
 #'   and <file_root_name>.annoy_index.
 #'
 #' @return None
 #' @export
-load_reduce_dimension_classifier <- function(cds, file_root_name = NULL) {
+load_reduce_dimension_model <- function(cds, file_root_name = NULL) {
   file_name_rds <- paste0(file_root_name, '.rds')
   file_name_umap_index <- paste0(file_root_name, '.umap_annoy_index')
   file_name_nn_index <- paste0(file_root_name, '.nn_annoy_index')
@@ -1171,19 +1171,19 @@ load_reduce_dimension_classifier <- function(cds, file_root_name = NULL) {
   object <- readRDS(file_name_rds)
   preprocess_method <- object[['preprocess_method']]
   method <- object[['method']]
-  preprocess_aux <- object[['bundle']]$preprocess_model
-  reduce_dim_aux <- object[['bundle']]$reduce_dimension_model
-  metric_umap <- reduce_dim_aux[['model']][['umap_model']]$nn_index$metric
+  preprocess_aux <- object[['bundle']][['preprocess_model']]
+  reduce_dim_aux <- object[['bundle']][['reduce_dimension_model']]
+  metric_umap <- reduce_dim_aux[['model']][['umap_model']][['nn_index']][['metric']]
   ndim_umap <- reduce_dim_aux[['model']][['umap_model']][['metric']][[metric_umap]][['ndim']]
 
-  metric_nn <- reduce_dim_aux[['classifier']]$annoy_index$metric
-  ndim_nn <- reduce_dim_aux[['classifier']]$annoy_ndim
+  metric_nn <- reduce_dim_aux[['classifier']][['annoy_index']][['metric']]
+  ndim_nn <- reduce_dim_aux[['classifier']][['annoy_ndim']]
 
-  reduce_dim_aux[['model']][['umap_model']]$nn_index$ann <- uwot:::create_ann(metric_umap, ndim_umap)
-  reduce_dim_aux[['model']][['umap_model']]$nn_index$ann$load(file_name_umap_index)
+  reduce_dim_aux[['model']][['umap_model']][['nn_index']][['ann']] <- uwot:::create_ann(metric_umap, ndim_umap)
+  reduce_dim_aux[['model']][['umap_model']][['nn_index']][['ann']]$load(file_name_umap_index)
 
-  reduce_dim_aux[['classifier']]$annoy_index$ann <- uwot:::create_ann(metric_nn, ndim_nn)
-  reduce_dim_aux[['classifier']]$annoy_index$ann$load(file_name_nn_index)
+  reduce_dim_aux[['classifier']][['annoy_index']][['ann']] <- uwot:::create_ann(metric_nn, ndim_nn)
+  reduce_dim_aux[['classifier']][['annoy_index']][['ann']]$load(file_name_nn_index)
 
   if(length(object[['comment']]) > 0 ) {
     message('Comment: ', object[['comment']])
