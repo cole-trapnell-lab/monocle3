@@ -46,6 +46,21 @@ models when testing markers for cell group.}
 
 \item{verbose}{Whether to print verbose progress output.}
 }
+\value{
+a data.frame where the rows are genes and the columns ars
+\itemize{
+\item gene_id  vector of gene names.
+\item gene_short_name vector of gene short names.
+\item cell_group vector of cell groups to which the gene is assigned.
+\item marker_score vector of marker scores. The value ranges from 0 to 1.
+\item mean_expression vector of mean normalized expression of the gene in the cell group.
+\item fraction_expressing vector of fraction of cells expressing gene within each cell group.
+\item specificity vector of measure of how specific the gene's expression is to the cell group. The is based on the Jensen-Shannon divergence. The value ranges from 0 to 1.
+\item pseudo_R2 vector of measure of how well the gene expression model fits the categorical data relative to the null model. The value ranges from 0 to 1.
+\item marker_test_p_value vector of likelihood ratio p-value.
+\item marker_test_q_value vector of likelihood ratio q-value.
+}
+}
 \description{
 Identify the genes most specifically expressed in groups of cells
 }

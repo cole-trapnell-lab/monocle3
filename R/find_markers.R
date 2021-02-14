@@ -21,6 +21,18 @@
 #' @param cores Number of cores to use.
 #' @param verbose Whether to print verbose progress output.
 #'
+#' @return a data.frame where the rows are genes and the columns ars
+#' * gene_id  vector of gene names.
+#' * gene_short_name vector of gene short names.
+#' * cell_group vector of cell groups to which the gene is assigned.
+#' * marker_score vector of marker scores. The value ranges from 0 to 1.
+#' * mean_expression vector of mean normalized expression of the gene in the cell group.
+#' * fraction_expressing vector of fraction of cells expressing gene within each cell group.
+#' * specificity vector of measure of how specific the gene's expression is to the cell group. The is based on the Jensen-Shannon divergence. The value ranges from 0 to 1.
+#' * pseudo_R2 vector of measure of how well the gene expression model fits the categorical data relative to the null model. The value ranges from 0 to 1.
+#' * marker_test_p_value vector of likelihood ratio p-value.
+#' * marker_test_q_value vector of likelihood ratio q-value.
+#'
 #' @export
 top_markers <- function(cds,
                         group_cells_by="cluster",

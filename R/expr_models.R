@@ -199,7 +199,15 @@ fit_model_helper <- function(x,
 #' @param verbose Logical indicating whether to emit progress messages.
 #' @param ... Additional arguments passed to model fitting functions.
 #'
-#' @return a tibble containing model objects
+#' @return a tibble where the rows are genes and columns are
+#'   * id from `rowData(cds)$id`.
+#'   * gene_short_names from `rowData(cds)$gene_short_names`.
+#'   * num_cells_expressed from `rowData(cds)$num_cells_expressed`.
+#'   * gene_id from `row.names(rowData(cds))`.
+#'   * model  GLM model returned by speedglm.
+#'   * model_summary returned by `summary(model)`.
+#'   * status of model fitting: OK when model converged, otherwise FAIL.
+#'
 #' @export
 fit_models <- function(cds,
                      model_formula_str,
