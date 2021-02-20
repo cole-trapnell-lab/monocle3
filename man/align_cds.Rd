@@ -10,6 +10,8 @@ align_cds(
   alignment_group = NULL,
   alignment_k = 20,
   residual_model_formula_str = NULL,
+  build_nn_index = FALSE,
+  nn_metric = c("cosine", "euclidean", "manhattan", "hamming"),
   verbose = FALSE,
   ...
 )
@@ -33,6 +35,13 @@ Default is NULL.}
 any effects to subtract from the data before dimensionality reduction.
 Uses a linear model to subtract effects. For non-linear effects, use
 alignment_group. Default is NULL.}
+
+\item{build_nn_index}{logical When this argument is set to TRUE,
+align_cds builds the Annoy nearest neighbor index from the
+aligned reduced matrix for later use. Default is FALSE.}
+
+\item{nn_metric}{a string specifying the metric used by Annoy, currently
+"cosine", "euclidean", "manhattan", or "hamming". Default is "cosine".}
 
 \item{verbose}{Whether to emit verbose output during dimensionality
 reduction}

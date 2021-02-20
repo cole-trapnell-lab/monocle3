@@ -56,13 +56,12 @@ used by UMAP. Default is "annoy". See uwot package's
 \item{cores}{Number of compute cores to use.}
 
 \item{build_nn_index}{logical When this argument is set to TRUE,
-reduce_dimension builds the Annoy classifier index from the
+reduce_dimension builds the Annoy nearest neighbor index from the
 dimensionally reduced matrix for later use. Default is FALSE.
 This works only for reduction_method = "UMAP".}
 
-\item{nn_metric}{a string specifying the metric used by Annoy for building
-the Annoy index, currently "cosine", "euclidean", "manhattan", or "hamming".
-Default is "cosine".}
+\item{nn_metric}{a string specifying the metric used by Annoy, currently
+"cosine", "euclidean", "manhattan", or "hamming". Default is "cosine".}
 
 \item{verbose}{Logical, whether to emit verbose output.}
 

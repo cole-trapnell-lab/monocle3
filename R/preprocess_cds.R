@@ -32,7 +32,7 @@
 #'   each gene before running trajectory reconstruction. Relevant for
 #'   method = PCA only.
 #' @param build_nn_index logical When this argument is set to TRUE,
-#'   preprocess_cds builds the Annoy classifier index from the
+#'   preprocess_cds builds the Annoy nearest neighbor index from the
 #'   dimensionally reduced matrix for later use. Default is FALSE.
 #' @param nn_metric a string specifying the metric used by Annoy, currently
 #'   "cosine", "euclidean", "manhattan", or "hamming". Default is "cosine".
@@ -111,7 +111,7 @@ preprocess_cds <- function(cds,
     row.names(irlba_rotation) <- rownames(FM)
     cds@preprocess_aux[['PCA']] <- SimpleList()
     cds@preprocess_aux[['PCA']][['model']] <- SimpleList()
-    cds@preprocess_aux[['PCA']][['classifier']] <- SimpleList()
+    cds@preprocess_aux[['PCA']][['nn_index']] <- SimpleList()
     # we need svd_v downstream so
     # calculate gene_loadings in cluster_cells.R
     cds@preprocess_aux[['PCA']][['model']][['svd_v']] <- irlba_rotation
@@ -122,8 +122,8 @@ preprocess_cds <- function(cds,
     cds@preprocess_aux[['PCA']][['beta']] <- NULL
     if( build_nn_index ) {
         annoy_index <- uwot:::annoy_build(X = preproc_res, metric = nn_metric)
-        cds@preprocess_aux[['PCA']][['classifier']][['annoy_index']] <- annoy_index
-        cds@preprocess_aux[['PCA']][['classifier']][['annoy_ndim']] <- ncol(preproc_res)
+        cds@preprocess_aux[['PCA']][['nn_index']][['annoy_index']] <- annoy_index
+        cds@preprocess_aux[['PCA']][['nn_index']][['annoy_ndim']] <- ncol(preproc_res)
     }
   } else if(method == "LSI") {
 
@@ -139,7 +139,7 @@ preprocess_cds <- function(cds,
     row.names(irlba_rotation) = rownames(FM)
     cds@preprocess_aux[['LSI']] <- SimpleList()
     cds@preprocess_aux[['LSI']][['model']] <- SimpleList()
-    cds@preprocess_aux[['LSI']][['classifier']] <- SimpleList()
+    cds@preprocess_aux[['LSI']][['nn_index']] <- SimpleList()
     cds@preprocess_aux[['LSI']][['model']][['svd_v']] <- irlba_rotation
     cds@preprocess_aux[['LSI']][['model']][['svd_sdev']] <- irlba_res$d/sqrt(max(1, num_col - 1))
     # we need svd_v downstream so
@@ -147,8 +147,8 @@ preprocess_cds <- function(cds,
     cds@preprocess_aux[['LSI']][['beta']] <- NULL
     if( build_nn_index ) {
         annoy_index <- uwot:::annoy_build(X = preproc_res, metric = nn_metric)
-        cds@preprocess_aux[['LSI']][['classifier']][['annoy_index']] <- annoy_index
-        cds@preprocess_aux[['LSI']][['classifier']][['annoy_ndim']] <- ncol(preproc_res)
+        cds@preprocess_aux[['LSI']][['nn_index']][['annoy_index']] <- annoy_index
+        cds@preprocess_aux[['LSI']][['nn_index']][['annoy_ndim']] <- ncol(preproc_res)
     }
   }
 

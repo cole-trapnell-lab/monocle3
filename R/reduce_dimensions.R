@@ -40,12 +40,11 @@
 #'   \code{\link[umap]{umap}} for details.
 #' @param cores Number of compute cores to use.
 #' @param build_nn_index logical When this argument is set to TRUE,
-#'   reduce_dimension builds the Annoy classifier index from the 
+#'   reduce_dimension builds the Annoy nearest neighbor index from the 
 #'   dimensionally reduced matrix for later use. Default is FALSE.
 #'   This works only for reduction_method = "UMAP".
-#' @param nn_metric a string specifying the metric used by Annoy for building
-#'   the Annoy index, currently "cosine", "euclidean", "manhattan", or "hamming".
-#'   Default is "cosine".
+#' @param nn_metric a string specifying the metric used by Annoy, currently
+#'   "cosine", "euclidean", "manhattan", or "hamming". Default is "cosine".
 #' @param verbose Logical, whether to emit verbose output.
 #' @param ... additional arguments to pass to the dimensionality reduction
 #'   function.
@@ -195,18 +194,19 @@ reduce_dimension <- function(cds,
 
     cds@reduce_dim_aux[['UMAP']] <- SimpleList()
     cds@reduce_dim_aux[['UMAP']][['model']] <- SimpleList()
-    cds@reduce_dim_aux[['UMAP']][['classifier']] <- SimpleList()
+    cds@reduce_dim_aux[['UMAP']][['nn_index']] <- SimpleList()
     if( !build_nn_index ) {
         row.names(umap_res) <- colnames(cds)
         reducedDims(cds)[['UMAP']] <- umap_res
     } else {
         row.names(umap_res$embedding) <- colnames(cds)
         reducedDims(cds)[['UMAP']] <- umap_res[['embedding']]
+        cds@reduce_dim_aux[['UMAP']][['model']][['umap_preprocess_method']] <- preprocess_method
         cds@reduce_dim_aux[['UMAP']][['model']][['umap_model']] <- umap_res
         # make nearest neighbor index in UMAP space
         annoy_index <- uwot:::annoy_build(X = reducedDims(cds)[['UMAP']], metric=nn_metric)
-        cds@reduce_dim_aux[['UMAP']][['classifier']][['annoy_index']] <- annoy_index
-        cds@reduce_dim_aux[['UMAP']][['classifier']][['annoy_ndim']] <- ncol(reducedDims(cds)[['UMAP']])
+        cds@reduce_dim_aux[['UMAP']][['nn_index']][['annoy_index']] <- annoy_index
+        cds@reduce_dim_aux[['UMAP']][['nn_index']][['annoy_ndim']] <- ncol(reducedDims(cds)[['UMAP']])
     }
   }
 

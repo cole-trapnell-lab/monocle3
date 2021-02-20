@@ -10,8 +10,8 @@ load_reduce_dimension_model(cds, file_root_name = NULL)
 \item{cds}{cell_data_set into which the model is to be loaded.}
 
 \item{file_root_name.}{A string giving the root of names given to the two
-files to which the model was saved. The files are named <file_root_name>.rds
-and <file_root_name>.annoy_index.}
+files to which the model was saved. The files are named <file_root_name>.rds,
+<file_root_name>._umap_nn_index, and <file_root_name>._rdd_nn_index.}
 }
 \value{
 None

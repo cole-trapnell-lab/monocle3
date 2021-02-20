@@ -6,7 +6,6 @@
 \usage{
 save_reduce_dimension_model(
   cds,
-  preprocess_method = c("PCA"),
   method = c("UMAP"),
   file_root_name = NULL,
   comment = NULL
@@ -23,7 +22,8 @@ that you want saved. This must be "UMAP". Default = "UMAP".}
 
 \item{file_root_name.}{A string giving the root of names given to the
 two files to which the model is saved. The files are named
-<file_root_name>.rds, and <file_root_name>.annoy_index.}
+<file_root_name>.rds, <file_root_name>._umap_nn_index, and
+<file_root_name>._rdd_nn_index.}
 }
 \value{
 None

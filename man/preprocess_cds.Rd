@@ -48,7 +48,7 @@ each gene before running trajectory reconstruction. Relevant for
 method = PCA only.}
 
 \item{build_nn_index}{logical When this argument is set to TRUE,
-preprocess_cds builds the Annoy classifier index from the
+preprocess_cds builds the Annoy nearest neighbor index from the
 dimensionally reduced matrix for later use. Default is FALSE.}
 
 \item{nn_metric}{a string specifying the metric used by Annoy, currently

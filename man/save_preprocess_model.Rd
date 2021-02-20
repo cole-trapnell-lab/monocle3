@@ -6,7 +6,7 @@
 \usage{
 save_preprocess_model(
   cds,
-  method = c("PCA", "LSI"),
+  method = c("PCA", "LSI", "Aligned"),
   file_root_name = NULL,
   comment = NULL
 )
@@ -22,7 +22,7 @@ that you want saved. Default is "PCA".}
 
 \item{file_root_name.}{A string giving the root of names given to the two
 files to which the model is saved. The files are named <file_root_name>.rds
-and <file_root_name>.annoy_index.}
+and <file_root_name>.ppc_nn_index.}
 }
 \value{
 None
