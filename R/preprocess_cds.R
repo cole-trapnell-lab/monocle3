@@ -111,7 +111,6 @@ preprocess_cds <- function(cds,
     row.names(irlba_rotation) <- rownames(FM)
     cds@preprocess_aux[['PCA']] <- SimpleList()
     cds@preprocess_aux[['PCA']][['model']] <- SimpleList()
-    cds@preprocess_aux[['PCA']][['nn_index']] <- SimpleList()
     # we need svd_v downstream so
     # calculate gene_loadings in cluster_cells.R
     cds@preprocess_aux[['PCA']][['model']][['svd_v']] <- irlba_rotation
@@ -121,6 +120,7 @@ preprocess_cds <- function(cds,
     cds@preprocess_aux[['PCA']][['model']][['prop_var_expl']] <- irlba_res$sdev^2 / sum(irlba_res$sdev^2)
     cds@preprocess_aux[['PCA']][['beta']] <- NULL
     if( build_nn_index ) {
+        cds@preprocess_aux[['PCA']][['nn_index']] <- SimpleList()
         annoy_index <- uwot:::annoy_build(X = preproc_res, metric = nn_metric)
         cds@preprocess_aux[['PCA']][['nn_index']][['annoy_index']] <- annoy_index
         cds@preprocess_aux[['PCA']][['nn_index']][['annoy_ndim']] <- ncol(preproc_res)
@@ -139,13 +139,13 @@ preprocess_cds <- function(cds,
     row.names(irlba_rotation) = rownames(FM)
     cds@preprocess_aux[['LSI']] <- SimpleList()
     cds@preprocess_aux[['LSI']][['model']] <- SimpleList()
-    cds@preprocess_aux[['LSI']][['nn_index']] <- SimpleList()
     cds@preprocess_aux[['LSI']][['model']][['svd_v']] <- irlba_rotation
     cds@preprocess_aux[['LSI']][['model']][['svd_sdev']] <- irlba_res$d/sqrt(max(1, num_col - 1))
     # we need svd_v downstream so
     # calculate gene_loadings in cluster_cells.R
     cds@preprocess_aux[['LSI']][['beta']] <- NULL
     if( build_nn_index ) {
+        cds@preprocess_aux[['LSI']][['nn_index']] <- SimpleList()
         annoy_index <- uwot:::annoy_build(X = preproc_res, metric = nn_metric)
         cds@preprocess_aux[['LSI']][['nn_index']][['annoy_index']] <- annoy_index
         cds@preprocess_aux[['LSI']][['nn_index']][['annoy_ndim']] <- ncol(preproc_res)

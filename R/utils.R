@@ -1062,9 +1062,11 @@ get_citations <- function(cds) {
 #'
 #' @return None
 #' @export
-save_preprocess_model <- function(cds, method = c('PCA', 'LSI', 'Aligned'), file_root_name = NULL, comment = NULL) {
+save_preprocess_model <- function(cds, method = c('PCA', 'LSI'), file_root_name = NULL, comment = NULL) {
   method <- match.arg(method)
-
+  if( is.null(cds@preprocess_aux[['PCA']][['nn_index']])) {
+    stop('Error: there is no Annoy index -- run preprocess_cds() with build_nn_index=TRUE')
+  }
   file_name_rds <- paste0(file_root_name, '.rds')
   file_name_index <- paste0(file_root_name, '.ppc_nn_index')
 
@@ -1102,7 +1104,7 @@ load_preprocess_model <- function(cds, file_root_name = NULL) {
   ndim <- object[['bundle']][['nn_index']][['annoy_ndim']]
 
   md5sum_nn_index <- tools::md5sum(file_name_index)
-  if(md5sum_nn_index != object[['md5sum_nn_index']] ) {
+  if(md5sum_nn_index != object[['md5sum_nn_index']]) {
     stop('annoy index file checksum discrepancy')
   }
 
@@ -1135,6 +1137,9 @@ load_preprocess_model <- function(cds, file_root_name = NULL) {
 #' @return None
 #' @export
 save_align_cds_model <- function(cds, method = c('Aligned'), file_root_name = NULL, comment = NULL) {
+  if( is.null(cds@preprocess_aux[['Aligned']][['nn_index']])) {
+    stop('Error: there is no Annoy index -- run preprocess_cds() with build_nn_index=TRUE')
+  }
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(method) == "",TRUE, TRUE),
              error = function(e) FALSE),
@@ -1182,7 +1187,7 @@ load_align_cds_model <- function(cds, file_root_name = NULL) {
   ndim <- object[['bundle']][['align_aux']][['nn_index']][['annoy_ndim']]
 
   md5sum_nn_index <- tools::md5sum(file_name_index)
-  if(md5sum_nn_index != object[['md5sum_nn_index']] ) {
+  if(md5sum_nn_index != object[['md5sum_nn_index']]) {
     stop('annoy index file checksum discrepancy')
   }
 
@@ -1219,7 +1224,9 @@ load_align_cds_model <- function(cds, file_root_name = NULL) {
 #' @return None
 #' @export
 save_reduce_dimension_model <- function(cds, method = c('UMAP'), file_root_name = NULL, comment = NULL) {
-
+  if( is.null(cds@reduce_dim_aux[['UMAP']][['nn_index']])) {
+    stop('Error: there is no Annoy index -- run preprocess_cds() with build_nn_index=TRUE')
+  }
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(method) == "",TRUE, TRUE),
              error = function(e) FALSE),

@@ -180,29 +180,39 @@ reduce_dimension <- function(cds,
     if (verbose)
       message("Running Uniform Manifold Approximation and Projection")
 
-    umap_res = uwot::umap(as.matrix(preprocess_mat),
-                          n_components = max_components,
-                          metric = umap.metric,
-                          min_dist = umap.min_dist,
-                          n_neighbors = umap.n_neighbors,
-                          fast_sgd = umap.fast_sgd,
-                          n_threads=cores,
-                          verbose=verbose,
-                          nn_method = umap.nn_method,
-                          ret_model = build_nn_index,
-                          ...)
+    umap_res <- uwot::umap(as.matrix(preprocess_mat),
+                           n_components = max_components,
+                           metric = umap.metric,
+                           min_dist = umap.min_dist,
+                           n_neighbors = umap.n_neighbors,
+                           fast_sgd = umap.fast_sgd,
+                           n_threads=cores,
+                           verbose=verbose,
+                           nn_method = umap.nn_method,
+                           ret_model = build_nn_index,
+                           ...)
 
     cds@reduce_dim_aux[['UMAP']] <- SimpleList()
     cds@reduce_dim_aux[['UMAP']][['model']] <- SimpleList()
-    cds@reduce_dim_aux[['UMAP']][['nn_index']] <- SimpleList()
     if( !build_nn_index ) {
         row.names(umap_res) <- colnames(cds)
         reducedDims(cds)[['UMAP']] <- umap_res
     } else {
-        row.names(umap_res$embedding) <- colnames(cds)
-        reducedDims(cds)[['UMAP']] <- umap_res[['embedding']]
+        # Notes:
+        #   o  uwot::umap_transform() returns a slightly different result in
+        #      comparison to uwot::umap() (umap_res$embedding) model, even
+        #      when uwot::umap_transform() uses the model from uwot::umap().
+        #      However, uwot::umap_transform() gives consistent results using
+        #      one model from uwot::umap(). So return the result from
+        #      uwot::umap_transform().
+        cds@reduce_dim_aux[['UMAP']][['nn_index']] <- SimpleList()
+        set.seed(2016)
+        umap_model <- umap_res
+        umap_res <- uwot::umap_transform(X=as.matrix(preprocess_mat), model=umap_model, n_threads=1)
+        row.names(umap_res) <- colnames(cds)
+        reducedDims(cds)[['UMAP']] <- umap_res
         cds@reduce_dim_aux[['UMAP']][['model']][['umap_preprocess_method']] <- preprocess_method
-        cds@reduce_dim_aux[['UMAP']][['model']][['umap_model']] <- umap_res
+        cds@reduce_dim_aux[['UMAP']][['model']][['umap_model']] <- umap_model
         # make nearest neighbor index in UMAP space
         annoy_index <- uwot:::annoy_build(X = reducedDims(cds)[['UMAP']], metric=nn_metric)
         cds@reduce_dim_aux[['UMAP']][['nn_index']][['annoy_index']] <- annoy_index

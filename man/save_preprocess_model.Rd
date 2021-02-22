@@ -6,7 +6,7 @@
 \usage{
 save_preprocess_model(
   cds,
-  method = c("PCA", "LSI", "Aligned"),
+  method = c("PCA", "LSI"),
   file_root_name = NULL,
   comment = NULL
 )
