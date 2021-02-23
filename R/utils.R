@@ -1138,7 +1138,7 @@ load_preprocess_model <- function(cds, file_root_name = NULL) {
 #' @export
 save_align_cds_model <- function(cds, method = c('Aligned'), file_root_name = NULL, comment = NULL) {
   if( is.null(cds@preprocess_aux[['Aligned']][['nn_index']])) {
-    stop('Error: there is no Annoy index -- run preprocess_cds() with build_nn_index=TRUE')
+    stop('Error: there is no Annoy index -- run align_cds() with build_nn_index=TRUE')
   }
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(method) == "",TRUE, TRUE),
@@ -1225,7 +1225,7 @@ load_align_cds_model <- function(cds, file_root_name = NULL) {
 #' @export
 save_reduce_dimension_model <- function(cds, method = c('UMAP'), file_root_name = NULL, comment = NULL) {
   if( is.null(cds@reduce_dim_aux[['UMAP']][['nn_index']])) {
-    stop('Error: there is no Annoy index -- run preprocess_cds() with build_nn_index=TRUE')
+    stop('Error: there is no Annoy index -- run reduce_dimension() with build_nn_index=TRUE')
   }
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(method) == "",TRUE, TRUE),
