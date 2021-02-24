@@ -22,13 +22,15 @@ that you want saved. Default is "PCA".}
 
 \item{file_root_name.}{A string giving the root of names given to the two
 files to which the model is saved. The files are named <file_root_name>.rds
-and <file_root_name>.ppc_nn_index.}
+and <file_root_name>.ppc_nn_index. Note: the <file_root_name>.rds file
+contains only the information required to load the preprocess model into
+the cds object given in load_preprocess_model(cds,...).}
 }
 \value{
 None
 }
 \description{
-Save a preprocess model consisting of dimensionality reduction
-model and Annoy nearest neighbor index objects, which are used to
-transform new data sets.
+Save a preprocess model consisting of the dimensionality reduction
+model and preprocess Annoy nearest neighbor index objects, which
+are used to transform new data sets.
 }

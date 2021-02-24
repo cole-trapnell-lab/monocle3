@@ -550,7 +550,7 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
     annotations <- read.table( anno_path, header=header, sep=sep, quote=quote, stringsAsFactors=FALSE )
   }, error = function( emsg )
   {
-    stop( 'load_mm_data: bad status reading ', annotation_type, ' file \'', anno_path, '\'\n  ',
+    stop( 'Bad status reading ', annotation_type, ' file \'', anno_path, '\'\n  ',
           emsg, '\n',
           '  note: possible problems include the wrong filename, a missing file,\n',
           '  and incorrect file format parameters, for example \'header\', \'sep\', and \'quote\'' )
@@ -1047,9 +1047,9 @@ get_citations <- function(cds) {
 
 #' Save preprocess model.
 #'
-#' Save a preprocess model consisting of dimensionality reduction 
-#' model and Annoy nearest neighbor index objects, which are used to
-#' transform new data sets.
+#' Save a preprocess model consisting of the dimensionality reduction 
+#' model and preprocess Annoy nearest neighbor index objects, which
+#' are used to transform new data sets.
 #'
 #' @param cds cell_data_set with existing model, which was created using
 #'   cds <- preprocess_cds(cds, build_nn_index=TRUE).
@@ -1057,7 +1057,9 @@ get_citations <- function(cds) {
 #'   that you want saved. Default is "PCA".
 #' @param file_root_name. A string giving the root of names given to the two
 #'   files to which the model is saved. The files are named <file_root_name>.rds
-#'   and <file_root_name>.ppc_nn_index.
+#'   and <file_root_name>.ppc_nn_index. Note: the <file_root_name>.rds file
+#'   contains only the information required to load the preprocess model into
+#'   the cds object given in load_preprocess_model(cds,...).
 #' @param comment An optional string that describes the model.
 #'
 #' @return None
@@ -1065,7 +1067,7 @@ get_citations <- function(cds) {
 save_preprocess_model <- function(cds, method = c('PCA', 'LSI'), file_root_name = NULL, comment = NULL) {
   method <- match.arg(method)
   if( is.null(cds@preprocess_aux[['PCA']][['nn_index']])) {
-    stop('Error: there is no Annoy index -- run preprocess_cds() with build_nn_index=TRUE')
+    stop('There is no Annoy index -- run preprocess_cds() with build_nn_index=TRUE')
   }
   file_name_rds <- paste0(file_root_name, '.rds')
   file_name_index <- paste0(file_root_name, '.ppc_nn_index')
@@ -1073,6 +1075,7 @@ save_preprocess_model <- function(cds, method = c('PCA', 'LSI'), file_root_name 
   cds@preprocess_aux[[method]][['nn_index']][['annoy_index']][['ann']]$save(file_name_index)
 
   object <- list()
+  object[['model_file']] <- 'preprocess'
   object[['method']] <- method
   object[['bundle']] <- cds@preprocess_aux[[method]]
   object[['comment']] <- comment
@@ -1099,13 +1102,17 @@ load_preprocess_model <- function(cds, file_root_name = NULL) {
   file_name_index <- paste0(file_root_name, '.ppc_nn_index')
 
   object <- readRDS(file_name_rds)
+  if( object[['model_file']] != 'preprocess') {
+    stop('File \'', file_name_rds, '\' was not made using the save_preprocess_model() function.')
+  }
+
   method <- object[['method']]
   metric <- object[['bundle']][['nn_index']][['annoy_index']][['metric']]
   ndim <- object[['bundle']][['nn_index']][['annoy_ndim']]
 
   md5sum_nn_index <- tools::md5sum(file_name_index)
   if(md5sum_nn_index != object[['md5sum_nn_index']]) {
-    stop('annoy index file checksum discrepancy')
+    stop('The annoy index file, \'', file_name_index, '\', differs from the file made using the save_preprocess_model() function.')
   }
 
   object[['bundle']][['nn_index']][['annoy_index']][['ann']] <- uwot:::create_ann(metric, ndim)
@@ -1123,22 +1130,24 @@ load_preprocess_model <- function(cds, file_root_name = NULL) {
 
 #' Save align_cds model.
 #'
-#' Save an align_cds model consisting of dimensionality reduction 
-#' models and Annoy nearest neighbor index objects, which are used to
-#' transform new data sets.
+#' Save an align_cds model consisting of the dimensionality reduction 
+#' models and align_cds Annoy nearest neighbor index objects, which are
+#' used to transform new data sets.
 #'
 #' @param cds cell_data_set with existing model, which was created using
 #'   cds <- preprocess_cds(cds, build_nn_index=TRUE).
 #' @param file_root_name. A string giving the root of names given to the two
 #'   files to which the model is saved. The files are named <file_root_name>.rds
-#'   and <file_root_name>.aln_nn_index.
+#'   and <file_root_name>.aln_nn_index. Note: the <file_root_name>.rds file
+#'   contains only the information required to load the align_cds model into
+#'   the cds object given in save_align_cds_model(cds,...).
 #' @param comment An optional string that describes the model.
 #'
 #' @return None
 #' @export
 save_align_cds_model <- function(cds, method = c('Aligned'), file_root_name = NULL, comment = NULL) {
   if( is.null(cds@preprocess_aux[['Aligned']][['nn_index']])) {
-    stop('Error: there is no Annoy index -- run align_cds() with build_nn_index=TRUE')
+    stop('There is no Annoy index -- run align_cds() with build_nn_index=TRUE')
   }
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(method) == "",TRUE, TRUE),
@@ -1154,6 +1163,7 @@ save_align_cds_model <- function(cds, method = c('Aligned'), file_root_name = NU
   preprocess_method <- cds@preprocess_aux[[method]][['model']][['preprocess_method']]
 
   object <- list()
+  object[['model_file']] <- 'align_cds'
   object[['preprocess_method']] <- preprocess_method
   object[['method']] <- method
   object[['bundle']] <- list(preprocess_aux=cds@preprocess_aux[[preprocess_method]], align_aux=cds@preprocess_aux[[method]])
@@ -1181,6 +1191,10 @@ load_align_cds_model <- function(cds, file_root_name = NULL) {
   file_name_index <- paste0(file_root_name, '.aln_nn_index')
 
   object <- readRDS(file_name_rds)
+  if( object[['model_file']] != 'align_cds') {
+    stop('File \'', file_name_rds, '\' was not made using the save_align_cds_model() function.')
+  }
+
   preprocess_method <- object[['preprocess_method']]
   method <- object[['method']]
   metric <- object[['bundle']][['align_aux']][['nn_index']][['annoy_index']][['metric']]
@@ -1188,7 +1202,7 @@ load_align_cds_model <- function(cds, file_root_name = NULL) {
 
   md5sum_nn_index <- tools::md5sum(file_name_index)
   if(md5sum_nn_index != object[['md5sum_nn_index']]) {
-    stop('annoy index file checksum discrepancy')
+    stop('The annoy index file, \'', file_name_index, '\', differs from the file made using the save_align_cds_model() function.')
   }
 
   object[['bundle']][['align_aux']][['nn_index']][['annoy_index']][['ann']] <- uwot:::create_ann(metric, ndim)
@@ -1207,25 +1221,28 @@ load_align_cds_model <- function(cds, file_root_name = NULL) {
 
 #' Save reduce_dimension model.
 #'
-#' Save a reduce_dimension model consisting of dimensionality reduction
-#' models and Annoy nearest neighbor index objects, which are used to
-#' transform and classify new data sets.
+#' Save a reduce_dimension model consisting of the dimensionality
+#' reduction models and reduce_dimension Annoy nearest neighbor
+#' index objects, which are used to transform and classify new data
+#' sets.
 #'
 #' @param cds cell_data_set with existing model, which was created using
 #'   cds <- reduce_dimension(cds, build_nn_index=TRUE).
 #' @param method A string indicating the method used to build the model
 #'   that you want saved. This must be "UMAP". Default = "UMAP".
 #' @param file_root_name. A string giving the root of names given to the
-#'   two files to which the model is saved. The files are named
+#'   three files to which the model is saved. The files are named
 #'   <file_root_name>.rds, <file_root_name>._umap_nn_index, and
-#'   <file_root_name>._rdd_nn_index.
+#'   <file_root_name>._rdd_nn_index. Note: the <file_root_name>.rds file
+#'   contains only the information required to load the reduce_dimension
+#'   model into the cds object given in load_reduce_dimension_model(cds,...).
 #' @param comment An optional string that describes the model.
 #'
 #' @return None
 #' @export
 save_reduce_dimension_model <- function(cds, method = c('UMAP'), file_root_name = NULL, comment = NULL) {
   if( is.null(cds@reduce_dim_aux[['UMAP']][['nn_index']])) {
-    stop('Error: there is no Annoy index -- run reduce_dimension() with build_nn_index=TRUE')
+    stop('There is no Annoy index -- run reduce_dimension() with build_nn_index=TRUE')
   }
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(method) == "",TRUE, TRUE),
@@ -1244,6 +1261,7 @@ save_reduce_dimension_model <- function(cds, method = c('UMAP'), file_root_name 
   cds@reduce_dim_aux[[method]][['nn_index']][['annoy_index']][['ann']]$save(file_name_nn_index)
 
   object <- list()
+  object[['model_file']] <- 'reduce_dimension'
   object[['preprocess_method']] <- preprocess_method
   object[['method']] <- method
   if( preprocess_method != 'Aligned' ) {
@@ -1282,6 +1300,10 @@ load_reduce_dimension_model <- function(cds, file_root_name = NULL) {
   file_name_nn_index <- paste0(file_root_name, '.rdd_nn_index')
 
   object <- readRDS(file_name_rds)
+  if( object[['model_file']] != 'reduce_dimension') {
+    stop('File \'', file_name_rds, '\' was not made using the save_reduce_dimension_model() function.')
+  }
+
   preprocess_method <- object[['preprocess_method']]
   method <- object[['method']]
   preprocess_aux <- object[['bundle']][['preprocess_aux']]
@@ -1294,12 +1316,12 @@ load_reduce_dimension_model <- function(cds, file_root_name = NULL) {
 
   md5sum_umap_index <- tools::md5sum(file_name_umap_index)
   if(md5sum_umap_index != object[['md5sum_umap_index']] ) {
-    stop('UMAP index file checksum discrepancy')
+    stop('The UMAP annoy index file, \'', file_name_umap_index, '\', differs from the file made using the save_reduce_dimension_model() function.')
   }
 
   md5sum_nn_index <- tools::md5sum(file_name_nn_index)
   if(md5sum_nn_index != object[['md5sum_nn_index']] ) {
-    stop('Annoy index file checksum discrepancy')
+    stop('The annoy index file, \'', file_name_nn_index, '\', differs from the file made using the save_reduce_dimension_model() function.')
   }
 
   reduce_dim_aux[['model']][['umap_model']][['nn_index']][['ann']] <- uwot:::create_ann(metric_umap, ndim_umap)

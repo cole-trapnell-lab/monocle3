@@ -21,15 +21,18 @@ that you want saved. This must be "UMAP". Default = "UMAP".}
 \item{comment}{An optional string that describes the model.}
 
 \item{file_root_name.}{A string giving the root of names given to the
-two files to which the model is saved. The files are named
+three files to which the model is saved. The files are named
 <file_root_name>.rds, <file_root_name>._umap_nn_index, and
-<file_root_name>._rdd_nn_index.}
+<file_root_name>._rdd_nn_index. Note: the <file_root_name>.rds file
+contains only the information required to load the reduce_dimension
+model into the cds object given in load_reduce_dimension_model(cds,...).}
 }
 \value{
 None
 }
 \description{
-Save a reduce_dimension model consisting of dimensionality reduction
-models and Annoy nearest neighbor index objects, which are used to
-transform and classify new data sets.
+Save a reduce_dimension model consisting of the dimensionality
+reduction models and reduce_dimension Annoy nearest neighbor
+index objects, which are used to transform and classify new data
+sets.
 }
