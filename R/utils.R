@@ -1102,7 +1102,7 @@ load_preprocess_model <- function(cds, file_root_name = NULL) {
   file_name_index <- paste0(file_root_name, '.ppc_nn_index')
 
   object <- readRDS(file_name_rds)
-  if( object[['model_file']] != 'preprocess') {
+  if( is.null(object[['model_file']]) || object[['model_file']] != 'preprocess') {
     stop('File \'', file_name_rds, '\' was not made using the save_preprocess_model() function.')
   }
 
@@ -1191,7 +1191,7 @@ load_align_cds_model <- function(cds, file_root_name = NULL) {
   file_name_index <- paste0(file_root_name, '.aln_nn_index')
 
   object <- readRDS(file_name_rds)
-  if( object[['model_file']] != 'align_cds') {
+  if( is.null(object[['model_file']]) || object[['model_file']] != 'align_cds') {
     stop('File \'', file_name_rds, '\' was not made using the save_align_cds_model() function.')
   }
 
@@ -1300,7 +1300,7 @@ load_reduce_dimension_model <- function(cds, file_root_name = NULL) {
   file_name_nn_index <- paste0(file_root_name, '.rdd_nn_index')
 
   object <- readRDS(file_name_rds)
-  if( object[['model_file']] != 'reduce_dimension') {
+  if( is.null(object[['model_file']]) || object[['model_file']] != 'reduce_dimension') {
     stop('File \'', file_name_rds, '\' was not made using the save_reduce_dimension_model() function.')
   }
 
