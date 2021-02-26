@@ -32,9 +32,9 @@ None
 }
 \description{
 Save a reduce_dimension model consisting of the dimensionality
-reduction models and reduce_dimension Annoy nearest neighbor
-index objects, which are used to transform and classify new data
-sets. Additionally, it saves preprocess and align_cds Annoy
+reduction models and reduce_dimension nearest neighbor
+index objects, which are used to transform new data
+sets. Additionally, it saves preprocess and align_cds nearest neighbor
 indexes, when preprocess_cds() and align_cds() were run with
 build_nn_index=TRUE.
 }

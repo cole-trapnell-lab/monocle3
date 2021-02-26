@@ -18,6 +18,6 @@ None
 }
 \description{
 Load into an existing cell_data_set a preprocess model consisting
-of dimensionality reduction model and Annoy nearest neighbor index
-objects, which are used to transform and classify new data sets.
+of dimensionality reduction model and nearest neighbor nearest neighbor index
+objects, which are used to transform new data sets.
 }

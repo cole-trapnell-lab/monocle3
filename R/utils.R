@@ -1048,7 +1048,7 @@ get_citations <- function(cds) {
 #' Save preprocess model.
 #'
 #' Save a preprocess model consisting of the dimensionality reduction 
-#' model and preprocess Annoy nearest neighbor index objects, which
+#' model and preprocess nearest neighbor index objects, which
 #' are used to transform new data sets.
 #'
 #' @param cds cell_data_set with existing model, which was created using
@@ -1065,24 +1065,36 @@ get_citations <- function(cds) {
 #' @return None
 #' @export
 save_preprocess_model <- function(cds, method = c('PCA', 'LSI'), file_root_name = NULL, comment = NULL) {
+  model_file_version <- '1.0.0'
   method <- match.arg(method)
   if(is.null(cds@preprocess_aux[[method]])) {
     stop('preprocess_cds was not run on this cds.')
   } else if(is.null(cds@preprocess_aux[[method]][['nn_index']])) {
-    stop('There is no Annoy index -- run preprocess_cds() with build_nn_index=TRUE')
+    stop('There is no nearest neighbor index -- run preprocess_cds() with build_nn_index=TRUE')
   }
 
-  file_name_rds <- paste0(file_root_name, '.rds')
-  file_name_index <- paste0(file_root_name, '.ppc_nn_index')
+  file_name_rds <- paste0(file_root_name, '.ppc_rds')
+  file_name_nn_index1 <- paste0(file_root_name, '.ppc_nn_index')
 
-  cds@preprocess_aux[[method]][['nn_index']][['annoy_index']][['ann']]$save(file_name_index)
+  cds@preprocess_aux[[method]][['nn_index']][['annoy_index']][['ann']]$save(file_name_nn_index1)
 
   object <- list()
+  object[['model_file_version']] <- model_file_version
   object[['model_file']] <- 'preprocess'
   object[['method']] <- method
   object[['bundle']] <- cds@preprocess_aux[[method]]
   object[['comment']] <- comment
-  object[['md5sum_nn_index']] <- tools::md5sum(file_name_index)
+  object[['md5sum_nn_index']] <- tools::md5sum(file_name_nn_index1)
+
+  appendLF <- FALSE
+  message('Models saved:', appendLF=appendLF)
+  message('  preprocess_cds', appendLF=appendLF)
+  message('Files written:', appendLF=appendLF)
+  message('  R object information:', appendLF=appendLF) 
+  message('    models: ', file_name_rds, appendLF=appendLF)
+  message('  Nearest neighbor indexes:', appendLF=appendLF)
+  message('    preprocess_cds: ', file_name_nn_index1, appendLF=appendLF)
+
   saveRDS(object, file_name_rds)
 }
 
@@ -1090,8 +1102,8 @@ save_preprocess_model <- function(cds, method = c('PCA', 'LSI'), file_root_name 
 #' Load preprocess model.
 #'
 #' Load into an existing cell_data_set a preprocess model consisting
-#' of dimensionality reduction model and Annoy nearest neighbor index
-#' objects, which are used to transform and classify new data sets.
+#' of dimensionality reduction model and nearest neighbor nearest neighbor index
+#' objects, which are used to transform new data sets.
 #'
 #' @param cds cell_data_set into which the model is to be loaded.
 #' @param file_root_name. A string giving the root of names given to the two
@@ -1101,8 +1113,9 @@ save_preprocess_model <- function(cds, method = c('PCA', 'LSI'), file_root_name 
 #' @return None
 #' @export
 load_preprocess_model <- function(cds, file_root_name = NULL) {
-  file_name_rds <- paste0(file_root_name, '.rds')
-  file_name_index <- paste0(file_root_name, '.ppc_nn_index')
+  model_file_version <- '1.0.0'
+  file_name_rds <- paste0(file_root_name, '.ppc_rds')
+  file_name_nn_index1 <- paste0(file_root_name, '.ppc_nn_index')
 
   object <- readRDS(file_name_rds)
   if( is.null(object[['model_file']]) || object[['model_file']] != 'preprocess') {
@@ -1113,13 +1126,13 @@ load_preprocess_model <- function(cds, file_root_name = NULL) {
   metric_index <- object[['bundle']][['nn_index']][['annoy_index']][['metric']]
   ndim_index <- object[['bundle']][['nn_index']][['annoy_ndim']]
 
-  md5sum_nn_index <- tools::md5sum(file_name_index)
+  md5sum_nn_index <- tools::md5sum(file_name_nn_index1)
   if(md5sum_nn_index != object[['md5sum_nn_index']]) {
-    stop('The annoy index file, \'', file_name_index, '\', differs from the file made using the save_preprocess_model() function.')
+    stop('The annoy index file, \'', file_name_nn_index1, '\', differs from the file made using the save_preprocess_model() function.')
   }
 
   object[['bundle']][['nn_index']][['annoy_index']][['ann']] <- uwot:::create_ann(metric_index, ndim_index)
-  object[['bundle']][['nn_index']][['annoy_index']][['ann']]$load(file_name_index)
+  object[['bundle']][['nn_index']][['annoy_index']][['ann']]$load(file_name_nn_index1)
 
   if(length(object[['comment']]) > 0 ) {
     message('Comment: ', object[['comment']])
@@ -1134,9 +1147,9 @@ load_preprocess_model <- function(cds, file_root_name = NULL) {
 #' Save align_cds model.
 #'
 #' Save an align_cds model consisting of the dimensionality reduction 
-#' models and align_cds Annoy nearest neighbor index objects, which are
+#' models and align_cds nearest neighbor index objects, which are
 #' used to transform new data sets. Additionally, it saves the
-#' preprocess_cds Annoy index, if preprocess_cds() was run with
+#' preprocess_cds nearest neighbor index, if preprocess_cds() was run with
 #' build_nn_index=TRUE.
 #'
 #' @param cds cell_data_set with existing model, which was created using
@@ -1151,10 +1164,11 @@ load_preprocess_model <- function(cds, file_root_name = NULL) {
 #' @return None
 #' @export
 save_align_cds_model <- function(cds, method = c('Aligned'), file_root_name = NULL, comment = NULL) {
+  model_file_version <- '1.0.0'
   if(is.null(cds@preprocess_aux[['Aligned']])) {
     stop('align_cds was not run on this cds.')
   } else if(is.null(cds@preprocess_aux[['Aligned']][['nn_index']])) {
-    stop('There is no Annoy index -- run align_cds() with build_nn_index=TRUE')
+    stop('There is no nearest neighbor index -- run align_cds() with build_nn_index=TRUE')
   }
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(method) == "",TRUE, TRUE),
@@ -1162,36 +1176,46 @@ save_align_cds_model <- function(cds, method = c('Aligned'), file_root_name = NU
     msg = "method must be one of 'Aligned'")
   method <- match.arg(method)
 
-  file_name_rds <- paste0(file_root_name, '.rds')
-  # preprocess Annoy index (PCA or LSI). This exists when preprocess_cds
-  # is run with build_nn_index=TRUE. Refer to this as index1.
-  file_name_index1 <- paste0(file_root_name, '.aln_nn_index1')
-  # align_cds Annoy index. This must exist in order to run
-  # save_align_cds_model(). Refer to this as index2.
-  file_name_index2 <- paste0(file_root_name, '.aln_nn_index2')
+  file_name_rds <- paste0(file_root_name, '.aln_rds')
+  # preprocess nearest neighbor index (PCA or LSI).
+  file_name_nn_index1 <- paste0(file_root_name, '.aln_nn_index1')
+  # align_cds nearest neighbor index.
+  file_name_nn_index2 <- paste0(file_root_name, '.aln_nn_index2')
 
   # Was preprocess_method 'PCA' or 'LSI', as specified in align_cds(..., preprocess_method=xx,...)?
   preprocess_method <- cds@preprocess_aux[[method]][['model']][['preprocess_method']]
 
-  # Is there a preprocess_cds() Annoy index?
+  # Is there a preprocess_cds() nearest neighbor index?
   exists_index1 <- !(is.null(cds@preprocess_aux[[preprocess_method]][['nn_index']]))
 
   if(exists_index1) {
-    cds@preprocess_aux[[preprocess_method]][['nn_index']][['annoy_index']][['ann']]$save(file_name_index1)
+    cds@preprocess_aux[[preprocess_method]][['nn_index']][['annoy_index']][['ann']]$save(file_name_nn_index1)
   }
 
-  cds@preprocess_aux[[method]][['nn_index']][['annoy_index']][['ann']]$save(file_name_index2)
+  cds@preprocess_aux[[method]][['nn_index']][['annoy_index']][['ann']]$save(file_name_nn_index2)
 
   object <- list()
+  object[['model_file_version']] <- model_file_version
   object[['model_file']] <- 'align_cds'
   object[['preprocess_method']] <- preprocess_method
   object[['method']] <- method
   object[['bundle']] <- list(preprocess_aux=cds@preprocess_aux[[preprocess_method]], align_aux=cds@preprocess_aux[[method]])
   object[['comment']] <- comment
   # Note: in load_align_cds_model, use object[['md5sum_nn_index1']] to
-  # determine whether a preprocess Annoy index was saved.
-  object[['md5sum_nn_index1']] <- ifelse(exists_index1, tools::md5sum(file_name_index1), NULL)
-  object[['md5sum_nn_index2']] <- tools::md5sum(file_name_index2)
+  # determine whether a preprocess nearest neighbor index was saved.
+  object[['md5sum_nn_index1']] <- ifelse(exists_index1, tools::md5sum(file_name_nn_index1), NULL)
+  object[['md5sum_nn_index2']] <- tools::md5sum(file_name_nn_index2)
+
+  appendLF <- FALSE
+  message('Models saved:', appendLF=appendLF)
+  message('  preprocess_cds\n  align_cds', appendLF=appendLF)
+  message('Files written:', appendLF=appendLF)
+  message('  R object information:', appendLF=appendLF)
+  message('    models: ', file_name_rds, appendLF=appendLF)
+  message('  Nearest neighbor indexes:', appendLF=appendLF)
+  message('    preprocess_cds: ', ifelse(exists_index1, file_name_nn_index1, 'No preprocess_cds index'), appendLF=appendLF)
+  message('    align_cds: ', file_name_nn_index2)
+
   saveRDS(object, file_name_rds)
 }
 
@@ -1199,8 +1223,8 @@ save_align_cds_model <- function(cds, method = c('Aligned'), file_root_name = NU
 #' Load align_cds model.
 #'
 #' Load into an existing cell_data_set an align_cds() model consisting
-#' of dimensionality reduction models and Annoy nearest neighbor index
-#' objects, which are used to transform and classify new data sets.
+#' of dimensionality reduction models and nearest neighbor index
+#' objects, which are used to transform new data sets.
 #'
 #' @param cds cell_data_set into which the model is to be loaded.
 #' @param file_root_name. A string giving the root of names given to the two
@@ -1210,9 +1234,10 @@ save_align_cds_model <- function(cds, method = c('Aligned'), file_root_name = NU
 #' @return None
 #' @export
 load_align_cds_model <- function(cds, file_root_name = NULL) {
-  file_name_rds <- paste0(file_root_name, '.rds')
-  file_name_index1 <- paste0(file_root_name, '.aln_nn_index1')
-  file_name_index2 <- paste0(file_root_name, '.aln_nn_index2')
+  model_file_version <- '1.0.0'
+  file_name_rds <- paste0(file_root_name, '.aln_rds')
+  file_name_nn_index1 <- paste0(file_root_name, '.aln_nn_index1')
+  file_name_nn_index2 <- paste0(file_root_name, '.aln_nn_index2')
 
   object <- readRDS(file_name_rds)
   if( is.null(object[['model_file']]) || object[['model_file']] != 'align_cds') {
@@ -1235,24 +1260,24 @@ load_align_cds_model <- function(cds, file_root_name = NULL) {
   ndim_index2 <- align_aux[['nn_index']][['annoy_ndim']]
 
   if(exists_index1) {
-    md5sum_nn_index1 <- tools::md5sum(file_name_index1)
+    md5sum_nn_index1 <- tools::md5sum(file_name_nn_index1)
     if(md5sum_nn_index1 != object[['md5sum_nn_index1']]) {
-      stop('The annoy index file, \'', file_name_index1, '\', differs from the file made using the save_align_cds_model() function.')
+      stop('The annoy index file, \'', file_name_nn_index1, '\', differs from the file made using the save_align_cds_model() function.')
     }
   }
 
-  md5sum_nn_index2 <- tools::md5sum(file_name_index2)
+  md5sum_nn_index2 <- tools::md5sum(file_name_nn_index2)
   if(md5sum_nn_index2 != object[['md5sum_nn_index2']]) {
-    stop('The annoy index file, \'', file_name_index2, '\', differs from the file made using the save_align_cds_model() function.')
+    stop('The annoy index file, \'', file_name_nn_index2, '\', differs from the file made using the save_align_cds_model() function.')
   }
 
   if(exists_index1) {
     preprocess_aux[['nn_index']][['annoy_index']][['ann']] <- uwot:::create_ann(metric_index1, ndim_index1)
-    preprocess_aux[['nn_index']][['annoy_index']][['ann']]$load(file_name_index1)
+    preprocess_aux[['nn_index']][['annoy_index']][['ann']]$load(file_name_nn_index1)
   }
 
   align_aux[['nn_index']][['annoy_index']][['ann']] <- uwot:::create_ann(metric_index2, ndim_index2)
-  align_aux[['nn_index']][['annoy_index']][['ann']]$load(file_name_index2)
+  align_aux[['nn_index']][['annoy_index']][['ann']]$load(file_name_nn_index2)
 
   cds@preprocess_aux[[preprocess_method]] <- preprocess_aux
   cds@preprocess_aux[[method]] <- align_aux
@@ -1268,9 +1293,9 @@ load_align_cds_model <- function(cds, file_root_name = NULL) {
 #' Save reduce_dimension model.
 #'
 #' Save a reduce_dimension model consisting of the dimensionality
-#' reduction models and reduce_dimension Annoy nearest neighbor
-#' index objects, which are used to transform and classify new data
-#' sets. Additionally, it saves preprocess and align_cds Annoy
+#' reduction models and reduce_dimension nearest neighbor
+#' index objects, which are used to transform new data
+#' sets. Additionally, it saves preprocess and align_cds nearest neighbor
 #' indexes, when preprocess_cds() and align_cds() were run with
 #' build_nn_index=TRUE.
 #'
@@ -1289,10 +1314,11 @@ load_align_cds_model <- function(cds, file_root_name = NULL) {
 #' @return None
 #' @export
 save_reduce_dimension_model <- function(cds, method = c('UMAP'), file_root_name = NULL, comment = NULL) {
+  model_file_version <- '1.0.0'
   if(is.null(cds@reduce_dim_aux[['UMAP']])) {
     stop('reduce_dimension was not run on this cds.')
   } else if(is.null(cds@reduce_dim_aux[['UMAP']][['nn_index']])) {
-    stop('There is no Annoy index -- run reduce_dimension() with build_nn_index=TRUE')
+    stop('There is no nearest neighbor index -- run reduce_dimension() with build_nn_index=TRUE')
   }
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(method) == "",TRUE, TRUE),
@@ -1300,16 +1326,14 @@ save_reduce_dimension_model <- function(cds, method = c('UMAP'), file_root_name 
     msg = "method must be 'UMAP'")
   method <- match.arg(method)
 
-  file_name_rds <- paste0(file_root_name, '.rds')
-  file_name_umap_index <- paste0(file_root_name, '.umap_nn_index')
-  # preprocess Annoy index (PCA or LSI). This exists when preprocess_cds
-  # is run with build_nn_index=TRUE. Refer to this as index1.
+  file_name_rds <- paste0(file_root_name, '.rdd_rds')
+  # uwot::umap annoy index.
+  file_name_umap_index <- paste0(file_root_name, '.rdd_umap_nn_index')
+  # preprocess nearest neighbor index (PCA or LSI).
   file_name_nn_index1 <- paste0(file_root_name, '.rdd_nn_index1')
-  # align_cds Aligned Annoy index. This exists when align_cds
-  # is run with build_nn_index=TRUE. Refer to this as index2.
+  # align_cds Aligned nearest neighbor index.
   file_name_nn_index2 <- paste0(file_root_name, '.rdd_nn_index2')
-  # reduce_dimension Annoy index. This must exist in order to run
-  # save_reduce_dimension_model(). Refer to this as index3.
+  # reduce_dimension nearest neighbor index.
   file_name_nn_index3 <- paste0(file_root_name, '.rdd_nn_index3')
 
   umap_preprocess_method <- cds@reduce_dim_aux[['UMAP']][['model']][['umap_preprocess_method']]
@@ -1328,6 +1352,7 @@ save_reduce_dimension_model <- function(cds, method = c('UMAP'), file_root_name 
   exists_index2 <- !(is.null(preprocess_method2)) && !(is.null(cds@preprocess_aux[[preprocess_method2]][['nn_index']]))
 
   object <- list()
+  object[['model_file_version']] <- model_file_version
   object[['model_file']] <- 'reduce_dimension'
   object[['preprocess_method1']] <- preprocess_method1
   object[['preprocess_method2']] <- preprocess_method2
@@ -1358,6 +1383,22 @@ save_reduce_dimension_model <- function(cds, method = c('UMAP'), file_root_name 
   object[['md5sum_nn_index2']] <- ifelse(exists_index2, tools::md5sum(file_name_nn_index2), NULL)
   object[['md5sum_nn_index3']] <- tools::md5sum(file_name_nn_index3)
 
+  appendLF <- FALSE
+  message('Models saved:', appendLF=appendLF)
+  if(is.null(preprocess_method2)) {
+    message('  preprocess_cds\n  reduce_dimension', appendLF=appendLF)
+  } else {
+    message('  preprocess_cds\n  align_cds\n  reduce_dimension', appendLF=appendLF)
+  }
+  message('Files written:', appendLF=appendLF)
+  message('  R object information:', appendLF=appendLF)
+  message('    models: ', file_name_rds, appendLF=appendLF)
+  message('  Nearest neighbor indexes:', appendLF=appendLF)
+  message('    preprocess_cds: ', ifelse(exists_index1, file_name_nn_index1, 'No preprocess_cds index'), appendLF=appendLF)
+  message('    align_cds: ', ifelse(exists_index2, file_name_nn_index2, 'No align_cds index'), appendLF=appendLF)
+  message('    reduce_dimension: ', file_name_nn_index3, appendLF=appendLF)
+  message('    UMAP: ', file_name_umap_index, appendLF=appendLF)
+
   saveRDS(object, file_name_rds)
 }
 
@@ -1365,8 +1406,8 @@ save_reduce_dimension_model <- function(cds, method = c('UMAP'), file_root_name 
 #' Load reduce_dimension model.
 #'
 #' Load into an existing cell_data_set a reduce_dimension model consisting
-#' of dimensionality reduction models and Annoy nearest neighbor index objects,
-#' which are used to transform and classify new data sets.
+#' of dimensionality reduction models and nearest neighbor index objects,
+#' which are used to transform new data sets.
 #'
 #' @param cds cell_data_set into which the model is to be loaded.
 #' @param file_root_name. A string giving the root of names given to the two
@@ -1376,8 +1417,9 @@ save_reduce_dimension_model <- function(cds, method = c('UMAP'), file_root_name 
 #' @return None
 #' @export
 load_reduce_dimension_model <- function(cds, file_root_name = NULL) {
-  file_name_rds <- paste0(file_root_name, '.rds')
-  file_name_umap_index <- paste0(file_root_name, '.umap_nn_index')
+  model_file_version <- '1.0.0'
+  file_name_rds <- paste0(file_root_name, '.rdd_rds')
+  file_name_umap_index <- paste0(file_root_name, '.rdd_umap_nn_index')
   file_name_nn_index1 <- paste0(file_root_name, '.rdd_nn_index1')
   file_name_nn_index2 <- paste0(file_root_name, '.rdd_nn_index2')
   file_name_nn_index3 <- paste0(file_root_name, '.rdd_nn_index3')

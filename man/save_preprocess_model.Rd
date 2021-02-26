@@ -31,6 +31,6 @@ None
 }
 \description{
 Save a preprocess model consisting of the dimensionality reduction
-model and preprocess Annoy nearest neighbor index objects, which
+model and preprocess nearest neighbor index objects, which
 are used to transform new data sets.
 }
