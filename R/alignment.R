@@ -71,6 +71,8 @@ align_cds <- function(cds,
     msg = "nn_metric must be one of 'cosine', 'euclidean', 'manhattan', or 'hamming'")
   nn_metric <- match.arg(nn_metric)
 
+  set.seed(2016)
+
   if (!is.null(residual_model_formula_str)) {
     if (verbose) message("Removing residual effects")
     X.model_mat <- Matrix::sparse.model.matrix(

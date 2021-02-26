@@ -1066,9 +1066,12 @@ get_citations <- function(cds) {
 #' @export
 save_preprocess_model <- function(cds, method = c('PCA', 'LSI'), file_root_name = NULL, comment = NULL) {
   method <- match.arg(method)
-  if( is.null(cds@preprocess_aux[['PCA']][['nn_index']])) {
+  if(is.null(cds@preprocess_aux[[method]])) {
+    stop('preprocess_cds was not run on this cds.')
+  } else if(is.null(cds@preprocess_aux[[method]][['nn_index']])) {
     stop('There is no Annoy index -- run preprocess_cds() with build_nn_index=TRUE')
   }
+
   file_name_rds <- paste0(file_root_name, '.rds')
   file_name_index <- paste0(file_root_name, '.ppc_nn_index')
 
@@ -1107,15 +1110,15 @@ load_preprocess_model <- function(cds, file_root_name = NULL) {
   }
 
   method <- object[['method']]
-  metric <- object[['bundle']][['nn_index']][['annoy_index']][['metric']]
-  ndim <- object[['bundle']][['nn_index']][['annoy_ndim']]
+  metric_index <- object[['bundle']][['nn_index']][['annoy_index']][['metric']]
+  ndim_index <- object[['bundle']][['nn_index']][['annoy_ndim']]
 
   md5sum_nn_index <- tools::md5sum(file_name_index)
   if(md5sum_nn_index != object[['md5sum_nn_index']]) {
     stop('The annoy index file, \'', file_name_index, '\', differs from the file made using the save_preprocess_model() function.')
   }
 
-  object[['bundle']][['nn_index']][['annoy_index']][['ann']] <- uwot:::create_ann(metric, ndim)
+  object[['bundle']][['nn_index']][['annoy_index']][['ann']] <- uwot:::create_ann(metric_index, ndim_index)
   object[['bundle']][['nn_index']][['annoy_index']][['ann']]$load(file_name_index)
 
   if(length(object[['comment']]) > 0 ) {
@@ -1132,13 +1135,15 @@ load_preprocess_model <- function(cds, file_root_name = NULL) {
 #'
 #' Save an align_cds model consisting of the dimensionality reduction 
 #' models and align_cds Annoy nearest neighbor index objects, which are
-#' used to transform new data sets.
+#' used to transform new data sets. Additionally, it saves the
+#' preprocess_cds Annoy index, if preprocess_cds() was run with
+#' build_nn_index=TRUE.
 #'
 #' @param cds cell_data_set with existing model, which was created using
 #'   cds <- preprocess_cds(cds, build_nn_index=TRUE).
-#' @param file_root_name. A string giving the root of names given to the two
+#' @param file_root_name. A string giving the root of names given to the
 #'   files to which the model is saved. The files are named <file_root_name>.rds
-#'   and <file_root_name>.aln_nn_index. Note: the <file_root_name>.rds file
+#'   and <file_root_name>.aln_nn_index<n>. Note: the <file_root_name>.rds file
 #'   contains only the information required to load the align_cds model into
 #'   the cds object given in save_align_cds_model(cds,...).
 #' @param comment An optional string that describes the model.
@@ -1146,7 +1151,9 @@ load_preprocess_model <- function(cds, file_root_name = NULL) {
 #' @return None
 #' @export
 save_align_cds_model <- function(cds, method = c('Aligned'), file_root_name = NULL, comment = NULL) {
-  if( is.null(cds@preprocess_aux[['Aligned']][['nn_index']])) {
+  if(is.null(cds@preprocess_aux[['Aligned']])) {
+    stop('align_cds was not run on this cds.')
+  } else if(is.null(cds@preprocess_aux[['Aligned']][['nn_index']])) {
     stop('There is no Annoy index -- run align_cds() with build_nn_index=TRUE')
   }
   assertthat::assert_that(
@@ -1156,11 +1163,24 @@ save_align_cds_model <- function(cds, method = c('Aligned'), file_root_name = NU
   method <- match.arg(method)
 
   file_name_rds <- paste0(file_root_name, '.rds')
-  file_name_index <- paste0(file_root_name, '.aln_nn_index')
+  # preprocess Annoy index (PCA or LSI). This exists when preprocess_cds
+  # is run with build_nn_index=TRUE. Refer to this as index1.
+  file_name_index1 <- paste0(file_root_name, '.aln_nn_index1')
+  # align_cds Annoy index. This must exist in order to run
+  # save_align_cds_model(). Refer to this as index2.
+  file_name_index2 <- paste0(file_root_name, '.aln_nn_index2')
 
-  cds@preprocess_aux[[method]][['nn_index']][['annoy_index']][['ann']]$save(file_name_index)
-
+  # Was preprocess_method 'PCA' or 'LSI', as specified in align_cds(..., preprocess_method=xx,...)?
   preprocess_method <- cds@preprocess_aux[[method]][['model']][['preprocess_method']]
+
+  # Is there a preprocess_cds() Annoy index?
+  exists_index1 <- !(is.null(cds@preprocess_aux[[preprocess_method]][['nn_index']]))
+
+  if(exists_index1) {
+    cds@preprocess_aux[[preprocess_method]][['nn_index']][['annoy_index']][['ann']]$save(file_name_index1)
+  }
+
+  cds@preprocess_aux[[method]][['nn_index']][['annoy_index']][['ann']]$save(file_name_index2)
 
   object <- list()
   object[['model_file']] <- 'align_cds'
@@ -1168,7 +1188,10 @@ save_align_cds_model <- function(cds, method = c('Aligned'), file_root_name = NU
   object[['method']] <- method
   object[['bundle']] <- list(preprocess_aux=cds@preprocess_aux[[preprocess_method]], align_aux=cds@preprocess_aux[[method]])
   object[['comment']] <- comment
-  object[['md5sum_nn_index']] <- tools::md5sum(file_name_index)
+  # Note: in load_align_cds_model, use object[['md5sum_nn_index1']] to
+  # determine whether a preprocess Annoy index was saved.
+  object[['md5sum_nn_index1']] <- ifelse(exists_index1, tools::md5sum(file_name_index1), NULL)
+  object[['md5sum_nn_index2']] <- tools::md5sum(file_name_index2)
   saveRDS(object, file_name_rds)
 }
 
@@ -1182,13 +1205,14 @@ save_align_cds_model <- function(cds, method = c('Aligned'), file_root_name = NU
 #' @param cds cell_data_set into which the model is to be loaded.
 #' @param file_root_name. A string giving the root of names given to the two
 #'   files to which the model was saved. The files are named <file_root_name>.rds
-#'   and <file_root_name>.aln_nn_index.
+#'   and <file_root_name>.aln_nn_index<n>.
 #'
 #' @return None
 #' @export
 load_align_cds_model <- function(cds, file_root_name = NULL) {
   file_name_rds <- paste0(file_root_name, '.rds')
-  file_name_index <- paste0(file_root_name, '.aln_nn_index')
+  file_name_index1 <- paste0(file_root_name, '.aln_nn_index1')
+  file_name_index2 <- paste0(file_root_name, '.aln_nn_index2')
 
   object <- readRDS(file_name_rds)
   if( is.null(object[['model_file']]) || object[['model_file']] != 'align_cds') {
@@ -1197,23 +1221,45 @@ load_align_cds_model <- function(cds, file_root_name = NULL) {
 
   preprocess_method <- object[['preprocess_method']]
   method <- object[['method']]
-  metric <- object[['bundle']][['align_aux']][['nn_index']][['annoy_index']][['metric']]
-  ndim <- object[['bundle']][['align_aux']][['nn_index']][['annoy_ndim']]
 
-  md5sum_nn_index <- tools::md5sum(file_name_index)
-  if(md5sum_nn_index != object[['md5sum_nn_index']]) {
-    stop('The annoy index file, \'', file_name_index, '\', differs from the file made using the save_align_cds_model() function.')
+  preprocess_aux <- object[['bundle']][['preprocess_aux']]
+  align_aux <- object[['bundle']][['align_aux']]
+
+  exists_index1 <- !is.null(object[['md5sum_nn_index1']])
+
+  if(exists_index1) {
+    metric_index1 <- preprocess_aux[['nn_index']][['annoy_index']][['metric']]
+    ndim_index1 <- preprocess_aux[['nn_index']][['annoy_ndim']]
+  }
+  metric_index2 <- align_aux[['nn_index']][['annoy_index']][['metric']]
+  ndim_index2 <- align_aux[['nn_index']][['annoy_ndim']]
+
+  if(exists_index1) {
+    md5sum_nn_index1 <- tools::md5sum(file_name_index1)
+    if(md5sum_nn_index1 != object[['md5sum_nn_index1']]) {
+      stop('The annoy index file, \'', file_name_index1, '\', differs from the file made using the save_align_cds_model() function.')
+    }
   }
 
-  object[['bundle']][['align_aux']][['nn_index']][['annoy_index']][['ann']] <- uwot:::create_ann(metric, ndim)
-  object[['bundle']][['align_aux']][['nn_index']][['annoy_index']][['ann']]$load(file_name_index)
+  md5sum_nn_index2 <- tools::md5sum(file_name_index2)
+  if(md5sum_nn_index2 != object[['md5sum_nn_index2']]) {
+    stop('The annoy index file, \'', file_name_index2, '\', differs from the file made using the save_align_cds_model() function.')
+  }
+
+  if(exists_index1) {
+    preprocess_aux[['nn_index']][['annoy_index']][['ann']] <- uwot:::create_ann(metric_index1, ndim_index1)
+    preprocess_aux[['nn_index']][['annoy_index']][['ann']]$load(file_name_index1)
+  }
+
+  align_aux[['nn_index']][['annoy_index']][['ann']] <- uwot:::create_ann(metric_index2, ndim_index2)
+  align_aux[['nn_index']][['annoy_index']][['ann']]$load(file_name_index2)
+
+  cds@preprocess_aux[[preprocess_method]] <- preprocess_aux
+  cds@preprocess_aux[[method]] <- align_aux
 
   if(length(object[['comment']]) > 0 ) {
     message('Comment: ', object[['comment']])
   }
-
-  cds@preprocess_aux[[preprocess_method]] <- object[['bundle']][['preprocess_aux']]
-  cds@preprocess_aux[[method]] <- object[['bundle']][['align_aux']]
 
   cds
 }
@@ -1224,16 +1270,18 @@ load_align_cds_model <- function(cds, file_root_name = NULL) {
 #' Save a reduce_dimension model consisting of the dimensionality
 #' reduction models and reduce_dimension Annoy nearest neighbor
 #' index objects, which are used to transform and classify new data
-#' sets.
+#' sets. Additionally, it saves preprocess and align_cds Annoy
+#' indexes, when preprocess_cds() and align_cds() were run with
+#' build_nn_index=TRUE.
 #'
 #' @param cds cell_data_set with existing model, which was created using
 #'   cds <- reduce_dimension(cds, build_nn_index=TRUE).
 #' @param method A string indicating the method used to build the model
 #'   that you want saved. This must be "UMAP". Default = "UMAP".
 #' @param file_root_name. A string giving the root of names given to the
-#'   three files to which the model is saved. The files are named
+#'   files to which the model is saved. The files are named
 #'   <file_root_name>.rds, <file_root_name>._umap_nn_index, and
-#'   <file_root_name>._rdd_nn_index. Note: the <file_root_name>.rds file
+#'   <file_root_name>._rdd_nn_index<n>. Note: the <file_root_name>.rds file
 #'   contains only the information required to load the reduce_dimension
 #'   model into the cds object given in load_reduce_dimension_model(cds,...).
 #' @param comment An optional string that describes the model.
@@ -1241,7 +1289,9 @@ load_align_cds_model <- function(cds, file_root_name = NULL) {
 #' @return None
 #' @export
 save_reduce_dimension_model <- function(cds, method = c('UMAP'), file_root_name = NULL, comment = NULL) {
-  if( is.null(cds@reduce_dim_aux[['UMAP']][['nn_index']])) {
+  if(is.null(cds@reduce_dim_aux[['UMAP']])) {
+    stop('reduce_dimension was not run on this cds.')
+  } else if(is.null(cds@reduce_dim_aux[['UMAP']][['nn_index']])) {
     stop('There is no Annoy index -- run reduce_dimension() with build_nn_index=TRUE')
   }
   assertthat::assert_that(
@@ -1250,33 +1300,64 @@ save_reduce_dimension_model <- function(cds, method = c('UMAP'), file_root_name 
     msg = "method must be 'UMAP'")
   method <- match.arg(method)
 
-  preprocess_method <- cds@reduce_dim_aux[['UMAP']][['model']][['umap_preprocess_method']]
-
-# check method
   file_name_rds <- paste0(file_root_name, '.rds')
   file_name_umap_index <- paste0(file_root_name, '.umap_nn_index')
-  file_name_nn_index <- paste0(file_root_name, '.rdd_nn_index')
+  # preprocess Annoy index (PCA or LSI). This exists when preprocess_cds
+  # is run with build_nn_index=TRUE. Refer to this as index1.
+  file_name_nn_index1 <- paste0(file_root_name, '.rdd_nn_index1')
+  # align_cds Aligned Annoy index. This exists when align_cds
+  # is run with build_nn_index=TRUE. Refer to this as index2.
+  file_name_nn_index2 <- paste0(file_root_name, '.rdd_nn_index2')
+  # reduce_dimension Annoy index. This must exist in order to run
+  # save_reduce_dimension_model(). Refer to this as index3.
+  file_name_nn_index3 <- paste0(file_root_name, '.rdd_nn_index3')
 
-  cds@reduce_dim_aux[[method]][['model']][['umap_model']][['nn_index']][['ann']]$save(file_name_umap_index)
-  cds@reduce_dim_aux[[method]][['nn_index']][['annoy_index']][['ann']]$save(file_name_nn_index)
+  umap_preprocess_method <- cds@reduce_dim_aux[['UMAP']][['model']][['umap_preprocess_method']]
+  # preprocess_method2 is given in reduce_dimension(...,preprocess_method=xx,...)
+  # preprocess_method1 is given in align_cds(...,preprocess_method=xx,...) if align_cds()
+  #                    was used; otherwise, it is given in preprocess_cds(...,method=xx,...)
+  if(umap_preprocess_method != 'Aligned') {
+    preprocess_method1 <- umap_preprocess_method
+    preprocess_method2 <- NULL
+  } else {
+    preprocess_method1 <- cds@preprocess_aux[['Aligned']][['model']][['preprocess_method']]
+    preprocess_method2 <- 'Aligned'
+  }
+
+  exists_index1 <- !(is.null(cds@preprocess_aux[[preprocess_method1]][['nn_index']]))
+  exists_index2 <- !(is.null(preprocess_method2)) && !(is.null(cds@preprocess_aux[[preprocess_method2]][['nn_index']]))
 
   object <- list()
   object[['model_file']] <- 'reduce_dimension'
-  object[['preprocess_method']] <- preprocess_method
+  object[['preprocess_method1']] <- preprocess_method1
+  object[['preprocess_method2']] <- preprocess_method2
   object[['method']] <- method
-  if( preprocess_method != 'Aligned' ) {
-    object[['bundle']] <- list(preprocess_aux=cds@preprocess_aux[[preprocess_method]],
+
+  if(exists_index1) {
+    cds@preprocess_aux[[preprocess_method1]][['nn_index']][['annoy_index']][['ann']]$save(file_name_nn_index1)
+  }
+
+  if(is.null(preprocess_method2)) {
+    object[['bundle']] <- list(preprocess_aux=cds@preprocess_aux[[preprocess_method1]],
                                reduce_dim_aux=cds@reduce_dim_aux[[method]])
   } else {
-    preprocess_method <- cds@preprocess_aux[['Aligned']][['model']][['preprocess_method']]
-    object[['bundle']] <- list(preprocess_aux=cds@preprocess_aux[[preprocess_method]],
+    if(exists_index2) {
+      cds@preprocess_aux[[preprocess_method2]][['nn_index']][['annoy_index']][['ann']]$save(file_name_nn_index2)
+    }
+    object[['bundle']] <- list(preprocess_aux=cds@preprocess_aux[[preprocess_method1]],
                                align_aux=cds@preprocess_aux[['Aligned']],
                                reduce_dim_aux=cds@reduce_dim_aux[[method]])
   }
 
+  cds@reduce_dim_aux[[method]][['nn_index']][['annoy_index']][['ann']]$save(file_name_nn_index3)
+  cds@reduce_dim_aux[[method]][['model']][['umap_model']][['nn_index']][['ann']]$save(file_name_umap_index)
+
   object[['comment']] <- comment
   object[['md5sum_umap_index']] <- tools::md5sum(file_name_umap_index)
-  object[['md5sum_nn_index']] <- tools::md5sum(file_name_nn_index)
+  object[['md5sum_nn_index1']] <- ifelse(exists_index1, tools::md5sum(file_name_nn_index1), NULL)
+  object[['md5sum_nn_index2']] <- ifelse(exists_index2, tools::md5sum(file_name_nn_index2), NULL)
+  object[['md5sum_nn_index3']] <- tools::md5sum(file_name_nn_index3)
+
   saveRDS(object, file_name_rds)
 }
 
@@ -1297,51 +1378,90 @@ save_reduce_dimension_model <- function(cds, method = c('UMAP'), file_root_name 
 load_reduce_dimension_model <- function(cds, file_root_name = NULL) {
   file_name_rds <- paste0(file_root_name, '.rds')
   file_name_umap_index <- paste0(file_root_name, '.umap_nn_index')
-  file_name_nn_index <- paste0(file_root_name, '.rdd_nn_index')
-
+  file_name_nn_index1 <- paste0(file_root_name, '.rdd_nn_index1')
+  file_name_nn_index2 <- paste0(file_root_name, '.rdd_nn_index2')
+  file_name_nn_index3 <- paste0(file_root_name, '.rdd_nn_index3')
   object <- readRDS(file_name_rds)
   if( is.null(object[['model_file']]) || object[['model_file']] != 'reduce_dimension') {
     stop('File \'', file_name_rds, '\' was not made using the save_reduce_dimension_model() function.')
   }
 
-  preprocess_method <- object[['preprocess_method']]
+  preprocess_method1 <- object[['preprocess_method1']]
+  preprocess_method2 <- object[['preprocess_method2']]
   method <- object[['method']]
-  preprocess_aux <- object[['bundle']][['preprocess_aux']]
-  reduce_dim_aux <- object[['bundle']][['reduce_dim_aux']]
-  metric_umap <- reduce_dim_aux[['model']][['umap_model']][['nn_index']][['metric']]
-  ndim_umap <- reduce_dim_aux[['model']][['umap_model']][['metric']][[metric_umap]][['ndim']]
 
-  metric_nn <- reduce_dim_aux[['nn_index']][['annoy_index']][['metric']]
-  ndim_nn <- reduce_dim_aux[['nn_index']][['annoy_ndim']]
+  preprocess_aux <- object[['bundle']][['preprocess_aux']]
+  align_aux <- if(!is.null(preprocess_method2)) object[['bundle']][['align_aux']] else NULL
+  reduce_dim_aux <- object[['bundle']][['reduce_dim_aux']]
+
+  exists_index1 <- !is.null(object[['md5sum_nn_index1']])
+  exists_index2 <- !is.null(object[['md5sum_nn_index2']])
+
+  metric_umap_index <- reduce_dim_aux[['model']][['umap_model']][['nn_index']][['metric']]
+  ndim_umap_index <- reduce_dim_aux[['model']][['umap_model']][['metric']][[metric_umap_index]][['ndim']]
+
+  if(exists_index1) {
+    metric_nn_index1 <- preprocess_aux[['nn_index']][['annoy_index']][['metric']]
+    ndim_nn_index1 <- preprocess_aux[['nn_index']][['annoy_ndim']]
+  }
+
+  if(exists_index2) {
+    metric_nn_index2 <- align_aux[['nn_index']][['annoy_index']][['metric']]
+    ndim_nn_index2 <- align_aux[['nn_index']][['annoy_ndim']]
+  }
+
+  metric_nn_index3 <- reduce_dim_aux[['nn_index']][['annoy_index']][['metric']]
+  ndim_nn_index3 <- reduce_dim_aux[['nn_index']][['annoy_ndim']]
 
   md5sum_umap_index <- tools::md5sum(file_name_umap_index)
   if(md5sum_umap_index != object[['md5sum_umap_index']] ) {
     stop('The UMAP annoy index file, \'', file_name_umap_index, '\', differs from the file made using the save_reduce_dimension_model() function.')
   }
 
-  md5sum_nn_index <- tools::md5sum(file_name_nn_index)
-  if(md5sum_nn_index != object[['md5sum_nn_index']] ) {
-    stop('The annoy index file, \'', file_name_nn_index, '\', differs from the file made using the save_reduce_dimension_model() function.')
+  if(exists_index1) {
+    md5sum_nn_index1 <- tools::md5sum(file_name_nn_index1)
+    if(md5sum_nn_index1 != object[['md5sum_nn_index1']] ) { 
+      stop('The annoy index file, \'', file_name_nn_index1, '\', differs from the file made using the save_reduce_dimension_model() function.')
+    }
   }
 
-  reduce_dim_aux[['model']][['umap_model']][['nn_index']][['ann']] <- uwot:::create_ann(metric_umap, ndim_umap)
+  if(exists_index2) { 
+    md5sum_nn_index2 <- tools::md5sum(file_name_nn_index2)
+    if(md5sum_nn_index2 != object[['md5sum_nn_index2']] ) {
+      stop('The annoy index file, \'', file_name_nn_index2, '\', differs from the file made using the save_reduce_dimension_model() function.')
+    }
+  }
+
+  md5sum_nn_index3 <- tools::md5sum(file_name_nn_index3)
+  if(md5sum_nn_index3 != object[['md5sum_nn_index3']] ) {
+    stop('The annoy index file, \'', file_name_nn_index3, '\', differs from the file made using the save_reduce_dimension_model() function.')
+  }
+
+  reduce_dim_aux[['model']][['umap_model']][['nn_index']][['ann']] <- uwot:::create_ann(metric_umap_index, ndim_umap_index)
   reduce_dim_aux[['model']][['umap_model']][['nn_index']][['ann']]$load(file_name_umap_index)
 
-  reduce_dim_aux[['nn_index']][['annoy_index']][['ann']] <- uwot:::create_ann(metric_nn, ndim_nn)
-  reduce_dim_aux[['nn_index']][['annoy_index']][['ann']]$load(file_name_nn_index)
+  if(exists_index1) {
+    preprocess_aux[['nn_index']][['annoy_index']][['ann']] <- uwot:::create_ann(metric_nn_index1, ndim_nn_index1)
+    preprocess_aux[['nn_index']][['annoy_index']][['ann']]$load(file_name_nn_index1)
+  }
+
+  if(exists_index2) {
+    align_aux[['nn_index']][['annoy_index']][['ann']] <- uwot:::create_ann(metric_nn_index2, ndim_nn_index2)
+    align_aux[['nn_index']][['annoy_index']][['ann']]$load(file_name_nn_index2)
+  }
+
+  reduce_dim_aux[['nn_index']][['annoy_index']][['ann']] <- uwot:::create_ann(metric_nn_index3, ndim_nn_index3)
+  reduce_dim_aux[['nn_index']][['annoy_index']][['ann']]$load(file_name_nn_index3)
+
+  cds@preprocess_aux[[preprocess_method1]] <- preprocess_aux
+  if(!is.null(preprocess_method2)) {
+    cds@preprocess_aux[['Aligned']] <- align_aux
+  }
+  cds@reduce_dim_aux[[method]] <- reduce_dim_aux
 
   if(length(object[['comment']]) > 0 ) {
     message('Comment: ', object[['comment']])
   }
-
-  if( preprocess_method != 'Aligned' ) {
-    cds@preprocess_aux[[preprocess_method]] <- preprocess_aux
-  } else {
-    preprocess_method <- object[['bundle']][['align_aux']][['model']][['preprocess_method']]
-    cds@preprocess_aux[[preprocess_method]] <- preprocess_aux
-    cds@preprocess_aux[['Aligned']] <- object[['bundle']][['align_aux']]
-  }
-  cds@reduce_dim_aux[[method]] <- reduce_dim_aux
 
   cds
 }
