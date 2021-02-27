@@ -1203,7 +1203,7 @@ save_align_cds_model <- function(cds, method = c('Aligned'), file_root_name = NU
   object[['comment']] <- comment
   # Note: in load_align_cds_model, use object[['md5sum_nn_index1']] to
   # determine whether a preprocess nearest neighbor index was saved.
-  object[['md5sum_nn_index1']] <- ifelse(exists_index1, tools::md5sum(file_name_nn_index1), NULL)
+  object[['md5sum_nn_index1']] <- if(exists_index1) tools::md5sum(file_name_nn_index1) else NULL
   object[['md5sum_nn_index2']] <- tools::md5sum(file_name_nn_index2)
 
   appendLF <- FALSE
@@ -1379,8 +1379,8 @@ save_reduce_dimension_model <- function(cds, method = c('UMAP'), file_root_name 
 
   object[['comment']] <- comment
   object[['md5sum_umap_index']] <- tools::md5sum(file_name_umap_index)
-  object[['md5sum_nn_index1']] <- ifelse(exists_index1, tools::md5sum(file_name_nn_index1), NULL)
-  object[['md5sum_nn_index2']] <- ifelse(exists_index2, tools::md5sum(file_name_nn_index2), NULL)
+  object[['md5sum_nn_index1']] <- if(exists_index1) tools::md5sum(file_name_nn_index1) else NULL
+  object[['md5sum_nn_index2']] <- if(exists_index2) tools::md5sum(file_name_nn_index2) else NULL
   object[['md5sum_nn_index3']] <- tools::md5sum(file_name_nn_index3)
 
   appendLF <- FALSE
