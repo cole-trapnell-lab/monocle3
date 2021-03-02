@@ -216,6 +216,7 @@ reduce_dimension <- function(cds,
         # make nearest neighbor index in UMAP space
         annoy_index <- uwot:::annoy_build(X = reducedDims(cds)[['UMAP']], metric=nn_metric)
         cds@reduce_dim_aux[['UMAP']][['nn_index']][['annoy_index']] <- annoy_index
+        cds@reduce_dim_aux[['UMAP']][['nn_index']][['annoy_metric']] <- nn_metric
         cds@reduce_dim_aux[['UMAP']][['nn_index']][['annoy_ndim']] <- ncol(reducedDims(cds)[['UMAP']])
     }
   }

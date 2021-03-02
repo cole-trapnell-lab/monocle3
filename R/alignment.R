@@ -110,6 +110,7 @@ align_cds <- function(cds,
       cds@preprocess_aux[['Aligned']][['nn_index']] <- SimpleList()
       annoy_index <- uwot:::annoy_build(X = reducedDims(cds)[["Aligned"]], metric = nn_metric)
       cds@preprocess_aux[['Aligned']][['nn_index']][['annoy_index']] <- annoy_index
+      cds@preprocess_aux[['Aligned']][['nn_index']][['annoy_metric']] <- nn_metric
       cds@preprocess_aux[['Aligned']][['nn_index']][['annoy_ndim']] <- ncol(preproc_res)
   }
 

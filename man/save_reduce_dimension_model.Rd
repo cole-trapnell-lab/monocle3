@@ -7,12 +7,12 @@
 save_reduce_dimension_model(
   cds,
   method = c("UMAP"),
-  file_root_name = NULL,
+  file_name_root = NULL,
   comment = NULL
 )
 }
 \arguments{
-\item{cds}{cell_data_set with existing model, which was created using
+\item{cds}{cell_data_set with an existing model, which was created using
 cds <- reduce_dimension(cds, build_nn_index=TRUE).}
 
 \item{method}{A string indicating the method used to build the model
@@ -20,21 +20,21 @@ that you want saved. This must be "UMAP". Default = "UMAP".}
 
 \item{comment}{An optional string that describes the model.}
 
-\item{file_root_name.}{A string giving the root of names given to the
-files to which the model is saved. The files are named
-<file_root_name>.rds, <file_root_name>._umap_nn_index, and
-<file_root_name>._rdd_nn_index<n>. Note: the <file_root_name>.rds file
-contains only the information required to load the reduce_dimension
+\item{file_name_root.}{A string with the root of names given to the
+files to which the model will be saved. The files are named
+<file_name_root>.rdd_rds, <file_name_root>.rdd_umap_nn_index, and
+<file_name_root>._rdd_nn_index<n>. Note: the <file_name_root>.rdd_rds file
+contains only the information needed to load the reduce_dimension
 model into the cds object given in load_reduce_dimension_model(cds,...).}
 }
 \value{
 None
 }
 \description{
-Save a reduce_dimension model consisting of the dimensionality
-reduction models and reduce_dimension Annoy nearest neighbor
-index objects, which are used to transform and classify new data
-sets. Additionally, it saves preprocess and align_cds Annoy
+Save a reduce_dimension model consisting of dimensionality
+reduction models and reduce_dimension nearest neighbor
+index objects, which are used to transform new data
+sets. Additionally, it saves preprocess and align_cds nearest neighbor
 indexes, when preprocess_cds() and align_cds() were run with
 build_nn_index=TRUE.
 }

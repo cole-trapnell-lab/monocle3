@@ -4,20 +4,21 @@
 \alias{load_reduce_dimension_model}
 \title{Load reduce_dimension model.}
 \usage{
-load_reduce_dimension_model(cds, file_root_name = NULL)
+load_reduce_dimension_model(cds, file_name_root = NULL)
 }
 \arguments{
 \item{cds}{cell_data_set into which the model is to be loaded.}
 
-\item{file_root_name.}{A string giving the root of names given to the two
-files to which the model was saved. The files are named <file_root_name>.rds,
-<file_root_name>._umap_nn_index, and <file_root_name>._rdd_nn_index.}
+\item{file_name_root.}{A string with the root of names given to the two
+files to which the model was saved. The files are named
+<file_name_root>.rdd_rds, <file_name_root>.rdd_umap_nn_index, and
+<file_name_root>._rdd_nn_index<n>.}
 }
 \value{
-None
+a cell_data_set
 }
 \description{
 Load into an existing cell_data_set a reduce_dimension model consisting
-of dimensionality reduction models and Annoy nearest neighbor index objects,
-which are used to transform and classify new data sets.
+of dimensionality reduction models and nearest neighbor index objects,
+which are used to transform new data sets.
 }

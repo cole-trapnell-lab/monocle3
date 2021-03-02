@@ -7,30 +7,31 @@
 save_preprocess_model(
   cds,
   method = c("PCA", "LSI"),
-  file_root_name = NULL,
+  file_name_root = NULL,
   comment = NULL
 )
 }
 \arguments{
-\item{cds}{cell_data_set with existing model, which was created using
+\item{cds}{cell_data_set with an existing model, which was created using
 cds <- preprocess_cds(cds, build_nn_index=TRUE).}
 
 \item{method}{A string indicating the method used to build the model
-that you want saved. Default is "PCA".}
+that you want to save. Default is "PCA".}
 
 \item{comment}{An optional string that describes the model.}
 
-\item{file_root_name.}{A string giving the root of names given to the two
-files to which the model is saved. The files are named <file_root_name>.rds
-and <file_root_name>.ppc_nn_index. Note: the <file_root_name>.rds file
-contains only the information required to load the preprocess model into
-the cds object given in load_preprocess_model(cds,...).}
+\item{file_name_root.}{A string with the root of names given to the two
+files to which the model will be saved. The files are named
+<file_name_root>.ppc_rds and <file_name_root>.ppc_nn_index. Note: the
+<file_name_root>.ppc_rds file contains only the information needed to load
+the preprocess model into the cds object given in
+load_preprocess_model(cds,...).}
 }
 \value{
 None
 }
 \description{
-Save a preprocess model consisting of the dimensionality reduction
-model and preprocess Annoy nearest neighbor index objects, which
+Save a preprocess model consisting of dimensionality reduction
+model and preprocess nearest neighbor index objects, which
 are used to transform new data sets.
 }
