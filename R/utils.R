@@ -1362,7 +1362,7 @@ save_umap_nn_indexes <- function(umap_model, file_name) {
     save_annoy_index(umap_model[['nn_index']], file_name)
     md5sum_umap_index <- tools::md5sum(file_name)
   } else {
-    warn('save_umap_nn_indexes is untested with umap using more than one metric')
+    warn('save_umap_nn_indexes is untested with more than one umap metric')
     md5sum_umap_index <- list()
     for(i in 1:n_metrics) {
       file_name_expand <- paste0(file_name, i)
@@ -1380,7 +1380,7 @@ load_umap_nn_indexes <- function(umap_model, file_name, md5sum_umap_index) {
   n_metrics <- length(metrics)
   if(n_metrics == 1) {
     md5sum <- tools::md5sum(file_name)
-    if(md5sum != md5sum_umap_index) {
+    if(!is.null(md5sum_umap_index) && md5sum != md5sum_umap_index) {
       stop('The UMAP annoy index file, \'', file_name, '\', differs from the file made using the save_reduce_dimension_model() function.')
     }
     metric <- metrics[[1]]
@@ -1388,11 +1388,11 @@ load_umap_nn_indexes <- function(umap_model, file_name, md5sum_umap_index) {
     annoy_ndim <- umap_model[['metric']][[1]][['ndim']]
     umap_model[['nn_index']] <- load_annoy_index(umap_model[['nn_index']], file_name, annoy_metric, annoy_ndim)
   } else {
-    warn('load_umap_nn_indexes is untested with umap using more than one metric')
+    warn('load_umap_nn_indexes is untested with more than one umap metric')
     for(i in 1:n_metrics) {
       file_name_expand <- paste0(file_name, i)
       md5sum <- tools::md5sum(file_name_expand)
-      if(md5sum != md5sum_umap_index[[i]]) {
+      if(!is.null(md5sum_umap_index) && md5sum != md5sum_umap_index[[i]]) {
         stop('The UMAP annoy index file, \'', file_name_expand, '\', differs from the file made using the save_reduce_dimension_model() function.')
       }
       metric <- metrics[[i]]
@@ -1488,7 +1488,7 @@ save_reduce_dimension_model <- function(cds, method = c('UMAP'), file_name_root 
                                reduce_dim_aux=cds@reduce_dim_aux[[method]])
   } else {
     if(exists_index2) {
-      object[['md5sum_nn_index2']] <- save_annoy_index(cds@preprocess_aux[[preprocess_method2]][['nn_index']][['annoy_index']], file_name_nn_index2)
+      save_annoy_index(cds@preprocess_aux[[preprocess_method2]][['nn_index']][['annoy_index']], file_name_nn_index2)
       object[['md5sum_nn_index2']] <- tools::md5sum(file_name_nn_index2)
     }
     object[['bundle']] <- list(preprocess_aux=cds@preprocess_aux[[preprocess_method1]],
@@ -1630,4 +1630,205 @@ load_reduce_dimension_model <- function(cds, file_name_root = NULL) {
 }
 
 
+#
+#' Save Monocle3 a full cell_data_set.
+#'
+#' Save a full Monocle3 cell_data_set to a specified directory
+#' by writing the R objects to an RDS file and
+#' the Annoy nearest neighbor indexes to individual index files.
+#'
+#' @param cds cell_data_set to save.
+#' @param directory_path A string giving the directory in
+#'   which to write the files.
+#'
+#' @return NA
+#'
+#' @export
+save_monocle_objects <- function(cds, directory_path) {
+  md5sum_list = list()
+  # Gather preprocess method names for which indexes exist.
+  methods_preprocess <- c()
+  for(method in names(cds@preprocess_aux)) {
+    if(!is.null(cds@preprocess_aux[[method]][['nn_index']][['annoy_index']]))
+      methods_preprocess <- c(methods_preprocess, method)
+  }
+
+  # Gather reduce_dimension method names for which indexes exist.
+  methods_reduce_dim <- c()
+  for( method in names(cds@reduce_dim_aux)) {
+    if(!is.null(cds@reduce_dim_aux[[method]][['nn_index']][['annoy_index']]))
+      methods_reduce_dim <- c(methods_reduce_dim, method)
+  }
+
+  # Make file paths.
+  path_cds_rds <- file.path(directory_path, 'cell_data_set.rds')
+  path_umap_ann_index <- file.path(directory_path, 'rdd_umap_rd_ann.idx')
+
+  paths_preprocess = list()
+  for(method in methods_preprocess)
+    paths_preprocess[[method]] <- file.path(directory_path, paste0('ppc_', tolower(method), '_nn_ann.idx'))
+
+  paths_reduce_dim = list()
+  for(method in methods_reduce_dim)
+    paths_reduce_dim[[method]] <- file.path(directory_path, paste0('rdd_', tolower(method), '_nn_ann.idx'))
+
+  # Make directory if necessary.
+  dir.create(path = directory_path, showWarnings=FALSE, recursive=TRUE, mode='0700')
+
+  # Remove files, if they exist.
+  for(method in methods_preprocess) {
+    if(file.exists(paths_preprocess[[method]]))
+      file.remove( paths_preprocess[[method]])
+  }
+  for(method in methods_reduce_dim) {
+    if(file.exists(paths_reduce_dim[[method]]))
+       file.remove(paths_reduce_dim[[method]])
+  }
+  if(file.exists(path_cds_rds))
+    file.remove(path_cds_rds)
+  if(file.exists(path_umap_ann_index))
+    file.remove(path_umap_ann_index)
+
+  # save CDS in RDS file
+  saveRDS(cds, path_cds_rds)
+  md5sum_file <- tools::md5sum(path_cds_rds)
+  md5sum_list <- c(md5sum_list, md5sum_file)
+
+  # save preprocess_cds annoy indexes.
+  for(method in methods_preprocess) {
+    save_annoy_index(cds@preprocess_aux[[method]][['nn_index']][['annoy_index']], paths_preprocess[[method]])
+    md5sum_file <- tools::md5sum(paths_preprocess[[method]])
+    md5sum_list <- c(md5sum_list, md5sum_file)
+  }
+
+  # save reduce_dimension annoy indexes.
+  for(method in methods_reduce_dim) {
+    save_annoy_index(cds@reduce_dim_aux[[method]][['nn_index']][['annoy_index']], paths_reduce_dim[[method]])
+    md5sum_file <- tools::md5sum(paths_reduce_dim[[method]])
+    md5sum_list <- c(md5sum_list, md5sum_file)
+  }
+
+  # save reduce_dimension UMAP annoy index
+  if(!is.null(cds@reduce_dim_aux[[method]][['model']][['umap_model']])) {
+    md5sum_file <- save_umap_nn_indexes(cds@reduce_dim_aux[[method]][['model']][['umap_model']], path_umap_ann_index)
+    md5sum_list <- c(md5sum_list, md5sum_file)
+  }
+
+  names(md5sum_list) <- basename(names(md5sum_list))
+  write.table(md5sum_list, file=file.path(directory_path,'md5sums.dat'), row.names=FALSE)
+  NA
+}
+
+
+#
+#' Load Monocle3 cell_data_set objects.
+#'
+#' Load a full Monocle3 cell_data_set from the directory
+#' made by the previously run save_monocle_objects function.
+#'
+#' @param directory_path A string giving the directory from
+#'   which to read the previously saved cell_data_set files.
+#'
+#' @return cell_data_set
+#'
+#' @export
+load_monocle_objects <- function(directory_path) {
+  appendLF <- FALSE
+
+  # Make file paths.
+  path_cds_rds <- file.path(directory_path, 'cell_data_set.rds')
+  path_umap_ann_index <- file.path(directory_path, 'rdd_umap_rd_ann.idx')
+
+  # Check whether directory exists.
+  if(!file.exists(directory_path))
+    stop('Directory \'', directory_path, '\' does not exist.')
+
+  # Check whether cds rds file exists.
+  if(!file.exists(path_cds_rds))
+    stop('Missing RDS file \'', path_cds_rds, '\'')
+
+  # Read cds rds file.
+  cds <- tryCatch(
+           {
+             readRDS(path_cds_rds)
+           },
+           error = function(cnd) {
+                     message('error reading file \'', path_cds_rds, '\': ', cnd, appendLF=appendLF);
+                     return(NULL)
+           },
+           finally = {
+                       message('loaded RDS file.', appendLF=appendLF)
+           }
+  )
+
+  # Gather preprocess method names for which indexes exist.
+  methods_preprocess <- c()
+  for(method in names(cds@preprocess_aux)) {
+    if(!is.null(cds@preprocess_aux[[method]][['nn_index']][['annoy_index']]))
+      methods_preprocess <- c(methods_preprocess, method)
+  }
+
+  # Gather reduce_dimension method names for which indexes exist.
+  methods_reduce_dim <- c()
+  for( method in names(cds@reduce_dim_aux)) {
+    if(!is.null(cds@reduce_dim_aux[[method]][['nn_index']][['annoy_index']]))
+      methods_reduce_dim <- c(methods_reduce_dim, method)
+  }
+
+  paths_preprocess = list()
+  for(method in methods_preprocess)
+    paths_preprocess[[method]] <- file.path(directory_path, paste0('ppc_', tolower(method), '_nn_ann.idx'))
+
+  paths_reduce_dim = list()
+  for(method in methods_reduce_dim)
+    paths_reduce_dim[[method]] <- file.path(directory_path, paste0('rdd_', tolower(method), '_nn_ann.idx'))
+
+  # Load preprocess annoy indexes.
+  for(method in methods_preprocess) {
+    metric <- cds@preprocess_aux[[method]][['nn_index']][['annoy_metric']]
+    ndim <- cds@preprocess_aux[[method]][['nn_index']][['annoy_ndim']]
+    cds@preprocess_aux[[method]][['nn_index']][['annoy_index']] <- tryCatch(
+             {
+               load_annoy_index(cds@preprocess_aux[[method]][['nn_index']][['annoy_index']], paths_preprocess[[method]], metric, ndim)
+             },
+             error = function(cnd) {
+                       message('error reading file \'', paths_preprocess[[method]], '\': ', cnd, appendLF=appendLF)
+                       return(NULL)
+             },
+             finally = {
+                         message('Loaded ', method, ' Annoy nearest neighbor index file.', appendLF=appendLF)
+             })
+  }
+
+  # Load reduce_dimension indexes.
+  for(method in methods_reduce_dim) {
+    metric <- cds@reduce_dim_aux[[method]][['nn_index']][['annoy_metric']]
+    ndim <- cds@reduce_dim_aux[[method]][['nn_index']][['annoy_ndim']]
+    cds@reduce_dim_aux[[method]][['nn_index']][['annoy_index']] <- tryCatch(
+             {
+               load_annoy_index(cds@reduce_dim_aux[[method]][['nn_index']][['annoy_index']], paths_reduce_dim[[method]], metric, ndim)
+             },
+             error = function(cnd) {
+                       message('error reading file \'', paths_preprocess[[method]], '\': ', cnd, appendLF=appendLF)
+                       return(NULL)
+             },
+             finally = {
+                         message('Loaded ', method, ' Annoy nearest neighbor index file.', appendLF=appendLF)
+             })
+  }
+
+  # Load UMAP annoy index.
+  cds@reduce_dim_aux[['UMAP']][['model']][['umap_model']] <- tryCatch(
+           {
+             load_umap_nn_indexes(cds@reduce_dim_aux[['UMAP']][['model']][['umap_model']], path_umap_ann_index, NULL)
+           },
+           error = function(cnd) {
+                     message('error reading file \'', path_umap_ann_index, '\': ', cnd, appendLF=appendLF)
+                     return(NULL)
+           },
+           finally = {
+                       message('Loaded UMAP internal Annoy nearest neighbor index file.', appendLF=appendLF)
+           })
+  cds
+}
 
