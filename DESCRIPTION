@@ -43,6 +43,7 @@ Imports:
     ggplot2 (>= 3.1.1),
     ggrepel (>= 0.8.1),
     grr,
+    HDF5Array,
     igraph (>= 1.2.4),
     irlba (>= 2.3.3),
     leidenbase,
