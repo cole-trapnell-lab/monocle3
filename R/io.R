@@ -1212,13 +1212,13 @@ load_transform_models <- function(cds, directory_path) {
   }
 
   # Write stored comment field.
-  if(length(file_index[['comment']]) > 0) {
-    message('File comment:\n', file_index[['comment']])
+  if(length(file_index[['comment']]) > 1) {
+    message('File comment: ', file_index[['comment']])
   }
 
   # Loop through the files in file_index.rds in order
   # to restore objects.
-  for(ifile in seq_along(file_index[['cds_object']])) {
+  for(ifile in seq_along(file_index[['files']][['cds_object']])) {
     file_path <- file_index[['files']][['file_path']][[ifile]]
     file_format <- file_index[['files']][['file_format']][[ifile]]
     cds_object <- file_index[['files']][['cds_object']][[ifile]]
@@ -1524,7 +1524,7 @@ test_hdf5_assays <- function(cds) {
   assays <- assays(cds)
   for( idx in seq_along(assays)) {
     asyl <- getListElement(assays, idx)
-    hdf5_test<- unlist(seedApply(asyl, is, "HDF5ArraySeed"))
+    hdf5_test<- unlist(DelayedArray:::seedApply(asyl, is, "HDF5ArraySeed"))
     if(any(unlist(hdf5_test))) return(TRUE)
   } 
   FALSE
@@ -1798,13 +1798,13 @@ load_monocle_objects <- function(directory_path) {
   }
 
   # Write stored comment field.
-  if(length(file_index[['comment']]) > 0) {
-    message('File comment:\n', file_index[['comment']])
+  if(length(file_index[['comment']]) > 1) {
+    message('File comment: ', file_index[['comment']])
   }
 
   # Loop through the files in file_index.rds in order
   # to restore objects.
-  for(ifile in seq_along(file_index[['cds_object']])) {
+  for(ifile in seq_along(file_index[['files']][['cds_object']])) {
     file_path <- file_index[['files']][['file_path']][[ifile]]
     file_format <- file_index[['files']][['file_format']][[ifile]]
     cds_object <- file_index[['files']][['cds_object']][[ifile]]
