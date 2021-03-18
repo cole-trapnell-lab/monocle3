@@ -832,7 +832,7 @@ preprocess_transform <- function(cds, method=c('PCA', 'LSI')) {
   class(irlba_res) <- c('irlba_prcomp', 'prcomp')
   
   # 'reference' gene names are in the cds@preproc
-  reducedDims(cds)[[method]] <- irlba$x
+  reducedDims(cds)[[method]] <- irlba_res$x
 
   cds
 }
