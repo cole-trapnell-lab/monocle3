@@ -13,10 +13,12 @@ load_transform_models(cds, directory_path)
 from which to read the model files.}
 }
 \value{
-
+A cell_data_set with the transform models loaded by
+load_transform_models.
 }
 \description{
 Load transform models, which were saved using save_transform_models,
 into a cell_data_set. This function over-writes existing models in
-the cell_data_set.
+the cell_data_set. For more information read the help information
+for save_transform_models.
 }

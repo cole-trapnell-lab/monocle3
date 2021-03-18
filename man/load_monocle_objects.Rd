@@ -11,9 +11,10 @@ load_monocle_objects(directory_path)
 from which to read the saved cell_data_set files.}
 }
 \value{
-
+A cell_data_set.
 }
 \description{
 Load a full Monocle3 cell_data_set, which was saved using
-save_monocle_objects.
+save_monocle_objects. For more information read the help
+information for save_monocle_objects.
 }

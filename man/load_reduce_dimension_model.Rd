@@ -15,7 +15,7 @@ files to which the model was saved. The files are named
 <file_name_root>._rdd_nn_index<n>.}
 }
 \value{
-a cell_data_set
+A cell_data_set.
 }
 \description{
 Load into an existing cell_data_set a reduce_dimension model consisting

@@ -20,8 +20,8 @@ in which to write the object files.}
 
 \item{hdf5_assays}{A boolean determining whether the
 non-HDF5Array assays objects are saved as HDF5 files. At this
-time HDF5Array assay objects are stored as HDF5Assay files
-regardless of the hdf5_assay parameter value.}
+time cell_data_set HDF5Array assay objects are stored as
+HDF5Assay files regardless of the hdf5_assays parameter value.}
 
 \item{comment}{A string with optional notes that is saved with
 the objects.}
@@ -30,7 +30,7 @@ the objects.}
 about the saved files.}
 }
 \value{
-
+None.
 }
 \description{
 Save a Monocle3 full cell_data_set to a specified directory
@@ -39,5 +39,13 @@ the Annoy nearest neighbor indexes to individual index files.
 The assays objects are saved as HDF5Array files when
 hdf5_assays=TRUE or when the cell_data_set assays are
 HDF5Array objects. If any assay in the cell_data set is an
-HDF5 object, all assays must be.
+HDF5 object, all assays must be. When save_monocle_objects is
+run with hdf5_assays=TRUE, the load_monocle_objects function
+loads the saved assays into HDF5Array objects in the resulting
+cell_data_set. Note: operations such as preprocess_cds that
+are run on assays stored as HDF5Arrays are much, much slower
+than the same operations run on assays stored as in-memory
+matrices. You may want to investigate parameters related to
+the Bioconductor DelayArray and BiocParallel packages in this
+case.
 }

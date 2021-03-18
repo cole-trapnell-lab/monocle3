@@ -212,6 +212,11 @@ reduce_dimension <- function(cds,
         row.names(umap_res) <- colnames(cds)
         reducedDims(cds)[['UMAP']] <- umap_res
         cds@reduce_dim_aux[['UMAP']][['model']][['umap_preprocess_method']] <- preprocess_method
+        cds@reduce_dim_aux[['UMAP']][['model']][['max_components']] <- max_components
+        cds@reduce_dim_aux[['UMAP']][['model']][['umap_metric']] <- umap.metric
+        cds@reduce_dim_aux[['UMAP']][['model']][['umap_min_dist']] <- umap.min_dist
+        cds@reduce_dim_aux[['UMAP']][['model']][['umap_n_neighbors']] <- umap.n_neighbors
+        cds@reduce_dim_aux[['UMAP']][['model']][['umap_fast_sgd']] <- umap.fast_sgd
         cds@reduce_dim_aux[['UMAP']][['model']][['umap_model']] <- umap_model
         # make nearest neighbor index in UMAP space
         annoy_index <- uwot:::annoy_build(X = reducedDims(cds)[['UMAP']], metric=nn_metric)

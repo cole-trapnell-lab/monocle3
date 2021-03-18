@@ -435,7 +435,7 @@ load_preprocess_model <- function(cds, file_name_root = NULL) {
   object[['bundle']][['nn_index']][['annoy_index']] <- load_annoy_index(object[['bundle']][['nn_index']][['annoy_index']], file_name_nn_index1, metric_index, ndim_index)
 
   if(length(object[['comment']]) > 0 ) {
-    message('Comment: ', object[['comment']])
+    message('Comment: ', object[['comment']], appendLF=appendLF)
   }
 
   cds@preprocess_aux[[method]] <- object[['bundle']]
@@ -513,7 +513,7 @@ save_align_cds_model <- function(cds, method = c('Aligned'), file_name_root = NU
   message('    models: ', file_name_rds, appendLF=appendLF)
   message('  Nearest neighbor indexes:', appendLF=appendLF)
   message('    preprocess_cds: ', ifelse(exists_index1, file_name_nn_index1, 'No preprocess_cds index'), appendLF=appendLF)
-  message('    align_cds: ', file_name_nn_index2)
+  message('    align_cds: ', file_name_nn_index2, appendLF=appendLF)
 
   saveRDS(object, file_name_rds)
 }
@@ -581,7 +581,7 @@ load_align_cds_model <- function(cds, file_name_root = NULL) {
   cds@preprocess_aux[[method]] <- align_aux
 
   if(length(object[['comment']]) > 0 ) {
-    message('Comment: ', object[['comment']])
+    message('Comment: ', object[['comment']], appendLF=appendLF)
   }
 
   cds
@@ -777,7 +777,8 @@ save_reduce_dimension_model <- function(cds, method = c('UMAP'), file_name_root 
 #'   <file_name_root>.rdd_rds, <file_name_root>.rdd_umap_nn_index, and
 #'   <file_name_root>._rdd_nn_index<n>.
 #'
-#' @return a cell_data_set
+#' @return A cell_data_set.
+#'
 #' @export
 load_reduce_dimension_model <- function(cds, file_name_root = NULL) {
   model_file_version <- '1.0.0'
@@ -864,7 +865,7 @@ load_reduce_dimension_model <- function(cds, file_name_root = NULL) {
   cds@reduce_dim_aux[[method]] <- reduce_dim_aux
 
   if(length(object[['comment']]) > 0 ) {
-    message('Comment: ', object[['comment']])
+    message('Comment: ', object[['comment']], appendLF=appendLF)
   }
 
   cds
@@ -943,32 +944,38 @@ report_files_saved <- function(file_index) {
     }
 
     file_name <- basename(files[['file_path']][[i]])
-    message('  ', file_name, '  (', method, '  ', file_type, '  from  ', process, ')')
+    message('  ', file_name, '  (', method, '  ', file_type, '  from  ', process, ')', appendLF=appendLF)
   }
 }
 
 
 #
-#' Save the set of cell_data_set transform models.
+#' Save cell_data_set transform models.
 #'
-#' Save the transform models to a specified directory
+#' Save the transform models to the specified directory
 #' by writing the R objects to RDS files and
 #' the Annoy nearest neighbor indexes to individual index files. 
-#' save_transform_models saves transforms made by the
-#' preprocess_cds, align_cds, and reduce_dimension functions.
-#' From the preprocess_cds, align_cds, and reduce_dimension
-#' transforms, save_transform_models saves the objects required
-#' to transform new count matrices into their reduced dimension
-#' spaces. If the preprocess_cds, align_cds, or reduce_dimension
-#' functions are run with the build_nn_index=TRUE parameter,
-#' those nearest neighbor indexes are saved as well. The model
-#' transforms are made by running preprocess_cds, align_cds,
-#' and reduce_dimension on a primary data set and saving the
-#' the transform models. In order to transform a new count
-#' matrix, load it into a new cell_data_set, load the saved
-#' transform models, and apply the models to the new count
-#' matrix without running preprocess_cds, align_cds, or
-#' reduce_dimension.
+#' save_transform_models saves transform models made by running
+#' the preprocess_cds, align_cds, and reduce_dimension functions
+#' on an initial cell_data_set. Subsequent cell_data_sets are
+#' transformed into the reduced dimension space of the initial
+#' cds by loading the new data into a new cds, loading the
+#' initial data set transform models into the new cds using
+#' the load_transform_models function, and applying those transform models
+#' to the new data set using the preprocess_transform,
+#' align_transform, and reduce_dimension_transform functions.
+#' In this case, do not run the preprocess_cds, align_cds, or
+#' reduce_dimension functions on the new cds. Additionally,
+#' save_transform_models saves Annoy nearest neighbor indexes
+#' when the preprocess_cds, align_cds, and reduce_dimension
+#' functions are run with the build_nn_index=TRUE parameter. These
+#' indexes are used to find matches between cells in the new
+#' processed cds and the initial cds using the xxx functions.
+#' save_transform_models scans the initial cell_data_set for
+#' models and Annoy nearest neighbor indexes and saves those
+#' that it finds. It does not save transform models
+#' and indexes that were not made using preprocess_cds,
+#' align_cds, and reduce_dimension.
 #'
 #' @param cds A cell_data_set with existing models.
 #' @param directory_path A string giving the name of the directory
@@ -977,7 +984,8 @@ report_files_saved <- function(file_index) {
 #'   the objects.
 #' @param verbose A boolean determining whether to print information
 #'   about the saved files.
-#' @return
+#'
+#' @return None.
 #'
 #' @export
 save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE) {
@@ -1176,12 +1184,15 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
 #'
 #' Load transform models, which were saved using save_transform_models,
 #' into a cell_data_set. This function over-writes existing models in
-#' the cell_data_set.
+#' the cell_data_set. For more information read the help information
+#' for save_transform_models.
 #'
 #' @param cds A cell_data_set to be transformed using the models.
 #' @param directory_path A string giving the name of the directory
 #'   from which to read the model files.
-#' @return
+#'
+#' @return A cell_data_set with the transform models loaded by
+#'   load_transform_models.
 #'
 #' @export
 load_transform_models <- function(cds, directory_path) {
@@ -1213,7 +1224,7 @@ load_transform_models <- function(cds, directory_path) {
 
   # Write stored comment field.
   if(length(file_index[['comment']]) > 1) {
-    message('File comment: ', file_index[['comment']])
+    message('File comment: ', file_index[['comment']], appendLF=appendLF)
   }
 
   # Loop through the files in file_index.rds in order
@@ -1251,7 +1262,7 @@ load_transform_models <- function(cds, directory_path) {
             readRDS(file_path)
           },
           error = function(cnd) {
-            message('Error reading file \'', file_path, '\'')
+            message('Error reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
      
@@ -1264,7 +1275,7 @@ load_transform_models <- function(cds, directory_path) {
            load_annoy_index(cds@preprocess_aux[[method]][['nn_index']][['annoy_index']], file_path, metric, ndim)
          },
          error = function(cds) {
-           message('Error reading file \'', file_path, '\'')
+           message('Error reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
          })
       } else {
@@ -1278,7 +1289,7 @@ load_transform_models <- function(cds, directory_path) {
             readRDS(file_path)
           },
           error = function(cnd) {
-            message('Error reading file \'', file_path, '\'')
+            message('Error reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
       } else
@@ -1290,7 +1301,7 @@ load_transform_models <- function(cds, directory_path) {
             load_annoy_index(cds@reduce_dim_aux[[method]][['nn_index']][['annoy_index']], file_path, metric, ndim)
           },
           error = function(cnd) {
-            message('Error reading file \'', file_path, '\'')
+            message('Error reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
       } else
@@ -1300,7 +1311,7 @@ load_transform_models <- function(cds, directory_path) {
             load_umap_nn_indexes(cds@reduce_dim_aux[[method]][['model']][['umap_model']], file_path, md5sum)
           },
           error = function(cnd) {
-            message('Error reading file \'', file_path, '\'')
+            message('Error reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
          })
       } else {
@@ -1326,9 +1337,9 @@ load_transform_models <- function(cds, directory_path) {
 #' @param directory_path A string giving the directory in
 #'   which to write the files.
 #'
-#' @return NA
+#' @return None.
 #'
-# # @export
+#' @export
 save_monocle_objects_old <- function(cds, directory_path) {
   md5sum_list = list()
   # Gather preprocess method names for which indexes exist.
@@ -1413,9 +1424,9 @@ save_monocle_objects_old <- function(cds, directory_path) {
 #' @param directory_path A string giving the directory from
 #'   which to read the previously saved cell_data_set files.
 #'
-#' @return cell_data_set
+#' @return A cell_data_set.
 #'
-# # @export
+#' @export
 load_monocle_objects_old <- function(directory_path) {
   appendLF <- FALSE
 
@@ -1540,20 +1551,29 @@ test_hdf5_assays <- function(cds) {
 #' The assays objects are saved as HDF5Array files when
 #' hdf5_assays=TRUE or when the cell_data_set assays are
 #' HDF5Array objects. If any assay in the cell_data set is an
-#' HDF5 object, all assays must be.
+#' HDF5 object, all assays must be. When save_monocle_objects is
+#' run with hdf5_assays=TRUE, the load_monocle_objects function
+#' loads the saved assays into HDF5Array objects in the resulting
+#' cell_data_set. Note: operations such as preprocess_cds that
+#' are run on assays stored as HDF5Arrays are much, much slower
+#' than the same operations run on assays stored as in-memory
+#' matrices. You may want to investigate parameters related to
+#' the Bioconductor DelayArray and BiocParallel packages in this
+#' case.
 #'
 #' @param cds A cell_data_set to save.
 #' @param directory_path A string giving the name of the directory
 #'   in which to write the object files.
 #' @param hdf5_assays A boolean determining whether the
 #'   non-HDF5Array assays objects are saved as HDF5 files. At this
-#'   time HDF5Array assay objects are stored as HDF5Assay files
-#'   regardless of the hdf5_assay parameter value.
+#'   time cell_data_set HDF5Array assay objects are stored as
+#'   HDF5Assay files regardless of the hdf5_assays parameter value.
 #' @param comment A string with optional notes that is saved with
 #'   the objects.
 #' @param verbose A boolean determining whether to print information
 #'   about the saved files.
-#' @return 
+#'
+#' @return None.
 #'
 #' @export
 save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment="", verbose=TRUE) {
@@ -1763,11 +1783,13 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
 #' Load a full Monocle3 cell_data_set.
 #'
 #' Load a full Monocle3 cell_data_set, which was saved using
-#' save_monocle_objects.
+#' save_monocle_objects. For more information read the help
+#' information for save_monocle_objects.
 #'
 #' @param directory_path A string giving the name of the directory
 #'   from which to read the saved cell_data_set files.
-#' @return
+#'
+#' @return A cell_data_set.
 #'
 #' @export
 load_monocle_objects <- function(directory_path) {
@@ -1799,7 +1821,7 @@ load_monocle_objects <- function(directory_path) {
 
   # Write stored comment field.
   if(length(file_index[['comment']]) > 1) {
-    message('File comment: ', file_index[['comment']])
+    message('File comment: ', file_index[['comment']], appendLF=appendLF)
   }
 
   # Loop through the files in file_index.rds in order
@@ -1839,7 +1861,7 @@ load_monocle_objects <- function(directory_path) {
             readRDS(file_path)
           },
           error = function(cnd) {
-            message('Error reading file \'', file_path, '\'')
+            message('Error reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
       } else
@@ -1849,7 +1871,7 @@ load_monocle_objects <- function(directory_path) {
             HDF5Array::loadHDF5SummarizedExperiment(file_path)
           },
           error = function(cnd) {
-            message('Error reading file \'', file_path, '\'')
+            message('Error reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
       } else {
@@ -1865,7 +1887,7 @@ load_monocle_objects <- function(directory_path) {
            load_annoy_index(cds@preprocess_aux[[method]][['nn_index']][['annoy_index']], file_path, metric, ndim)
          },
          error = function(cds) {
-           message('Error reading file \'', file_path, '\'')
+           message('Error reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
          })
       } else {
@@ -1881,7 +1903,7 @@ load_monocle_objects <- function(directory_path) {
             load_annoy_index(cds@reduce_dim_aux[[method]][['nn_index']][['annoy_index']], file_path, metric, ndim)
           },
           error = function(cnd) {
-            message('Error reading file \'', file_path, '\'')
+            message('Error reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
       } else
@@ -1891,7 +1913,7 @@ load_monocle_objects <- function(directory_path) {
             load_umap_nn_indexes(cds@reduce_dim_aux[[method]][['model']][['umap_model']], file_path, md5sum)
           },
           error = function(cnd) {
-            message('Error reading file \'', file_path, '\'')
+            message('Error reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
          })
       } else {

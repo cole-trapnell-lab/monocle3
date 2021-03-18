@@ -113,6 +113,10 @@ preprocess_cds <- function(cds,
     cds@preprocess_aux[['PCA']][['model']] <- SimpleList()
     # we need svd_v downstream so
     # calculate gene_loadings in cluster_cells.R
+    cds@preprocess_aux[['PCA']][['model']][['num_dim']] <- num_dim
+    cds@preprocess_aux[['PCA']][['model']][['norm_method']] <- norm_method
+    cds@preprocess_aux[['PCA']][['model']][['use_genes']] <- use_genes
+    cds@preprocess_aux[['PCA']][['model']][['pseudo_count']] <- pseudo_count
     cds@preprocess_aux[['PCA']][['model']][['svd_v']] <- irlba_rotation
     cds@preprocess_aux[['PCA']][['model']][['svd_sdev']] <- irlba_res$sdev
     cds@preprocess_aux[['PCA']][['model']][['svd_center']] <- irlba_res$center
@@ -140,6 +144,10 @@ preprocess_cds <- function(cds,
     row.names(irlba_rotation) = rownames(FM)
     cds@preprocess_aux[['LSI']] <- SimpleList()
     cds@preprocess_aux[['LSI']][['model']] <- SimpleList()
+    cds@preprocess_aux[['LSI']][['model']][['num_dim']] <- um_dim
+    cds@preprocess_aux[['LSI']][['model']][['norm_method']] <- norm_method
+    cds@preprocess_aux[['LSI']][['model']][['use_genes']] <- use_genes
+    cds@preprocess_aux[['LSI']][['model']][['pseudo_count']] <- pseudo_count
     cds@preprocess_aux[['LSI']][['model']][['svd_v']] <- irlba_rotation
     cds@preprocess_aux[['LSI']][['model']][['svd_sdev']] <- irlba_res$d/sqrt(max(1, num_col - 1))
     # we need svd_v downstream so
