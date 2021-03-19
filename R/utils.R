@@ -767,13 +767,14 @@ get_citations <- function(cds) {
 #' @param method A previously loaded transform model that
 #'   is used to reduce the dimensions of the count matrix
 #'   in cds.
-#'
+#' @param block_size A numeric value for the DelayedArray
+#'   block size.
 #' @return A cell_data_set with a preprocess reduced count
 #'   matrix.
 #'
 #' @export
 #'
-preprocess_transform <- function(cds, method=c('PCA', 'LSI')) {
+preprocess_transform <- function(cds, method=c('PCA', 'LSI'), block_size=1e8) {
   assertthat::assert_that(class(cds) == 'cell_data_set',
                           msg=paste('cds parameter is not a cell_data_set'))
   assertthat::assert_that(
@@ -792,6 +793,8 @@ preprocess_transform <- function(cds, method=c('PCA', 'LSI')) {
   assertthat::assert_that(!is.null(cds@preprocess_aux[[method]]),
                           msg=paste0("Method '", method, "' is not in the model",
                                     " object."))
+
+  DelayedArray::setAutoBlockSize(block_size)
 
   set.seed(2016)
   norm_method <- cds@preprocess_aux[[method]][['model']][['norm_method']]
