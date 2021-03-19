@@ -103,6 +103,15 @@ align_cds <- function(cds,
   }
   reducedDims(cds)[["Aligned"]] <- as.matrix(preproc_res)
 
+  #
+  # Notes:
+  #   o  the functions save_transform_models/load_transform_models
+  #      expect that the preprocess_aux slot consists of a SimpleList
+  #      that stores information about methods with the elements
+  #        preprocess_aux[[method]][['model']] for the transform elements
+  #        preprocess_aux[[method]][['nn_index']] for the annoy index
+  #      and depends on the elements within model and nn_index.
+  #
   cds@preprocess_aux[['Aligned']] <- SimpleList()
   cds@preprocess_aux[['Aligned']][['model']] <- SimpleList()
   cds@preprocess_aux[['Aligned']][['model']][['preprocess_method']] <- preprocess_method

@@ -902,7 +902,7 @@ file_index_to_model_string <- function(file_index, i) {
 # Report files saved.
 #
 report_files_saved <- function(file_index) {
-  appendLF <- FALSE
+  appendLF <- TRUE
   processes <- list()
   files <- file_index[['files']]
   for( i in seq_along(files[['cds_object']])) {
@@ -989,7 +989,7 @@ report_files_saved <- function(file_index) {
 #'
 #' @export
 save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE) {
-  appendLF <- FALSE
+  appendLF <- TRUE
   # file information is written to an RDS file
   # in directory_path
   #   cds_object: preprocess_aux |r reduce_dim_aux
@@ -1196,7 +1196,7 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
 #'
 #' @export
 load_transform_models <- function(cds, directory_path) {
-  appendLF <- FALSE
+  appendLF <- TRUE
   # Check for directory.
   if(!file.exists(directory_path))
     stop('Directory \'', directory_path, '\' does not exist.')
@@ -1428,7 +1428,7 @@ save_monocle_objects_old <- function(cds, directory_path) {
 #'
 #' @export
 load_monocle_objects_old <- function(directory_path) {
-  appendLF <- FALSE
+  appendLF <- TRUE
 
   # Make file paths.
   path_cds_rds <- file.path(directory_path, 'cell_data_set.rds')
@@ -1577,7 +1577,7 @@ test_hdf5_assays <- function(cds) {
 #'
 #' @export
 save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment="", verbose=TRUE) {
-  appendLF <- FALSE
+  appendLF <- TRUE
   # file information is written to an RDS file
   # in directory_path
   #   cds_object: cds | preprocess_aux | reduce_dim_aux
@@ -1793,7 +1793,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
 #'
 #' @export
 load_monocle_objects <- function(directory_path) {
-  appendLF <- FALSE
+  appendLF <- TRUE
   # Check for directory.
   if(!file.exists(directory_path))
     stop('Directory \'', directory_path, '\' does not exist.')

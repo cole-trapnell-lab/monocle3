@@ -160,6 +160,15 @@ reduce_dimension <- function(cds,
 
   preprocess_mat <- reducedDims(cds)[[preprocess_method]]
 
+  #
+  # Notes:
+  #   o  the functions save_transform_models/load_transform_models
+  #      expect that the reduce_dim_aux slot consists of a SimpleList
+  #      that stores information about methods with the elements
+  #        reduce_dim_aux[[method]][['model']] for the transform elements
+  #        reduce_dim_aux[[method]][['nn_index']] for the annoy index
+  #      and depends on the elements within model and nn_index.
+  #
   if(reduction_method == "PCA") {
     if (verbose) message("Returning preprocessed PCA matrix")
   } else if(reduction_method == "LSI") {

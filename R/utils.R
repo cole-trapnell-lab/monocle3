@@ -780,6 +780,9 @@ preprocess_transform <- function(cds, method=c('PCA', 'LSI')) {
     tryCatch(expr = ifelse(match.arg(method) == "",TRUE, TRUE),
              error = function(e) FALSE),
     msg = "method must be one of 'PCA' or 'LSI'")
+
+  method <- match.arg(method)
+
   assertthat::assert_that(!is.null(size_factors(cds)),
              msg = paste("You must call estimate_size_factors before calling",
                          "preprocess_cds."))
@@ -789,8 +792,6 @@ preprocess_transform <- function(cds, method=c('PCA', 'LSI')) {
   assertthat::assert_that(!is.null(cds@preprocess_aux[[method]]),
                           msg=paste0("Method '", method, "' is not in the model",
                                     " object."))
-
-  method <- match.arg(method)
 
   set.seed(2016)
   norm_method <- cds@preprocess_aux[[method]][['model']][['norm_method']]
@@ -852,6 +853,7 @@ preprocess_transform <- function(cds, method=c('PCA', 'LSI')) {
 #'
 #' @return A cell_data_set with an align_cds transformed
 #'   reduced count matrix.
+#'
 #' @export
 #'
 align_transform <- function(cds, method=c('Aligned')) {
@@ -906,6 +908,7 @@ align_transform <- function(cds, method=c('Aligned')) {
 #'
 #' @return A cell_data_set with a reduce_dimension transformed 
 #'   reduced count matrix.
+#'
 #' @export
 #'
 reduce_dimension_transform <- function(cds, method=c('UMAP')) {
@@ -935,4 +938,67 @@ reduce_dimension_transform <- function(cds, method=c('UMAP')) {
   cds
 }
 
+
+#' Search Annoy index for cells near the cells in cds.
+#'
+#' Search the Annoy nearest neighbor index for cells near cells in cds.
+#'
+#' param cds A cell_data_set.
+#' param stage The stage in which the Annoy index was made.
+#' param method The method for which the Annoy index was made. This
+#'   can be method 'PCA' or 'LSI' for stage 'preprocess', method 'Aligned'
+#'   for stage 'Align', and method 'UMAP' for stage 'reduce_dimension'.
+#' param n An integer for the number of nearest neighbors to return for
+#'   each cell.
+#' param search_k An integer used to balance accuracy and speed. Larger
+#'   values give more accurate results.
+#' param ... Parameters to pass through to annoy_search.
+#' 
+#' export
+#'
+search_nn_index <- function(cds, stage=c('PCA', 'align', 'reduce_dimension'), method=c('PCA', 'LSI', 'Aligned', 'UMAP'), n=5, search_k=100 * n, ...) {
+  assertthat::assert_that(class(cds) == 'cell_data_set',
+                          msg=paste('cds parameter is not a cell_data_set'))
+
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(stage) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "stage must be 'preprocess', 'align', or 'reduce_dimension'")
+
+  stage <- match.args(stage)
+  method <- match.args(method)
+
+  if(stage=='preprocess' ) {
+    if(!(method %in% c('PCA', 'LSI'))) {
+      stop('Stage \'preprocess\' allows methods \'PCA\' and \'LSI\' but not \'', method)
+    }
+    stage_aux <- cds@preprocess_aux
+  } else
+  if(stage == 'align') {
+    if(!(method %in% c('Aligned'))) {
+      stop('Stage \'align\' allows method \'aligned\' but not \'', method)
+    }
+    stage_aux <- cds@preprocess_aux
+  } else
+  if(stage == 'reduce_dimension') {
+    if(!(method %in% c('UMAP'))) {
+      stop('Stage \'reduce_dimension\' allows method \'UMAP\' but not \'', method)
+    }
+    stage_aux <- cds@reduced_dim_aux
+  } else {
+    stop('Unrecognized stage \'', stage, '\'')
+  }
+
+  assertthat::assert_that(!is.null(reducedDim(cds, method)),
+    msg = paste0("The matrix for ", method,
+                " does not exist. Please preprocess the",
+                " cds as required."))
+
+  query_matrix <- reducedDim(cds, method)
+
+  # depends on uwot version
+  ann_index <- stage_aux[[method]][['nn_index']][['annoy_index']][['ann']]
+  ann_res <- uwot::annoy_search(X=query_matrix, ann=ann_index, k=n, search_k=search_k, ...)
+  ann_res
+}
 

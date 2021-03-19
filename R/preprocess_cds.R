@@ -98,6 +98,15 @@ preprocess_cds <- function(cds,
   fm_rowsums = Matrix::rowSums(FM)
   FM <- FM[is.finite(fm_rowsums) & fm_rowsums != 0, ]
 
+  #
+  # Notes:
+  #   o  the functions save_transform_models/load_transform_models
+  #      expect that the preprocess_aux slot consists of a SimpleList
+  #      that stores information about methods with the elements
+  #        preprocess_aux[[method]][['model']] for the transform elements
+  #        preprocess_aux[[method]][['nn_index']] for the annoy index
+  #      and depends on the elements within model and nn_index.
+  #
   if(method == 'PCA') {
     if (verbose) message("Remove noise by PCA ...")
 
