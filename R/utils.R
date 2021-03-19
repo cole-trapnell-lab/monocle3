@@ -768,13 +768,14 @@ get_citations <- function(cds) {
 #'   is used to reduce the dimensions of the count matrix
 #'   in cds.
 #' @param block_size A numeric value for the DelayedArray
-#'   block size.
+#'   block size used only in this function. Default is
+#'   NULL, which does not affect the current block size.
 #' @return A cell_data_set with a preprocess reduced count
 #'   matrix.
 #'
 #' @export
 #'
-preprocess_transform <- function(cds, method=c('PCA', 'LSI'), block_size=1e8) {
+preprocess_transform <- function(cds, method=c('PCA', 'LSI'), block_size=NULL) {
   assertthat::assert_that(class(cds) == 'cell_data_set',
                           msg=paste('cds parameter is not a cell_data_set'))
   assertthat::assert_that(
@@ -794,7 +795,10 @@ preprocess_transform <- function(cds, method=c('PCA', 'LSI'), block_size=1e8) {
                           msg=paste0("Method '", method, "' is not in the model",
                                     " object."))
 
-  DelayedArray::setAutoBlockSize(block_size)
+  if(!is.null(block_size)) {
+    block_size0 <- DelayedArray::getAutoBlockSize()
+    DelayedArray::setAutoBlockSize(block_size)
+  }
 
   set.seed(2016)
   norm_method <- cds@preprocess_aux[[method]][['model']][['norm_method']]
@@ -837,6 +841,10 @@ preprocess_transform <- function(cds, method=c('PCA', 'LSI'), block_size=1e8) {
   
   # 'reference' gene names are in the cds@preproc
   reducedDims(cds)[[method]] <- irlba_res$x
+
+  if(!is.null(block_size)) {
+    DelayedArray::setAutoBlockSize(block_size0)
+  }
 
   cds
 }
