@@ -775,13 +775,16 @@ get_citations <- function(cds) {
 #'
 #' @export
 #'
-preprocess_transform <- function(cds, method=c('PCA', 'LSI'), block_size=NULL) {
+preprocess_transform <- function(cds, method=c('PCA'), block_size=NULL) {
+  #
+  # Need to add processing for LSI. TF-IDF transform etc.
+  #
   assertthat::assert_that(class(cds) == 'cell_data_set',
                           msg=paste('cds parameter is not a cell_data_set'))
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(method) == "",TRUE, TRUE),
              error = function(e) FALSE),
-    msg = "method must be one of 'PCA' or 'LSI'")
+    msg = "method must be 'PCA'")
 
   method <- match.arg(method)
 
@@ -857,6 +860,10 @@ preprocess_transform <- function(cds, method=c('PCA', 'LSI'), block_size=NULL) {
 #' information read the help information for
 #' save_transform_models.
 #'
+#' Note: this function is a place holder. It does not
+#' map the transformed count matrix to aligned space
+#' at this time because I don't know how to do so.
+#'
 #' @param cds A cell_data_set to be transformed.
 #' @param method A previously loaded transform model that
 #'   is used to reduce the dimensions of the preprocessed
@@ -868,6 +875,9 @@ preprocess_transform <- function(cds, method=c('PCA', 'LSI'), block_size=NULL) {
 #' @export
 #'
 align_transform <- function(cds, method=c('Aligned')) {
+  #
+  # Need to add transformation code.
+  #
   assertthat::assert_that(class(cds) == 'cell_data_set',
                           msg=paste('cds parameter is not a cell_data_set'))
   assertthat::assert_that(
@@ -885,6 +895,8 @@ align_transform <- function(cds, method=c('Aligned')) {
                                     "' does not exist.",
                                     " Please preprocess the matrix before",
                                     " calling align_transform using preprocess_transform."))
+
+  stop('This function is a place holder. It does not map the transformed count matrix to aligned space at this time because I don't know how to make it do so.')
 
   set.seed(2016)
   alignment_group <- cds@preprocess_aux[['Aligned']][['model']][['alignment_group']]
@@ -913,16 +925,19 @@ align_transform <- function(cds, method=c('Aligned')) {
 #' save_transform_models.
 #'
 #' @param cds A cell_data_set to be transformed.
-#' @param method A previously loaded transform model that
-#'   is used to reduce the dimensions of the preprocessed
-#'   count matrix in cds.
+#' @param preprocess_method A previously loaded preprocess method.
+#'   The default is NULL, which uses the preprocess_method that
+#'   was used when the reduce_dimension model was built.
+#' @param method A previously loaded reduce_dimension transform
+#'   model that is used to reduce the dimensions of the
+#'   preprocessed count matrix in cds.
 #'
 #' @return A cell_data_set with a reduce_dimension transformed 
 #'   reduced count matrix.
 #'
 #' @export
 #'
-reduce_dimension_transform <- function(cds, method=c('UMAP')) {
+reduce_dimension_transform <- function(cds, preprocess_method=NULL, method=c('UMAP')) {
   assertthat::assert_that(class(cds) == 'cell_data_set',
                           msg=paste('cds parameter is not a cell_data_set'))
   assertthat::assert_that(
@@ -930,9 +945,19 @@ reduce_dimension_transform <- function(cds, method=c('UMAP')) {
              error = function(e) FALSE),
     msg = "method must be 'UMAP'")
 
+  if(is.null(preprocess_method)) {
+    preprocess_method <- cds@reduce_dim_aux[[method]][['model']][['umap_preprocess_method']]
+  } else
+  if(!is.null(preprocess_method) && !(preprocess_method %in% c('PCA', 'LSI', 'Aligned')) {
+    stop('Preprocess_method must be one of \'PCA\', \'LSI\', or \'Aligned\'.')
+  }
+
+  if(is.null(cds@preprocess_aux[[preprocess_method]])) {
+    stop('There is no transform model for preprocess_method \'', preprocess_method, '\'.')
+  }
+
   method <- match.arg(method)
 
-  preprocess_method <- cds@reduce_dim_aux[[method]][['model']][['umap_preprocess_method']]
   preproc_res <- reducedDims(cds)[[preprocess_method]]
   assertthat::assert_that(!is.null(preproc_res),
                           msg=paste("Preprocessing for '",
