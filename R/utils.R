@@ -896,7 +896,7 @@ align_transform <- function(cds, method=c('Aligned')) {
                                     " Please preprocess the matrix before",
                                     " calling align_transform using preprocess_transform."))
 
-  stop('This function is a place holder. It does not map the transformed count matrix to aligned space at this time because I don't know how to make it do so.')
+  stop('This function is a place holder. It does not map the transformed count matrix to aligned space at this time because I don\'t know how to make it do so.')
 
   set.seed(2016)
   alignment_group <- cds@preprocess_aux[['Aligned']][['model']][['alignment_group']]
@@ -948,7 +948,7 @@ reduce_dimension_transform <- function(cds, preprocess_method=NULL, method=c('UM
   if(is.null(preprocess_method)) {
     preprocess_method <- cds@reduce_dim_aux[[method]][['model']][['umap_preprocess_method']]
   } else
-  if(!is.null(preprocess_method) && !(preprocess_method %in% c('PCA', 'LSI', 'Aligned')) {
+  if(!is.null(preprocess_method) && !(preprocess_method %in% c('PCA', 'LSI', 'Aligned'))) {
     stop('Preprocess_method must be one of \'PCA\', \'LSI\', or \'Aligned\'.')
   }
 

@@ -23,3 +23,8 @@ to a new preprocess transformed matrix. For more
 information read the help information for
 save_transform_models.
 }
+\details{
+Note: this function is a place holder. It does not
+map the transformed count matrix to aligned space
+at this time because I don't know how to do so.
+}

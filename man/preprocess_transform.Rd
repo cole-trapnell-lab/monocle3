@@ -4,7 +4,7 @@
 \alias{preprocess_transform}
 \title{Apply a preprocess transform model to a cell_data_set.}
 \usage{
-preprocess_transform(cds, method = c("PCA", "LSI"))
+preprocess_transform(cds, method = c("PCA"), block_size = NULL)
 }
 \arguments{
 \item{cds}{A cell_data_set to be transformed.}
@@ -12,6 +12,10 @@ preprocess_transform(cds, method = c("PCA", "LSI"))
 \item{method}{A previously loaded transform model that
 is used to reduce the dimensions of the count matrix
 in cds.}
+
+\item{block_size}{A numeric value for the DelayedArray
+block size used only in this function. Default is
+NULL, which does not affect the current block size.}
 }
 \value{
 A cell_data_set with a preprocess reduced count
