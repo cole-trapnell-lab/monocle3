@@ -200,13 +200,13 @@ fit_model_helper <- function(x,
 #' @param ... Additional arguments passed to model fitting functions.
 #'
 #' @return a tibble where the rows are genes and columns are
-#'   * id from `rowData(cds)$id`.
-#'   * gene_short_names from `rowData(cds)$gene_short_names`.
-#'   * num_cells_expressed from `rowData(cds)$num_cells_expressed`.
-#'   * gene_id from `row.names(rowData(cds))`.
-#'   * model  GLM model returned by speedglm.
-#'   * model_summary returned by `summary(model)`.
-#'   * status of model fitting: OK when model converged, otherwise FAIL.
+#'   * id character vector from `rowData(cds)$id`
+#'   * gene_short_names character vector from `rowData(cds)$gene_short_names`
+#'   * num_cells_expressed int vector from `rowData(cds)$num_cells_expressed`
+#'   * gene_id character vector from row.names(rowData(cds))`
+#'   * model GLM model list returned by speedglm
+#'   * model_summary model summary list returned by `summary(model)`
+#'   * status character vector of model fitting status: OK when model converged, otherwise FAIL
 #'
 #' @export
 fit_models <- function(cds,
