@@ -69,6 +69,7 @@ learn_graph <- function(cds,
                         close_loop = TRUE,
                         learn_graph_control = NULL,
                         verbose = FALSE) {
+
   reduction_method <- "UMAP"
   if (!is.null(learn_graph_control)) {
     assertthat::assert_that(methods::is(learn_graph_control, "list"))
@@ -155,6 +156,8 @@ learn_graph <- function(cds,
   } else {
     partition_list <- rep(1, nrow(colData(cds)))
   }
+
+  
 
   multi_tree_DDRTree_res <-
     multi_component_RGE(cds, scale = scale,
@@ -609,6 +612,8 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE,
   Z <- t(reducedDims(cds)[[reduction_method]])
   Y <- rge_res_Y
 
+  browser()
+
   cds <- findNearestPointOnMST(cds, reduction_method, rge_res_Y)
   closest_vertex <- cds@principal_graph_aux[[
     reduction_method]]$pr_graph_cell_proj_closest_vertex
@@ -663,6 +668,7 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE,
       nearest_edges[i, ] <- c(closest_vertex_names[i], neighbors[which_min])
     }
   }
+  cds
 
   colnames(P) <- colnames(Z)
 
@@ -771,7 +777,11 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE,
   row.names(closest_vertex_df) <- row.names(closest_vertex)
   cds@principal_graph_aux[[
     reduction_method]]$pr_graph_cell_proj_closest_vertex <- closest_vertex_df
+  browser()
+  
 
+  cds@principal_graph_aux[[
+    reduction_method]]$edge_proj <- igraph::get.edge.ids(cds@principal_graph[[reduction_method]], as.vector(t(nearest_edges)))
   cds
 }
 

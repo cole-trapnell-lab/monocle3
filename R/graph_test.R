@@ -55,17 +55,38 @@ graph_test <- function(cds,
                     neighbor_graph = neighbor_graph,
                     reduction_method = reduction_method)
 
+  
   if(verbose) {
     message("Performing Moran's I test: ...")
   }
   exprs_mat <- SingleCellExperiment::counts(cds)[, attr(lw, "region.id"), drop=FALSE]
   sz <- size_factors(cds)[attr(lw, "region.id")]
 
+  tmp <- Matrix::t(exprs_mat)
+  # var.list <- unlist(pbmcapply::pbmclapply(row.names(exprs_mat), FUN= function(colnames) {
+	#   res <- var(tmp[, colnames])
+  #   # print(res)
+  # }))
+
+  start_time <- Sys.time()
+  tmt2 <- exprs_mat
+  tmt2@x <- rep(1, length(exprs_mat@x))
+  tmt2 <- tmt2 * (Matrix::rowSums(exprs_mat) / exprs_mat@Dim[2])
+  tmt2@x <- exprs_mat@x - tmt2@x
+  tmt2@x <- tmt2@x ** 2
+  res <- Matrix::rowSums(tmt2)
+  pos.high.var <- order(-res)[1:2000]
+  print(Sys.time() - start_time)
+
+  
+
+
   wc <- spdep::spweights.constants(lw, zero.policy = TRUE, adjust.n = TRUE)
-  test_res <- pbmcapply::pbmclapply(row.names(exprs_mat),
+  test_res <- pbmcapply::pbmclapply(row.names(exprs_mat)[pos.high.var],
                                     FUN = function(x, sz, alternative,
                                                    method, expression_family) {
-    exprs_val <- exprs_mat[x, ]
+    # exprs_val <- exprs_mat[x, ]
+    exprs_val <- tmp[, x]
 
     if (expression_family %in% c("uninormal", "binomialff")){
       exprs_val <- exprs_val
@@ -97,23 +118,26 @@ graph_test <- function(cds,
   if(verbose) {
     message("returning results: ...")
   }
+  
 
   test_res <- do.call(rbind.data.frame, test_res)
-  row.names(test_res) <- row.names(cds)
-  test_res <- merge(test_res, rowData(cds), by="row.names")
+  row.names(test_res) <- row.names(exprs_mat)[pos.high.var]
+  #test_res <- merge(test_res, rowData(cds), by="row.names")
   #remove the first column and set the row names to the first column
-  row.names(test_res) <- test_res[, 1]
-  test_res[, 1] <- NULL
+  #row.names(test_res) <- test_res[, 1]
+  #test_res[, 1] <- NULL
   test_res$q_value <- 1
   test_res$q_value[which(test_res$status == 'OK')] <-
     stats::p.adjust(subset(test_res, status == 'OK')[, 'p_value'], method="BH")
   test_res$status = as.character(test_res$status)
   # make sure gene name ordering in the DEG test result is the same as the CDS
-  test_res[row.names(cds), ]
+  test_res[row.names(exprs_mat)[pos.high.var], ]
 }
 
 my.moran.test <- function (x, listw, wc, alternative = "greater",
                            randomisation = TRUE) {
+  #browser()
+  
   zero.policy = TRUE
   adjust.n = TRUE
   na.action = stats::na.fail
@@ -134,6 +158,7 @@ my.moran.test <- function (x, listw, wc, alternative = "greater",
   S02 <- wc$S0 * wc$S0
   res <- spdep::moran(x, listw, wc$n, wc$S0, zero.policy = zero.policy,
                       NAOK = NAOK)
+  #browser()
   I <- res$I
   K <- res$K
 
@@ -251,6 +276,29 @@ my.geary.test <- function (x, listw, wc, randomisation = TRUE,
   res
 }
 
+
+
+# Tmoran <- function(x, knn_res, n, S0, zero.policy=NULL, NAOK=FALSE) {
+#         if (is.null(zero.policy))
+#             zero.policy <- get("zeroPolicy", envir = .spdepOptions)
+#         stopifnot(is.logical(zero.policy))
+
+# 	xx <- rowMeans(x)
+# 	z <- x - xx
+# 	zz <- rowSums(z**2)
+# 	K <- sum(z**4) *(length(x) /(zz**2))
+#   res <- apply(knn_res, MARGIN = 1, FUN = function(x) { 
+# 	  rowSums(z[, x])
+#   })
+  
+  
+# 	lz <- lag.listw(nb, z)
+
+# 	I <- (n / S0) * ((sum(z*lz, na.rm=NAOK)) / zz)
+# 	res <- list(I=I, K=K)
+# 	res
+# }
+
 #' Function to calculate the neighbors list with spatial weights for the chosen
 #' coding scheme from a cell dataset object
 #'
@@ -272,6 +320,7 @@ calculateLW <- function(cds,
                         reduction_method,
                         verbose = FALSE
 ) {
+  #browser();
   if(verbose) {
     message("retrieve the matrices for Moran's I test...")
   }
@@ -304,7 +353,6 @@ calculateLW <- function(cds,
     colnames(relations) <- c("from", "to", "weight")
     knn_res_graph <- igraph::graph.data.frame(relations, directed = T)
 
-      knn_list <- lapply(1:nrow(knn_res), function(x) knn_res[x, -1])
       region_id_names <- colnames(cds)
 
       id_map <- 1:ncol(cds)
@@ -402,6 +450,7 @@ calculateLW <- function(cds,
 
       id_map <- 1:ncol(cds)
       names(id_map) <- id_map
+    #browser();
 
     knn_list <-
       slam::rowapply_simple_triplet_matrix(slam::as.simple_triplet_matrix(tmp),

@@ -27,7 +27,8 @@ estimate_size_factors <- function(cds,
                   "the zero read cells using",
                   "cds <- cds[,Matrix::colSums(exprs(cds)) != 0] and then",
                   "run cds <- estimate_size_factors(cds)"))
-    return(cds)
+    colData(cds)$cellName <- colnames(cds)
+    return(cds) 
   }
   if (is_sparse_matrix(SingleCellExperiment::counts(cds))){
     size_factors(cds) <- estimate_sf_sparse(SingleCellExperiment::counts(cds),
