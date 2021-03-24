@@ -97,8 +97,6 @@ order_cells <- function(cds,
     #principal_graph(cds)[[reduction_method]]
   }
 
-  browser()
-
   cds@principal_graph_aux[[reduction_method]]$root_pr_nodes <- root_pr_nodes
 
   cc_ordering <- extract_general_graph_ordering(cds, root_pr_nodes, verbose,

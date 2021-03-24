@@ -612,7 +612,6 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE,
   Z <- t(reducedDims(cds)[[reduction_method]])
   Y <- rge_res_Y
 
-  browser()
 
   cds <- findNearestPointOnMST(cds, reduction_method, rge_res_Y)
   closest_vertex <- cds@principal_graph_aux[[
@@ -777,7 +776,6 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE,
   row.names(closest_vertex_df) <- row.names(closest_vertex)
   cds@principal_graph_aux[[
     reduction_method]]$pr_graph_cell_proj_closest_vertex <- closest_vertex_df
-  browser()
   
 
   cds@principal_graph_aux[[

@@ -136,7 +136,6 @@ graph_test <- function(cds,
 
 my.moran.test <- function (x, listw, wc, alternative = "greater",
                            randomisation = TRUE) {
-  #browser()
   
   zero.policy = TRUE
   adjust.n = TRUE
@@ -158,7 +157,6 @@ my.moran.test <- function (x, listw, wc, alternative = "greater",
   S02 <- wc$S0 * wc$S0
   res <- spdep::moran(x, listw, wc$n, wc$S0, zero.policy = zero.policy,
                       NAOK = NAOK)
-  #browser()
   I <- res$I
   K <- res$K
 
@@ -320,7 +318,6 @@ calculateLW <- function(cds,
                         reduction_method,
                         verbose = FALSE
 ) {
-  #browser();
   if(verbose) {
     message("retrieve the matrices for Moran's I test...")
   }
@@ -450,7 +447,6 @@ calculateLW <- function(cds,
 
       id_map <- 1:ncol(cds)
       names(id_map) <- id_map
-    #browser();
 
     knn_list <-
       slam::rowapply_simple_triplet_matrix(slam::as.simple_triplet_matrix(tmp),
