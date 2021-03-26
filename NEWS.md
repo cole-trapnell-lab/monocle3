@@ -1,3 +1,16 @@
+# monocle3 1.0.0
+
+### Changes
+
+* Add label_principal_points option to plot_cells to assist with identifying root_pr_nodes in order_cells.
+
+### Bug fixes
+
+* Documentation and error reports improvements.
+* Fix fit_models tests for NA/Inf/NaNs.
+* Refine gene loadings calculations in find_gene_modules.
+* Test for convergence failure in top_markers,
+
 # monocle3 0.2.3
 
 ### Changes

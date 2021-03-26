@@ -39,7 +39,16 @@ TRUE.}
 \item{...}{Additional arguments passed to model fitting functions.}
 }
 \value{
-a tibble containing model objects
+a tibble where the rows are genes and columns are
+\itemize{
+\item id character vector from \code{rowData(cds)$id}
+\item gene_short_names character vector from \code{rowData(cds)$gene_short_names}
+\item num_cells_expressed int vector from \code{rowData(cds)$num_cells_expressed}
+\item gene_id character vector from row.names(rowData(cds))`
+\item model GLM model list returned by speedglm
+\item model_summary model summary list returned by \code{summary(model)}
+\item status character vector of model fitting status: OK when model converged, otherwise FAIL
+}
 }
 \description{
 This function fits a generalized linear model for each gene in a
