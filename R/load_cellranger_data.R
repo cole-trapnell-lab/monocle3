@@ -37,9 +37,9 @@ get_genome_in_matrix_path <- function(matrix_path, genome=NULL) {
 #' *  for Cell Ranger version 2 data, \emph{load_cellranger_data} expects to
 #'    find the required files \emph{barcodes.tsv}, \emph{genes.tsv}, and
 #'    \emph{matrix.mtx}
-#'    in the directories
+#'    in the directories as
 #'      -  \emph{10x_data/outs/filtered_gene_bc_matrices/<genome>/barcodes.tsv}
-#'      -  \emph{10x_data/outs/filtered_gene_bc_matrices/<genome>/features.tsv}
+#'      -  \emph{10x_data/outs/filtered_gene_bc_matrices/<genome>/genes.tsv}
 #'      -  \emph{10x_data/outs/filtered_gene_bc_matrices/<genome>/matrix.mtx}
 #'
 #'    where <genome> is the name of a genome. \emph{load_cellranger_data}
@@ -47,11 +47,11 @@ get_genome_in_matrix_path <- function(matrix_path, genome=NULL) {
 #'     \emph{10x_data/outs/filtered_gene_bc_matrices} or a \emph{genome}
 #'    directory with the name given with the \emph{genome} argument.
 #' *  for Cell Ranger version 3 data, \emph{load_cellranger_data} expects to
-#'    find the required files \emph{barcodes.tsv.gz}, \emph{genes.tsv.gz},
-#'    and \emph{matrix.mtx.gz} in the directories
-#'      -  \emph{10x_data/outs/filtered_gene_bc_matrices/barcodes.tsv.gz}
-#'      -  \emph{10x_data/outs/filtered_gene_bc_matrices/features.tsv.gz}
-#'      -  \emph{10x_data/outs/filtered_gene_bc_matrices/matrix.mtx.gz}
+#'    find the required files \emph{barcodes.tsv.gz}, \emph{features.tsv.gz},
+#'    and \emph{matrix.mtx.gz} in the directories as
+#'      -  \emph{10x_data/outs/filtered_feature_bc_matrix/barcodes.tsv.gz}
+#'      -  \emph{10x_data/outs/filtered_feature_bc_matrix/features.tsv.gz}
+#'      -  \emph{10x_data/outs/filtered_feature_bc_matrix/matrix.mtx.gz}
 #'
 #' * if any of the files is not in the expected directory,
 #'   \emph{load_cellranger_data} will terminate with an error
