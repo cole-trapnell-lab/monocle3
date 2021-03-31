@@ -85,7 +85,7 @@ align_cds <- function(cds,
     beta[is.na(beta)] <- 0
     preproc_res <- Matrix::t(as.matrix(Matrix::t(preproc_res)) -
                                beta %*% Matrix::t(X.model_mat[, -1]))
-    cds@preprocess_aux[[preprocess_method]]$beta = beta
+    cds@preprocess_aux[[preprocess_method]][['beta']] = beta
   }
 
   if(!is.null(alignment_group)) {
