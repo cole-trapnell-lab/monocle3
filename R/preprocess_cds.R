@@ -153,7 +153,7 @@ preprocess_cds <- function(cds,
     row.names(irlba_rotation) = rownames(FM)
     cds@preprocess_aux[['LSI']] <- SimpleList()
     cds@preprocess_aux[['LSI']][['model']] <- SimpleList()
-    cds@preprocess_aux[['LSI']][['model']][['num_dim']] <- um_dim
+    cds@preprocess_aux[['LSI']][['model']][['num_dim']] <- num_dim
     cds@preprocess_aux[['LSI']][['model']][['norm_method']] <- norm_method
     cds@preprocess_aux[['LSI']][['model']][['use_genes']] <- use_genes
     cds@preprocess_aux[['LSI']][['model']][['pseudo_count']] <- pseudo_count
