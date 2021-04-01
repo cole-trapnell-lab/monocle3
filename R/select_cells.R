@@ -65,8 +65,8 @@ choose_cells <- function(cds,
       # Main panel for displaying outputs ----
       shiny::mainPanel(
         shiny::plotOutput("plot1", height="auto",
-                   click = "plot1_click",
-                   brush = shiny::brushOpts(id = "plot1_brush"))
+                          click = "plot1_click",
+                          brush = shiny::brushOpts(id = "plot1_brush"))
       )
     )
   )
@@ -127,11 +127,17 @@ choose_cells <- function(cds,
 }
 
 
-#' Choose cells interactively along the path of a principal graph
+#' Choose cells along the path of a principal graph
 #'
 #' @param cds CDS object to be subsetted.
 #' @param reduction_method The reduction method to plot while choosing cells.
 #'   Currently only "UMAP" is supported.
+#' @param starting_pr_node NULL, or a string with the name of the starting
+#'   principal node to be used. You can see the principal nodes in your dataset
+#'   by using plot_cells with label_principal_points = TRUE.
+#' @param ending_pr_nodes NULL, or one or more strings with the name(s) of the
+#'   ending principal node(s) to be used. You can see the principal nodes in
+#'   your dataset by using plot_cells with label_principal_points = TRUE.
 #' @param return_list Logical, return a list of cells instead of a subsetted
 #'   CDS object.
 #' @param clear_cds Logical, clear CDS slots before returning.
@@ -143,9 +149,11 @@ choose_cells <- function(cds,
 #' @export
 #'
 choose_graph_segments <- function(cds,
-                                 reduction_method = "UMAP",
-                                 return_list = FALSE,
-                                 clear_cds = TRUE) {
+                                  reduction_method = "UMAP",
+                                  starting_pr_node = NULL,
+                                  ending_pr_nodes = NULL,
+                                  return_list = FALSE,
+                                  clear_cds = TRUE) {
 
   assertthat::assert_that(methods::is(cds, "cell_data_set"))
   assertthat::assert_that(assertthat::are_equal("UMAP", reduction_method),
@@ -156,7 +164,7 @@ choose_graph_segments <- function(cds,
                                        reduction_method, " calculated. ",
                                        "Please run reduce_dimension with ",
                                        "reduction_method = ", reduction_method,
-                                       ", cluster_cells, and learn_graph ",
+                                       ", cluster_cells and learn_graph ",
                                        "before running choose_graph_segments."))
   assertthat::assert_that(!is.null(cds@clusters[[reduction_method]]),
                           msg = paste("No cell clusters for",
@@ -172,161 +180,191 @@ choose_graph_segments <- function(cds,
                                       "reduction_method =", reduction_method,
                                       "before running choose_graph_segments."))
   assertthat::assert_that(is.logical(return_list))
-  assertthat::assert_that(interactive(),
-                          msg = paste("choose_graph_segments only works in",
-                                      "interactive mode."))
+  if (all(c(is.null(starting_pr_node),
+            is.null(ending_pr_nodes)))) {
+    interactive <- TRUE
+    assertthat::assert_that(interactive(),
+                            msg = paste("Interactive mode not working on",
+                                        "this system (known issue with",
+                                        "iPython notebooks and on remote",
+                                        "servers). Please provide starting",
+                                        "and ending principal nodes - see",
+                                        "documentation."))
+  } else {
+    interactive <- FALSE
+    assertthat::assert_that(!is.null(starting_pr_node),
+                            msg = paste("If not using interactive mode, you",
+                                        "must provide a starting_pr_node"))
+    assertthat::assert_that(length(starting_pr_node) <= 1,
+                            msg = paste("choose_graph_segments only supports",
+                                        "1 starting_pr_node. You can pass",
+                                        "multiple ending nodes."))
 
-  dp_mst <- cds@principal_graph[[reduction_method]]
-
-  princ_points <- t(cds@principal_graph_aux[[reduction_method]]$dp_mst) %>%
-    as.data.frame() %>%
-    dplyr::select_(x = 1, y = 2) %>%
-    dplyr::mutate(sample_name = rownames(.), sample_state = rownames(.))
-  row.names(princ_points) <- princ_points$sample_name
-
-  edge_df <- dp_mst %>%
-    igraph::as_data_frame() %>%
-    dplyr::select_(source = "from", target = "to") %>%
-    dplyr::left_join(princ_points %>%
-                       dplyr::select_(source="sample_name",
-                                      source_prin_graph_dim_1="x",
-                                      source_prin_graph_dim_2="y"),
-                     by = "source") %>%
-    dplyr::left_join(princ_points %>%
-                       dplyr::select_(target="sample_name",
-                                      target_prin_graph_dim_1="x",
-                                      target_prin_graph_dim_2="y"),
-                     by = "target")
-
-  data_df <- data.frame(reducedDims(cds)[[reduction_method]])
-
-  colnames(data_df) <- c("data_dim_1", "data_dim_2")
-  data_df$sample_name <- row.names(data_df)
-
-  data_df <- as.data.frame(cbind(data_df, colData(cds)))
-
-  data_df$cell_color = tryCatch({
-    partitions(cds, reduction_method = reduction_method)[data_df$sample_name]},
-    error = function(e) {NULL})
-  data_df$chosen_cells <- FALSE
-
-  ui <- shiny::fluidPage(
-    shiny::titlePanel("Choose cells along a graph path"),
-
-    # Sidebar layout with input and output definitions ----
-    shiny::sidebarLayout(
-
-      # Sidebar panel for inputs ----
-      shiny::sidebarPanel(
-        shiny::actionButton("choose_start", "Choose starting node"),
-        shiny::actionButton("choose_end", "Choose ending nodes"),
-        shiny::actionButton("connect", "Connect nodes"),
-        # clear button
-        shiny::actionButton("reset", "Clear"),
-        # done button
-        shiny::actionButton("done", "Done"),
-        shiny::h3("Instructions:"),
-        shiny::tags$ol(
-          shiny::tags$li("Highlight starting principal_graph node."),
-          shiny::tags$li("Click 'Choose starting node' to highlight."),
-          shiny::tags$li("Highlight ending principal_graph node(s)."),
-          shiny::tags$li("Click 'Choose ending nodes' to highlight."),
-          shiny::tags$li(paste("Click 'Connect nodes' to highlight connecting nodes",
-                        "and cells")),
-          shiny::tags$li("Click 'Done' to return the chosen subset.")
-        ),
-        shiny::h4("Details:"),
-        shiny::tags$ul(
-          shiny::tags$li("To start over, click 'Clear'"),
-          shiny::tags$li(paste("You can choose multiple ending nodes, but only 1",
-                        "starting node."))
-        )
-      ),
-
-      # Main panel for displaying outputs ----
-      shiny::mainPanel(
-        shiny::plotOutput("plot1", height="auto",
-                          click = "plot1_click",
-                          brush = shiny::brushOpts(id = "plot1_brush"))
-      )
-    )
-  )
-
-  server <- function(input, output, session) {
-
-    vals <- shiny::reactiveValues(
-      start = rep(FALSE, nrow(princ_points)),
-      end =  rep(FALSE, nrow(princ_points)),
-      chosen = rep(FALSE, nrow(princ_points)),
-      chosen_cells = rep(FALSE, nrow(data_df))
-    )
-
-    output$plot1 <- shiny::renderPlot({
-      # Plot the kept and excluded points as two separate data sets
-      princ_points$start <- vals$start
-      princ_points$end <- vals$end
-      princ_points$chosen <- "Unchosen"
-      princ_points$chosen[vals$start] <- "Start"
-      princ_points$chosen[vals$end] <- "End"
-      princ_points$chosen[vals$chosen] <- "Chosen"
-      data_df$chosen_cells <- "gray"
-      data_df$chosen_cells[vals$chosen_cells] <- "purple"
-      suppressMessages(plot_principal_graph(cds, data_df, princ_points,
-                                            label_branch_points = FALSE,
-                                            label_leaves = FALSE,
-                                            label_roots = FALSE))
-    }, height = function() {
-      session$clientData$output_plot1_width
-    })
-
-    # Toggle points that are brushed, when button is clicked
-    shiny::observeEvent(input$choose_start, {
-      res <- shiny::brushedPoints(princ_points, xvar = "x", yvar = "y",
-                                  input$plot1_brush, allRows = TRUE)
-      vals$start <- res$selected_
-    })
-
-    # Toggle points that are brushed, when button is clicked
-    shiny::observeEvent(input$choose_end, {
-      res <- shiny::brushedPoints(princ_points, xvar = "x", yvar = "y",
-                                  input$plot1_brush, allRows = TRUE)
-      vals$end <- vals$end | res$selected_
-    })
-
-    shiny::observeEvent(input$connect, {
-      chosen <- tryCatch(
-        get_principal_path(cds, reduction_method,
-                           starting_cell = row.names(princ_points)[vals$start],
-                           end_cells = row.names(princ_points)[vals$end]),
-        error = function(e) print(e))
-      vals$chosen <- vals$chosen | row.names(princ_points) %in% chosen$nodes
-      vals$chosen_cells <- vals$chosen_cells | row.names(pData(cds)) %in%
-        chosen$cells
-      vals$start = rep(FALSE, nrow(princ_points))
-      vals$end =  rep(FALSE, nrow(princ_points))
-    })
-
-    # Reset all points
-    shiny::observeEvent(input$reset, {
-      vals$start = rep(FALSE, nrow(princ_points))
-      vals$end =  rep(FALSE, nrow(princ_points))
-      vals$chosen =  rep(FALSE, nrow(princ_points))
-      vals$chosen_cells = rep(FALSE, nrow(data_df))
-    })
-
-    shiny::observeEvent(input$done, {
-      shiny::stopApp(list(nodes = row.names(princ_points)[vals$chosen],
-                          cells = row.names(data_df)[vals$chosen_cells]))
-    })
-
+    assertthat::assert_that(!is.null(ending_pr_nodes),
+                            msg = paste("If not using interactive mode, you",
+                                        "must provide ending_pr_nodes."))
   }
 
-  sel <- suppressMessages(shiny::runApp(shiny::shinyApp(ui, server)))
 
+  if (!interactive) {
+    sel <- get_principal_path(cds, reduction_method,
+                              starting_cell = starting_pr_node,
+                              end_cells = ending_pr_nodes)
+  } else {
+
+
+    dp_mst <- cds@principal_graph[[reduction_method]]
+
+    princ_points <- t(cds@principal_graph_aux[[reduction_method]]$dp_mst) %>%
+      as.data.frame() %>%
+      dplyr::select_(x = 1, y = 2) %>%
+      dplyr::mutate(sample_name = rownames(.), sample_state = rownames(.))
+    row.names(princ_points) <- princ_points$sample_name
+
+    edge_df <- dp_mst %>%
+      igraph::as_data_frame() %>%
+      dplyr::select_(source = "from", target = "to") %>%
+      dplyr::left_join(princ_points %>%
+                         dplyr::select_(source="sample_name",
+                                        source_prin_graph_dim_1="x",
+                                        source_prin_graph_dim_2="y"),
+                       by = "source") %>%
+      dplyr::left_join(princ_points %>%
+                         dplyr::select_(target="sample_name",
+                                        target_prin_graph_dim_1="x",
+                                        target_prin_graph_dim_2="y"),
+                       by = "target")
+
+    data_df <- data.frame(reducedDims(cds)[[reduction_method]])
+
+    colnames(data_df) <- c("data_dim_1", "data_dim_2")
+    data_df$sample_name <- row.names(data_df)
+
+    data_df <- as.data.frame(cbind(data_df, colData(cds)))
+
+    data_df$cell_color = tryCatch({
+      partitions(cds, reduction_method = reduction_method)[data_df$sample_name]},
+      error = function(e) {NULL})
+    data_df$chosen_cells <- FALSE
+
+    ui <- shiny::fluidPage(
+      shiny::titlePanel("Choose cells along a graph path"),
+
+      # Sidebar layout with input and output definitions ----
+      shiny::sidebarLayout(
+
+        # Sidebar panel for inputs ----
+        shiny::sidebarPanel(
+          shiny::actionButton("choose_start", "Choose starting node"),
+          shiny::actionButton("choose_end", "Choose ending nodes"),
+          shiny::actionButton("connect", "Connect nodes"),
+          # clear button
+          shiny::actionButton("reset", "Clear"),
+          # done button
+          shiny::actionButton("done", "Done"),
+          shiny::h3("Instructions:"),
+          shiny::tags$ol(
+            shiny::tags$li("Highlight starting principal_graph node."),
+            shiny::tags$li("Click 'Choose starting node' to highlight."),
+            shiny::tags$li("Highlight ending principal_graph node(s)."),
+            shiny::tags$li("Click 'Choose ending nodes' to highlight."),
+            shiny::tags$li(paste("Click 'Connect nodes' to highlight connecting nodes",
+                                 "and cells")),
+            shiny::tags$li("Click 'Done' to return the chosen subset.")
+          ),
+          shiny::h4("Details:"),
+          shiny::tags$ul(
+            shiny::tags$li("To start over, click 'Clear'"),
+            shiny::tags$li(paste("You can choose multiple ending nodes, but only 1",
+                                 "starting node."))
+          )
+        ),
+
+        # Main panel for displaying outputs ----
+        shiny::mainPanel(
+          shiny::plotOutput("plot1", height="auto",
+                            click = "plot1_click",
+                            brush = shiny::brushOpts(id = "plot1_brush"))
+        )
+      )
+    )
+
+    server <- function(input, output, session) {
+
+      vals <- shiny::reactiveValues(
+        start = rep(FALSE, nrow(princ_points)),
+        end =  rep(FALSE, nrow(princ_points)),
+        chosen = rep(FALSE, nrow(princ_points)),
+        chosen_cells = rep(FALSE, nrow(data_df))
+      )
+
+      output$plot1 <- shiny::renderPlot({
+        # Plot the kept and excluded points as two separate data sets
+        princ_points$start <- vals$start
+        princ_points$end <- vals$end
+        princ_points$chosen <- "Unchosen"
+        princ_points$chosen[vals$start] <- "Start"
+        princ_points$chosen[vals$end] <- "End"
+        princ_points$chosen[vals$chosen] <- "Chosen"
+        data_df$chosen_cells <- "gray"
+        data_df$chosen_cells[vals$chosen_cells] <- "purple"
+        suppressMessages(plot_principal_graph(cds, data_df, princ_points,
+                                              label_branch_points = FALSE,
+                                              label_leaves = FALSE,
+                                              label_roots = FALSE))
+      }, height = function() {
+        session$clientData$output_plot1_width
+      })
+
+      # Toggle points that are brushed, when button is clicked
+      shiny::observeEvent(input$choose_start, {
+        res <- shiny::brushedPoints(princ_points, xvar = "x", yvar = "y",
+                                    input$plot1_brush, allRows = TRUE)
+        vals$start <- res$selected_
+      })
+
+      # Toggle points that are brushed, when button is clicked
+      shiny::observeEvent(input$choose_end, {
+        res <- shiny::brushedPoints(princ_points, xvar = "x", yvar = "y",
+                                    input$plot1_brush, allRows = TRUE)
+        vals$end <- vals$end | res$selected_
+      })
+
+      shiny::observeEvent(input$connect, {
+        chosen <- tryCatch(
+          get_principal_path(cds, reduction_method,
+                             starting_cell = row.names(princ_points)[vals$start],
+                             end_cells = row.names(princ_points)[vals$end]),
+          error = function(e) print(e))
+        vals$chosen <- vals$chosen | row.names(princ_points) %in% chosen$nodes
+        vals$chosen_cells <- vals$chosen_cells | row.names(pData(cds)) %in%
+          chosen$cells
+        vals$start = rep(FALSE, nrow(princ_points))
+        vals$end =  rep(FALSE, nrow(princ_points))
+      })
+
+      # Reset all points
+      shiny::observeEvent(input$reset, {
+        vals$start = rep(FALSE, nrow(princ_points))
+        vals$end =  rep(FALSE, nrow(princ_points))
+        vals$chosen =  rep(FALSE, nrow(princ_points))
+        vals$chosen_cells = rep(FALSE, nrow(data_df))
+      })
+
+      shiny::observeEvent(input$done, {
+        shiny::stopApp(list(nodes = row.names(princ_points)[vals$chosen],
+                            cells = row.names(data_df)[vals$chosen_cells]))
+      })
+
+    }
+
+    sel <- suppressMessages(shiny::runApp(shiny::shinyApp(ui, server)))
+  }
   if(return_list) {
     return(sel)
   } else {
     cds<-cds[,sel$cells]
+    principal_graph(cds)[[reduction_method]] <- igraph::induced_subgraph(principal_graph(cds)[[reduction_method]], sel[[1]])
     if( clear_cds )
       cds<-clear_cds_slots(cds)
     return(cds)
@@ -356,7 +394,7 @@ get_principal_path <- function(cds, reduction_method,
   subset_cells <- row.names(cds@principal_graph_aux[[
     reduction_method]]$pr_graph_cell_proj_closest_vertex)[corresponding_cells]
 
-  return(list(nodes = subset_principal_nodes, cells =subset_cells))
+  return(list(nodes = subset_principal_nodes, cells = subset_cells))
 }
 
 traverse_graph <- function(g, starting_cell, end_cells){

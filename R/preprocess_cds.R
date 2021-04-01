@@ -24,15 +24,6 @@
 #' @param use_genes NULL or a list of gene IDs. If a list of gene IDs, only
 #'   this subset of genes is used for dimensionality reduction. Default is
 #'   NULL.
-#' @param residual_model_formula_str NULL or a string model formula specifying
-#'   any effects to subtract from the data before dimensionality reduction.
-#'   Uses a linear model to subtract effects. For non-linear effects, use
-#'   alignment_group. Default is NULL.
-#' @param alignment_group String specifying a column of colData to use for
-#'  aligning groups of cells. The column specified must be a factor.
-#'  Alignment can be used to subtract batch effects in a non-linear way.
-#'  For correcting continuous effects, use residual_model_formula_str.
-#'  Default is NULL.
 #' @param pseudo_count NULL or the amount to increase expression values before
 #'   normalization and dimensionality reduction. If NULL (default), a
 #'   pseudo_count of 1 is added for log normalization and 0 is added for size
@@ -50,8 +41,6 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
                            num_dim=50,
                            norm_method = c("log", "size_only", "none"),
                            use_genes = NULL,
-                           residual_model_formula_str=NULL,
-                           alignment_group=NULL,
                            pseudo_count=NULL,
                            scaling = TRUE,
                            verbose=FALSE,
@@ -108,12 +97,13 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
 
     irlba_rotation <- irlba_res$rotation
     row.names(irlba_rotation) <- rownames(FM)
-    cds@preprocess_aux$gene_loadings <- irlba_rotation
+    cds@preprocess_aux$gene_loadings <- irlba_rotation %*% diag(irlba_res$sdev)
     cds@preprocess_aux$prop_var_expl <- irlba_res$sdev^2 / sum(irlba_res$sdev^2)
 
   } else if(method == "LSI") {
 
     preproc_res <- tfidf(FM)
+    num_col <- ncol(preproc_res)
     irlba_res <- irlba::irlba(Matrix::t(preproc_res),
                               nv = min(num_dim,min(dim(FM)) - 1))
 
@@ -122,7 +112,7 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
 
     irlba_rotation = irlba_res$v
     row.names(irlba_rotation) = rownames(FM)
-    cds@preprocess_aux$gene_loadings = irlba_rotation
+    cds@preprocess_aux$gene_loadings = irlba_rotation %*% diag( irlba_res$d/sqrt( max(1, num_col - 1) ) )
 
   }
 

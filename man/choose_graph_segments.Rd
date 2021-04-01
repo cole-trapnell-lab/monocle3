@@ -2,11 +2,13 @@
 % Please edit documentation in R/select_cells.R
 \name{choose_graph_segments}
 \alias{choose_graph_segments}
-\title{Choose cells interactively along the path of a principal graph}
+\title{Choose cells along the path of a principal graph}
 \usage{
 choose_graph_segments(
   cds,
   reduction_method = "UMAP",
+  starting_pr_node = NULL,
+  ending_pr_nodes = NULL,
   return_list = FALSE,
   clear_cds = TRUE
 )
@@ -16,6 +18,14 @@ choose_graph_segments(
 
 \item{reduction_method}{The reduction method to plot while choosing cells.
 Currently only "UMAP" is supported.}
+
+\item{starting_pr_node}{NULL, or a string with the name of the starting
+principal node to be used. You can see the principal nodes in your dataset
+by using plot_cells with label_principal_points = TRUE.}
+
+\item{ending_pr_nodes}{NULL, or one or more strings with the name(s) of the
+ending principal node(s) to be used. You can see the principal nodes in
+your dataset by using plot_cells with label_principal_points = TRUE.}
 
 \item{return_list}{Logical, return a list of cells instead of a subsetted
 CDS object.}
@@ -29,5 +39,5 @@ A subset CDS object. If return_list = FALSE, a list of cell and
 graph node names.
 }
 \description{
-Choose cells interactively along the path of a principal graph
+Choose cells along the path of a principal graph
 }

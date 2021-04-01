@@ -21,6 +21,18 @@
 #' @param cores Number of cores to use.
 #' @param verbose Whether to print verbose progress output.
 #'
+#' @return a data.frame where the rows are genes and the columns are
+#' * gene_id vector of gene names
+#' * gene_short_name vector of gene short names
+#' * cell_group character vector of the cell group to which the cell belongs
+#' * marker_score numeric vector of marker scores as the fraction expressing scaled by the specificity. The value ranges from 0 to 1.
+#' * mean_expression numeric vector of mean normalized expression of the gene in the cell group
+#' * fraction_expressing numeric vector of fraction of cells expressing the gene within the cell group
+#' * specificity numeric vector of a measure of how specific the gene's expression is to the cell group based on the Jensen-Shannon divergence. The value ranges from 0 to 1.
+#' * pseudo_R2 numeric vector of pseudo R-squared values, a measure of how well the gene expression model fits the categorical data relative to the null model. The value ranges from 0 to 1.
+#' * marker_test_p_value numeric vector of likelihood ratio p-values
+#' * marker_test_q_value numeric vector of likelihood ratio q-values
+#'
 #' @export
 top_markers <- function(cds,
                         group_cells_by="cluster",
@@ -159,6 +171,13 @@ top_markers <- function(cds,
                                  RhpcBLASctl::omp_set_num_threads(old_omp_num_threads)
                                  RhpcBLASctl::blas_set_num_threads(old_blas_num_threads)
                                })
+
+    #
+    # Check for possible convergence failure or other problems. Issue: #383
+    #
+    if('warning' %in% marker_test_res) {
+        warning('test_marker_for_cell_group() caught warning: possible convergence failure.')
+    }
 
     marker_test_res = t(marker_test_res)
     marker_test_res = as.matrix(marker_test_res)

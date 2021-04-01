@@ -199,7 +199,15 @@ fit_model_helper <- function(x,
 #' @param verbose Logical indicating whether to emit progress messages.
 #' @param ... Additional arguments passed to model fitting functions.
 #'
-#' @return a tibble containing model objects
+#' @return a tibble where the rows are genes and columns are
+#'   * id character vector from `rowData(cds)$id`
+#'   * gene_short_names character vector from `rowData(cds)$gene_short_names`
+#'   * num_cells_expressed int vector from `rowData(cds)$num_cells_expressed`
+#'   * gene_id character vector from row.names(rowData(cds))`
+#'   * model GLM model list returned by speedglm
+#'   * model_summary model summary list returned by `summary(model)`
+#'   * status character vector of model fitting status: OK when model converged, otherwise FAIL
+#'
 #' @export
 fit_models <- function(cds,
                      model_formula_str,
@@ -238,24 +246,28 @@ fit_models <- function(cds,
       err_msg <- paste0(err_msg,'  \'', mf_term, '\': not in cds\n')
       next
     }
-    mf_length  <- length(coldata_df[[mf_term]])
-    mf_num_inf <- sum(is.infinite(coldata_df[[mf_term]]))
-    mf_num_nan <- sum(is.nan(coldata_df[[mf_term]]))
-    mf_num_na  <- sum(is.na(coldata_df[[mf_term]]))
-    if( mf_num_inf > 0 )
-      err_msg <- paste0(err_msg, '  \'', mf_term, '\': ' , mf_num_inf, ' of ', mf_length, ' values are Inf\n')
-    if( mf_num_nan > 0 )
-      err_msg <- paste0(err_msg, '  \'', mf_term, '\': ' , mf_num_nan, ' of ', mf_length, ' values are NaN\n')
-    if( mf_num_na - mf_num_nan > 0 )
-      err_msg <- paste0(err_msg, '  \'', mf_term, '\': ' , mf_num_na - mf_num_nan, ' of ', mf_length, ' values are NA\n')
   }
   if(length(err_msg) > 0)
     stop( '\n-- bad fit_models terms --\n', err_msg )
-  rm( err_msg, mf_terms, mf_term, mf_length, mf_num_inf, mf_num_nan, mf_num_na )
   tryCatch({
     stats::model.frame(model_form, data=coldata_df)
-  }, error = function(e) {
-    stop ("Error in model formula")
+  }, error = function( cnd ) {
+       info_msg <- ''
+       for( mf_term in mf_terms )
+       {
+         mf_length  <- length(coldata_df[[mf_term]])
+         mf_num_inf <- sum(is.infinite(coldata_df[[mf_term]]))
+         mf_num_nan <- sum(is.nan(coldata_df[[mf_term]]))
+         mf_num_na  <- sum(is.na(coldata_df[[mf_term]]))
+         if( mf_num_inf > 0 )
+           info_msg <- paste0(info_msg, '  \'', mf_term, '\': ' , mf_num_inf, ' of ', mf_length, ' values are Inf\n')
+         if( mf_num_nan > 0 )
+           info_msg <- paste0(info_msg, '  \'', mf_term, '\': ' , mf_num_nan, ' of ', mf_length, ' values are NaN\n')
+         if( mf_num_na - mf_num_nan > 0 )
+           info_msg <- paste0(info_msg, '  \'', mf_term, '\': ' , mf_num_na - mf_num_nan, ' of ', mf_length, ' values are NA\n')
+       }
+       rm( mf_term, mf_length, mf_num_inf, mf_num_nan, mf_num_na )
+       stop (paste0( 'Error in model formula: ', conditionMessage( cnd ), '\n', info_msg ) )
   })
 
   disp_func <- NULL
