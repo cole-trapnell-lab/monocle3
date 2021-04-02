@@ -189,24 +189,41 @@ reduce_dimension <- function(cds,
     if (verbose)
       message("Running Uniform Manifold Approximation and Projection")
 
-    umap_res <- uwot::umap(as.matrix(preprocess_mat),
-                           n_components = max_components,
-                           metric = umap.metric,
-                           min_dist = umap.min_dist,
-                           n_neighbors = umap.n_neighbors,
-                           fast_sgd = umap.fast_sgd,
-                           n_threads=cores,
-                           verbose=verbose,
-                           nn_method = umap.nn_method,
-                           ret_model = build_nn_index,
-                           ...)
-
     cds@reduce_dim_aux[['UMAP']] <- SimpleList()
     cds@reduce_dim_aux[['UMAP']][['model']] <- SimpleList()
+
+    #
+    # uwot::umap returns slightly different results on CentOS 7, at least,
+    # when ret_model is not given and when it is given with the default
+    # value of FALSE.
+    #
     if( !build_nn_index ) {
+      umap_res <- uwot::umap(as.matrix(preprocess_mat),
+                             n_components = max_components,
+                             metric = umap.metric,
+                             min_dist = umap.min_dist,
+                             n_neighbors = umap.n_neighbors,
+                             fast_sgd = umap.fast_sgd,
+                             n_threads=cores,
+                             verbose=verbose,
+                             nn_method = umap.nn_method,
+                             ...)
+  
         row.names(umap_res) <- colnames(cds)
         reducedDims(cds)[['UMAP']] <- umap_res
     } else {
+      umap_res <- uwot::umap(as.matrix(preprocess_mat),
+                             n_components = max_components,
+                             metric = umap.metric,
+                             min_dist = umap.min_dist,
+                             n_neighbors = umap.n_neighbors,
+                             fast_sgd = umap.fast_sgd,
+                             n_threads=cores,
+                             verbose=verbose,
+                             nn_method = umap.nn_method,
+                             ret_model = build_nn_index,
+                             ...)
+  
         # Notes:
         #   o  uwot::umap_transform() returns a slightly different result in
         #      comparison to uwot::umap() (umap_res$embedding) model, even
