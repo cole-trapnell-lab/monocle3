@@ -907,8 +907,7 @@ align_transform <- function(cds, method=c('Aligned')) {
   X.model_mat <- Matrix::sparse.model.matrix( stats::as.formula(residual_model_formula_str), data = colData(cds), drop.unused.levels = TRUE)
   fit <- limma::lmFit(Matrix::t(preproc_res), X.model_mat)
   beta <- fit$coefficients[, -1, drop = FALSE]
-#  cds@preprocess_aux[[preprocess_method]][['beta']] <- beta
-  cds@preprocess_aux[[preprocess_method]]$beta <- beta
+  cds@preprocess_aux[[preprocess_method]][['beta']] <- beta
   preproc_res <- Matrix::t(as.matrix(Matrix::t(preproc_res)) - beta %*% Matrix::t(X.model_mat[, -1]))
   corrected_PCA = batchelor::reducedMNN(as.matrix(preproc_res), batch=colData(cds)[,alignment_group], k=alignment_k)
   preproc_res = corrected_PCA$corrected
