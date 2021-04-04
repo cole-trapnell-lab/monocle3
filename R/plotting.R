@@ -1095,7 +1095,8 @@ plot_pc_variance_explained <- function(cds) {
                                       "PCA. Please run preprocess_cds with",
                                       "method = 'PCA' before running",
                                       "plot_pc_variance_explained."))
-  prop_varex <- cds@preprocess_aux$prop_var_expl
+
+  prop_varex <- cds@preprocess_aux[['PCA']][['model']][['prop_var_expl']]
 
   p <- qplot(1:length(prop_varex), prop_varex, alpha = I(0.5)) +
     monocle_theme_opts() +

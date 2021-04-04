@@ -2,6 +2,9 @@
 #'
 #'
 #' @param cds the cell_data_set upon which to perform this operation
+#' @param preprocess_method a string specifying the low-dimensional space
+#'   to use for gene loadings, currently either PCA or LSI. Default is
+#'   "PCA".
 #' @param reduction_method The dimensionality reduction method used to generate the lower dimensional space in which genes will be clustered. Currently only UMAP is supported.
 #' @param max_components The number of dimensions in which to cluster genes into modules.
 #' @param umap.metric Metric used by UMAP for measuring similarity between genes .
@@ -27,6 +30,7 @@
 #'
 #' @export
 find_gene_modules <- function(cds,
+                          preprocess_method = c('PCA', 'LSI'),
                           reduction_method = c("UMAP"),
                           max_components = 2,
                           umap.metric = "cosine",
@@ -44,6 +48,10 @@ find_gene_modules <- function(cds,
                           verbose = F,
                           ...) {
   method = 'leiden'
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(preprocess_method) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "preprocess_method must be one of 'PCA' or 'LSI'")
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
@@ -66,14 +74,15 @@ find_gene_modules <- function(cds,
                                       "reduction_method =", reduction_method,
                                       "before running cluster_cells"))
 
-  preprocess_mat <- cds@preprocess_aux$gene_loadings
+  # preprocess_mat is gene_loading matrix
+  preprocess_mat <- cds@preprocess_aux[[preprocess_method]][['model']]$svd_v %*% diag(cds@preprocess_aux[[preprocess_method]][['model']]$svd_sdev)
 # Notes:
-#   o  cds@preprocess_aux$beta is npc x nfactor, which causes
+#   o  cds@preprocess_aux[[preprocess_method]][['beta']] is npc x nfactor, which causes
 #      preprocess_mat to have nfactor columns, often one column
 #   o  I do not know how to adjust gene_loadings for batch effects
 #      so this is disabled for now
-#  if (is.null(cds@preprocess_aux$beta) == FALSE){
-#    preprocess_mat = preprocess_mat %*% (-cds@preprocess_aux$beta)
+#  if (!is.null(cds@preprocess_aux[[preprocess_method]][['beta']])){
+#    preprocess_mat = preprocess_mat %*% (-cds@preprocess_aux[[preprocess_method]][['beta']])
 #  }
   preprocess_mat <- preprocess_mat[intersect(rownames(cds), row.names(preprocess_mat)),]
 

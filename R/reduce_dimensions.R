@@ -39,6 +39,12 @@
 #'   used by UMAP. Default is "annoy". See uwot package's
 #'   \code{\link[umap]{umap}} for details.
 #' @param cores Number of compute cores to use.
+#' @param build_nn_index logical When this argument is set to TRUE,
+#'   reduce_dimension builds the Annoy nearest neighbor index from the 
+#'   dimensionally reduced matrix for later use. Default is FALSE.
+#'   This works only for reduction_method = "UMAP".
+#' @param nn_metric a string specifying the metric used by Annoy, currently
+#'   "cosine", "euclidean", "manhattan", or "hamming". Default is "cosine".
 #' @param verbose Logical, whether to emit verbose output.
 #' @param ... additional arguments to pass to the dimensionality reduction
 #'   function.
@@ -59,14 +65,23 @@ reduce_dimension <- function(cds,
                              umap.fast_sgd = FALSE,
                              umap.nn_method = "annoy",
                              cores=1,
+                             build_nn_index = FALSE,
+                             nn_metric = c("cosine", "euclidean", "manhattan", "hamming"),
                              verbose=FALSE,
                              ...){
+
   extra_arguments <- list(...)
 
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
     msg = "reduction_method must be one of 'UMAP', 'PCA', 'tSNE', 'LSI', 'Aligned'")
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(nn_metric) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "nn_metric must be one of 'cosine', 'euclidean', 'manhattan', or 'hamming'")
+  assertthat::assert_that(is.logical(build_nn_index),
+                          msg = paste("build_nn_index must be either TRUE or FALSE"))
 
   reduction_method <- match.arg(reduction_method)
 
@@ -86,6 +101,7 @@ reduce_dimension <- function(cds,
 
   #preprocess_method <- match.arg(preprocess_method)
 
+  nn_metric <- match.arg(nn_metric)
 
   assertthat::assert_that(assertthat::is.count(max_components))
 
@@ -144,6 +160,15 @@ reduce_dimension <- function(cds,
 
   preprocess_mat <- reducedDims(cds)[[preprocess_method]]
 
+  #
+  # Notes:
+  #   o  the functions save_transform_models/load_transform_models
+  #      expect that the reduce_dim_aux slot consists of a SimpleList
+  #      that stores information about methods with the elements
+  #        reduce_dim_aux[[method]][['model']] for the transform elements
+  #        reduce_dim_aux[[method]][['nn_index']] for the annoy index
+  #      and depends on the elements within model and nn_index.
+  #
   if(reduction_method == "PCA") {
     if (verbose) message("Returning preprocessed PCA matrix")
   } else if(reduction_method == "LSI") {
@@ -164,22 +189,70 @@ reduce_dimension <- function(cds,
     if (verbose)
       message("Running Uniform Manifold Approximation and Projection")
 
-    umap_res = uwot::umap(as.matrix(preprocess_mat),
-                          n_components = max_components,
-                          metric = umap.metric,
-                          min_dist = umap.min_dist,
-                          n_neighbors = umap.n_neighbors,
-                          fast_sgd = umap.fast_sgd,
-                          n_threads=cores,
-                          verbose=verbose,
-                          nn_method = umap.nn_method,
-                          ...)
+    cds@reduce_dim_aux[['UMAP']] <- SimpleList()
+    cds@reduce_dim_aux[['UMAP']][['model']] <- SimpleList()
 
-    row.names(umap_res) <- colnames(cds)
-    reducedDims(cds)$UMAP <- umap_res
+    #
+    # uwot::umap returns slightly different results on CentOS 7, at least,
+    # when ret_model is not given and when it is given with the default
+    # value of FALSE.
+    #
+    if( !build_nn_index ) {
+      umap_res <- uwot::umap(as.matrix(preprocess_mat),
+                             n_components = max_components,
+                             metric = umap.metric,
+                             min_dist = umap.min_dist,
+                             n_neighbors = umap.n_neighbors,
+                             fast_sgd = umap.fast_sgd,
+                             n_threads=cores,
+                             verbose=verbose,
+                             nn_method = umap.nn_method,
+                             ...)
+  
+        row.names(umap_res) <- colnames(cds)
+        reducedDims(cds)[['UMAP']] <- umap_res
+    } else {
+      umap_res <- uwot::umap(as.matrix(preprocess_mat),
+                             n_components = max_components,
+                             metric = umap.metric,
+                             min_dist = umap.min_dist,
+                             n_neighbors = umap.n_neighbors,
+                             fast_sgd = umap.fast_sgd,
+                             n_threads=cores,
+                             verbose=verbose,
+                             nn_method = umap.nn_method,
+                             ret_model = build_nn_index,
+                             ...)
+  
+        # Notes:
+        #   o  uwot::umap_transform() returns a slightly different result in
+        #      comparison to uwot::umap() (umap_res$embedding) model, even
+        #      when uwot::umap_transform() uses the model from uwot::umap().
+        #      However, uwot::umap_transform() gives consistent results using
+        #      one model from uwot::umap(). So return the result from
+        #      uwot::umap_transform().
+        cds@reduce_dim_aux[['UMAP']][['nn_index']] <- SimpleList()
+        set.seed(2016)
+        umap_model <- umap_res
+        umap_res <- uwot::umap_transform(X=as.matrix(preprocess_mat), model=umap_model, n_threads=1)
+        row.names(umap_res) <- colnames(cds)
+        reducedDims(cds)[['UMAP']] <- umap_res
+        cds@reduce_dim_aux[['UMAP']][['model']][['umap_preprocess_method']] <- preprocess_method
+        cds@reduce_dim_aux[['UMAP']][['model']][['max_components']] <- max_components
+        cds@reduce_dim_aux[['UMAP']][['model']][['umap_metric']] <- umap.metric
+        cds@reduce_dim_aux[['UMAP']][['model']][['umap_min_dist']] <- umap.min_dist
+        cds@reduce_dim_aux[['UMAP']][['model']][['umap_n_neighbors']] <- umap.n_neighbors
+        cds@reduce_dim_aux[['UMAP']][['model']][['umap_fast_sgd']] <- umap.fast_sgd
+        cds@reduce_dim_aux[['UMAP']][['model']][['umap_model']] <- umap_model
+        # make nearest neighbor index in UMAP space
+        annoy_index <- uwot:::annoy_build(X = reducedDims(cds)[['UMAP']], metric=nn_metric)
+        cds@reduce_dim_aux[['UMAP']][['nn_index']][['annoy_index']] <- annoy_index
+        cds@reduce_dim_aux[['UMAP']][['nn_index']][['annoy_metric']] <- nn_metric
+        cds@reduce_dim_aux[['UMAP']][['nn_index']][['annoy_ndim']] <- ncol(reducedDims(cds)[['UMAP']])
+    }
   }
 
-  ## Clear out any old graphs:
+  ## Clear out old graphs:
   cds@principal_graph_aux[[reduction_method]] <- NULL
   cds@principal_graph[[reduction_method]] <- NULL
   cds@clusters[[reduction_method]] <- NULL
