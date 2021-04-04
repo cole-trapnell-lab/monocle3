@@ -444,6 +444,7 @@ sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
   ans$rotation <- s$v
   colnames(ans$rotation) <- paste("PC", seq(1, ncol(ans$rotation)), sep="")
   ans$center <- args$center
+  ans$svd_scale <- args$scale
   if (retx)
   {
     ans <- c(ans, list(x = sweep(s$u, 2, s$d, FUN=`*`)))
