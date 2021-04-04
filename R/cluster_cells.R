@@ -1,3 +1,11 @@
+# Notes:
+#   o  there appear to be unused variables in this file, for example,
+#         o  distMatrix
+#         o  relations
+#         o  edge_lists
+#         o  coord
+
+
 #' Cluster cells using Louvain/Leiden community detection
 #'
 #' Unsupervised clustering of cells is a common step in many single-cell
@@ -160,6 +168,56 @@ cluster_cells <- function(cds,
 }
 
 
+cluster_cells_make_graph <- function(data, weight, cell_names, k, verbose) {
+  if (is.data.frame(data))
+    data <- as.matrix(data)
+  if (!is.matrix(data))
+    stop("Wrong input data, should be a data frame or matrix!")
+
+  if (k < 1) {
+    stop("k must be a positive integer!")
+  } else
+  if (k > nrow(data) - 2) {
+    k <- nrow(data) - 2
+    warning(paste("RANN counts the point itself, k must be smaller than\nthe",
+                  "total number of points - 1 (all other points) - 1",
+                  "(itself)!"))
+  }
+
+  if (verbose) {
+    message("Run kNN based graph clustering starts:", "\n",
+            "  -Input data of ", nrow(data), " rows and ", ncol(data),
+            " columns", "\n", "  -k is set to ", k)
+    message("  Finding nearest neighbors...")
+  }
+
+  t1 <- system.time(tmp <- RANN::nn2(data, data, k+1, searchtype = "standard"))
+  neighborMatrix <- tmp[[1]][, -1]
+  distMatrix <- tmp[[2]][, -1]
+  if (verbose)
+    message("DONE. Run time: ", t1[3], "s\n", " Compute jaccard coefficient between nearest-neighbor sets ..." )
+
+  t2 <- system.time(links <- jaccard_coeff(neighborMatrix, weight))
+
+  if (verbose)
+    message("DONE. Run time:", t2[3], "s\n", " Build undirected graph from the weighted links ...")
+
+  links <- links[links[, 1] > 0,]
+  relations <- as.data.frame(links)
+  colnames(relations) <- c("from", "to", "weight")
+
+  relations$from <- cell_names[relations$from]
+  relations$to <- cell_names[relations$to]
+
+  t3 <- system.time(g <- igraph::graph.data.frame(relations, directed = FALSE))
+
+  if (verbose)
+    message("DONE ~", t3[3], "s\n")
+
+  return(list(g=g, distMatrix=distMatrix, relations=relations))
+}
+
+
 louvain_clustering <- function(data,
                                pd,
                                k = 20,
@@ -172,46 +230,10 @@ louvain_clustering <- function(data,
   if(!identical(cell_names, row.names(pd)))
     stop("Phenotype and row name from the data doesn't match")
 
-  if (is.data.frame(data))
-    data <- as.matrix(data)
-  if (!is.matrix(data))
-    stop("Wrong input data, should be a data frame of matrix!")
-  if (k < 1) {
-    stop("k must be a positive integer!")
-  } else if (k > nrow(data) - 2) {
-    k <- nrow(data) - 2
-    warning(paste("RANN counts the point itself, k must be smaller than\nthe",
-                  "total number of points - 1 (all other points) - 1",
-                  "(itself)!"))
-  }
-  if (verbose) {
-    message("Run kNN based graph clustering starts:", "\n",
-            "  -Input data of ", nrow(data), " rows and ", ncol(data),
-            " columns", "\n", "  -k is set to ", k)
-    message("  Finding nearest neighbors...")
-  }
+  graph_result <- cluster_cells_make_graph(data, weight, cell_names, k, verbose)
 
-  t1 <- system.time(tmp <- RANN::nn2(data, data, k +
-                                       1, searchtype = "standard"))
-  neighborMatrix <- tmp[[1]][, -1]
-  distMatrix <- tmp[[2]][, -1]
-  if (verbose)
-    message("DONE. Run time: ", t1[3], "s\n", " Compute jaccard coefficient between nearest-neighbor sets ..." )
-
-  t2 <- system.time(links <- jaccard_coeff(neighborMatrix,
-                                           weight))
-  if (verbose)
-    message("DONE. Run time:", t2[3], "s\n", " Build undirected graph from the weighted links ...")
-
-  links <- links[links[, 1] > 0, ]
-  relations <- as.data.frame(links)
-  colnames(relations) <- c("from", "to", "weight")
-
-  relations$from <- cell_names[relations$from]
-  relations$to <- cell_names[relations$to]
-  t3 <- system.time(g <- igraph::graph.data.frame(relations, directed = FALSE))
-  if (verbose)
-    message("DONE ~", t3[3], "s\n Run louvain clustering on the graph ...\n")
+  if(verbose)
+    message("  Run louvain clustering ...")
 
   t_start <- Sys.time()
   Qp <- -1
@@ -227,7 +249,7 @@ louvain_clustering <- function(data,
       cat("Running louvain iteration ", iter, "...\n")
     }
 
-    Q <- igraph::cluster_louvain(g)
+    Q <- igraph::cluster_louvain(graph_result[['g']])
 
     if (is.null(optim_res)) {
       Qp <- max(Q$modularity)
@@ -252,7 +274,7 @@ louvain_clustering <- function(data,
         length(unique(igraph::membership(optim_res))), "\n")
   }
 
-  if(igraph::vcount(g) < 3000) {
+  if(igraph::vcount(graph_result[['g']]) < 3000) {
     coord <- NULL
     edge_links <- NULL
   } else {
@@ -260,9 +282,13 @@ louvain_clustering <- function(data,
     edge_links <- NULL
   }
 
-  igraph::V(g)$names <- as.character(igraph::V(g))
-  return(list(g = g, relations = relations, distMatrix = distMatrix,
-              coord = coord, edge_links = edge_links, optim_res = optim_res))
+  igraph::V(graph_result[['g']])$names <- as.character(igraph::V(graph_result[['g']]))
+  return(list(g=graph_result[['g']],
+              relations=graph_result[['relations']],
+              distMatrix=graph_result[['distMatrix']],
+              coord = coord,
+              edge_links=edge_links,
+              optim_res=optim_res))
 }
 
 
@@ -309,49 +335,8 @@ leiden_clustering <- function(data,
   cell_names <- row.names(pd)
   if(!identical(cell_names, row.names(pd)))
     stop("Phenotype and row name from the data don't match")
-  if (is.data.frame(data))
-    data <- as.matrix(data)
-  if (!is.matrix(data))
-    stop("Wrong input data, should be a data frame of matrix!")
-  if (k < 1) {
-    stop("k must be a positive integer!")
-  } else if (k > nrow(data) - 2) {
-    k <- nrow(data) - 2
-    warning(paste("RANN counts the point itself, k must be smaller than\nthe",
-                  "total number of points - 1 (all other points) - 1",
-                  "(itself)!"))
-  }
 
-  # Start processing.
-  if (verbose) {
-    message("Run kNN based graph clustering starts:", "\n",
-            "  -Input data of ", nrow(data), " rows and ", ncol(data),
-            " columns", "\n", "  -k is set to ", k)
-    message("  Finding nearest neighbors...")
-  }
-  t1 <- system.time(tmp <- RANN::nn2(data, data, k + 1, searchtype = "standard"))
-  neighborMatrix <- tmp[[1]][, -1]
-  distMatrix <- tmp[[2]][, -1]
-  if (verbose)
-    message("    DONE. Run time: ", t1[3], "s")
-
-  if(verbose)
-    message("  Compute jaccard coefficient between nearest-neighbor sets ...")
-  t2 <- system.time(links <- jaccard_coeff(neighborMatrix,
-                                           weight))
-  if (verbose)
-    message("    DONE. Run time: ", t2[3], "s")
-
-  if(verbose)
-    message("  Build undirected graph from the weighted links ...")
-  links <- links[links[, 1] > 0, ]
-  relations <- as.data.frame(links)
-  colnames(relations) <- c("from", "to", "weight")
-  relations$from <- cell_names[relations$from]
-  relations$to <- cell_names[relations$to]
-  t3 <- system.time(g <- igraph::graph.data.frame(relations, directed = FALSE))
-  if (verbose)
-    message("    DONE. Run time: ", t3[3], "s")
+  graph_result <- cluster_cells_make_graph(data, weight, cell_names, k, verbose)
 
   if(verbose)
     message("  Run leiden clustering ...")
@@ -375,7 +360,7 @@ leiden_clustering <- function(data,
   # so scan parameter range, if given.
   for(i in 1:length(resolution_parameter)) {
     cur_resolution_parameter <- resolution_parameter[i]
-    cluster_result <- leidenbase::leiden_find_partition( g,
+    cluster_result <- leidenbase::leiden_find_partition( graph_result[['g']],
                                                          partition_type = partition_type,
                                                          initial_membership = initial_membership,
                                                          edge_weights = edge_weights,
@@ -446,7 +431,7 @@ leiden_clustering <- function(data,
             max(best_result[['membership']]))
   }
 
-  if(igraph::vcount(g) < 3000) {
+  if(igraph::vcount(graph_result[['g']]) < 3000) {
     coord <- NULL
     edge_links <- NULL
   } else {
@@ -454,13 +439,17 @@ leiden_clustering <- function(data,
     edge_links <- NULL
   }
 
-  igraph::V(g)$names <- as.character(igraph::V(g))
+  igraph::V(graph_result[['g']])$names <- as.character(igraph::V(graph_result[['g']]))
   out_result <- list(membership = best_result[['membership']],
                      modularity = best_result[['modularity']] )
   names(out_result$membership) = cell_names
 
-  return(list(g = g, relations = relations, distMatrix = distMatrix,
-              coord = coord, edge_links = edge_links, optim_res = out_result))
+  return(list(g=graph_result[['g']],
+              relations=graph_result[['relations']],
+              distMatrix=graph_result[['distMatrix']],
+              coord=coord,
+              edge_links=edge_links,
+              optim_res=out_result))
 }
 
 
@@ -499,3 +488,5 @@ compute_partitions <- function(g,
 
   list(cluster_g = cluster_g, num_links = num_links, cluster_mat = cluster_mat)
 }
+
+
