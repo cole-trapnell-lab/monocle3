@@ -30,6 +30,11 @@
 #'  For correcting continuous effects, use residual_model_formula_str.
 #'  Default is NULL.
 #' @param alignment_k The value of k used in mutual nearest neighbor alignment
+#' @param build_nn_index logical When this argument is set to TRUE,
+#'   align_cds builds the Annoy nearest neighbor index from the
+#'   aligned reduced matrix for later use. Default is FALSE.
+#' @param nn_metric a string specifying the metric used by Annoy, currently
+#'   "cosine", "euclidean", "manhattan", or "hamming". Default is "cosine".
 #' @param verbose Whether to emit verbose output during dimensionality
 #'   reduction
 #' @param ... additional arguments to pass to limma::lmFit if
@@ -41,6 +46,8 @@ align_cds <- function(cds,
                       alignment_group=NULL,
                       alignment_k=20,
                       residual_model_formula_str=NULL,
+                      build_nn_index=FALSE,
+                      nn_metric = c("cosine", "euclidean", "manhattan", "hamming"),
                       verbose=FALSE,
                       ...){
   assertthat::assert_that(
@@ -58,8 +65,15 @@ align_cds <- function(cds,
                                       "preprocess_method = '",
                                       preprocess_method,
                                       "' before calling align_cds."))
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(nn_metric) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "nn_metric must be one of 'cosine', 'euclidean', 'manhattan', or 'hamming'")
+  nn_metric <- match.arg(nn_metric)
 
-    if (!is.null(residual_model_formula_str)) {
+  set.seed(2016)
+
+  if (!is.null(residual_model_formula_str)) {
     if (verbose) message("Removing residual effects")
     X.model_mat <- Matrix::sparse.model.matrix(
       stats::as.formula(residual_model_formula_str),
@@ -71,7 +85,7 @@ align_cds <- function(cds,
     beta[is.na(beta)] <- 0
     preproc_res <- Matrix::t(as.matrix(Matrix::t(preproc_res)) -
                                beta %*% Matrix::t(X.model_mat[, -1]))
-    cds@preprocess_aux$beta = beta
+    cds@preprocess_aux[[preprocess_method]][['beta']] = beta
   }
 
   if(!is.null(alignment_group)) {
@@ -88,6 +102,29 @@ align_cds <- function(cds,
     cds <- add_citation(cds, "MNN_correct")
   }
   reducedDims(cds)[["Aligned"]] <- as.matrix(preproc_res)
+
+  #
+  # Notes:
+  #   o  the functions save_transform_models/load_transform_models
+  #      expect that the preprocess_aux slot consists of a SimpleList
+  #      that stores information about methods with the elements
+  #        preprocess_aux[[method]][['model']] for the transform elements
+  #        preprocess_aux[[method]][['nn_index']] for the annoy index
+  #      and depends on the elements within model and nn_index.
+  #
+  cds@preprocess_aux[['Aligned']] <- SimpleList()
+  cds@preprocess_aux[['Aligned']][['model']] <- SimpleList()
+  cds@preprocess_aux[['Aligned']][['model']][['preprocess_method']] <- preprocess_method
+  cds@preprocess_aux[['Aligned']][['model']][['alignment_group']] <- alignment_group
+  cds@preprocess_aux[['Aligned']][['model']][['alignment_k']] <- alignment_k
+  cds@preprocess_aux[['Aligned']][['model']][['residual_model_formula_str']] <- residual_model_formula_str
+  if( build_nn_index ) {
+      cds@preprocess_aux[['Aligned']][['nn_index']] <- SimpleList()
+      annoy_index <- uwot:::annoy_build(X = reducedDims(cds)[["Aligned"]], metric = nn_metric)
+      cds@preprocess_aux[['Aligned']][['nn_index']][['annoy_index']] <- annoy_index
+      cds@preprocess_aux[['Aligned']][['nn_index']][['annoy_metric']] <- nn_metric
+      cds@preprocess_aux[['Aligned']][['nn_index']][['annoy_ndim']] <- ncol(preproc_res)
+  }
 
   cds
 }
