@@ -1043,3 +1043,285 @@ get_citations <- function(cds) {
   metadata(cds)$citations
 }
 
+
+#' Apply a preprocess transform model to a cell_data_set.
+#'
+#' Applies a previously calculated preprocess transform
+#' model to a new count matrix. For more information read
+#' the help information for save_transform_models.
+#'
+#' @param cds A cell_data_set to be transformed.
+#' @param method A previously loaded transform model that
+#'   is used to reduce the dimensions of the count matrix
+#'   in cds.
+#' @param block_size A numeric value for the DelayedArray
+#'   block size used only in this function. Default is
+#'   NULL, which does not affect the current block size.
+#' @return A cell_data_set with a preprocess reduced count
+#'   matrix.
+#'
+#' @export
+#'
+preprocess_transform <- function(cds, method=c('PCA'), block_size=NULL) {
+  #
+  # Need to add processing for LSI. TF-IDF transform etc.
+  #
+  assertthat::assert_that(class(cds) == 'cell_data_set',
+                          msg=paste('cds parameter is not a cell_data_set'))
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(method) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "method must be 'PCA'")
+
+  method <- match.arg(method)
+
+  assertthat::assert_that(!is.null(size_factors(cds)),
+             msg = paste("You must call estimate_size_factors before calling",
+                         "preprocess_cds."))
+  assertthat::assert_that(sum(is.na(size_factors(cds))) == 0,
+                          msg=paste("One or more cells has a size factor of",
+                                    "NA."))
+  assertthat::assert_that(!is.null(cds@preprocess_aux[[method]]),
+                          msg=paste0("Method '", method, "' is not in the model",
+                                    " object."))
+
+  if(!is.null(block_size)) {
+    block_size0 <- DelayedArray::getAutoBlockSize()
+    DelayedArray::setAutoBlockSize(block_size)
+  }
+
+  set.seed(2016)
+  norm_method <- cds@preprocess_aux[[method]][['model']][['norm_method']]
+  pseudo_count <- cds@preprocess_aux[[method]][['model']][['pseudo_count']]
+  rotation_matrix <- cds@preprocess_aux[[method]][['model']]$svd_v
+  vcenter <- cds@preprocess_aux[[method]][['model']]$svd_center
+  vscale <- cds@preprocess_aux[[method]][['model']]$svd_scale
+
+  FM <- normalize_expr_data(cds, norm_method=norm_method, pseudo_count=pseudo_count)
+  if (nrow(FM) == 0) {
+    stop("Error: all rows have standard deviation zero")
+  }
+
+  # Don't select matrix rows by use_genes because intersect() does
+  # it implicitly through the rotation matrix.
+
+  fm_rowsums = Matrix::rowSums(FM)
+  FM <- FM[is.finite(fm_rowsums) & fm_rowsums != 0, ]
+  
+  # Thank you Maddy.
+  intersect_genes <- intersect(rownames(rotation_matrix), rownames(FM))
+  intersect_indices <- match(intersect_genes, rownames(rotation_matrix))
+
+  # [intersect_genes,] orders FM rows by intersect_genes
+  FM <- FM[intersect_genes,]
+  
+  xt <- Matrix::t(FM)
+  xtda <- DelayedArray::DelayedArray(xt)
+
+  vcenter <- vcenter[intersect_indices]
+  vscale <- vscale[intersect_indices]
+
+  xtdasc <- t(xtda) - vcenter
+  xtdasc <- t(xtdasc / vscale)
+
+  irlba_res <- list()
+  irlba_res$x <- xtdasc %*% rotation_matrix[intersect_indices,]
+  irlba_res$x <- as.matrix(irlba_res$x)
+  class(irlba_res) <- c('irlba_prcomp', 'prcomp')
+
+  # 'reference' gene names are in the cds@preproc
+  reducedDims(cds)[[method]] <- irlba_res$x
+
+  if(!is.null(block_size)) {
+    DelayedArray::setAutoBlockSize(block_size0)
+  }
+
+  cds
+}
+
+
+#' Apply an align_cds transform model to a cell_data_set.
+#'
+#' Applies a previously calculated align_cds transform model
+#' to a new preprocess transformed matrix. For more
+#' information read the help information for
+#' save_transform_models.
+#'
+#' Note: this function is a place holder. It does not
+#' map the transformed count matrix to aligned space
+#' at this time because I don't know how to do so.
+#'
+#' @param cds A cell_data_set to be transformed.
+#' @param method A previously loaded transform model that
+#'   is used to reduce the dimensions of the preprocessed
+#'   count matrix in cds.
+#'
+#' @return A cell_data_set with an align_cds transformed
+#'   reduced count matrix.
+#'
+#' @export
+#'
+align_transform <- function(cds, method=c('Aligned')) {
+  #
+  # Need to add transformation code.
+  #
+  assertthat::assert_that(class(cds) == 'cell_data_set',
+                          msg=paste('cds parameter is not a cell_data_set'))
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(method) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "method must be 'Aligned'")
+
+  method <- match.arg(method)
+
+  preprocess_method <- cds@preprocess_aux[['Aligned']][['model']][['preprocess_method']]
+  preproc_res <- reducedDims(cds)[[preprocess_method]]
+  assertthat::assert_that(!is.null(preproc_res),
+                          msg=paste("Preprocessing for '",
+                                    preprocess_method,
+                                    "' does not exist.",
+                                    " Please preprocess the matrix before",
+                                    " calling align_transform using preprocess_transform."))
+
+  stop('This function is a place holder. It does not map the transformed count matrix to aligned space at this time because I don\'t know how to make it do so.')
+
+  set.seed(2016)
+  alignment_group <- cds@preprocess_aux[['Aligned']][['model']][['alignment_group']]
+  alignment_k <- cds@preprocess_aux[['Aligned']][['model']][['alignment_k']]
+  residual_model_formula_str <- cds@preprocess_aux[['Aligned']][['model']][['residual_model_formula_str']]
+  nn_metric <- cds@preprocess_aux[['Aligned']][['nn_index']][['annoy_metric']]
+
+  X.model_mat <- Matrix::sparse.model.matrix( stats::as.formula(residual_model_formula_str), data = colData(cds), drop.unused.levels = TRUE)
+  fit <- limma::lmFit(Matrix::t(preproc_res), X.model_mat)
+  beta <- fit$coefficients[, -1, drop = FALSE]
+  cds@preprocess_aux[[preprocess_method]][['beta']] <- beta
+  preproc_res <- Matrix::t(as.matrix(Matrix::t(preproc_res)) - beta %*% Matrix::t(X.model_mat[, -1]))
+  corrected_PCA = batchelor::reducedMNN(as.matrix(preproc_res), batch=colData(cds)[,alignment_group], k=alignment_k)
+  preproc_res = corrected_PCA$corrected
+  reducedDims(cds)[['Aligned']] <- as.matrix(preproc_res)
+
+  cds
+}
+
+
+#' Apply a reduce_transform transform model to a cell_data_set.
+#'
+#' Applies a previously calculated reduce_dimension transform
+#' model to a new preprocess transformed matrix. For more
+#' information read the help information for
+#' save_transform_models.
+#'
+#' @param cds A cell_data_set to be transformed.
+#' @param preprocess_method A previously loaded preprocess method.
+#'   The default is NULL, which uses the preprocess_method that
+#'   was used when the reduce_dimension model was built.
+#' @param method A previously loaded reduce_dimension transform
+#'   model that is used to reduce the dimensions of the
+#'   preprocessed count matrix in cds.
+#'
+#' @return A cell_data_set with a reduce_dimension transformed
+#'   reduced count matrix.
+#'
+#' @export
+#'
+reduce_dimension_transform <- function(cds, preprocess_method=NULL, method=c('UMAP')) {
+  assertthat::assert_that(class(cds) == 'cell_data_set',
+                          msg=paste('cds parameter is not a cell_data_set'))
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(method) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "method must be 'UMAP'")
+
+  if(is.null(preprocess_method)) {
+    preprocess_method <- cds@reduce_dim_aux[[method]][['model']][['umap_preprocess_method']]
+  } else
+  if(!is.null(preprocess_method) && !(preprocess_method %in% c('PCA', 'LSI', 'Aligned'))) {
+    stop('Preprocess_method must be one of \'PCA\', \'LSI\', or \'Aligned\'.')
+  }
+
+  if(is.null(cds@preprocess_aux[[preprocess_method]])) {
+    stop('There is no transform model for preprocess_method \'', preprocess_method, '\'.')
+  }
+
+  method <- match.arg(method)
+
+  preproc_res <- reducedDims(cds)[[preprocess_method]]
+  assertthat::assert_that(!is.null(preproc_res),
+                          msg=paste("Preprocessing for '",
+                                    preprocess_method,
+                                    "' does not exist.",
+                                    " Please preprocess the matrix before",
+                                    " calling reduce_dimension_transform using preprocess_transform",
+                                    " or align_transform."))
+
+  set.seed(2016)
+  umap_model <- cds@reduce_dim_aux[[method]][['model']][['umap_model']]
+  reducedDims(cds)[[method]] <- uwot:::umap_transform(X=preproc_res, model=umap_model, init='weighted', n_sgd_threads=1)
+
+  cds
+}
+
+
+#' Search Annoy index for cells near the cells in cds.
+#'
+#' Search the Annoy nearest neighbor index for cells near cells in cds.
+#'
+#' param cds A cell_data_set.
+#' param stage The stage in which the Annoy index was made.
+#' param method The method for which the Annoy index was made. This
+#'   can be method 'PCA' or 'LSI' for stage 'preprocess', method 'Aligned'
+#'   for stage 'Align', and method 'UMAP' for stage 'reduce_dimension'.
+#' param n An integer for the number of nearest neighbors to return for
+#'   each cell.
+#' param search_k An integer used to balance accuracy and speed. Larger
+#'   values give more accurate results.
+#' param ... Parameters to pass through to annoy_search.
+#'
+#' export
+#'
+search_nn_index <- function(cds, stage=c('PCA', 'align', 'reduce_dimension'), method=c('PCA', 'LSI', 'Aligned', 'UMAP'), n=5, search_k=100 * n, ...) {
+  assertthat::assert_that(class(cds) == 'cell_data_set',
+                          msg=paste('cds parameter is not a cell_data_set'))
+
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(stage) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "stage must be 'preprocess', 'align', or 'reduce_dimension'")
+
+  stage <- match.args(stage)
+  method <- match.args(method)
+
+  if(stage=='preprocess' ) {
+    if(!(method %in% c('PCA', 'LSI'))) {
+      stop('Stage \'preprocess\' allows methods \'PCA\' and \'LSI\' but not \'', method)
+    }
+    stage_aux <- cds@preprocess_aux
+  } else
+  if(stage == 'align') {
+    if(!(method %in% c('Aligned'))) {
+      stop('Stage \'align\' allows method \'aligned\' but not \'', method)
+    }
+    stage_aux <- cds@preprocess_aux
+  } else
+  if(stage == 'reduce_dimension') {
+    if(!(method %in% c('UMAP'))) {
+      stop('Stage \'reduce_dimension\' allows method \'UMAP\' but not \'', method)
+    }
+    stage_aux <- cds@reduced_dim_aux
+  } else {
+    stop('Unrecognized stage \'', stage, '\'')
+  }
+
+  assertthat::assert_that(!is.null(reducedDim(cds, method)),
+    msg = paste0("The matrix for ", method,
+                " does not exist. Please preprocess the",
+                " cds as required."))
+
+  query_matrix <- reducedDim(cds, method)
+
+  # depends on uwot version
+  ann_index <- stage_aux[[method]][['nn_index']][['annoy_index']][['ann']]
+  ann_res <- uwot::annoy_search(X=query_matrix, ann=ann_index, k=n, search_k=search_k, ...)
+  ann_res
+}
+
