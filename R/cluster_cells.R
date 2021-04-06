@@ -474,7 +474,6 @@ compute_partitions <- function(g,
     igraph::as_adjacency_matrix(g) %*% membership_matrix
   diag(num_links) <- 0
   louvain_modules <- levels(cell_membership)
-
   edges_per_module <- Matrix::rowSums(num_links)
   total_edges <- sum(num_links)
 

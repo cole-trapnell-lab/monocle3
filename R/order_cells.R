@@ -28,7 +28,9 @@ order_cells <- function(cds,
                         reduction_method = "UMAP",
                         root_pr_nodes=NULL,
                         root_cells=NULL,
-                        verbose = FALSE){
+                        verbose = FALSE,
+                        subset_indices = NULL,
+                        centers = NULL){
 
   assertthat::assert_that(methods::is(cds, "cell_data_set"))
   assertthat::assert_that(assertthat::are_equal("UMAP", reduction_method),
@@ -100,7 +102,7 @@ order_cells <- function(cds,
   cds@principal_graph_aux[[reduction_method]]$root_pr_nodes <- root_pr_nodes
 
   cc_ordering <- extract_general_graph_ordering(cds, root_pr_nodes, verbose,
-                                                reduction_method)
+                                                reduction_method, subset_indices, centers)
   cds@principal_graph_aux[[reduction_method]]$pseudotime <-
     cc_ordering[row.names(colData(cds)), ]$pseudo_time
   names(cds@principal_graph_aux[[reduction_method]]$pseudotime) <-
@@ -112,7 +114,10 @@ order_cells <- function(cds,
 extract_general_graph_ordering <- function(cds,
                                            root_pr_nodes,
                                            verbose=T,
-                                           reduction_method) {
+                                           reduction_method,
+                                           subset_indices,
+                                           centers = NULL) {
+  browser()
   Z <- t(reducedDims(cds)[[reduction_method]])
   Y <- cds@principal_graph_aux[[reduction_method]]$dp_mst
   pr_graph <- principal_graph(cds)[[reduction_method]]
@@ -133,8 +138,17 @@ extract_general_graph_ordering <- function(cds,
 
   cell_wise_graph <-
     cds@principal_graph_aux[[reduction_method]]$pr_graph_cell_proj_tree
+
+
+  if (!is.null(subset_indices)) {
+    selected_vertex <- colnames(cds)[subset_indices]
+    selected_vertex <- c(selected_vertex, centers)
+    selected_vertex_id <- which(igraph::V(cell_wise_graph)$name %in% selected_vertex)
+    cell_wise_graph <- igraph::induced_subgraph(cell_wise_graph, selected_vertex_id)
+  }
+
   cell_wise_distances <- igraph::distances(cell_wise_graph,
-                                           v = closest_vertex_id)
+                                           v = root_pr_nodes)
 
   if (length(closest_vertex_id) > 1){
     node_names <- colnames(cell_wise_distances)

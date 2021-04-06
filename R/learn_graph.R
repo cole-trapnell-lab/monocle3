@@ -211,6 +211,7 @@ multi_component_RGE <- function(cds,
                                 geodesic_distance_ratio = 1/3,
                                 prune_graph = TRUE,
                                 minimal_branch_len = minimal_branch_len,
+                                cluster_method = 'knn',
                                 verbose = FALSE) {
   X <- t(irlba_pca_res)
 
@@ -255,15 +256,41 @@ multi_component_RGE <- function(cds,
     centers <- centers + matrix(stats::rnorm(length(centers), sd = 1e-10),
                                 nrow = nrow(centers)) # add random noise
 
-    kmean_res <- tryCatch({
+    kmean_res
+    
+    tmp <- tryCatch({
       stats::kmeans(t(X_subset), centers=centers, iter.max = 100)
     }, error = function(err) {
       stats::kmeans(t(X_subset), centers = curr_ncenter, iter.max = 100)
     })
 
-    if (kmean_res$ifault != 0){
-      message(paste("Warning: kmeans returned ifault =", kmean_res$ifault))
-    }
+
+    cluster_result <- fastcluster::hclust(dist(t(X_subset)), method = "ward.D")
+    browser()
+    sub_grp <- cutree(cluster_result, k = curr_ncenter)
+    
+    
+
+    cluster_info <- split(t(X_subset), sub_grp)
+    tmp <- lapply(cluster_info, matrix, ncol = 3)
+    kmean_per_cluster <- lapply(tmp, function(x) {
+      stats::kmeans(x, centers = 2, iter.max = 100)
+    })
+    cluster_index <- lapply(kmean_per_cluster, FUN = function(x) { x$cluster })
+    sub_grp <- (sub_grp - 1) * 2 + unlist(cluster_index)
+    
+    cluster_info <- split(t(X_subset), sub_grp)
+    tmp <- lapply(cluster_info, matrix, ncol = 3)
+    tmp <- lapply(tmp, function(a) {apply(a, MARGIN = 2,  FUN= function(x) { sqrt(mean(x ^ 2))})} )
+    cluster_info <- NULL
+    cluster_info$centers <- matrix(unlist(tmp), byrow=TRUE, nrow=length(tmp))
+    cluster_info$cluster <- sub_grp
+    kmean_res <- cluster_info
+    
+
+    # if (kmean_res$ifault != 0){
+    #   message(paste("Warning: kmeans returned ifault =", kmean_res$ifault))
+    # }
     nearest_center <- find_nearest_vertex(t(kmean_res$centers), X_subset,
                                           process_targets_in_blocks=TRUE)
     medioids <- X_subset[, unique(nearest_center)]
@@ -738,6 +765,12 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE,
         # point of the edge
         added_rows <- which(is.na(data_df$new_source) &
                               is.na(data_df$new_target))
+
+        tmp <- data_df %>% dplyr::group_by(group) %>% dplyr::slice(c(dplyr::n()))
+        tmp$new_source <- tmp$new_target
+        tmp$new_target <- tmp$target
+        data_df <- rbind(data_df, tmp)
+
         data_df <- as.data.frame(data_df, stringsAsFactors = F)
         data_df <- as.data.frame(as.matrix(data_df), stringsAsFactors = F)
         data_df[added_rows, c('new_source', 'new_target')] <-
