@@ -184,7 +184,9 @@ aggregate_gene_expression <- function(cds,
                                       scale_agg_values=TRUE,
                                       max_agg_value=3,
                                       min_agg_value=-3,
-                                      exclude.na=TRUE){
+                                      exclude.na=TRUE,
+                                      gene_agg_fun="sum",
+                                      cell_agg_fun="mean"){
   if (is.null(gene_group_df) && is.null(cell_group_df))
     stop("Error: one of either gene_group_df or cell_group_df must not be NULL")
   agg_mat <- normalized_counts(cds, norm_method=norm_method,
@@ -211,14 +213,9 @@ aggregate_gene_expression <- function(cds,
 
     # FIXME: this should allow genes to be part of multiple groups. group_by
     # over the second column with a call to colSum should do it.
-    agg_mat = as.matrix(my.aggregate.Matrix(agg_mat[gene_group_df[,1],],
+    agg_mat = my.aggregate.Matrix(agg_mat[gene_group_df[,1],],
                                             as.factor(gene_group_df[,2]),
-                                            fun="sum"))
-	if (scale_agg_values){
-      agg_mat <- t(scale(t(agg_mat)))
-      agg_mat[agg_mat < min_agg_value] <- min_agg_value
-      agg_mat[agg_mat > max_agg_value] <- max_agg_value
-    }
+                                            fun=gene_agg_fun)
   }
 
   if (is.null(cell_group_df) == FALSE){
@@ -229,8 +226,15 @@ aggregate_gene_expression <- function(cds,
     agg_mat <- agg_mat[,cell_group_df[,1]]
     agg_mat <- my.aggregate.Matrix(Matrix::t(agg_mat),
                                   as.factor(cell_group_df[,2]),
-                                  fun="mean")
+                                  fun=cell_agg_fun)
     agg_mat <- Matrix::t(agg_mat)
+  }
+
+  if (scale_agg_values){
+    agg_mat = as.matrix(agg_mat)
+    agg_mat <- t(scale(t(agg_mat)))
+    agg_mat[agg_mat < min_agg_value] <- min_agg_value
+    agg_mat[agg_mat > max_agg_value] <- max_agg_value
   }
 
   if (exclude.na){
