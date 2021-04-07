@@ -66,6 +66,7 @@ before_script:
 script:
   - |
     R CMD build .
+    if [ ! -f "monocle3*tar.gz" ]; then exit 1; fi
     travis_wait 20 R CMD check monocle3*tar.gz
 
 after_failure:
