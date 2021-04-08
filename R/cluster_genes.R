@@ -233,6 +233,7 @@ aggregate_gene_expression <- function(cds,
   if (scale_agg_values){
     agg_mat = as.matrix(agg_mat)
     agg_mat <- t(scale(t(agg_mat)))
+    agg_mat[is.nan(agg_mat)] = 0
     agg_mat[agg_mat < min_agg_value] <- min_agg_value
     agg_mat[agg_mat > max_agg_value] <- max_agg_value
   }

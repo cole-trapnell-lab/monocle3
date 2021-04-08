@@ -73,11 +73,13 @@ top_markers <- function(cds,
 
   cluster_binary_exprs = as.matrix(aggregate_gene_expression(cds,
                                                              cell_group_df=cell_group_df,
-                                                             norm_method="binary"))
+                                                             norm_method="binary",
+                                                             scale_agg_values=FALSE))
 
   cluster_mean_exprs = as.matrix(aggregate_gene_expression(cds,
                                                            cell_group_df=cell_group_df,
-                                                           norm_method="size_only"))
+                                                           norm_method="size_only",
+                                                           scale_agg_values=FALSE))
 
   if (verbose)
     message("Computing Jensen-Shannon specificities")
@@ -198,7 +200,7 @@ top_markers <- function(cds,
                                                         pseudo_R2,
                                                         lrtest_p_value,
                                                         lrtest_q_value)
-    
+
     marker_test_res = marker_test_res %>% dplyr::rename(gene_id=rowname, marker_test_p_value=lrtest_p_value,  marker_test_q_value=lrtest_q_value)
     marker_test_res$pseudo_R2 = unlist(marker_test_res$pseudo_R2)
     marker_test_res$marker_test_p_value = unlist(marker_test_res$marker_test_p_value)
