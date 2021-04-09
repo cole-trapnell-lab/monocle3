@@ -7,6 +7,7 @@
 cluster_cells(
   cds,
   reduction_method = c("UMAP", "tSNE", "PCA", "LSI", "Aligned"),
+  nn_method = c("nn2", "annoy"),
   k = 20,
   cluster_method = c("leiden", "louvain"),
   num_iter = 2,

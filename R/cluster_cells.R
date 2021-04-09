@@ -123,12 +123,12 @@ cluster_cells <- function(cds,
 
   if(cluster_method=='louvain') {
     cluster_result <- louvain_clustering(data = reduced_dim_res,
-                                         nn_method,
                                          pd = colData(cds),
                                          k = k,
                                          weight = weight,
                                          num_iter = num_iter,
                                          random_seed = random_seed,
+                                         nn_method,
                                          verbose = verbose, ...)
     if (length(unique(cluster_result$optim_res$membership)) > 1) {
       cluster_graph_res <- compute_partitions(cluster_result$g,
@@ -148,13 +148,13 @@ cluster_cells <- function(cds,
   } else if(cluster_method=='leiden'){
     cds <- add_citation(cds, "leiden")
     cluster_result <- leiden_clustering(data = reduced_dim_res,
-                                        nn_method,
                                         pd = colData(cds),
                                         k = k,
                                         weight = weight,
                                         num_iter = num_iter,
                                         resolution_parameter = resolution,
                                         random_seed = random_seed,
+                                        nn_method,
                                         verbose = verbose, ...)
     if(length(unique(cluster_result$optim_res$membership)) > 1) {
       cluster_graph_res <- compute_partitions(cluster_result$g,
@@ -178,7 +178,7 @@ cluster_cells <- function(cds,
 }
 
 
-cluster_cells_make_graph <- function(data, nn_method=c('nn2', 'annoy'), weight, cell_names, k, verbose) {
+cluster_cells_make_graph <- function(data, weight, cell_names, k, nn_method=c('nn2', 'annoy'), verbose) {
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(nn_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
@@ -243,19 +243,19 @@ cluster_cells_make_graph <- function(data, nn_method=c('nn2', 'annoy'), weight, 
 
 
 louvain_clustering <- function(data,
-                               nn_method,
                                pd,
                                k = 20,
                                weight = F,
                                louvain_iter = 1,
                                random_seed = 0L,
+                               nn_method,
                                verbose = F, ...) {
   extra_arguments <- list(...)
   cell_names <- row.names(pd)
   if(!identical(cell_names, row.names(pd)))
     stop("Phenotype and row name from the data doesn't match")
 
-  graph_result <- cluster_cells_make_graph(data, nn_method, weight, cell_names, k, verbose)
+  graph_result <- cluster_cells_make_graph(data, weight, cell_names, k, nn_method, verbose)
 
   if(verbose)
     message("  Run louvain clustering ...")
@@ -318,13 +318,13 @@ louvain_clustering <- function(data,
 
 
 leiden_clustering <- function(data,
-                              nn_method,
                               pd,
                               k = 20,
                               weight = NULL,
                               num_iter = 2,
                               resolution_parameter = 0.0001,
                               random_seed = NULL,
+                              nn_method,
                               verbose = FALSE, ...) {
   extra_arguments <- list(...)
   if( 'partition_type' %in% names( extra_arguments ) )
@@ -362,7 +362,7 @@ leiden_clustering <- function(data,
   if(!identical(cell_names, row.names(pd)))
     stop("Phenotype and row name from the data don't match")
 
-  graph_result <- cluster_cells_make_graph(data, nn_method, weight, cell_names, k, verbose)
+  graph_result <- cluster_cells_make_graph(data, weight, cell_names, k, nn_method, verbose)
 
   if(verbose)
     message("  Run leiden clustering ...")
