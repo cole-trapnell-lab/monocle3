@@ -116,6 +116,7 @@ find_gene_modules <- function(cds,
                                     num_iter = leiden_iter,
                                     resolution_parameter = resolution,
                                     random_seed = random_seed,
+                                    nn_method = 'nn2',
                                     verbose = verbose, ...)
 
   cluster_graph_res <- compute_partitions(cluster_result$g,

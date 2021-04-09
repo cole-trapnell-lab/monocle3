@@ -65,10 +65,8 @@
 #'   Cell, 2015.
 #' @useDynLib monocle3, .registration = TRUE
 #' @export
-
 cluster_cells <- function(cds,
                           reduction_method = c("UMAP", "tSNE", "PCA", "LSI", "Aligned"),
-                          nn_method = c("nn2", "annoy"),
                           k = 20,
                           cluster_method = c('leiden', 'louvain'),
                           num_iter = 2,
@@ -76,14 +74,13 @@ cluster_cells <- function(cds,
                           weight = FALSE,
                           resolution = NULL,
                           random_seed = NULL,
+                          nn_method = c('nn2', 'annoy'),
                           verbose = F,
                           ...) {
-
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(nn_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
     msg = "nn_method must be one of 'nn2' or 'annoy'")
-
   nn_method <- match.arg(nn_method)
 
   reduction_method <- match.arg(reduction_method)
@@ -128,7 +125,7 @@ cluster_cells <- function(cds,
                                          weight = weight,
                                          num_iter = num_iter,
                                          random_seed = random_seed,
-                                         nn_method,
+                                         nn_method = nn_method,
                                          verbose = verbose, ...)
     if (length(unique(cluster_result$optim_res$membership)) > 1) {
       cluster_graph_res <- compute_partitions(cluster_result$g,
@@ -154,7 +151,7 @@ cluster_cells <- function(cds,
                                         num_iter = num_iter,
                                         resolution_parameter = resolution,
                                         random_seed = random_seed,
-                                        nn_method,
+                                        nn_method = nn_method,
                                         verbose = verbose, ...)
     if(length(unique(cluster_result$optim_res$membership)) > 1) {
       cluster_graph_res <- compute_partitions(cluster_result$g,
@@ -179,6 +176,7 @@ cluster_cells <- function(cds,
 
 
 cluster_cells_make_graph <- function(data, weight, cell_names, k, nn_method=c('nn2', 'annoy'), verbose) {
+
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(nn_method) == "",TRUE, TRUE),
              error = function(e) FALSE),

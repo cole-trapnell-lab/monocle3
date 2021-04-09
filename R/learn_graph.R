@@ -1032,7 +1032,7 @@ connect_tips <- function(pd,
     data <- t(reducedDimS_old[, ])
 
     cluster_result <- louvain_clustering(data, pd[, ], k = k, weight = weight,
-                                      verbose = verbose)
+                                      nn_method = 'nn2', verbose = verbose)
 
     cluster_result$optim_res$membership <- tmp[, 1]
   } else { # use kmean clustering result
@@ -1043,7 +1043,8 @@ connect_tips <- function(pd,
     data <- t(reducedDimS_old[, ]) # raw_data_tip_pc_points
 
     cluster_result <- louvain_clustering(data, pd[row.names(data), ], k = k,
-                                      weight = weight, verbose = verbose)
+                                      weight = weight, nn_method = 'nn2',
+                                      verbose = verbose)
 
     cluster_result$optim_res$membership <- kmean_res$cluster
   }
