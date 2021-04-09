@@ -65,8 +65,6 @@ before_script:
 
 script:
   - |
-    export PKG_TARBALL=$(Rscript -e 'pkg <- devtools::as.package("."); cat(paste0(pkg$package,"_",pkg$version,".tar.gz"))')
-    if [ ! -f "$PKG_TARBALL" ]; then exit 1; fi
     R CMD build .
     travis_wait 20 R CMD check monocle3*tar.gz
 
