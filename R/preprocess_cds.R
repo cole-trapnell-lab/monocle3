@@ -115,6 +115,7 @@ preprocess_cds <- function(cds,
                                      center = scaling, scale. = scaling)
     preproc_res <- irlba_res$x
     row.names(preproc_res) <- colnames(cds)
+    reducedDims(cds)[[method]] <- as.matrix(preproc_res)
 
     irlba_rotation <- irlba_res$rotation
     row.names(irlba_rotation) <- rownames(FM)
@@ -133,11 +134,7 @@ preprocess_cds <- function(cds,
     cds@preprocess_aux[['PCA']][['model']][['prop_var_expl']] <- irlba_res$sdev^2 / sum(irlba_res$sdev^2)
     cds@preprocess_aux[['PCA']][['beta']] <- NULL
     if( build_nn_index ) {
-        cds@preprocess_aux[['PCA']][['nn_index']] <- SimpleList()
-        annoy_index <- uwot:::annoy_build(X = preproc_res, metric = nn_metric)
-        cds@preprocess_aux[['PCA']][['nn_index']][['annoy_index']] <- annoy_index
-        cds@preprocess_aux[['PCA']][['nn_index']][['annoy_metric']] <- nn_metric
-        cds@preprocess_aux[['PCA']][['nn_index']][['annoy_ndim']] <- ncol(preproc_res)
+      cds <- build_annoy_index(cds, 'PCA', nn_metric)
     }
   } else if(method == "LSI") {
 
@@ -148,6 +145,7 @@ preprocess_cds <- function(cds,
 
     preproc_res <- irlba_res$u %*% diag(irlba_res$d)
     row.names(preproc_res) <- colnames(cds)
+    reducedDims(cds)[[method]] <- as.matrix(preproc_res)
 
     irlba_rotation = irlba_res$v
     row.names(irlba_rotation) = rownames(FM)
@@ -163,15 +161,9 @@ preprocess_cds <- function(cds,
     # calculate gene_loadings in cluster_cells.R
     cds@preprocess_aux[['LSI']][['beta']] <- NULL
     if( build_nn_index ) {
-        cds@preprocess_aux[['LSI']][['nn_index']] <- SimpleList()
-        annoy_index <- uwot:::annoy_build(X = preproc_res, metric = nn_metric)
-        cds@preprocess_aux[['LSI']][['nn_index']][['annoy_index']] <- annoy_index
-        cds@preprocess_aux[['LSI']][['nn_index']][['annoy_metric']] <- nn_metric
-        cds@preprocess_aux[['LSI']][['nn_index']][['annoy_ndim']] <- ncol(preproc_res)
+      cds <- build_annoy_index(cds, 'PCA', nn_metric)
     }
   }
-
-  reducedDims(cds)[[method]] <- as.matrix(preproc_res)
 
   cds
 }

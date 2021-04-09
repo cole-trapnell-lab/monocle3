@@ -184,6 +184,13 @@ reduce_dimension <- function(cds,
 
     reducedDims(cds)$tSNE <- tsne_data
 
+    cds@reduce_dim_aux[['tSNE']] <- SimpleList()
+
+    # make nearest neighbor index in tSNE space
+    if( build_nn_index ) {
+      cds <- build_annoy_index(cds, 'tSNE', nn_metric)
+    }
+
   } else if (reduction_method == c("UMAP")) {
     cds <- add_citation(cds, "UMAP")
     if (verbose)
@@ -214,7 +221,6 @@ reduce_dimension <- function(cds,
         #      However, uwot::umap_transform() gives consistent results using
         #      one model from uwot::umap(). So return the result from
         #      uwot::umap_transform().
-        cds@reduce_dim_aux[['UMAP']][['nn_index']] <- SimpleList()
         set.seed(2016)
         umap_model <- umap_res
         umap_res <- uwot::umap_transform(X=as.matrix(preprocess_mat), model=umap_model, n_threads=1)
@@ -227,11 +233,9 @@ reduce_dimension <- function(cds,
         cds@reduce_dim_aux[['UMAP']][['model']][['umap_n_neighbors']] <- umap.n_neighbors
         cds@reduce_dim_aux[['UMAP']][['model']][['umap_fast_sgd']] <- umap.fast_sgd
         cds@reduce_dim_aux[['UMAP']][['model']][['umap_model']] <- umap_model
+
         # make nearest neighbor index in UMAP space
-        annoy_index <- uwot:::annoy_build(X = reducedDims(cds)[['UMAP']], metric=nn_metric)
-        cds@reduce_dim_aux[['UMAP']][['nn_index']][['annoy_index']] <- annoy_index
-        cds@reduce_dim_aux[['UMAP']][['nn_index']][['annoy_metric']] <- nn_metric
-        cds@reduce_dim_aux[['UMAP']][['nn_index']][['annoy_ndim']] <- ncol(reducedDims(cds)[['UMAP']])
+        cds <- build_annoy_index(cds, 'UMAP', nn_metric)
     }
   }
 

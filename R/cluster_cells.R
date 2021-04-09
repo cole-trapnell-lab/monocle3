@@ -68,6 +68,7 @@
 
 cluster_cells <- function(cds,
                           reduction_method = c("UMAP", "tSNE", "PCA", "LSI", "Aligned"),
+                          nn_method = c("nn2", "annoy"),
                           k = 20,
                           cluster_method = c('leiden', 'louvain'),
                           num_iter = 2,
@@ -77,6 +78,13 @@ cluster_cells <- function(cds,
                           random_seed = NULL,
                           verbose = F,
                           ...) {
+
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(nn_method) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "nn_method must be one of 'nn2' or 'annoy'")
+
+  nn_method <- match.arg(nn_method)
 
   reduction_method <- match.arg(reduction_method)
   cluster_method <- match.arg(cluster_method)
@@ -115,6 +123,7 @@ cluster_cells <- function(cds,
 
   if(cluster_method=='louvain') {
     cluster_result <- louvain_clustering(data = reduced_dim_res,
+                                         nn_method,
                                          pd = colData(cds),
                                          k = k,
                                          weight = weight,
@@ -139,6 +148,7 @@ cluster_cells <- function(cds,
   } else if(cluster_method=='leiden'){
     cds <- add_citation(cds, "leiden")
     cluster_result <- leiden_clustering(data = reduced_dim_res,
+                                        nn_method,
                                         pd = colData(cds),
                                         k = k,
                                         weight = weight,
@@ -168,7 +178,14 @@ cluster_cells <- function(cds,
 }
 
 
-cluster_cells_make_graph <- function(data, weight, cell_names, k, verbose) {
+cluster_cells_make_graph <- function(data, nn_method=c('nn2', 'annoy'), weight, cell_names, k, verbose) {
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(nn_method) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "nn_method must be one of 'nn2' or 'annoy'")
+
+  nn_method <- match.arg(nn_method)
+
   if (is.data.frame(data))
     data <- as.matrix(data)
   if (!is.matrix(data))
@@ -191,9 +208,16 @@ cluster_cells_make_graph <- function(data, weight, cell_names, k, verbose) {
     message("  Finding nearest neighbors...")
   }
 
-  t1 <- system.time(tmp <- RANN::nn2(data, data, k+1, searchtype = "standard"))
+  if(nn_method == 'nn2') {
+    t1 <- system.time(tmp <- RANN::nn2(data, data, k+1, searchtype = "standard"))
+  } else
+  if(nn_method == 'annoy') {
+    t1 <- system.time(tmp <- RANN::nn2(data, data, k+1, searchtype = "standard"))
+  }
+
   neighborMatrix <- tmp[[1]][, -1]
   distMatrix <- tmp[[2]][, -1]
+
   if (verbose)
     message("DONE. Run time: ", t1[3], "s\n", " Compute jaccard coefficient between nearest-neighbor sets ..." )
 
@@ -219,6 +243,7 @@ cluster_cells_make_graph <- function(data, weight, cell_names, k, verbose) {
 
 
 louvain_clustering <- function(data,
+                               nn_method,
                                pd,
                                k = 20,
                                weight = F,
@@ -230,7 +255,7 @@ louvain_clustering <- function(data,
   if(!identical(cell_names, row.names(pd)))
     stop("Phenotype and row name from the data doesn't match")
 
-  graph_result <- cluster_cells_make_graph(data, weight, cell_names, k, verbose)
+  graph_result <- cluster_cells_make_graph(data, nn_method, weight, cell_names, k, verbose)
 
   if(verbose)
     message("  Run louvain clustering ...")
@@ -293,6 +318,7 @@ louvain_clustering <- function(data,
 
 
 leiden_clustering <- function(data,
+                              nn_method,
                               pd,
                               k = 20,
                               weight = NULL,
@@ -336,7 +362,7 @@ leiden_clustering <- function(data,
   if(!identical(cell_names, row.names(pd)))
     stop("Phenotype and row name from the data don't match")
 
-  graph_result <- cluster_cells_make_graph(data, weight, cell_names, k, verbose)
+  graph_result <- cluster_cells_make_graph(data, nn_method, weight, cell_names, k, verbose)
 
   if(verbose)
     message("  Run leiden clustering ...")

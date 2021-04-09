@@ -119,11 +119,7 @@ align_cds <- function(cds,
   cds@preprocess_aux[['Aligned']][['model']][['alignment_k']] <- alignment_k
   cds@preprocess_aux[['Aligned']][['model']][['residual_model_formula_str']] <- residual_model_formula_str
   if( build_nn_index ) {
-      cds@preprocess_aux[['Aligned']][['nn_index']] <- SimpleList()
-      annoy_index <- uwot:::annoy_build(X = reducedDims(cds)[["Aligned"]], metric = nn_metric)
-      cds@preprocess_aux[['Aligned']][['nn_index']][['annoy_index']] <- annoy_index
-      cds@preprocess_aux[['Aligned']][['nn_index']][['annoy_metric']] <- nn_metric
-      cds@preprocess_aux[['Aligned']][['nn_index']][['annoy_ndim']] <- ncol(preproc_res)
+    cds <- build_annoy_index(cds, 'Aligned', nn_metric)
   }
 
   cds
