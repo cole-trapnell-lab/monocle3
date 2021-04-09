@@ -69,7 +69,7 @@ build_annoy_index <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', '
                                         "method='tSNE' before running",
                                         "build_annoy_index."))
     reduced_matrix <- reducedDims(cds)[['tSNE']]
-    cds@preprocess_aux[['tSNE']][['nn_index']] <- SimpleList()
+    cds@reduce_dim_aux[['tSNE']][['nn_index']] <- SimpleList()
     annoy_index <- uwot:::annoy_build(X = reduced_matrix, metric=nn_metric)
     cds@reduce_dim_aux[['tSNE']][['nn_index']][['annoy_index']] <- annoy_index
     cds@reduce_dim_aux[['tSNE']][['nn_index']][['annoy_metric']] <- nn_metric
@@ -85,7 +85,7 @@ build_annoy_index <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', '
                                         "build_annoy_index."))
 
     reduced_matrix <- reducedDims(cds)[['UMAP']]
-    cds@preprocess_aux[['UMAP']][['nn_index']] <- SimpleList()
+    cds@reduce_dim_aux[['UMAP']][['nn_index']] <- SimpleList()
     annoy_index <- uwot:::annoy_build(X = reduced_matrix, metric=nn_metric)
     cds@reduce_dim_aux[['UMAP']][['nn_index']][['annoy_index']] <- annoy_index
     cds@reduce_dim_aux[['UMAP']][['nn_index']][['annoy_metric']] <- nn_metric
