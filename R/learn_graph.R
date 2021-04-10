@@ -256,36 +256,33 @@ multi_component_RGE <- function(cds,
     centers <- centers + matrix(stats::rnorm(length(centers), sd = 1e-10),
                                 nrow = nrow(centers)) # add random noise
 
-    kmean_res
     
-    tmp <- tryCatch({
+    
+    kmean_res <- tryCatch({
       stats::kmeans(t(X_subset), centers=centers, iter.max = 100)
     }, error = function(err) {
       stats::kmeans(t(X_subset), centers = curr_ncenter, iter.max = 100)
     })
 
 
-    cluster_result <- fastcluster::hclust(dist(t(X_subset)), method = "ward.D")
-    browser()
-    sub_grp <- cutree(cluster_result, k = curr_ncenter)
+    # cluster_result <- fastcluster::hclust(dist(t(X_subset)), method = "ward.D")
+    # browser()
+    # sub_grp <- cutree(cluster_result, k = curr_ncenter)
+    # cluster_info <- split(t(X_subset), sub_grp)
+    # tmp <- lapply(cluster_info, matrix, ncol = 3)
+    # kmean_per_cluster <- lapply(tmp, function(x) {
+    #   stats::kmeans(x, centers = 2, iter.max = 100)
+    # })
+    # cluster_index <- lapply(kmean_per_cluster, FUN = function(x) { x$cluster })
+    # sub_grp <- (sub_grp - 1) * 2 + unlist(cluster_index)
     
-    
-
-    cluster_info <- split(t(X_subset), sub_grp)
-    tmp <- lapply(cluster_info, matrix, ncol = 3)
-    kmean_per_cluster <- lapply(tmp, function(x) {
-      stats::kmeans(x, centers = 2, iter.max = 100)
-    })
-    cluster_index <- lapply(kmean_per_cluster, FUN = function(x) { x$cluster })
-    sub_grp <- (sub_grp - 1) * 2 + unlist(cluster_index)
-    
-    cluster_info <- split(t(X_subset), sub_grp)
-    tmp <- lapply(cluster_info, matrix, ncol = 3)
-    tmp <- lapply(tmp, function(a) {apply(a, MARGIN = 2,  FUN= function(x) { sqrt(mean(x ^ 2))})} )
-    cluster_info <- NULL
-    cluster_info$centers <- matrix(unlist(tmp), byrow=TRUE, nrow=length(tmp))
-    cluster_info$cluster <- sub_grp
-    kmean_res <- cluster_info
+    # cluster_info <- split(t(X_subset), sub_grp)
+    # tmp <- lapply(cluster_info, matrix, ncol = 3)
+    # tmp <- lapply(tmp, function(a) {apply(a, MARGIN = 2,  FUN= function(x) { sqrt(mean(x ^ 2))})} )
+    # cluster_info <- NULL
+    # cluster_info$centers <- matrix(unlist(tmp), byrow=TRUE, nrow=length(tmp))
+    # cluster_info$cluster <- sub_grp
+    # kmean_res <- cluster_info
     
 
     # if (kmean_res$ifault != 0){

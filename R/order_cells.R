@@ -103,12 +103,12 @@ order_cells <- function(cds,
 
   cc_ordering <- extract_general_graph_ordering(cds, root_pr_nodes, verbose,
                                                 reduction_method, subset_indices, centers)
-  cds@principal_graph_aux[[reduction_method]]$pseudotime <-
-    cc_ordering[row.names(colData(cds)), ]$pseudo_time
-  names(cds@principal_graph_aux[[reduction_method]]$pseudotime) <-
-    row.names(colData(cds))
+  cds@principal_graph_aux[[reduction_method]]$pseudotime <- rep(NA, length(row.names(colData(cds))))
+  pos_match <- match(row.names(colData(cds))[subset_indices], row.names(cc_ordering))
+  cds@principal_graph_aux[[reduction_method]]$pseudotime[subset_indices] <- cc_ordering$pseudo_time[pos_match]
+  names(cds@principal_graph_aux[[reduction_method]]$pseudotime) <- row.names(colData(cds))
 
-  cds
+  cds 
 }
 
 extract_general_graph_ordering <- function(cds,
