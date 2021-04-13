@@ -22,6 +22,10 @@
 #' @param cds The cell_data_set upon which to perform clustering.
 #' @param reduction_method The dimensionality reduction method upon which to
 #'   base clustering. Options are "UMAP", "tSNE", "PCA" and "LSI".
+#' @param nn_method String indicating the nearest neighbor method to be
+#'   used by cluster_cells. Options are "nn2" and "annoy". Default is "nn2".
+#' @param nn_metric String specifying the metric used by Annoy, currently
+#'   "cosine", "euclidean", "manhattan", or "hamming". Default is "cosine".
 #' @param k Integer number of nearest neighbors to use when creating the k
 #'   nearest neighbor graph for Louvain/Leiden clustering. k is related to the
 #'   resolution of the clustering result, a bigger k will result in lower
@@ -67,6 +71,8 @@
 #' @export
 cluster_cells <- function(cds,
                           reduction_method = c("UMAP", "tSNE", "PCA", "LSI", "Aligned"),
+                          nn_method = c('nn2', 'annoy'),
+                          nn_metric = c('cosine', 'euclidean', 'manhattan', 'hamming'),
                           k = 20,
                           cluster_method = c('leiden', 'louvain'),
                           num_iter = 2,
@@ -74,16 +80,18 @@ cluster_cells <- function(cds,
                           weight = FALSE,
                           resolution = NULL,
                           random_seed = NULL,
-                          nn_method = c('nn2', 'annoy'),
                           verbose = F,
                           ...) {
   assertthat::assert_that(
-    tryCatch(expr = ifelse(match.arg(nn_method) == "",TRUE, TRUE),
+    tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
-    msg = "nn_method must be one of 'nn2' or 'annoy'")
-  nn_method <- match.arg(nn_method)
-
+    msg = "reduction_method must be one of 'UMAP', 'tSNE', 'PCA', 'LSI', 'Aligned'")
   reduction_method <- match.arg(reduction_method)
+
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(cluster_method) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "cluster_method must be one of 'leiden', 'louvain'")
   cluster_method <- match.arg(cluster_method)
 
   assertthat::assert_that(methods::is(cds, "cell_data_set"))
@@ -110,6 +118,18 @@ cluster_cells <- function(cds,
                                       "reduction_method =", reduction_method,
                                       "before running cluster_cells"))
 
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(nn_method) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "nn_method must be one of 'nn2', 'annoy'")
+  nn_method <- match.arg(nn_method)
+
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(nn_metric) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "nn_metric must be one of 'cosine', 'euclidean', 'manhattan', or 'hamming'")
+  nn_metric <- match.arg(nn_metric)
+
   reduced_dim_res <- reducedDims(cds)[[reduction_method]]
 
   if(is.null(random_seed)) {
@@ -119,14 +139,18 @@ cluster_cells <- function(cds,
     message("Running ", cluster_method, " clustering algorithm ...")
 
   if(cluster_method=='louvain') {
-    cluster_result <- louvain_clustering(data = reduced_dim_res,
+    cluster_result <- louvain_clustering(cds = cds,
+                                         data = reduced_dim_res,
+                                         reduction_method = reduction_method,
+                                         nn_method = nn_method,
+                                         nn_metric = nn_metric,
                                          pd = colData(cds),
                                          k = k,
                                          weight = weight,
                                          num_iter = num_iter,
                                          random_seed = random_seed,
-                                         nn_method = nn_method,
                                          verbose = verbose, ...)
+    cds <- cluster_result[['cds']]
     if (length(unique(cluster_result$optim_res$membership)) > 1) {
       cluster_graph_res <- compute_partitions(cluster_result$g,
                                               cluster_result$optim_res,
@@ -144,15 +168,19 @@ cluster_cells <- function(cds,
                                              clusters = clusters)
   } else if(cluster_method=='leiden'){
     cds <- add_citation(cds, "leiden")
-    cluster_result <- leiden_clustering(data = reduced_dim_res,
+    cluster_result <- leiden_clustering(cds = cds,
+                                        data = reduced_dim_res,
+                                        reduction_method = reduction_method,
+                                        nn_method = nn_method,
+                                        nn_metric = nn_metric,
                                         pd = colData(cds),
                                         k = k,
                                         weight = weight,
                                         num_iter = num_iter,
                                         resolution_parameter = resolution,
                                         random_seed = random_seed,
-                                        nn_method = nn_method,
                                         verbose = verbose, ...)
+    cds <- cluster_result[['cds']]
     if(length(unique(cluster_result$optim_res$membership)) > 1) {
       cluster_graph_res <- compute_partitions(cluster_result$g,
                                               cluster_result$optim_res,
@@ -175,14 +203,33 @@ cluster_cells <- function(cds,
 }
 
 
-cluster_cells_make_graph <- function(data, weight, cell_names, k, nn_method=c('nn2', 'annoy'), verbose) {
+cluster_cells_make_graph <- function(cds,
+                                     data,
+                                     weight,
+                                     cell_names,
+                                     nn_method=c('nn2', 'annoy'),
+                                     nn_metric = c('cosine', 'euclidean', 'manhattan', 'hamming'),
+                                     k,
+                                     reduction_method = c("UMAP", "tSNE", "PCA", "LSI", "Aligned"),
+                                     verbose) {
+
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "reduction_method must be one of 'UMAP', 'tSNE', 'PCA', 'LSI', 'Aligned'")
+  reduction_method <- match.arg(reduction_method)
 
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(nn_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
     msg = "nn_method must be one of 'nn2' or 'annoy'")
-
   nn_method <- match.arg(nn_method)
+
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(nn_metric) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "nn_metric must be one of 'cosine', 'euclidean', 'manhattan', or 'hamming'")
+  nn_metric <- match.arg(nn_metric)
 
   if (is.data.frame(data))
     data <- as.matrix(data)
@@ -199,6 +246,8 @@ cluster_cells_make_graph <- function(data, weight, cell_names, k, nn_method=c('n
                   "(itself)!"))
   }
 
+message('nn_method: ', nn_method)
+
   if (verbose) {
     message("Run kNN based graph clustering starts:", "\n",
             "  -Input data of ", nrow(data), " rows and ", ncol(data),
@@ -210,7 +259,21 @@ cluster_cells_make_graph <- function(data, weight, cell_names, k, nn_method=c('n
     t1 <- system.time(tmp <- RANN::nn2(data, data, k+1, searchtype = "standard"))
   } else
   if(nn_method == 'annoy') {
-    t1 <- system.time(tmp <- RANN::nn2(data, data, k+1, searchtype = "standard"))
+    if(reduction_method %in% c('PCA', 'LSI', 'Alignment')) {
+      if(is.null(cds@preprocess_aux[[reduction_method]][['nn_index']]) || cds@preprocess_aux[[reduction_method]][['nn_index']][['nn_metric']] != nn_metric){
+        cds <- build_annoy_index(cds, reduction_method, nn_metric)
+      }
+      stage_aux <- 'preprocess'
+    } else
+    if(reduction_method %in% c('tSNE', 'UMAP')) {
+      if(is.null(cds@reduce_dim_aux[[reduction_method]][['nn_index']]) || cds@reduce_dim_aux[[reduction_method]][['nn_index']][['nn_metric']] != nn_metric){
+        cds <- build_annoy_index(cds, reduction_method, nn_metric)
+      }
+      stage_aux <- 'reduce_dimension'
+    } else {
+      stop('Unrecognized reduction method \'', reduction_method, '\'')
+    }
+    tmp <- search_nn_index(cds=cds, stage=stage_aux, method=reduction_method, n=k, search_k=100*k)
   }
 
   neighborMatrix <- tmp[[1]][, -1]
@@ -236,24 +299,58 @@ cluster_cells_make_graph <- function(data, weight, cell_names, k, nn_method=c('n
   if (verbose)
     message("DONE ~", t3[3], "s\n")
 
-  return(list(g=g, distMatrix=distMatrix, relations=relations))
+  return(list(cds=cds, g=g, distMatrix=distMatrix, relations=relations))
 }
 
 
-louvain_clustering <- function(data,
+louvain_clustering <- function(cds,
+                               data,
+                               reduction_method = c("UMAP", "tSNE", "PCA", "LSI", "Aligned"),
+                               nn_method = c('nn2', 'annoy'),
+                               nn_metric = c('cosine', 'euclidean', 'manhattan', 'hamming'),
                                pd,
                                k = 20,
                                weight = F,
                                louvain_iter = 1,
                                random_seed = 0L,
-                               nn_method,
                                verbose = F, ...) {
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "reduction_method must be one of 'UMAP', 'tSNE', 'PCA', 'LSI', 'Aligned'")
+  reduction_method <- match.arg(reduction_method)
+
+  assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
+                          msg = paste("No dimensionality reduction for",
+                                      reduction_method, "calculated.",
+                                      "Please run reduce_dimension with",
+                                      "reduction_method =", reduction_method,
+                                      "before running louvain_clustering."))
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(nn_method) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "nn_method must be one of 'nn2', 'annoy'")
+  nn_method <- match.arg(nn_method)
+
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(nn_metric) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "nn_metric must be one of 'cosine', 'euclidean', 'manhattan', or 'hamming'")
+  nn_metric <- match.arg(nn_metric)
+
   extra_arguments <- list(...)
   cell_names <- row.names(pd)
   if(!identical(cell_names, row.names(pd)))
     stop("Phenotype and row name from the data doesn't match")
 
-  graph_result <- cluster_cells_make_graph(data, weight, cell_names, k, nn_method, verbose)
+  graph_result <- cluster_cells_make_graph(cds=cds, data=data,
+                                           weight=weight,
+                                           cell_names=cell_names,
+                                           nn_method=nn_method, nn_metric=nn_metric, k=k,
+                                           reduction_method=reduction_method,
+                                           verbose=verbose)
+  # cluster_cells_make_graph may add preprocess_aux[[reduction_method]][['nn_index']] ... to the cds.
+  cds <- graph_result[['cds']]
 
   if(verbose)
     message("  Run louvain clustering ...")
@@ -306,7 +403,8 @@ louvain_clustering <- function(data,
   }
 
   igraph::V(graph_result[['g']])$names <- as.character(igraph::V(graph_result[['g']]))
-  return(list(g=graph_result[['g']],
+  return(list(cds=cds,
+              g=graph_result[['g']],
               relations=graph_result[['relations']],
               distMatrix=graph_result[['distMatrix']],
               coord = coord,
@@ -315,14 +413,17 @@ louvain_clustering <- function(data,
 }
 
 
-leiden_clustering <- function(data,
+leiden_clustering <- function(cds,
+                              data,
+                              reduction_method = c("UMAP", "tSNE", "PCA", "LSI", "Aligned"),
+                              nn_method = c('nn2', 'annoy'),
+                              nn_metric = c('cosine', 'euclidean', 'manhattan', 'hamming'),
                               pd,
                               k = 20,
                               weight = NULL,
                               num_iter = 2,
                               resolution_parameter = 0.0001,
                               random_seed = NULL,
-                              nn_method,
                               verbose = FALSE, ...) {
   extra_arguments <- list(...)
   if( 'partition_type' %in% names( extra_arguments ) )
@@ -343,6 +444,31 @@ leiden_clustering <- function(data,
     node_sizes <- NULL
 
   # Check input parameters.
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "reduction_method must be one of 'UMAP', 'tSNE', 'PCA', 'LSI', 'Aligned'")
+  reduction_method <- match.arg(reduction_method)
+
+  assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
+                          msg = paste("No dimensionality reduction for",
+                                      reduction_method, "calculated.",
+                                      "Please run reduce_dimension with",
+                                      "reduction_method =", reduction_method,
+                                      "before running leiden_clustering."))
+
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(nn_method) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "nn_method must be one of 'nn2', 'annoy'")
+  nn_method <- match.arg(nn_method)
+
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(nn_metric) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "nn_metric must be one of 'cosine', 'euclidean', 'manhattan', or 'hamming'")
+  nn_metric <- match.arg(nn_metric)
+
   # The following vertex partitions have no resolution parameter.
   if( partition_type %in% c('ModularityVertexPartition','SignificanceVertexPartition','SurpriseVertexPartition') )
   {
@@ -360,8 +486,13 @@ leiden_clustering <- function(data,
   if(!identical(cell_names, row.names(pd)))
     stop("Phenotype and row name from the data don't match")
 
-  graph_result <- cluster_cells_make_graph(data, weight, cell_names, k, nn_method, verbose)
-
+  graph_result <- cluster_cells_make_graph(cds=cds, data=data, weight=weight, 
+                                           cell_names=cell_names,
+                                           nn_method=nn_method, nn_metric=nn_metric, k=k, 
+                                           reduction_method=reduction_method, 
+                                           verbose=verbose)
+  # cluster_cells_make_graph may add preprocess_aux[[reduction_method]][['nn_index']] ... to the cds.
+  cds <- graph_result[['cds']]
   if(verbose)
     message("  Run leiden clustering ...")
 
@@ -468,7 +599,8 @@ leiden_clustering <- function(data,
                      modularity = best_result[['modularity']] )
   names(out_result$membership) = cell_names
 
-  return(list(g=graph_result[['g']],
+  return(list(cds=cds,
+              g=graph_result[['g']],
               relations=graph_result[['relations']],
               distMatrix=graph_result[['distMatrix']],
               coord=coord,

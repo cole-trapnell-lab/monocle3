@@ -99,19 +99,18 @@ build_annoy_index <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', '
 #'
 #' Search the Annoy nearest neighbor index for cells near cells in cds.
 #'
-#' param cds A cell_data_set.
-#' param stage The stage in which the Annoy index was made.
-#' param method The method for which the Annoy index was made. This
+#' @param cds A cell_data_set.
+#' @param stage The stage in which the Annoy index was made.
+#' @param method The method for which the Annoy index was made. This
 #'   can be method 'PCA' or 'LSI' for stage 'preprocess', method 'Aligned'
-#'   for stage 'Align', and method 'UMAP' for stage 'reduce_dimension'.
-#' param n An integer for the number of nearest neighbors to return for
+#'   for stage 'Align', and method 'tSNE' or 'UMAP' for stage 'reduce_dimension'.
+#' @param n An integer for the number of nearest neighbors to return for
 #'   each cell.
-#' param search_k An integer used to balance accuracy and speed. Larger
+#' @param search_k An integer used to balance accuracy and speed. Larger
 #'   values give more accurate results.
-#' param ... Parameters to pass through to annoy_search.
+#' @param ... Parameters to pass through to annoy_search.
 #'
-#' export
-#'
+#' @export
 search_nn_index <- function(cds, stage=c('PCA', 'align', 'reduce_dimension'), method=c('PCA', 'LSI', 'Aligned', 'UMAP'), n=5, search_k=100 * n, ...) {
   assertthat::assert_that(class(cds) == 'cell_data_set',
                           msg=paste('cds parameter is not a cell_data_set'))
@@ -121,8 +120,8 @@ search_nn_index <- function(cds, stage=c('PCA', 'align', 'reduce_dimension'), me
              error = function(e) FALSE),
     msg = "stage must be 'preprocess', 'align', or 'reduce_dimension'")
 
-  stage <- match.args(stage)
-  method <- match.args(method)
+  stage <- match.arg(stage)
+  method <- match.arg(method)
 
   if(stage=='preprocess' ) {
     if(!(method %in% c('PCA', 'LSI'))) {
@@ -140,7 +139,7 @@ search_nn_index <- function(cds, stage=c('PCA', 'align', 'reduce_dimension'), me
     if(!(method %in% c('UMAP'))) {
       stop('Stage \'reduce_dimension\' allows method \'UMAP\' but not \'', method)
     }
-    stage_aux <- cds@reduced_dim_aux
+    stage_aux <- cds@reduce_dim_aux
   } else {
     stop('Unrecognized stage \'', stage, '\'')
   }
@@ -154,7 +153,7 @@ search_nn_index <- function(cds, stage=c('PCA', 'align', 'reduce_dimension'), me
 
   # depends on uwot version
   ann_index <- stage_aux[[method]][['nn_index']][['annoy_index']][['ann']]
-  ann_res <- uwot::annoy_search(X=query_matrix, ann=ann_index, k=n, search_k=search_k, ...)
+  ann_res <- uwot:::annoy_search(X=query_matrix, ann=ann_index, k=n, search_k=search_k, ...)
   ann_res
 }
 

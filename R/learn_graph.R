@@ -308,7 +308,8 @@ multi_component_RGE <- function(cds,
       reduce_dims_old <-
         t(reducedDims(cds)[[reduction_method]])[, partition_list == cur_comp]
       connect_tips_res <-
-        connect_tips(colData(cds)[partition_list == cur_comp, ],
+        connect_tips(cds,
+                     pd = colData(cds)[partition_list == cur_comp, ],
                      R = rge_res$R,
                      stree = stree,
                      reducedDimK_old = rge_res$Y,
@@ -1001,7 +1002,8 @@ generate_centers <- function(X, W, P, param.gamma){
   return(C)
 }
 
-connect_tips <- function(pd,
+connect_tips <- function(cds,
+                         pd,
                          R, # kmean cluster
                          stree,
                          reducedDimK_old,
@@ -1031,9 +1033,13 @@ connect_tips <- function(pd,
 
     data <- t(reducedDimS_old[, ])
 
-    cluster_result <- louvain_clustering(data, pd[, ], k = k, weight = weight,
-                                      nn_method = 'nn2', verbose = verbose)
-
+    # Note: the reduction_method and nn_metric parameters are unused
+    #       for nn_method='nn2'.
+    cluster_result <- louvain_clustering(cds, data = data,
+                                         nn_method = 'nn2',
+                                         pd = pd[, ], k = k, weight = weight,
+                                         verbose = verbose)
+    cds <- cluster_result[['cds']]
     cluster_result$optim_res$membership <- tmp[, 1]
   } else { # use kmean clustering result
     tip_pc_points <- which(igraph::degree(mst_g_old) == 1)
@@ -1042,10 +1048,14 @@ connect_tips <- function(pd,
 
     data <- t(reducedDimS_old[, ]) # raw_data_tip_pc_points
 
-    cluster_result <- louvain_clustering(data, pd[row.names(data), ], k = k,
-                                      weight = weight, nn_method = 'nn2',
-                                      verbose = verbose)
-
+    # Note: the reduction_method and nn_metric parameters are unused
+    #       for nn_method='nn2'.
+    cluster_result <- louvain_clustering(cds, data = data,
+                                         nn_method = 'nn2',
+                                         pd = pd[row.names(data), ],
+                                         k = k, weight = weight,
+                                         verbose = verbose)
+    cds <- cluster_result[['cds']]
     cluster_result$optim_res$membership <- kmean_res$cluster
   }
 

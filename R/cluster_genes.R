@@ -108,17 +108,19 @@ find_gene_modules <- function(cds,
   if(verbose)
     message("Running leiden clustering algorithm ...")
 
-  cluster_result <- leiden_clustering(data = reduced_dim_res,
-                                    pd = rowData(cds)[
-                                      row.names(reduced_dim_res),,drop=FALSE],
-                                    k = k,
-                                    weight = weight,
-                                    num_iter = leiden_iter,
-                                    resolution_parameter = resolution,
-                                    random_seed = random_seed,
-                                    nn_method = 'nn2',
-                                    verbose = verbose, ...)
-
+  # Note: the reduction_method and nn_metric parameters are unused
+  #       for nn_method='nn2'.
+  cluster_result <- leiden_clustering(cds = cds,
+                                      data = reduced_dim_res,
+                                      nn_method = 'nn2',
+                                      pd = rowData(cds)[row.names(reduced_dim_res),,drop=FALSE],
+                                      k = k,
+                                      weight = weight,
+                                      num_iter = leiden_iter,
+                                      resolution_parameter = resolution,
+                                      random_seed = random_seed,
+                                      verbose = verbose, ...)
+  cds <- cluster_result[['cds']]
   cluster_graph_res <- compute_partitions(cluster_result$g,
                                           cluster_result$optim_res,
                                           partition_qval, verbose)
