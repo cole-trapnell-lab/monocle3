@@ -151,10 +151,14 @@ search_nn_index <- function(cds, stage=c('PCA', 'align', 'reduce_dimension'), me
 
   query_matrix <- reducedDim(cds, method)
 
-  # depends on uwot version
+  # notes:
+  #   o  there may be dependency on uwot version
+  #   o  ensure that ann_res[[1]] are indices and ann_res[[2]] are distances
+  #   o  set list names to nn.idx and nn.dists for compatibility with
+  #      RANN::nn2()
+  #
   ann_index <- stage_aux[[method]][['nn_index']][['annoy_index']][['ann']]
-  ann_res <- uwot:::annoy_search(X=query_matrix, ann=ann_index, k=n, search_k=search_k, ...)
-  ann_res
+  tmp <- uwot:::annoy_search(X=query_matrix, ann=ann_index, k=n, search_k=search_k, ...)
+  ann_res = list(nn.idx = tmp[['idx']], nn.dists = tmp[['dist']])
 }
-
 

@@ -246,8 +246,6 @@ cluster_cells_make_graph <- function(cds,
                   "(itself)!"))
   }
 
-message('nn_method: ', nn_method)
-
   if (verbose) {
     message("Run kNN based graph clustering starts:", "\n",
             "  -Input data of ", nrow(data), " rows and ", ncol(data),
