@@ -7,8 +7,6 @@
 cluster_cells(
   cds,
   reduction_method = c("UMAP", "tSNE", "PCA", "LSI", "Aligned"),
-  nn_method = c("nn2", "annoy"),
-  nn_metric = c("cosine", "euclidean", "manhattan", "hamming"),
   k = 20,
   cluster_method = c("leiden", "louvain"),
   num_iter = 2,
@@ -16,6 +14,8 @@ cluster_cells(
   weight = FALSE,
   resolution = NULL,
   random_seed = NULL,
+  nn_method = c("nn2", "annoy"),
+  nn_metric = c("cosine", "euclidean", "manhattan", "hamming"),
   verbose = F,
   ...
 )
@@ -25,12 +25,6 @@ cluster_cells(
 
 \item{reduction_method}{The dimensionality reduction method upon which to
 base clustering. Options are "UMAP", "tSNE", "PCA" and "LSI".}
-
-\item{nn_method}{String indicating the nearest neighbor method to be
-used by cluster_cells. Options are "nn2" and "annoy". Default is "nn2".}
-
-\item{nn_metric}{String specifying the metric used by Annoy, currently
-"cosine", "euclidean", "manhattan", or "hamming". Default is "cosine".}
 
 \item{k}{Integer number of nearest neighbors to use when creating the k
 nearest neighbor graph for Louvain/Leiden clustering. k is related to the
@@ -60,6 +54,12 @@ NULL (Default), the parameter is determined automatically.}
 \item{random_seed}{The seed used by the random number generator in
 louvain-igraph package. This argument will be ignored if num_iter is
 larger than 1.}
+
+\item{nn_method}{String indicating the nearest neighbor method to be
+used by cluster_cells. Options are "nn2" and "annoy". Default is "nn2".}
+
+\item{nn_metric}{String specifying the metric used by Annoy, currently
+"cosine", "euclidean", "manhattan", or "hamming". Default is "cosine".}
 
 \item{verbose}{A logic flag to determine whether or not we should print the
 run details.}
