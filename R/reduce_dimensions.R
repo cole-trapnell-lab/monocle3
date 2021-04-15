@@ -205,7 +205,8 @@ reduce_dimension <- function(cds,
                              n_threads=cores,
                              verbose=verbose,
                              nn_method = umap.nn_method,
-                             ret_model = TRUE,
+#                             ret_model = TRUE,
+                             ret_model = FALSE,
                              ...)
 
     cds@reduce_dim_aux[['UMAP']] <- SimpleList()
@@ -219,9 +220,15 @@ reduce_dimension <- function(cds,
     #      one model from uwot::umap(). So return the result from
     #      uwot::umap_transform().
     set.seed(2016)
-    umap_res <- uwot::umap_transform(X=as.matrix(preprocess_mat), model=umap_model, n_threads=1)
+#    umap_res <- uwot::umap_transform(X=as.matrix(preprocess_mat), model=umap_model, n_threads=1)
+#    row.names(umap_res) <- colnames(cds)
+#    reducedDims(cds)[['UMAP']] <- umap_res
+
+# begin tmp
+    umap_res <- umap_model
     row.names(umap_res) <- colnames(cds)
     reducedDims(cds)[['UMAP']] <- umap_res
+# end tmp
 
     cds@reduce_dim_aux[['UMAP']][['model']][['umap_preprocess_method']] <- preprocess_method
     cds@reduce_dim_aux[['UMAP']][['model']][['max_components']] <- max_components
