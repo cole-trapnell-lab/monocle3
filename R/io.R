@@ -359,13 +359,16 @@ load_annoy_index <- function(nn_index, file_name, metric, ndim) {
 # value(s) as either a character string, in case of
 # one metric, or a list, in case of more than one matric.
 save_umap_nn_indexes <- function(umap_model, file_name) {
+  if(is.null(umap_model[['metric']])) {
+    stop('No UMAP model in this CDS.')
+  }
   metrics <- names(umap_model[['metric']])
   n_metrics <- length(metrics)
   if(n_metrics == 1) {
     save_annoy_index(umap_model[['nn_index']], file_name)
     md5sum_umap_index <- tools::md5sum(file_name)
   } else {
-    warn('save_umap_nn_indexes is untested with more than one umap metric')
+    warning('save_umap_nn_indexes is untested with more than one umap metric')
     md5sum_vec <- character()
     for(i in 1:n_metrics) {
       file_name_expand <- paste0(file_name, i)
@@ -393,7 +396,7 @@ load_umap_nn_indexes <- function(umap_model, file_name, md5sum_umap_index) {
     annoy_ndim <- umap_model[['metric']][[1]][['ndim']]
     umap_model[['nn_index']] <- load_annoy_index(umap_model[['nn_index']], file_name, annoy_metric, annoy_ndim)
   } else {
-    warn('load_umap_nn_indexes is untested with more than one umap metric')
+    warning('load_umap_nn_indexes is untested with more than one umap metric')
     if(!is.null(md5sum_umap_index)) {
       md5sum_vec <- unlist(strsplit(md5sum_umap_index, '_', fixed=TRUE))
     }
