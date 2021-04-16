@@ -218,6 +218,9 @@ reduce_dimension <- function(cds,
     #      However, uwot::umap_transform() gives consistent results using
     #      one model from uwot::umap(). So return the result from
     #      uwot::umap_transform().
+    #   o  uwot::umap_transform() depends on the RNG state and we want
+    #      consistent results when called here and in *_transform function(s).
+    #
     set.seed(2016)
     umap_res <- uwot::umap_transform(X=as.matrix(preprocess_mat), model=umap_model, n_threads=1)
     row.names(umap_res) <- colnames(cds)

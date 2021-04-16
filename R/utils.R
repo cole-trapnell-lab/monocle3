@@ -956,6 +956,11 @@ reduce_dimension_transform <- function(cds, preprocess_method=NULL, method=c('UM
                                     " calling reduce_dimension_transform using preprocess_transform",
                                     " or align_transform."))
 
+  # Notes:
+  #   o  uwot::umap_transform() depends on the RNG state and we want
+  #      consistent results when called here and in reduce_dimensions()
+  #      function(s).
+  #
   set.seed(2016)
   umap_model <- cds@reduce_dim_aux[[method]][['model']][['umap_model']]
   reducedDims(cds)[[method]] <- uwot:::umap_transform(X=preproc_res, model=umap_model, init='weighted', n_sgd_threads=1)
