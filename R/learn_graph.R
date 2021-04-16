@@ -1039,7 +1039,7 @@ connect_tips <- function(cds,
                                          nn_method = 'nn2',
                                          pd = pd[, ], k = k, weight = weight,
                                          verbose = verbose)
-    cds <- cluster_result[['cds']]
+
     cluster_result$optim_res$membership <- tmp[, 1]
   } else { # use kmean clustering result
     tip_pc_points <- which(igraph::degree(mst_g_old) == 1)
@@ -1055,7 +1055,7 @@ connect_tips <- function(cds,
                                          pd = pd[row.names(data), ],
                                          k = k, weight = weight,
                                          verbose = verbose)
-    cds <- cluster_result[['cds']]
+
     cluster_result$optim_res$membership <- kmean_res$cluster
   }
 

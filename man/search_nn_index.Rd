@@ -6,8 +6,7 @@
 \usage{
 search_nn_index(
   cds,
-  stage = c("PCA", "align", "reduce_dimension"),
-  method = c("PCA", "LSI", "Aligned", "UMAP"),
+  method = c("PCA", "LSI", "Aligned", "tSNE", "UMAP"),
   n = 5,
   search_k = 100 * n,
   ...
@@ -16,11 +15,8 @@ search_nn_index(
 \arguments{
 \item{cds}{A cell_data_set.}
 
-\item{stage}{The stage in which the Annoy index was made.}
-
-\item{method}{The method for which the Annoy index was made. This
-can be method 'PCA' or 'LSI' for stage 'preprocess', method 'Aligned'
-for stage 'Align', and method 'tSNE' or 'UMAP' for stage 'reduce_dimension'.}
+\item{method}{The method for which the Annoy index was made. method
+can be 'PCA', 'LSI','Aligned', 'tSNE', or 'UMAP'.}
 
 \item{n}{An integer for the number of nearest neighbors to return for
 each cell.}

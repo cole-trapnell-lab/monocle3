@@ -119,7 +119,7 @@ align_cds <- function(cds,
   cds@preprocess_aux[['Aligned']][['model']][['alignment_k']] <- alignment_k
   cds@preprocess_aux[['Aligned']][['model']][['residual_model_formula_str']] <- residual_model_formula_str
   if( build_nn_index ) {
-    cds <- build_annoy_index(cds, 'Aligned', nn_metric)
+    cds <- build_annoy_index(cds=cds, reduction_method='Aligned', nn_metric=nn_metric)
   }
 
   cds

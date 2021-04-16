@@ -1,3 +1,35 @@
+# Check whether annoy index exists.
+annoy_index_exists <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP'), nn_metric=c('cosine', 'euclidean', 'manhattan', 'hamming')) {
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "reduction_method must be one of 'PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP'")
+
+  reduction_method <- match.arg(reduction_method)
+
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(nn_metric) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "nn_metric must be one of 'cosine', 'euclidean', 'manhattan', or 'hamming'")
+
+  nn_metric <- match.arg(nn_metric)
+
+  index_exists <- FALSE
+  if((reduction_method %in% c('PCA', 'LSI', 'Aligned')) &&
+     !is.null(cds@preprocess_aux[[reduction_method]][['nn_index']]) &&
+     cds@preprocess_aux[[reduction_method]][['nn_index']][['annoy_metric']] == nn_metric) {
+      index_exists <- TRUE
+  } else
+  if((reduction_method %in% c('tSNE', 'UMAP')) &&
+     !is.null(cds@reduce_dim_aux[[reduction_method]][['nn_index']]) &&
+     cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy_metric']] == nn_metric) {
+      index_exists <- TRUE
+  }
+
+  return(index_exists)
+}
+
+
 #' @export
 build_annoy_index <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP'), nn_metric=c('cosine', 'euclidean', 'manhattan', 'hamming')) {
   assertthat::assert_that(
@@ -100,10 +132,8 @@ build_annoy_index <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', '
 #' Search the Annoy nearest neighbor index for cells near cells in cds.
 #'
 #' @param cds A cell_data_set.
-#' @param stage The stage in which the Annoy index was made.
-#' @param method The method for which the Annoy index was made. This
-#'   can be method 'PCA' or 'LSI' for stage 'preprocess', method 'Aligned'
-#'   for stage 'Align', and method 'tSNE' or 'UMAP' for stage 'reduce_dimension'.
+#' @param method The method for which the Annoy index was made. method
+#'   can be 'PCA', 'LSI','Aligned', 'tSNE', or 'UMAP'.
 #' @param n An integer for the number of nearest neighbors to return for
 #'   each cell.
 #' @param search_k An integer used to balance accuracy and speed. Larger
@@ -111,34 +141,19 @@ build_annoy_index <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', '
 #' @param ... Parameters to pass through to annoy_search.
 #'
 #' @export
-search_nn_index <- function(cds, stage=c('PCA', 'align', 'reduce_dimension'), method=c('PCA', 'LSI', 'Aligned', 'UMAP'), n=5, search_k=100 * n, ...) {
+search_nn_index <- function(cds, method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP'), n=5, search_k=100 * n, ...) {
   assertthat::assert_that(class(cds) == 'cell_data_set',
                           msg=paste('cds parameter is not a cell_data_set'))
 
-  assertthat::assert_that(
-    tryCatch(expr = ifelse(match.arg(stage) == "",TRUE, TRUE),
-             error = function(e) FALSE),
-    msg = "stage must be 'preprocess', 'align', or 'reduce_dimension'")
-
-  stage <- match.arg(stage)
   method <- match.arg(method)
 
+  stage_list <- list(PCA='preprocess', LSI='preprocess', Aligned='preprocess', tSNE='reduce_dimension', UMAP='reduce_dimension')
+  stage <- stage_list[method]
+
   if(stage=='preprocess' ) {
-    if(!(method %in% c('PCA', 'LSI'))) {
-      stop('Stage \'preprocess\' allows methods \'PCA\' and \'LSI\' but not \'', method)
-    }
-    stage_aux <- cds@preprocess_aux
-  } else
-  if(stage == 'align') {
-    if(!(method %in% c('Aligned'))) {
-      stop('Stage \'align\' allows method \'aligned\' but not \'', method)
-    }
     stage_aux <- cds@preprocess_aux
   } else
   if(stage == 'reduce_dimension') {
-    if(!(method %in% c('UMAP'))) {
-      stop('Stage \'reduce_dimension\' allows method \'UMAP\' but not \'', method)
-    }
     stage_aux <- cds@reduce_dim_aux
   } else {
     stop('Unrecognized stage \'', stage, '\'')
@@ -161,4 +176,64 @@ search_nn_index <- function(cds, stage=c('PCA', 'align', 'reduce_dimension'), me
   tmp <- uwot:::annoy_search(X=query_matrix, ann=ann_index, k=n, search_k=search_k, ...)
   ann_res = list(nn.idx = tmp[['idx']], nn.dists = tmp[['dist']])
 }
+
+
+# Given a vector of nearest neighbors from a
+# search for which the query and database are
+# the same set and the self point is not the
+# first element, swap it to the first element.
+nn_vector_index_swap <- function(vec) {
+  # Most often, the self point is shifted right
+  # one column; that is, there is one other point
+  # with zero distance.
+  if(vec[2] != vec[1]) {
+    if(vec[3] == vec[1]) {
+      vec[3] <- vec[2]
+      vec[2] <- vec[1]
+      return(vec)
+    } else
+    {
+      for( i in 2:length(vec)) {
+        if(vec[i] == vec[1]) {
+          vec[i] <- vec[2]
+          vec[2] <- vec[1]
+          return(vec)
+        }
+      }
+      # The self point is not in the vector so
+      # put it in the second column.
+      vec[2] <- vec[1]
+      return(vec)
+    }
+  }
+  vec
+}
+
+
+# Sort annoy self-set search results so that self
+# points are in the first column.
+#
+# For use when the query and database sets are the
+# same and the self points must be in the first
+# column.
+#
+# This is required because annoy does not sort the
+# self points into the first column. That is, in
+# cases where non-self points have zero distance,
+# the self point may be in a column j > 1.
+#
+# Warning: do not use this if the search point set
+#          differs from the index set. It will
+#          make a mess of the result.
+#
+annoy_self_search_index_swap <- function(annoy_res) {
+  idx <- annoy_res[['nn.idx']]
+  dists <- annoy_res[['nn.dists']]
+
+  iidx <- cbind(1:nrow(idx),idx)
+  shift_res <- t(apply(iidx, 1, nn_vector_index_swap))
+
+  list(nn.idx=shift_res[,-1], nn.dists=dists)
+}
+
 

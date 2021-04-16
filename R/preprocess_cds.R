@@ -134,7 +134,7 @@ preprocess_cds <- function(cds,
     cds@preprocess_aux[['PCA']][['model']][['prop_var_expl']] <- irlba_res$sdev^2 / sum(irlba_res$sdev^2)
     cds@preprocess_aux[['PCA']][['beta']] <- NULL
     if( build_nn_index ) {
-      cds <- build_annoy_index(cds, 'PCA', nn_metric)
+      cds <- build_annoy_index(cds=cds, reduction_method='PCA', nn_metric=nn_metric)
     }
   } else if(method == "LSI") {
 
@@ -161,7 +161,7 @@ preprocess_cds <- function(cds,
     # calculate gene_loadings in cluster_cells.R
     cds@preprocess_aux[['LSI']][['beta']] <- NULL
     if( build_nn_index ) {
-      cds <- build_annoy_index(cds, 'PCA', nn_metric)
+      cds <- build_annoy_index(cds=cds, reduction_method='PCA', nn_metric=nn_metric)
     }
   }
 

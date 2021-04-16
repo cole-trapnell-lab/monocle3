@@ -130,6 +130,10 @@ cluster_cells <- function(cds,
     msg = "nn_metric must be one of 'cosine', 'euclidean', 'manhattan', or 'hamming'")
   nn_metric <- match.arg(nn_metric)
 
+  if(nn_method == 'annoy' && !annoy_index_exists(cds, reduction_method, nn_metric)) {
+    cds <- build_annoy_index(cds=cds, reduction_method=reduction_method, nn_metric=nn_metric)
+  }
+
   reduced_dim_res <- reducedDims(cds)[[reduction_method]]
 
   if(is.null(random_seed)) {
@@ -150,7 +154,7 @@ cluster_cells <- function(cds,
                                          num_iter = num_iter,
                                          random_seed = random_seed,
                                          verbose = verbose, ...)
-    cds <- cluster_result[['cds']]
+
     if (length(unique(cluster_result$optim_res$membership)) > 1) {
       cluster_graph_res <- compute_partitions(cluster_result$g,
                                               cluster_result$optim_res,
@@ -180,7 +184,7 @@ cluster_cells <- function(cds,
                                         resolution_parameter = resolution,
                                         random_seed = random_seed,
                                         verbose = verbose, ...)
-    cds <- cluster_result[['cds']]
+
     if(length(unique(cluster_result$optim_res$membership)) > 1) {
       cluster_graph_res <- compute_partitions(cluster_result$g,
                                               cluster_result$optim_res,
@@ -257,28 +261,20 @@ cluster_cells_make_graph <- function(cds,
     t1 <- system.time(tmp <- RANN::nn2(data, data, k+1, searchtype = "standard"))
   } else
   if(nn_method == 'annoy') {
-    if(reduction_method %in% c('PCA', 'LSI', 'Alignment')) {
-      if(is.null(cds@preprocess_aux[[reduction_method]][['nn_index']]) || cds@preprocess_aux[[reduction_method]][['nn_index']][['nn_metric']] != nn_metric){
-        cds <- build_annoy_index(cds, reduction_method, nn_metric)
-      }
-      stage_aux <- 'preprocess'
-    } else
-    if(reduction_method %in% c('tSNE', 'UMAP')) {
-      if(is.null(cds@reduce_dim_aux[[reduction_method]][['nn_index']]) || cds@reduce_dim_aux[[reduction_method]][['nn_index']][['nn_metric']] != nn_metric){
-        cds <- build_annoy_index(cds, reduction_method, nn_metric)
-      }
-      stage_aux <- 'reduce_dimension'
-    } else {
-      stop('Unrecognized reduction method \'', reduction_method, '\'')
-    }
-    tmp <- search_nn_index(cds=cds, stage=stage_aux, method=reduction_method, n=k, search_k=100*k)
+    tmp <- search_nn_index(cds=cds, method=reduction_method, n=k, search_k=100*k)
+    # Annoy does not sort the self point into the first column so ensure that it is.
+    tmp <- annoy_self_search_index_swap(annoy_res=tmp)
   }
 
-  neighborMatrix <- tmp[[1]][, -1]
-  distMatrix <- tmp[[2]][, -1]
+  neighborMatrix <- tmp[['nn.idx']][, -1]
+  distMatrix <- tmp[['nn.dists']][, -1]
 
-  if (verbose)
-    message("DONE. Run time: ", t1[3], "s\n", " Compute jaccard coefficient between nearest-neighbor sets ..." )
+  if (verbose) {
+    if(nn_method == 'nn2') {
+      message("DONE. Run time: ", t1[3], "s\n")
+    }
+    message("Compute jaccard coefficient between nearest-neighbor sets ..." )
+  }
 
   t2 <- system.time(links <- jaccard_coeff(neighborMatrix, weight))
 
@@ -297,7 +293,7 @@ cluster_cells_make_graph <- function(cds,
   if (verbose)
     message("DONE ~", t3[3], "s\n")
 
-  return(list(cds=cds, g=g, distMatrix=distMatrix, relations=relations))
+  return(list(g=g, distMatrix=distMatrix, relations=relations))
 }
 
 
@@ -317,13 +313,6 @@ louvain_clustering <- function(cds,
              error = function(e) FALSE),
     msg = "reduction_method must be one of 'UMAP', 'tSNE', 'PCA', 'LSI', 'Aligned'")
   reduction_method <- match.arg(reduction_method)
-
-  assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
-                          msg = paste("No dimensionality reduction for",
-                                      reduction_method, "calculated.",
-                                      "Please run reduce_dimension with",
-                                      "reduction_method =", reduction_method,
-                                      "before running louvain_clustering."))
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(nn_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
@@ -347,8 +336,6 @@ louvain_clustering <- function(cds,
                                            nn_method=nn_method, nn_metric=nn_metric, k=k,
                                            reduction_method=reduction_method,
                                            verbose=verbose)
-  # cluster_cells_make_graph may add preprocess_aux[[reduction_method]][['nn_index']] ... to the cds.
-  cds <- graph_result[['cds']]
 
   if(verbose)
     message("  Run louvain clustering ...")
@@ -401,8 +388,7 @@ louvain_clustering <- function(cds,
   }
 
   igraph::V(graph_result[['g']])$names <- as.character(igraph::V(graph_result[['g']]))
-  return(list(cds=cds,
-              g=graph_result[['g']],
+  return(list(g=graph_result[['g']],
               relations=graph_result[['relations']],
               distMatrix=graph_result[['distMatrix']],
               coord = coord,
@@ -448,13 +434,6 @@ leiden_clustering <- function(cds,
     msg = "reduction_method must be one of 'UMAP', 'tSNE', 'PCA', 'LSI', 'Aligned'")
   reduction_method <- match.arg(reduction_method)
 
-  assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
-                          msg = paste("No dimensionality reduction for",
-                                      reduction_method, "calculated.",
-                                      "Please run reduce_dimension with",
-                                      "reduction_method =", reduction_method,
-                                      "before running leiden_clustering."))
-
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(nn_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
@@ -489,8 +468,6 @@ leiden_clustering <- function(cds,
                                            nn_method=nn_method, nn_metric=nn_metric, k=k, 
                                            reduction_method=reduction_method, 
                                            verbose=verbose)
-  # cluster_cells_make_graph may add preprocess_aux[[reduction_method]][['nn_index']] ... to the cds.
-  cds <- graph_result[['cds']]
   if(verbose)
     message("  Run leiden clustering ...")
 
@@ -597,8 +574,7 @@ leiden_clustering <- function(cds,
                      modularity = best_result[['modularity']] )
   names(out_result$membership) = cell_names
 
-  return(list(cds=cds,
-              g=graph_result[['g']],
+  return(list(g=graph_result[['g']],
               relations=graph_result[['relations']],
               distMatrix=graph_result[['distMatrix']],
               coord=coord,

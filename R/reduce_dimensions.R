@@ -188,7 +188,7 @@ reduce_dimension <- function(cds,
 
     # make nearest neighbor index in tSNE space
     if( build_nn_index ) {
-      cds <- build_annoy_index(cds, 'tSNE', nn_metric)
+      cds <- build_annoy_index(cds=cds, reduction_method='tSNE', nn_metric=nn_metric)
     }
 
   } else if (reduction_method == c("UMAP")) {
@@ -236,7 +236,7 @@ reduce_dimension <- function(cds,
 
     if( build_nn_index ) {
       # make nearest neighbor index in UMAP space
-      cds <- build_annoy_index(cds, 'UMAP', nn_metric)
+      cds <- build_annoy_index(cds=cds, reduction_method='UMAP', nn_metric=nn_metric)
     }
   }
 
