@@ -70,7 +70,7 @@ script:
     travis_wait 20 R CMD check monocle3*tar.gz
 
 after_failure:
-- Rscript -e 'devtools::install();devtools::test()'
+- Rscript -e 'devtools::install();options(testthat.progress.max_fails=5000);devtools::test()'
 
 notifications:
   slack:
