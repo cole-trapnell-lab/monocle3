@@ -101,10 +101,10 @@ preprocess_cds <- function(cds,
   #
   # Notes:
   #   o  the functions save_transform_models/load_transform_models
-  #      expect that the preprocess_aux slot consists of a SimpleList
+  #      expect that the reduce_dim_aux slot consists of a SimpleList
   #      that stores information about methods with the elements
-  #        preprocess_aux[[method]][['model']] for the transform elements
-  #        preprocess_aux[[method]][['nn_index']] for the annoy index
+  #        reduce_dim_aux[[method]][['model']] for the transform elements
+  #        reduce_dim_aux[[method]][['nn_index']] for the annoy index
   #      and depends on the elements within model and nn_index.
   #
   if(method == 'PCA') {
@@ -119,20 +119,20 @@ preprocess_cds <- function(cds,
 
     irlba_rotation <- irlba_res$rotation
     row.names(irlba_rotation) <- rownames(FM)
-    cds@preprocess_aux[['PCA']] <- SimpleList()
-    cds@preprocess_aux[['PCA']][['model']] <- SimpleList()
+    cds@reduce_dim_aux[['PCA']] <- SimpleList()
+    cds@reduce_dim_aux[['PCA']][['model']] <- SimpleList()
     # we need svd_v downstream so
     # calculate gene_loadings in cluster_cells.R
-    cds@preprocess_aux[['PCA']][['model']][['num_dim']] <- num_dim
-    cds@preprocess_aux[['PCA']][['model']][['norm_method']] <- norm_method
-    cds@preprocess_aux[['PCA']][['model']][['use_genes']] <- use_genes
-    cds@preprocess_aux[['PCA']][['model']][['pseudo_count']] <- pseudo_count
-    cds@preprocess_aux[['PCA']][['model']][['svd_v']] <- irlba_rotation
-    cds@preprocess_aux[['PCA']][['model']][['svd_sdev']] <- irlba_res$sdev
-    cds@preprocess_aux[['PCA']][['model']][['svd_center']] <- irlba_res$center
-    cds@preprocess_aux[['PCA']][['model']][['svd_scale']] <- irlba_res$svd_scale
-    cds@preprocess_aux[['PCA']][['model']][['prop_var_expl']] <- irlba_res$sdev^2 / sum(irlba_res$sdev^2)
-    cds@preprocess_aux[['PCA']][['beta']] <- NULL
+    cds@reduce_dim_aux[['PCA']][['model']][['num_dim']] <- num_dim
+    cds@reduce_dim_aux[['PCA']][['model']][['norm_method']] <- norm_method
+    cds@reduce_dim_aux[['PCA']][['model']][['use_genes']] <- use_genes
+    cds@reduce_dim_aux[['PCA']][['model']][['pseudo_count']] <- pseudo_count
+    cds@reduce_dim_aux[['PCA']][['model']][['svd_v']] <- irlba_rotation
+    cds@reduce_dim_aux[['PCA']][['model']][['svd_sdev']] <- irlba_res$sdev
+    cds@reduce_dim_aux[['PCA']][['model']][['svd_center']] <- irlba_res$center
+    cds@reduce_dim_aux[['PCA']][['model']][['svd_scale']] <- irlba_res$svd_scale
+    cds@reduce_dim_aux[['PCA']][['model']][['prop_var_expl']] <- irlba_res$sdev^2 / sum(irlba_res$sdev^2)
+    cds@reduce_dim_aux[['PCA']][['beta']] <- NULL
     if( build_nn_index ) {
       cds <- build_annoy_index(cds=cds, reduction_method='PCA', nn_metric=nn_metric)
     }
@@ -149,17 +149,17 @@ preprocess_cds <- function(cds,
 
     irlba_rotation = irlba_res$v
     row.names(irlba_rotation) = rownames(FM)
-    cds@preprocess_aux[['LSI']] <- SimpleList()
-    cds@preprocess_aux[['LSI']][['model']] <- SimpleList()
-    cds@preprocess_aux[['LSI']][['model']][['num_dim']] <- num_dim
-    cds@preprocess_aux[['LSI']][['model']][['norm_method']] <- norm_method
-    cds@preprocess_aux[['LSI']][['model']][['use_genes']] <- use_genes
-    cds@preprocess_aux[['LSI']][['model']][['pseudo_count']] <- pseudo_count
-    cds@preprocess_aux[['LSI']][['model']][['svd_v']] <- irlba_rotation
-    cds@preprocess_aux[['LSI']][['model']][['svd_sdev']] <- irlba_res$d/sqrt(max(1, num_col - 1))
+    cds@reduce_dim_aux[['LSI']] <- SimpleList()
+    cds@reduce_dim_aux[['LSI']][['model']] <- SimpleList()
+    cds@reduce_dim_aux[['LSI']][['model']][['num_dim']] <- num_dim
+    cds@reduce_dim_aux[['LSI']][['model']][['norm_method']] <- norm_method
+    cds@reduce_dim_aux[['LSI']][['model']][['use_genes']] <- use_genes
+    cds@reduce_dim_aux[['LSI']][['model']][['pseudo_count']] <- pseudo_count
+    cds@reduce_dim_aux[['LSI']][['model']][['svd_v']] <- irlba_rotation
+    cds@reduce_dim_aux[['LSI']][['model']][['svd_sdev']] <- irlba_res$d/sqrt(max(1, num_col - 1))
     # we need svd_v downstream so
     # calculate gene_loadings in cluster_cells.R
-    cds@preprocess_aux[['LSI']][['beta']] <- NULL
+    cds@reduce_dim_aux[['LSI']][['beta']] <- NULL
     if( build_nn_index ) {
       cds <- build_annoy_index(cds=cds, reduction_method='PCA', nn_metric=nn_metric)
     }

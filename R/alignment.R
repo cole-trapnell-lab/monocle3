@@ -85,7 +85,7 @@ align_cds <- function(cds,
     beta[is.na(beta)] <- 0
     preproc_res <- Matrix::t(as.matrix(Matrix::t(preproc_res)) -
                                beta %*% Matrix::t(X.model_mat[, -1]))
-    cds@preprocess_aux[[preprocess_method]][['beta']] = beta
+    cds@reduce_dim_aux[[preprocess_method]][['beta']] = beta
   }
 
   if(!is.null(alignment_group)) {
@@ -106,18 +106,18 @@ align_cds <- function(cds,
   #
   # Notes:
   #   o  the functions save_transform_models/load_transform_models
-  #      expect that the preprocess_aux slot consists of a SimpleList
+  #      expect that the reduce_dim_aux slot consists of a SimpleList
   #      that stores information about methods with the elements
-  #        preprocess_aux[[method]][['model']] for the transform elements
-  #        preprocess_aux[[method]][['nn_index']] for the annoy index
+  #        reduce_dim_aux[[method]][['model']] for the transform elements
+  #        reduce_dim_aux[[method]][['nn_index']] for the annoy index
   #      and depends on the elements within model and nn_index.
   #
-  cds@preprocess_aux[['Aligned']] <- SimpleList()
-  cds@preprocess_aux[['Aligned']][['model']] <- SimpleList()
-  cds@preprocess_aux[['Aligned']][['model']][['preprocess_method']] <- preprocess_method
-  cds@preprocess_aux[['Aligned']][['model']][['alignment_group']] <- alignment_group
-  cds@preprocess_aux[['Aligned']][['model']][['alignment_k']] <- alignment_k
-  cds@preprocess_aux[['Aligned']][['model']][['residual_model_formula_str']] <- residual_model_formula_str
+  cds@reduce_dim_aux[['Aligned']] <- SimpleList()
+  cds@reduce_dim_aux[['Aligned']][['model']] <- SimpleList()
+  cds@reduce_dim_aux[['Aligned']][['model']][['preprocess_method']] <- preprocess_method
+  cds@reduce_dim_aux[['Aligned']][['model']][['alignment_group']] <- alignment_group
+  cds@reduce_dim_aux[['Aligned']][['model']][['alignment_k']] <- alignment_k
+  cds@reduce_dim_aux[['Aligned']][['model']][['residual_model_formula_str']] <- residual_model_formula_str
   if( build_nn_index ) {
     cds <- build_annoy_index(cds=cds, reduction_method='Aligned', nn_metric=nn_metric)
   }

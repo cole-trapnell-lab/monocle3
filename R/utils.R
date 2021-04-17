@@ -693,7 +693,6 @@ combine_cds <- function(cds_list,
 #' @export
 #'
 clear_cds_slots <- function(cds) {
-  cds@preprocess_aux <- SimpleList()
   cds@reduce_dim_aux <- SimpleList()
   cds@principal_graph_aux <- SimpleList()
   cds@principal_graph <- SimpleList()
@@ -783,7 +782,7 @@ preprocess_transform <- function(cds, method=c('PCA'), block_size=NULL) {
   assertthat::assert_that(sum(is.na(size_factors(cds))) == 0,
                           msg=paste("One or more cells has a size factor of",
                                     "NA."))
-  assertthat::assert_that(!is.null(cds@preprocess_aux[[method]]),
+  assertthat::assert_that(!is.null(cds@reduce_dim_aux[[method]]),
                           msg=paste0("Method '", method, "' is not in the model",
                                     " object."))
 
@@ -793,11 +792,11 @@ preprocess_transform <- function(cds, method=c('PCA'), block_size=NULL) {
   }
 
   set.seed(2016)
-  norm_method <- cds@preprocess_aux[[method]][['model']][['norm_method']]
-  pseudo_count <- cds@preprocess_aux[[method]][['model']][['pseudo_count']]
-  rotation_matrix <- cds@preprocess_aux[[method]][['model']]$svd_v
-  vcenter <- cds@preprocess_aux[[method]][['model']]$svd_center
-  vscale <- cds@preprocess_aux[[method]][['model']]$svd_scale
+  norm_method <- cds@reduce_dim_aux[[method]][['model']][['norm_method']]
+  pseudo_count <- cds@reduce_dim_aux[[method]][['model']][['pseudo_count']]
+  rotation_matrix <- cds@reduce_dim_aux[[method]][['model']]$svd_v
+  vcenter <- cds@reduce_dim_aux[[method]][['model']]$svd_center
+  vscale <- cds@reduce_dim_aux[[method]][['model']]$svd_scale
 
   FM <- normalize_expr_data(cds, norm_method=norm_method, pseudo_count=pseudo_count)
   if (nrow(FM) == 0) {
@@ -876,7 +875,7 @@ align_transform <- function(cds, method=c('Aligned')) {
 
   method <- match.arg(method)
 
-  preprocess_method <- cds@preprocess_aux[['Aligned']][['model']][['preprocess_method']]
+  preprocess_method <- cds@reduce_dim_aux[['Aligned']][['model']][['preprocess_method']]
   preproc_res <- reducedDims(cds)[[preprocess_method]]
   assertthat::assert_that(!is.null(preproc_res),
                           msg=paste("Preprocessing for '",
@@ -888,15 +887,15 @@ align_transform <- function(cds, method=c('Aligned')) {
 #  stop('This function is a place holder. It does not map the transformed count matrix to aligned space at this time because I don\'t know how to make it do so.')
 
   set.seed(2016)
-  alignment_group <- cds@preprocess_aux[['Aligned']][['model']][['alignment_group']]
-  alignment_k <- cds@preprocess_aux[['Aligned']][['model']][['alignment_k']]
-  residual_model_formula_str <- cds@preprocess_aux[['Aligned']][['model']][['residual_model_formula_str']]
-  nn_metric <- cds@preprocess_aux[['Aligned']][['nn_index']][['annoy_metric']]
+  alignment_group <- cds@reduce_dim_aux[['Aligned']][['model']][['alignment_group']]
+  alignment_k <- cds@reduce_dim_aux[['Aligned']][['model']][['alignment_k']]
+  residual_model_formula_str <- cds@reduce_dim_aux[['Aligned']][['model']][['residual_model_formula_str']]
+  nn_metric <- cds@reduce_dim_aux[['Aligned']][['nn_index']][['annoy_metric']]
 
   X.model_mat <- Matrix::sparse.model.matrix( stats::as.formula(residual_model_formula_str), data = colData(cds), drop.unused.levels = TRUE)
   fit <- limma::lmFit(Matrix::t(preproc_res), X.model_mat)
   beta <- fit$coefficients[, -1, drop = FALSE]
-  cds@preprocess_aux[[preprocess_method]][['beta']] <- beta
+  cds@reduce_dim_aux[[preprocess_method]][['beta']] <- beta
   preproc_res <- Matrix::t(as.matrix(Matrix::t(preproc_res)) - beta %*% Matrix::t(X.model_mat[, -1]))
   corrected_PCA = batchelor::reducedMNN(as.matrix(preproc_res), batch=colData(cds)[,alignment_group], k=alignment_k)
   preproc_res = corrected_PCA$corrected
@@ -941,7 +940,7 @@ reduce_dimension_transform <- function(cds, preprocess_method=NULL, method=c('UM
     stop('Preprocess_method must be one of \'PCA\', \'LSI\', or \'Aligned\'.')
   }
 
-  if(is.null(cds@preprocess_aux[[preprocess_method]])) {
+  if(is.null(cds@reduce_dim_aux[[preprocess_method]])) {
     stop('There is no transform model for preprocess_method \'', preprocess_method, '\'.')
   }
 

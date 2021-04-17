@@ -14,19 +14,12 @@ annoy_index_exists <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', 
 
   nn_metric <- match.arg(nn_metric)
 
-  index_exists <- FALSE
-  if((reduction_method %in% c('PCA', 'LSI', 'Aligned')) &&
-     !is.null(cds@preprocess_aux[[reduction_method]][['nn_index']]) &&
-     cds@preprocess_aux[[reduction_method]][['nn_index']][['annoy_metric']] == nn_metric) {
-      index_exists <- TRUE
-  } else
-  if((reduction_method %in% c('tSNE', 'UMAP')) &&
-     !is.null(cds@reduce_dim_aux[[reduction_method]][['nn_index']]) &&
+  if(!is.null(cds@reduce_dim_aux[[reduction_method]][['nn_index']]) &&
      cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy_metric']] == nn_metric) {
-      index_exists <- TRUE
+    return(TRUE)
   }
 
-  return(index_exists)
+  return(FALSE)
 }
 
 
@@ -54,12 +47,6 @@ build_annoy_index <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', '
                                         "method = 'PCA' before running",
                                         "build_annoy_index with",
                                         "reduction_method = 'PCA'."))
-    reduced_matrix <- reducedDims(cds)[['PCA']]
-    cds@preprocess_aux[['PCA']][['nn_index']] <- SimpleList()
-    annoy_index <- uwot:::annoy_build(X = reduced_matrix, metric = nn_metric)
-    cds@preprocess_aux[['PCA']][['nn_index']][['annoy_index']] <- annoy_index
-    cds@preprocess_aux[['PCA']][['nn_index']][['annoy_metric']] <- nn_metric
-    cds@preprocess_aux[['PCA']][['nn_index']][['annoy_ndim']] <- ncol(reduced_matrix)
   } else
   if(reduction_method == 'LSI') {
     assertthat::assert_that(!is.null(reducedDims(cds)[['LSI']]),
@@ -69,13 +56,6 @@ build_annoy_index <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', '
                                         "method = 'LSI' before running",
                                         "build_annoy_index with",
                                         "reduction_method = 'LSI'."))
-
-    reduced_matrix <- reducedDims(cds)[['LSI']]
-    cds@preprocess_aux[['LSI']][['nn_index']] <- SimpleList()
-    annoy_index <- uwot:::annoy_build(X = reduced_matrix, metric = nn_metric)
-    cds@preprocess_aux[['LSI']][['nn_index']][['annoy_index']] <- annoy_index
-    cds@preprocess_aux[['LSI']][['nn_index']][['annoy_metric']] <- nn_metric
-    cds@preprocess_aux[['LSI']][['nn_index']][['annoy_ndim']] <- ncol(reduced_matrix)
   } else
   if(reduction_method == 'Aligned') {
     assertthat::assert_that(!is.null(reducedDims(cds)[['Aligned']]),
@@ -84,13 +64,6 @@ build_annoy_index <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', '
                                         "Please run align_cds before running",
                                         "build_annoy_index with",
                                         "reduction_method = 'Aligned'."))
-
-    reduced_matrix <- reducedDims(cds)[['Aligned']]
-    cds@preprocess_aux[['Aligned']][['nn_index']] <- SimpleList()
-    annoy_index <- uwot:::annoy_build(X = reduced_matrix, metric = nn_metric)
-    cds@preprocess_aux[['Aligned']][['nn_index']][['annoy_index']] <- annoy_index
-    cds@preprocess_aux[['Aligned']][['nn_index']][['annoy_metric']] <- nn_metric
-    cds@preprocess_aux[['Aligned']][['nn_index']][['annoy_ndim']] <- ncol(reduced_matrix)
   } else
   if(reduction_method == 'tSNE') {
     assertthat::assert_that(!is.null(reducedDims(cds)[['tSNE']]),
@@ -100,12 +73,6 @@ build_annoy_index <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', '
                                         "Please run reduce_dimension with",
                                         "method='tSNE' before running",
                                         "build_annoy_index."))
-    reduced_matrix <- reducedDims(cds)[['tSNE']]
-    cds@reduce_dim_aux[['tSNE']][['nn_index']] <- SimpleList()
-    annoy_index <- uwot:::annoy_build(X = reduced_matrix, metric=nn_metric)
-    cds@reduce_dim_aux[['tSNE']][['nn_index']][['annoy_index']] <- annoy_index
-    cds@reduce_dim_aux[['tSNE']][['nn_index']][['annoy_metric']] <- nn_metric
-    cds@reduce_dim_aux[['tSNE']][['nn_index']][['annoy_ndim']] <- ncol(reduced_matrix)
   } else
   if(reduction_method == 'UMAP') {
     assertthat::assert_that(!is.null(reducedDims(cds)[['UMAP']]),
@@ -115,14 +82,15 @@ build_annoy_index <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', '
                                         "Please run reduce_dimension with",
                                         "method='UMAP' before running",
                                         "build_annoy_index."))
-
-    reduced_matrix <- reducedDims(cds)[['UMAP']]
-    cds@reduce_dim_aux[['UMAP']][['nn_index']] <- SimpleList()
-    annoy_index <- uwot:::annoy_build(X = reduced_matrix, metric=nn_metric)
-    cds@reduce_dim_aux[['UMAP']][['nn_index']][['annoy_index']] <- annoy_index
-    cds@reduce_dim_aux[['UMAP']][['nn_index']][['annoy_metric']] <- nn_metric
-    cds@reduce_dim_aux[['UMAP']][['nn_index']][['annoy_ndim']] <- ncol(reduced_matrix)
   }
+
+  reduced_matrix <- reducedDims(cds)[[reduction_method]]
+  cds@reduce_dim_aux[[reduction_method]][['nn_index']] <- SimpleList()
+  annoy_index <- uwot:::annoy_build(X = reduced_matrix, metric = nn_metric)
+  cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy_index']] <- annoy_index
+  cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy_metric']] <- nn_metric
+  cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy_ndim']] <- ncol(reduced_matrix)
+
   cds
 }
 
@@ -150,15 +118,6 @@ search_nn_index <- function(cds, method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP
   stage_list <- list(PCA='preprocess', LSI='preprocess', Aligned='preprocess', tSNE='reduce_dimension', UMAP='reduce_dimension')
   stage <- stage_list[method]
 
-  if(stage=='preprocess' ) {
-    stage_aux <- cds@preprocess_aux
-  } else
-  if(stage == 'reduce_dimension') {
-    stage_aux <- cds@reduce_dim_aux
-  } else {
-    stop('Unrecognized stage \'', stage, '\'')
-  }
-
   assertthat::assert_that(!is.null(reducedDim(cds, method)),
     msg = paste0("The matrix for ", method,
                 " does not exist. Please preprocess the",
@@ -172,7 +131,7 @@ search_nn_index <- function(cds, method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP
   #   o  set list names to nn.idx and nn.dists for compatibility with
   #      RANN::nn2()
   #
-  ann_index <- stage_aux[[method]][['nn_index']][['annoy_index']][['ann']]
+  ann_index <- cds@reduce_dim_aux[[method]][['nn_index']][['annoy_index']][['ann']]
   tmp <- uwot:::annoy_search(X=query_matrix, ann=ann_index, k=n, search_k=search_k, ...)
   ann_res = list(nn.idx = tmp[['idx']], nn.dists = tmp[['dist']])
 }

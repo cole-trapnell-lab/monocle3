@@ -440,18 +440,18 @@ report_files_saved <- function(file_index) {
       process <- 'cell_data_set'
       method <- 'full_cds'
     } else
-    if(cds_object == 'preprocess_aux') {
+    if(cds_object == 'reduce_dim_aux') {
       if(method == 'Aligned') {
         process <- 'align_cds'
       } else
       if(method == 'PCA' || method == 'LSI') {
         process <- 'preprocess_cds'
+      } else
+      if(method == 'tSNE' || method == 'UMAP') {
+        process <- 'reduce_dimension'
       } else {
         stop('Unrecognized preprocess method \'', method, '\'')
       }
-    } else
-    if(cds_object == 'reduce_dim_aux') {
-      process <- 'reduce_dimension'
     } else {
       stop('Unrecognized cds_object value \'', files[['cds_object']][[i]], '\'')
     }
@@ -520,7 +520,7 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
   appendLF <- TRUE
   # file information is written to an RDS file
   # in directory_path
-  #   cds_object: preprocess_aux |r reduce_dim_aux
+  #   cds_object: reduce_dim_aux
   #   method: PCA | LSI | Aligned | UMAP ...
   #   object_spec: ex: cds@reduce_dim_aux[[method]]
   #   file_format: rds | annoy_index | umap_annoy_index
@@ -543,18 +543,6 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
                                            file_md5sum = character(0),
                                            stringsAsFactors = FALSE))
 
-  # Gather preprocess methods and whether each has an annoy index.
-  methods_preprocess <- list()
-  for(method in names(cds@preprocess_aux)) {
-    methods_preprocess[[method]] <- list()
-    methods_preprocess[[method]][['rds_path']] <- file.path(directory_path, paste0('ppc_', tolower(method), '_transform_model.rds'))
-    methods_preprocess[[method]][['nn_index_path']] <- file.path(directory_path, paste0('ppc_', tolower(method), '_transform_model_nn.idx'))
-    if(!is.null(cds@preprocess_aux[[method]][['nn_index']][['annoy_index']]))
-      methods_preprocess[[method]][['has_nn_index']] <- TRUE
-    else
-      methods_preprocess[[method]][['has_nn_index']] <- FALSE
-  }
-
   # Gather reduce_dimension methods and whether each has an annoy index.
   methods_reduce_dim <- list()
   for( method in names(cds@reduce_dim_aux)) {
@@ -572,70 +560,22 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
   dir.create(path = directory_path, showWarnings=FALSE, recursive=TRUE, mode='0700')
 
   # Remove files, if they exist.
-  for(method in names(methods_preprocess)) {
-    if(file.exists(methods_preprocess[[method]][['rds_path']]))
-      file.remove(methods_preprocess[[method]][['rds_path']])
-    if(file.exists(methods_preprocess[[method]][['nn_index_path']]))
-      file.remove(methods_preprocess[[method]][['nn_index_path']])
-  }
   for(method in names(methods_reduce_dim)) {
     if(file.exists(methods_reduce_dim[[method]][['rds_path']]))
-       file.remove(methods_reduce_dim[[method]][['rds_path']])
-    if(file.exists(methods_reduce_dim[[method]][['umap_index_path']]))
-       file.remove(methods_reduce_dim[[method]][['umap_index_path']])
+      file.remove(methods_reduce_dim[[method]][['rds_path']])
     if(file.exists(methods_reduce_dim[[method]][['nn_index_path']]))
-       file.remove(methods_reduce_dim[[method]][['nn_index_path']])
-  }
-
-  # Save preprocess_cds annoy indexes.
-  # Notes:
-  #   o  save RDS files before the corresponding index files in
-  #      order to enable loading.
-  #
-  for(method in names(methods_preprocess)) {
-    tryCatch(
-      {
-        saveRDS(cds@preprocess_aux[[method]], file=methods_preprocess[[method]][['rds_path']])
-      },
-      error = function(cnd) {
-                     message('Error writing file \'', methods_preprocess[[method]][['rds_path']], '\': ', cnd, appendLF=appendLF)
-                     return(NULL)
-      },
-      finally = {
-        md5sum <- tools::md5sum(methods_preprocess[[method]][['rds_path']])
-        file_index[['files']] <- rbind(file_index[['files']],
-                                       data.frame(cds_object = 'preprocess_aux',
-                                                  method = method,
-                                                  object_spec = object_name_to_string(cds@preprocess_aux[[method]]),
-                                                  file_format = 'rds',
-                                                  file_path = methods_preprocess[[method]][['rds_path']],
-                                                  file_md5sum = md5sum,
-                                                  stringsAsFactors = FALSE))
-      })
-    if(methods_preprocess[[method]][['has_nn_index']]) {
-      tryCatch(
-        {
-          save_annoy_index(cds@preprocess_aux[[method]][['nn_index']][['annoy_index']], methods_preprocess[[method]][['nn_index_path']])
-        },
-        error = function(cnd) {
-                       message('Error writing file \'', methods_preprocess[[method]][['nn_index_path']], '\': ', cnd, appendLF=appendLF)
-                       return(NULL)
-        },
-        finally = {
-          md5sum <- tools::md5sum(methods_preprocess[[method]][['nn_index_path']])
-          file_index[['files']] <- rbind(file_index[['files']],
-                                         data.frame(cds_object = 'preprocess_aux',
-                                                    method = method,
-                                                    object_spec = object_name_to_string(cds@preprocess_aux[[method]][['nn_index']][['annoy_index']]),
-                                                    file_format = 'annoy_index',
-                                                    file_path = methods_preprocess[[method]][['nn_index_path']],
-                                                    file_md5sum = md5sum,
-                                                    stringsAsFactors = FALSE))
-        })
+      file.remove(methods_reduce_dim[[method]][['nn_index_path']])
+    if(method == 'UMAP') {
+      if(file.exists(methods_reduce_dim[[method]][['umap_index_path']]))
+         file.remove(methods_reduce_dim[[method]][['umap_index_path']])
     }
   }
 
   # Save reduce_dimension annoy indexes.
+  # Notes:
+  #   o  save RDS files before the corresponding index files in
+  #      order to enable loading.
+  #
   for(method in names(methods_reduce_dim)) {
     tryCatch(
       {
@@ -783,33 +723,6 @@ load_transform_models <- function(cds, directory_path) {
     #   o  expect that the RDS file for a method
     #      appears before index files for the method
     #
-    if(cds_object == 'preprocess_aux') {
-      if(file_format == 'rds') {
-        cds@preprocess_aux[[method]] <- tryCatch(
-          {
-            readRDS(file_path)
-          },
-          error = function(cnd) {
-            message('Error reading file \'', file_path, '\'', appendLF=appendLF)
-            return(NULL)
-          })
-     
-      } else
-      if(file_format == 'annoy_index') {
-        metric <- cds@preprocess_aux[[method]][['nn_index']][['annoy_metric']]
-        ndim <- cds@preprocess_aux[[method]][['nn_index']][['annoy_ndim']]
-        cds@preprocess_aux[[method]][['nn_index']][['annoy_index']] <- tryCatch(
-         {
-           load_annoy_index(cds@preprocess_aux[[method]][['nn_index']][['annoy_index']], file_path, metric, ndim)
-         },
-         error = function(cds) {
-           message('Error reading file \'', file_path, '\'', appendLF=appendLF)
-            return(NULL)
-         })
-      } else {
-        stop('Unrecognized file format value \'', file_format, '\'')
-      }
-    } else
     if(cds_object == 'reduce_dim_aux') {
       if(file_format == 'rds') {
         cds@reduce_dim_aux[[method]] <- tryCatch(
@@ -906,8 +819,8 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
   appendLF <- TRUE
   # file information is written to an RDS file
   # in directory_path
-  #   cds_object: cds | preprocess_aux | reduce_dim_aux
-  #   method: PCA | LSI | Aligned | UMAP  ...
+  #   cds_object: cds | reduce_dim_aux
+  #   method: PCA | LSI | Aligned | tSNE | UMAP  ...
   #   object_spec: ex: cds@reduce_dim_aux[[method]]
   #   file_format: rds | annoy_index | umap_annoy_index
   #   file_path: path within directory_path (need file name)
@@ -937,22 +850,13 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
   rds_path <- file.path(directory_path, 'cds_object.rds')
   hdf5_path <- file.path(directory_path, 'hdf5_object')
 
-  # Gather preprocess methods and whether each has an annoy index.
-  methods_preprocess <- list()
-  for(method in names(cds@preprocess_aux)) {
-    methods_preprocess[[method]] <- list()
-    methods_preprocess[[method]][['nn_index_path']] <- file.path(directory_path, paste0('ppc_', tolower(method), '_transform_model_nn.idx'))
-    if(!is.null(cds@preprocess_aux[[method]][['nn_index']][['annoy_index']]))
-      methods_preprocess[[method]][['has_nn_index']] <- TRUE
-    else
-      methods_preprocess[[method]][['has_nn_index']] <- FALSE
-  }
-
   # Gather reduce_dimension method names for which indexes exist.
   methods_reduce_dim <- list()
   for(method in names(cds@reduce_dim_aux)) {
     methods_reduce_dim[[method]] <- list()
-    methods_reduce_dim[[method]][['umap_index_path']] <- file.path(directory_path, paste0('rdd_', tolower(method), '_transform_model_umap.idx'))
+    if(method == 'UMAP') {
+      methods_reduce_dim[[method]][['umap_index_path']] <- file.path(directory_path, paste0('rdd_', tolower(method), '_transform_model_umap.idx'))
+    }
     methods_reduce_dim[[method]][['nn_index_path']] <- file.path(directory_path, paste0('rdd_', tolower(method), '_transform_model_nn.idx'))
     if(!is.null(cds@reduce_dim_aux[[method]][['nn_index']][['annoy_index']]))
       methods_reduce_dim[[method]][['has_nn_index']] <- TRUE
@@ -964,13 +868,11 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
   dir.create(path = directory_path, showWarnings=FALSE, recursive=TRUE, mode='0700')
 
   # Remove files, if they exist.
-  for(method in names(methods_preprocess)) {
-    if(file.exists(methods_preprocess[[method]][['nn_index_path']]))
-      file.remove(methods_preprocess[[method]][['nn_index_path']])
-  }
   for(method in names(methods_reduce_dim)) {
-    if(file.exists(methods_reduce_dim[[method]][['umap_index_path']]))
-       file.remove(methods_reduce_dim[[method]][['umap_index_path']])
+    if(method == 'UMAP') {
+      if(file.exists(methods_reduce_dim[[method]][['umap_index_path']]))
+         file.remove(methods_reduce_dim[[method]][['umap_index_path']])
+    }
     if(file.exists(methods_reduce_dim[[method]][['nn_index_path']]))
        file.remove(methods_reduce_dim[[method]][['nn_index_path']])
   }
@@ -1022,36 +924,11 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
       })
   }
 
-  # Save preprocess_cds annoy indexes.
+  # Save reduce_dimension annoy indexes.
   # Notes:
   #   o  save RDS files before the corresponding index files in
   #      order to enable loading.
   #
-  for(method in names(methods_preprocess)) {
-    if(methods_preprocess[[method]][['has_nn_index']]) {
-      tryCatch(
-        {
-          save_annoy_index(cds@preprocess_aux[[method]][['nn_index']][['annoy_index']], methods_preprocess[[method]][['nn_index_path']])
-        },
-        error = function(cnd) {
-                       message('Error writing file \'', methods_preprocess[[method]][['nn_index_path']], '\': ', cnd, appendLF=appendLF)
-                       return(NULL)
-        },
-        finally = {
-          md5sum <- tools::md5sum(methods_preprocess[[method]][['nn_index_path']])
-          file_index[['files']] <- rbind(file_index[['files']],
-                                         data.frame(cds_object = 'preprocess_aux',
-                                                    method = method,
-                                                    object_spec = object_name_to_string(cds@preprocess_aux[[method]][['nn_index']][['annoy_index']]),
-                                                    file_format = 'annoy_index',
-                                                    file_path = methods_preprocess[[method]][['nn_index_path']],
-                                                    file_md5sum = md5sum,
-                                                    stringsAsFactors = FALSE))
-        })
-    }
-  }
-
-  # Save reduce_dimension annoy indexes.
   for(method in names(methods_reduce_dim)) {
     if(method == 'UMAP') {
       tryCatch(
@@ -1202,22 +1079,6 @@ load_monocle_objects <- function(directory_path) {
           })
       } else {
         stop('Unrecognized cds format value \'', file_format, '\'')
-      }
-    } else
-    if(cds_object == 'preprocess_aux') {
-      if(file_format == 'annoy_index') {
-        metric <- cds@preprocess_aux[[method]][['nn_index']][['annoy_metric']]
-        ndim <- cds@preprocess_aux[[method]][['nn_index']][['annoy_ndim']]
-        cds@preprocess_aux[[method]][['nn_index']][['annoy_index']] <- tryCatch(
-         {
-           load_annoy_index(cds@preprocess_aux[[method]][['nn_index']][['annoy_index']], file_path, metric, ndim)
-         },
-         error = function(cds) {
-           message('Error reading file \'', file_path, '\'', appendLF=appendLF)
-            return(NULL)
-         })
-      } else {
-        stop('Unrecognized file format value \'', file_format, '\'')
       }
     } else
     if(cds_object == 'reduce_dim_aux') {
