@@ -547,9 +547,9 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
   methods_reduce_dim <- list()
   for( method in names(cds@reduce_dim_aux)) {
     methods_reduce_dim[[method]] <- list()
-    methods_reduce_dim[[method]][['rds_path']] <- file.path(directory_path, paste0('rdd_', tolower(method), '_transform_model.rds'))
-    methods_reduce_dim[[method]][['umap_index_path']] <- file.path(directory_path, paste0('rdd_', tolower(method), '_transform_model_umap.idx'))
-    methods_reduce_dim[[method]][['nn_index_path']] <- file.path(directory_path, paste0('rdd_', tolower(method), '_transform_model_nn.idx'))
+    methods_reduce_dim[[method]][['rds_path']] <- paste0('rdd_', tolower(method), '_transform_model.rds')
+    methods_reduce_dim[[method]][['umap_index_path']] <- paste0('rdd_', tolower(method), '_transform_model_umap.idx')
+    methods_reduce_dim[[method]][['nn_index_path']] <- paste0('rdd_', tolower(method), '_transform_model_nn.idx')
     if(!is.null(cds@reduce_dim_aux[[method]][['nn_index']][['annoy_index']]))
       methods_reduce_dim[[method]][['has_nn_index']] <- TRUE
     else
@@ -561,13 +561,13 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
 
   # Remove files, if they exist.
   for(method in names(methods_reduce_dim)) {
-    if(file.exists(methods_reduce_dim[[method]][['rds_path']]))
-      file.remove(methods_reduce_dim[[method]][['rds_path']])
-    if(file.exists(methods_reduce_dim[[method]][['nn_index_path']]))
-      file.remove(methods_reduce_dim[[method]][['nn_index_path']])
+    if(file.exists(file.path(directory_path, methods_reduce_dim[[method]][['rds_path']])))
+      file.remove(file.path(directory_path, methods_reduce_dim[[method]][['rds_path']]))
+    if(file.exists(file.path(directory_path, methods_reduce_dim[[method]][['nn_index_path']])))
+      file.remove(file.path(directory_path, methods_reduce_dim[[method]][['nn_index_path']]))
     if(method == 'UMAP') {
-      if(file.exists(methods_reduce_dim[[method]][['umap_index_path']]))
-         file.remove(methods_reduce_dim[[method]][['umap_index_path']])
+      if(file.exists(file.path(directory_path, methods_reduce_dim[[method]][['umap_index_path']])))
+         file.remove(file.path(directory_path, methods_reduce_dim[[method]][['umap_index_path']]))
     }
   }
 
@@ -579,14 +579,14 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
   for(method in names(methods_reduce_dim)) {
     tryCatch(
       {
-        saveRDS(cds@reduce_dim_aux[[method]], file=methods_reduce_dim[[method]][['rds_path']])
+        saveRDS(cds@reduce_dim_aux[[method]], file=file.path(directory_path, methods_reduce_dim[[method]][['rds_path']]))
       },
       error = function(cnd) {
-                     message('Error writing file \'', methods_reduce_dim[[method]][['rds_path']], '\': ', cnd, appendLF=appendLF)
+                     message('Error writing file \'', file.path(directory_path, methods_reduce_dim[[method]][['rds_path']]), '\': ', cnd, appendLF=appendLF)
                      return(NULL)
       },
       finally = {
-        md5sum <- tools::md5sum(methods_reduce_dim[[method]][['rds_path']])
+        md5sum <- tools::md5sum(file.path(directory_path, methods_reduce_dim[[method]][['rds_path']]))
         file_index[['files']] <- rbind(file_index[['files']],
                                        data.frame(cds_object = 'reduce_dim_aux',
                                                   method = method,
@@ -599,10 +599,10 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
     if(method == 'UMAP') {
       tryCatch(
         {
-          md5sum <- save_umap_nn_indexes(cds@reduce_dim_aux[[method]][['model']][['umap_model']], methods_reduce_dim[[method]][['umap_index_path']])
+          md5sum <- save_umap_nn_indexes(cds@reduce_dim_aux[[method]][['model']][['umap_model']], file.path(directory_path, methods_reduce_dim[[method]][['umap_index_path']]))
         },
         error = function(cnd) {
-                       message('Error writing file \'', methods_reduce_dim[[method]][['umap_index_path']], '\': ', cnd, appendLF=appendLF)
+                       message('Error writing file \'', file.path(directory_path, methods_reduce_dim[[method]][['umap_index_path']]), '\': ', cnd, appendLF=appendLF)
                        return(NULL)
         },
         finally = {
@@ -619,14 +619,14 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
     if(methods_reduce_dim[[method]][['has_nn_index']]) {
       tryCatch(
         {
-          save_annoy_index(cds@reduce_dim_aux[[method]][['nn_index']][['annoy_index']], methods_reduce_dim[[method]][['nn_index_path']])
+          save_annoy_index(cds@reduce_dim_aux[[method]][['nn_index']][['annoy_index']], file.path(directory_path, methods_reduce_dim[[method]][['nn_index_path']]))
         },
         error = function(cnd) {
-                       message('Error writing file \'', methods_reduce_dim[[method]][['nn_index_path']], '\': ', cnd, appendLF=appendLF)
+                       message('Error writing file \'', file.path(directory_path, methods_reduce_dim[[method]][['nn_index_path']]), '\': ', cnd, appendLF=appendLF)
                        return(NULL)
         },
         finally = {
-          md5sum <- tools::md5sum(methods_reduce_dim[[method]][['nn_index_path']])
+          md5sum <- tools::md5sum(file.path(directory_path, methods_reduce_dim[[method]][['nn_index_path']]))
           file_index[['files']] <- rbind(file_index[['files']],
                                          data.frame(cds_object = 'reduce_dim_aux',
                                                     method = method,
@@ -698,7 +698,7 @@ load_transform_models <- function(cds, directory_path) {
   # Loop through the files in file_index.rds in order
   # to restore objects.
   for(ifile in seq_along(file_index[['files']][['cds_object']])) {
-    file_path <- file_index[['files']][['file_path']][[ifile]]
+    file_path <- file.path(directory_path, file_index[['files']][['file_path']][[ifile]])
     file_format <- file_index[['files']][['file_format']][[ifile]]
     cds_object <- file_index[['files']][['cds_object']][[ifile]]
     method <- file_index[['files']][['method']][[ifile]]
@@ -847,17 +847,17 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
   hdf5_assay_flag <- hdf5_assays || test_hdf5_assays(cds)
 
   # Path of cds object file.
-  rds_path <- file.path(directory_path, 'cds_object.rds')
-  hdf5_path <- file.path(directory_path, 'hdf5_object')
+  rds_path <- 'cds_object.rds'
+  hdf5_path <- 'hdf5_object'
 
   # Gather reduce_dimension method names for which indexes exist.
   methods_reduce_dim <- list()
   for(method in names(cds@reduce_dim_aux)) {
     methods_reduce_dim[[method]] <- list()
     if(method == 'UMAP') {
-      methods_reduce_dim[[method]][['umap_index_path']] <- file.path(directory_path, paste0('rdd_', tolower(method), '_transform_model_umap.idx'))
+      methods_reduce_dim[[method]][['umap_index_path']] <- paste0('rdd_', tolower(method), '_transform_model_umap.idx')
     }
-    methods_reduce_dim[[method]][['nn_index_path']] <- file.path(directory_path, paste0('rdd_', tolower(method), '_transform_model_nn.idx'))
+    methods_reduce_dim[[method]][['nn_index_path']] <- paste0('rdd_', tolower(method), '_transform_model_nn.idx')
     if(!is.null(cds@reduce_dim_aux[[method]][['nn_index']][['annoy_index']]))
       methods_reduce_dim[[method]][['has_nn_index']] <- TRUE
     else
@@ -870,11 +870,11 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
   # Remove files, if they exist.
   for(method in names(methods_reduce_dim)) {
     if(method == 'UMAP') {
-      if(file.exists(methods_reduce_dim[[method]][['umap_index_path']]))
-         file.remove(methods_reduce_dim[[method]][['umap_index_path']])
+      if(file.exists(file.path(directory_path, methods_reduce_dim[[method]][['umap_index_path']])))
+         file.remove(file.path(directory_path, methods_reduce_dim[[method]][['umap_index_path']]))
     }
-    if(file.exists(methods_reduce_dim[[method]][['nn_index_path']]))
-       file.remove(methods_reduce_dim[[method]][['nn_index_path']])
+    if(file.exists(file.path(directory_path, methods_reduce_dim[[method]][['nn_index_path']])))
+       file.remove(file.path(directory_path, methods_reduce_dim[[method]][['nn_index_path']]))
   }
 
   #
@@ -885,14 +885,14 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
   if(!hdf5_assay_flag) {
     tryCatch(
       {
-        saveRDS(cds, rds_path)
+        saveRDS(cds, file.path(directory_path, rds_path))
       },
       error = function(cnd) {
-                       message('Error writing file \'', rds_path, '\': ', cnd, appendLF=appendLF)
+                       message('Error writing file \'', file.path(directory_path, rds_path), '\': ', cnd, appendLF=appendLF)
                        return(NULL)
       },
       finally = {
-        md5sum <- tools::md5sum(rds_path)
+        md5sum <- tools::md5sum(file.path(directory_path, rds_path))
         file_index[['files']] <- rbind(file_index[['files']],
                                        data.frame(cds_object = 'cds',
                                                   method = NA,
@@ -905,14 +905,14 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
   } else {
     tryCatch(
       {
-        HDF5Array::saveHDF5SummarizedExperiment(cds, hdf5_path, replace=TRUE)
+        HDF5Array::saveHDF5SummarizedExperiment(cds, file.path(directory_path, hdf5_path), replace=TRUE)
       },
       error = function(cnd) {
-                       message('Error writing file \'', hdf5_path, '\': ', cnd, appendLF=appendLF)
+                       message('Error writing file \'', file.path(directory_path, hdf5_path), '\': ', cnd, appendLF=appendLF)
                        return(NULL)
       },
       finally = {
-        md5sum <- tools::md5sum(file.path(hdf5_path, 'se.rds'))
+        md5sum <- tools::md5sum(file.path(directory_path, hdf5_path, 'se.rds'))
         file_index[['files']] <- rbind(file_index[['files']],
                                        data.frame(cds_object = 'cds',
                                                   method = NA,
@@ -933,10 +933,10 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
     if(method == 'UMAP') {
       tryCatch(
         {
-          md5sum <- save_umap_nn_indexes(cds@reduce_dim_aux[[method]][['model']][['umap_model']], methods_reduce_dim[[method]][['umap_index_path']])
+          md5sum <- save_umap_nn_indexes(cds@reduce_dim_aux[[method]][['model']][['umap_model']], file.path(directory_path, methods_reduce_dim[[method]][['umap_index_path']]))
         },
         error = function(cnd) {
-                       message('Error writing file \'', methods_reduce_dim[[method]][['umap_index_path']], '\': ', cnd, appendLF=appendLF)
+                       message('Error writing file \'', file.path(directory_path, methods_reduce_dim[[method]][['umap_index_path']]), '\': ', cnd, appendLF=appendLF)
                        return(NULL)
         },
         finally = {
@@ -953,14 +953,14 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
     if(methods_reduce_dim[[method]][['has_nn_index']]) {
       tryCatch(
         {
-          save_annoy_index(cds@reduce_dim_aux[[method]][['nn_index']][['annoy_index']], methods_reduce_dim[[method]][['nn_index_path']])
+          save_annoy_index(cds@reduce_dim_aux[[method]][['nn_index']][['annoy_index']], file.path(directory_path, methods_reduce_dim[[method]][['nn_index_path']]))
         },
         error = function(cnd) {
-                       message('Error writing file \'', methods_reduce_dim[[method]][['nn_index_path']], '\': ', cnd, appendLF=appendLF)
+                       message('Error writing file \'', file.path(directory_path, methods_reduce_dim[[method]][['nn_index_path']]), '\': ', cnd, appendLF=appendLF)
                        return(NULL)
         },
         finally = {
-          md5sum <- tools::md5sum(methods_reduce_dim[[method]][['nn_index_path']])
+          md5sum <- tools::md5sum(file.path(directory_path, methods_reduce_dim[[method]][['nn_index_path']]))
           file_index[['files']] <- rbind(file_index[['files']],
                                          data.frame(cds_object = 'reduce_dim_aux',
                                                     method = method,
@@ -1030,7 +1030,7 @@ load_monocle_objects <- function(directory_path) {
   # Loop through the files in file_index.rds in order
   # to restore objects.
   for(ifile in seq_along(file_index[['files']][['cds_object']])) {
-    file_path <- file_index[['files']][['file_path']][[ifile]]
+    file_path <- file.path(directory_path, file_index[['files']][['file_path']][[ifile]])
     file_format <- file_index[['files']][['file_format']][[ifile]]
     cds_object <- file_index[['files']][['cds_object']][[ifile]]
     method <- file_index[['files']][['method']][[ifile]]
