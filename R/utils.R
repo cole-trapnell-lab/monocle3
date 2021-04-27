@@ -969,3 +969,17 @@ reduce_dimension_transform <- function(cds, preprocess_method=NULL, method=c('UM
 }
 
 
+align_beta_transform <- function(cds, preprocess_method = 'PCA') {
+  preproc_res <- reducedDims(cds)[[preprocess_method]]
+  beta <- cds@preprocess_aux[[preprocess_method]][['beta']]
+  residual_model_formula_str <- cds@preprocess_aux[['Aligned']][['model']][['residual_model_formula_str']]
+  X.model_mat <- Matrix::sparse.model.matrix(
+    stats::as.formula(residual_model_formula_str),
+    data = colData(cds),
+    drop.unused.levels = TRUE)
+  reducedDims(cds)[['Aligned']] <- Matrix::t(as.matrix(Matrix::t(preproc_res)) -
+                                   beta %*% Matrix::t(X.model_mat[, -1])) 
+  cds
+}
+
+
