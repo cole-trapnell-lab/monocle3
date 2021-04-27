@@ -77,6 +77,7 @@ find_gene_modules <- function(cds,
   # preprocess_mat is gene_loading matrix
   preprocess_mat <- cds@reduce_dim_aux[[preprocess_method]][['model']]$svd_v %*% diag(cds@reduce_dim_aux[[preprocess_method]][['model']]$svd_sdev)
 # Notes:
+#   o  the beta vector is in cds@reduce_dim_aux[['Aligned']][['beta']]
 #   o  cds@reduce_dim_aux[[preprocess_method]][['beta']] is npc x nfactor, which causes
 #      preprocess_mat to have nfactor columns, often one column
 #   o  I do not know how to adjust gene_loadings for batch effects
