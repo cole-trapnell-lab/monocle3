@@ -510,7 +510,8 @@ normalized_counts <- function(cds,
 combine_cds <- function(cds_list,
                         keep_all_genes = TRUE,
                         cell_names_unique = FALSE,
-                        sample_col_name = "sample") {
+                        sample_col_name = "sample",
+                        keep_reduced_dims = FALSE) {
 
   assertthat::assert_that(is.list(cds_list),
                           msg=paste("cds_list must be a list."))
@@ -679,8 +680,23 @@ combine_cds <- function(cds_list,
 
   all_exp <- all_exp[row.names(all_fd), row.names(all_pd), drop=FALSE]
 
+  new_cds <- new_cell_data_set(all_exp, cell_metadata = all_pd, gene_metadata = all_fd)
 
-  new_cell_data_set(all_exp, cell_metadata = all_pd, gene_metadata = all_fd)
+  if(keep_reduced_dims) {
+    for(red_dim in names(reducedDims(cds_list[[1]]))) {
+      reduced_dims_list <- list()
+      for(j in 1:length(cds_list)) {
+        reduced_dims_list[[j]] <- reducedDims(cds_list[[j]])[[red_dim]]
+      }
+      reducedDims(new_cds)[[red_dim]] <- do.call(rbind, reduced_dims_list, quote=FALSE)
+      # The following should not happen; the accessor appears to ensure the
+      # correct row order.
+      if(identical(rownames(reducedDims(new_cds)[[red_dim]]), rownames(all_pd))) {
+        stop('Mis-ordered reduced matrix rows.')
+      }
+    }
+  }
+  new_cds
 }
 
 #' Clear CDS slots
