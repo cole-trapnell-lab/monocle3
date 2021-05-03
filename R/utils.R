@@ -691,7 +691,7 @@ combine_cds <- function(cds_list,
       reducedDims(new_cds)[[red_dim]] <- do.call(rbind, reduced_dims_list, quote=FALSE)
       # The following should not happen; the accessor appears to ensure the
       # correct row order.
-      if(identical(rownames(reducedDims(new_cds)[[red_dim]]), rownames(all_pd))) {
+      if(!identical(rownames(reducedDims(new_cds)[[red_dim]]), rownames(all_pd))) {
         stop('Mis-ordered reduced matrix rows.')
       }
     }
