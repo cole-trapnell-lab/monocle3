@@ -499,7 +499,10 @@ normalized_counts <- function(cds,
 #'   the genes in common among all of the CDSs will be kept. Default is TRUE.
 #' @param cell_names_unique Logical indicating whether all of the cell IDs
 #'   across all of the CDSs are unique. If FALSE, the CDS name is appended to
-#'   each cell ID to prevent collisions. Default is FALSE.
+#'   each cell ID to prevent collisions. These cell IDs are used as count matrix
+#'   column names and colData(cds) row names. Cell names stored in other
+#'   cds locations are not modified so you will need to modify them manually
+#'   for consistency. Default is FALSE.
 #' @param sample_col_name A string to be the column name for the colData column
 #'   that indicates which original cds the cell derives from. Default is
 #'   "sample".
