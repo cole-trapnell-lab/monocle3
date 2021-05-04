@@ -499,7 +499,10 @@ normalized_counts <- function(cds,
 #'   the genes in common among all of the CDSs will be kept. Default is TRUE.
 #' @param cell_names_unique Logical indicating whether all of the cell IDs
 #'   across all of the CDSs are unique. If FALSE, the CDS name is appended to
-#'   each cell ID to prevent collisions. Default is FALSE.
+#'   each cell ID to prevent collisions. These cell IDs are used as count matrix
+#'   column names and colData(cds) row names. Cell names stored in other
+#'   cds locations are not modified so you will need to modify them manually
+#'   for consistency. Default is FALSE.
 #' @param sample_col_name A string to be the column name for the colData column
 #'   that indicates which original cds the cell derives from. Default is
 #'   "sample".
@@ -679,8 +682,23 @@ combine_cds <- function(cds_list,
 
   all_exp <- all_exp[row.names(all_fd), row.names(all_pd), drop=FALSE]
 
+  new_cds <- new_cell_data_set(all_exp, cell_metadata = all_pd, gene_metadata = all_fd)
 
-  new_cell_data_set(all_exp, cell_metadata = all_pd, gene_metadata = all_fd)
+  if(keep_reduced_dims) {
+    for(red_dim in names(reducedDims(cds_list[[1]]))) {
+      reduced_dims_list <- list()
+      for(j in 1:length(cds_list)) {
+        reduced_dims_list[[j]] <- reducedDims(cds_list[[j]])[[red_dim]]
+      }
+      reducedDims(new_cds)[[red_dim]] <- do.call(rbind, reduced_dims_list, quote=FALSE)
+      # The following should not happen; the accessor appears to ensure the
+      # correct row order.
+      if(!identical(rownames(reducedDims(new_cds)[[red_dim]]), rownames(all_pd))) {
+        stop('Mis-ordered reduced matrix rows.')
+      }
+    }
+  }
+  new_cds
 }
 
 #' Clear CDS slots
@@ -967,4 +985,20 @@ reduce_dimension_transform <- function(cds, preprocess_method=NULL, method=c('UM
   cds
 }
 
+
+#
+# Note: this transformation is not generally effective.
+#
+align_beta_transform <- function(cds, preprocess_method = 'PCA') {
+  preproc_res <- reducedDims(cds)[[preprocess_method]]
+  beta <- cds@reduce_dim_aux[[preprocess_method]][['beta']]
+  residual_model_formula_str <- cds@reduce_dim_aux[['Aligned']][['model']][['residual_model_formula_str']]
+  X.model_mat <- Matrix::sparse.model.matrix(
+    stats::as.formula(residual_model_formula_str),
+    data = colData(cds),
+    drop.unused.levels = TRUE)
+  reducedDims(cds)[['Aligned']] <- Matrix::t(as.matrix(Matrix::t(preproc_res)) -
+                                   beta %*% Matrix::t(X.model_mat[, -1]))
+  cds
+}
 
