@@ -513,7 +513,8 @@ normalized_counts <- function(cds,
 combine_cds <- function(cds_list,
                         keep_all_genes = TRUE,
                         cell_names_unique = FALSE,
-                        sample_col_name = "sample") {
+                        sample_col_name = "sample",
+                        keep_reduced_dims = FALSE) {
 
   assertthat::assert_that(is.list(cds_list),
                           msg=paste("cds_list must be a list."))
