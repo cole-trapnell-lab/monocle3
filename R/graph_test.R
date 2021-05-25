@@ -389,7 +389,7 @@ calculateLW <- function(cds,
       if(is.null(tmp)) {
         tmp <- cur_tmp
       } else {
-        tmp <- Matrix::rBind(tmp, cur_tmp)
+        tmp <- rbind(tmp, cur_tmp)
       }
     }
 
