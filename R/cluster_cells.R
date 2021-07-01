@@ -44,12 +44,12 @@
 #' @param random_seed The seed used by the random number generator in
 #'   louvain-igraph package. This argument will be ignored if num_iter is
 #'   larger than 1.
+#' @param verbose A logic flag to determine whether or not we should print the
+#'   run details.
 #' @param nn_method String indicating the nearest neighbor method to be
 #'   used by cluster_cells. Options are "nn2" and "annoy". Default is "nn2".
 #' @param nn_metric String specifying the metric used by Annoy, currently
 #'   "cosine", "euclidean", "manhattan", or "hamming". Default is "cosine".
-#' @param verbose A logic flag to determine whether or not we should print the
-#'   run details.
 #' @param ... Additional arguments passed to the leidenbase package.
 #'
 #' @return an updated cell_data_set object, with cluster and partition
@@ -78,9 +78,9 @@ cluster_cells <- function(cds,
                           weight = FALSE,
                           resolution = NULL,
                           random_seed = NULL,
+                          verbose = F,
                           nn_method = c('nn2', 'annoy'),
                           nn_metric = c('cosine', 'euclidean', 'manhattan', 'hamming'),
-                          verbose = F,
                           ...) {
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
@@ -216,7 +216,7 @@ cluster_cells_make_graph <- function(cds,
                                      k,
                                      reduction_method = c("UMAP", "tSNE", "PCA", "LSI", "Aligned"),
                                      verbose) {
-
+  assertthat::assert_that(methods::is(cds, "cell_data_set"))
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
@@ -308,6 +308,7 @@ louvain_clustering <- function(cds,
                                louvain_iter = 1,
                                random_seed = 0L,
                                verbose = F, ...) {
+  assertthat::assert_that(methods::is(cds, "cell_data_set"))
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
@@ -428,6 +429,7 @@ leiden_clustering <- function(cds,
     node_sizes <- NULL
 
   # Check input parameters.
+  assertthat::assert_that(methods::is(cds, "cell_data_set"))
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
              error = function(e) FALSE),

@@ -2,9 +2,6 @@
 #'
 #'
 #' @param cds the cell_data_set upon which to perform this operation
-#' @param preprocess_method a string specifying the low-dimensional space
-#'   to use for gene loadings, currently either PCA or LSI. Default is
-#'   "PCA".
 #' @param reduction_method The dimensionality reduction method used to generate the lower dimensional space in which genes will be clustered. Currently only UMAP is supported.
 #' @param max_components The number of dimensions in which to cluster genes into modules.
 #' @param umap.metric Metric used by UMAP for measuring similarity between genes .
@@ -24,13 +21,15 @@
 #' @param random_seed  the seed used by the random number generator in Leiden.
 #' @param cores number of cores computer should use to execute function
 #' @param verbose Whether or not verbose output is printed.
+#' @param preprocess_method a string specifying the low-dimensional space
+#'   to use for gene loadings, currently either PCA or LSI. Default is
+#'   "PCA".
 #' @param ... Additional arguments passed to UMAP and Louvain analysis.
 #'
 #' @return A dataframe with genes and the modules to which they are assigned.
 #'
 #' @export
 find_gene_modules <- function(cds,
-                          preprocess_method = c('PCA', 'LSI'),
                           reduction_method = c("UMAP"),
                           max_components = 2,
                           umap.metric = "cosine",
@@ -46,6 +45,7 @@ find_gene_modules <- function(cds,
                           random_seed = 0L,
                           cores=1,
                           verbose = F,
+                          preprocess_method = c('PCA', 'LSI'),
                           ...) {
   method = 'leiden'
   assertthat::assert_that(
@@ -78,12 +78,12 @@ find_gene_modules <- function(cds,
   preprocess_mat <- cds@reduce_dim_aux[[preprocess_method]][['model']]$svd_v %*% diag(cds@reduce_dim_aux[[preprocess_method]][['model']]$svd_sdev)
 # Notes:
 #   o  the beta vector is in cds@reduce_dim_aux[['Aligned']][['beta']]
-#   o  cds@reduce_dim_aux[[preprocess_method]][['beta']] is npc x nfactor, which causes
+#   o  cds@reduce_dim_aux[['Aligned']][['beta']] is npc x nfactor, which causes
 #      preprocess_mat to have nfactor columns, often one column
 #   o  I do not know how to adjust gene_loadings for batch effects
 #      so this is disabled for now
-#  if (!is.null(cds@reduce_dim_aux[[preprocess_method]][['beta']])){
-#    preprocess_mat = preprocess_mat %*% (-cds@reduce_dim_aux[[preprocess_method]][['beta']])
+#  if (!is.null(cds@reduce_dim_aux[['Aligned']][['beta']])){
+#    preprocess_mat = preprocess_mat %*% (-cds@reduce_dim_aux[['Aligned']][['beta']])
 #  }
   preprocess_mat <- preprocess_mat[intersect(rownames(cds), row.names(preprocess_mat)),]
 

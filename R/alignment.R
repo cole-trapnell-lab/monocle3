@@ -30,13 +30,13 @@
 #'  For correcting continuous effects, use residual_model_formula_str.
 #'  Default is NULL.
 #' @param alignment_k The value of k used in mutual nearest neighbor alignment
+#' @param verbose Whether to emit verbose output during dimensionality
+#'   reduction
 #' @param build_nn_index logical When this argument is set to TRUE,
 #'   align_cds builds the Annoy nearest neighbor index from the
 #'   aligned reduced matrix for later use. Default is FALSE.
 #' @param nn_metric a string specifying the metric used by Annoy, currently
 #'   "cosine", "euclidean", "manhattan", or "hamming". Default is "cosine".
-#' @param verbose Whether to emit verbose output during dimensionality
-#'   reduction
 #' @param ... additional arguments to pass to limma::lmFit if
 #'   residual_model_formula is not NULL
 #' @return an updated cell_data_set object
@@ -46,9 +46,9 @@ align_cds <- function(cds,
                       alignment_group=NULL,
                       alignment_k=20,
                       residual_model_formula_str=NULL,
+                      verbose=FALSE,
                       build_nn_index=FALSE,
                       nn_metric = c("cosine", "euclidean", "manhattan", "hamming"),
-                      verbose=FALSE,
                       ...){
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(preprocess_method) == "",TRUE, TRUE),

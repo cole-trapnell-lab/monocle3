@@ -39,13 +39,13 @@
 #'   used by UMAP. Default is "annoy". See uwot package's
 #'   \code{\link[umap]{umap}} for details.
 #' @param cores Number of compute cores to use.
+#' @param verbose Logical, whether to emit verbose output.
 #' @param build_nn_index logical When this argument is set to TRUE,
 #'   reduce_dimension builds the Annoy nearest neighbor index from the 
 #'   dimensionally reduced matrix for later use. Default is FALSE.
 #'   This works only for reduction_method = "UMAP".
 #' @param nn_metric a string specifying the metric used by Annoy, currently
 #'   "cosine", "euclidean", "manhattan", or "hamming". Default is "cosine".
-#' @param verbose Logical, whether to emit verbose output.
 #' @param ... additional arguments to pass to the dimensionality reduction
 #'   function.
 #' @return an updated cell_data_set object
@@ -65,9 +65,9 @@ reduce_dimension <- function(cds,
                              umap.fast_sgd = FALSE,
                              umap.nn_method = "annoy",
                              cores=1,
+                             verbose=FALSE,
                              build_nn_index = FALSE,
                              nn_metric = c("cosine", "euclidean", "manhattan", "hamming"),
-                             verbose=FALSE,
                              ...){
 
   extra_arguments <- list(...)

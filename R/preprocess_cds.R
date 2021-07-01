@@ -31,13 +31,13 @@
 #' @param scaling When this argument is set to TRUE (default), it will scale
 #'   each gene before running trajectory reconstruction. Relevant for
 #'   method = PCA only.
+#' @param verbose Whether to emit verbose output during dimensionality
+#'   reduction
 #' @param build_nn_index logical When this argument is set to TRUE,
 #'   preprocess_cds builds the Annoy nearest neighbor index from the
 #'   dimensionally reduced matrix for later use. Default is FALSE.
 #' @param nn_metric a string specifying the metric used by Annoy, currently
 #'   "cosine", "euclidean", "manhattan", or "hamming". Default is "cosine".
-#' @param verbose Whether to emit verbose output during dimensionality
-#'   reduction
 #' @return an updated cell_data_set object
 #' @export
 preprocess_cds <- function(cds,
@@ -47,9 +47,9 @@ preprocess_cds <- function(cds,
                            use_genes = NULL,
                            pseudo_count = NULL,
                            scaling = TRUE,
+                           verbose = FALSE,
                            build_nn_index = FALSE,
                            nn_metric = c("cosine", "euclidean", "manhattan", "hamming"),
-                           verbose = FALSE,
                            ...) {
 
   assertthat::assert_that(
@@ -132,7 +132,6 @@ preprocess_cds <- function(cds,
     cds@reduce_dim_aux[['PCA']][['model']][['svd_center']] <- irlba_res$center
     cds@reduce_dim_aux[['PCA']][['model']][['svd_scale']] <- irlba_res$svd_scale
     cds@reduce_dim_aux[['PCA']][['model']][['prop_var_expl']] <- irlba_res$sdev^2 / sum(irlba_res$sdev^2)
-    cds@reduce_dim_aux[['PCA']][['beta']] <- NULL
     if( build_nn_index ) {
       cds <- build_annoy_index(cds=cds, reduction_method='PCA', nn_metric=nn_metric)
     }
@@ -159,11 +158,11 @@ preprocess_cds <- function(cds,
     cds@reduce_dim_aux[['LSI']][['model']][['svd_sdev']] <- irlba_res$d/sqrt(max(1, num_col - 1))
     # we need svd_v downstream so
     # calculate gene_loadings in cluster_cells.R
-    cds@reduce_dim_aux[['LSI']][['beta']] <- NULL
     if( build_nn_index ) {
       cds <- build_annoy_index(cds=cds, reduction_method='PCA', nn_metric=nn_metric)
     }
   }
+  cds@reduce_dim_aux[['Aligned']][['beta']] <- NULL
 
   cds
 }
