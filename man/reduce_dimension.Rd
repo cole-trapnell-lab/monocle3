@@ -16,9 +16,9 @@ reduce_dimension(
   umap.fast_sgd = FALSE,
   umap.nn_method = "annoy",
   cores = 1,
+  verbose = FALSE,
   build_nn_index = FALSE,
   nn_metric = c("cosine", "euclidean", "manhattan", "hamming"),
-  verbose = FALSE,
   ...
 )
 }
@@ -55,6 +55,8 @@ used by UMAP. Default is "annoy". See uwot package's
 
 \item{cores}{Number of compute cores to use.}
 
+\item{verbose}{Logical, whether to emit verbose output.}
+
 \item{build_nn_index}{logical When this argument is set to TRUE,
 reduce_dimension builds the Annoy nearest neighbor index from the
 dimensionally reduced matrix for later use. Default is FALSE.
@@ -62,8 +64,6 @@ This works only for reduction_method = "UMAP".}
 
 \item{nn_metric}{a string specifying the metric used by Annoy, currently
 "cosine", "euclidean", "manhattan", or "hamming". Default is "cosine".}
-
-\item{verbose}{Logical, whether to emit verbose output.}
 
 \item{...}{additional arguments to pass to the dimensionality reduction
 function.}

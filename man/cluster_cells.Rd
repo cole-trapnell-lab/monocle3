@@ -14,9 +14,9 @@ cluster_cells(
   weight = FALSE,
   resolution = NULL,
   random_seed = NULL,
+  verbose = F,
   nn_method = c("nn2", "annoy"),
   nn_metric = c("cosine", "euclidean", "manhattan", "hamming"),
-  verbose = F,
   ...
 )
 }
@@ -55,14 +55,14 @@ NULL (Default), the parameter is determined automatically.}
 louvain-igraph package. This argument will be ignored if num_iter is
 larger than 1.}
 
+\item{verbose}{A logic flag to determine whether or not we should print the
+run details.}
+
 \item{nn_method}{String indicating the nearest neighbor method to be
 used by cluster_cells. Options are "nn2" and "annoy". Default is "nn2".}
 
 \item{nn_metric}{String specifying the metric used by Annoy, currently
 "cosine", "euclidean", "manhattan", or "hamming". Default is "cosine".}
-
-\item{verbose}{A logic flag to determine whether or not we should print the
-run details.}
 
 \item{...}{Additional arguments passed to the leidenbase package.}
 }

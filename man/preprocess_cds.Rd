@@ -12,9 +12,9 @@ preprocess_cds(
   use_genes = NULL,
   pseudo_count = NULL,
   scaling = TRUE,
+  verbose = FALSE,
   build_nn_index = FALSE,
   nn_metric = c("cosine", "euclidean", "manhattan", "hamming"),
-  verbose = FALSE,
   ...
 )
 }
@@ -47,15 +47,15 @@ factor only normalization.}
 each gene before running trajectory reconstruction. Relevant for
 method = PCA only.}
 
+\item{verbose}{Whether to emit verbose output during dimensionality
+reduction}
+
 \item{build_nn_index}{logical When this argument is set to TRUE,
 preprocess_cds builds the Annoy nearest neighbor index from the
 dimensionally reduced matrix for later use. Default is FALSE.}
 
 \item{nn_metric}{a string specifying the metric used by Annoy, currently
 "cosine", "euclidean", "manhattan", or "hamming". Default is "cosine".}
-
-\item{verbose}{Whether to emit verbose output during dimensionality
-reduction}
 }
 \value{
 an updated cell_data_set object
