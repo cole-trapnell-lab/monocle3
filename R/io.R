@@ -213,7 +213,11 @@ load_mm_data <- function( mat_path,
   colData(cds)$n.umi <- Matrix::colSums(exprs(cds))
   cds <- cds[,colData(cds)$n.umi >= umi_cutoff]
   cds <- estimate_size_factors(cds)
-  
+
+  cds <- initialize_counts_metadata(cds)
+  matrix_id <- get_unique_id()
+  cds <- set_counts_identity(cds, mat_path, matrix_id)
+ 
   return( cds )
 }
 
@@ -351,7 +355,7 @@ load_annoy_index <- function(nn_index, file_name, metric, ndim) {
     nn_index <- uwot:::create_ann(metric, ndim)
     nn_index$load(file_name)
   }
-  nn_index
+  return(nn_index)
 }
 
 
@@ -378,7 +382,7 @@ save_umap_nn_indexes <- function(umap_model, file_name) {
     }
     md5sum_umap_index <- paste(md5sum_vec, collapse='_')
   }
-  md5sum_umap_index
+  return(md5sum_umap_index)
 }
 
 
@@ -412,7 +416,7 @@ load_umap_nn_indexes <- function(umap_model, file_name, md5sum_umap_index) {
       umap_model[['nn_index']][[i]] <- load_annoy_index(umap_model[['nn_index']][[i]], file_name_expand, annoy_metric, annoy_ndim)
     }
   }
-  umap_model
+  return(umap_model)
 }
 
 
@@ -758,12 +762,15 @@ load_transform_models <- function(cds, directory_path) {
       } else {
         stop('Unrecognized file format value \'', file_format, '\'')
       }
+
+      cds@reduce_dim_aux[[method]][['model']][['identity']][['model_path']] <- directory_path
     } else {
       stop('Unrecognized cds_object value \'', cds_object, '\'')
     }
+    set_model_source(cds, method, directory_path) 
   }
 
-  cds
+  return(cds)
 }
 
 
@@ -1109,8 +1116,37 @@ load_monocle_objects <- function(directory_path) {
     } else {
       stop('Unrecognized cds_object value \'', cds_object, '\'')
     }
+    set_model_source(cds, method, directory_path)
   }
 
-  cds
+  return(cds)
 }
 
+
+load_monocle_objects_1_0 <- function(file) {
+  cds_tmp <- readRDS(file)
+  cds_preprocess_aux <- cds_tmp[['preprocess_aux']]
+  cds_reduce_dim_aux <- cds_tmp@reduce_dim_aux
+  cds_tmp[['preprocess_aux']] <- NULL
+  cds_tmp@reduce_dim_aux <- NULL
+  reduced_dims <-list()
+  if(!is.null(reducedDim(cds_tmp)[['PCA']])) {
+    reduced_dims[['PCA']] <- TRUE
+#need to fuss with gene_loadings -> svd_v and svd_sdev
+#transfer prop_var_expl
+  }
+  if(!is.null(reducedDim(cds_tmp)[['LSI']])) {
+    reduced_dims[['LSI']] <- TRUE
+#need to fuss with gene_loadings -> svd_v and svd_sdev
+  }
+  if(!is.null(reducedDim(cds_tmp)[['Aligned']])) {
+    reduced_dims[['Aligned']] <- TRUE
+#if there is a beta, then used linear regression, if not used only MNN
+  }
+  if(!is.null(reducedDim(cds_tmp)[['tSNE']])) {
+    reduced_dims[['tSNE']] <- TRUE
+  }
+  if(!is.null(reducedDim(cds_tmp)[['UMAP']])) {
+    reduced_dims[['UMAP']] <- TRUE
+  }
+}

@@ -176,6 +176,9 @@ reduce_dimension <- function(cds,
   } else if (reduction_method == "tSNE") {
     if (verbose) message("Reduce dimension by tSNE ...")
 
+    cds <- initialize_reduce_dim_metadata(cds, 'tSNE')
+    cds <- initialize_reduce_dim_aux_model(cds, 'tSNE')
+
     tsne_res <- Rtsne::Rtsne(as.matrix(preprocess_mat), dims = max_components,
                              pca = F, check_duplicates=FALSE, ...)
 
@@ -184,17 +187,32 @@ reduce_dimension <- function(cds,
 
     reducedDims(cds)$tSNE <- tsne_data
 
-    cds@reduce_dim_aux[['tSNE']] <- SimpleList()
 
     # make nearest neighbor index in tSNE space
     if( build_nn_index ) {
       cds <- build_annoy_index(cds=cds, reduction_method='tSNE', nn_metric=nn_metric)
     }
 
+    matrix_id <- get_unique_id()
+    reduce_dim_matrix_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method)
+    set_reduce_dim_matrix_identity(cds, 'tSNE',
+                                   'matrix:tSNE',
+                                   matrix_id,
+                                   reduce_dim_matrix_identity[['matrix_type']],
+                                   reduce_dim_matrix_identity[['matrix_id']])
+    reduce_dim_model_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method)
+    set_reduce_dim_model_identity(cds, 'tSNE',
+                                  'matrix:tSNE',
+                                  matrix_id,
+                                  reduce_dim_model_identity[['model_type']],
+                                  reduce_dim_model_identity[['model_id']])
   } else if (reduction_method == c("UMAP")) {
     cds <- add_citation(cds, "UMAP")
     if (verbose)
       message("Running Uniform Manifold Approximation and Projection")
+
+    cds <- initialize_reduce_dim_metadata(cds, 'UMAP')
+    cds <- initialize_reduce_dim_aux_model(cds, 'UMAP')
 
     umap_model <- uwot::umap(as.matrix(preprocess_mat),
                              n_components = max_components,
@@ -207,9 +225,6 @@ reduce_dimension <- function(cds,
                              nn_method = umap.nn_method,
                              ret_model = TRUE,
                              ...)
-
-    cds@reduce_dim_aux[['UMAP']] <- SimpleList()
-    cds@reduce_dim_aux[['UMAP']][['model']] <- SimpleList()
 
     # Notes:
     #   o  uwot::umap_transform() returns a slightly different result in
@@ -238,6 +253,19 @@ reduce_dimension <- function(cds,
       # make nearest neighbor index in UMAP space
       cds <- build_annoy_index(cds=cds, reduction_method='UMAP', nn_metric=nn_metric)
     }
+    matrix_id <- get_unique_id()
+    reduce_dim_matrix_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method)
+    set_reduce_dim_matrix_identity(cds, 'UMAP',
+                                   'matrix:UMAP',
+                                   matrix_id,
+                                   reduce_dim_matrix_identity[['matrix_type']],
+                                   reduce_dim_matrix_identity[['matrix_id']])
+    reduce_dim_model_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method)
+    set_reduce_dim_model_identity(cds, 'UMAP',
+                                  'matrix:UMAP',
+                                  matrix_id,
+                                  reduce_dim_model_identity[['model_type']],
+                                  reduce_dim_model_identity[['model_id']])
   }
 
   ## Clear out old graphs:

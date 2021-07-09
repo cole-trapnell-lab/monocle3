@@ -108,6 +108,9 @@ preprocess_cds <- function(cds,
   #      and depends on the elements within model and nn_index.
   #
   if(method == 'PCA') {
+    cds <- initialize_reduce_dim_metadata(cds, 'PCA')
+    cds <- initialize_reduce_dim_aux_model(cds, 'PCA')
+
     if (verbose) message("Remove noise by PCA ...")
 
     irlba_res <- sparse_prcomp_irlba(Matrix::t(FM),
@@ -119,8 +122,6 @@ preprocess_cds <- function(cds,
 
     irlba_rotation <- irlba_res$rotation
     row.names(irlba_rotation) <- rownames(FM)
-    cds@reduce_dim_aux[['PCA']] <- SimpleList()
-    cds@reduce_dim_aux[['PCA']][['model']] <- SimpleList()
     # we need svd_v downstream so
     # calculate gene_loadings in cluster_cells.R
     cds@reduce_dim_aux[['PCA']][['model']][['num_dim']] <- num_dim
@@ -135,7 +136,21 @@ preprocess_cds <- function(cds,
     if( build_nn_index ) {
       cds <- build_annoy_index(cds=cds, reduction_method='PCA', nn_metric=nn_metric)
     }
+    matrix_id <- get_unique_id()
+    counts_identity <- get_counts_identity(cds)
+    cds <- set_reduce_dim_matrix_identity(cds, 'PCA',
+                                          'matrix:PCA',
+                                          matrix_id,
+                                          counts_identity[['matrix_source']],
+                                          counts_identity[['matrix_id']])
+    cds <- set_reduce_dim_model_identity(cds, 'PCA',
+                                         'matrix:PCA',
+                                         matrix_id,
+                                         counts_identity[['matrix_source']],
+                                         counts_identity[['matrix_id']])
   } else if(method == "LSI") {
+    cds <- initialize_reduce_dim_metadata(cds, 'LSI')
+    cds <- initialize_reduce_dim_aux_model(cds, 'LSI')
 
     preproc_res <- tfidf(FM)
     num_col <- ncol(preproc_res)
@@ -148,8 +163,6 @@ preprocess_cds <- function(cds,
 
     irlba_rotation = irlba_res$v
     row.names(irlba_rotation) = rownames(FM)
-    cds@reduce_dim_aux[['LSI']] <- SimpleList()
-    cds@reduce_dim_aux[['LSI']][['model']] <- SimpleList()
     cds@reduce_dim_aux[['LSI']][['model']][['num_dim']] <- num_dim
     cds@reduce_dim_aux[['LSI']][['model']][['norm_method']] <- norm_method
     cds@reduce_dim_aux[['LSI']][['model']][['use_genes']] <- use_genes
@@ -161,8 +174,20 @@ preprocess_cds <- function(cds,
     if( build_nn_index ) {
       cds <- build_annoy_index(cds=cds, reduction_method='PCA', nn_metric=nn_metric)
     }
+    matrix_id <- get_unique_id()
+    counts_identity <- get_counts_identity(cds)
+    cds <- set_reduce_dim_matrix_identity(cds, 'LSI',
+                                          'matrix:LSI',
+                                          matrix_id,
+                                          counts_identity[['matrix_source']],
+                                          counts_identity[['matrix_id']])
+    cds <- set_reduce_dim_model_identity(cds, 'LSI',
+                                         'matrix:LSI',
+                                         matrix_id,
+                                         counts_identity[['matrix_source']],
+                                         counts_identity[['matrix_id']])
   }
-  cds@reduce_dim_aux[['Aligned']][['beta']] <- NULL
+  cds@reduce_dim_aux[['Aligned']] <- NULL
 
   cds
 }

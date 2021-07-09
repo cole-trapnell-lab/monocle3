@@ -73,6 +73,9 @@ align_cds <- function(cds,
 
   set.seed(2016)
 
+  cds <- initialize_reduce_dim_metadata(cds, 'Aligned')
+  cds <- initialize_reduce_dim_aux_model(cds, 'Aligned')
+
   if (!is.null(residual_model_formula_str)) {
     if (verbose) message("Removing residual effects")
     X.model_mat <- Matrix::sparse.model.matrix(
@@ -85,7 +88,7 @@ align_cds <- function(cds,
     beta[is.na(beta)] <- 0
     preproc_res <- Matrix::t(as.matrix(Matrix::t(preproc_res)) -
                                beta %*% Matrix::t(X.model_mat[, -1]))
-    cds@reduce_dim_aux[['Aligned']][['beta']] = beta
+    cds@reduce_dim_aux[['Aligned']][['model']][['beta']] = beta
   }
 
   if(!is.null(alignment_group)) {
@@ -112,8 +115,6 @@ align_cds <- function(cds,
   #        reduce_dim_aux[[method]][['nn_index']] for the annoy index
   #      and depends on the elements within model and nn_index.
   #
-  cds@reduce_dim_aux[['Aligned']] <- SimpleList()
-  cds@reduce_dim_aux[['Aligned']][['model']] <- SimpleList()
   cds@reduce_dim_aux[['Aligned']][['model']][['preprocess_method']] <- preprocess_method
   cds@reduce_dim_aux[['Aligned']][['model']][['alignment_group']] <- alignment_group
   cds@reduce_dim_aux[['Aligned']][['model']][['alignment_k']] <- alignment_k
@@ -121,6 +122,20 @@ align_cds <- function(cds,
   if( build_nn_index ) {
     cds <- build_annoy_index(cds=cds, reduction_method='Aligned', nn_metric=nn_metric)
   }
+  matrix_id <- get_unique_id()
+  reduce_dim_matrix_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method) 
+  cds <- set_reduce_dim_matrix_identity(cds, 'Aligned',
+                                        'matrix:Aligned',
+                                        matrix_id,
+                                        reduce_dim_matrix_identity[['matrix_type']],
+                                        reduce_dim_matrix_identity[['matrix_id']])
+  reduce_dim_model_identity <- get_reduce_dim_model_identity(cds, preprocess_method)
+  cds <- set_reduce_dim_model_identity(cds, 'Aligned',
+                                       'matrix:Aligned',
+                                       matrix_id,
+                                       reduce_dim_model_identity[['model_type']],
+                                       reduce_dim_model_identity[['model_id']])
 
   cds
 }
+
