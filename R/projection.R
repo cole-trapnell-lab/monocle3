@@ -92,12 +92,15 @@ preprocess_transform <- function(cds, method=c('PCA'), block_size=NULL) {
 
   matrix_id <- get_unique_id()
   counts_identity <- get_counts_identity(cds)
+  reduce_dim_model_identity <- get_reduce_dim_model_identity(cds, method)
   cds <- initialize_reduce_dim_metadata(cds, method)
   cds <- set_reduce_dim_matrix_identity(cds, method,
                                         paste0('matrix:',method),
                                         matrix_id,
-                                        counts_identity[['matrix_source']],
-                                        counts_identity[['matrix_id']])
+                                        counts_identity[['matrix_type']],
+                                        counts_identity[['matrix_id']],
+                                        reduce_dim_model_identity[['model_type']],
+                                        reduce_dim_model_identity[['model_id']])
   # Keep the existing, loaded, reduce_dim_model_identity information.
 
   return(cds)
@@ -147,7 +150,7 @@ align_transform <- function(cds, method=c('Aligned')) {
                                     " Please preprocess the matrix before",
                                     " calling align_transform using preprocess_transform."))
 
-  stop('This function is a place holder. It does not map the transformed count matrix to aligned space at this time because I don\'t know how to make it do so.')
+#  stop('This function is a place holder. It does not map the transformed count matrix to aligned space at this time because I don\'t know how to make it do so.')
 
   set.seed(2016)
   alignment_group <- cds@reduce_dim_aux[['Aligned']][['model']][['alignment_group']]
@@ -166,12 +169,15 @@ align_transform <- function(cds, method=c('Aligned')) {
 
   matrix_id <- get_unique_id()
   reduce_dim_matrix_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method)
+  reduce_dim_model_identity <- get_reduce_dim_model_identity(cds, method)
   cds <- initialize_reduce_dim_metadata(cds, method)
   cds <- set_reduce_dim_matrix_identity(cds, method,
                                         paste0('matrix:', method),
                                         matrix_id,
                                         reduce_dim_matrix_identity[['matrix_type']],
-                                        reduce_dim_matrix_identity[['matrix_id']])
+                                        reduce_dim_matrix_identity[['matrix_id']],
+                                        reduce_dim_model_identity[['model_type']],
+                                        reduce_dim_model_identity[['model_id']])
   # Keep the existing, loaded, reduce_dim_model_identity information.
 
   return(cds)
@@ -239,12 +245,15 @@ reduce_dimension_transform <- function(cds, preprocess_method=NULL, method=c('UM
 
   matrix_id <- get_unique_id()
   reduce_dim_matrix_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method)
+  reduce_dim_model_identity <- get_reduce_dim_model_identity(cds, method)
   cds <- initialize_reduce_dim_metadata(cds, method)
   cds <- set_reduce_dim_matrix_identity(cds, method,
                                         paste0('matrix:', method),
                                         matrix_id,
                                         reduce_dim_matrix_identity[['matrix_type']],
-                                        reduce_dim_matrix_identity[['matrix_id']])
+                                        reduce_dim_matrix_identity[['matrix_id']],
+                                        reduce_dim_model_identity[['model_type']],
+                                        reduce_dim_model_identity[['model_id']])
   # Keep the existing, loaded, reduce_dim_model_identity information.
 
   return(cds)
@@ -269,11 +278,14 @@ align_beta_transform <- function(cds, preprocess_method = 'PCA') {
   matrix_id <- get_unique_id()
   cds <- initialize_reduce_dim_metadata(cds, method)
   reduce_dim_matrix_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method)
+  reduce_dim_model_identity <- get_reduce_dim_model_identity(cds, method)
   cds <- set_reduce_dim_matrix_identity(cds, method,
                                         paste0('matrix:', method),
                                         matrix_id,
                                         reduce_dim_matrix_identity[['matrix_type']],
-                                        reduce_dim_matrix_identity[['matrix_id']])
+                                        reduce_dim_matrix_identity[['matrix_id']],
+                                        reduce_dim_model_identity[['model_type']],
+                                        reduce_dim_model_identity[['model_id']])
   # Keep the existing, loaded, reduce_dim_model_identity information.
 
   return(cds)

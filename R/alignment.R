@@ -128,7 +128,9 @@ align_cds <- function(cds,
                                         'matrix:Aligned',
                                         matrix_id,
                                         reduce_dim_matrix_identity[['matrix_type']],
-                                        reduce_dim_matrix_identity[['matrix_id']])
+                                        reduce_dim_matrix_identity[['matrix_id']],
+                                        'matrix:Aligned',
+                                        matrix_id)
   reduce_dim_model_identity <- get_reduce_dim_model_identity(cds, preprocess_method)
   cds <- set_reduce_dim_model_identity(cds, 'Aligned',
                                        'matrix:Aligned',

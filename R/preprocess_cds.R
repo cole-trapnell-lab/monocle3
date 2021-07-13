@@ -141,13 +141,15 @@ preprocess_cds <- function(cds,
     cds <- set_reduce_dim_matrix_identity(cds, 'PCA',
                                           'matrix:PCA',
                                           matrix_id,
-                                          counts_identity[['matrix_source']],
-                                          counts_identity[['matrix_id']])
+                                          counts_identity[['matrix_type']],
+                                          counts_identity[['matrix_id']],
+                                          'matrix:PCA',
+                                          matrix_id)
     cds <- set_reduce_dim_model_identity(cds, 'PCA',
                                          'matrix:PCA',
                                          matrix_id,
-                                         counts_identity[['matrix_source']],
-                                         counts_identity[['matrix_id']])
+                                         'none',
+                                         'none')
   } else if(method == "LSI") {
     cds <- initialize_reduce_dim_metadata(cds, 'LSI')
     cds <- initialize_reduce_dim_aux_model(cds, 'LSI')
@@ -179,13 +181,15 @@ preprocess_cds <- function(cds,
     cds <- set_reduce_dim_matrix_identity(cds, 'LSI',
                                           'matrix:LSI',
                                           matrix_id,
-                                          counts_identity[['matrix_source']],
-                                          counts_identity[['matrix_id']])
+                                          counts_identity[['matrix_type']],
+                                          counts_identity[['matrix_id']],
+                                          'matrix:LSI',
+                                          matrix_id)
     cds <- set_reduce_dim_model_identity(cds, 'LSI',
                                          'matrix:LSI',
                                          matrix_id,
-                                         counts_identity[['matrix_source']],
-                                         counts_identity[['matrix_id']])
+                                         'none',
+                                         'none')
   }
   cds@reduce_dim_aux[['Aligned']] <- NULL
 

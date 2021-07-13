@@ -199,8 +199,10 @@ reduce_dimension <- function(cds,
                                    'matrix:tSNE',
                                    matrix_id,
                                    reduce_dim_matrix_identity[['matrix_type']],
-                                   reduce_dim_matrix_identity[['matrix_id']])
-    reduce_dim_model_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method)
+                                   reduce_dim_matrix_identity[['matrix_id']],
+                                   'matrix:tSNE',
+                                   matrix_id)
+    reduce_dim_model_identity <- get_reduce_dim_model_identity(cds, preprocess_method)
     set_reduce_dim_model_identity(cds, 'tSNE',
                                   'matrix:tSNE',
                                   matrix_id,
@@ -255,17 +257,19 @@ reduce_dimension <- function(cds,
     }
     matrix_id <- get_unique_id()
     reduce_dim_matrix_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method)
-    set_reduce_dim_matrix_identity(cds, 'UMAP',
-                                   'matrix:UMAP',
-                                   matrix_id,
-                                   reduce_dim_matrix_identity[['matrix_type']],
-                                   reduce_dim_matrix_identity[['matrix_id']])
-    reduce_dim_model_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method)
-    set_reduce_dim_model_identity(cds, 'UMAP',
-                                  'matrix:UMAP',
-                                  matrix_id,
-                                  reduce_dim_model_identity[['model_type']],
-                                  reduce_dim_model_identity[['model_id']])
+    cds <- set_reduce_dim_matrix_identity(cds, 'UMAP',
+                                          'matrix:UMAP',
+                                          matrix_id,
+                                          reduce_dim_matrix_identity[['matrix_type']],
+                                          reduce_dim_matrix_identity[['matrix_id']],
+                                          'matrix:UMAP',
+                                          matrix_id)
+    reduce_dim_model_identity <- get_reduce_dim_model_identity(cds, preprocess_method)
+    cds <- set_reduce_dim_model_identity(cds, 'UMAP',
+                                         'matrix:UMAP',
+                                         matrix_id,
+                                         reduce_dim_model_identity[['model_type']],
+                                         reduce_dim_model_identity[['model_id']])
   }
 
   ## Clear out old graphs:

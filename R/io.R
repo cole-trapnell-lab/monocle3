@@ -762,12 +762,10 @@ load_transform_models <- function(cds, directory_path) {
       } else {
         stop('Unrecognized file format value \'', file_format, '\'')
       }
-
-      cds@reduce_dim_aux[[method]][['model']][['identity']][['model_path']] <- directory_path
+      cds <- set_model_identity_path(cds, method, directory_path) 
     } else {
       stop('Unrecognized cds_object value \'', cds_object, '\'')
     }
-    set_model_source(cds, method, directory_path) 
   }
 
   return(cds)
@@ -1113,10 +1111,10 @@ load_monocle_objects <- function(directory_path) {
       } else {
         stop('Unrecognized file format value \'', file_format, '\'')
       }
+      cds <- set_model_identity_path(cds, method, directory_path)
     } else {
       stop('Unrecognized cds_object value \'', cds_object, '\'')
     }
-    set_model_source(cds, method, directory_path)
   }
 
   return(cds)
