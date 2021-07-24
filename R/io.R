@@ -536,7 +536,7 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
                       'uwot_version' = packageVersion('uwot'),
                       'monocle_version' = packageVersion('monocle3'),
                       'cds_version' = metadata(cds)$cds_version,
-                      'archive_version' = '1.0.0',
+                      'archive_version' = get_global_value('transform_models_version'),
                       'directory' = directory_path,
                       'comment' = comment,
                       'files' = data.frame(cds_object = character(0),
@@ -585,8 +585,8 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
       {
         saveRDS(cds@reduce_dim_aux[[method]], file=file.path(directory_path, methods_reduce_dim[[method]][['rds_path']]))
       },
-      error = function(cnd) {
-                     message('Error writing file \'', file.path(directory_path, methods_reduce_dim[[method]][['rds_path']]), '\': ', cnd, appendLF=appendLF)
+      error = function(cond) {
+                     message('Error writing file \'', file.path(directory_path, methods_reduce_dim[[method]][['rds_path']]), '\': ', cond, appendLF=appendLF)
                      return(NULL)
       },
       finally = {
@@ -605,8 +605,8 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
         {
           md5sum <- save_umap_nn_indexes(cds@reduce_dim_aux[[method]][['model']][['umap_model']], file.path(directory_path, methods_reduce_dim[[method]][['umap_index_path']]))
         },
-        error = function(cnd) {
-                       message('Error writing file \'', file.path(directory_path, methods_reduce_dim[[method]][['umap_index_path']]), '\': ', cnd, appendLF=appendLF)
+        error = function(cond) {
+                       message('Error writing file \'', file.path(directory_path, methods_reduce_dim[[method]][['umap_index_path']]), '\': ', cond, appendLF=appendLF)
                        return(NULL)
         },
         finally = {
@@ -625,8 +625,8 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
         {
           save_annoy_index(cds@reduce_dim_aux[[method]][['nn_index']][['annoy_index']], file.path(directory_path, methods_reduce_dim[[method]][['nn_index_path']]))
         },
-        error = function(cnd) {
-                       message('Error writing file \'', file.path(directory_path, methods_reduce_dim[[method]][['nn_index_path']]), '\': ', cnd, appendLF=appendLF)
+        error = function(cond) {
+                       message('Error writing file \'', file.path(directory_path, methods_reduce_dim[[method]][['nn_index_path']]), '\': ', cond, appendLF=appendLF)
                        return(NULL)
         },
         finally = {
@@ -683,8 +683,8 @@ load_transform_models <- function(cds, directory_path) {
     {
       readRDS(file_index_path)
     },
-    error = function(cnd) {
-              message('Error reading file \'', file_index_path, '\': ', cnd, appendLF=appendLF);
+    error = function(cond) {
+              message('Error reading file \'', file_index_path, '\': ', cond, appendLF=appendLF);
               return(NULL)
     }
   )
@@ -733,7 +733,7 @@ load_transform_models <- function(cds, directory_path) {
           { 
             readRDS(file_path)
           },
-          error = function(cnd) {
+          error = function(cond) {
             message('Error reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
@@ -745,7 +745,7 @@ load_transform_models <- function(cds, directory_path) {
           {
             load_annoy_index(cds@reduce_dim_aux[[method]][['nn_index']][['annoy_index']], file_path, metric, ndim)
           },
-          error = function(cnd) {
+          error = function(cond) {
             message('Error reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
@@ -755,7 +755,7 @@ load_transform_models <- function(cds, directory_path) {
           {
             load_umap_nn_indexes(cds@reduce_dim_aux[[method]][['model']][['umap_model']], file_path, md5sum)
           },
-          error = function(cnd) {
+          error = function(cond) {
             message('Error reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
          })
@@ -837,7 +837,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
                       'hdf5array_version' = packageVersion('HDF5Array'),
                       'monocle_version' = packageVersion('monocle3'),
                       'cds_version' = metadata(cds)$cds_version,
-                      'archive_version' = '1.0.0',
+                      'archive_version' = get_global_value('monocle_objects_version'),
                       'directory' = directory_path,
                       'comment' = comment,
                       'files' = data.frame(cds_object = character(0),
@@ -892,8 +892,8 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
       {
         saveRDS(cds, file.path(directory_path, rds_path))
       },
-      error = function(cnd) {
-                       message('Error writing file \'', file.path(directory_path, rds_path), '\': ', cnd, appendLF=appendLF)
+      error = function(cond) {
+                       message('Error writing file \'', file.path(directory_path, rds_path), '\': ', cond, appendLF=appendLF)
                        return(NULL)
       },
       finally = {
@@ -912,8 +912,8 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
       {
         HDF5Array::saveHDF5SummarizedExperiment(cds, file.path(directory_path, hdf5_path), replace=TRUE)
       },
-      error = function(cnd) {
-                       message('Error writing file \'', file.path(directory_path, hdf5_path), '\': ', cnd, appendLF=appendLF)
+      error = function(cond) {
+                       message('Error writing file \'', file.path(directory_path, hdf5_path), '\': ', cond, appendLF=appendLF)
                        return(NULL)
       },
       finally = {
@@ -940,8 +940,8 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
         {
           md5sum <- save_umap_nn_indexes(cds@reduce_dim_aux[[method]][['model']][['umap_model']], file.path(directory_path, methods_reduce_dim[[method]][['umap_index_path']]))
         },
-        error = function(cnd) {
-                       message('Error writing file \'', file.path(directory_path, methods_reduce_dim[[method]][['umap_index_path']]), '\': ', cnd, appendLF=appendLF)
+        error = function(cond) {
+                       message('Error writing file \'', file.path(directory_path, methods_reduce_dim[[method]][['umap_index_path']]), '\': ', cond, appendLF=appendLF)
                        return(NULL)
         },
         finally = {
@@ -960,8 +960,8 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
         {
           save_annoy_index(cds@reduce_dim_aux[[method]][['nn_index']][['annoy_index']], file.path(directory_path, methods_reduce_dim[[method]][['nn_index_path']]))
         },
-        error = function(cnd) {
-                       message('Error writing file \'', file.path(directory_path, methods_reduce_dim[[method]][['nn_index_path']]), '\': ', cnd, appendLF=appendLF)
+        error = function(cond) {
+                       message('Error writing file \'', file.path(directory_path, methods_reduce_dim[[method]][['nn_index_path']]), '\': ', cond, appendLF=appendLF)
                        return(NULL)
         },
         finally = {
@@ -1001,26 +1001,38 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
 #'
 #' @export
 load_monocle_objects <- function(directory_path) {
-  appendLF <- TRUE
+  appendLF <- FALSE
   # Check for directory.
   if(!file.exists(directory_path))
-    stop('Directory \'', directory_path, '\' does not exist.')
+    stop('Directory or file \'', directory_path, '\' does not exist.')
 
-  # Check for file_index.rds.
+  # Check for file_index.rds. If none, assume that 'directory_path' is
+  # an RDS file.
   file_index_path <- file.path(directory_path, 'file_index.rds')
-  if(!file.exists(file_index_path))
-    stop('Missing file index file \'', file_index_path, '\'')
+  if(!file.exists(file_index_path)) {
+    cds <- load_monocle_rds(directory_path)
+    return(cds)
+  }
 
   # Read file index.
+  catch_error <- FALSE
   file_index <- tryCatch(
     {
       readRDS(file_index_path)
     },
-    error = function(cnd) {
-              message('Error reading file \'', file_index_path, '\': ', cnd, appendLF=appendLF);
-              return(NULL)
+    error = function(cond) {
+              message('Error reading file \'', file_index_path, '\': ', cond, appendLF=appendLF);
+              catch_error <<- TRUE
+    },
+    warning = function(cond) {
+              message('Error reading file \'', file_index_path, '\': ', cond, appendLF=appendLF);
+              catch_error <<- TRUE
     }
   )
+
+  if(catch_error) {
+    return(NULL)
+  }
 
   # Check that this is a save_monocle_objects archive.
   if(file_index[['save_function']] != 'save_monocle_objects') {
@@ -1068,7 +1080,7 @@ load_monocle_objects <- function(directory_path) {
           {
             readRDS(file_path)
           },
-          error = function(cnd) {
+          error = function(cond) {
             message('Error reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
@@ -1078,7 +1090,7 @@ load_monocle_objects <- function(directory_path) {
           {
             HDF5Array::loadHDF5SummarizedExperiment(file_path)
           },
-          error = function(cnd) {
+          error = function(cond) {
             message('Error reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
@@ -1094,7 +1106,7 @@ load_monocle_objects <- function(directory_path) {
           {
             load_annoy_index(cds@reduce_dim_aux[[method]][['nn_index']][['annoy_index']], file_path, metric, ndim)
           },
-          error = function(cnd) {
+          error = function(cond) {
             message('Error reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
@@ -1104,7 +1116,7 @@ load_monocle_objects <- function(directory_path) {
           {
             load_umap_nn_indexes(cds@reduce_dim_aux[[method]][['model']][['umap_model']], file_path, md5sum)
           },
-          error = function(cnd) {
+          error = function(cond) {
             message('Error reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
          })
@@ -1121,30 +1133,194 @@ load_monocle_objects <- function(directory_path) {
 }
 
 
-load_monocle_objects_1_0 <- function(file) {
-  cds_tmp <- readRDS(file)
-  cds_preprocess_aux <- cds_tmp[['preprocess_aux']]
-  cds_reduce_dim_aux <- cds_tmp@reduce_dim_aux
-  cds_tmp[['preprocess_aux']] <- NULL
-  cds_tmp@reduce_dim_aux <- NULL
-  reduced_dims <-list()
-  if(!is.null(reducedDim(cds_tmp)[['PCA']])) {
-    reduced_dims[['PCA']] <- TRUE
-#need to fuss with gene_loadings -> svd_v and svd_sdev
-#transfer prop_var_expl
+#
+#  Operations from Monocle3 documentation
+#   o  expression matrix
+#   o  PCA: svd_v svd_sdev and gene_loadings and prop_var_expl
+#   o  LSI: ?
+#   o  Aligned: beta array and ?
+#   o  cell clustering
+#   o  marker genes
+#   o  cell annotations
+#   o  find_gene_modules
+#   o  Garnett annotations?
+#   o  learn_graph()
+#   o  order_cells()
+#   o  fit_models() DE regression analysis
+#   o  graph_test() DE graph-autocorrelation analysis
+#   o  Cicero annotations?
+#
+# Objects on loading (initial)
+#   o  @ reduce_dim_aux
+#   o  @ principal_graph_aux
+#   o  @ principal_graph
+#   o  @ clusters
+#   o  @ int_elementMetadata
+#   o  @ int_colData
+#   o  @ int_metadata
+#   o  @ rowRanges
+#   o  @ colData
+#   o  @ assays
+#   o  @ NAMES
+#   o  @ elementMetadata
+#   o  @ metadata
+#   o  $ preprocess_aux (vestigial now)
+#
+# Objects after analysis consisting of
+#   cds <- preprocess_cds(cds, num_dim = 100)
+#   cds <- align_cds(cds, num_dim = 100, alignment_group = "plate")
+#   cds <- reduce_dimension(cds)
+#   cds <- cluster_cells(cds, resolution=1e-5)
+#   marker_test_res <- top_markers(cds, group_cells_by="partition", reference_cells=1000, cores=8)
+#   colData(cds)$assigned_cell_type <- as.character(partitions(cds))
+#   cds_subset <- choose_cells(cds)
+#   pr_graph_test_res <- graph_test(cds_subset, neighbor_graph="knn", cores=8)
+#   pr_deg_ids <- row.names(subset(pr_graph_test_res, morans_I > 0.01 & q_value < 0.05))
+#   gene_module_df <- find_gene_modules(cds_subset[pr_deg_ids,], resolution=1e-3)
+#   cds_subset <- cluster_cells(cds_subset, resolution=1e-2)
+#
+#   o  @ reduce_dim_aux
+#   o  @ principal_graph_aux
+#   o  @ principal_graph
+#   o  @ clusters
+#   o  @ int_elementMetadata
+#   o  @ int_colData
+#   o  @ int_metadata
+#   o  @ rowRanges
+#   o  @ colData
+#   o  @ assays
+#   o  @ NAMES
+#   o  @ elementMetadata
+#   o  @ metadata
+#   o  $ preprocess_aux (empty)
+#
+# Objects after analysis of
+#   cds <- load_monocle_rds('packer_embryo.load.rds')
+#   cds <- preprocess_cds(cds, num_dim = 50)
+#   cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+#   cds <- reduce_dimension(cds)
+#   cds <- cluster_cells(cds)
+#   cds <- learn_graph(cds)
+#   cds <- order_cells(cds)
+#   ciliated_genes <- c("che-1", "hlh-17", "nhr-6", "dmd-6", "ceh-36", "ham-1")
+#   cds_subset <- cds[rowData(cds)$gene_short_name %in% ciliated_genes,]
+#   gene_fits <- fit_models(cds_subset, model_formula_str = "~embryo.time")
+#   subset_pr_test_res <- graph_test(cds_subset, neighbor_graph="principal_graph", cores=4)
+#   pr_deg_ids <- row.names(subset(subset_pr_test_res, q_value < 0.05))
+#
+#   o  @ reduce_dim_aux
+#   o  @ principal_graph_aux
+#   o  @ principal_graph
+#   o  @ clusters
+#   o  @ int_elementMetadata
+#   o  @ int_colData
+#   o  @ int_metadata
+#   o  @ rowRanges
+#   o  @ colData
+#   o  @ assays
+#   o  @ NAMES
+#   o  @ elementMetadata
+#   o  @ metadata
+#
+# Strategy
+#   o  copy slots
+#        o  @ assays
+#        o  @ colData
+#        o  @ rowRanges
+#        o  @ int_metadata ?
+#        o  @ int_colData
+#        o  @ int_elementMetadata
+#        o  @ clusters
+#        o  @ principal_graph
+#        o  @ principal_graph_aux
+#        o  @ reduce_dim_aux
+#   o  transfer
+#        o  @ preprocess_aux -> reduce_dim_aux (done)
+#
+# Issues
+#   o  deal with missing values/objects; e.g., projection related and nearest neighbors
+#        o  no annoy indices
+#        o  no models initially; partial models after loading
+#        o  no model identities
+#        o  affected functions
+#             o  projection functions
+#             o  save/load models
+#             o  save/load monocle objects?
+#   o  gene_loadings to svd_v and svd_sdev conversion? (done)
+#   o  the user may save a cds made using the recent Monocle3 version
+#      and load it using load_monocle_objects. In that case, load the
+#      cds using readRDS and return it unmodified. Use a model_version
+#      check?
+#   o  can there be an inconsistency between the model and matrix identity
+#      version information?
+load_monocle_rds <- function(file_path) {
+  appendLF <- TRUE
+  catch_error <- FALSE
+  cds_tmp <- tryCatch(
+                       {
+                         readRDS(file_path)
+                       },
+                       error=function(cond) {
+                         message('Error reading file \'', file_path, '\': ', cond, appendLF=appendLF);
+                         catch_error <<- TRUE
+                       },
+                       warning=function(cond) {
+                         message('Error reading file \'', file_path, '\': ', cond, appendLF=appendLF);
+                         catch_error <<- TRUE
+                       }
+                     )
+
+  if(catch_error) {
+    return(NULL)
   }
-  if(!is.null(reducedDim(cds_tmp)[['LSI']])) {
-    reduced_dims[['LSI']] <- TRUE
-#need to fuss with gene_loadings -> svd_v and svd_sdev
+
+  cds <- cds_tmp
+
+  if(!is.null(reducedDims(cds_tmp)[['PCA']])) {
+    cds <- initialize_reduce_dim_aux_model(cds, 'PCA')
+    gene_loadings <- cds_tmp@preprocess_aux[['gene_loadings']]
+    svd_sdev <- apply(gene_loadings, 2, function(x) {sqrt(sum(x^2))})
+    svd_v <- gene_loadings %*% diag(1.0/svd_sdev)
+    colnames(svd_v) <- paste("PC", seq(1, ncol(svd_v)), sep="")
+    cds@reduce_dim_aux[['PCA']][['model']][['svd_sdev']] <- svd_sdev
+    cds@reduce_dim_aux[['PCA']][['model']][['svd_v']] <- svd_v
+    cds@reduce_dim_aux[['PCA']][['model']][['prop_var_expl']] <- cds_tmp@preprocess_aux[['prop_var_expl']]
   }
-  if(!is.null(reducedDim(cds_tmp)[['Aligned']])) {
-    reduced_dims[['Aligned']] <- TRUE
-#if there is a beta, then used linear regression, if not used only MNN
+
+  if(!is.null(reducedDims(cds_tmp)[['LSI']])) {
+    cds <- initialize_reduce_dim_aux_model(cds, 'LSI')
+    gene_loadings <- cds_tmp@preprocess_aux[['gene_loadings']]
+    svd_sdev <- apply(gene_loadings, 2, function(x) {sqrt(sum(x^2))})
+    cds@reduce_dim_aux[['LSI']][['model']][['svd_v']] <- gene_loadings %*% diag(1.0/svd_sdev)
+    cds@reduce_dim_aux[['LSI']][['model']][['svd_sdev']] <- svd_sdev
   }
-  if(!is.null(reducedDim(cds_tmp)[['tSNE']])) {
-    reduced_dims[['tSNE']] <- TRUE
+
+  if(!is.null(reducedDims(cds_tmp)[['Aligned']])) {
+    cds <- initialize_reduce_dim_aux_model(cds, 'Aligned')
+    if(!is.null(cds_tmp@preprocess_aux$beta)) {
+      cds@reduce_dim_aux[['Aligned']][['model']][['beta']] <- cds_tmp@preprocess_aux$beta
+    }
   }
-  if(!is.null(reducedDim(cds_tmp)[['UMAP']])) {
-    reduced_dims[['UMAP']] <- TRUE
+
+  if(!is.null(reducedDims(cds_tmp)[['tSNE']])) {
+    cds <- initialize_reduce_dim_aux_model(cds, 'tSNE')
   }
+
+  if(!is.null(reducedDims(cds_tmp)[['UMAP']])) {
+    cds <- initialize_reduce_dim_aux_model(cds, 'UMAP')
+  }
+
+  # The RDS file may have a preprocess_aux slot, which doesn't
+  # exist in the current cell_data_set class. The attr command
+  # appears to removes it whereas setting cds@preprocess_cds
+  # and cds$preprocess_cds to NULL do not.
+  if(!is.null(attr(cds, which='preprocess_aux'))) {
+    attr(cds, which='preprocess_aux') <- NULL
+  }
+
+  rm(cds_tmp)
+
+  return(cds)
 }
+
+

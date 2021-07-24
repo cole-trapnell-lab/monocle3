@@ -35,8 +35,12 @@
 #' @param build_nn_index logical When this argument is set to TRUE,
 #'   align_cds builds the Annoy nearest neighbor index from the
 #'   aligned reduced matrix for later use. Default is FALSE.
+#' @param nn_method String indicating the nearest neighbor method to be
+#'   used by cluster_cells. Option is "annoy". Default is "annoy".
 #' @param nn_metric a string specifying the metric used by Annoy, currently
-#'   "cosine", "euclidean", "manhattan", or "hamming". Default is "cosine".
+#'   'euclidean', 'cosine', 'manhattan', or 'hamming'. Default is 'euclidean'.
+#' @param n_trees Numeric Annoy nearest neighbor builds a forest of n trees. More
+#'   trees give more precision when searching. Defaults is 50.
 #' @param ... additional arguments to pass to limma::lmFit if
 #'   residual_model_formula is not NULL
 #' @return an updated cell_data_set object
@@ -48,7 +52,8 @@ align_cds <- function(cds,
                       residual_model_formula_str=NULL,
                       verbose=FALSE,
                       build_nn_index=FALSE,
-                      nn_metric = c("cosine", "euclidean", "manhattan", "hamming"),
+                      nn_metric = c('euclidean', 'cosine', 'manhattan', 'hamming'),
+                      n_trees = 50,
                       ...){
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(preprocess_method) == "",TRUE, TRUE),
@@ -65,11 +70,20 @@ align_cds <- function(cds,
                                       "preprocess_method = '",
                                       preprocess_method,
                                       "' before calling align_cds."))
+
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(nn_method) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "nn_method must be 'annoy'")
+  nn_method <- match.arg(nn_method)
+
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(nn_metric) == "",TRUE, TRUE),
              error = function(e) FALSE),
-    msg = "nn_metric must be one of 'cosine', 'euclidean', 'manhattan', or 'hamming'")
+    msg = "nn_metric must be one of 'euclidean','cosine', 'manhattan', or 'hamming'")
   nn_metric <- match.arg(nn_metric)
+
+  assertthat::assert_that(assertthat::is.count(n_trees))
 
   set.seed(2016)
 
@@ -88,7 +102,7 @@ align_cds <- function(cds,
     beta[is.na(beta)] <- 0
     preproc_res <- Matrix::t(as.matrix(Matrix::t(preproc_res)) -
                                beta %*% Matrix::t(X.model_mat[, -1]))
-    cds@reduce_dim_aux[['Aligned']][['model']][['beta']] = beta
+    cds@reduce_dim_aux[['Aligned']][['model']][['beta']] <- beta
   }
 
   if(!is.null(alignment_group)) {
@@ -119,9 +133,13 @@ align_cds <- function(cds,
   cds@reduce_dim_aux[['Aligned']][['model']][['alignment_group']] <- alignment_group
   cds@reduce_dim_aux[['Aligned']][['model']][['alignment_k']] <- alignment_k
   cds@reduce_dim_aux[['Aligned']][['model']][['residual_model_formula_str']] <- residual_model_formula_str
+
   if( build_nn_index ) {
-    cds <- build_annoy_index(cds=cds, reduction_method='Aligned', nn_metric=nn_metric)
+    cds <- build_nn_index(cds=cds, reduction_method='Aligned', nn_method=nn_method, nn_metric=nn_metric, n_trees=n_trees)
+  } else {
+    cds <- clear_nn_index(cds=cds, reduction_method='Aligned', nn_method=nn_method)
   }
+
   matrix_id <- get_unique_id()
   reduce_dim_matrix_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method) 
   cds <- set_reduce_dim_matrix_identity(cds, 'Aligned',

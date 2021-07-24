@@ -18,7 +18,9 @@ reduce_dimension(
   cores = 1,
   verbose = FALSE,
   build_nn_index = FALSE,
-  nn_metric = c("cosine", "euclidean", "manhattan", "hamming"),
+  nn_method = c("annoy"),
+  nn_metric = c("euclidean", "cosine", "manhattan", "hamming"),
+  n_trees = 50,
   ...
 )
 }
@@ -62,8 +64,11 @@ reduce_dimension builds the Annoy nearest neighbor index from the
 dimensionally reduced matrix for later use. Default is FALSE.
 This works only for reduction_method = "UMAP".}
 
+\item{nn_method}{String indicating the nearest neighbor method to be
+used by cluster_cells. Option is "annoy". Default is "annoy".}
+
 \item{nn_metric}{a string specifying the metric used by Annoy, currently
-"cosine", "euclidean", "manhattan", or "hamming". Default is "cosine".}
+'euclidean', 'cosine', 'manhattan', or 'hamming'. Default is 'euclidean'.}
 
 \item{...}{additional arguments to pass to the dimensionality reduction
 function.}

@@ -906,11 +906,12 @@ set_model_identity_path <- function(cds, reduction_method, model_path='none') {
 
 
 # Make a unique identifier string.
-..global_unique_id_counter.. <- 1
 get_unique_id <- function() {
-  ..global_unique_id_counter.. <- ..global_unique_id_counter.. + 1
-  rtime <- as.numeric(Sys.time())*100000 + ..global_unique_id_counter..
+  id_count <- get_global_variable('id_count')
+  rtime <- as.numeric(Sys.time())*100000 + id_count
   id_hash <- openssl::md5(as.character(rtime))
+  id_count <- id_count + 1
+  set_global_variable('id_count', id_count)
   return(id_hash)
 }
 
@@ -921,4 +922,27 @@ get_time_stamp <- function() {
   return(time_stamp)
 }
 
+
+matrix_multiply_multicore <- function(mat_a, mat_b, cores=1L) {
+  if(cores > 1) {
+    omp_num_threads <- get_global_variable('omp_num_threads')
+    blas_num_threads <- get_global_variable('blas_num_threads')
+  
+    RhpcBLASctl::omp_set_num_threads(1L)
+    RhpcBLASctl::blas_set_num_threads(1L)
+  
+    DelayedArray:::setAutoBPPARAM(BPPARAM=BiocParallel:::MulticoreParam(workers=as.integer(cores)))
+  
+    mat_c <- mat_a %*% mat_b
+  
+    DelayedArray:::setAutoBPPARAM(BPPARAM=BiocParallel:::SerialParam())
+  
+    RhpcBLASctl::omp_set_num_threads(as.integer(omp_num_threads))
+    RhpcBLASctl::blas_set_num_threads(as.integer(blas_num_threads))
+  } else {
+    mat_c <- mat_a %*% mat_b
+  }
+
+  return(mat_c)
+}
 

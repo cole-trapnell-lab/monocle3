@@ -52,11 +52,12 @@ find_gene_modules <- function(cds,
     tryCatch(expr = ifelse(match.arg(preprocess_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
     msg = "preprocess_method must be one of 'PCA' or 'LSI'")
+  preprocess_method <- match.arg(preprocess_method)
+
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
     msg = "reduction_method must be one of 'UMAP', 'PCA' or 'tSNE'")
-
   reduction_method <- match.arg(reduction_method)
 
   assertthat::assert_that(methods::is(cds, "cell_data_set"))

@@ -36,8 +36,12 @@
 #' @param build_nn_index logical When this argument is set to TRUE,
 #'   preprocess_cds builds the Annoy nearest neighbor index from the
 #'   dimensionally reduced matrix for later use. Default is FALSE.
+#' @param nn_method String indicating the nearest neighbor method to be
+#'   used by cluster_cells. Option is "annoy". Default is "annoy".
 #' @param nn_metric a string specifying the metric used by Annoy, currently
-#'   "cosine", "euclidean", "manhattan", or "hamming". Default is "cosine".
+#'   'euclidean', 'cosine', 'manhattan', or 'hamming'. Default is 'euclidian'.
+#' @param n_trees Numeric Annoy nearest neighbor builds a forest of n trees. More
+#'   trees give more precision when searching. Defaults is 50.
 #' @return an updated cell_data_set object
 #' @export
 preprocess_cds <- function(cds,
@@ -49,22 +53,37 @@ preprocess_cds <- function(cds,
                            scaling = TRUE,
                            verbose = FALSE,
                            build_nn_index = FALSE,
-                           nn_metric = c("cosine", "euclidean", "manhattan", "hamming"),
+                           nn_method = c('annoy'),
+                           nn_metric = c('euclidean', 'cosine', 'manhattan', 'hamming'),
+                           n_trees=50,
                            ...) {
 
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(method) == "",TRUE, TRUE),
              error = function(e) FALSE),
     msg = "method must be one of 'PCA' or 'LSI'")
+  method <- match.arg(method)
+
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(norm_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
     msg = "norm_method must be one of 'log', 'size_only' or 'none'")
+  norm_method <- match.arg(norm_method)
+
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(nn_method) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "nn_method must be 'annoy'")
+  nn_method <- match.arg(nn_method)
+
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(nn_metric) == "",TRUE, TRUE),
              error = function(e) FALSE),
-    msg = "nn_metric must be one of 'cosine', 'euclidean', 'manhattan', or 'hamming'")
+    msg = "nn_metric must be one of 'euclidean', 'cosine', 'manhattan', or 'hamming'")
+  nn_metric <- match.arg(nn_metric)
+
   assertthat::assert_that(assertthat::is.count(num_dim))
+
   if(!is.null(use_genes)) {
     assertthat::assert_that(is.character(use_genes))
     assertthat::assert_that(all(use_genes %in% row.names(rowData(cds))),
@@ -79,9 +98,6 @@ preprocess_cds <- function(cds,
                                       "NA."))
   assertthat::assert_that(is.logical(build_nn_index),
                           msg = paste("build_nn_index must be either TRUE or FALSE"))
-  method <- match.arg(method)
-  norm_method <- match.arg(norm_method)
-  nn_metric <- match.arg(nn_metric)
 
   #ensure results from RNG sensitive algorithms are the same on all calls
   set.seed(2016)
@@ -134,7 +150,9 @@ preprocess_cds <- function(cds,
     cds@reduce_dim_aux[['PCA']][['model']][['svd_scale']] <- irlba_res$svd_scale
     cds@reduce_dim_aux[['PCA']][['model']][['prop_var_expl']] <- irlba_res$sdev^2 / sum(irlba_res$sdev^2)
     if( build_nn_index ) {
-      cds <- build_annoy_index(cds=cds, reduction_method='PCA', nn_metric=nn_metric)
+      cds <- build_nn_index(cds=cds, reduction_method='PCA', nn_method=nn_method, nn_metric=nn_metric, n_trees=n_trees)
+    } else {
+      cds <- clear_nn_index(cds=cds, reduction_method='PCA', nn_method=nn_method)
     }
     matrix_id <- get_unique_id()
     counts_identity <- get_counts_identity(cds)
@@ -174,7 +192,9 @@ preprocess_cds <- function(cds,
     # we need svd_v downstream so
     # calculate gene_loadings in cluster_cells.R
     if( build_nn_index ) {
-      cds <- build_annoy_index(cds=cds, reduction_method='PCA', nn_metric=nn_metric)
+      cds <- build_nn_index(cds=cds, reduction_method='LSI', nn_method=nn_method, nn_metric=nn_metric, n_trees=n_trees)
+    } else {
+      cds <- clear_nn_index(cds=cds, reduction_method='LSI', nn_method=nn_method)
     }
     matrix_id <- get_unique_id()
     counts_identity <- get_counts_identity(cds)

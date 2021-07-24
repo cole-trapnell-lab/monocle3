@@ -37,6 +37,7 @@ Imports:
     assertthat (>= 0.2.1),
     batchelor,
     BiocGenerics (>= 0.28.0),
+    BiocParallel,
     DelayedArray (>= 0.8.0),
     DelayedMatrixStats (>= 1.4.0),
     dplyr (>= 0.8.0.1),

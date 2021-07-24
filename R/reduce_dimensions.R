@@ -44,8 +44,10 @@
 #'   reduce_dimension builds the Annoy nearest neighbor index from the 
 #'   dimensionally reduced matrix for later use. Default is FALSE.
 #'   This works only for reduction_method = "UMAP".
+#' @param nn_method String indicating the nearest neighbor method to be
+#'   used by cluster_cells. Option is "annoy". Default is "annoy".
 #' @param nn_metric a string specifying the metric used by Annoy, currently
-#'   "cosine", "euclidean", "manhattan", or "hamming". Default is "cosine".
+#'   'euclidean', 'cosine', 'manhattan', or 'hamming'. Default is 'euclidean'.
 #' @param ... additional arguments to pass to the dimensionality reduction
 #'   function.
 #' @return an updated cell_data_set object
@@ -67,7 +69,9 @@ reduce_dimension <- function(cds,
                              cores=1,
                              verbose=FALSE,
                              build_nn_index = FALSE,
-                             nn_metric = c("cosine", "euclidean", "manhattan", "hamming"),
+                             nn_method=c('annoy'),
+                             nn_metric = c('euclidean', 'cosine', 'manhattan', 'hamming'),
+                             n_trees = 50,
                              ...){
 
   extra_arguments <- list(...)
@@ -76,14 +80,22 @@ reduce_dimension <- function(cds,
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
     msg = "reduction_method must be one of 'UMAP', 'PCA', 'tSNE', 'LSI', 'Aligned'")
+  reduction_method <- match.arg(reduction_method)
+
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(nn_method) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "nn_method must be 'annoy'")
+  nn_method <- match.arg(nn_method)
+
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(nn_metric) == "",TRUE, TRUE),
              error = function(e) FALSE),
-    msg = "nn_metric must be one of 'cosine', 'euclidean', 'manhattan', or 'hamming'")
+    msg = "nn_metric must be one of 'euclidean', 'cosine', 'manhattan', or 'hamming'")
+  nn_metric <- match.arg(nn_metric)
+
   assertthat::assert_that(is.logical(build_nn_index),
                           msg = paste("build_nn_index must be either TRUE or FALSE"))
-
-  reduction_method <- match.arg(reduction_method)
 
   if (is.null(preprocess_method)){
     if ("Aligned" %in% names(reducedDims(cds))){
@@ -101,7 +113,8 @@ reduce_dimension <- function(cds,
 
   #preprocess_method <- match.arg(preprocess_method)
 
-  nn_metric <- match.arg(nn_metric)
+
+  assertthat::assert_that(assertthat::is.count(n_trees))
 
   assertthat::assert_that(assertthat::is.count(max_components))
 
@@ -190,7 +203,9 @@ reduce_dimension <- function(cds,
 
     # make nearest neighbor index in tSNE space
     if( build_nn_index ) {
-      cds <- build_annoy_index(cds=cds, reduction_method='tSNE', nn_metric=nn_metric)
+      cds <- build_nn_index(cds=cds, reduction_method='tSNE', nn_method=nn_method, nn_metric=nn_metric, n_trees=n_trees)
+    } else {
+      cds <- clear_nn_index(cds=cds, reduction_method='tSNE', nn_method=nn_method)
     }
 
     matrix_id <- get_unique_id()
@@ -253,8 +268,11 @@ reduce_dimension <- function(cds,
 
     if( build_nn_index ) {
       # make nearest neighbor index in UMAP space
-      cds <- build_annoy_index(cds=cds, reduction_method='UMAP', nn_metric=nn_metric)
+      cds <- build_nn_index(cds=cds, reduction_method='UMAP', nn_method=nn_method, nn_metric=nn_metric, n_trees=n_trees)
+    } else {
+      cds <- clear_nn_index(cds=cds, reduction_method='UMAP', nn_method=nn_method)
     }
+
     matrix_id <- get_unique_id()
     reduce_dim_matrix_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method)
     cds <- set_reduce_dim_matrix_identity(cds, 'UMAP',

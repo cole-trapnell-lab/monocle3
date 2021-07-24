@@ -12,7 +12,8 @@ align_cds(
   residual_model_formula_str = NULL,
   verbose = FALSE,
   build_nn_index = FALSE,
-  nn_metric = c("cosine", "euclidean", "manhattan", "hamming"),
+  nn_metric = c("euclidean", "cosine", "manhattan", "hamming"),
+  n_trees = 50,
   ...
 )
 }
@@ -44,10 +45,16 @@ align_cds builds the Annoy nearest neighbor index from the
 aligned reduced matrix for later use. Default is FALSE.}
 
 \item{nn_metric}{a string specifying the metric used by Annoy, currently
-"cosine", "euclidean", "manhattan", or "hamming". Default is "cosine".}
+'euclidean', 'cosine', 'manhattan', or 'hamming'. Default is 'euclidean'.}
+
+\item{n_trees}{Numeric Annoy nearest neighbor builds a forest of n trees. More
+trees give more precision when searching. Defaults is 50.}
 
 \item{...}{additional arguments to pass to limma::lmFit if
 residual_model_formula is not NULL}
+
+\item{nn_method}{String indicating the nearest neighbor method to be
+used by cluster_cells. Option is "annoy". Default is "annoy".}
 }
 \value{
 an updated cell_data_set object

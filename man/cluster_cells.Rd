@@ -16,7 +16,10 @@ cluster_cells(
   random_seed = NULL,
   verbose = F,
   nn_method = c("nn2", "annoy"),
-  nn_metric = c("cosine", "euclidean", "manhattan", "hamming"),
+  nn_metric = c("euclidean", "cosine", "manhattan", "hamming"),
+  n_trees = 50,
+  search_k = 100 * k,
+  cores = 1,
   ...
 )
 }
@@ -62,7 +65,16 @@ run details.}
 used by cluster_cells. Options are "nn2" and "annoy". Default is "nn2".}
 
 \item{nn_metric}{String specifying the metric used by Annoy, currently
-"cosine", "euclidean", "manhattan", or "hamming". Default is "cosine".}
+'euclidean', 'cosine', 'manhattan', or 'hamming'. Default is 'euclidean'.}
+
+\item{n_trees}{Numeric Annoy nearest neighbor builds a forest of n trees. More
+trees give more precision when searching. Defaults is 50.}
+
+\item{search_k}{Numeric Annoy search parameter that gives a tradeoff
+between nearest neighbors search speed and accuracy. Default is 100 * k.}
+
+\item{cores}{Integer Number of cores to use for nearest neighbor functions.
+Default is 1.}
 
 \item{...}{Additional arguments passed to the leidenbase package.}
 }

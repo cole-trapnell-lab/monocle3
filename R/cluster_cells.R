@@ -49,7 +49,13 @@
 #' @param nn_method String indicating the nearest neighbor method to be
 #'   used by cluster_cells. Options are "nn2" and "annoy". Default is "nn2".
 #' @param nn_metric String specifying the metric used by Annoy, currently
-#'   "cosine", "euclidean", "manhattan", or "hamming". Default is "cosine".
+#'   'euclidean', 'cosine', 'manhattan', or 'hamming'. Default is 'euclidean'.
+#' @param n_trees Numeric Annoy nearest neighbor builds a forest of n trees. More
+#'   trees give more precision when searching. Defaults is 50.
+#' @param search_k Numeric Annoy search parameter that gives a tradeoff
+#'   between nearest neighbors search speed and accuracy. Default is 100 * k.
+#' @param cores Integer Number of cores to use for nearest neighbor functions.
+#'   Default is 1.
 #' @param ... Additional arguments passed to the leidenbase package.
 #'
 #' @return an updated cell_data_set object, with cluster and partition
@@ -80,7 +86,10 @@ cluster_cells <- function(cds,
                           random_seed = NULL,
                           verbose = F,
                           nn_method = c('nn2', 'annoy'),
-                          nn_metric = c('cosine', 'euclidean', 'manhattan', 'hamming'),
+                          nn_metric = c('euclidean', 'cosine', 'manhattan', 'hamming'),
+                          n_trees = 50,
+                          search_k = 100 * k,
+                          cores=1,
                           ...) {
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
@@ -96,9 +105,12 @@ cluster_cells <- function(cds,
 
   assertthat::assert_that(methods::is(cds, "cell_data_set"))
   assertthat::assert_that(is.character(reduction_method))
-  assertthat::assert_that(assertthat::is.count(k))
   assertthat::assert_that(is.logical(weight))
   assertthat::assert_that(assertthat::is.count(num_iter))
+  assertthat::assert_that(assertthat::is.count(k))
+  assertthat::assert_that(assertthat::is.count(search_k))
+  assertthat::assert_that(assertthat::is.count(n_trees))
+  assertthat::assert_that(assertthat::is.count(cores))
 
   if (!is.null(resolution) & cluster_method == "louvain") {
     message(paste("Resolution can only be used when cluster_method is",
@@ -127,11 +139,14 @@ cluster_cells <- function(cds,
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(nn_metric) == "",TRUE, TRUE),
              error = function(e) FALSE),
-    msg = "nn_metric must be one of 'cosine', 'euclidean', 'manhattan', or 'hamming'")
+    msg = "nn_metric must be one of 'euclidean', 'cosine', 'manhattan', or 'hamming'")
   nn_metric <- match.arg(nn_metric)
 
-  if(nn_method == 'annoy' && !annoy_index_exists(cds, reduction_method, nn_metric)) {
-    cds <- build_annoy_index(cds=cds, reduction_method=reduction_method, nn_metric=nn_metric)
+
+  if(nn_method == 'annoy' && !check_nn_index_exists(cds, reduction_method=reduction_method, nn_method=nn_method, nn_metric=nn_metric, n_trees=n_trees)) {
+tic('build annoy index next')
+    cds <- build_nn_index(cds=cds, reduction_method=reduction_method, nn_method=nn_method, nn_metric=nn_metric, n_trees=n_trees)
+toc()
   }
 
   reduced_dim_res <- reducedDims(cds)[[reduction_method]]
@@ -147,9 +162,10 @@ cluster_cells <- function(cds,
                                          data = reduced_dim_res,
                                          reduction_method = reduction_method,
                                          nn_method = nn_method,
-                                         nn_metric = nn_metric,
                                          pd = colData(cds),
                                          k = k,
+                                         search_k = search_k,
+                                         cores=cores,
                                          weight = weight,
                                          num_iter = num_iter,
                                          random_seed = random_seed,
@@ -176,9 +192,10 @@ cluster_cells <- function(cds,
                                         data = reduced_dim_res,
                                         reduction_method = reduction_method,
                                         nn_method = nn_method,
-                                        nn_metric = nn_metric,
                                         pd = colData(cds),
                                         k = k,
+                                        search_k = search_k,
+                                        cores=cores,
                                         weight = weight,
                                         num_iter = num_iter,
                                         resolution_parameter = resolution,
@@ -212,9 +229,10 @@ cluster_cells_make_graph <- function(cds,
                                      weight,
                                      cell_names,
                                      nn_method=c('nn2', 'annoy'),
-                                     nn_metric = c('cosine', 'euclidean', 'manhattan', 'hamming'),
-                                     k,
+                                     k=20,
+                                     search_k=100*k,
                                      reduction_method = c("UMAP", "tSNE", "PCA", "LSI", "Aligned"),
+                                     cores=1,
                                      verbose) {
   assertthat::assert_that(methods::is(cds, "cell_data_set"))
   assertthat::assert_that(
@@ -229,16 +247,12 @@ cluster_cells_make_graph <- function(cds,
     msg = "nn_method must be one of 'nn2' or 'annoy'")
   nn_method <- match.arg(nn_method)
 
-  assertthat::assert_that(
-    tryCatch(expr = ifelse(match.arg(nn_metric) == "",TRUE, TRUE),
-             error = function(e) FALSE),
-    msg = "nn_metric must be one of 'cosine', 'euclidean', 'manhattan', or 'hamming'")
-  nn_metric <- match.arg(nn_metric)
-
   if (is.data.frame(data))
     data <- as.matrix(data)
   if (!is.matrix(data))
     stop("Wrong input data, should be a data frame or matrix!")
+
+  assertthat::assert_that(assertthat::is.count(search_k))
 
   if (k < 1) {
     stop("k must be a positive integer!")
@@ -258,13 +272,21 @@ cluster_cells_make_graph <- function(cds,
   }
 
   if(nn_method == 'nn2') {
+tic('run RANN next')
     t1 <- system.time(tmp <- RANN::nn2(data, data, k+1, searchtype = "standard"))
+toc()
   } else
   if(nn_method == 'annoy') {
-    tmp <- search_nn_index(cds=cds, method=reduction_method, n=k, search_k=100*k)
+tic('run annoy search next')
+    tmp <- search_nn_index(cds=cds, reduction_method=reduction_method, nn_method=nn_method, k=k+1, search_k=search_k, cores=cores)
+toc()
+tic('run annoy index swap next')
     # Annoy does not sort the self point into the first column so ensure that it is.
-    tmp <- annoy_self_search_index_swap(annoy_res=tmp)
+    tmp <- swap_nn_self_search_index(annoy_res=tmp)
+toc()
   }
+
+write.table(tmp[['nn.idx']], file=paste0('cluster_cells.nearest_neighbors.',nn_method,'.txt'))
 
   neighborMatrix <- tmp[['nn.idx']][, -1]
   distMatrix <- tmp[['nn.dists']][, -1]
@@ -301,9 +323,10 @@ louvain_clustering <- function(cds,
                                data,
                                reduction_method = c("UMAP", "tSNE", "PCA", "LSI", "Aligned"),
                                nn_method = c('nn2', 'annoy'),
-                               nn_metric = c('cosine', 'euclidean', 'manhattan', 'hamming'),
                                pd,
                                k = 20,
+                               search_k = 100 * k,
+                               cores=1,
                                weight = F,
                                louvain_iter = 1,
                                random_seed = 0L,
@@ -320,11 +343,8 @@ louvain_clustering <- function(cds,
     msg = "nn_method must be one of 'nn2', 'annoy'")
   nn_method <- match.arg(nn_method)
 
-  assertthat::assert_that(
-    tryCatch(expr = ifelse(match.arg(nn_metric) == "",TRUE, TRUE),
-             error = function(e) FALSE),
-    msg = "nn_metric must be one of 'cosine', 'euclidean', 'manhattan', or 'hamming'")
-  nn_metric <- match.arg(nn_metric)
+  assertthat::assert_that(assertthat::is.count(search_k))
+  assertthat::assert_that(assertthat::is.count(k))
 
   extra_arguments <- list(...)
   cell_names <- row.names(pd)
@@ -334,8 +354,11 @@ louvain_clustering <- function(cds,
   graph_result <- cluster_cells_make_graph(cds=cds, data=data,
                                            weight=weight,
                                            cell_names=cell_names,
-                                           nn_method=nn_method, nn_metric=nn_metric, k=k,
+                                           nn_method=nn_method,
+                                           k=k, 
+                                           search_k=search_k,
                                            reduction_method=reduction_method,
+                                           cores=cores,
                                            verbose=verbose)
 
   if(verbose)
@@ -402,9 +425,10 @@ leiden_clustering <- function(cds,
                               data,
                               reduction_method = c("UMAP", "tSNE", "PCA", "LSI", "Aligned"),
                               nn_method = c('nn2', 'annoy'),
-                              nn_metric = c('cosine', 'euclidean', 'manhattan', 'hamming'),
                               pd,
                               k = 20,
+                              search_k = 100 * k,
+                              cores=1,
                               weight = NULL,
                               num_iter = 2,
                               resolution_parameter = 0.0001,
@@ -442,11 +466,8 @@ leiden_clustering <- function(cds,
     msg = "nn_method must be one of 'nn2', 'annoy'")
   nn_method <- match.arg(nn_method)
 
-  assertthat::assert_that(
-    tryCatch(expr = ifelse(match.arg(nn_metric) == "",TRUE, TRUE),
-             error = function(e) FALSE),
-    msg = "nn_metric must be one of 'cosine', 'euclidean', 'manhattan', or 'hamming'")
-  nn_metric <- match.arg(nn_metric)
+  assertthat::assert_that(assertthat::is.count(k))
+  assertthat::assert_that(assertthat::is.count(search_k))
 
   # The following vertex partitions have no resolution parameter.
   if( partition_type %in% c('ModularityVertexPartition','SignificanceVertexPartition','SurpriseVertexPartition') )
@@ -465,10 +486,14 @@ leiden_clustering <- function(cds,
   if(!identical(cell_names, row.names(pd)))
     stop("Phenotype and row name from the data don't match")
 
-  graph_result <- cluster_cells_make_graph(cds=cds, data=data, weight=weight, 
+  graph_result <- cluster_cells_make_graph(cds=cds, data=data,
+                                           weight=weight, 
                                            cell_names=cell_names,
-                                           nn_method=nn_method, nn_metric=nn_metric, k=k, 
+                                           nn_method=nn_method,
+                                           k=k,
+                                           search_k=search_k,
                                            reduction_method=reduction_method, 
+                                           cores=cores,
                                            verbose=verbose)
   if(verbose)
     message("  Run leiden clustering ...")

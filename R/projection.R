@@ -11,12 +11,13 @@
 #' @param block_size A numeric value for the DelayedArray
 #'   block size used only in this function. Default is
 #'   NULL, which does not affect the current block size.
+#' @param cores The number of cores to use for the matrix multiplication.
 #' @return A cell_data_set with a preprocess reduced count
 #'   matrix.
 #'
 #' @export
 #'
-preprocess_transform <- function(cds, method=c('PCA'), block_size=NULL) {
+preprocess_transform <- function(cds, method=c('PCA'), block_size=NULL, cores=1) {
   #
   # Need to add processing for LSI. TF-IDF transform etc.
   #
@@ -79,7 +80,12 @@ preprocess_transform <- function(cds, method=c('PCA'), block_size=NULL) {
   xtdasc <- t(xtdasc / vscale)
 
   irlba_res <- list()
-  irlba_res$x <- xtdasc %*% rotation_matrix[intersect_indices,]
+
+#  irlba_res$x <- xtdasc %*% rotation_matrix[intersect_indices,]
+  irlba_res$x <- matrix_multiply_multicore(mat_a=xtdasc,
+                                         mat_b=rotation_matrix[intersect_indices,],
+                                         cores)
+
   irlba_res$x <- as.matrix(irlba_res$x)
   class(irlba_res) <- c('irlba_prcomp', 'prcomp')
 
