@@ -7,11 +7,8 @@
 search_nn_index(
   cds,
   reduction_method = c("PCA", "LSI", "Aligned", "tSNE", "UMAP"),
-  nn_method = c("annoy"),
-  k = 5,
-  search_k = 100 * k,
-  cores = 1,
-  ...
+  k,
+  nn_control
 )
 }
 \arguments{
@@ -22,12 +19,6 @@ can be 'PCA', 'LSI','Aligned', 'tSNE', or 'UMAP'.}
 
 \item{k}{An integer for the number of nearest neighbors to return for
 each cell. Default is 5.}
-
-\item{search_k}{An integer used to balance accuracy and speed. Larger
-values give more accurate results. Default is 100 * k.}
-
-\item{cores}{Integer The number of threads used for the nearest
-neighbor search. Default is 1.}
 
 \item{...}{Parameters to pass through to annoy_search.}
 }

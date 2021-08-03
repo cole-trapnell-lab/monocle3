@@ -35,6 +35,8 @@
 #'   differential expression.
 #' @param verbose Whether to show spatial test (Moran's I) errors and warnings.
 #'   Only valid for cores = 1.
+#' @param nn_control list See set_nn_control for a description of available
+#'   and default list values.
 #' @return a data frame containing the p values and q-values from the Moran's I
 #'   test on the parallel arrays of models.
 #' @seealso \code{\link[spdep]{moran.test}} \code{\link[spdep]{geary.test}}
@@ -47,13 +49,18 @@ graph_test <- function(cds,
                        alternative = 'greater',
                        expression_family="quasipoisson",
                        cores=1,
-                       verbose=FALSE) {
+                       verbose=FALSE,
+                       nn_control=list()) {
   neighbor_graph <- match.arg(neighbor_graph)
+
+  nn_control <- set_nn_control(nn_control=nn_control, k=k, method_default='nn2')
+
   lw <- calculateLW(cds,
                     k = k,
                     verbose = verbose,
                     neighbor_graph = neighbor_graph,
-                    reduction_method = reduction_method)
+                    reduction_method = reduction_method,
+                    nn_control = nn_control)
 
   if(verbose) {
     message("Performing Moran's I test: ...")
@@ -270,8 +277,8 @@ calculateLW <- function(cds,
                         k,
                         neighbor_graph,
                         reduction_method,
-                        verbose = FALSE
-) {
+                        verbose = FALSE,
+                        nn_control = list()) {
   if(verbose) {
     message("retrieve the matrices for Moran's I test...")
   }
@@ -280,9 +287,14 @@ calculateLW <- function(cds,
 
   cell_coords <- reducedDims(cds)[[reduction_method]]
   if (neighbor_graph == "knn") {
-    knn_res <- RANN::nn2(cell_coords, cell_coords,
-                         min(k + 1, nrow(cell_coords)),
-                         searchtype = "standard")[[1]]
+    if(nn_control[['method']] == 'nn2') {
+      knn_res <- RANN::nn2(cell_coords, cell_coords,
+                           min(k + 1, nrow(cell_coords)),
+                           searchtype = "standard")[[1]]
+    }
+    else {
+      knn_res <- search_nn_index(cds, reduction_method=reduction_method, k=min(k + 1, nrow(cell_coords)), nn_control=nn_control)[[1]]
+    }
   } else if(neighbor_graph == "principal_graph") {
     pr_graph_node_coords <- cds@principal_graph_aux[[reduction_method]]$dp_mst
     principal_g <-
@@ -294,9 +306,15 @@ calculateLW <- function(cds,
   exprs_mat <- exprs(cds)
   if(neighbor_graph == "knn") {
     if(is.null(knn_res)) {
-      knn_res <- RANN::nn2(cell_coords, cell_coords,
-                           min(k + 1, nrow(cell_coords)),
-                           searchtype = "standard")[[1]]
+      if(nn_control[['method']] == 'nn2') {
+        knn_res <- RANN::nn2(cell_coords, cell_coords,
+                             min(k + 1, nrow(cell_coords)),
+                             searchtype = "standard")[[1]]
+     } else {
+      knn_res <- search_nn_index(cds, reduction_method=reduction_method, k=min(k + 1, nrow(cell_coords)), nn_control=nn_control)[[1]]
+    }
+
+
     }
     links <- jaccard_coeff(knn_res[, -1], F)
     links <- links[links[, 1] > 0, ]
@@ -337,9 +355,14 @@ calculateLW <- function(cds,
     }
     # an alternative approach to make the kNN graph based on the principal
     # graph
-    knn_res <- RANN::nn2(cell_coords, cell_coords,
-                         min(k + 1, nrow(cell_coords)),
-                         searchtype = "standard")[[1]]
+    if(nn_control[['method']] == 'nn2') {
+      knn_res <- RANN::nn2(cell_coords, cell_coords,
+                           min(k + 1, nrow(cell_coords)),
+                           searchtype = "standard")[[1]]
+    } else {
+      knn_res <- search_nn_index(cds, reduction_method=reduction_method, k=min(k + 1, nrow(cell_coords)), nn_control=nn_control)[[1]]
+    }
+
     # convert the matrix of knn graph from the cell IDs into a matrix of
     # principal points IDs
     # kNN_res_pp_map <- matrix(cell2pp_map[knn_res], ncol = k + 1, byrow = F)

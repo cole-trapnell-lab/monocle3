@@ -38,7 +38,7 @@ In this case, do not run the preprocess_cds, align_cds, or
 reduce_dimension functions on the new cds. Additionally,
 save_transform_models saves Annoy nearest neighbor indexes
 when the preprocess_cds, align_cds, and reduce_dimension
-functions are run with the build_nn_index=TRUE parameter. These
+functions are run with the make_nn_index=TRUE parameter. These
 indexes are used to find matches between cells in the new
 processed cds and the initial cds using the xxx functions.
 save_transform_models scans the initial cell_data_set for

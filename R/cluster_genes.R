@@ -24,6 +24,8 @@
 #' @param preprocess_method a string specifying the low-dimensional space
 #'   to use for gene loadings, currently either PCA or LSI. Default is
 #'   "PCA".
+#' @param nn_control list See set_nn_control for a description of available
+#'   and default list values.
 #' @param ... Additional arguments passed to UMAP and Louvain analysis.
 #'
 #' @return A dataframe with genes and the modules to which they are assigned.
@@ -46,8 +48,12 @@ find_gene_modules <- function(cds,
                           cores=1,
                           verbose = F,
                           preprocess_method = c('PCA', 'LSI'),
+                          nn_control = list(),
                           ...) {
   method = 'leiden'
+
+  nn_control <- set_nn_control(nn_control=nn_control, k=k, method_default='nn2')
+
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(preprocess_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
@@ -114,10 +120,11 @@ find_gene_modules <- function(cds,
   #       for nn_method='nn2'.
   cluster_result <- leiden_clustering(cds = cds,
                                       data = reduced_dim_res,
-                                      nn_method = 'nn2',
                                       pd = rowData(cds)[row.names(reduced_dim_res),,drop=FALSE],
-                                      k = k,
+                                      reduction_method='UMAP',
                                       weight = weight,
+                                      k = k,
+                                      nn_control = nn_control,
                                       num_iter = leiden_iter,
                                       resolution_parameter = resolution,
                                       random_seed = random_seed,

@@ -36,12 +36,8 @@
 #' @param build_nn_index logical When this argument is set to TRUE,
 #'   preprocess_cds builds the Annoy nearest neighbor index from the
 #'   dimensionally reduced matrix for later use. Default is FALSE.
-#' @param nn_method String indicating the nearest neighbor method to be
-#'   used by cluster_cells. Option is "annoy". Default is "annoy".
-#' @param nn_metric a string specifying the metric used by Annoy, currently
-#'   'euclidean', 'cosine', 'manhattan', or 'hamming'. Default is 'euclidian'.
-#' @param n_trees Numeric Annoy nearest neighbor builds a forest of n trees. More
-#'   trees give more precision when searching. Defaults is 50.
+#' @param nn_control list See set_nn_control for a description of available
+#'   and default list values.
 #' @return an updated cell_data_set object
 #' @export
 preprocess_cds <- function(cds,
@@ -53,9 +49,7 @@ preprocess_cds <- function(cds,
                            scaling = TRUE,
                            verbose = FALSE,
                            build_nn_index = FALSE,
-                           nn_method = c('annoy'),
-                           nn_metric = c('euclidean', 'cosine', 'manhattan', 'hamming'),
-                           n_trees=50,
+                           nn_control = list(),
                            ...) {
 
   assertthat::assert_that(
@@ -69,18 +63,6 @@ preprocess_cds <- function(cds,
              error = function(e) FALSE),
     msg = "norm_method must be one of 'log', 'size_only' or 'none'")
   norm_method <- match.arg(norm_method)
-
-  assertthat::assert_that(
-    tryCatch(expr = ifelse(match.arg(nn_method) == "",TRUE, TRUE),
-             error = function(e) FALSE),
-    msg = "nn_method must be 'annoy'")
-  nn_method <- match.arg(nn_method)
-
-  assertthat::assert_that(
-    tryCatch(expr = ifelse(match.arg(nn_metric) == "",TRUE, TRUE),
-             error = function(e) FALSE),
-    msg = "nn_metric must be one of 'euclidean', 'cosine', 'manhattan', or 'hamming'")
-  nn_metric <- match.arg(nn_metric)
 
   assertthat::assert_that(assertthat::is.count(num_dim))
 
@@ -96,8 +78,8 @@ preprocess_cds <- function(cds,
   assertthat::assert_that(sum(is.na(size_factors(cds))) == 0,
                           msg = paste("One or more cells has a size factor of",
                                       "NA."))
-  assertthat::assert_that(is.logical(build_nn_index),
-                          msg = paste("build_nn_index must be either TRUE or FALSE"))
+
+  nn_control <- set_nn_control(nn_control=nn_control, k=1, method_default='annoy')
 
   #ensure results from RNG sensitive algorithms are the same on all calls
   set.seed(2016)
@@ -120,8 +102,8 @@ preprocess_cds <- function(cds,
   #      expect that the reduce_dim_aux slot consists of a SimpleList
   #      that stores information about methods with the elements
   #        reduce_dim_aux[[method]][['model']] for the transform elements
-  #        reduce_dim_aux[[method]][['nn_index']] for the annoy index
-  #      and depends on the elements within model and nn_index.
+  #        reduce_dim_aux[[method]][[nn_method]] for the nn index
+  #      and depends on the elements within model and nn_method.
   #
   if(method == 'PCA') {
     cds <- initialize_reduce_dim_metadata(cds, 'PCA')
@@ -149,11 +131,12 @@ preprocess_cds <- function(cds,
     cds@reduce_dim_aux[['PCA']][['model']][['svd_center']] <- irlba_res$center
     cds@reduce_dim_aux[['PCA']][['model']][['svd_scale']] <- irlba_res$svd_scale
     cds@reduce_dim_aux[['PCA']][['model']][['prop_var_expl']] <- irlba_res$sdev^2 / sum(irlba_res$sdev^2)
-    if( build_nn_index ) {
-      cds <- build_nn_index(cds=cds, reduction_method='PCA', nn_method=nn_method, nn_metric=nn_metric, n_trees=n_trees)
-    } else {
-      cds <- clear_nn_index(cds=cds, reduction_method='PCA', nn_method=nn_method)
-    }
+
+    if( build_nn_index )
+      cds <- make_nn_index(cds=cds, reduction_method='PCA', nn_control=nn_control)
+    else
+      cds <- clear_nn_index(cds=cds, reduction_method='PCA', nn_control[['method']])
+
     matrix_id <- get_unique_id()
     counts_identity <- get_counts_identity(cds)
     cds <- set_reduce_dim_matrix_identity(cds, 'PCA',
@@ -191,11 +174,12 @@ preprocess_cds <- function(cds,
     cds@reduce_dim_aux[['LSI']][['model']][['svd_sdev']] <- irlba_res$d/sqrt(max(1, num_col - 1))
     # we need svd_v downstream so
     # calculate gene_loadings in cluster_cells.R
-    if( build_nn_index ) {
-      cds <- build_nn_index(cds=cds, reduction_method='LSI', nn_method=nn_method, nn_metric=nn_metric, n_trees=n_trees)
-    } else {
-      cds <- clear_nn_index(cds=cds, reduction_method='LSI', nn_method=nn_method)
-    }
+
+    if( build_nn_index )
+      cds <- make_nn_index(cds=cds, reduction_method='LSI', nn_control=nn_control)
+    else
+      cds <- clear_nn_index(cds=cds, reduction_method='LSI', nn_control[['method']])
+
     matrix_id <- get_unique_id()
     counts_identity <- get_counts_identity(cds)
     cds <- set_reduce_dim_matrix_identity(cds, 'LSI',

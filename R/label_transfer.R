@@ -63,7 +63,16 @@ get_nn_means <- function(query_data, query_search, ref_colData_df, cell_label_ty
 #      nn's to the query data set cells
 #   o  test the ref_colData for the required columns
 #   o  the cell_label_type value must be in the colnames(colData(cds)).
-transfer_cell_labels <- function(cds, reduction_method=c('UMAP', 'PCA'), in_model_dir, ref_colData, cell_label_type, nn_method=c('annoy'), k=10, search_k=100 * k, cores=1, top_threshold=0.5, top_over_second_threshold=1.5) {
+transfer_cell_labels <- function(cds,
+                                 reduction_method=c('UMAP', 'PCA'),
+                                 in_model_dir,
+                                 ref_colData,
+                                 cell_label_type,
+                                 k=10,
+                                 nn_control,
+                                 top_threshold=0.5,
+                                 top_over_second_threshold=1.5) {
+
   assertthat::assert_that(class(cds) == 'cell_data_set',
                           msg=paste0('cds parameter is not a cell_data_set'))
   assertthat::assert_that(
@@ -73,14 +82,9 @@ transfer_cell_labels <- function(cds, reduction_method=c('UMAP', 'PCA'), in_mode
   assertthat::assert_that(cell_label_type %in% colnames(ref_colData_df),
                           msg=paste0('cell_label_type \'', cell_label_type, '\' is not in the ref_colData'))
 
-  assertthat::assert_that(
-    tryCatch(expr = ifelse(match.arg(nn_method) == "",TRUE, TRUE),
-             error = function(e) FALSE),
-    msg = "nn_method must be 'annoy'")
-  nn_method <- match.arg(nn_method)
-
   assertthat::assert_that(assertthat::is.count(k))
-  assertthat::assert_that(assertthat::is.count(search_k))
+
+  nn_control <- set_nn_control(nn_control=nn_control, k=k, method_default='annoy')
 
   assertthat::assert_that(is.double(top_threshold),
                           msg=paste0('top_threshold value is not numeric'))
@@ -104,8 +108,6 @@ transfer_cell_labels <- function(cds, reduction_method=c('UMAP', 'PCA'), in_mode
                                     "loaded model object."))
   colData(cds)[[cell_label_type]] <- NULL
 
-
-
   # Search the reference reduction_method space for nearest neighbors
   # to the query cells.
   # The cds_reduced_dims contains the query cell coordinates
@@ -113,7 +115,7 @@ transfer_cell_labels <- function(cds, reduction_method=c('UMAP', 'PCA'), in_mode
   # The cds@reduce_dim_aux[[reduction_method]] contains the reduction_method
   # coordinates for the reference data set, which were
   # loaded using load_transform_models() above.
-  cds_res <- search_nn_index(cds, reduction_method=reduction_method, nn_method, k=k, search_k=search_k, cores=cores)
+  cds_res <- search_nn_index(cds, reduction_method=reduction_method, k=k, nn_control=nn_control)
  
   # Get the best reference cell label for the query cells.
   cds_reduced_dims <- reducedDims(cds)[[reduction_method]]
@@ -152,13 +154,23 @@ edit_cell_label <- function(curr_label, other_labels, top_threshold=0.5, top_ove
 }
 
 
-edit_query_cell_labels <- function(preproc_res, query_colData, query_nn_index,
+edit_query_cell_labels <- function(preproc_res,
+                                   query_colData,
+                                   query_nn_index,
                                    cell_label_type,
-                                   nn_method='annoy', k=10, search_k=100 * k,
-                                   top_threshold=0.5, top_over_second_threshold=1.5, ...) {
+                                   k=10,
+                                   nn_control=nn_control,
+                                   top_threshold=0.5,
+                                   top_over_second_threshold=1.5, ...) {
 
+  nn_method <- nn_control[['method']]
 
-  query_search <- uwot:::annoy_search(X=preproc_res, k=k+1, ann=query_nn_index, search_k=search_k, ...)
+  if(nn_method == 'annoy') {
+    query_search <- uwot:::annoy_search(X=preproc_res, k=k+1, ann=query_nn_index, search_k=search_k, ...)
+  } else if(nn_method == 'hnsw') {
+    message('edit_query_cell_labels: hnsw nn unimplemented')
+  }
+
   query_nns <- sapply(seq(1, nrow(query_search[['idx']])), function(i) {
     # Get neighbors in reference space.
     query_neighbors <- query_search[['idx']][i,]
@@ -177,11 +189,15 @@ edit_query_cell_labels <- function(preproc_res, query_colData, query_nn_index,
 # Purpose: replace missing cell labels.
 # Notes:
 #   the cell_label_type value must be in the colnames(colData(cds)).
+#' export
 fix_missing_cell_labels <- function(cds, reduction_method=c('UMAP', 'PCA'), out_notna_model_dir=NULL,
                                     cell_label_type=NULL,
-                                    nn_method=c('annoy'),  nn_metric=c('euclidean', 'cosine', 'manhattan', 'hamming'),
-                                    n_trees=50, k=10, search_k=100 * k,
+                                    k=10,
+                                    nn_control=nn_control,
                                     top_threshold=0.5, top_over_second_threshold=1.5, ...) {
+
+  nn_method <- nn_control[['method']]
+
   assertthat::assert_that(class(cds) == 'cell_data_set',
                           msg=paste('cds parameter is not a cell_data_set'))
   assertthat::assert_that(
@@ -194,32 +210,17 @@ fix_missing_cell_labels <- function(cds, reduction_method=c('UMAP', 'PCA'), out_
   assertthat::assert_that(cell_label_type %in% colnames(colData(cds)),
                           msg=paste0('cell_label_type \'', cell_label_type, '\' is not in the cds colData'))
 
-  assertthat::assert_that(
-    tryCatch(expr = ifelse(match.arg(nn_method) == "",TRUE, TRUE),
-             error = function(e) FALSE),
-    msg = "nn_method must be 'annoy'")
-  nn_method <- match.arg(nn_method)
+  nn_control <- set_nn_control(nn_control=nn_control, k=k, method_default='annoy')
 
-  assertthat::assert_that(
-    tryCatch(expr = ifelse(match.arg(nn_metric) == "",TRUE, TRUE),
-             error = function(e) FALSE),
-    msg = "nn_metric must be one of 'euclidean', 'cosine', 'manhattan', or 'hamming'")
-
-  nn_metric <- match.arg(nn_metric)
-
-  assertthat::assert_that(assertthat::is.count(n_trees))
-  
   na_cds <- cds[, is.na(colData(cds)[[cell_label_type]])]
   
   # Build on rest of cds, where there is a label.
   notna_cds <- cds[, !is.na(colData(cds)[[cell_label_type]])]
-  notna_cds <- build_nn_index(notna_cds, 
+  notna_cds <- make_nn_index(notna_cds, 
                               reduction_method=reduction_method,
-                              nn_method=nn_method,
-                              nn_metric=nn_metric,
-                              n_trees=n_trees)
-  
-  notna_nn_index <- notna_cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy_index']]
+                              nn_control=nn_control)
+ 
+  notna_nn_index <- notna_cds@reduce_dim_aux[[reduction_method]][[paste0(nn_method,'_nn')]][['nn_index']]
   notna_colData <- as.data.frame(colData(notna_cds))
 
   if(!is.null(out_notna_model_dir)) {
@@ -230,9 +231,8 @@ fix_missing_cell_labels <- function(cds, reduction_method=c('UMAP', 'PCA'), out_
                                             query_colData=notna_colData, 
                                             query_nn_index=notna_nn_index, 
                                             cell_label_type=cell_label_type,
-                                            nn_method=nn_method,
                                             k=k,
-                                            search_k=search_k,
+                                            nn_control=nn_control,
                                             top_threshold=top_threshold,
                                             top_over_second_threshold=top_over_second_threshold,
                                             ...)

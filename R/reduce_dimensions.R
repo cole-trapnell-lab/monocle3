@@ -38,16 +38,13 @@
 #' @param umap.nn_method String indicating the nearest neighbor method to be
 #'   used by UMAP. Default is "annoy". See uwot package's
 #'   \code{\link[umap]{umap}} for details.
-#' @param cores Number of compute cores to use.
 #' @param verbose Logical, whether to emit verbose output.
+#' @param cores Number of cores to use for computing the UMAP.
 #' @param build_nn_index logical When this argument is set to TRUE,
-#'   reduce_dimension builds the Annoy nearest neighbor index from the 
+#'   preprocess_cds builds the Annoy nearest neighbor index from the
 #'   dimensionally reduced matrix for later use. Default is FALSE.
-#'   This works only for reduction_method = "UMAP".
-#' @param nn_method String indicating the nearest neighbor method to be
-#'   used by cluster_cells. Option is "annoy". Default is "annoy".
-#' @param nn_metric a string specifying the metric used by Annoy, currently
-#'   'euclidean', 'cosine', 'manhattan', or 'hamming'. Default is 'euclidean'.
+#' @param nn_control list See set_nn_control for a description of available
+#'   and default list values.
 #' @param ... additional arguments to pass to the dimensionality reduction
 #'   function.
 #' @return an updated cell_data_set object
@@ -66,12 +63,10 @@ reduce_dimension <- function(cds,
                              umap.n_neighbors = 15L,
                              umap.fast_sgd = FALSE,
                              umap.nn_method = "annoy",
-                             cores=1,
-                             verbose=FALSE,
+                             verbose = FALSE,
+                             cores = 1,
                              build_nn_index = FALSE,
-                             nn_method=c('annoy'),
-                             nn_metric = c('euclidean', 'cosine', 'manhattan', 'hamming'),
-                             n_trees = 50,
+                             nn_control = list(),
                              ...){
 
   extra_arguments <- list(...)
@@ -81,18 +76,6 @@ reduce_dimension <- function(cds,
              error = function(e) FALSE),
     msg = "reduction_method must be one of 'UMAP', 'PCA', 'tSNE', 'LSI', 'Aligned'")
   reduction_method <- match.arg(reduction_method)
-
-  assertthat::assert_that(
-    tryCatch(expr = ifelse(match.arg(nn_method) == "",TRUE, TRUE),
-             error = function(e) FALSE),
-    msg = "nn_method must be 'annoy'")
-  nn_method <- match.arg(nn_method)
-
-  assertthat::assert_that(
-    tryCatch(expr = ifelse(match.arg(nn_metric) == "",TRUE, TRUE),
-             error = function(e) FALSE),
-    msg = "nn_metric must be one of 'euclidean', 'cosine', 'manhattan', or 'hamming'")
-  nn_metric <- match.arg(nn_metric)
 
   assertthat::assert_that(is.logical(build_nn_index),
                           msg = paste("build_nn_index must be either TRUE or FALSE"))
@@ -111,10 +94,9 @@ reduce_dimension <- function(cds,
       msg = "preprocess_method must be one of 'PCA' or 'LSI'")
   }
 
+  nn_control <- set_nn_control(nn_control=nn_control, k=1, method_default='annoy')
+
   #preprocess_method <- match.arg(preprocess_method)
-
-
-  assertthat::assert_that(assertthat::is.count(n_trees))
 
   assertthat::assert_that(assertthat::is.count(max_components))
 
@@ -179,8 +161,8 @@ reduce_dimension <- function(cds,
   #      expect that the reduce_dim_aux slot consists of a SimpleList
   #      that stores information about methods with the elements
   #        reduce_dim_aux[[method]][['model']] for the transform elements
-  #        reduce_dim_aux[[method]][['nn_index']] for the annoy index
-  #      and depends on the elements within model and nn_index.
+  #        reduce_dim_aux[[method]][[nn_method]] for the annoy index
+  #      and depends on the elements within model and nn_method.
   #
   if(reduction_method == "PCA") {
     if (verbose) message("Returning preprocessed PCA matrix")
@@ -202,11 +184,10 @@ reduce_dimension <- function(cds,
 
 
     # make nearest neighbor index in tSNE space
-    if( build_nn_index ) {
-      cds <- build_nn_index(cds=cds, reduction_method='tSNE', nn_method=nn_method, nn_metric=nn_metric, n_trees=n_trees)
-    } else {
-      cds <- clear_nn_index(cds=cds, reduction_method='tSNE', nn_method=nn_method)
-    }
+    if( build_nn_index )
+        cds <- make_nn_index(cds=cds, reduction_method='tSNE', nn_control=nn_control)
+    else
+      cds <- clear_nn_index(cds=cds, reduction_method='tSNE', nn_method=nn_control[['method']])
 
     matrix_id <- get_unique_id()
     reduce_dim_matrix_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method)
@@ -266,12 +247,11 @@ reduce_dimension <- function(cds,
     cds@reduce_dim_aux[['UMAP']][['model']][['umap_fast_sgd']] <- umap.fast_sgd
     cds@reduce_dim_aux[['UMAP']][['model']][['umap_model']] <- umap_model
 
-    if( build_nn_index ) {
+    if( build_nn_index )
       # make nearest neighbor index in UMAP space
-      cds <- build_nn_index(cds=cds, reduction_method='UMAP', nn_method=nn_method, nn_metric=nn_metric, n_trees=n_trees)
-    } else {
-      cds <- clear_nn_index(cds=cds, reduction_method='UMAP', nn_method=nn_method)
-    }
+      cds <- make_nn_index(cds=cds, reduction_method='UMAP', nn_control=nn_control)
+    else
+      cds <- clear_nn_index(cds=cds, reduction_method='UMAP', nn_method=nn_control[['method']])
 
     matrix_id <- get_unique_id()
     reduce_dim_matrix_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method)

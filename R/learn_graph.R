@@ -40,13 +40,38 @@
 #'   pruning to remove small insignificant branches. Default is TRUE.}
 #'   \item{scale:}{}
 #'   \item{ncenter:}{}
-#'   \item{rann.k:}{Maximum number of nearest neighbors to compute in the
-#'   reversed graph embedding. Set rann.k=NULL
-#'   to let learn_graph estimate rann.k. Default is 25.}
+#'   \item{nn.k:}{Maximum number of nearest neighbors to compute in the
+#'   reversed graph embedding. Set k=NULL
+#'   to let learn_graph estimate k. Default is 25.}
+#'   \item{rann.k:}{nn.k replaces rann.k but rann.k is available for
+#'   compatibility with existing code.}
 #'   \item{maxiter:}{}
 #'   \item{eps:}{}
 #'   \item{L1.gamma:}{}
 #'   \item{L1.sigma:}{}
+#'   \item{nn.method:}{The package to use for finding nearest neighbors.
+#'   nn.method can be one of 'nn2', 'annoy', or 'hnsw'. Default is 'nn2'.}
+#'   \item{nn.metric:}{The distance metric for the annoy or hnsw nearest
+#'   neighbor index build. See help(set_nn_control) for more information.
+#'   Default is 'euclidean'.}
+#'   \item{nn.n_trees:}{The number of trees used to build the annoy nearest
+#'   neighbor index. See help(set_nn_control) for more information. Default
+#'   is 50.}
+#'   \item{nn.search_k:}{The number of nodes to search in an annoy index
+#'   search. See help(set_nn_control) for more information. Default is
+#'   100 * nn.k.}
+#'   \item{nn.M:}{Related to internal dimensionality of HNSW index. See
+#'   help(set_nn_control) for more information. Default is 48.}
+#'   \item{nn.ef_construction:}{Controls the HNSW index build speed/accuracy
+#'   tradeoff. Default is 200.}
+#'   \item{nn.ef:}{Controls the HNSW index search speed/accuracy tradeoff.
+#'   See help(set_nn_control) for more information. Default is 10.}
+#'   \item{nn.grain_size:}{Used by annoy and HNSW to set the minimum amount
+#'   of work to do per thread. See help(set_nn_control) for more
+#'   information. Default is 1.}
+#'   \item{nn.cores:}{Used by annoy and HNSW to control the number of
+#'   threads used. See help(set_nn_control) for more information. Default
+#'   is 1.}
 #' }
 #'
 #' @param cds the cell_data_set upon which to perform this operation
@@ -81,12 +106,32 @@ learn_graph <- function(cds,
                                     "scale",
                                     "ncenter",
                                     "rann.k",
+                                    "k",
                                     "maxiter",
                                     "eps",
                                     "L1.gamma",
-                                    "L1.sigma")),
+                                    "L1.sigma",
+                                    "nn_method",
+                                    "nn.metric",
+                                    "nn.n_trees",
+                                    "nn.search_k",
+                                    "nn.M",
+                                    "nn.ef_construction",
+                                    "nn.ef",
+                                    "nn.grain_size",
+                                    "nn.cores")),
                             msg = "Unknown variable in learn_graph_control")
   }
+
+  if(!is.null(learn_graph_control[['rann.k']]) && !is.null(learn_graph_control[['nn.k']])) {
+    assertthat::assert_that(learn_graph_control[['rann.k']] == learn_graph_control[['nn.k']],
+                            msg=paste0('both learn_graph_control$nn.k and learn_graph_control$rann.k are',
+                                       ' defined and are unequal. See help(learn_graph) for more',
+                                       ' information.'))
+  }
+
+  if(is.null(learn_graph_control[['nn.k']]) && !is.null(learn_graph_control[['rann.k']]))
+    learn_graph_control[['nn.k']] <- learn_graph_control[['rann.k']]
 
   euclidean_distance_ratio <-
     ifelse(is.null(learn_graph_control$euclidean_distance_ratio), 1,
@@ -105,8 +150,8 @@ learn_graph <- function(cds,
   ncenter <- learn_graph_control$ncenter
   scale <- ifelse(is.null(learn_graph_control$scale), FALSE,
                   learn_graph_control$scale)
-  rann.k <- ifelse(is.null(learn_graph_control$rann.k), 25,
-                   learn_graph_control$rann.k)
+  nn.k <- ifelse(is.null(learn_graph_control[['nn.k']]), 25,
+                   learn_graph_control[['nn.k']])
   maxiter <- ifelse(is.null(learn_graph_control$maxiter), 10,
                     learn_graph_control$maxiter)
   eps <- ifelse(is.null(learn_graph_control$eps), 1e-5,
@@ -115,7 +160,7 @@ learn_graph <- function(cds,
                      learn_graph_control$L1.gamma)
   L1.sigma <- ifelse(is.null(learn_graph_control$L1.sigma), 0.01,
                      learn_graph_control$L1.sigma)
-
+  
   assertthat::assert_that(methods::is(cds, "cell_data_set"))
   assertthat::assert_that(reduction_method %in% c('UMAP'), msg=paste0('unsupported or invalid reduction method \'', reduction_method, '\''))
   assertthat::assert_that(is.logical(use_partition))
@@ -131,7 +176,7 @@ learn_graph <- function(cds,
     assertthat::assert_that(assertthat::is.count(ncenter))
   }
   assertthat::assert_that(assertthat::is.count(maxiter))
-  assertthat::assert_that(assertthat::is.count(rann.k))
+  assertthat::assert_that(assertthat::is.count(nn.k))
   assertthat::assert_that(is.numeric(eps))
   assertthat::assert_that(is.numeric(L1.sigma))
   assertthat::assert_that(is.numeric(L1.sigma))
@@ -150,6 +195,18 @@ learn_graph <- function(cds,
                                       "reduction_method =", reduction_method,
                                       "before running learn_graph."))
 
+  nn_control <- list(method=learn_graph_control[['nn.method']],
+                     metric=learn_graph_control[['nn.metric']],
+                     n_trees=learn_graph_control[['nn.n_trees']],
+                     search_k=learn_graph_control[['nn.search_k']],
+                     M=learn_graph_control[['nn.M']],
+                     ef_construction=learn_graph_control[['nn.ef_construction']],
+                     ef=learn_graph_control[['nn.ef']],
+                     grain_size=learn_graph_control[['nn.grain_size']],
+                     cores=learn_graph_control[['nn.cores']])
+
+  nn_control <- set_nn_control(nn_control=nn_control, k=nn.k, method_default='nn2')
+
   if (use_partition) {
     partition_list <- cds@clusters[[reduction_method]]$partitions
   } else {
@@ -163,7 +220,8 @@ learn_graph <- function(cds,
                         irlba_pca_res = reducedDims(cds)[[reduction_method]],
                         max_components = max_components,
                         ncenter = ncenter,
-                        rann.k = rann.k,
+                        nn.k = nn.k,
+                        nn_control = nn_control,
                         maxiter = maxiter,
                         eps = eps,
                         L1.gamma = L1.gamma,
@@ -198,7 +256,8 @@ multi_component_RGE <- function(cds,
                                 max_components,
                                 ncenter,
                                 irlba_pca_res,
-                                rann.k=25,
+                                nn.k=25,
+                                nn_control=list(),
                                 maxiter,
                                 eps,
                                 L1.gamma,
@@ -266,17 +325,21 @@ multi_component_RGE <- function(cds,
     medioids <- X_subset[, unique(nearest_center)]
     reduced_dim_res <- t(medioids)
     mat <- t(X_subset)
-    if (is.null(rann.k)) {
+    if (is.null(nn.k)) {
       k <- round(sqrt(nrow(mat))/2)
       k <- max(10, k)
+    } else {
+      k <- nn.k
     }
-    else
-    {
-      k <- rann.k
-    }
+
     if (verbose)
-      message("Finding kNN using RANN with ", k, " neighbors")
-    dx <- RANN::nn2(mat, k = min(k, nrow(mat) - 1))
+      message("Finding kNN with ", k, " neighbors")
+
+message('learn_graph: bge: nn_method: ', nn_control[['method']])
+
+    dx <- search_nn_matrix(mat=mat, k=min(k, nrow(mat) - 1), nn_control=nn_control)
+#    dx <- RANN::nn2(mat, k = min(k, nrow(mat) - 1))
+
     nn.index <- dx$nn.idx[, -1]
     nn.dist <- dx$nn.dists[, -1]
 
@@ -314,6 +377,8 @@ multi_component_RGE <- function(cds,
                      stree = stree,
                      reducedDimK_old = rge_res$Y,
                      reducedDimS_old = reduce_dims_old,
+                     k = 25,
+                     nn_control = nn_control,
                      kmean_res = kmean_res,
                      euclidean_distance_ratio = euclidean_distance_ratio,
                      geodesic_distance_ratio = geodesic_distance_ratio,
@@ -431,10 +496,12 @@ multi_component_RGE <- function(cds,
               dp_mst = dp_mst))
 }
 
+
 cal_ncenter <- function(num_cell_communities, ncells,
                         nodes_per_log10_cells=15) {
   round(num_cell_communities * nodes_per_log10_cells * log10(ncells))
 }
+
 
 #' Finds the nearest principal graph node
 #' @param data_matrix the input matrix
@@ -1009,6 +1076,7 @@ connect_tips <- function(cds,
                          reducedDimK_old,
                          reducedDimS_old,
                          k = 25,
+                         nn_control = nn_control,
                          weight = F,
                          qval_thresh = 0.05,
                          kmean_res,
@@ -1016,6 +1084,8 @@ connect_tips <- function(cds,
                          geodesic_distance_ratio = 1/3,
                          medioids,
                          verbose = FALSE) {
+  reduction_method <- 'UMAP'
+
   if(is.null(row.names(stree)) & is.null(row.names(stree))) {
     dimnames(stree) <- list(paste0('Y_', 1:ncol(stree)),
                             paste0('Y_', 1:ncol(stree)))
@@ -1035,9 +1105,15 @@ connect_tips <- function(cds,
 
     # Note: the reduction_method and nn_metric parameters are unused
     #       for nn_method='nn2'.
-    cluster_result <- louvain_clustering(cds, data = data,
-                                         nn_method = 'nn2',
-                                         pd = pd[, ], k = k, weight = weight,
+    cluster_result <- louvain_clustering(cds,
+                                         data = data,
+                                         pd = pd[, ],
+                                         reduction_method=reduction_method,
+                                         weight = weight,
+                                         k = k,
+                                         nn_control = nn_control,
+                                         louvain_iter=1,
+                                         random_seed=0L,
                                          verbose = verbose)
 
     cluster_result$optim_res$membership <- tmp[, 1]
@@ -1050,10 +1126,15 @@ connect_tips <- function(cds,
 
     # Note: the reduction_method and nn_metric parameters are unused
     #       for nn_method='nn2'.
-    cluster_result <- louvain_clustering(cds, data = data,
-                                         nn_method = 'nn2',
+    cluster_result <- louvain_clustering(cds,
+                                         data = data,
                                          pd = pd[row.names(data), ],
-                                         k = k, weight = weight,
+                                         reduction_method=reduction_method,
+                                         weight = weight,
+                                         k = k,
+                                         nn_control = nn_control,
+                                         louvain_iter=1,
+                                         random_seed=random_seed,
                                          verbose = verbose)
 
     cluster_result$optim_res$membership <- kmean_res$cluster

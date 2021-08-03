@@ -22,6 +22,7 @@ find_gene_modules(
   cores = 1,
   verbose = F,
   preprocess_method = c("PCA", "LSI"),
+  nn_control = list(),
   ...
 )
 }
@@ -65,6 +66,9 @@ one with the highest value.}
 \item{preprocess_method}{a string specifying the low-dimensional space
 to use for gene loadings, currently either PCA or LSI. Default is
 "PCA".}
+
+\item{nn_control}{list See set_nn_control for a description of available
+and default list values.}
 
 \item{...}{Additional arguments passed to UMAP and Louvain analysis.}
 }

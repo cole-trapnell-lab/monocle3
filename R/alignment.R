@@ -35,12 +35,8 @@
 #' @param build_nn_index logical When this argument is set to TRUE,
 #'   align_cds builds the Annoy nearest neighbor index from the
 #'   aligned reduced matrix for later use. Default is FALSE.
-#' @param nn_method String indicating the nearest neighbor method to be
-#'   used by cluster_cells. Option is "annoy". Default is "annoy".
-#' @param nn_metric a string specifying the metric used by Annoy, currently
-#'   'euclidean', 'cosine', 'manhattan', or 'hamming'. Default is 'euclidean'.
-#' @param n_trees Numeric Annoy nearest neighbor builds a forest of n trees. More
-#'   trees give more precision when searching. Defaults is 50.
+#' @param nn_control list See set_nn_control for a description of available
+#'   and default list values.
 #' @param ... additional arguments to pass to limma::lmFit if
 #'   residual_model_formula is not NULL
 #' @return an updated cell_data_set object
@@ -52,8 +48,7 @@ align_cds <- function(cds,
                       residual_model_formula_str=NULL,
                       verbose=FALSE,
                       build_nn_index=FALSE,
-                      nn_metric = c('euclidean', 'cosine', 'manhattan', 'hamming'),
-                      n_trees = 50,
+                      nn_control=list(),
                       ...){
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(preprocess_method) == "",TRUE, TRUE),
@@ -71,19 +66,7 @@ align_cds <- function(cds,
                                       preprocess_method,
                                       "' before calling align_cds."))
 
-  assertthat::assert_that(
-    tryCatch(expr = ifelse(match.arg(nn_method) == "",TRUE, TRUE),
-             error = function(e) FALSE),
-    msg = "nn_method must be 'annoy'")
-  nn_method <- match.arg(nn_method)
-
-  assertthat::assert_that(
-    tryCatch(expr = ifelse(match.arg(nn_metric) == "",TRUE, TRUE),
-             error = function(e) FALSE),
-    msg = "nn_metric must be one of 'euclidean','cosine', 'manhattan', or 'hamming'")
-  nn_metric <- match.arg(nn_metric)
-
-  assertthat::assert_that(assertthat::is.count(n_trees))
+  nn_control <- set_nn_control(nn_control=nn_control, k=1, method_default='annoy')
 
   set.seed(2016)
 
@@ -126,19 +109,18 @@ align_cds <- function(cds,
   #      expect that the reduce_dim_aux slot consists of a SimpleList
   #      that stores information about methods with the elements
   #        reduce_dim_aux[[method]][['model']] for the transform elements
-  #        reduce_dim_aux[[method]][['nn_index']] for the annoy index
-  #      and depends on the elements within model and nn_index.
+  #        reduce_dim_aux[[method]][[nn_method]] for the annoy index
+  #      and depends on the elements within model and nn_method.
   #
   cds@reduce_dim_aux[['Aligned']][['model']][['preprocess_method']] <- preprocess_method
   cds@reduce_dim_aux[['Aligned']][['model']][['alignment_group']] <- alignment_group
   cds@reduce_dim_aux[['Aligned']][['model']][['alignment_k']] <- alignment_k
   cds@reduce_dim_aux[['Aligned']][['model']][['residual_model_formula_str']] <- residual_model_formula_str
 
-  if( build_nn_index ) {
-    cds <- build_nn_index(cds=cds, reduction_method='Aligned', nn_method=nn_method, nn_metric=nn_metric, n_trees=n_trees)
-  } else {
-    cds <- clear_nn_index(cds=cds, reduction_method='Aligned', nn_method=nn_method)
-  }
+  if( build_nn_index )
+    cds <- make_nn_index(cds=cds, reduction_method='Aligned', nn_control=nn_control)
+  else
+    cds <- clear_nn_index(cds=cds, reduction_method='Aligned', nn_control[['method']])
 
   matrix_id <- get_unique_id()
   reduce_dim_matrix_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method) 

@@ -162,8 +162,6 @@ align_transform <- function(cds, method=c('Aligned')) {
   alignment_group <- cds@reduce_dim_aux[['Aligned']][['model']][['alignment_group']]
   alignment_k <- cds@reduce_dim_aux[['Aligned']][['model']][['alignment_k']]
   residual_model_formula_str <- cds@reduce_dim_aux[['Aligned']][['model']][['residual_model_formula_str']]
-  nn_metric <- cds@reduce_dim_aux[['Aligned']][['nn_index']][['annoy_metric']]
-
   X.model_mat <- Matrix::sparse.model.matrix( stats::as.formula(residual_model_formula_str), data = colData(cds), drop.unused.levels = TRUE)
   fit <- limma::lmFit(Matrix::t(preproc_res), X.model_mat)
   beta <- fit$coefficients[, -1, drop = FALSE]

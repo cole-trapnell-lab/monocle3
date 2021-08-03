@@ -14,9 +14,7 @@ preprocess_cds(
   scaling = TRUE,
   verbose = FALSE,
   build_nn_index = FALSE,
-  nn_method = c("annoy"),
-  nn_metric = c("euclidean", "cosine", "manhattan", "hamming"),
-  n_trees = 50,
+  nn_control = list(),
   ...
 )
 }
@@ -56,14 +54,8 @@ reduction}
 preprocess_cds builds the Annoy nearest neighbor index from the
 dimensionally reduced matrix for later use. Default is FALSE.}
 
-\item{nn_method}{String indicating the nearest neighbor method to be
-used by cluster_cells. Option is "annoy". Default is "annoy".}
-
-\item{nn_metric}{a string specifying the metric used by Annoy, currently
-'euclidean', 'cosine', 'manhattan', or 'hamming'. Default is 'euclidian'.}
-
-\item{n_trees}{Numeric Annoy nearest neighbor builds a forest of n trees. More
-trees give more precision when searching. Defaults is 50.}
+\item{nn_control}{list See set_nn_control for a description of available
+and default list values.}
 }
 \value{
 an updated cell_data_set object

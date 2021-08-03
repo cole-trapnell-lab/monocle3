@@ -15,12 +15,10 @@ reduce_dimension(
   umap.n_neighbors = 15L,
   umap.fast_sgd = FALSE,
   umap.nn_method = "annoy",
-  cores = 1,
   verbose = FALSE,
+  cores = 1,
   build_nn_index = FALSE,
-  nn_method = c("annoy"),
-  nn_metric = c("euclidean", "cosine", "manhattan", "hamming"),
-  n_trees = 50,
+  nn_control = list(),
   ...
 )
 }
@@ -55,20 +53,16 @@ TRUE. See uwot package's \code{\link[umap]{umap}} for details.}
 used by UMAP. Default is "annoy". See uwot package's
 \code{\link[umap]{umap}} for details.}
 
-\item{cores}{Number of compute cores to use.}
-
 \item{verbose}{Logical, whether to emit verbose output.}
 
+\item{cores}{Number of cores to use for computing the UMAP.}
+
 \item{build_nn_index}{logical When this argument is set to TRUE,
-reduce_dimension builds the Annoy nearest neighbor index from the
-dimensionally reduced matrix for later use. Default is FALSE.
-This works only for reduction_method = "UMAP".}
+preprocess_cds builds the Annoy nearest neighbor index from the
+dimensionally reduced matrix for later use. Default is FALSE.}
 
-\item{nn_method}{String indicating the nearest neighbor method to be
-used by cluster_cells. Option is "annoy". Default is "annoy".}
-
-\item{nn_metric}{a string specifying the metric used by Annoy, currently
-'euclidean', 'cosine', 'manhattan', or 'hamming'. Default is 'euclidean'.}
+\item{nn_control}{list See set_nn_control for a description of available
+and default list values.}
 
 \item{...}{additional arguments to pass to the dimensionality reduction
 function.}
