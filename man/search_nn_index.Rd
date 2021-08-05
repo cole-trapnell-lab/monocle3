@@ -8,7 +8,8 @@ search_nn_index(
   cds,
   reduction_method = c("PCA", "LSI", "Aligned", "tSNE", "UMAP"),
   k,
-  nn_control
+  nn_control = list(),
+  verbose = FALSE
 )
 }
 \arguments{

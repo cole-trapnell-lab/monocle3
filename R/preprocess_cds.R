@@ -79,7 +79,7 @@ preprocess_cds <- function(cds,
                           msg = paste("One or more cells has a size factor of",
                                       "NA."))
 
-  nn_control <- set_nn_control(nn_control=nn_control, k=1, method_default='annoy')
+  nn_control <- set_nn_control(nn_control=nn_control, k=1, method_default='annoy', verbose=verbose)
 
   #ensure results from RNG sensitive algorithms are the same on all calls
   set.seed(2016)
@@ -132,13 +132,9 @@ preprocess_cds <- function(cds,
     cds@reduce_dim_aux[['PCA']][['model']][['svd_scale']] <- irlba_res$svd_scale
     cds@reduce_dim_aux[['PCA']][['model']][['prop_var_expl']] <- irlba_res$sdev^2 / sum(irlba_res$sdev^2)
 
-    if( build_nn_index )
-      cds <- make_nn_index(cds=cds, reduction_method='PCA', nn_control=nn_control)
-    else
-      cds <- clear_nn_index(cds=cds, reduction_method='PCA', nn_control[['method']])
-
     matrix_id <- get_unique_id()
     counts_identity <- get_counts_identity(cds)
+
     cds <- set_reduce_dim_matrix_identity(cds, 'PCA',
                                           'matrix:PCA',
                                           matrix_id,
@@ -151,6 +147,12 @@ preprocess_cds <- function(cds,
                                          matrix_id,
                                          'none',
                                          'none')
+
+    if( build_nn_index )
+      cds <- make_nn_index(cds=cds, reduction_method='PCA', nn_control=nn_control, verbose=verbose)
+    else
+      cds <- clear_nn_index(cds=cds, reduction_method='PCA', 'all')
+
   } else if(method == "LSI") {
     cds <- initialize_reduce_dim_metadata(cds, 'LSI')
     cds <- initialize_reduce_dim_aux_model(cds, 'LSI')
@@ -175,13 +177,9 @@ preprocess_cds <- function(cds,
     # we need svd_v downstream so
     # calculate gene_loadings in cluster_cells.R
 
-    if( build_nn_index )
-      cds <- make_nn_index(cds=cds, reduction_method='LSI', nn_control=nn_control)
-    else
-      cds <- clear_nn_index(cds=cds, reduction_method='LSI', nn_control[['method']])
-
     matrix_id <- get_unique_id()
     counts_identity <- get_counts_identity(cds)
+
     cds <- set_reduce_dim_matrix_identity(cds, 'LSI',
                                           'matrix:LSI',
                                           matrix_id,
@@ -194,6 +192,12 @@ preprocess_cds <- function(cds,
                                          matrix_id,
                                          'none',
                                          'none')
+
+    if( build_nn_index )
+      cds <- make_nn_index(cds=cds, reduction_method='LSI', nn_control=nn_control, verbose=verbose)
+    else
+      cds <- clear_nn_index(cds=cds, reduction_method='LSI', 'all')
+
   }
   cds@reduce_dim_aux[['Aligned']] <- NULL
 

@@ -66,7 +66,7 @@ align_cds <- function(cds,
                                       preprocess_method,
                                       "' before calling align_cds."))
 
-  nn_control <- set_nn_control(nn_control=nn_control, k=1, method_default='annoy')
+  nn_control <- set_nn_control(nn_control=nn_control, k=1, method_default='annoy', verbose=verbose)
 
   set.seed(2016)
 
@@ -117,13 +117,9 @@ align_cds <- function(cds,
   cds@reduce_dim_aux[['Aligned']][['model']][['alignment_k']] <- alignment_k
   cds@reduce_dim_aux[['Aligned']][['model']][['residual_model_formula_str']] <- residual_model_formula_str
 
-  if( build_nn_index )
-    cds <- make_nn_index(cds=cds, reduction_method='Aligned', nn_control=nn_control)
-  else
-    cds <- clear_nn_index(cds=cds, reduction_method='Aligned', nn_control[['method']])
-
   matrix_id <- get_unique_id()
   reduce_dim_matrix_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method) 
+
   cds <- set_reduce_dim_matrix_identity(cds, 'Aligned',
                                         'matrix:Aligned',
                                         matrix_id,
@@ -137,6 +133,11 @@ align_cds <- function(cds,
                                        matrix_id,
                                        reduce_dim_model_identity[['model_type']],
                                        reduce_dim_model_identity[['model_id']])
+
+  if( build_nn_index )
+    cds <- make_nn_index(cds=cds, reduction_method='Aligned', nn_control=nn_control, verbose=verbose)
+  else
+    cds <- clear_nn_index(cds=cds, reduction_method='Aligned', 'all')
 
   cds
 }

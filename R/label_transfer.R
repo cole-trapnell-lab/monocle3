@@ -71,7 +71,8 @@ transfer_cell_labels <- function(cds,
                                  k=10,
                                  nn_control,
                                  top_threshold=0.5,
-                                 top_over_second_threshold=1.5) {
+                                 top_over_second_threshold=1.5,
+                                 verbose=FALSE) {
 
   assertthat::assert_that(class(cds) == 'cell_data_set',
                           msg=paste0('cds parameter is not a cell_data_set'))
@@ -84,7 +85,7 @@ transfer_cell_labels <- function(cds,
 
   assertthat::assert_that(assertthat::is.count(k))
 
-  nn_control <- set_nn_control(nn_control=nn_control, k=k, method_default='annoy')
+  nn_control <- set_nn_control(nn_control=nn_control, k=k, method_default='annoy', verbose)
 
   assertthat::assert_that(is.double(top_threshold),
                           msg=paste0('top_threshold value is not numeric'))
@@ -115,7 +116,7 @@ transfer_cell_labels <- function(cds,
   # The cds@reduce_dim_aux[[reduction_method]] contains the reduction_method
   # coordinates for the reference data set, which were
   # loaded using load_transform_models() above.
-  cds_res <- search_nn_index(cds, reduction_method=reduction_method, k=k, nn_control=nn_control)
+  cds_res <- search_nn_index(cds, reduction_method=reduction_method, k=k, nn_control=nn_control, verbose=verbose)
  
   # Get the best reference cell label for the query cells.
   cds_reduced_dims <- reducedDims(cds)[[reduction_method]]
@@ -194,7 +195,8 @@ fix_missing_cell_labels <- function(cds, reduction_method=c('UMAP', 'PCA'), out_
                                     cell_label_type=NULL,
                                     k=10,
                                     nn_control=nn_control,
-                                    top_threshold=0.5, top_over_second_threshold=1.5, ...) {
+                                    top_threshold=0.5, top_over_second_threshold=1.5,
+                                    verbose=FALSE, ...) {
 
   nn_method <- nn_control[['method']]
 
@@ -210,15 +212,16 @@ fix_missing_cell_labels <- function(cds, reduction_method=c('UMAP', 'PCA'), out_
   assertthat::assert_that(cell_label_type %in% colnames(colData(cds)),
                           msg=paste0('cell_label_type \'', cell_label_type, '\' is not in the cds colData'))
 
-  nn_control <- set_nn_control(nn_control=nn_control, k=k, method_default='annoy')
+  nn_control <- set_nn_control(nn_control=nn_control, k=k, method_default='annoy', verbose)
 
   na_cds <- cds[, is.na(colData(cds)[[cell_label_type]])]
   
   # Build on rest of cds, where there is a label.
   notna_cds <- cds[, !is.na(colData(cds)[[cell_label_type]])]
   notna_cds <- make_nn_index(notna_cds, 
-                              reduction_method=reduction_method,
-                              nn_control=nn_control)
+                             reduction_method=reduction_method,
+                             nn_control=nn_control,
+                             verbose=verbose)
  
   notna_nn_index <- notna_cds@reduce_dim_aux[[reduction_method]][[paste0(nn_method,'_nn')]][['nn_index']]
   notna_colData <- as.data.frame(colData(notna_cds))

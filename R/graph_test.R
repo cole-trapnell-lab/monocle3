@@ -53,7 +53,7 @@ graph_test <- function(cds,
                        nn_control=list()) {
   neighbor_graph <- match.arg(neighbor_graph)
 
-  nn_control <- set_nn_control(nn_control=nn_control, k=k, method_default='nn2')
+  nn_control <- set_nn_control(nn_control=nn_control, k=k, method_default='nn2', verbose=verbose)
 
   lw <- calculateLW(cds,
                     k = k,
@@ -286,14 +286,23 @@ calculateLW <- function(cds,
   principal_g <- NULL
 
   cell_coords <- reducedDims(cds)[[reduction_method]]
+  nn_method <- nn_control[['method']]
+
+  if((nn_method == 'annoy' || nn_method == 'hnsw') &&
+     !check_nn_index_is_current(cds, reduction_method=reduction_method, nn_control=nn_control, verbose=verbose)) {
+#tic('build annoy index next')
+    cds <- make_nn_index(cds=cds, reduction_method=reduction_method, nn_control=nn_control, verbose=verbose)
+#toc()
+  }
+
   if (neighbor_graph == "knn") {
-    if(nn_control[['method']] == 'nn2') {
+    if(nn_method == 'nn2') {
       knn_res <- RANN::nn2(cell_coords, cell_coords,
                            min(k + 1, nrow(cell_coords)),
                            searchtype = "standard")[[1]]
     }
     else {
-      knn_res <- search_nn_index(cds, reduction_method=reduction_method, k=min(k + 1, nrow(cell_coords)), nn_control=nn_control)[[1]]
+      knn_res <- search_nn_index(cds, reduction_method=reduction_method, k=min(k + 1, nrow(cell_coords)), nn_control=nn_control, verbose=verbose)[[1]]
     }
   } else if(neighbor_graph == "principal_graph") {
     pr_graph_node_coords <- cds@principal_graph_aux[[reduction_method]]$dp_mst
@@ -306,12 +315,12 @@ calculateLW <- function(cds,
   exprs_mat <- exprs(cds)
   if(neighbor_graph == "knn") {
     if(is.null(knn_res)) {
-      if(nn_control[['method']] == 'nn2') {
+      if(nn_method == 'nn2') {
         knn_res <- RANN::nn2(cell_coords, cell_coords,
                              min(k + 1, nrow(cell_coords)),
                              searchtype = "standard")[[1]]
      } else {
-      knn_res <- search_nn_index(cds, reduction_method=reduction_method, k=min(k + 1, nrow(cell_coords)), nn_control=nn_control)[[1]]
+      knn_res <- search_nn_index(cds, reduction_method=reduction_method, k=min(k + 1, nrow(cell_coords)), nn_control=nn_control, verbose=verbose)[[1]]
     }
 
 
@@ -355,12 +364,12 @@ calculateLW <- function(cds,
     }
     # an alternative approach to make the kNN graph based on the principal
     # graph
-    if(nn_control[['method']] == 'nn2') {
+    if(nn_method == 'nn2') {
       knn_res <- RANN::nn2(cell_coords, cell_coords,
                            min(k + 1, nrow(cell_coords)),
                            searchtype = "standard")[[1]]
     } else {
-      knn_res <- search_nn_index(cds, reduction_method=reduction_method, k=min(k + 1, nrow(cell_coords)), nn_control=nn_control)[[1]]
+      knn_res <- search_nn_index(cds, reduction_method=reduction_method, k=min(k + 1, nrow(cell_coords)), nn_control=nn_control, verbose=verbose)[[1]]
     }
 
     # convert the matrix of knn graph from the cell IDs into a matrix of

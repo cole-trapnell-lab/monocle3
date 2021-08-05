@@ -94,7 +94,7 @@ reduce_dimension <- function(cds,
       msg = "preprocess_method must be one of 'PCA' or 'LSI'")
   }
 
-  nn_control <- set_nn_control(nn_control=nn_control, k=1, method_default='annoy')
+  nn_control <- set_nn_control(nn_control=nn_control, k=1, method_default='annoy', verbose=verbose)
 
   #preprocess_method <- match.arg(preprocess_method)
 
@@ -183,14 +183,9 @@ reduce_dimension <- function(cds,
     reducedDims(cds)$tSNE <- tsne_data
 
 
-    # make nearest neighbor index in tSNE space
-    if( build_nn_index )
-        cds <- make_nn_index(cds=cds, reduction_method='tSNE', nn_control=nn_control)
-    else
-      cds <- clear_nn_index(cds=cds, reduction_method='tSNE', nn_method=nn_control[['method']])
-
     matrix_id <- get_unique_id()
     reduce_dim_matrix_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method)
+
     set_reduce_dim_matrix_identity(cds, 'tSNE',
                                    'matrix:tSNE',
                                    matrix_id,
@@ -204,6 +199,13 @@ reduce_dimension <- function(cds,
                                   matrix_id,
                                   reduce_dim_model_identity[['model_type']],
                                   reduce_dim_model_identity[['model_id']])
+
+    # make nearest neighbor index in tSNE space
+    if( build_nn_index )
+        cds <- make_nn_index(cds=cds, reduction_method='tSNE', nn_control=nn_control, verbose=verbose)
+    else
+      cds <- clear_nn_index(cds=cds, reduction_method='tSNE', 'all')
+
   } else if (reduction_method == c("UMAP")) {
     cds <- add_citation(cds, "UMAP")
     if (verbose)
@@ -247,14 +249,9 @@ reduce_dimension <- function(cds,
     cds@reduce_dim_aux[['UMAP']][['model']][['umap_fast_sgd']] <- umap.fast_sgd
     cds@reduce_dim_aux[['UMAP']][['model']][['umap_model']] <- umap_model
 
-    if( build_nn_index )
-      # make nearest neighbor index in UMAP space
-      cds <- make_nn_index(cds=cds, reduction_method='UMAP', nn_control=nn_control)
-    else
-      cds <- clear_nn_index(cds=cds, reduction_method='UMAP', nn_method=nn_control[['method']])
-
     matrix_id <- get_unique_id()
     reduce_dim_matrix_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method)
+
     cds <- set_reduce_dim_matrix_identity(cds, 'UMAP',
                                           'matrix:UMAP',
                                           matrix_id,
@@ -268,6 +265,12 @@ reduce_dimension <- function(cds,
                                          matrix_id,
                                          reduce_dim_model_identity[['model_type']],
                                          reduce_dim_model_identity[['model_id']])
+
+    if( build_nn_index )
+      # make nearest neighbor index in UMAP space
+      cds <- make_nn_index(cds=cds, reduction_method='UMAP', nn_control=nn_control, verbose=verbose)
+    else
+      cds <- clear_nn_index(cds=cds, reduction_method='UMAP', 'all')
   }
 
   ## Clear out old graphs:

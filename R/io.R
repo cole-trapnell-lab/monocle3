@@ -814,8 +814,8 @@ load_transform_models <- function(cds, directory_path) {
           })
       } else
       if(file_format == 'annoy_index') {
-        metric <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_metric']]
-        ndim <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_ndim']]
+        metric <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['metric']]
+        ndim <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['ndim']]
         cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']] <- tryCatch(
           {
             load_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']], file_path, metric, ndim)
@@ -826,8 +826,8 @@ load_transform_models <- function(cds, directory_path) {
           })
       } else
       if(file_format == 'hnsw_index') {
-        metric <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_metric']]
-        ndim <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_ndim']]
+        metric <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['metric']]
+        ndim <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['ndim']]
         cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']] <- tryCatch(
           {
             load_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']], file_path, metric, ndim)
@@ -1226,8 +1226,8 @@ load_monocle_objects <- function(directory_path) {
     } else
     if(cds_object == 'reduce_dim_aux') {
       if(file_format == 'annoy_index') {
-        metric <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_metric']]
-        ndim <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_ndim']]
+        metric <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['metric']]
+        ndim <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['ndim']]
         cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']] <- tryCatch(
           {
             load_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']], file_path, metric, ndim)
@@ -1238,8 +1238,8 @@ load_monocle_objects <- function(directory_path) {
           })
       } else
       if(file_format == 'hnsw_index') {
-        metric <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_metric']]
-        ndim <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_ndim']]
+        metric <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['metric']]
+        ndim <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['ndim']]
         cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']] <- tryCatch(
           {
             load_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']], file_path, metric, ndim)

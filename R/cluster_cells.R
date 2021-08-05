@@ -115,15 +115,16 @@ cluster_cells <- function(cds,
                                       "reduction_method =", reduction_method,
                                       "before running cluster_cells"))
 
-  nn_control <- set_nn_control(nn_control=nn_control, k=k, method_default='nn2')
-  nn_method <- nn_control[['method']]
+  nn_control <- set_nn_control(nn_control=nn_control, k=k, method_default='nn2', verbose=verbose)
 
-  if((nn_method == 'annoy' || nn_method == 'hnsw') &&
-     !check_nn_index_current(cds, reduction_method=reduction_method, nn_control=nn_control)) {
-#tic('build annoy index next')
-    cds <- make_nn_index(cds=cds, reduction_method=reduction_method, nn_control=nn_control)
-#toc()
-  }
+#  nn_method <- nn_control[['method']]
+#
+#  if((nn_method == 'annoy' || nn_method == 'hnsw') &&
+#     !check_nn_index_is_current(cds, reduction_method=reduction_method, nn_control=nn_control, verbose=verbose)) {
+##tic('build annoy index next')
+#    cds <- make_nn_index(cds=cds, reduction_method=reduction_method, nn_control=nn_control, verbose=verbose)
+##toc()
+#  }
 
   reduced_dim_res <- reducedDims(cds)[[reduction_method]]
 
@@ -236,31 +237,24 @@ cluster_cells_make_graph <- function(cds,
   nn_method <- nn_control[['method']]
 
   if(nn_method == 'nn2') {
-#tic('run RANN next')
+message('cluster_cells: nn2: start')
     t1 <- system.time(tmp <- RANN::nn2(data, data, k+1, searchtype = "standard"))
-#toc()
-  } else {
+message('cluster_cells: nn2: done')
+  }
+  else {
 
-#if(nn_method == 'annoy')
-#  tic('run annoy search next')
-#else
-#if(nn_method == 'hnsw')
-#  tic('run hnsw search next')
-    tmp <- search_nn_index(cds=cds, reduction_method=reduction_method, k=k+1, nn_control=nn_control)
-#toc()
-
-    # Annoy does not sort the self point into the first column so ensure that it is.
-    if(nn_method == 'annoy' || nn_method == 'hnsw') {
-#tic('run annoy index swap next')
-write.table(tmp[['nn.idx']], file=paste0('cluster_cells.nearest_neighbors.pre_shift.',nn_method,'.txt'))
-      tmp <- swap_nn_self_search_index(nn_res=tmp)
-write.table(tmp[['nn.idx']], file=paste0('cluster_cells.nearest_neighbors.post_shift.',nn_method,'.txt'))
+    if((nn_method == 'annoy' || nn_method == 'hnsw') &&
+       !check_nn_index_is_current(cds, reduction_method=reduction_method, nn_control=nn_control, verbose=verbose)) {
+#tic('build annoy index next')
+      cds <- make_nn_index(cds=cds, reduction_method=reduction_method, nn_control=nn_control, verbose=verbose)
 #toc()
     }
 
+    tmp <- search_nn_index(cds=cds, reduction_method=reduction_method, k=k+1, nn_control=nn_control, verbose=verbose)
+    if(nn_method == 'annoy' || nn_method == 'hnsw') {
+      tmp <- swap_nn_row_index_point(nn_res=tmp, verbose=verbose)
+    }
   }
-
-write.table(tmp[['nn.idx']], file=paste0('cluster_cells.nearest_neighbors.',nn_method,'.txt'))
 
   neighborMatrix <- tmp[['nn.idx']][, -1]
   distMatrix <- tmp[['nn.dists']][, -1]

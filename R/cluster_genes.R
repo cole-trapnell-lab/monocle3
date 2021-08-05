@@ -52,7 +52,7 @@ find_gene_modules <- function(cds,
                           ...) {
   method = 'leiden'
 
-  nn_control <- set_nn_control(nn_control=nn_control, k=k, method_default='nn2')
+  nn_control <- set_nn_control(nn_control=nn_control, k=k, method_default='nn2', verbose=verbose)
 
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(preprocess_method) == "",TRUE, TRUE),

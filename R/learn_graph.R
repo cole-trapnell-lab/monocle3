@@ -111,7 +111,7 @@ learn_graph <- function(cds,
                                     "eps",
                                     "L1.gamma",
                                     "L1.sigma",
-                                    "nn_method",
+                                    "nn.method",
                                     "nn.metric",
                                     "nn.n_trees",
                                     "nn.search_k",
@@ -205,7 +205,7 @@ learn_graph <- function(cds,
                      grain_size=learn_graph_control[['nn.grain_size']],
                      cores=learn_graph_control[['nn.cores']])
 
-  nn_control <- set_nn_control(nn_control=nn_control, k=nn.k, method_default='nn2')
+  nn_control <- set_nn_control(nn_control=nn_control, k=nn.k, method_default='nn2', verbose=verbose)
 
   if (use_partition) {
     partition_list <- cds@clusters[[reduction_method]]$partitions
@@ -335,9 +335,7 @@ multi_component_RGE <- function(cds,
     if (verbose)
       message("Finding kNN with ", k, " neighbors")
 
-message('learn_graph: bge: nn_method: ', nn_control[['method']])
-
-    dx <- search_nn_matrix(mat=mat, k=min(k, nrow(mat) - 1), nn_control=nn_control)
+    dx <- search_nn_matrix(X=mat, k=min(k, nrow(mat) - 1), nn_control=nn_control, verbose=verbose)
 #    dx <- RANN::nn2(mat, k = min(k, nrow(mat) - 1))
 
     nn.index <- dx$nn.idx[, -1]
@@ -1103,7 +1101,7 @@ connect_tips <- function(cds,
 
     data <- t(reducedDimS_old[, ])
 
-    # Note: the reduction_method and nn_metric parameters are unused
+    # Note: the reduction_method and nn metric parameters are unused
     #       for nn_method='nn2'.
     cluster_result <- louvain_clustering(cds,
                                          data = data,
@@ -1124,7 +1122,7 @@ connect_tips <- function(cds,
 
     data <- t(reducedDimS_old[, ]) # raw_data_tip_pc_points
 
-    # Note: the reduction_method and nn_metric parameters are unused
+    # Note: the reduction_method and nn metric parameters are unused
     #       for nn_method='nn2'.
     cluster_result <- louvain_clustering(cds,
                                          data = data,
