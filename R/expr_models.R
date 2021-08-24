@@ -22,7 +22,7 @@ clean_mass_model_object <- function(cm) {
   cm$weights <- c()
   cm$prior.weights <- c()
   cm$data <- c()
-
+  
   cm$family$variance <- c()
   cm$family$dev.resids <- c()
   cm$family$aic <- c()
@@ -37,7 +37,7 @@ clean_mass_model_object <- function(cm) {
 clean_speedglm_model_object = function(cm) {
   cm$y = c()
   #cm$model = c()
-
+  
   cm$residuals = c()
   cm$fitted.values = c()
   cm$effects = c()
@@ -46,7 +46,7 @@ clean_speedglm_model_object = function(cm) {
   cm$weights = c()
   cm$prior.weights = c()
   cm$data = c()
-
+  
   cm$family$variance = c()
   cm$family$dev.resids = c()
   cm$family$aic = c()
@@ -62,7 +62,7 @@ clean_speedglm_model_object = function(cm) {
 clean_zeroinfl_model_object = function(cm) {
   cm$y = c()
   cm$model = c()
-
+  
   cm$residuals = c()
   cm$fitted.values = c()
   #cm$effects = c()
@@ -71,8 +71,8 @@ clean_zeroinfl_model_object = function(cm) {
   cm$weights = c()
   #cm$prior.weights = c()
   cm$data = c()
-
-
+  
+  
   # cm$family$variance = c()
   # cm$family$dev.resids = c()
   # cm$family$aic = c()
@@ -86,6 +86,39 @@ clean_zeroinfl_model_object = function(cm) {
   return(cm)
 }
 
+clean_glmerMod_model_object <- function(model) {
+  rcl="glmResp"
+  #trivial.y=FALSE
+  #fac <- as.numeric(rcl != "nlsResp")
+  model@devcomp$cmp <- c(model@devcomp$cmp, 
+                         logLik=logLik(model),
+                         AIC=AIC(logLik(model)),
+                         BIC=BIC(logLik(model)),
+                         df_residual = df.residual(model))
+  cm <- new(switch(rcl, lmerResp="lmerMod", glmResp="glmerMod", nlsResp="nlmerMod"),
+            call=model@call, 
+            #frame=model@frame, # takes up quite a bit of space, but messes up evaluate_fits if we delete
+            flist=model@flist, 
+            cnms=model@cnms,
+            Gp=model@Gp, 
+            theta=model@theta, 
+            beta=model@beta,
+            #u=if (trivial.y) rep(NA_real_,nrow(model@pp$Zt)) else model@pp$u(fac),
+            #lower=model@lower, 
+            devcomp=model@devcomp,
+            pp=model@pp, 
+            resp=model@resp
+            
+  )
+  return(cm)
+}
+
+
+clean_glmerMod_summary_object <- function(model_summary) {
+  model_summary$residuals <- c()
+  return(model_summary)
+}
+
 
 clean_model_object = function(model) {
   if (class(model)[1] == "negbin") {
@@ -94,7 +127,9 @@ clean_model_object = function(model) {
     model = clean_speedglm_model_object(model)
   } else if (class(model) == "zeroinfl"){
     model = clean_zeroinfl_model_object(model)
-  }else {
+  } else if (class(model)[1] == "glmerMod") {
+    model = clean_glmerMod_model_object(model) 
+  } else {
     stop("Unrecognized model class")
   }
 }
@@ -120,12 +155,12 @@ fit_model_helper <- function(x,
                              verbose = FALSE,
                              ...) {
   model_formula_str <- paste("f_expression", model_formula_str,
-                           sep = "")
+                             sep = "")
   orig_x <- x
   # FIXME: should we be using this here?
   # x <- x + pseudocount
   if (expression_family %in% c("negbinomial", "poisson", "zinegbinomial",
-                               "zipoisson", "quasipoisson")) {
+                               "zipoisson", "quasipoisson", "mixed-negbinomial")) {
     x <- x / Size_Factor
     f_expression <- round(x)
   }
@@ -138,38 +173,46 @@ fit_model_helper <- function(x,
   }
   f_expression = as.numeric(f_expression)
   model_formula = stats::as.formula(model_formula_str)
-
+  
   tryCatch({
     if (verbose) messageWrapper = function(expr) { expr }
     else messageWrapper = suppressWarnings
-
+    
     FM_fit = messageWrapper(switch(expression_family,
-                    "negbinomial" = MASS::glm.nb(model_formula, epsilon=1e-3,
-                                                 model=FALSE, y=FALSE, ...),
-                    "poisson" = speedglm::speedglm(model_formula,
-                                                   family = stats::poisson(),
-                                                   acc=1e-3, model=FALSE,
-                                                   y=FALSE, ...),
-                    "quasipoisson" = speedglm::speedglm(model_formula,
-                                                        family = stats::quasipoisson(),
-                                                        acc=1e-3, model=FALSE,
-                                                        y=FALSE, ...),
-                    "binomial" = speedglm::speedglm(model_formula,
-                                                    family = stats::binomial(),
-                                                    acc=1e-3, model=FALSE,
-                                                    y=FALSE, ...),
-                    "gaussian" = speedglm::speedglm(model_formula,
-                                                    family = stats::gaussian(),
-                                                    acc=1e-3, model=FALSE,
-                                                    y=FALSE, ...),
-                    "zipoisson" = pscl::zeroinfl(model_formula,
-                                                 dist="poisson", ...),
-                    "zinegbinomial" = pscl::zeroinfl(model_formula,
-                                                     dist="negbin", ...)
-                    ))
+                                   "negbinomial" = MASS::glm.nb(model_formula, epsilon=1e-3,
+                                                                model=FALSE, y=FALSE, ...),
+                                   "poisson" = speedglm::speedglm(model_formula,
+                                                                  family = stats::poisson(),
+                                                                  acc=1e-3, model=FALSE,
+                                                                  y=FALSE, ...),
+                                   "quasipoisson" = speedglm::speedglm(model_formula,
+                                                                       family = stats::quasipoisson(),
+                                                                       acc=1e-3, model=FALSE,
+                                                                       y=FALSE, ...),
+                                   "binomial" = speedglm::speedglm(model_formula,
+                                                                   family = stats::binomial(),
+                                                                   acc=1e-3, model=FALSE,
+                                                                   y=FALSE, ...),
+                                   "gaussian" = speedglm::speedglm(model_formula,
+                                                                   family = stats::gaussian(),
+                                                                   acc=1e-3, model=FALSE,
+                                                                   y=FALSE, ...),
+                                   "zipoisson" = pscl::zeroinfl(model_formula,
+                                                                dist="poisson", ...),
+                                   "zinegbinomial" = pscl::zeroinfl(model_formula,
+                                                                    dist="negbin", ...),
+                                   "mixed-negbinomial" = glmer.nb(model_formula, 
+                                                                    nAGQ=0,
+                                                                    control=glmerControl(optimizer = "nloptwrap"),
+                                                                    ...)
+    ))
     FM_summary = summary(FM_fit)
-    if (clean_model)
-      FM_fit = clean_model_object(FM_fit)
+    if (clean_model){
+      FM_fit = clean_model_object(FM_fit) 
+      if (class(FM_fit) == "glmerMod"){
+        FM_summary = clean_glmerMod_summary_object(FM_summary)
+      }
+    }
     df = list(model=FM_fit, model_summary=FM_summary)
     df
   }, error = function(e) {
@@ -210,14 +253,14 @@ fit_model_helper <- function(x,
 #'
 #' @export
 fit_models <- function(cds,
-                     model_formula_str,
-                     expression_family = "quasipoisson",
-                     reduction_method="UMAP",
-                     cores = 1,
-                     clean_model = TRUE,
-                     verbose = FALSE,
-                     ...) {
-
+                       model_formula_str,
+                       expression_family = "quasipoisson",
+                       reduction_method="UMAP",
+                       cores = 1,
+                       clean_model = TRUE,
+                       verbose = FALSE,
+                       ...) {
+  
   model_form <- stats::as.formula(model_formula_str)
   if (!"num_cells_expressed" %in% names(rowData(cds))) {
     cds <- detect_genes(cds)
@@ -228,7 +271,7 @@ fit_models <- function(cds,
     coldata_df$partition = partitions(cds, reduction_method)[colnames(cds)]
     coldata_df$pseudotime = pseudotime(cds, reduction_method)
   }, error = function(e) {} )
-
+  
   # Test model formula validity.
   # Notes:
   #  o  allow for formulas in model formula: e.g.,  ~ splines::ns(pseudotime, df=3)
@@ -250,28 +293,30 @@ fit_models <- function(cds,
   if(length(err_msg) > 0)
     stop( '\n-- bad fit_models terms --\n', err_msg )
   tryCatch({
-    stats::model.frame(model_form, data=coldata_df)
+    modelFixedForm = stats::as.formula(paste0("~", paste(mf_terms, collapse = " + ")))
+    stats::model.frame(modelFixedForm, data=coldata_df)
+    #stats::model.frame(model_form, data=coldata_df)
   }, error = function( cnd ) {
-       info_msg <- ''
-       for( mf_term in mf_terms )
-       {
-         mf_length  <- length(coldata_df[[mf_term]])
-         mf_num_inf <- sum(is.infinite(coldata_df[[mf_term]]))
-         mf_num_nan <- sum(is.nan(coldata_df[[mf_term]]))
-         mf_num_na  <- sum(is.na(coldata_df[[mf_term]]))
-         if( mf_num_inf > 0 )
-           info_msg <- paste0(info_msg, '  \'', mf_term, '\': ' , mf_num_inf, ' of ', mf_length, ' values are Inf\n')
-         if( mf_num_nan > 0 )
-           info_msg <- paste0(info_msg, '  \'', mf_term, '\': ' , mf_num_nan, ' of ', mf_length, ' values are NaN\n')
-         if( mf_num_na - mf_num_nan > 0 )
-           info_msg <- paste0(info_msg, '  \'', mf_term, '\': ' , mf_num_na - mf_num_nan, ' of ', mf_length, ' values are NA\n')
-       }
-       rm( mf_term, mf_length, mf_num_inf, mf_num_nan, mf_num_na )
-       stop (paste0( 'Error in model formula: ', conditionMessage( cnd ), '\n', info_msg ) )
+    info_msg <- ''
+    for( mf_term in mf_terms )
+    {
+      mf_length  <- length(coldata_df[[mf_term]])
+      mf_num_inf <- sum(is.infinite(coldata_df[[mf_term]]))
+      mf_num_nan <- sum(is.nan(coldata_df[[mf_term]]))
+      mf_num_na  <- sum(is.na(coldata_df[[mf_term]]))
+      if( mf_num_inf > 0 )
+        info_msg <- paste0(info_msg, '  \'', mf_term, '\': ' , mf_num_inf, ' of ', mf_length, ' values are Inf\n')
+      if( mf_num_nan > 0 )
+        info_msg <- paste0(info_msg, '  \'', mf_term, '\': ' , mf_num_nan, ' of ', mf_length, ' values are NaN\n')
+      if( mf_num_na - mf_num_nan > 0 )
+        info_msg <- paste0(info_msg, '  \'', mf_term, '\': ' , mf_num_na - mf_num_nan, ' of ', mf_length, ' values are NA\n')
+    }
+    rm( mf_term, mf_length, mf_num_inf, mf_num_nan, mf_num_na )
+    stop (paste0( 'Error in model formula: ', conditionMessage( cnd ), '\n', info_msg ) )
   })
-
+  
   disp_func <- NULL
-
+  
   if (cores > 1) {
     fits <-
       mc_es_apply(
@@ -306,7 +351,7 @@ fit_models <- function(cds,
     )
     fits
   }
-
+  
   rowData(cds)$gene_id <- row.names(rowData(cds))
   fits <- tibble::as_tibble(purrr::transpose(fits))
   M_f <- tibble::as_tibble(rowData(cds))
@@ -322,14 +367,17 @@ extract_model_status_helper <- function(model){
   if (class(model)[1] == "speedglm") {
     status_str <- ifelse(model$convergence, "OK", "FAIL")
     return (status_str)
-
+    
   } else if (class(model)[1] == "negbin"){
     status_str <- ifelse(model$converged, "OK", "FAIL")
     return (status_str)
   } else if (class(model) == "zeroinfl"){
     status_str <- ifelse(model$converged, "OK", "FAIL")
     return (status_str)
-  }else {
+  }else if (class(model)[1] == "glmerMod"){
+    status_str <- ifelse(any( grepl("failed to converge", model@optinfo$conv$lme4$messages) ), "FAIL", "OK") # check to see if any warning messages
+    return (status_str)
+  } else {
     return("FAIL")
   }
 }
@@ -356,7 +404,7 @@ extract_coefficient_helper = function(model, model_summary,
     coef_mat$normalized_effect = log_eff_over_int
     coef_mat$model_component = "count"
     return (coef_mat)
-
+    
   } else if (class(model)[1] == "negbin"){
     coef_mat = model_summary$coefficients # first row is intercept
     # We need this because some summary methods "format" the coefficients into
@@ -375,15 +423,15 @@ extract_coefficient_helper = function(model, model_summary,
     log_eff_over_int[1] = 0
     coef_mat = tibble::as_tibble(coef_mat, rownames = "term")
     coef_mat$normalized_effect = log_eff_over_int
-
+    
     coef_mat$model_component = "count"
     return (coef_mat)
   } else if (class(model) == "zeroinfl"){
     count_coef_mat = model_summary$coefficients$count # first row is intercept
     colnames(count_coef_mat) = c('estimate',
-                           'std_err',
-                           'test_val',
-                           'p_value')
+                                 'std_err',
+                                 'test_val',
+                                 'p_value')
     log_eff_over_int = log2((model$linkinv(count_coef_mat[, 1] +
                                              count_coef_mat[1, 1]) +
                                pseudo_count) /
@@ -394,17 +442,40 @@ extract_coefficient_helper = function(model, model_summary,
     count_coef_mat = tibble::as_tibble(count_coef_mat, rownames = "term")
     count_coef_mat$normalized_effect = log_eff_over_int
     count_coef_mat$model_component = "count"
-
+    
     zero_coef_mat = model_summary$coefficients$zero # first row is intercept
     colnames(zero_coef_mat) = c('estimate',
-                                 'std_err',
-                                 'test_val',
-                                 'p_value')
+                                'std_err',
+                                'test_val',
+                                'p_value')
     zero_coef_mat = tibble::as_tibble(zero_coef_mat, rownames = "term")
     zero_coef_mat$normalized_effect = NA
     zero_coef_mat$model_component = "zero"
     coef_mat = dplyr::bind_rows(count_coef_mat, zero_coef_mat)
     return (coef_mat)
+  } else if (class(model) == "glmerMod"){
+    
+    coef_mat = model_summary$coefficients # first row is intercept
+    # We need this because some summary methods "format" the coefficients into
+    # a factor...
+    coef_mat = apply(coef_mat, 2, function(x) {as.numeric(as.character(x)) })
+    row.names(coef_mat) = row.names(model_summary$coefficients)
+    colnames(coef_mat) = c('estimate',
+                           'std_err',
+                           'test_val',
+                           'p_value')
+    log_eff_over_int = log2((exp(coef_mat[, 1] + # inverse-link function for neg-binomial is exp, done manually bc no inv-link function in merMod
+                                   coef_mat[1, 1]) +
+                               pseudo_count) /
+                              rep(exp(coef_mat[1, 1]) +
+                                    pseudo_count, times = nrow(coef_mat)))
+    log_eff_over_int[1] = 0
+    coef_mat = tibble::as_tibble(coef_mat, rownames = "term")
+    coef_mat$normalized_effect = log_eff_over_int
+    
+    coef_mat$model_component = "count"
+    return (coef_mat)
+    
   } else {
     coef_mat = matrix(NA_real_, nrow = 1, ncol = 5)
     colnames(coef_mat) = c('estimate',
@@ -452,18 +523,18 @@ compare_models <- function(model_tbl_full, model_tbl_reduced){
     joined_fits <- dplyr::full_join(model_x_eval, model_y_eval,
                                     by=c("gene_id", "gene_short_name",
                                          "num_cells_expressed"))
-
+    
   } else {
     joined_fits <- dplyr::full_join(model_x_eval, model_y_eval,
                                     by=c("gene_id", "num_cells_expressed"))
   }
-
+  
   joined_fits <- joined_fits %>% dplyr::mutate(
     dfs = round(abs(df_residual.x  - df_residual.y)),
     LLR = 2 * abs(logLik.x  - logLik.y),
     p_value = stats::pchisq(LLR, dfs, lower.tail = FALSE)
   )
-
+  
   joined_fits <- joined_fits %>%
     dplyr::select_if(names(.) %in% c("gene_id", "gene_short_name",
                                      "num_cells_expressed", "p_value"))
@@ -491,8 +562,8 @@ compare_models <- function(model_tbl_full, model_tbl_reduced){
 #' @export
 evaluate_fits <- function(model_tbl){
   private_glance <- function(m){
-
-
+    
+    
     mass_glance <- function(m) {
       tibble::tibble(null_deviance = m$null.deviance,
                      df_null = m$df.null,
@@ -502,7 +573,7 @@ evaluate_fits <- function(model_tbl){
                      deviance = m$deviance,
                      df_residual = m$df.residual)
     }
-
+    
     zeroinfl_glance <- function(m) {
       tibble::tibble(null_deviance = NA_real_,
                      df_null = m$df.null,
@@ -530,15 +601,25 @@ evaluate_fits <- function(model_tbl){
                      deviance = NA_real_,
                      df_residual = NA_integer_)
     }
-
+    glmerMod_glance <- function(m) {
+      tibble::tibble(null_deviance = NA_real_,
+                     df_null = NA_integer_,
+                     logLik = m@devcomp$cmp["logLik"],
+                     AIC = m@devcomp$cmp["AIC"],
+                     BIC = m@devcomp$cmp["BIC"],
+                     deviance = m@devcomp$cmp["dev"],
+                     df_residual = m@devcomp$cmp["df_residual"])
+    }
+    
     tryCatch({switch(class(m)[1],
                      "negbin" = mass_glance(m),
                      "zeroinfl" = zeroinfl_glance(m),
                      "speedglm" = speedglm_glance(m),
+                     "glmerMod" = glmerMod_glance(m),
                      default_glance(m)
     )
     })
-
+    
   }
   model_tbl %>% dplyr::mutate(glanced = purrr::map(model, private_glance)) %>%
     tidyr::unnest(glanced, .drop=TRUE)
