@@ -35,8 +35,8 @@
 #' @param build_nn_index logical When this argument is set to TRUE,
 #'   align_cds builds the Annoy nearest neighbor index from the
 #'   aligned reduced matrix for later use. Default is FALSE.
-#' @param nn_control list See set_nn_control for a description of available
-#'   and default list values.
+#' @param nn_control A list of parameters used to make the nearest
+#'  neighbor index. See the set_nn_control help for detailed information.
 #' @param ... additional arguments to pass to limma::lmFit if
 #'   residual_model_formula is not NULL
 #' @return an updated cell_data_set object

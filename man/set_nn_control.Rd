@@ -23,6 +23,11 @@ their default values.}
 points to return from a search. This value is used only
 to set the default annoy search_k parameter. The value
 is ignored for index builds. Default is 25.}
+
+\item{method_default}{The nearest neighbor method to use when not
+specified in the nn_control list.}
+
+\item{verbose}{Whether to emit verbose output.}
 }
 \value{
 An updated nn_control list.
@@ -37,8 +42,9 @@ values are set to default values.
 
 \describe{
 \item{method}{The method used to find nearest neighbor points.
-The available methods are 'nn2', 'annoy', and 'hnsw'. Must
-be specified.
+The available methods are 'nn2', 'annoy', and 'hnsw'. If not
+specified, the method given by the method_default parameter is
+used.
 Detailed information about each can be found on the WWW sites:
 https://cran.r-project.org/web/packages/RANN/,
 https://cran.r-project.org/web/packages/RcppAnnoy/index.html,

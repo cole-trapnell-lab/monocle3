@@ -49,8 +49,8 @@ differential expression.}
 \item{verbose}{Whether to show spatial test (Moran's I) errors and warnings.
 Only valid for cores = 1.}
 
-\item{nn_control}{list See set_nn_control for a description of available
-and default list values.}
+\item{nn_control}{A list of parameters used to make the nearest
+neighbor index. See the set_nn_control help for detailed information.}
 }
 \value{
 a data frame containing the p values and q-values from the Moran's I

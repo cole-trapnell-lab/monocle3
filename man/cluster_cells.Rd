@@ -57,8 +57,8 @@ larger than 1.}
 \item{verbose}{A logic flag to determine whether or not we should print the
 run details.}
 
-\item{nn_control}{list See set_nn_control for description of available
-and default list values.}
+\item{nn_control}{A list of parameters used to make the nearest
+neighbor index. See the set_nn_control help for detailed information.}
 
 \item{...}{Additional arguments passed to the leidenbase package.}
 }

@@ -61,8 +61,8 @@ used by UMAP. Default is "annoy". See uwot package's
 preprocess_cds builds the Annoy nearest neighbor index from the
 dimensionally reduced matrix for later use. Default is FALSE.}
 
-\item{nn_control}{list See set_nn_control for a description of available
-and default list values.}
+\item{nn_control}{A list of parameters used to make the nearest
+neighbor index. See the set_nn_control help for detailed information.}
 
 \item{...}{additional arguments to pass to the dimensionality reduction
 function.}

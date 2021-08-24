@@ -35,8 +35,8 @@
 #'   differential expression.
 #' @param verbose Whether to show spatial test (Moran's I) errors and warnings.
 #'   Only valid for cores = 1.
-#' @param nn_control list See set_nn_control for a description of available
-#'   and default list values.
+#' @param nn_control A list of parameters used to make the nearest
+#'  neighbor index. See the set_nn_control help for detailed information.
 #' @return a data frame containing the p values and q-values from the Moran's I
 #'   test on the parallel arrays of models.
 #' @seealso \code{\link[spdep]{moran.test}} \code{\link[spdep]{geary.test}}
@@ -302,7 +302,9 @@ calculateLW <- function(cds,
                            searchtype = "standard")[[1]]
     }
     else {
-      knn_res <- search_nn_index(cds, reduction_method=reduction_method, k=min(k + 1, nrow(cell_coords)), nn_control=nn_control, verbose=verbose)[[1]]
+      knn_res <- search_nn_index(reducedDims(cds)[[reduction_method]],
+                                 get_nn_index(cds=cds, reduction_method=reduction_method, nn_control=nn_control, verbose=verbose),
+                                 k=min(k + 1, nrow(cell_coords), nn_control=nn_control, verbose=verbose)[[1]])
     }
   } else if(neighbor_graph == "principal_graph") {
     pr_graph_node_coords <- cds@principal_graph_aux[[reduction_method]]$dp_mst
@@ -320,7 +322,9 @@ calculateLW <- function(cds,
                              min(k + 1, nrow(cell_coords)),
                              searchtype = "standard")[[1]]
      } else {
-      knn_res <- search_nn_index(cds, reduction_method=reduction_method, k=min(k + 1, nrow(cell_coords)), nn_control=nn_control, verbose=verbose)[[1]]
+      knn_res <- search_nn_index(reducedDims(cds)[[reduction_method]],
+                                 get_nn_index(cds=cds, reduction_method=reduction_method, nn_control=nn_control, verbose=verbose),
+                                 k=min(k + 1, nrow(cell_coords)), nn_control=nn_control, verbose=verbose)[[1]]
     }
 
 
@@ -369,7 +373,9 @@ calculateLW <- function(cds,
                            min(k + 1, nrow(cell_coords)),
                            searchtype = "standard")[[1]]
     } else {
-      knn_res <- search_nn_index(cds, reduction_method=reduction_method, k=min(k + 1, nrow(cell_coords)), nn_control=nn_control, verbose=verbose)[[1]]
+      knn_res <- search_nn_index(reducedDims(cds)[[reduction_method]],
+                                 get_nn_index(cds=cds, reduction_method=reduction_method, nn_control=nn_control, verbose=verbose),
+                                 k=min(k + 1, nrow(cell_coords)), nn_control=nn_control, verbose=verbose)[[1]]
     }
 
     # convert the matrix of knn graph from the cell IDs into a matrix of

@@ -45,33 +45,38 @@
 #'   to let learn_graph estimate k. Default is 25.}
 #'   \item{rann.k:}{nn.k replaces rann.k but rann.k is available for
 #'   compatibility with existing code.}
+#'   reversed graph embedding. Set rann.k=NULL to let learn_graph estimate
+#'   rann.k. Default is 25.
 #'   \item{maxiter:}{}
 #'   \item{eps:}{}
 #'   \item{L1.gamma:}{}
 #'   \item{L1.sigma:}{}
-#'   \item{nn.method:}{The package to use for finding nearest neighbors.
-#'   nn.method can be one of 'nn2', 'annoy', or 'hnsw'. Default is 'nn2'.}
+#'   \item{nn.method:}{The package to use for finding nearest neighbors in
+#'   the reverse graph embedding. nn.method can be one of 'nn2', 'annoy', or
+#'   'hnsw'. Default is 'nn2'.}
 #'   \item{nn.metric:}{The distance metric for the annoy or hnsw nearest
-#'   neighbor index build. See help(set_nn_control) for more information.
-#'   Default is 'euclidean'.}
+#'   neighbor index build in the reverse graph embedding. See help(set_nn_control)
+#'   for more information. Default is 'euclidean'.}
 #'   \item{nn.n_trees:}{The number of trees used to build the annoy nearest
-#'   neighbor index. See help(set_nn_control) for more information. Default
-#'   is 50.}
-#'   \item{nn.search_k:}{The number of nodes to search in an annoy index
-#'   search. See help(set_nn_control) for more information. Default is
-#'   100 * nn.k.}
-#'   \item{nn.M:}{Related to internal dimensionality of HNSW index. See
-#'   help(set_nn_control) for more information. Default is 48.}
+#'   neighbor index in the reverse graph embedding. See help(set_nn_control)
+#'   for more information. Default is 50.}
+#'   \item{nn.search_k:}{The number of nodes to search in the annoy index
+#'   search in the reverse graph embedding. See help(set_nn_control) for
+#'   more information. Default is 100 * nn.k.}
+#'   \item{nn.M:}{Related to internal dimensionality of HNSW index in the
+#'   reverse graph embedding. See help(set_nn_control) for more information.
+#'   Default is 48.}
 #'   \item{nn.ef_construction:}{Controls the HNSW index build speed/accuracy
-#'   tradeoff. Default is 200.}
-#'   \item{nn.ef:}{Controls the HNSW index search speed/accuracy tradeoff.
-#'   See help(set_nn_control) for more information. Default is 10.}
+#'   tradeoff in the reverse graph embedding. Default is 200.}
+#'   \item{nn.ef:}{Controls the HNSW index search speed/accuracy tradeoff in
+#'   the reverse graph embedding. See help(set_nn_control) for more
+#'   information. Default is 10.}
 #'   \item{nn.grain_size:}{Used by annoy and HNSW to set the minimum amount
-#'   of work to do per thread. See help(set_nn_control) for more
-#'   information. Default is 1.}
+#'   of work to do per thread in the reverse graph embedding. See
+#'   help(set_nn_control) for more information. Default is 1.}
 #'   \item{nn.cores:}{Used by annoy and HNSW to control the number of
-#'   threads used. See help(set_nn_control) for more information. Default
-#'   is 1.}
+#'   threads used in the reverse graph embedding. See help(set_nn_control)
+#'   for more information. Default is 1.}
 #' }
 #'
 #' @param cds the cell_data_set upon which to perform this operation
@@ -106,7 +111,6 @@ learn_graph <- function(cds,
                                     "scale",
                                     "ncenter",
                                     "rann.k",
-                                    "k",
                                     "maxiter",
                                     "eps",
                                     "L1.gamma",
@@ -118,6 +122,7 @@ learn_graph <- function(cds,
                                     "nn.M",
                                     "nn.ef_construction",
                                     "nn.ef",
+                                    "nn.k",
                                     "nn.grain_size",
                                     "nn.cores")),
                             msg = "Unknown variable in learn_graph_control")
@@ -278,11 +283,13 @@ multi_component_RGE <- function(cds,
   max_ncenter <- 0
 
   for(cur_comp in sort(unique(partition_list))) {  #  for loop 1  start
+
     if(verbose) {
       message(paste0('Processing partition component ', cur_comp))
     }
 
     X_subset <- X[, partition_list == cur_comp]
+
     if(verbose) message('Current partition is ', cur_comp)
 
     #add other parameters...
@@ -335,7 +342,7 @@ multi_component_RGE <- function(cds,
     if (verbose)
       message("Finding kNN with ", k, " neighbors")
 
-    dx <- search_nn_matrix(X=mat, k=min(k, nrow(mat) - 1), nn_control=nn_control, verbose=verbose)
+    dx <- search_nn_matrix(subject_matrix=mat, query_matrix=mat, k=min(k, nrow(mat) - 1), nn_control=nn_control, verbose=verbose)
 #    dx <- RANN::nn2(mat, k = min(k, nrow(mat) - 1))
 
     nn.index <- dx$nn.idx[, -1]
@@ -1067,6 +1074,7 @@ generate_centers <- function(X, W, P, param.gamma){
   return(C)
 }
 
+
 connect_tips <- function(cds,
                          pd,
                          R, # kmean cluster
@@ -1113,6 +1121,7 @@ connect_tips <- function(cds,
                                          louvain_iter=1,
                                          random_seed=0L,
                                          verbose = verbose)
+    cluster_result[['cds']] <- NULL
 
     cluster_result$optim_res$membership <- tmp[, 1]
   } else { # use kmean clustering result
@@ -1134,6 +1143,7 @@ connect_tips <- function(cds,
                                          louvain_iter=1,
                                          random_seed=random_seed,
                                          verbose = verbose)
+    cluster_result[['cds']] <- NULL
 
     cluster_result$optim_res$membership <- kmean_res$cluster
   }

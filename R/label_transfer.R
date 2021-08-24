@@ -116,7 +116,9 @@ transfer_cell_labels <- function(cds,
   # The cds@reduce_dim_aux[[reduction_method]] contains the reduction_method
   # coordinates for the reference data set, which were
   # loaded using load_transform_models() above.
-  cds_res <- search_nn_index(cds, reduction_method=reduction_method, k=k, nn_control=nn_control, verbose=verbose)
+  cds_res <- search_nn_index(reducedDims(cds)[[reduction_method]],
+                             get_nn_index(cds=cds, reduction_method=reduction_method, nn_control=nn_control, verbose=verbose),
+                             k=k, nn_control=nn_control, verbose=verbose)
  
   # Get the best reference cell label for the query cells.
   cds_reduced_dims <- reducedDims(cds)[[reduction_method]]

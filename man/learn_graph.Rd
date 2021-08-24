@@ -81,33 +81,38 @@ reversed graph embedding. Set k=NULL
 to let learn_graph estimate k. Default is 25.}
 \item{rann.k:}{nn.k replaces rann.k but rann.k is available for
 compatibility with existing code.}
+reversed graph embedding. Set rann.k=NULL to let learn_graph estimate
+rann.k. Default is 25.
 \item{maxiter:}{}
 \item{eps:}{}
 \item{L1.gamma:}{}
 \item{L1.sigma:}{}
-\item{nn.method:}{The package to use for finding nearest neighbors.
-nn.method can be one of 'nn2', 'annoy', or 'hnsw'. Default is 'nn2'.}
+\item{nn.method:}{The package to use for finding nearest neighbors in
+the reverse graph embedding. nn.method can be one of 'nn2', 'annoy', or
+'hnsw'. Default is 'nn2'.}
 \item{nn.metric:}{The distance metric for the annoy or hnsw nearest
-neighbor index build. See help(set_nn_control) for more information.
-Default is 'euclidean'.}
+neighbor index build in the reverse graph embedding. See help(set_nn_control)
+for more information. Default is 'euclidean'.}
 \item{nn.n_trees:}{The number of trees used to build the annoy nearest
-neighbor index. See help(set_nn_control) for more information. Default
-is 50.}
-\item{nn.search_k:}{The number of nodes to search in an annoy index
-search. See help(set_nn_control) for more information. Default is
-100 * nn.k.}
-\item{nn.M:}{Related to internal dimensionality of HNSW index. See
-help(set_nn_control) for more information. Default is 48.}
+neighbor index in the reverse graph embedding. See help(set_nn_control)
+for more information. Default is 50.}
+\item{nn.search_k:}{The number of nodes to search in the annoy index
+search in the reverse graph embedding. See help(set_nn_control) for
+more information. Default is 100 * nn.k.}
+\item{nn.M:}{Related to internal dimensionality of HNSW index in the
+reverse graph embedding. See help(set_nn_control) for more information.
+Default is 48.}
 \item{nn.ef_construction:}{Controls the HNSW index build speed/accuracy
-tradeoff. Default is 200.}
-\item{nn.ef:}{Controls the HNSW index search speed/accuracy tradeoff.
-See help(set_nn_control) for more information. Default is 10.}
+tradeoff in the reverse graph embedding. Default is 200.}
+\item{nn.ef:}{Controls the HNSW index search speed/accuracy tradeoff in
+the reverse graph embedding. See help(set_nn_control) for more
+information. Default is 10.}
 \item{nn.grain_size:}{Used by annoy and HNSW to set the minimum amount
-of work to do per thread. See help(set_nn_control) for more
-information. Default is 1.}
+of work to do per thread in the reverse graph embedding. See
+help(set_nn_control) for more information. Default is 1.}
 \item{nn.cores:}{Used by annoy and HNSW to control the number of
-threads used. See help(set_nn_control) for more information. Default
-is 1.}
+threads used in the reverse graph embedding. See help(set_nn_control)
+for more information. Default is 1.}
 }
 }
 

@@ -46,8 +46,8 @@
 #'   larger than 1.
 #' @param verbose A logic flag to determine whether or not we should print the
 #'   run details.
-#' @param nn_control list See set_nn_control for description of available
-#'   and default list values.
+#' @param nn_control A list of parameters used to make the nearest
+#'  neighbor index. See the set_nn_control help for detailed information.
 #' @param ... Additional arguments passed to the leidenbase package.
 #'
 #' @return an updated cell_data_set object, with cluster and partition
@@ -134,6 +134,8 @@ cluster_cells <- function(cds,
   if(verbose)
     message("Running ", cluster_method, " clustering algorithm ...")
 
+write.table(row.names(colData(cds)), file='row_names_full_cds.txt')
+
   if(cluster_method=='louvain') {
     cluster_result <- louvain_clustering(cds = cds,
                                          data = reduced_dim_res,
@@ -145,6 +147,9 @@ cluster_cells <- function(cds,
                                          louvain_iter = num_iter,
                                          random_seed = random_seed,
                                          verbose = verbose, ...)
+
+    cds <- cluster_result[['cds']]
+    cluster_result[['cds']] <- NULL
 
     if (length(unique(cluster_result$optim_res$membership)) > 1) {
       cluster_graph_res <- compute_partitions(cluster_result$g,
@@ -174,6 +179,9 @@ cluster_cells <- function(cds,
                                         resolution_parameter = resolution,
                                         random_seed = random_seed,
                                         verbose = verbose, ...)
+
+    cds <- cluster_result[['cds']]
+    cluster_result[['cds']] <- NULL
 
     if(length(unique(cluster_result$optim_res$membership)) > 1) {
       cluster_graph_res <- compute_partitions(cluster_result$g,
@@ -245,12 +253,16 @@ message('cluster_cells: nn2: done')
 
     if((nn_method == 'annoy' || nn_method == 'hnsw') &&
        !check_nn_index_is_current(cds, reduction_method=reduction_method, nn_control=nn_control, verbose=verbose)) {
-#tic('build annoy index next')
+tic('cluster_cells_make_graph: build annoy/hnsw index next')
       cds <- make_nn_index(cds=cds, reduction_method=reduction_method, nn_control=nn_control, verbose=verbose)
-#toc()
+toc()
     }
 
-    tmp <- search_nn_index(cds=cds, reduction_method=reduction_method, k=k+1, nn_control=nn_control, verbose=verbose)
+tic('cluster_cells_make_graph: search annoy/hnsw index next')
+    tmp <- search_nn_index(reducedDims(cds)[[reduction_method]],
+                           get_nn_index(cds=cds, reduction_method=reduction_method, nn_control=nn_control, verbose=verbose),
+                           k=k+1, nn_control=nn_control, verbose=verbose)
+toc()
     if(nn_method == 'annoy' || nn_method == 'hnsw') {
       tmp <- swap_nn_row_index_point(nn_res=tmp, verbose=verbose)
     }
@@ -283,10 +295,13 @@ message('cluster_cells: nn2: done')
   if (verbose)
     message("DONE ~", t3[3], "s\n")
 
-  return(list(g=g, distMatrix=distMatrix, relations=relations))
+  return(list(cds=cds, g=g, distMatrix=distMatrix, relations=relations))
 }
 
 
+# Notes:
+#   o  louvain_clustering does not update the nearest neighbor index
+#      stored in the cds because it does not return a cds.
 louvain_clustering <- function(cds,
                                data,
                                pd,
@@ -309,6 +324,7 @@ louvain_clustering <- function(cds,
 
   extra_arguments <- list(...)
   cell_names <- row.names(pd)
+
   if(!identical(cell_names, row.names(pd)))
     stop("Phenotype and row name from the data doesn't match")
 
@@ -320,6 +336,9 @@ louvain_clustering <- function(cds,
                                            k=k, 
                                            nn_control=nn_control,
                                            verbose=verbose)
+
+  # return the cds because the NN index may have been updated.
+  cds <- graph_result[['cds']]
 
   if(verbose)
     message("  Run louvain clustering ...")
@@ -372,7 +391,8 @@ louvain_clustering <- function(cds,
   }
 
   igraph::V(graph_result[['g']])$names <- as.character(igraph::V(graph_result[['g']]))
-  return(list(g=graph_result[['g']],
+  return(list(cds=cds,
+              g=graph_result[['g']],
               relations=graph_result[['relations']],
               distMatrix=graph_result[['distMatrix']],
               coord = coord,
@@ -381,6 +401,9 @@ louvain_clustering <- function(cds,
 }
 
 
+# Notes:
+#   o  leiden_clustering does not update the nearest neighbor index
+#      stored in the cds because it does not return a cds.
 leiden_clustering <- function(cds,
                               data,
                               pd,
@@ -445,6 +468,10 @@ leiden_clustering <- function(cds,
                                            k=k,
                                            nn_control=nn_control,
                                            verbose=verbose)
+
+  # return the cds because the NN index may have been updated.
+  cds <- graph_result[['cds']]
+
   if(verbose)
     message("  Run leiden clustering ...")
 
@@ -551,7 +578,8 @@ leiden_clustering <- function(cds,
                      modularity = best_result[['modularity']] )
   names(out_result$membership) = cell_names
 
-  return(list(g=graph_result[['g']],
+  return(list(cds=cds,
+              g=graph_result[['g']],
               relations=graph_result[['relations']],
               distMatrix=graph_result[['distMatrix']],
               coord=coord,

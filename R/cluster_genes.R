@@ -24,8 +24,8 @@
 #' @param preprocess_method a string specifying the low-dimensional space
 #'   to use for gene loadings, currently either PCA or LSI. Default is
 #'   "PCA".
-#' @param nn_control list See set_nn_control for a description of available
-#'   and default list values.
+#' @param nn_control A list of parameters used to make the nearest
+#'  neighbor index. See the set_nn_control help for detailed information.
 #' @param ... Additional arguments passed to UMAP and Louvain analysis.
 #'
 #' @return A dataframe with genes and the modules to which they are assigned.
@@ -130,6 +130,7 @@ find_gene_modules <- function(cds,
                                       random_seed = random_seed,
                                       verbose = verbose,
                                       ...)
+  cluster_result[['cds']] <- NULL
 
   cluster_graph_res <- compute_partitions(cluster_result$g,
                                           cluster_result$optim_res,

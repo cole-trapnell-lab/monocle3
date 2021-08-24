@@ -67,8 +67,8 @@ one with the highest value.}
 to use for gene loadings, currently either PCA or LSI. Default is
 "PCA".}
 
-\item{nn_control}{list See set_nn_control for a description of available
-and default list values.}
+\item{nn_control}{A list of parameters used to make the nearest
+neighbor index. See the set_nn_control help for detailed information.}
 
 \item{...}{Additional arguments passed to UMAP and Louvain analysis.}
 }
