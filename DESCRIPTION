@@ -89,5 +89,4 @@ Suggests:
 VignetteBuilder: knitr
 Language: en-US
 Remotes:
-    VPetukhov/ggrastr,
     cole-trapnell-lab/leidenbase
