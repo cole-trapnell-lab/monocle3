@@ -16,7 +16,6 @@ r:
 #r_packages:
 #  - covr
 r_github_packages:
-- VPetukhov/ggrastr
 - cole-trapnell-lab/leidenbase
 #r_binary_packages:
 r_packages:
@@ -25,6 +24,7 @@ r_packages:
  - dplyr
  - devtools
  - ggplot2
+ - ggrastr
  - ggrepel
  - igraph
  - irlba
