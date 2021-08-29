@@ -15,8 +15,8 @@ r:
 - bioc-release
 #r_packages:
 #  - covr
-r_github_packages:
-- cole-trapnell-lab/leidenbase
+#r_github_packages:
+#- cole-trapnell-lab/leidenbase
 #r_binary_packages:
 r_packages:
  - covr
