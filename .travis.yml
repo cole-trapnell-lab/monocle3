@@ -1,3 +1,4 @@
+---
 cache: packages
 sudo: required
 warnings_are_errors: true
@@ -5,18 +6,18 @@ os: linux
 dist: xenial
 language: r
 before_install:
-  - sudo apt-get install -y libudunits2-dev
-  - sudo apt-get install -y gdal-bin
-  - sudo apt-get install -y libgdal1-dev
-  - sudo apt-get install -y libharfbuzz-dev
-  - sudo apt-get install -y libfribidi-dev
-  - sudo apt-get install -y libgit2-dev
+ - sudo apt-get install -y libudunits2-dev
+ - sudo apt-get install -y gdal-bin
+ - sudo apt-get install -y libgdal1-dev
+ - sudo apt-get install -y libharfbuzz-dev
+ - sudo apt-get install -y libfribidi-dev
+ - sudo apt-get install -y libgit2-dev
 r:
-- bioc-release
+ - bioc-release
 #r_packages:
 #  - covr
-r_github_packages:
- - cole-trapnell-lab/leidenbase
+#r_github_packages:
+# - cole-trapnell-lab/leidenbase
 #r_binary_packages:
 r_packages:
  - covr
@@ -53,7 +54,6 @@ r_packages:
  - tibble
  - tidyr
  - viridis
-
 before_script:
   - export PKG_NAME=$(Rscript -e 'cat(paste0(devtools::as.package(".")$package))')
   - export PKG_TARBALL=$(Rscript -e 'pkg <- devtools::as.package("."); cat(paste0(pkg$package,"_",pkg$version,".tar.gz"))')
@@ -69,7 +69,7 @@ script:
     travis_wait 20 R CMD check monocle3*tar.gz
 
 after_failure:
-- Rscript -e 'devtools::install();devtools::test()'
+ - Rscript -e 'devtools::install();devtools::test()'
 
 notifications:
   slack:
