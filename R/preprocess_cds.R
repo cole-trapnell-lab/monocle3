@@ -80,7 +80,9 @@ preprocess_cds <- function(cds,
                           msg = paste("One or more cells has a size factor of",
                                       "NA."))
 
-  nn_control <- set_nn_control(nn_control=nn_control, k=1, method_default='annoy', verbose=verbose)
+  if(build_nn_index) {
+    nn_control <- set_nn_control(nn_control=nn_control, k=1, method_default='annoy', verbose=verbose)
+  }
 
   #ensure results from RNG sensitive algorithms are the same on all calls
   set.seed(2016)
@@ -149,10 +151,12 @@ preprocess_cds <- function(cds,
                                          'none',
                                          'none')
 
-    if( build_nn_index )
-      cds <- make_nn_index(cds=cds, reduction_method='PCA', nn_control=nn_control, verbose=verbose)
+    if( build_nn_index ) {
+      nn_index <- make_nn_index(subject_matrix=reducedDims(cds)[[method]], nn_control=nn_control, verbose=verbose)
+      cds <- set_cds_nn_index(cds=cds, reduction_method=method, nn_index=nn_index, nn_control=nn_control, verbose=verbose)
+    }
     else
-      cds <- clear_nn_index(cds=cds, reduction_method='PCA', 'all')
+      cds <- clear_cds_nn_index(cds=cds, reduction_method=method, nn_method='all')
 
   } else if(method == "LSI") {
     cds <- initialize_reduce_dim_metadata(cds, 'LSI')
@@ -194,11 +198,12 @@ preprocess_cds <- function(cds,
                                          'none',
                                          'none')
 
-    if( build_nn_index )
-      cds <- make_nn_index(cds=cds, reduction_method='LSI', nn_control=nn_control, verbose=verbose)
+    if( build_nn_index ) {
+      nn_index <- make_nn_index(subject_matrix=reducedDims(cds)[[method]], nn_control=nn_control, verbose=verbose)
+      cds <- set_cds_nn_index(cds=cds, reduction_method=method, nn_index=nn_index, nn_control=nn_control, verbose=verbose)
+    }
     else
-      cds <- clear_nn_index(cds=cds, reduction_method='LSI', 'all')
-
+      cds <- clear_cds_nn_index(cds=cds, reduction_method=method, nn_method='all')
   }
   cds@reduce_dim_aux[['Aligned']] <- NULL
 

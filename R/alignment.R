@@ -66,7 +66,9 @@ align_cds <- function(cds,
                                       preprocess_method,
                                       "' before calling align_cds."))
 
-  nn_control <- set_nn_control(nn_control=nn_control, k=1, method_default='annoy', verbose=verbose)
+  if(build_nn_index) {
+    nn_control <- set_nn_control(nn_control=nn_control, k=1, method_default='annoy', verbose=verbose)
+  }
 
   set.seed(2016)
 
@@ -134,10 +136,18 @@ align_cds <- function(cds,
                                        reduce_dim_model_identity[['model_type']],
                                        reduce_dim_model_identity[['model_id']])
 
-  if( build_nn_index )
-    cds <- make_nn_index(cds=cds, reduction_method='Aligned', nn_control=nn_control, verbose=verbose)
+  if( build_nn_index ) {
+    nn_index <- make_nn_index(subject_matrix=reducedDims(cds)[['Aligned']],
+                              nn_control=nn_control,
+                              verbose=verbose)
+    cds <- set_cds_nn_index(cds=cds,
+                            reduction_method=preprocess_method,
+                            nn_index,
+                            nn_control=nn_control,
+                            verbose=verbose)
+  }
   else
-    cds <- clear_nn_index(cds=cds, reduction_method='Aligned', 'all')
+    cds <- clear_cds_nn_index(cds=cds, reduction_method='Aligned', 'all')
 
   cds
 }

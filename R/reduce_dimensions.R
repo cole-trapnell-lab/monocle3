@@ -94,7 +94,9 @@ reduce_dimension <- function(cds,
       msg = "preprocess_method must be one of 'PCA' or 'LSI'")
   }
 
-  nn_control <- set_nn_control(nn_control=nn_control, k=1, method_default='annoy', verbose=verbose)
+  if(build_nn_index) {
+    nn_control <- set_nn_control(nn_control=nn_control, k=1, method_default='annoy', verbose=verbose)
+  }
 
   #preprocess_method <- match.arg(preprocess_method)
 
@@ -201,12 +203,19 @@ reduce_dimension <- function(cds,
                                   reduce_dim_model_identity[['model_id']])
 
     # make nearest neighbor index in tSNE space
-    if( build_nn_index )
-        cds <- make_nn_index(cds=cds, reduction_method='tSNE', nn_control=nn_control, verbose=verbose)
-    else
-      cds <- clear_nn_index(cds=cds, reduction_method='tSNE', 'all')
 
-  } else if (reduction_method == c("UMAP")) {
+    if( build_nn_index ) {
+      nn_index <- make_nn_index(subject_matrix=reducedDims(cds)[[reduction_method]],
+                                nn_control=nn_control,
+                                verbose=verbose)
+      cds <- set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, nn_control=nn_control, verbose=verbose)
+    }
+    else
+      cds <- clear_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_method='all')
+
+  }
+  else
+  if (reduction_method == c("UMAP")) {
     cds <- add_citation(cds, "UMAP")
     if (verbose)
       message("Running Uniform Manifold Approximation and Projection")
@@ -266,11 +275,14 @@ reduce_dimension <- function(cds,
                                          reduce_dim_model_identity[['model_type']],
                                          reduce_dim_model_identity[['model_id']])
 
-    if( build_nn_index )
-      # make nearest neighbor index in UMAP space
-      cds <- make_nn_index(cds=cds, reduction_method='UMAP', nn_control=nn_control, verbose=verbose)
+    if( build_nn_index ) {
+      nn_index <- make_nn_index(subject_matrix=reducedDims(cds)[[reduction_method]],
+                                nn_control=nn_control,
+                                verbose=verbose)
+      cds <- set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, nn_control=nn_control, verbose=verbose)
+    }
     else
-      cds <- clear_nn_index(cds=cds, reduction_method='UMAP', 'all')
+      cds <- clear_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_method='all')
   }
 
   ## Clear out old graphs:

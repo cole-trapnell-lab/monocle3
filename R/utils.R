@@ -946,3 +946,31 @@ matrix_multiply_multicore <- function(mat_a, mat_b, cores=1L) {
   return(mat_c)
 }
 
+
+get_call_stack <- function ()
+{
+  cv<-as.vector(sys.calls())
+  lcv <- length(cv)
+  n <- lcv - 1
+
+  ocv <- vector()
+  for(i in seq(1,n)) {
+    elem <- stringr::str_split(as.character(cv[i]), '[(]', n=2)[[1]][[1]]
+    ocv <- c(ocv, elem)
+  }
+
+  return(ocv)
+}
+
+
+get_call_stack_as_string <- function() {
+  cs <- get_call_stack()
+  scs <- ''
+  for(i in seq(length(cs)-1)) {
+    csep <- ifelse(i == 1, '', ' => ')
+    scs <- sprintf("%s%s%s()", scs, csep, cs[[i]])
+  }
+  return(scs)
+}
+
+

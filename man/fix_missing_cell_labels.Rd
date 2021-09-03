@@ -13,8 +13,7 @@ fix_missing_cell_labels(
   nn_control = nn_control,
   top_threshold = 0.5,
   top_over_second_threshold = 1.5,
-  verbose = FALSE,
-  ...
+  verbose = FALSE
 )
 }
 \description{

@@ -594,17 +594,9 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
       methods_reduce_dim[[reduction_method]][['has_annoy_index']] <- FALSE
 
     if(!is.null(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']]))
-{
-message('hnsw index exists')
       methods_reduce_dim[[reduction_method]][['has_hnsw_index']] <- TRUE
-}
     else
-{
-message('hnsw index absent')
-
       methods_reduce_dim[[reduction_method]][['has_hnsw_index']] <- FALSE
-message('hnsw_index null ', reduction_method, ': ', is.null(methods_reduce_dim[[reduction_method]][['has_hnsw_index']]))
-}
   }
 
   # Make directory if necessary.
@@ -673,8 +665,7 @@ message('hnsw_index null ', reduction_method, ': ', is.null(methods_reduce_dim[[
                                                     stringsAsFactors = FALSE))
         })
     }
-message('here 2')
-message('has_hnsw_index null ', reduction_method, ': ', is.null(methods_reduce_dim[[reduction_method]][['has_hnsw_index']]))
+
     if(methods_reduce_dim[[reduction_method]][['has_hnsw_index']]) {
       tryCatch(
         {
@@ -815,10 +806,10 @@ load_transform_models <- function(cds, directory_path) {
       } else
       if(file_format == 'annoy_index') {
         metric <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['metric']]
-        ndim <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['ndim']]
+        ncolumn <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['ncol']]
         cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']] <- tryCatch(
           {
-            load_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']], file_path, metric, ndim)
+            load_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']], file_path, metric, ncolumn)
           },
           error = function(cond) {
             message('Error reading file \'', file_path, '\'', appendLF=appendLF)
@@ -827,10 +818,10 @@ load_transform_models <- function(cds, directory_path) {
       } else
       if(file_format == 'hnsw_index') {
         metric <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['metric']]
-        ndim <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['ndim']]
+        ncolumn <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['ncol']]
         cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']] <- tryCatch(
           {
-            load_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']], file_path, metric, ndim)
+            load_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']], file_path, metric, ncolumn)
           },
           error = function(cond) {
             message('Error reading file \'', file_path, '\'', appendLF=appendLF)
@@ -1227,10 +1218,10 @@ load_monocle_objects <- function(directory_path) {
     if(cds_object == 'reduce_dim_aux') {
       if(file_format == 'annoy_index') {
         metric <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['metric']]
-        ndim <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['ndim']]
+        ncolumn <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['ncol']]
         cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']] <- tryCatch(
           {
-            load_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']], file_path, metric, ndim)
+            load_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']], file_path, metric, ncolumn)
           },
           error = function(cond) {
             message('Error reading file \'', file_path, '\'', appendLF=appendLF)
@@ -1239,10 +1230,10 @@ load_monocle_objects <- function(directory_path) {
       } else
       if(file_format == 'hnsw_index') {
         metric <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['metric']]
-        ndim <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['ndim']]
+        ncolumn <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['ncol']]
         cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']] <- tryCatch(
           {
-            load_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']], file_path, metric, ndim)
+            load_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']], file_path, metric, ncolumn)
           },
           error = function(cond) {
             message('Error reading file \'', file_path, '\'', appendLF=appendLF)

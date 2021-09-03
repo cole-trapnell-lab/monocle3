@@ -116,8 +116,8 @@ transfer_cell_labels <- function(cds,
   # The cds@reduce_dim_aux[[reduction_method]] contains the reduction_method
   # coordinates for the reference data set, which were
   # loaded using load_transform_models() above.
-  cds_res <- search_nn_index(reducedDims(cds)[[reduction_method]],
-                             get_nn_index(cds=cds, reduction_method=reduction_method, nn_control=nn_control, verbose=verbose),
+  cds_res <- search_nn_index(query_matrix=reducedDims(cds)[[reduction_method]],
+                             get_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_control=nn_control, verbose=verbose),
                              k=k, nn_control=nn_control, verbose=verbose)
  
   # Get the best reference cell label for the query cells.
@@ -164,15 +164,15 @@ edit_query_cell_labels <- function(preproc_res,
                                    k=10,
                                    nn_control=nn_control,
                                    top_threshold=0.5,
-                                   top_over_second_threshold=1.5, ...) {
+                                   top_over_second_threshold=1.5) {
 
   nn_method <- nn_control[['method']]
 
-  if(nn_method == 'annoy') {
-    query_search <- uwot:::annoy_search(X=preproc_res, k=k+1, ann=query_nn_index, search_k=search_k, ...)
-  } else if(nn_method == 'hnsw') {
-    message('edit_query_cell_labels: hnsw nn unimplemented')
-  }
+  query_search <- search_nn_index(query_matrix=preproc_res,
+                                  query_nn_index,
+                                  k=k+1,
+                                  nn_control=nn_control,
+                                  verbose=verbose)
 
   query_nns <- sapply(seq(1, nrow(query_search[['idx']])), function(i) {
     # Get neighbors in reference space.
@@ -193,13 +193,17 @@ edit_query_cell_labels <- function(preproc_res,
 # Notes:
 #   the cell_label_type value must be in the colnames(colData(cds)).
 #' export
-fix_missing_cell_labels <- function(cds, reduction_method=c('UMAP', 'PCA'), out_notna_model_dir=NULL,
+fix_missing_cell_labels <- function(cds,
+                                    reduction_method=c('UMAP', 'PCA'),
+                                    out_notna_model_dir=NULL,
                                     cell_label_type=NULL,
                                     k=10,
                                     nn_control=nn_control,
-                                    top_threshold=0.5, top_over_second_threshold=1.5,
-                                    verbose=FALSE, ...) {
+                                    top_threshold=0.5,
+                                    top_over_second_threshold=1.5,
+                                    verbose=FALSE) {
 
+  nn_control <- set_nn_control(nn_control=nn_control, k=k, method_default='annoy', verbose=verbose)
   nn_method <- nn_control[['method']]
 
   assertthat::assert_that(class(cds) == 'cell_data_set',
@@ -220,12 +224,10 @@ fix_missing_cell_labels <- function(cds, reduction_method=c('UMAP', 'PCA'), out_
   
   # Build on rest of cds, where there is a label.
   notna_cds <- cds[, !is.na(colData(cds)[[cell_label_type]])]
-  notna_cds <- make_nn_index(notna_cds, 
-                             reduction_method=reduction_method,
-                             nn_control=nn_control,
-                             verbose=verbose)
- 
-  notna_nn_index <- notna_cds@reduce_dim_aux[[reduction_method]][[paste0(nn_method,'_nn')]][['nn_index']]
+
+  notna_nn_index <- make_nn_index(subject_matrix=reducedDims(cds)[[reduction_method]],
+                                  nn_control=nn_control,
+                                  verbose=verbose)
   notna_colData <- as.data.frame(colData(notna_cds))
 
   if(!is.null(out_notna_model_dir)) {
@@ -239,8 +241,7 @@ fix_missing_cell_labels <- function(cds, reduction_method=c('UMAP', 'PCA'), out_
                                             k=k,
                                             nn_control=nn_control,
                                             top_threshold=top_threshold,
-                                            top_over_second_threshold=top_over_second_threshold,
-                                            ...)
+                                            top_over_second_threshold=top_over_second_threshold)
   
   return(new_cell_labels)
 }

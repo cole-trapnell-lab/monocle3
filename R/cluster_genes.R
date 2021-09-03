@@ -52,6 +52,11 @@ find_gene_modules <- function(cds,
                           ...) {
   method = 'leiden'
 
+  if(!check_cds_nn_search_exists(cds=cds, reduction_method='UMAP', search_id='cluster_cells', verbose=verbose)) {
+    stop(paste0('No clusters found for reduction method ', reduction_method, '. Run cluster_cells with reduction_method \'UMAP\'.'))
+  }
+
+  nn_control <- get_cds_nn_control(cds=cds, reduction_method='UMAP', search_id='cluster_cells', verbose=verbose)
   nn_control <- set_nn_control(nn_control=nn_control, k=k, method_default='nn2', verbose=verbose)
 
   assertthat::assert_that(
@@ -81,8 +86,11 @@ find_gene_modules <- function(cds,
                                       "reduction_method =", reduction_method,
                                       "before running cluster_cells"))
 
-  # preprocess_mat is gene_loading matrix
+  # preprocess_mat is gene_loading matrix. The gene_loadings were calculated only
+  # for preprocess_method='PCA' in preprocess_cds() but I extend this to 'LSI' and
+  # calculate gene_loadings here.
   preprocess_mat <- cds@reduce_dim_aux[[preprocess_method]][['model']]$svd_v %*% diag(cds@reduce_dim_aux[[preprocess_method]][['model']]$svd_sdev)
+
 # Notes:
 #   o  the beta vector is in cds@reduce_dim_aux[['Aligned']][['model']][['beta']]
 #   o  cds@reduce_dim_aux[['Aligned']][['model']][['beta']] is npc x nfactor, which causes
@@ -116,13 +124,10 @@ find_gene_modules <- function(cds,
   if(verbose)
     message("Running leiden clustering algorithm ...")
 
-  # Note: the reduction_method and nn_metric parameters are unused
-  #       for nn_method='nn2'.
-  cluster_result <- leiden_clustering(cds = cds,
-                                      data = reduced_dim_res,
+  cluster_result <- leiden_clustering(data = reduced_dim_res,
                                       pd = rowData(cds)[row.names(reduced_dim_res),,drop=FALSE],
-                                      reduction_method='UMAP',
                                       weight = weight,
+                                      nn_index = NULL,
                                       k = k,
                                       nn_control = nn_control,
                                       num_iter = leiden_iter,
@@ -130,7 +135,6 @@ find_gene_modules <- function(cds,
                                       random_seed = random_seed,
                                       verbose = verbose,
                                       ...)
-  cluster_result[['cds']] <- NULL
 
   cluster_graph_res <- compute_partitions(cluster_result$g,
                                           cluster_result$optim_res,

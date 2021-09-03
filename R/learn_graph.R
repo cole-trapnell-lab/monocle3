@@ -45,38 +45,10 @@
 #'   to let learn_graph estimate k. Default is 25.}
 #'   \item{rann.k:}{nn.k replaces rann.k but rann.k is available for
 #'   compatibility with existing code.}
-#'   reversed graph embedding. Set rann.k=NULL to let learn_graph estimate
-#'   rann.k. Default is 25.
 #'   \item{maxiter:}{}
 #'   \item{eps:}{}
 #'   \item{L1.gamma:}{}
 #'   \item{L1.sigma:}{}
-#'   \item{nn.method:}{The package to use for finding nearest neighbors in
-#'   the reverse graph embedding. nn.method can be one of 'nn2', 'annoy', or
-#'   'hnsw'. Default is 'nn2'.}
-#'   \item{nn.metric:}{The distance metric for the annoy or hnsw nearest
-#'   neighbor index build in the reverse graph embedding. See help(set_nn_control)
-#'   for more information. Default is 'euclidean'.}
-#'   \item{nn.n_trees:}{The number of trees used to build the annoy nearest
-#'   neighbor index in the reverse graph embedding. See help(set_nn_control)
-#'   for more information. Default is 50.}
-#'   \item{nn.search_k:}{The number of nodes to search in the annoy index
-#'   search in the reverse graph embedding. See help(set_nn_control) for
-#'   more information. Default is 100 * nn.k.}
-#'   \item{nn.M:}{Related to internal dimensionality of HNSW index in the
-#'   reverse graph embedding. See help(set_nn_control) for more information.
-#'   Default is 48.}
-#'   \item{nn.ef_construction:}{Controls the HNSW index build speed/accuracy
-#'   tradeoff in the reverse graph embedding. Default is 200.}
-#'   \item{nn.ef:}{Controls the HNSW index search speed/accuracy tradeoff in
-#'   the reverse graph embedding. See help(set_nn_control) for more
-#'   information. Default is 10.}
-#'   \item{nn.grain_size:}{Used by annoy and HNSW to set the minimum amount
-#'   of work to do per thread in the reverse graph embedding. See
-#'   help(set_nn_control) for more information. Default is 1.}
-#'   \item{nn.cores:}{Used by annoy and HNSW to control the number of
-#'   threads used in the reverse graph embedding. See help(set_nn_control)
-#'   for more information. Default is 1.}
 #' }
 #'
 #' @param cds the cell_data_set upon which to perform this operation
@@ -110,21 +82,12 @@ learn_graph <- function(cds,
                                     "prune_graph",
                                     "scale",
                                     "ncenter",
+                                    "nn.k",
                                     "rann.k",
                                     "maxiter",
                                     "eps",
                                     "L1.gamma",
-                                    "L1.sigma",
-                                    "nn.method",
-                                    "nn.metric",
-                                    "nn.n_trees",
-                                    "nn.search_k",
-                                    "nn.M",
-                                    "nn.ef_construction",
-                                    "nn.ef",
-                                    "nn.k",
-                                    "nn.grain_size",
-                                    "nn.cores")),
+                                    "L1.sigma")),
                             msg = "Unknown variable in learn_graph_control")
   }
 
@@ -200,16 +163,7 @@ learn_graph <- function(cds,
                                       "reduction_method =", reduction_method,
                                       "before running learn_graph."))
 
-  nn_control <- list(method=learn_graph_control[['nn.method']],
-                     metric=learn_graph_control[['nn.metric']],
-                     n_trees=learn_graph_control[['nn.n_trees']],
-                     search_k=learn_graph_control[['nn.search_k']],
-                     M=learn_graph_control[['nn.M']],
-                     ef_construction=learn_graph_control[['nn.ef_construction']],
-                     ef=learn_graph_control[['nn.ef']],
-                     grain_size=learn_graph_control[['nn.grain_size']],
-                     cores=learn_graph_control[['nn.cores']])
-
+  nn_control <- get_cds_nn_control(cds=cds, reduction_method=reduction_method, search_id='cluster_cells', verbose=verbose)
   nn_control <- set_nn_control(nn_control=nn_control, k=nn.k, method_default='nn2', verbose=verbose)
 
   if (use_partition) {
@@ -343,7 +297,7 @@ multi_component_RGE <- function(cds,
       message("Finding kNN with ", k, " neighbors")
 
     dx <- search_nn_matrix(subject_matrix=mat, query_matrix=mat, k=min(k, nrow(mat) - 1), nn_control=nn_control, verbose=verbose)
-#    dx <- RANN::nn2(mat, k = min(k, nrow(mat) - 1))
+#    dx <- RANN::nn2(mat, k = min(k, nrow(mat) - 1))  # replaced by search_nn_matrix above
 
     nn.index <- dx$nn.idx[, -1]
     nn.dist <- dx$nn.dists[, -1]
@@ -1109,20 +1063,15 @@ connect_tips <- function(cds,
 
     data <- t(reducedDimS_old[, ])
 
-    # Note: the reduction_method and nn metric parameters are unused
-    #       for nn_method='nn2'.
-    cluster_result <- louvain_clustering(cds,
-                                         data = data,
+    cluster_result <- louvain_clustering(data = data,
                                          pd = pd[, ],
-                                         reduction_method=reduction_method,
                                          weight = weight,
+                                         nn_index = NULL,
                                          k = k,
                                          nn_control = nn_control,
                                          louvain_iter=1,
                                          random_seed=0L,
                                          verbose = verbose)
-    cluster_result[['cds']] <- NULL
-
     cluster_result$optim_res$membership <- tmp[, 1]
   } else { # use kmean clustering result
     tip_pc_points <- which(igraph::degree(mst_g_old) == 1)
@@ -1131,20 +1080,15 @@ connect_tips <- function(cds,
 
     data <- t(reducedDimS_old[, ]) # raw_data_tip_pc_points
 
-    # Note: the reduction_method and nn metric parameters are unused
-    #       for nn_method='nn2'.
-    cluster_result <- louvain_clustering(cds,
-                                         data = data,
+    cluster_result <- louvain_clustering(data = data,
                                          pd = pd[row.names(data), ],
-                                         reduction_method=reduction_method,
                                          weight = weight,
+                                         nn_index = NULL,
                                          k = k,
                                          nn_control = nn_control,
                                          louvain_iter=1,
                                          random_seed=random_seed,
                                          verbose = verbose)
-    cluster_result[['cds']] <- NULL
-
     cluster_result$optim_res$membership <- kmean_res$cluster
   }
 
