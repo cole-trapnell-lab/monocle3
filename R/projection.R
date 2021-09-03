@@ -5,7 +5,7 @@
 #' the help information for save_transform_models.
 #'
 #' @param cds A cell_data_set to be transformed.
-#' @param method A previously loaded transform model that
+#' @param reduction_method A previously loaded transform model that
 #'   is used to reduce the dimensions of the count matrix
 #'   in cds.
 #' @param block_size A numeric value for the DelayedArray
@@ -17,18 +17,18 @@
 #'
 #' @export
 #'
-preprocess_transform <- function(cds, method=c('PCA'), block_size=NULL, cores=1) {
+preprocess_transform <- function(cds, reduction_method=c('PCA'), block_size=NULL, cores=1) {
   #
   # Need to add processing for LSI. TF-IDF transform etc.
   #
   assertthat::assert_that(class(cds) == 'cell_data_set',
                           msg=paste('cds parameter is not a cell_data_set'))
   assertthat::assert_that(
-    tryCatch(expr = ifelse(match.arg(method) == "",TRUE, TRUE),
+    tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
-    msg = "method must be 'PCA'")
+    msg = "reduction_method must be 'PCA'")
 
-  method <- match.arg(method)
+  reduction_method <- match.arg(reduction_method)
 
   assertthat::assert_that(!is.null(size_factors(cds)),
              msg = paste("You must call estimate_size_factors before calling",
@@ -36,8 +36,8 @@ preprocess_transform <- function(cds, method=c('PCA'), block_size=NULL, cores=1)
   assertthat::assert_that(sum(is.na(size_factors(cds))) == 0,
                           msg=paste("One or more cells has a size factor of",
                                     "NA."))
-  assertthat::assert_that(!is.null(cds@reduce_dim_aux[[method]]),
-                          msg=paste0("Method '", method, "' is not in the model",
+  assertthat::assert_that(!is.null(cds@reduce_dim_aux[[reduction_method]]),
+                          msg=paste0("Reduction method '", reduction_method, "' is not in the model",
                                     " object."))
 
   if(!is.null(block_size)) {
@@ -46,11 +46,11 @@ preprocess_transform <- function(cds, method=c('PCA'), block_size=NULL, cores=1)
   }
 
   set.seed(2016)
-  norm_method <- cds@reduce_dim_aux[[method]][['model']][['norm_method']]
-  pseudo_count <- cds@reduce_dim_aux[[method]][['model']][['pseudo_count']]
-  rotation_matrix <- cds@reduce_dim_aux[[method]][['model']]$svd_v
-  vcenter <- cds@reduce_dim_aux[[method]][['model']]$svd_center
-  vscale <- cds@reduce_dim_aux[[method]][['model']]$svd_scale
+  norm_method <- cds@reduce_dim_aux[[reduction_method]][['model']][['norm_method']]
+  pseudo_count <- cds@reduce_dim_aux[[reduction_method]][['model']][['pseudo_count']]
+  rotation_matrix <- cds@reduce_dim_aux[[reduction_method]][['model']]$svd_v
+  vcenter <- cds@reduce_dim_aux[[reduction_method]][['model']]$svd_center
+  vscale <- cds@reduce_dim_aux[[reduction_method]][['model']]$svd_scale
 
   FM <- normalize_expr_data(cds, norm_method=norm_method, pseudo_count=pseudo_count)
   if (nrow(FM) == 0) {
@@ -90,7 +90,7 @@ preprocess_transform <- function(cds, method=c('PCA'), block_size=NULL, cores=1)
   class(irlba_res) <- c('irlba_prcomp', 'prcomp')
 
   # 'reference' gene names are in the cds@preproc
-  reducedDims(cds)[[method]] <- irlba_res$x
+  reducedDims(cds)[[reduction_method]] <- irlba_res$x
 
   if(!is.null(block_size)) {
     DelayedArray::setAutoBlockSize(block_size0)
@@ -98,10 +98,10 @@ preprocess_transform <- function(cds, method=c('PCA'), block_size=NULL, cores=1)
 
   matrix_id <- get_unique_id()
   counts_identity <- get_counts_identity(cds)
-  reduce_dim_model_identity <- get_reduce_dim_model_identity(cds, method)
-  cds <- initialize_reduce_dim_metadata(cds, method)
-  cds <- set_reduce_dim_matrix_identity(cds, method,
-                                        paste0('matrix:',method),
+  reduce_dim_model_identity <- get_reduce_dim_model_identity(cds, reduction_method)
+  cds <- initialize_reduce_dim_metadata(cds, reduction_method)
+  cds <- set_reduce_dim_matrix_identity(cds, reduction_method,
+                                        paste0('matrix:',reduction_method),
                                         matrix_id,
                                         counts_identity[['matrix_type']],
                                         counts_identity[['matrix_id']],
@@ -125,7 +125,7 @@ preprocess_transform <- function(cds, method=c('PCA'), block_size=NULL, cores=1)
 #' at this time because I don't know how to do so.
 #'
 #' @param cds A cell_data_set to be transformed.
-#' @param method A previously loaded transform model that
+#' @param reduction_method A previously loaded transform model that
 #'   is used to reduce the dimensions of the preprocessed
 #'   count matrix in cds.
 #'
@@ -134,18 +134,18 @@ preprocess_transform <- function(cds, method=c('PCA'), block_size=NULL, cores=1)
 #'
 #' @export
 #'
-align_transform <- function(cds, method=c('Aligned')) {
+align_transform <- function(cds, reduction_method=c('Aligned')) {
   #
   # Need to add transformation code.
   #
   assertthat::assert_that(class(cds) == 'cell_data_set',
                           msg=paste('cds parameter is not a cell_data_set'))
   assertthat::assert_that(
-    tryCatch(expr = ifelse(match.arg(method) == "",TRUE, TRUE),
+    tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
-    msg = "method must be 'Aligned'")
+    msg = "reduction_method must be 'Aligned'")
 
-  method <- match.arg(method)
+  reduction_method <- match.arg(reduction_method)
 
   preprocess_method <- cds@reduce_dim_aux[['Aligned']][['model']][['preprocess_method']]
   preproc_res <- reducedDims(cds)[[preprocess_method]]
@@ -173,10 +173,10 @@ align_transform <- function(cds, method=c('Aligned')) {
 
   matrix_id <- get_unique_id()
   reduce_dim_matrix_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method)
-  reduce_dim_model_identity <- get_reduce_dim_model_identity(cds, method)
-  cds <- initialize_reduce_dim_metadata(cds, method)
-  cds <- set_reduce_dim_matrix_identity(cds, method,
-                                        paste0('matrix:', method),
+  reduce_dim_model_identity <- get_reduce_dim_model_identity(cds, reduction_method)
+  cds <- initialize_reduce_dim_metadata(cds, reduction_method)
+  cds <- set_reduce_dim_matrix_identity(cds, reduction_method,
+                                        paste0('matrix:', reduction_method),
                                         matrix_id,
                                         reduce_dim_matrix_identity[['matrix_type']],
                                         reduce_dim_matrix_identity[['matrix_id']],
@@ -196,10 +196,10 @@ align_transform <- function(cds, method=c('Aligned')) {
 #' save_transform_models.
 #'
 #' @param cds A cell_data_set to be transformed.
-#' @param preprocess_method A previously loaded preprocess method.
-#'   The default is NULL, which uses the preprocess_method that
+#' @param preprocess_method A previously loaded preprocess reduction
+#'   method.  The default is NULL, which uses the preprocess_method that
 #'   was used when the reduce_dimension model was built.
-#' @param method A previously loaded reduce_dimension transform
+#' @param reduction_method A previously loaded reduce_dimension transform
 #'   model that is used to reduce the dimensions of the
 #'   preprocessed count matrix in cds.
 #'
@@ -208,16 +208,16 @@ align_transform <- function(cds, method=c('Aligned')) {
 #'
 #' @export
 #'
-reduce_dimension_transform <- function(cds, preprocess_method=NULL, method=c('UMAP')) {
+reduce_dimension_transform <- function(cds, preprocess_method=NULL, reduction_method=c('UMAP')) {
   assertthat::assert_that(class(cds) == 'cell_data_set',
                           msg=paste('cds parameter is not a cell_data_set'))
   assertthat::assert_that(
-    tryCatch(expr = ifelse(match.arg(method) == "",TRUE, TRUE),
+    tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
-    msg = "method must be 'UMAP'")
+    msg = "reduction_method must be 'UMAP'")
 
   if(is.null(preprocess_method)) {
-    preprocess_method <- cds@reduce_dim_aux[[method]][['model']][['umap_preprocess_method']]
+    preprocess_method <- cds@reduce_dim_aux[[reduction_method]][['model']][['umap_preprocess_method']]
   } else
   if(!is.null(preprocess_method) && !(preprocess_method %in% c('PCA', 'LSI', 'Aligned'))) {
     stop('Preprocess_method must be one of \'PCA\', \'LSI\', or \'Aligned\'.')
@@ -227,7 +227,7 @@ reduce_dimension_transform <- function(cds, preprocess_method=NULL, method=c('UM
     stop('There is no transform model for preprocess_method \'', preprocess_method, '\'.')
   }
 
-  method <- match.arg(method)
+  reduction_method <- match.arg(reduction_method)
 
   preproc_res <- reducedDims(cds)[[preprocess_method]]
   assertthat::assert_that(!is.null(preproc_res),
@@ -244,15 +244,15 @@ reduce_dimension_transform <- function(cds, preprocess_method=NULL, method=c('UM
   #      function(s).
   #
   set.seed(2016)
-  umap_model <- cds@reduce_dim_aux[[method]][['model']][['umap_model']]
-  reducedDims(cds)[[method]] <- uwot:::umap_transform(X=preproc_res, model=umap_model, init='weighted', n_sgd_threads=1)
+  umap_model <- cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']]
+  reducedDims(cds)[[reduction_method]] <- uwot:::umap_transform(X=preproc_res, model=umap_model, init='weighted', n_sgd_threads=1)
 
   matrix_id <- get_unique_id()
   reduce_dim_matrix_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method)
-  reduce_dim_model_identity <- get_reduce_dim_model_identity(cds, method)
-  cds <- initialize_reduce_dim_metadata(cds, method)
-  cds <- set_reduce_dim_matrix_identity(cds, method,
-                                        paste0('matrix:', method),
+  reduce_dim_model_identity <- get_reduce_dim_model_identity(cds, reduction_method)
+  cds <- initialize_reduce_dim_metadata(cds, reduction_method)
+  cds <- set_reduce_dim_matrix_identity(cds, reduction_method,
+                                        paste0('matrix:', reduction_method),
                                         matrix_id,
                                         reduce_dim_matrix_identity[['matrix_type']],
                                         reduce_dim_matrix_identity[['matrix_id']],
@@ -268,7 +268,7 @@ reduce_dimension_transform <- function(cds, preprocess_method=NULL, method=c('UM
 # Note: this transformation is not generally effective.
 #
 align_beta_transform <- function(cds, preprocess_method = 'PCA') {
-  method <- 'Aligned'
+  reduction_method <- 'Aligned'
   preproc_res <- reducedDims(cds)[[preprocess_method]]
   beta <- cds@reduce_dim_aux[['Aligned']][['model']][['beta']]
   residual_model_formula_str <- cds@reduce_dim_aux[['Aligned']][['model']][['residual_model_formula_str']]
@@ -280,11 +280,11 @@ align_beta_transform <- function(cds, preprocess_method = 'PCA') {
                                    beta %*% Matrix::t(X.model_mat[, -1]))
 
   matrix_id <- get_unique_id()
-  cds <- initialize_reduce_dim_metadata(cds, method)
+  cds <- initialize_reduce_dim_metadata(cds, reduction_method)
   reduce_dim_matrix_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method)
-  reduce_dim_model_identity <- get_reduce_dim_model_identity(cds, method)
-  cds <- set_reduce_dim_matrix_identity(cds, method,
-                                        paste0('matrix:', method),
+  reduce_dim_model_identity <- get_reduce_dim_model_identity(cds, reduction_method)
+  cds <- set_reduce_dim_matrix_identity(cds, reduction_method,
+                                        paste0('matrix:', reduction_method),
                                         matrix_id,
                                         reduce_dim_matrix_identity[['matrix_type']],
                                         reduce_dim_matrix_identity[['matrix_id']],

@@ -141,7 +141,7 @@ align_cds <- function(cds,
                               nn_control=nn_control,
                               verbose=verbose)
     cds <- set_cds_nn_index(cds=cds,
-                            reduction_method=preprocess_method,
+                            reduction_method='Aligned',
                             nn_index,
                             nn_control=nn_control,
                             verbose=verbose)
