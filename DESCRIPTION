@@ -39,6 +39,7 @@ Imports:
     BiocGenerics (>= 0.28.0),
     DelayedArray (>= 0.8.0),
     DelayedMatrixStats (>= 1.4.0),
+    devtools,
     dplyr (>= 0.8.0.1),
     ggplot2 (>= 3.1.1),
     ggrastr,
@@ -79,6 +80,8 @@ Imports:
     tibble (>= 2.1.1),
     tidyr (>= 0.8.3),
     viridis (>= 0.5.1)
+Remotes:
+    https://github.com/cole-trapnell-lab/leidenbase
 Suggests: 
     testthat (>= 2.1.0),
     pryr (>= 0.1.4),
