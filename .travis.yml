@@ -16,8 +16,8 @@ r:
  - bioc-release
 #r_packages:
 #  - covr
-#r_github_packages:
-# - cole-trapnell-lab/leidenbase
+r_github_packages:
+ - cole-trapnell-lab/leidenbase
 #r_binary_packages:
 r_packages:
  - covr
@@ -46,7 +46,6 @@ r_packages:
  - reshape2
  - RhpcBLASctl
  - roxygen2
- - shiny
  - slam
  - spdep
  - speedglm
@@ -54,6 +53,7 @@ r_packages:
  - tibble
  - tidyr
  - viridis
+ - shiny
 before_script:
   - export PKG_NAME=$(Rscript -e 'cat(paste0(devtools::as.package(".")$package))')
   - export PKG_TARBALL=$(Rscript -e 'pkg <- devtools::as.package("."); cat(paste0(pkg$package,"_",pkg$version,".tar.gz"))')
