@@ -39,7 +39,6 @@ Imports:
     BiocGenerics (>= 0.28.0),
     DelayedArray (>= 0.8.0),
     DelayedMatrixStats (>= 1.4.0),
-    devtools,
     dplyr (>= 0.8.0.1),
     ggplot2 (>= 3.1.1),
     ggrastr,

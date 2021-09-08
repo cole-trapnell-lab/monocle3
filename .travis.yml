@@ -3,7 +3,7 @@ cache: packages
 sudo: required
 warnings_are_errors: true
 os: linux
-dist: xenial
+dist: focal
 language: r
 before_install:
  - sudo apt-get install -y libudunits2-dev
