@@ -1,6 +1,6 @@
-# Check if class is a sparseMatrix from Matrix package
+# Test whether a matrix is one of our supported sparse matrices
 is_sparse_matrix <- function(x){
-  class(x) %in% c("dgCMatrix", "dgTMatrix")
+  class(x) %in% c("dgCMatrix", "dgTMatrix", "lgCMatrix")
 }
 
 #' Function to calculate size factors for single-cell RNA-seq data
@@ -25,7 +25,7 @@ estimate_size_factors <- function(cds,
     warning(paste("Your CDS object contains cells with zero reads.",
                   "This causes size factor calculation to fail. Please remove",
                   "the zero read cells using",
-                  "cds <- cds[,Matrix::rowSums(exprs(cds)) != 0] and then",
+                  "cds <- cds[,Matrix::colSums(exprs(cds)) != 0] and then",
                   "run cds <- estimate_size_factors(cds)"))
     return(cds)
   }
@@ -317,13 +317,6 @@ load_worm_embryo <- function(){
 }
 
 
-# Test whether a matrix is one of our supported sparse matrices
-is_sparse_matrix <- function(x){
-  class(x) %in% c("dgCMatrix", "dgTMatrix", "lgCMatrix")
-}
-
-
-
 #' Principal Components Analysis
 #'
 #' Efficient computation of a truncated principal components analysis of a
@@ -529,6 +522,193 @@ normalized_counts <- function(cds,
 }
 
 
+
+#' Test if a file has a Matrix Market header.
+#' @param matpath Path to test file.
+#' @return TRUE if matpath file has Matrix Market header.
+#' @noRd
+is_matrix_market_file <- function( matpath )
+{
+  first_line <- read.table( matpath, nrows=1 )
+  grepl( "%%MatrixMarket", first_line$V1 )
+}
+
+
+
+#' Load matrix dimension metadata from file.
+#' @param anno_path Path to matdim annotation file.
+#' @return list consisting of matdim_names, which label matrix dimension,
+#' and metadata, if present in the file, which are
+#' additional dimension metadata.
+#' @noRd
+load_annotations_data <- function( anno_path, metadata_column_names=NULL, header=FALSE, sep="", quote="\"'", annotation_type=NULL )
+{
+  assertthat::assert_that( ! is.null( annotation_type ) )
+  tryCatch(
+  {
+    annotations <- read.table( anno_path, header=header, sep=sep, quote=quote, stringsAsFactors=FALSE )
+  }, error = function( emsg )
+  {
+    stop( 'load_mm_data: bad status reading ', annotation_type, ' file \'', anno_path, '\'\n  ',
+          emsg, '\n',
+          '  note: possible problems include the wrong filename, a missing file,\n',
+          '  and incorrect file format parameters, for example \'header\', \'sep\', and \'quote\'' )
+  })
+
+  metadata = NULL
+  if( .row_names_info( annotations ) < 0 )
+  {
+    names <- annotations[,1]
+    if( ncol( annotations ) > 1 )
+      metadata <- annotations[,-1,drop=FALSE]
+  }
+  else
+  {
+    names <- rownames( annotations )
+    metadata <- annotations
+  }
+
+  if( ! ( is.null( metadata_column_names ) || is.null( metadata ) ) )
+  {
+    assertthat::assert_that( length( metadata_column_names ) == ncol( metadata ),
+                             msg=paste0( annotation_type,
+                                         ' metadata column name count (',
+                                         length( metadata_column_names ),
+                                         ') != ',
+                                         annotation_type,
+                                         'annotation column count (',
+                                         ncol( metadata ),
+                                         ')' ) )
+    colnames( metadata ) <- metadata_column_names
+  }
+
+  if( ! is.null( metadata ) )
+    rownames(metadata)<-names
+
+  list( names=names, metadata=metadata )
+}
+
+
+
+#' Load data from matrix market format files.
+#'
+#' @param mat_path Path to the Matrix Market .mtx matrix file. The
+#' values are read and stored  as a sparse matrix with nrows and ncols,
+#' as inferred from the file. Required.
+#' @param feature_anno_path Path to a feature annotation file. The
+#' feature_anno_path file must have nrows lines and at least one column.
+#' The values in the first column label the matrix rows and each must be
+#' distinct in the column. Values in additional columns are stored in
+#' the cell_data_set 'gene' metadata. For gene features, we urge use of
+#' official gene IDs for labels, such as Ensembl or Wormbase IDs. In this
+#' case, the second column has typically a 'short' gene name. Additional
+#' information such as gene_biotype may be stored in additional columns
+#' starting with column 3. Required.
+#' @param cell_anno_path Path to a cell annotation file. The cell_anno_path
+#' file must have ncols lines and at least one column. The values in the
+#' first column label the matrix columns and each must be distinct in the
+#' column. Values in additional columns are stored in the cell_data_set
+#' cells metadata. Required.
+#' @param header Logical set to TRUE if both feature_anno_path and
+#' cell_anno_path files have column headers, or set to FALSE if both
+#' files do not have column headers (only these cases are supported).
+#' The files may have either ncols or ncols-1 header fields. In both
+#' cases, the first column is used as the matrix dimension names. The
+#' default is FALSE.
+#' @param feature_metadata_column_names A character vector of feature
+#' metadata column names. The number of names must be one less than the
+#' number of columns in the feature_anno_path file. These values
+#' will replace those read from the feature_anno_path file header,
+#' if present. The default is NULL.
+#' @param cell_metadata_column_names A character vector of cell
+#' metadata column names. The number of names must be one less than the
+#' number of columns in the cell_anno_path file. These values will
+#' replace those read from the cell_anno_path file header, if present.
+#' The default is NULL.
+#' @param quote A character string specifying the quoting characters
+#' used in the feature_anno_path and cell_anno_path files. The default
+#' is "\"'".
+#' @param umi_cutoff UMI per cell cutoff. Columns (cells) with less
+#' than umi_cutoff total counts are removed from the matrix. The
+#' default is 100.
+#' @param sep field separator character in the annotation files. If
+#' sep = "", the separator is white space, that is, one or more spaces,
+#' tabs, newlines, or carriage returns. The default is the tab
+#' character for tab-separated-value files.
+#'
+#' @return cds object
+#'
+#' @section Comments:
+#' * load_mm_data estimates size factors.
+#'
+#' @examples
+#' \dontrun{
+#' library( monocle3 )
+#' pmat<-system.file("extdata", "matrix.mtx.gz", package = "monocle3")
+#' prow<-system.file("extdata", "features_c3h0.txt", package = "monocle3")
+#' pcol<-system.file("extdata", "barcodes_c2h0.txt", package = "monocle3")
+#' cds <- load_mm_data( pmat, prow, pcol,
+#'                      feature_metadata_column_names = c('gene_short_name',
+#'                      'gene_biotype'), sep='' )
+#'
+#' In this example, the features_c3h0.txt file has three columns,
+#' separated by spaces. The first column has official gene names, the
+#' second has short gene names, and the third has gene biotypes.
+#' }
+#'
+#' @export
+#'
+load_mm_data <- function( mat_path,
+                          feature_anno_path,
+                          cell_anno_path,
+                          header = FALSE,
+                          feature_metadata_column_names = NULL,
+                          cell_metadata_column_names = NULL,
+                          umi_cutoff = 100,
+                          quote="\"'",
+                          sep="\t") {
+  assertthat::assert_that(assertthat::is.readable(mat_path), msg='unable to read matrix file')
+  assertthat::assert_that(assertthat::is.readable(feature_anno_path), msg='unable to read feature annotation file')
+  assertthat::assert_that(assertthat::is.readable(cell_anno_path), msg='unable to read cell annotation file')
+  assertthat::assert_that(is.numeric(umi_cutoff))
+
+  feature_annotations <- load_annotations_data( feature_anno_path, feature_metadata_column_names, header, sep, quote=quote, annotation_type='features' )
+  cell_annotations <- load_annotations_data( cell_anno_path, cell_metadata_column_names, header, sep, quote=quote, annotation_type='cells' )
+
+  assertthat::assert_that( ! any( duplicated( feature_annotations$names ) ), msg='duplicate feature names in feature annotation file' )
+  assertthat::assert_that( ! any( duplicated( cell_annotations$names ) ), msg='duplicate cell names in cell annotation file' )
+
+  mat <- Matrix::readMM( mat_path )
+
+  assertthat::assert_that( length( feature_annotations$names ) == nrow( mat ),
+                           msg=paste0( 'feature name count (',
+                                       length( feature_annotations$names ),
+                                       ') != matrix row count (',
+                                       nrow( mat ),
+                                       ')' ) )
+  assertthat::assert_that( length( cell_annotations$names ) == ncol( mat ),
+                           msg=paste0( 'cell name count (',
+                                       length( cell_annotations$names ),
+                                       ') != matrix column count (',
+                                       ncol( mat ),
+                                       ')' ) )
+
+  rownames( mat ) <- feature_annotations$names
+  colnames( mat ) <- cell_annotations$names
+
+  cds <- new_cell_data_set( mat,
+                            cell_metadata = cell_annotations$metadata,
+                            gene_metadata = feature_annotations$metadata )
+
+  colData(cds)$n.umi <- Matrix::colSums(exprs(cds))
+  cds <- cds[,colData(cds)$n.umi >= umi_cutoff]
+  cds <- estimate_size_factors(cds)
+
+  return( cds )
+}
+
+
+
 #' Load data from matrix market format
 #'
 #' @param mat_path Path to the .mtx matrix market file.
@@ -539,14 +719,32 @@ normalized_counts <- function(cds,
 #' @return cds object
 #' @export
 #'
-load_mtx_data <- function(mat_path,
-                          gene_anno_path,
-                          cell_anno_path,
-                          umi_cutoff = 100) {
+load_mtx_data <- function( mat_path,
+                           gene_anno_path,
+                           cell_anno_path,
+                           umi_cutoff = 100) {
   assertthat::assert_that(assertthat::is.readable(mat_path))
   assertthat::assert_that(assertthat::is.readable(gene_anno_path))
   assertthat::assert_that(assertthat::is.readable(cell_anno_path))
   assertthat::assert_that(is.numeric(umi_cutoff))
+
+  if( is_matrix_market_file( mat_path ) )
+  {
+    #
+    # Read an feature annotation file with two tab-separated
+    # columns where the second column has short gene names.
+    # Read a cell annotation file with one column that has the
+    # matrix row names.
+    #
+    cds <- load_mm_data( mat_path,
+                         gene_anno_path,
+                         cell_anno_path,
+                         feature_metadata_column_names=c('gene_short_name'),
+                         umi_cutoff=umi_cutoff,
+                         sep="\t" )
+    return( cds )
+  }
+
   df <- utils::read.table(mat_path, col.names = c("gene.idx", "cell.idx", "count"),
                           colClasses = c("integer", "integer", "integer"))
 
@@ -586,6 +784,7 @@ load_mtx_data <- function(mat_path,
 }
 
 
+
 #' Combine a list of cell_data_set objects
 #'
 #' This function will combine a list of cell_data_set objects into a new
@@ -599,13 +798,17 @@ load_mtx_data <- function(mat_path,
 #' @param cell_names_unique Logical indicating whether all of the cell IDs
 #'   across all of the CDSs are unique. If FALSE, the CDS name is appended to
 #'   each cell ID to prevent collisions. Default is FALSE.
+#' @param sample_col_name A string to be the column name for the colData column
+#'   that indicates which original cds the cell derives from. Default is
+#'   "sample".
 #'
 #' @return A combined cell_data_set object.
 #' @export
 #'
 combine_cds <- function(cds_list,
                         keep_all_genes = TRUE,
-                        cell_names_unique = FALSE) {
+                        cell_names_unique = FALSE,
+                        sample_col_name = "sample") {
 
   assertthat::assert_that(is.list(cds_list),
                           msg=paste("cds_list must be a list."))
@@ -613,13 +816,16 @@ combine_cds <- function(cds_list,
   assertthat::assert_that(all(sapply(cds_list, class) == "cell_data_set"),
                           msg=paste("All members of cds_list must be",
                                     "cell_data_set class."))
+  assertthat::assert_that(is.character(sample_col_name))
 
-  if (any(sapply(cds_list, function(cds) "sample" %in% names(colData(cds))))) {
-    warning(paste0("The combine_cds function adds a column called 'sample' ",
-                   "which indicates which initial cds a cell comes from. One ",
-                   "or more of your input cds objects contains a 'sample' ",
-                   "column, which will be overwritten. We recommend you ",
-                   "rename this column."))
+  if (sample_col_name == "sample" &
+      any(sapply(cds_list, function(cds) "sample" %in% names(colData(cds))))) {
+    warning(paste0("By default, the combine_cds function adds a column called ",
+                   "'sample' which indicates which initial cds a cell came ",
+                   "from. One or more of your input cds objects contains a ",
+                   "'sample' column, which will be overwritten. We recommend ",
+                   "you rename this column or provide an alternative column ",
+                   "name using the 'sample_col_name' parameter."))
   }
   assertthat::assert_that(!any(sapply(cds_list, function(cds)
     sum(is.na(names(colData(cds)))) != 0)),
@@ -629,7 +835,7 @@ combine_cds <- function(cds_list,
                                        "proceeding."))
   assertthat::assert_that(!any(sapply(cds_list, function(cds)
     sum(is.na(names(rowData(cds)))) != 0)),
-    msg = paste0("One of the input CDS' has a colData ",
+    msg = paste0("One of the input CDS' has a rowData ",
                  "column name that is NA, please ",
                  "remove or rename that column before ",
                  "proceeding."))
@@ -682,7 +888,7 @@ combine_cds <- function(cds_list,
   fdata_cols <- unique(fdata_cols)
   if (sum(duplicated(all_cells)) != 0 & cell_names_unique) {
     stop(paste("Cell names are not unique across CDSs - cell_names_unique",
-               "must be TRUE."))
+               "must be FALSE."))
   }
   all_cells <- unique(all_cells)
   for(i in 1:length(cds_list)) {
@@ -692,12 +898,18 @@ combine_cds <- function(cds_list,
     if (!cell_names_unique) {
       if(list_named) {
         row.names(pd) <- paste(row.names(pd), names(cds_list)[[i]], sep="_")
-        pd$sample <- names(cds_list)[[i]]
+        pd[,sample_col_name] <- names(cds_list)[[i]]
       } else {
         row.names(pd) <- paste(row.names(pd), i, sep="_")
-        pd$sample <- i
+        pd[,sample_col_name] <- i
       }
       colnames(exp) <- row.names(pd)
+    } else {
+      if(list_named) {
+        pd[,sample_col_name] <- names(cds_list)[[i]]
+      } else {
+        pd[,sample_col_name] <- i
+      }
     }
     not_in <- pdata_cols[!pdata_cols %in% names(pd)]
     for (n in not_in) {
@@ -733,8 +945,8 @@ combine_cds <- function(cds_list,
     }
 
 
-    exprs_list[[i]] <- exp[gene_list,]
-    fd_list[[i]] <- fd[gene_list,]
+    exprs_list[[i]] <- exp[gene_list, , drop=FALSE]
+    fd_list[[i]] <- fd[gene_list, , drop=FALSE]
     pd_list[[i]] <- pd
 
   }
@@ -763,7 +975,7 @@ combine_cds <- function(cds_list,
   all_pd <- do.call(rbind, pd_list)
   all_exp <- do.call(cbind, exprs_list)
 
-  all_exp <- all_exp[row.names(all_fd), row.names(all_pd)]
+  all_exp <- all_exp[row.names(all_fd), row.names(all_pd), drop=FALSE]
 
 
   new_cell_data_set(all_exp, cell_metadata = all_pd, gene_metadata = all_fd)

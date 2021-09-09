@@ -72,8 +72,8 @@ in the analysis, the harder the trajectory is to learn. Fortunately, many
 genes typically co-vary with one another, and so the dimensionality of the
 data can be reduced with a wide variety of different algorithms. Monocle3
 provides two different algorithms for dimensionality reduction via
-\code{reduce_dimensions} (UMAP and tSNE). The function
-\code{reduce_dimensions} is the second step in the trajectory building
+\code{reduce_dimension} (UMAP and tSNE). The function
+\code{reduce_dimension} is the second step in the trajectory building
 process after \code{preprocess_cds}.
 
 UMAP is implemented from the package uwot.

@@ -77,7 +77,7 @@ plot_cells_3d <- function(cds,
   assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
                           msg = paste("No dimensionality reduction for",
                                       reduction_method, "calculated.",
-                                      "Please run reduce_dimensions with",
+                                      "Please run reduce_dimension with",
                                       "reduction_method =", reduction_method,
                                       "before attempting to plot."))
   low_dim_coords <- reducedDims(cds)[[reduction_method]]
@@ -99,7 +99,11 @@ plot_cells_3d <- function(cds,
     message("No trajectory to plot. Has learn_graph() been called yet?")
     show_trajectory_graph = FALSE
   }
-
+	
+  if (class(cds@colData[,color_cells_by])=="character") {
+    cds@colData[,color_cells_by] = factor(cds@colData[,color_cells_by])
+  }	
+	
   gene_short_name <- NA
   sample_name <- NA
 
@@ -220,9 +224,9 @@ plot_cells_3d <- function(cds,
                                       colorscale=color_scale),
                             colorscale=color_scale)) %>%
         plotly::add_markers(x = sub2$data_dim_1, y = sub2$data_dim_2,
-                           z = sub2$data_dim_3, color = I("lightgrey"),
-                           size=I(cell_size),
-                           marker=list(opacity = .4), showlegend=FALSE)
+                            z = sub2$data_dim_3, color = I("lightgrey"),
+                            size=I(cell_size),
+                            marker=list(opacity = .4), showlegend=FALSE)
     }
   } else {
     if(color_cells_by %in% c("cluster", "partition")){
@@ -236,7 +240,11 @@ plot_cells_3d <- function(cds,
       } else{
         if(is.null(color_palette)) {
           N <- length(unique(data_df$cell_color))
-          color_palette <- RColorBrewer::brewer.pal(N, "Set2")
+          if(N > 8){
+            color_palette <- colorRampPalette(RColorBrewer::brewer.pal(N, "Set2"))(14)
+          } else {
+            color_palette <- RColorBrewer::brewer.pal(N, "Set2")
+          }
         }
         p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
                              z = ~data_dim_3, type = 'scatter3d',
@@ -260,7 +268,11 @@ plot_cells_3d <- function(cds,
     } else {
       if(is.null(color_palette)) {
         N <- length(unique(data_df$cell_color))
-        color_palette <- RColorBrewer::brewer.pal(N, "Set2")
+        if(N > 8){
+          color_palette <- colorRampPalette(RColorBrewer::brewer.pal(8, "Set2"))(N)
+        } else {
+          color_palette <- RColorBrewer::brewer.pal(N, "Set2")
+        }
         names(color_palette) = unique(data_df$cell_color)
       }
       p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
@@ -371,6 +383,9 @@ plot_cells_3d <- function(cds,
 #'   ggrastr package.
 #' @param scale_to_range Logical indicating whether to scale expression to
 #'   percent of maximum expression.
+#' @param label_principal_points Logical indicating whether to label roots,
+#'   leaves, and branch points with principal point names. This is useful for
+#'   order_cells and choose_graph_segments in non-interactive mode.
 #'
 #' @return a ggplot2 plot object
 #' @export
@@ -405,13 +420,14 @@ plot_cells <- function(cds,
                        alpha = 1,
                        min_expr=0.1,
                        rasterize=FALSE,
-                       scale_to_range=FALSE) {
+                       scale_to_range=FALSE,
+                       label_principal_points = FALSE) {
   reduction_method <- match.arg(reduction_method)
   assertthat::assert_that(methods::is(cds, "cell_data_set"))
   assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
                           msg = paste("No dimensionality reduction for",
                                       reduction_method, "calculated.",
-                                      "Please run reduce_dimensions with",
+                                      "Please run reduce_dimension with",
                                       "reduction_method =", reduction_method,
                                       "before attempting to plot."))
   low_dim_coords <- reducedDims(cds)[[reduction_method]]
@@ -452,6 +468,19 @@ plot_cells <- function(cds,
     message("No trajectory to plot. Has learn_graph() been called yet?")
     show_trajectory_graph = FALSE
   }
+  if (label_principal_points &&
+      is.null(principal_graph(cds)[[reduction_method]])) {
+    message("Cannot label principal points when no trajectory to plot. Has learn_graph() been called yet?")
+    label_principal_points = FALSE
+  }
+
+  if (label_principal_points) {
+    label_branch_points <- FALSE
+    label_leaves <- FALSE
+    label_roots <- FALSE
+  }
+
+
 
   gene_short_name <- NA
   sample_name <- NA
@@ -545,10 +574,9 @@ plot_cells <- function(cds,
     } else {
       markers = genes
     }
-    markers_rowData <- as.data.frame(subset(rowData(cds),
-                                            gene_short_name %in% markers |
-                                              row.names(rowData(cds)) %in%
-                                              markers))
+	markers_rowData <- rowData(cds)[(rowData(cds)$gene_short_name %in% markers) |
+							        (row.names(rowData(cds)) %in% markers),,drop=FALSE]
+	markers_rowData <- as.data.frame(markers_rowData)
     if (nrow(markers_rowData) == 0) {
       stop("None of the provided genes were found in the cds")
     }
@@ -626,7 +654,7 @@ plot_cells <- function(cds,
           text_df = data_df %>%
             dplyr::group_by(cell_group) %>%
             dplyr::mutate(cells_in_cluster= dplyr::n()) %>%
-            dplyr::group_by(cell_color, add=TRUE) %>%
+            dplyr::group_by(cell_color, .add=TRUE) %>%
             dplyr::mutate(per=dplyr::n()/cells_in_cluster)
           median_coord_df = text_df %>%
             dplyr::summarize(fraction_of_group = dplyr::n(),
@@ -677,6 +705,7 @@ plot_cells <- function(cds,
     data_df <- merge(data_df, markers_exprs, by.x="sample_name",
                      by.y="cell_id")
     data_df$value <- with(data_df, ifelse(value >= min_expr, value, NA))
+    ya_sub <- data_df[!is.na(data_df$value),]
     na_sub <- data_df[is.na(data_df$value),]
     if(norm_method == "size_only"){
       g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2)) +
@@ -684,10 +713,11 @@ plot_cells <- function(cds,
                       stroke = I(cell_stroke), color = "grey80", alpha = alpha,
                       data = na_sub) +
         plotting_func(aes(color=value), size=I(cell_size),
-                      stroke = I(cell_stroke), na.rm = TRUE) +
+                      stroke = I(cell_stroke),
+                      data = ya_sub[order(ya_sub$value),]) +
         viridis::scale_color_viridis(option = "viridis",
                                      name = expression_legend_label,
-                                     na.value = "grey80", end = 0.8,
+                                     na.value = NA, end = 0.8,
                                      alpha = alpha) +
         guides(alpha = FALSE) + facet_wrap(~feature_label)
     } else {
@@ -697,10 +727,11 @@ plot_cells <- function(cds,
                       data = na_sub, alpha = alpha) +
         plotting_func(aes(color=log10(value+min_expr)),
                       size=I(cell_size), stroke = I(cell_stroke),
-                      na.rm = TRUE, alpha = alpha) +
+                      data = ya_sub[order(ya_sub$value),],
+					  alpha = alpha) +
         viridis::scale_color_viridis(option = "viridis",
                                      name = expression_legend_label,
-                                     na.value = "grey80", end = 0.8,
+                                     na.value = NA, end = 0.8,
                                      alpha = alpha) +
         guides(alpha = FALSE) + facet_wrap(~feature_label)
     }
@@ -748,8 +779,28 @@ plot_cells <- function(cds,
                           data=edge_df)
 
 
+    if (label_principal_points) {
+      mst_branch_nodes <- branch_nodes(cds, reduction_method)
+      mst_leaf_nodes <- leaf_nodes(cds, reduction_method)
+      mst_root_nodes <- root_nodes(cds, reduction_method)
+      pps <- c(mst_branch_nodes, mst_leaf_nodes, mst_root_nodes)
+      princ_point_df <- ica_space_df %>%
+        dplyr::slice(match(names(pps), sample_name))
+
+      g <- g +
+        geom_point(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2"),
+                   shape = 21, stroke=I(trajectory_graph_segment_size),
+                   color="white",
+                   fill="black",
+                   size=I(graph_label_size * 1.5),
+                   na.rm=TRUE, princ_point_df) +
+        ggrepel::geom_text_repel(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2",
+                             label="sample_name"),
+                  size=I(graph_label_size * 1.5), color="Black", na.rm=TRUE,
+                  princ_point_df)
+    }
     if (label_branch_points){
-      mst_branch_nodes <- branch_nodes(cds)
+      mst_branch_nodes <- branch_nodes(cds, reduction_method)
       branch_point_df <- ica_space_df %>%
         dplyr::slice(match(names(mst_branch_nodes), sample_name)) %>%
         dplyr::mutate(branch_point_idx = seq_len(dplyr::n()))
@@ -768,7 +819,7 @@ plot_cells <- function(cds,
     }
 
     if (label_leaves){
-      mst_leaf_nodes <- leaf_nodes(cds)
+      mst_leaf_nodes <- leaf_nodes(cds, reduction_method)
       leaf_df <- ica_space_df %>%
         dplyr::slice(match(names(mst_leaf_nodes), sample_name)) %>%
         dplyr::mutate(leaf_idx = seq_len(dplyr::n()))
@@ -787,7 +838,7 @@ plot_cells <- function(cds,
     }
 
     if (label_roots){
-      mst_root_nodes <- root_nodes(cds)
+      mst_root_nodes <- root_nodes(cds, reduction_method)
       root_df <- ica_space_df %>%
         dplyr::slice(match(names(mst_root_nodes), sample_name)) %>%
         dplyr::mutate(root_idx = seq_len(dplyr::n()))
@@ -1092,6 +1143,7 @@ plot_pc_variance_explained <- function(cds) {
 #'   factor. Default is TRUE.
 #' @param log_scale Logical, whether or not to scale data logarithmically.
 #'   Default is TRUE.
+#' @param pseudocount A pseudo-count added to the gene expression. Default is 0.
 #' @return a ggplot2 plot object
 #' @import ggplot2
 #' @export
@@ -1110,7 +1162,8 @@ plot_genes_violin <- function (cds_subset,
                                panel_order = NULL,
                                label_by_short_name = TRUE,
                                normalize = TRUE,
-                               log_scale = TRUE) {
+                               log_scale = TRUE,
+                               pseudocount = 0) {
 
   assertthat::assert_that(methods::is(cds_subset, "cell_data_set"))
 
@@ -1127,7 +1180,7 @@ plot_genes_violin <- function (cds_subset,
   }
 
   assertthat::assert_that(assertthat::is.count(ncol))
-
+  assertthat::assert_that(assertthat::is.number(pseudocount))
   assertthat::assert_that(is.logical(label_by_short_name))
   if (label_by_short_name) {
     assertthat::assert_that("gene_short_name" %in% names(rowData(cds_subset)),
@@ -1153,12 +1206,15 @@ plot_genes_violin <- function (cds_subset,
                                       "pass only the subset of the CDS to be",
                                       "plotted."))
 
-  if (normalize) {
+  if (pseudocount > 0) {
+    cds_exprs <- SingleCellExperiment::counts(cds_subset) + 1
+  } else {
     cds_exprs <- SingleCellExperiment::counts(cds_subset)
+  }
+  if (normalize) {
     cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds_subset))
     cds_exprs <- reshape2::melt(as.matrix(cds_exprs))
   } else {
-    cds_exprs <- SingleCellExperiment::counts(cds_subset)
     cds_exprs <- reshape2::melt(as.matrix(cds_exprs))
   }
 
@@ -1195,7 +1251,7 @@ plot_genes_violin <- function (cds_subset,
   cds_exprs[,group_cells_by] <- as.factor(cds_exprs[,group_cells_by])
   q <- q + geom_violin(aes_string(fill = group_cells_by), scale="width") +
     guides(fill=FALSE)
-  q <- q + stat_summary(fun.y=mean, geom="point", size=1, color="black")
+  q <- q + stat_summary(fun=mean, geom="point", size=1, color="black")
   q <- q + facet_wrap(~feature_label, nrow = nrow,
                       ncol = ncol, scales = "free_y")
   if (min_expr < 1) {
@@ -1462,6 +1518,12 @@ plot_genes_by_group <- function(cds,
                             msg = paste("group_cells_by must be a column in",
                                         "the colData table."))
   }
+  assertthat::assert_that("gene_short_name" %in% names(rowData(cds)), msg =
+                            paste("This function requires a gene_short_name",
+                                  "column in your rowData. If you do not have",
+                                  "gene symbols, you can use other gene ids",
+                                  "by running",
+                                  "rowData(cds)$gene_short_name <- row.names(rowData(cds))"))
 
   norm_method = match.arg(norm_method)
 
@@ -1471,7 +1533,7 @@ plot_genes_by_group <- function(cds,
     dplyr::pull(rowname)
   if(length(gene_ids) < 1)
     stop(paste('Please make sure markers are included in the gene_short_name",
-               "column of the fData!'))
+               "column of the rowData!'))
 
   if(flip_percentage_mean == FALSE){
     major_axis <- 1

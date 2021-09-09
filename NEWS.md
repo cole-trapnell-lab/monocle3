@@ -1,3 +1,47 @@
+# monocle3 1.0.0
+
+### Changes
+
+* Add label_principal_points option to plot_cells to assist with identifying root_pr_nodes in order_cells.
+
+### Bug fixes
+
+* Documentation and error reports improvements.
+* Fix fit_models tests for NA/Inf/NaNs.
+* Refine gene loadings calculations in find_gene_modules.
+* Test for convergence failure in top_markers,
+
+# monocle3 0.2.3
+
+### Changes
+* Added clear_cds parameter to choose_cells().
+
+### Bug fixes
+* Documentation and error reports improvements.
+* Fixed issue #316, top_marker()
+* Fixed issue #346, find_gene_modules()
+
+# monocle3 0.2.2
+
+### Changes
+* Added load_mm_data() to load data from matrix market sparse file and gene and cell data files.
+* Added rann.k parameter to learn_graph().
+* Added speedglm.maxiter parameter to top_marker().
+
+### Bug fixes
+* Fixed combine_cds() issues.
+* Fixed learn_graph(use_partition=FALSE) issue
+* Fixed batchelor::fastMNN(pc.input) deprecation issue
+* Fixed choose_graph_segments() issue.
+* Fixed missing gaussian family in fit_models().
+* Fixed add pseudocount to violin plot.
+* Fixed add detect_genes() to fit_models() if needed.
+* Fixed compare_models() issues.
+* Fixed check for undefined values in fit_models() formula.
+* Fixed plot_cells() plotting order issue.
+* Fixed find_gene_modules() run-to-run variation issue.
+* Fixed rlist package namespace collision.
+* Fixed allow short gene names in aggregate_gene_expression(gene_group_df).
 
 # monocle3 0.2.0
 

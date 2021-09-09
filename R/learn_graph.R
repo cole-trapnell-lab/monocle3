@@ -17,7 +17,7 @@
 #' technical factors) to "subtract" from the data so it doesn't contribute to
 #' the trajectory. The function \code{learn_graph} is the fourth step in the
 #' trajectory building process after \code{preprocess_cds},
-#' \code{reduce_dimensions}, and \code{cluster_cells}. After
+#' \code{reduce_dimension}, and \code{cluster_cells}. After
 #' \code{learn_graph}, \code{order_cells} is typically called.
 #'
 #' @section Optional \code{learn_graph_control} parameters:
@@ -40,6 +40,9 @@
 #'   pruning to remove small insignificant branches. Default is TRUE.}
 #'   \item{scale:}{}
 #'   \item{ncenter:}{}
+#'   \item{rann.k:}{Maximum number of nearest neighbors to compute in the
+#'   reversed graph embedding. Set rann.k=NULL
+#'   to let learn_graph estimate rann.k. Default is 25.}
 #'   \item{maxiter:}{}
 #'   \item{eps:}{}
 #'   \item{L1.gamma:}{}
@@ -67,7 +70,6 @@ learn_graph <- function(cds,
                         learn_graph_control = NULL,
                         verbose = FALSE) {
   reduction_method <- "UMAP"
-
   if (!is.null(learn_graph_control)) {
     assertthat::assert_that(methods::is(learn_graph_control, "list"))
     assertthat::assert_that(all(names(learn_graph_control) %in%
@@ -78,6 +80,7 @@ learn_graph <- function(cds,
                                     "prune_graph",
                                     "scale",
                                     "ncenter",
+                                    "rann.k",
                                     "maxiter",
                                     "eps",
                                     "L1.gamma",
@@ -102,6 +105,8 @@ learn_graph <- function(cds,
   ncenter <- learn_graph_control$ncenter
   scale <- ifelse(is.null(learn_graph_control$scale), FALSE,
                   learn_graph_control$scale)
+  rann.k <- ifelse(is.null(learn_graph_control$rann.k), 25,
+                   learn_graph_control$rann.k)
   maxiter <- ifelse(is.null(learn_graph_control$maxiter), 10,
                     learn_graph_control$maxiter)
   eps <- ifelse(is.null(learn_graph_control$eps), 1e-5,
@@ -112,6 +117,7 @@ learn_graph <- function(cds,
                      learn_graph_control$L1.sigma)
 
   assertthat::assert_that(methods::is(cds, "cell_data_set"))
+  assertthat::assert_that(reduction_method %in% c('UMAP'), msg=paste0('unsupported or invalid reduction method \'', reduction_method, '\''))
   assertthat::assert_that(is.logical(use_partition))
   assertthat::assert_that(is.logical(close_loop))
   assertthat::assert_that(is.logical(verbose))
@@ -125,6 +131,7 @@ learn_graph <- function(cds,
     assertthat::assert_that(assertthat::is.count(ncenter))
   }
   assertthat::assert_that(assertthat::is.count(maxiter))
+  assertthat::assert_that(assertthat::is.count(rann.k))
   assertthat::assert_that(is.numeric(eps))
   assertthat::assert_that(is.numeric(L1.sigma))
   assertthat::assert_that(is.numeric(L1.sigma))
@@ -132,7 +139,7 @@ learn_graph <- function(cds,
   assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
                           msg = paste("No dimensionality reduction for",
                                       reduction_method, "calculated.",
-                                      "Please run reduce_dimensions with",
+                                      "Please run reduce_dimension with",
                                       "reduction_method =", reduction_method,
                                       "and cluster_cells before running",
                                       "learn_graph."))
@@ -156,6 +163,7 @@ learn_graph <- function(cds,
                         irlba_pca_res = reducedDims(cds)[[reduction_method]],
                         max_components = max_components,
                         ncenter = ncenter,
+                        rann.k = rann.k,
                         maxiter = maxiter,
                         eps = eps,
                         L1.gamma = L1.gamma,
@@ -190,6 +198,7 @@ multi_component_RGE <- function(cds,
                                 max_components,
                                 ncenter,
                                 irlba_pca_res,
+                                rann.k=25,
                                 maxiter,
                                 eps,
                                 L1.gamma,
@@ -209,9 +218,9 @@ multi_component_RGE <- function(cds,
   merge_rge_res <- NULL
   max_ncenter <- 0
 
-  for(cur_comp in sort(unique(partition_list))) {
+  for(cur_comp in sort(unique(partition_list))) {  #  for loop 1  start
     if(verbose) {
-      message(paste0('Processing louvain component ', cur_comp))
+      message(paste0('Processing partition component ', cur_comp))
     }
 
     X_subset <- X[, partition_list == cur_comp]
@@ -224,7 +233,7 @@ multi_component_RGE <- function(cds,
 
     if(is.null(ncenter)) {
       num_clusters_in_partition <-
-        length(unique(clusters(cds)[colnames(X_subset)]))
+        length(unique(clusters(cds, reduction_method)[colnames(X_subset)]))
       num_cells_in_partition = ncol(X_subset)
       curr_ncenter <- cal_ncenter(num_clusters_in_partition, num_cells_in_partition)
       if(is.null(curr_ncenter) || curr_ncenter >= ncol(X_subset)) {
@@ -256,11 +265,14 @@ multi_component_RGE <- function(cds,
                                           process_targets_in_blocks=TRUE)
     medioids <- X_subset[, unique(nearest_center)]
     reduced_dim_res <- t(medioids)
-    k <- 25
     mat <- t(X_subset)
-    if (is.null(k)) {
+    if (is.null(rann.k)) {
       k <- round(sqrt(nrow(mat))/2)
       k <- max(10, k)
+    }
+    else
+    {
+      k <- rann.k
     }
     if (verbose)
       message("Finding kNN using RANN with ", k, " neighbors")
@@ -369,7 +381,7 @@ multi_component_RGE <- function(cds,
 
     dp_mst <- igraph::graph.union(dp_mst, cur_dp_mst)
     reducedDimK_coord <- cbind(reducedDimK_coord, curr_reducedDimK_coord)
-  }
+  }  #  for loop 1  end
 
   row.names(pr_graph_cell_proj_closest_vertex) <- cell_name_vec
 
@@ -638,7 +650,7 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE,
         projection <- rbind(projection, tmp)
         distance <- c(distance, stats::dist(rbind(Z_i, tmp)))
       }
-      if(class(projection) != 'matrix') {
+      if(class(projection)[1] != 'matrix') {
         projection <- as.matrix(projection)
       }
 
@@ -658,8 +670,23 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE,
   dp_mst_df <- NULL
   partitions <- cds@clusters[[reduction_method]]$partitions
 
+  # Sanity test.
+  # If this fails there may be a problem with getting cell names from
+  # cds@clusters[[reduction_method]]$partitions
+  # although that seems utterly implausible. I am replacing
+  #   subset_cds_col_names <- colnames(cds)[cds@clusters[[reduction_method]]$partitions == cur_partition]
+  # in the loop with the partition element names as
+  #   subset_cds_col_names <- names(partitions[partitions==cur_partition])
+  # so that this functions works when learn_graph() is run with use_partition=FALSE.
+  assertthat::assert_that( !is.null( names(cds@clusters[[reduction_method]]$partitions) ), msg='names(cds@clusters[[reduction_method]]$partitions) == NULL' )
+  assertthat::assert_that( !( length( colnames(cds) ) != length(names(cds@clusters[[reduction_method]]$partitions))), msg='length( colnames(cds) ) != length(names(cds@clusters[[reduction_method]]$partitions))' )
+  assertthat::assert_that( !any( colnames(cds)!=names(cds@clusters[[reduction_method]]$partitions) ), msg='colnames(cds)!=names(cds@clusters[[reduction_method]]$partitions)' )
+
   if(length(dp_mst_list) == 1 & length(unique(partitions)) > 1) {
-    partitions <- 1
+    #
+    # Adjust for condition learn_graph(use_partition=FALSE).
+    #
+    partitions[partitions!='1'] <- '1'
   }
 
   if(!is.null(partitions)) {
@@ -671,8 +698,8 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE,
                 cur_partition)
       }
 
-      subset_cds_col_names <- colnames(cds)[cds@clusters[[
-        reduction_method]]$partitions == cur_partition]
+      subset_cds_col_names <- names(partitions[partitions==cur_partition])
+
       cur_z <- Z[, subset_cds_col_names]
       cur_p <- P[, subset_cds_col_names]
 

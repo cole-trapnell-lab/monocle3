@@ -1,0 +1,6 @@
+gene_short_name source
+ENSG00000243485 RP11-34P13.3 Gene_Expression
+ENSG00000237613 FAM138A	Gene_Expression
+ENSG00000268674 FAM231B	Gene_Expression
+CD3_GCCTGACTAGATCCA CD3	Antibody_Capture
+CD19_CGTGCAACACTCGTA CD19 Antibody_Capture
