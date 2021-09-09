@@ -236,7 +236,11 @@ plot_cells_3d <- function(cds,
       } else{
         if(is.null(color_palette)) {
           N <- length(unique(data_df$cell_color))
-          color_palette <- RColorBrewer::brewer.pal(N, "Set2")
+          if(N > 8){
+            color_palette <- colorRampPalette(RColorBrewer::brewer.pal(N, "Set2"))(14)
+          } else {
+            color_palette <- RColorBrewer::brewer.pal(N, "Set2")
+          }
         }
         p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
                              z = ~data_dim_3, type = 'scatter3d',
@@ -260,7 +264,11 @@ plot_cells_3d <- function(cds,
     } else {
       if(is.null(color_palette)) {
         N <- length(unique(data_df$cell_color))
-        color_palette <- RColorBrewer::brewer.pal(N, "Set2")
+        if(N > 8){
+          color_palette <- colorRampPalette(RColorBrewer::brewer.pal(8, "Set2"))(N)
+        } else {
+          color_palette <- RColorBrewer::brewer.pal(N, "Set2")
+        }
         names(color_palette) = unique(data_df$cell_color)
       }
       p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
