@@ -93,7 +93,7 @@ cluster_cells <- function(cds,
   assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
                           msg = paste("No dimensionality reduction for",
                                       reduction_method, "calculated.",
-                                      "Please run reduce_dimensions with",
+                                      "Please run reduce_dimension with",
                                       "reduction_method =", reduction_method,
                                       "before running cluster_cells"))
 
@@ -119,11 +119,11 @@ cluster_cells <- function(cds,
                                               partition_qval, verbose)
       partitions <- igraph::components(
         cluster_graph_res$cluster_g)$membership[cluster_result$optim_res$membership]
-      names(partitions) <- row.names(reduced_dim_res)
       partitions <- as.factor(partitions)
     } else {
       partitions <- rep(1, nrow(colData(cds)))
     }
+    names(partitions) <- row.names(reduced_dim_res)
     clusters <- factor(igraph::membership(cluster_result$optim_res))
     cds@clusters[[reduction_method]] <- list(cluster_result = cluster_result,
                                              partitions = partitions,
@@ -144,11 +144,11 @@ cluster_cells <- function(cds,
                                               partition_qval, verbose)
       partitions <- igraph::components(
         cluster_graph_res$cluster_g)$membership[cluster_result$optim_res$membership]
-      names(partitions) <- row.names(reduced_dim_res)
       partitions <- as.factor(partitions)
     } else {
       partitions <- rep(1, nrow(colData(cds)))
     }
+    names(partitions) <- row.names(reduced_dim_res)
     clusters <- factor(igraph::membership(cluster_result$optim_res))
     cds@clusters[[reduction_method]] <- list(cluster_result = cluster_result,
                                              partitions = partitions,

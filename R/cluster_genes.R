@@ -10,7 +10,7 @@
 #' @param umap.fast_sgd Whether to allow UMAP to perform fast stochastic gradient descent. Defaults to TRUE. Setting FALSE will result in slower, but deterministic behavior (if cores=1).
 #' @param umap.nn_method The method used for nearest neighbor network construction during UMAP.
 #' @param k number of kNN used in creating the k nearest neighbor graph for Louvain clustering. The number of kNN is related to the resolution of the clustering result, bigger number of kNN gives low resolution and vice versa. Default to be 20
-#' @param louvain_iter Integer number of iterations used for Louvain clustering. The clustering result gives the largest modularity score will be used as the final clustering result.  Default to be 1. Note that if louvain_iter is large than 1, the `seed` argument will be ignored.
+#' @param leiden_iter Integer number of iterations used for Leiden clustering. The clustering result with the largest modularity score is used as the final clustering result.  Default to be 1.
 #' @param partition_qval Significance threshold used in Louvain community graph partitioning.
 #' @param weight A logic argument to determine whether or not we will use
 #'   Jaccard coefficient for two nearest neighbors (based on the overlapping of
@@ -18,7 +18,7 @@
 #' @param resolution Resolution parameter passed to Louvain. Can be a list. If
 #'   so, this method will evaluate modularity at each resolution and use the
 #'   one with the highest value.
-#' @param random_seed  the seed used by the random number generator in louvain-igraph package. This argument will be ignored if louvain_iter is larger than 1.
+#' @param random_seed  the seed used by the random number generator in Leiden.
 #' @param cores number of cores computer should use to execute function
 #' @param verbose Whether or not verbose output is printed.
 #' @param ... Additional arguments passed to UMAP and Louvain analysis.
@@ -35,7 +35,7 @@ find_gene_modules <- function(cds,
                           umap.fast_sgd = FALSE,
                           umap.nn_method = "annoy",
                           k = 20,
-                          louvain_iter = 1,
+                          leiden_iter = 1,
                           partition_qval = 0.05,
                           weight = FALSE,
                           resolution = NULL,
@@ -43,7 +43,7 @@ find_gene_modules <- function(cds,
                           cores=1,
                           verbose = F,
                           ...) {
-  method = 'louvain'
+  method = 'leiden'
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
@@ -55,22 +55,31 @@ find_gene_modules <- function(cds,
   assertthat::assert_that(is.character(reduction_method))
   assertthat::assert_that(assertthat::is.count(k))
   assertthat::assert_that(is.logical(weight))
-  assertthat::assert_that(assertthat::is.count(louvain_iter))
+  assertthat::assert_that(assertthat::is.count(leiden_iter))
   ## TO DO what is resolution?
   assertthat::assert_that(is.numeric(partition_qval))
   assertthat::assert_that(is.logical(verbose))
   assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
                           msg = paste("No dimensionality reduction for",
                                       reduction_method, "calculated.",
-                                      "Please run reduce_dimensions with",
+                                      "Please run reduce_dimension with",
                                       "reduction_method =", reduction_method,
                                       "before running cluster_cells"))
 
   preprocess_mat <- cds@preprocess_aux$gene_loadings
-  if (is.null(cds@preprocess_aux$beta) == FALSE){
-    preprocess_mat = preprocess_mat %*% cds@preprocess_aux$beta
-  }
-  preprocess_mat = preprocess_mat[intersect(rownames(cds), row.names(preprocess_mat)),]
+# Notes:
+#   o  cds@preprocess_aux$beta is npc x nfactor, which causes
+#      preprocess_mat to have nfactor columns, often one column
+#   o  I do not know how to adjust gene_loadings for batch effects
+#      so this is disabled for now
+#  if (is.null(cds@preprocess_aux$beta) == FALSE){
+#    preprocess_mat = preprocess_mat %*% (-cds@preprocess_aux$beta)
+#  }
+  preprocess_mat <- preprocess_mat[intersect(rownames(cds), row.names(preprocess_mat)),]
+
+  # uwot::umap uses a random number generator
+  if( random_seed != 0L )
+    set.seed( random_seed )
 
   umap_res = uwot::umap(as.matrix(preprocess_mat),
                         n_components = max_components,
@@ -88,14 +97,14 @@ find_gene_modules <- function(cds,
   reduced_dim_res <- umap_res
 
   if(verbose)
-    message("Running louvain clustering algorithm ...")
+    message("Running leiden clustering algorithm ...")
 
   cluster_result <- leiden_clustering(data = reduced_dim_res,
                                     pd = rowData(cds)[
                                       row.names(reduced_dim_res),,drop=FALSE],
                                     k = k,
                                     weight = weight,
-                                    louvain_iter = louvain_iter,
+                                    num_iter = leiden_iter,
                                     resolution_parameter = resolution,
                                     random_seed = random_seed,
                                     verbose = verbose, ...)
@@ -145,7 +154,8 @@ my.aggregate.Matrix = function (x, groupings = NULL, form = NULL, fun = "sum", .
 #'
 #' @param cds The cell_data_set on which this function operates
 #' @param gene_group_df A dataframe in which the first column contains gene ids
-#'   and the second contains groups. If NULL, genes are not grouped.
+#'   or short gene names and the second contains groups. If NULL, genes are not
+#'   grouped.
 #' @param cell_group_df A dataframe in which the first column contains cell ids
 #'   and the second contains groups. If NULL, cells are not grouped.
 #' @param norm_method How to transform gene expression values before
@@ -185,6 +195,18 @@ aggregate_gene_expression <- function(cds,
                                      fData(cds)$gene_short_name |
                                      gene_group_df[,1] %in%
                                      row.names(fData(cds)),,drop=FALSE]
+
+    # Convert gene short names to rownames if necessary. The more
+    # straightforward single call to recode took much longer.
+    # Thanks to Christopher Johnstone who posted this on github.
+    short_name_mask <- gene_group_df[[1]] %in% fData(cds)$gene_short_name
+    if (any(short_name_mask)) {
+      geneids <- as.character(gene_group_df[[1]])
+      geneids[short_name_mask] <- row.names(fData(cds))[match(
+                  geneids[short_name_mask], fData(cds)$gene_short_name)]
+      gene_group_df[[1]] <- geneids
+    }
+
     # gene_group_df = gene_group_df[row.names(fData(cds)),]
 
     # FIXME: this should allow genes to be part of multiple groups. group_by
@@ -192,7 +214,7 @@ aggregate_gene_expression <- function(cds,
     agg_mat = as.matrix(my.aggregate.Matrix(agg_mat[gene_group_df[,1],],
                                             as.factor(gene_group_df[,2]),
                                             fun="sum"))
-    if (scale_agg_values){
+	if (scale_agg_values){
       agg_mat <- t(scale(t(agg_mat)))
       agg_mat[agg_mat < min_agg_value] <- min_agg_value
       agg_mat[agg_mat > max_agg_value] <- max_agg_value
@@ -201,18 +223,18 @@ aggregate_gene_expression <- function(cds,
 
   if (is.null(cell_group_df) == FALSE){
 
-    cell_group_df = as.data.frame(cell_group_df)
-    cell_group_df = cell_group_df[cell_group_df[,1] %in% row.names(pData(cds)),,
+    cell_group_df <- as.data.frame(cell_group_df)
+    cell_group_df <- cell_group_df[cell_group_df[,1] %in% row.names(pData(cds)),,
                                   drop=FALSE]
-    agg_mat = agg_mat[,cell_group_df[,1]]
-    agg_mat = my.aggregate.Matrix(Matrix::t(agg_mat),
-                                             as.factor(cell_group_df[,2]),
+    agg_mat <- agg_mat[,cell_group_df[,1]]
+    agg_mat <- my.aggregate.Matrix(Matrix::t(agg_mat),
+                                  as.factor(cell_group_df[,2]),
                                   fun="mean")
-    agg_mat = Matrix::t(agg_mat)
+    agg_mat <- Matrix::t(agg_mat)
   }
 
   if (exclude.na){
-    agg_mat = agg_mat[row.names(agg_mat) != "NA", colnames(agg_mat) != "NA"]
+    agg_mat <- agg_mat[rownames(agg_mat) != "NA", colnames(agg_mat) != "NA",drop=FALSE]
   }
   return(agg_mat)
 }
