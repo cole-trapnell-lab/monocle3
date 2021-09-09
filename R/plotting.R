@@ -99,7 +99,11 @@ plot_cells_3d <- function(cds,
     message("No trajectory to plot. Has learn_graph() been called yet?")
     show_trajectory_graph = FALSE
   }
-
+	
+  if (class(cds@colData[,color_cells_by])=="character") {
+    cds@colData[,color_cells_by] = factor(cds@colData[,color_cells_by])
+  }	
+	
   gene_short_name <- NA
   sample_name <- NA
 
