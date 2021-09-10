@@ -241,7 +241,7 @@ plot_cells_3d <- function(cds,
         if(is.null(color_palette)) {
           N <- length(unique(data_df$cell_color))
           if(N > 8){
-            color_palette <- colorRampPalette(RColorBrewer::brewer.pal(N, "Set2"))(14)
+            color_palette <- colorRampPalette(RColorBrewer::brewer.pal(8, "Set2"))(N)
           } else {
             color_palette <- RColorBrewer::brewer.pal(N, "Set2")
           }
