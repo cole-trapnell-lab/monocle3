@@ -17,7 +17,7 @@
 #'
 #' @export
 #'
-preprocess_transform <- function(cds, reduction_method=c('PCA'), block_size=NULL, cores=1) {
+preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_size=NULL, cores=1) {
   #
   # Need to add processing for LSI. TF-IDF transform etc.
   #
@@ -26,7 +26,7 @@ preprocess_transform <- function(cds, reduction_method=c('PCA'), block_size=NULL
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
-    msg = "reduction_method must be 'PCA'")
+    msg = "reduction_method must be 'PCA' or 'LSI'")
 
   reduction_method <- match.arg(reduction_method)
 
@@ -46,51 +46,150 @@ preprocess_transform <- function(cds, reduction_method=c('PCA'), block_size=NULL
   }
 
   set.seed(2016)
-  norm_method <- cds@reduce_dim_aux[[reduction_method]][['model']][['norm_method']]
-  pseudo_count <- cds@reduce_dim_aux[[reduction_method]][['model']][['pseudo_count']]
-  rotation_matrix <- cds@reduce_dim_aux[[reduction_method]][['model']]$svd_v
-  vcenter <- cds@reduce_dim_aux[[reduction_method]][['model']]$svd_center
-  vscale <- cds@reduce_dim_aux[[reduction_method]][['model']]$svd_scale
 
-  FM <- normalize_expr_data(cds, norm_method=norm_method, pseudo_count=pseudo_count)
-  if (nrow(FM) == 0) {
-    stop("Error: all rows have standard deviation zero")
+  if(reduction_method == 'PCA') {
+    norm_method <- cds@reduce_dim_aux[[reduction_method]][['model']][['norm_method']]
+    pseudo_count <- cds@reduce_dim_aux[[reduction_method]][['model']][['pseudo_count']]
+    rotation_matrix <- cds@reduce_dim_aux[[reduction_method]][['model']]$svd_v
+    vcenter <- cds@reduce_dim_aux[[reduction_method]][['model']]$svd_center
+    vscale <- cds@reduce_dim_aux[[reduction_method]][['model']]$svd_scale
+  
+    FM <- normalize_expr_data(cds, norm_method=norm_method, pseudo_count=pseudo_count)
+    if (nrow(FM) == 0) {
+      stop("Error: all rows have standard deviation zero")
+    }
+  
+    # Don't select matrix rows by use_genes because intersect() does
+    # it implicitly through the rotation matrix.
+  
+    fm_rowsums = Matrix::rowSums(FM)
+    FM <- FM[is.finite(fm_rowsums) & fm_rowsums != 0, ]
+    
+    # Thank you Maddy.
+    intersect_genes <- intersect(rownames(rotation_matrix), rownames(FM))
+    intersect_indices <- match(intersect_genes, rownames(rotation_matrix))
+
+    if(any(is.na(intersect_indices))) {
+      stop('gene sets differ: genes in the subject matrix are not in the reference matrix')
+    }
+
+    if((length(intersect_indices)/length(rownames(FM))) < 0.5) {
+      warning('fewer than half the genes in the subject matrix are also in the reference matrix: are the matrices prepared using the same gene set?')
+    } 
+
+    # [intersect_genes,] orders FM rows by intersect_genes
+    FM <- FM[intersect_genes,]
+    
+    xt <- Matrix::t(FM)
+    xtda <- DelayedArray::DelayedArray(xt)
+  
+    vcenter <- vcenter[intersect_indices]
+    vscale <- vscale[intersect_indices]
+  
+    xtdasc <- t(xtda) - vcenter
+    xtdasc <- t(xtdasc / vscale)
+  
+    irlba_res <- list()
+  
+  #  irlba_res$x <- xtdasc %*% rotation_matrix[intersect_indices,]
+    irlba_res$x <- matrix_multiply_multicore(mat_a=xtdasc,
+                                           mat_b=rotation_matrix[intersect_indices,],
+                                           cores)
+  
+    irlba_res$x <- as.matrix(irlba_res$x)
+    class(irlba_res) <- c('irlba_prcomp', 'prcomp')
+  
+    # 'reference' gene names are in the cds@preproc
+    reducedDims(cds)[[reduction_method]] <- irlba_res$x
+
   }
+  else if(reduction_method == 'LSI') {
+    norm_method <- cds@reduce_dim_aux[[reduction_method]][['model']][['norm_method']]
+    pseudo_count <- cds@reduce_dim_aux[[reduction_method]][['model']][['pseudo_count']]
+    rotation_matrix <- cds@reduce_dim_aux[[reduction_method]][['model']][['svd_v']]
+    log_scale_tf <- cds@reduce_dim_aux[[reduction_method]][['model']][['log_scale_tf']]
+    frequencies <- cds@reduce_dim_aux[[reduction_method]][['model']][['frequencies']]
+    scale_factor <- cds@reduce_dim_aux[[reduction_method]][['model']][['scale_factor']]
+    col_sums <- cds@reduce_dim_aux[[reduction_method]][['model']][['col_sums']]
+    row_sums <- cds@reduce_dim_aux[[reduction_method]][['model']][['row_sums']]
+    num_cols <- cds@reduce_dim_aux[[reduction_method]][['model']][['num_cols']]
 
-  # Don't select matrix rows by use_genes because intersect() does
-  # it implicitly through the rotation matrix.
+    FM <- normalize_expr_data(cds, norm_method=norm_method, pseudo_count=pseudo_count)
+    if (nrow(FM) == 0) {
+      stop("Error: all rows have standard deviation zero")
+    }
+ 
+    fm_rowsums = Matrix::rowSums(FM)
+    FM <- FM[is.finite(fm_rowsums) & fm_rowsums != 0, ]
+   
+    intersect_features <- intersect(rownames(rotation_matrix), rownames(FM))
+    intersect_indices <- match(intersect_features, rownames(rotation_matrix))
 
-  fm_rowsums = Matrix::rowSums(FM)
-  FM <- FM[is.finite(fm_rowsums) & fm_rowsums != 0, ]
+    if(any(is.na(intersect_indices))) {
+      stop('feature sets differ: features in the subject matrix are not in the reference matrix')
+    }
+
+    if((length(intersect_indices)/length(rownames(FM))) < 0.5) {
+      warning('fewer than half the features in the subject matrix are also in the reference matrix: are the matrices prepared using the same feature set?')
+    }
+
+    # [intersect_features,] orders FM rows by intersect_features
+    FM <- FM[intersect_features,]
+
+    # Andrew's tfidf with modifications
+    if (frequencies) {
+      # "term frequency" method
+      tf <- Matrix::t(Matrix::t(FM) / Matrix::colSums(FM))
+    } else {
+      # "raw count" method
+      tf <- FM
+    }
+
+    # Either TF method can optionally be log scaled
+    if (log_scale_tf) {
+      if (frequencies) {
+        tf@x = log1p(tf@x * scale_factor)
+      } else {
+        tf@x = log1p(tf@x * 1)
+      }
+    }
+
+    idf <- log(1 + num_cols / row_sums)
+    idf <- idf[intersect_indices]
+
+    tf_idf_counts = tryCatch({
+      tf_idf_counts = tf * idf
+    }, error = function(e) {
+      print(paste("TF*IDF multiplication too large for in-memory, falling back",
+                  "on DelayedArray."))
+      options(DelayedArray.block.size=block_size)
+      DelayedArray:::set_verbose_block_processing(TRUE)
   
-  # Thank you Maddy.
-  intersect_genes <- intersect(rownames(rotation_matrix), rownames(FM))
-  intersect_indices <- match(intersect_genes, rownames(rotation_matrix))
-
-  # [intersect_genes,] orders FM rows by intersect_genes
-  FM <- FM[intersect_genes,]
+      tf = DelayedArray::DelayedArray(tf)
+      idf = as.matrix(idf)
   
-  xt <- Matrix::t(FM)
-  xtda <- DelayedArray::DelayedArray(xt)
+      tf_idf_counts = tf * idf
+    })
 
-  vcenter <- vcenter[intersect_indices]
-  vscale <- vscale[intersect_indices]
+    rownames(tf_idf_counts) = rownames(FM)
+    colnames(tf_idf_counts) = colnames(FM)
+    tf_idf_counts = methods::as(tf_idf_counts, "sparseMatrix")
 
-  xtdasc <- t(xtda) - vcenter
-  xtdasc <- t(xtdasc / vscale)
+    xt <- Matrix::t(tf_idf_counts)
+    xtda <- DelayedArray::DelayedArray(xt)
 
-  irlba_res <- list()
+    irlba_res <- list()
 
-#  irlba_res$x <- xtdasc %*% rotation_matrix[intersect_indices,]
-  irlba_res$x <- matrix_multiply_multicore(mat_a=xtdasc,
-                                         mat_b=rotation_matrix[intersect_indices,],
-                                         cores)
+    irlba_res$x <- matrix_multiply_multicore(mat_a=xtda,
+                                           mat_b=rotation_matrix[intersect_indices,],
+                                           cores)
+    irlba_res$x <- as.matrix(irlba_res$x)
+    class(irlba_res) <- c('irlba_prcomp', 'prcomp')
 
-  irlba_res$x <- as.matrix(irlba_res$x)
-  class(irlba_res) <- c('irlba_prcomp', 'prcomp')
+    # 'reference' gene names are in the cds@preproc
+    reducedDims(cds)[[reduction_method]] <- irlba_res$x
 
-  # 'reference' gene names are in the cds@preproc
-  reducedDims(cds)[[reduction_method]] <- irlba_res$x
+  }
 
   if(!is.null(block_size)) {
     DelayedArray::setAutoBlockSize(block_size0)
@@ -156,7 +255,7 @@ align_transform <- function(cds, reduction_method=c('Aligned')) {
                                     " Please preprocess the matrix before",
                                     " calling align_transform using preprocess_transform."))
 
-#  stop('This function is a place holder. It does not map the transformed count matrix to aligned space at this time because I don\'t know how to make it do so.')
+  stop('This function is a place holder. It does not map the transformed count matrix to aligned space at this time because I don\'t know how to make it do so.')
 
   set.seed(2016)
   alignment_group <- cds@reduce_dim_aux[['Aligned']][['model']][['alignment_group']]

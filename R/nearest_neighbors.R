@@ -924,7 +924,7 @@ count_nn_missing_self_index <- function(nn_res) {
     if(vidx[[1]] != irow) {
       dself <- FALSE
       dzero <- TRUE
-      for(i in 1:len) {
+      for(i in seq(1, len, 1)) {
         if(vidx[[i]] == irow) {
           dself = TRUE
           break
@@ -992,7 +992,7 @@ swap_nn_row_index_point <- function(nn_res, verbose=FALSE) {
         vidx[[1]] <- irow
       } else {
         match <- FALSE
-        for(i in 2:length(vidx)) {
+        for(i in seq(2, length(vidx), 1)) {
           if(vidx[[i]] == irow) {
             vidx[[i]] <- vidx[[1]]
             vidx[[1]] <- irow

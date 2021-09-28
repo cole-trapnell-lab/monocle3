@@ -162,7 +162,10 @@ preprocess_cds <- function(cds,
     cds <- initialize_reduce_dim_metadata(cds, 'LSI')
     cds <- initialize_reduce_dim_aux_model(cds, 'LSI')
 
-    preproc_res <- tfidf(FM)
+#    preproc_res <- tfidf(FM)
+    tfidf_res <- tfidf(FM)
+    preproc_res <- tfidf_res[['tf_idf_counts']]
+
     num_col <- ncol(preproc_res)
     irlba_res <- irlba::irlba(Matrix::t(preproc_res),
                               nv = min(num_dim,min(dim(FM)) - 1))
@@ -177,6 +180,12 @@ preprocess_cds <- function(cds,
     cds@reduce_dim_aux[['LSI']][['model']][['norm_method']] <- norm_method
     cds@reduce_dim_aux[['LSI']][['model']][['use_genes']] <- use_genes
     cds@reduce_dim_aux[['LSI']][['model']][['pseudo_count']] <- pseudo_count
+    cds@reduce_dim_aux[['LSI']][['model']][['log_scale_tf']] <- tfidf_res[['log_scale_tf']]
+    cds@reduce_dim_aux[['LSI']][['model']][['frequencies']] <- tfidf_res[['frequencies']]
+    cds@reduce_dim_aux[['LSI']][['model']][['scale_factor']] <- tfidf_res[['scale_factor']]
+    cds@reduce_dim_aux[['LSI']][['model']][['col_sums']] <- tfidf_res[['col_sums']]
+    cds@reduce_dim_aux[['LSI']][['model']][['row_sums']] <- tfidf_res[['row_sums']]
+    cds@reduce_dim_aux[['LSI']][['model']][['num_cols']] <- tfidf_res[['num_cols']]
     cds@reduce_dim_aux[['LSI']][['model']][['svd_v']] <- irlba_rotation
     cds@reduce_dim_aux[['LSI']][['model']][['svd_sdev']] <- irlba_res$d/sqrt(max(1, num_col - 1))
     # we need svd_v downstream so
@@ -254,9 +263,11 @@ tfidf <- function(count_matrix, frequencies=TRUE, log_scale_tf=TRUE,
   # Use either raw counts or divide by total counts in each cell
   if (frequencies) {
     # "term frequency" method
-    tf <- Matrix::t(Matrix::t(count_matrix) / Matrix::colSums(count_matrix))
+    col_sums <- Matrix::colSums(count_matrix)
+    tf <- Matrix::t(Matrix::t(count_matrix) / col_sums)
   } else {
     # "raw count" method
+    col_sums <- NA
     tf <- count_matrix
   }
 
@@ -270,7 +281,9 @@ tfidf <- function(count_matrix, frequencies=TRUE, log_scale_tf=TRUE,
   }
 
   # IDF w/ "inverse document frequency smooth" method
-  idf = log(1 + ncol(count_matrix) / Matrix::rowSums(count_matrix > 0))
+  num_cols <- ncol(count_matrix)
+  row_sums <- Matrix::rowSums(count_matrix > 0)
+  idf = log(1 + num_cols / row_sums)
 
   # Try to just to the multiplication and fall back on delayed array
   # TODO hopefully this actually falls back and not get jobs killed in SGE
@@ -293,5 +306,7 @@ tfidf <- function(count_matrix, frequencies=TRUE, log_scale_tf=TRUE,
   rownames(tf_idf_counts) = rownames(count_matrix)
   colnames(tf_idf_counts) = colnames(count_matrix)
   tf_idf_counts = methods::as(tf_idf_counts, "sparseMatrix")
-  return(tf_idf_counts)
+  return(list(tf_idf_counts=tf_idf_counts, frequencies=frequencies, log_scale_tf=log_scale_tf, scale_factor=scale_factor, col_sums=col_sums, row_sums=row_sums, num_cols=num_cols))
 }
+
+

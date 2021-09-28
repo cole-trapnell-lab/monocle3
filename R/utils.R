@@ -597,7 +597,7 @@ combine_cds <- function(cds_list,
                "must be FALSE."))
   }
   all_cells <- unique(all_cells)
-  for(i in 1:length(cds_list)) {
+  for(i in seq(1, length(cds_list), 1)) {
     pd <- as.data.frame(pData(cds_list[[i]]))
     exp <- exprs(cds_list[[i]])
     exp <- exp[intersect(row.names(exp), gene_list),, drop=FALSE]
@@ -688,7 +688,7 @@ combine_cds <- function(cds_list,
   if(keep_reduced_dims) {
     for(red_dim in names(reducedDims(cds_list[[1]]))) {
       reduced_dims_list <- list()
-      for(j in 1:length(cds_list)) {
+      for(j in seq(1, length(cds_list), 1)) {
         reduced_dims_list[[j]] <- reducedDims(cds_list[[j]])[[red_dim]]
       }
       reducedDims(new_cds)[[red_dim]] <- do.call(rbind, reduced_dims_list, quote=FALSE)
@@ -954,7 +954,7 @@ get_call_stack <- function ()
   n <- lcv - 1
 
   ocv <- vector()
-  for(i in seq(1,n)) {
+  for(i in seq(1,n,1)) {
     elem <- stringr::str_split(as.character(cv[i]), '[(]', n=2)[[1]][[1]]
     ocv <- c(ocv, elem)
   }

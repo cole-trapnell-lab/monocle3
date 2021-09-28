@@ -400,7 +400,7 @@ save_umap_nn_indexes <- function(umap_model, file_name) {
   } else {
     warning('save_umap_nn_indexes is untested with more than one umap metric')
     md5sum_vec <- character()
-    for(i in 1:n_metrics) {
+    for(i in seq(1, n_metrics, 1)) {
       file_name_expand <- paste0(file_name, i)
       save_annoy_index(umap_model[['nn_index']][[i]], file_name_expand)
       md5sum <- tools::md5sum(file_name_expand)
@@ -430,7 +430,7 @@ load_umap_nn_indexes <- function(umap_model, file_name, md5sum_umap_index) {
     if(!is.null(md5sum_umap_index)) {
       md5sum_vec <- unlist(strsplit(md5sum_umap_index, '_', fixed=TRUE))
     }
-    for(i in 1:n_metrics) {
+    for(i in seq(1, n_metrics, 1)) {
       file_name_expand <- paste0(file_name, i)
       md5sum <- tools::md5sum(file_name_expand)
       if(!is.null(md5sum_umap_index) && md5sum != md5sum_vec[[i]]) {
