@@ -47,6 +47,7 @@ Imports:
     irlba (>= 2.3.3),
     leidenbase,
     limma (>= 3.38.3),
+    lme4,
     lmtest (>= 0.9-36),
     MASS (>= 7.3-51.4),
     Matrix (>= 1.2-17),
