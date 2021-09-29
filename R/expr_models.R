@@ -281,7 +281,7 @@ fit_models <- function(cds,
   #     which causes model.frame( model_formula, ...) to fail
   #  o  model.frame catches mis-spelled functions
   err_msg <- NULL
-  mf_terms <- all.vars(model_form)
+  mf_terms <- all.vars(lme4::subbars(model_form))
   for( mf_term in mf_terms )
   {
     if(!( mf_term %in% names(coldata_df)))
@@ -293,9 +293,7 @@ fit_models <- function(cds,
   if(length(err_msg) > 0)
     stop( '\n-- bad fit_models terms --\n', err_msg )
   tryCatch({
-    modelFixedForm = stats::as.formula(paste0("~", paste(mf_terms, collapse = " + ")))
-    stats::model.frame(modelFixedForm, data=coldata_df)
-    #stats::model.frame(model_form, data=coldata_df)
+    stats::model.frame(lme4::subbars(model_form), data=coldata_df)
   }, error = function( cnd ) {
     info_msg <- ''
     for( mf_term in mf_terms )
