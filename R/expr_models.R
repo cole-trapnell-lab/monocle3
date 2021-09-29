@@ -125,7 +125,7 @@ clean_model_object = function(model) {
     model = clean_mass_model_object(model)
   } else if (length(intersect(class(model), c("speedglm"))) >= 1) {
     model = clean_speedglm_model_object(model)
-  } else if (class(model) == "zeroinfl"){
+  } else if (class(model)[1] == "zeroinfl"){
     model = clean_zeroinfl_model_object(model)
   } else if (class(model)[1] == "glmerMod") {
     model = clean_glmerMod_model_object(model) 
@@ -209,7 +209,7 @@ fit_model_helper <- function(x,
     FM_summary = summary(FM_fit)
     if (clean_model){
       FM_fit = clean_model_object(FM_fit) 
-      if (class(FM_fit) == "glmerMod"){
+      if (class(FM_fit)[1] == "glmerMod"){
         FM_summary = clean_glmerMod_summary_object(FM_summary)
       }
     }
@@ -369,7 +369,7 @@ extract_model_status_helper <- function(model){
   } else if (class(model)[1] == "negbin"){
     status_str <- ifelse(model$converged, "OK", "FAIL")
     return (status_str)
-  } else if (class(model) == "zeroinfl"){
+  } else if (class(model)[1] == "zeroinfl"){
     status_str <- ifelse(model$converged, "OK", "FAIL")
     return (status_str)
   }else if (class(model)[1] == "glmerMod"){
@@ -424,7 +424,7 @@ extract_coefficient_helper = function(model, model_summary,
     
     coef_mat$model_component = "count"
     return (coef_mat)
-  } else if (class(model) == "zeroinfl"){
+  } else if (class(model)[1] == "zeroinfl"){
     count_coef_mat = model_summary$coefficients$count # first row is intercept
     colnames(count_coef_mat) = c('estimate',
                                  'std_err',
@@ -451,7 +451,7 @@ extract_coefficient_helper = function(model, model_summary,
     zero_coef_mat$model_component = "zero"
     coef_mat = dplyr::bind_rows(count_coef_mat, zero_coef_mat)
     return (coef_mat)
-  } else if (class(model) == "glmerMod"){
+  } else if (class(model)[1] == "glmerMod"){
     
     coef_mat = model_summary$coefficients # first row is intercept
     # We need this because some summary methods "format" the coefficients into
