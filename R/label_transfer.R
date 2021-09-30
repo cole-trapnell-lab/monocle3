@@ -3,7 +3,7 @@
 # Purpose: return the most frequently occurring cell label.
 # Parameters:
 #   x  list of cell labels.
-which_mode <- function(x, top_threshold=0.5, top_over_second_threshold=1.5) {
+which_mode <- function(x, top_threshold=0.5, top_two_ratio_threshold=1.5) {
   # Make a contigency table of cell labels sorted from
   # most to least frequently occurring.
   ta <- sort(table(x), decreasing=TRUE)
@@ -12,7 +12,7 @@ which_mode <- function(x, top_threshold=0.5, top_over_second_threshold=1.5) {
   top_to_second <- dplyr::nth(ta, 1)/dplyr::nth(ta, 2)
   if (freq > top_threshold)
     mod <- names(ta)[ta == tam]
-  else if (top_to_second >= top_over_second_threshold)
+  else if (top_to_second >= top_two_ratio_threshold)
     mod <- names(ta)[ta == tam]
   else
     mod <- NA_character_
@@ -23,26 +23,26 @@ which_mode <- function(x, top_threshold=0.5, top_over_second_threshold=1.5) {
 # Purpose: get cell labels of nearest neighbor cells for discrete values.
 # Called by: transfer_cell_labels
 # Calls: which_mode
-get_nn_cell_label <- function(query_data, query_search, ref_colData_df, cell_label_type, top_threshold=0.5, top_over_second_threshold=1.5) {
+get_nn_cell_label <- function(query_data, query_search, ref_colData, transfer_cell_label, top_threshold=0.5, top_two_ratio_threshold=1.5) {
   # Loop through the query cells.
   query_nns <- sapply(seq(1, nrow(query_data)), function(i) {
     # Get labels of neighboring cells in reference space.
     ref_neighbors <- query_search[['idx']][i,]
     # Get corresponding cell labels.
-    ref_labels <- ref_colData_df[ref_neighbors, cell_label_type]
+    ref_labels <- ref_colData[ref_neighbors, transfer_cell_label]
     # Find modal cell label over a threshold.
-    top_label <- which_mode(ref_labels, top_threshold=top_threshold, top_over_second_threshold=top_over_second_threshold)
+    top_label <- which_mode(x=ref_labels, top_threshold=top_threshold, top_two_ratio_threshold=top_two_ratio_threshold)
   })
 }
 
 
 # Purpose: get means from nearest neighbor cells for continuous values.
-get_nn_means <- function(query_data, query_search, ref_colData_df, cell_label_type) {
+get_nn_means <- function(query_data, query_search, ref_colData, transfer_cell_label) {
   query_nns <- sapply(seq(1, nrow(query_data)), function(i) {
     # Get labels of neighboring cells in reference space.
     ref_neighbors <- query_search[['idx']][i,]
     # Get corresponding reference cell label.
-    ref_labels <- ref_colData_df[ref_neighbors, cell_label_type]
+    ref_labels <- ref_colData[ref_neighbors, transfer_cell_label]
     # Find the modal cell label.
     top_label <- mean(ref_labels, na.rm=TRUE)
   })
@@ -62,16 +62,16 @@ get_nn_means <- function(query_data, query_search, ref_colData_df, cell_label_ty
 #   o  the reference annoy index is searched for (reference cell)
 #      nn's to the query data set cells
 #   o  test the ref_colData for the required columns
-#   o  the cell_label_type value must be in the colnames(colData(cds)).
+#   o  the transfer_cell_label value must be in the colnames(colData(cds)).
 transfer_cell_labels <- function(cds,
-                                 reduction_method=c('UMAP', 'PCA'),
+                                 reduction_method=c('UMAP', 'PCA', 'LSI'),
                                  in_model_dir,
                                  ref_colData,
-                                 cell_label_type,
+                                 transfer_cell_label,
                                  k=10,
                                  nn_control,
                                  top_threshold=0.5,
-                                 top_over_second_threshold=1.5,
+                                 top_two_ratio_threshold=1.5,
                                  verbose=FALSE) {
 
   assertthat::assert_that(class(cds) == 'cell_data_set',
@@ -79,35 +79,35 @@ transfer_cell_labels <- function(cds,
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
-    msg = "reduction_method must be 'UMAP' or 'PCA'")
-  assertthat::assert_that(cell_label_type %in% colnames(ref_colData_df),
-                          msg=paste0('cell_label_type \'', cell_label_type, '\' is not in the ref_colData'))
+    msg = "reduction_method must be 'UMAP', 'PCA', or 'LSI'")
 
   assertthat::assert_that(assertthat::is.count(k))
 
-  nn_control <- set_nn_control(nn_control=nn_control, k=k, method_default='annoy', verbose)
-
   assertthat::assert_that(is.double(top_threshold),
                           msg=paste0('top_threshold value is not numeric'))
-  assertthat::assert_that(is.double(top_over_second_threshold),
-                          msg=paste0('top_over_second_threshold value is not numeric'))
+  assertthat::assert_that(is.double(top_two_ratio_threshold),
+                          msg=paste0('top_two_ratio_threshold value is not numeric'))
   reduction_method <- match.arg(reduction_method)
 
-  ref_colData_df <- ref_colData
-  if(!is.data.frame(ref_colData_df)) {
-    ref_colData_df <- as.data.frame(ref_colData_df)
+  if(!is.data.frame(ref_colData)) {
+    ref_colData <- as.data.frame(ref_colData)
   }
 
-  # Are the cell_label_type values discrete?
-  label_data_are_discrete <- !is.double(colData(ref_colData_df[[cell_label_type]])[1])
+  assertthat::assert_that(transfer_cell_label %in% colnames(ref_colData),
+                          msg=paste0('transfer_cell_label \'', transfer_cell_label, '\' is not in the ref_colData'))
+
+  nn_control <- set_nn_control(nn_control=nn_control, k=k, method_default='annoy', verbose)
+
+  # Are the transfer_cell_label values discrete?
+  label_data_are_discrete <- !is.double(colData(ref_colData[[transfer_cell_label]])[1])
 
   # Load the reference projection models and nn indexes
   # into the query cds.
-  cds <- load_transform_models(cds, in_model_dir)
+  cds <- load_transform_models(cds=cds, directory_path=in_model_dir)
   assertthat::assert_that(!is.null(cds@reduce_dim_aux[[reduction_method]]),
                           msg=paste0("Reduction Method '", reduction_method, "' is not in the",
                                     "loaded model object."))
-  colData(cds)[[cell_label_type]] <- NULL
+  colData(cds)[[transfer_cell_label]] <- NULL
 
   # Search the reference reduction_method space for nearest neighbors
   # to the query cells.
@@ -116,27 +116,27 @@ transfer_cell_labels <- function(cds,
   # The cds@reduce_dim_aux[[reduction_method]] contains the reduction_method
   # coordinates for the reference data set, which were
   # loaded using load_transform_models() above.
-  cds_res <- search_nn_index(query_matrix=reducedDims(cds)[[reduction_method]],
-                             get_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_control=nn_control, verbose=verbose),
+  cds_reduced_dims <- reducedDims(cds)[[reduction_method]]
+  cds_nn_index <- get_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_control=nn_control, verbose=verbose)
+  cds_res <- search_nn_index(query_matrix=cds_reduced_dims, nn_index=cds_nn_index,
                              k=k, nn_control=nn_control, verbose=verbose)
  
   # Get the best reference cell label for the query cells.
-  cds_reduced_dims <- reducedDims(cds)[[reduction_method]]
   if(label_data_are_discrete) {
-    nn_labels <- get_nn_cell_label(cds_reduced_dims, 
-                                   cds_res, 
-                                   ref_colData_df, 
-                                   cell_label_type=cell_label_type,
+    nn_labels <- get_nn_cell_label(query_data=cds_reduced_dims, 
+                                   query_search=cds_res, 
+                                   ref_colData=ref_colData, 
+                                   transfer_cell_label=transfer_cell_label,
                                    top_threshold=top_threshold,
-                                   top_over_second_threshold=top_over_second_threshold)
+                                   top_two_ratio_threshold=top_two_ratio_threshold)
   } else {
-    nn_labels <- get_nn_means(cds_reduced_dims,
-                              cds_res,
-                              ref_colData_df,
-                              cell_label_type=cell_label_type)
+    nn_labels <- get_nn_means(query_data=cds_reduced_dims,
+                              query_search=cds_res,
+                              ref_colData=ref_colData,
+                              transfer_cell_label=transfer_cell_label)
   }
   
-  colData(cds)[[cell_label_type]] <- nn_labels
+  colData(cds)[[transfer_cell_label]] <- nn_labels
 
   return(cds)
 }
@@ -144,11 +144,11 @@ transfer_cell_labels <- function(cds,
 
 # fill in NAs ----------------------------------------------------------------
 
-edit_cell_label <- function(curr_label, other_labels, top_threshold=0.5, top_over_second_threshold=1.5) {
+edit_cell_label <- function(curr_label, other_labels, top_threshold=0.5, top_two_ratio_threshold=1.5) {
   # Change NAs to strings.
   curr_label <- replace_na(curr_label, "NA")
   other_labels <- replace_na(other_labels, "NA")
-  top_label <- which_mode(other_labels, top_threshold, top_over_second_threshold)
+  top_label <- which_mode(x=other_labels, top_threshold=top_threshold, top_two_ratio_threshold=top_two_ratio_threshold)
   
   # Switch back if necessary.
   top_label <- gsub("NA", NA_character_, top_label)
@@ -160,16 +160,14 @@ edit_cell_label <- function(curr_label, other_labels, top_threshold=0.5, top_ove
 edit_query_cell_labels <- function(preproc_res,
                                    query_colData,
                                    query_nn_index,
-                                   cell_label_type,
+                                   transfer_cell_label,
                                    k=10,
                                    nn_control=nn_control,
                                    top_threshold=0.5,
-                                   top_over_second_threshold=1.5) {
-
-  nn_method <- nn_control[['method']]
+                                   top_two_ratio_threshold=1.5) {
 
   query_search <- search_nn_index(query_matrix=preproc_res,
-                                  query_nn_index,
+                                  nn_index=query_nn_index,
                                   k=k+1,
                                   nn_control=nn_control,
                                   verbose=verbose)
@@ -178,70 +176,67 @@ edit_query_cell_labels <- function(preproc_res,
     # Get neighbors in reference space.
     query_neighbors <- query_search[['idx']][i,]
     # Get corresponding reference cell label.
-    query_labels <- query_colData[query_neighbors, cell_label_type]
+    query_labels <- query_colData[query_neighbors, transfer_cell_label]
     curr_label <- query_labels[1]
     other_labels <- query_labels[2:k]
     top_label <- edit_cell_label(curr_label=curr_label,
                                  other_labels=other_labels,
                                  top_threshold=top_threshold,
-                                 top_over_second_threshold=top_over_second_threshold)
+                                 top_two_ratio_threshold=top_two_ratio_threshold)
   })
 }
 
 
 # Purpose: replace missing cell labels.
 # Notes:
-#   the cell_label_type value must be in the colnames(colData(cds)).
+#   the transfer_cell_label value must be in the colnames(colData(cds)).
 #' export
 fix_missing_cell_labels <- function(cds,
-                                    reduction_method=c('UMAP', 'PCA'),
+                                    reduction_method=c('UMAP', 'PCA', 'LSI'),
                                     out_notna_model_dir=NULL,
-                                    cell_label_type=NULL,
+                                    transfer_cell_label=NULL,
                                     k=10,
                                     nn_control=nn_control,
                                     top_threshold=0.5,
-                                    top_over_second_threshold=1.5,
+                                    top_two_ratio_threshold=1.5,
                                     verbose=FALSE) {
-
-  nn_control <- set_nn_control(nn_control=nn_control, k=k, method_default='annoy', verbose=verbose)
-  nn_method <- nn_control[['method']]
 
   assertthat::assert_that(class(cds) == 'cell_data_set',
                           msg=paste('cds parameter is not a cell_data_set'))
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
-    msg = "reduction_method must be 'UMAP' or 'PCA'")
+    msg = "reduction_method must be 'UMAP', 'PCA', or 'LSI'")
   assertthat::assert_that(!is.null(cds@reduce_dim_aux[[reduction_method]]),
                           msg=paste0("Reduction method '", reduction_method, "' is not in the cds."))
   reduction_method <- match.arg(reduction_method)
-  assertthat::assert_that(cell_label_type %in% colnames(colData(cds)),
-                          msg=paste0('cell_label_type \'', cell_label_type, '\' is not in the cds colData'))
+  assertthat::assert_that(transfer_cell_label %in% colnames(colData(cds)),
+                          msg=paste0('transfer_cell_label \'', transfer_cell_label, '\' is not in the cds colData'))
 
   nn_control <- set_nn_control(nn_control=nn_control, k=k, method_default='annoy', verbose)
 
-  na_cds <- cds[, is.na(colData(cds)[[cell_label_type]])]
+  # Partition cds.
+  notna_cds <- cds[, !is.na(colData(cds)[[transfer_cell_label]])]
   
-  # Build on rest of cds, where there is a label.
-  notna_cds <- cds[, !is.na(colData(cds)[[cell_label_type]])]
-
-  notna_nn_index <- make_nn_index(subject_matrix=reducedDims(cds)[[reduction_method]],
+  # Build index on not NA cds, where there is a label.
+  notna_nn_index <- make_nn_index(subject_matrix=reducedDims(notna_cds)[[reduction_method]],
                                   nn_control=nn_control,
                                   verbose=verbose)
   notna_colData <- as.data.frame(colData(notna_cds))
 
   if(!is.null(out_notna_model_dir)) {
-    save_transform_models(notna_cds, out_notna_model_dir)
+    save_transform_models(cds=notna_cds, directory_path=out_notna_model_dir)
   }
   
+  na_cds <- cds[, is.na(colData(cds)[[transfer_cell_label]])]
   new_cell_labels <- edit_query_cell_labels(preproc_res=reducedDims(na_cds)[[reduction_method]],
                                             query_colData=notna_colData, 
                                             query_nn_index=notna_nn_index, 
-                                            cell_label_type=cell_label_type,
+                                            transfer_cell_label=transfer_cell_label,
                                             k=k,
                                             nn_control=nn_control,
                                             top_threshold=top_threshold,
-                                            top_over_second_threshold=top_over_second_threshold)
+                                            top_two_ratio_threshold=top_two_ratio_threshold)
   
   return(new_cell_labels)
 }
