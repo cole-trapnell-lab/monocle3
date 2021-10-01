@@ -3,17 +3,39 @@
 # Purpose: return the most frequently occurring cell label.
 # Parameters:
 #   x  list of cell labels.
+# which_mode <- function(x, top_threshold=0.5, top_two_ratio_threshold=1.5) {
+#   # Make a contigency table of cell labels sorted from
+#   # most to least frequently occurring.
+#   ta <- sort(table(x), decreasing=TRUE)
+#   tam <- dplyr::first(ta)
+#   freq <- tam / length(x)
+#   top_to_second <- dplyr::nth(ta, 1) / dplyr::nth(ta, 2)
+#   if(freq > top_threshold)
+#     mod <- names(ta)[ta == tam]
+#   else
+#   if(top_to_second >= top_two_ratio_threshold)
+#     mod <- names(ta)[ta == tam]
+#   else
+#     mod <- NA_character_
+#   return(mod)
+# }
+
+
+# Purpose: return the most frequently occurring cell label.
+# Parameters:
+#   x  list of cell labels.
 which_mode <- function(x, top_threshold=0.5, top_two_ratio_threshold=1.5) {
   # Make a contigency table of cell labels sorted from
   # most to least frequently occurring.
   ta <- sort(table(x), decreasing=TRUE)
-  tam <- dplyr::first(ta)
-  freq <- tam/length(x)
-  top_to_second <- dplyr::nth(ta, 1)/dplyr::nth(ta, 2)
-  if (freq > top_threshold)
-    mod <- names(ta)[ta == tam]
-  else if (top_to_second >= top_two_ratio_threshold)
-    mod <- names(ta)[ta == tam]
+  tam <- ta[1]
+  freq <- tam / length(x)
+  top_to_second <- ta[1] / ta[2]
+  if(freq > top_threshold)
+    mod <- names(tam)[1]
+  else
+  if(top_to_second >= top_two_ratio_threshold)
+    mod <- names(tam)[1]
   else
     mod <- NA_character_
   return(mod)
@@ -27,7 +49,7 @@ get_nn_cell_label <- function(query_data, query_search, ref_colData, transfer_ce
   # Loop through the query cells.
   query_nns <- sapply(seq(1, nrow(query_data)), function(i) {
     # Get labels of neighboring cells in reference space.
-    ref_neighbors <- query_search[['idx']][i,]
+    ref_neighbors <- query_search[['nn.idx']][i,]
     # Get corresponding cell labels.
     ref_labels <- ref_colData[ref_neighbors, transfer_cell_label]
     # Find modal cell label over a threshold.
@@ -40,7 +62,7 @@ get_nn_cell_label <- function(query_data, query_search, ref_colData, transfer_ce
 get_nn_means <- function(query_data, query_search, ref_colData, transfer_cell_label) {
   query_nns <- sapply(seq(1, nrow(query_data)), function(i) {
     # Get labels of neighboring cells in reference space.
-    ref_neighbors <- query_search[['idx']][i,]
+    ref_neighbors <- query_search[['nn.idx']][i,]
     # Get corresponding reference cell label.
     ref_labels <- ref_colData[ref_neighbors, transfer_cell_label]
     # Find the modal cell label.
@@ -63,6 +85,7 @@ get_nn_means <- function(query_data, query_search, ref_colData, transfer_cell_la
 #      nn's to the query data set cells
 #   o  test the ref_colData for the required columns
 #   o  the transfer_cell_label value must be in the colnames(colData(cds)).
+#   o  keep k=10 or so for confidence in the label transfer
 transfer_cell_labels <- function(cds,
                                  reduction_method=c('UMAP', 'PCA', 'LSI'),
                                  in_model_dir,
@@ -99,7 +122,7 @@ transfer_cell_labels <- function(cds,
   nn_control <- set_nn_control(nn_control=nn_control, k=k, method_default='annoy', verbose)
 
   # Are the transfer_cell_label values discrete?
-  label_data_are_discrete <- !is.double(colData(ref_colData[[transfer_cell_label]])[1])
+  label_data_are_discrete <- !is.double(ref_colData[[transfer_cell_label]][1])
 
   # Load the reference projection models and nn indexes
   # into the query cds.
@@ -172,9 +195,9 @@ edit_query_cell_labels <- function(preproc_res,
                                   nn_control=nn_control,
                                   verbose=verbose)
 
-  query_nns <- sapply(seq(1, nrow(query_search[['idx']])), function(i) {
+  query_nns <- sapply(seq(1, nrow(query_search[['nn.idx']])), function(i) {
     # Get neighbors in reference space.
-    query_neighbors <- query_search[['idx']][i,]
+    query_neighbors <- query_search[['nn.idx']][i,]
     # Get corresponding reference cell label.
     query_labels <- query_colData[query_neighbors, transfer_cell_label]
     curr_label <- query_labels[1]

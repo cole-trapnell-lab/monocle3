@@ -585,7 +585,12 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
     methods_reduce_dim[[reduction_method]][['hnsw_index_path']] <- paste0('rdd_', tolower(reduction_method), '_transform_model_hnsw.idx')
 
     if(reduction_method == 'UMAP') {
-      methods_reduce_dim[[reduction_method]][['umap_index_path']] <- paste0('rdd_', tolower(reduction_method), '_transform_model_umap.idx')
+      if(!is.null(cds@reduce_dim_aux[[reduction_method]][['model']])){
+        methods_reduce_dim[[reduction_method]][['has_model_index']] <- TRUE
+        methods_reduce_dim[[reduction_method]][['umap_index_path']] <- paste0('rdd_', tolower(reduction_method), '_transform_model_umap.idx')
+      }
+      else
+        methods_reduce_dim[[reduction_method]][['has_model_index']] <- FALSE
     }
 
     if(!is.null(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']]))
@@ -597,6 +602,7 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
       methods_reduce_dim[[reduction_method]][['has_hnsw_index']] <- TRUE
     else
       methods_reduce_dim[[reduction_method]][['has_hnsw_index']] <- FALSE
+
   }
 
   # Make directory if necessary.
@@ -614,8 +620,10 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
       file.remove(file.path(directory_path, methods_reduce_dim[[reduction_method]][['hnsw_index_path']]))
 
     if(reduction_method == 'UMAP') {
-      if(file.exists(file.path(directory_path, methods_reduce_dim[[reduction_method]][['umap_index_path']])))
-         file.remove(file.path(directory_path, methods_reduce_dim[[reduction_method]][['umap_index_path']]))
+      if(methods_reduce_dim[[reduction_method]][['has_model_index']]) {
+        if(file.exists(file.path(directory_path, methods_reduce_dim[[reduction_method]][['umap_index_path']])))
+           file.remove(file.path(directory_path, methods_reduce_dim[[reduction_method]][['umap_index_path']]))
+      }
     }
   }
 
@@ -687,7 +695,7 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
                                                     stringsAsFactors = FALSE))
         })
     }
-    if(reduction_method == 'UMAP') {
+    if(reduction_method == 'UMAP' && methods_reduce_dim[[reduction_method]][['has_model_index']]) {
       tryCatch(
         {
           md5sum <- save_umap_nn_indexes(cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']], file.path(directory_path, methods_reduce_dim[[reduction_method]][['umap_index_path']]))
@@ -954,7 +962,12 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
       methods_reduce_dim[[reduction_method]][['has_hnsw_index']] <- FALSE
 
     if(reduction_method == 'UMAP') {
-      methods_reduce_dim[[reduction_method]][['umap_index_path']] <- paste0('rdd_', tolower(reduction_method), '_transform_model_umap.idx')
+      if(!is.null(cds@reduce_dim_aux[[reduction_method]][['model']])){
+        methods_reduce_dim[[reduction_method]][['has_model_index']] <- TRUE
+        methods_reduce_dim[[reduction_method]][['umap_index_path']] <- paste0('rdd_', tolower(reduction_method), '_transform_model_umap.idx')
+      }
+      else
+        methods_reduce_dim[[reduction_method]][['has_model_index']] <- FALSE
     }
   }
 
@@ -973,8 +986,10 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
        file.remove(file.path(directory_path, methods_reduce_dim[[reduction_method]][['hnsw_index_path']]))
 
     if(reduction_method == 'UMAP') {
-      if(file.exists(file.path(directory_path, methods_reduce_dim[[reduction_method]][['umap_index_path']])))
-         file.remove(file.path(directory_path, methods_reduce_dim[[reduction_method]][['umap_index_path']]))
+      if(methods_reduce_dim[[reduction_method]][['has_model_index']]) {
+        if(file.exists(file.path(directory_path, methods_reduce_dim[[reduction_method]][['umap_index_path']])))
+           file.remove(file.path(directory_path, methods_reduce_dim[[reduction_method]][['umap_index_path']]))
+      }
     }
   }
 
@@ -1073,7 +1088,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
                                                     stringsAsFactors = FALSE))
         })
     }
-    if(reduction_method == 'UMAP') {
+    if(reduction_method == 'UMAP' && methods_reduce_dim[[reduction_method]][['has_model_index']]) {
       tryCatch(
         {
           md5sum <- save_umap_nn_indexes(cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']], file.path(directory_path, methods_reduce_dim[[reduction_method]][['umap_index_path']]))
