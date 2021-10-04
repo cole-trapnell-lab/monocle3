@@ -119,7 +119,7 @@ transfer_cell_labels <- function(cds,
   assertthat::assert_that(transfer_cell_label %in% colnames(ref_colData),
                           msg=paste0('transfer_cell_label \'', transfer_cell_label, '\' is not in the ref_colData'))
 
-  nn_control <- set_nn_control(nn_control=nn_control, k=k, method_default='annoy', verbose)
+  nn_control <- set_nn_control(nn_control=nn_control, k=k, method_default='annoy', verbose=verbose)
 
   # Are the transfer_cell_label values discrete?
   label_data_are_discrete <- !is.double(ref_colData[[transfer_cell_label]][1])
@@ -169,8 +169,8 @@ transfer_cell_labels <- function(cds,
 
 edit_cell_label <- function(curr_label, other_labels, top_threshold=0.5, top_two_ratio_threshold=1.5) {
   # Change NAs to strings.
-  curr_label <- replace_na(curr_label, "NA")
-  other_labels <- replace_na(other_labels, "NA")
+  curr_label <- tidyr::replace_na(curr_label, "NA")
+  other_labels <- tidyr::replace_na(other_labels, "NA")
   top_label <- which_mode(x=other_labels, top_threshold=top_threshold, top_two_ratio_threshold=top_two_ratio_threshold)
   
   # Switch back if necessary.
@@ -187,7 +187,8 @@ edit_query_cell_labels <- function(preproc_res,
                                    k=10,
                                    nn_control=nn_control,
                                    top_threshold=0.5,
-                                   top_two_ratio_threshold=1.5) {
+                                   top_two_ratio_threshold=1.5,
+                                   verbose=FALSE) {
 
   query_search <- search_nn_index(query_matrix=preproc_res,
                                   nn_index=query_nn_index,
@@ -236,7 +237,7 @@ fix_missing_cell_labels <- function(cds,
   assertthat::assert_that(transfer_cell_label %in% colnames(colData(cds)),
                           msg=paste0('transfer_cell_label \'', transfer_cell_label, '\' is not in the cds colData'))
 
-  nn_control <- set_nn_control(nn_control=nn_control, k=k, method_default='annoy', verbose)
+  nn_control <- set_nn_control(nn_control=nn_control, k=k, method_default='annoy', verbose=verbose)
 
   # Partition cds.
   notna_cds <- cds[, !is.na(colData(cds)[[transfer_cell_label]])]
@@ -259,7 +260,8 @@ fix_missing_cell_labels <- function(cds,
                                             k=k,
                                             nn_control=nn_control,
                                             top_threshold=top_threshold,
-                                            top_two_ratio_threshold=top_two_ratio_threshold)
+                                            top_two_ratio_threshold=top_two_ratio_threshold,
+                                            verbose=verbose)
   
   return(new_cell_labels)
 }

@@ -585,7 +585,7 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
     methods_reduce_dim[[reduction_method]][['hnsw_index_path']] <- paste0('rdd_', tolower(reduction_method), '_transform_model_hnsw.idx')
 
     if(reduction_method == 'UMAP') {
-      if(!is.null(cds@reduce_dim_aux[[reduction_method]][['model']])){
+      if(!is.null(cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']])){
         methods_reduce_dim[[reduction_method]][['has_model_index']] <- TRUE
         methods_reduce_dim[[reduction_method]][['umap_index_path']] <- paste0('rdd_', tolower(reduction_method), '_transform_model_umap.idx')
       }
@@ -962,7 +962,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
       methods_reduce_dim[[reduction_method]][['has_hnsw_index']] <- FALSE
 
     if(reduction_method == 'UMAP') {
-      if(!is.null(cds@reduce_dim_aux[[reduction_method]][['model']])){
+      if(!is.null(cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']])){
         methods_reduce_dim[[reduction_method]][['has_model_index']] <- TRUE
         methods_reduce_dim[[reduction_method]][['umap_index_path']] <- paste0('rdd_', tolower(reduction_method), '_transform_model_umap.idx')
       }
