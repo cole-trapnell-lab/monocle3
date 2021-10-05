@@ -232,8 +232,8 @@ fit_model_helper <- function(x,
 #'   the genes.
 #' @param expression_family Specifies the family function used for expression
 #'   responses. Can be one of "quasipoisson", "negbinomial", "poisson",
-#'   "binomial", "gaussian", "zipoisson", or "zinegbinomial". Default is
-#'   "quasipoisson".
+#'   "binomial", "gaussian", "zipoisson", "zinegbinomial", or "mixed-negbinomial".
+#'   Default is "quasipoisson".
 #' @param reduction_method Which method to use with clusters() and
 #'   partitions(). Default is "UMAP".
 #' @param cores The number of processor cores to use during fitting.
