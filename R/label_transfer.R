@@ -263,6 +263,9 @@ fix_missing_cell_labels <- function(cds,
                                             top_two_ratio_threshold=top_two_ratio_threshold,
                                             verbose=verbose)
   
-  return(new_cell_labels)
+  na_label_index <- which(is.na(colData(cds)[[transfer_cell_label]]))
+  colData(cds)[[transfer_cell_label]][na_label_index] <- new_cell_labels
+
+  return(cds)
 }
 
