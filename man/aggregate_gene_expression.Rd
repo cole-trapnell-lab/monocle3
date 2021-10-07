@@ -14,7 +14,9 @@ aggregate_gene_expression(
   scale_agg_values = TRUE,
   max_agg_value = 3,
   min_agg_value = -3,
-  exclude.na = TRUE
+  exclude.na = TRUE,
+  gene_agg_fun = "sum",
+  cell_agg_fun = "mean"
 )
 }
 \arguments{
