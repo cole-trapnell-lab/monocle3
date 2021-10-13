@@ -5,27 +5,34 @@
 \title{Verify and set nearest neighbor parameter list.}
 \usage{
 set_nn_control(
+  mode = 3,
   nn_control = list(),
   k = 25,
-  method_default = NULL,
+  nn_control_default = list(),
   verbose = FALSE
 )
 }
 \arguments{
-\item{nn_control}{list A list of parameters passed
-to the nearest neighbor function specified by
-nn_control[\link{'method'}]. The nn_control list can be empty in which
-case the variables are set to their default values.
-See below for a description of the valid named values and
-their default values.}
+\item{mode}{The nearest neighbor operation for which the nn_control
+list will be used. 1=make index, 2=search index, and 3=both make
+and search index. The default mode value is 3.}
 
-\item{k}{integer The number of desired nearest neighbor
-points to return from a search. This value is used only
-to set the default annoy search_k parameter. The value
-is ignored for index builds. Default is 25.}
+\item{nn_control}{list An optional list of parameters passed to
+the nearest neighbor function specified by nn_control[\link{'method'}].
+The nn_control list can be empty in which case defaults are used
+as follows: if the nn_control_default list has non-zero length, it
+is used; otherwise the annoy nearest neighbor method is used with
+metric='euclidean', n_trees=50, and search_k=k * n_trees. If not
+all of the values required by a nearest neighbor method are given
+listed below.}
 
-\item{method_default}{The nearest neighbor method to use when not
-specified in the nn_control list.}
+\item{k}{integer The number of desired nearest neighbor points to
+return from a search. This value is used only to set the annoy
+search_k parameter when search_k is not given in nn_control. The
+value is ignored for index builds. The default is 25.}
+
+\item{nn_control_default}{An optional nn_control list to use when the
+nn_control parameter has length zero.}
 
 \item{verbose}{Whether to emit verbose output.}
 }

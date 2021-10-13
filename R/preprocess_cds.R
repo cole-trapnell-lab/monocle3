@@ -81,7 +81,11 @@ preprocess_cds <- function(cds,
                                       "NA."))
 
   if(build_nn_index) {
-    nn_control <- set_nn_control(nn_control=nn_control, k=1, method_default='annoy', verbose=verbose)
+    nn_control <- set_nn_control(mode=1,
+                                 nn_control=nn_control,
+                                 k=1,
+                                 nn_control_default=get_global_variable('nn_control_2'),
+                                 verbose=verbose)
   }
 
   #ensure results from RNG sensitive algorithms are the same on all calls

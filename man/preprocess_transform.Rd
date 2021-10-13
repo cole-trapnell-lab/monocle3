@@ -4,12 +4,17 @@
 \alias{preprocess_transform}
 \title{Apply a preprocess transform model to a cell_data_set.}
 \usage{
-preprocess_transform(cds, method = c("PCA"), block_size = NULL, cores = 1)
+preprocess_transform(
+  cds,
+  reduction_method = c("PCA", "LSI"),
+  block_size = NULL,
+  cores = 1
+)
 }
 \arguments{
 \item{cds}{A cell_data_set to be transformed.}
 
-\item{method}{A previously loaded transform model that
+\item{reduction_method}{A previously loaded transform model that
 is used to reduce the dimensions of the count matrix
 in cds.}
 

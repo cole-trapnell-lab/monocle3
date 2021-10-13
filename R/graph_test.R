@@ -76,8 +76,11 @@ graph_test <- function(cds,
     stop(paste0('No clusters found for reduction method ', reduction_method, '. Run cluster_cells with reduction_method \'UMAP\'.'))
   }
 
-  nn_control <- get_cds_nn_control(cds=cds, reduction_method='UMAP', search_id='cluster_cells', verbose=verbose)
-  nn_control <- set_nn_control(nn_control=nn_control, k=k, method_default='nn2', verbose=verbose)
+  nn_control <- set_nn_control(mode=3,
+                               nn_control=nn_control,
+                               k=k,
+                               nn_control_default=get_global_variable('nn_control_1'),
+                               verbose=verbose)
 
   lw <- calculateLW(cds,
                     k = k,

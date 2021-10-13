@@ -9,11 +9,17 @@ set_global_variable <- function(variable_name, value) {
 
 get_global_variable <- function(variable_name) {
   value <- tryCatch({
-                      get('guard_element', envir=._._global_variable_env_._.) 
+                      v <- get('guard_element', envir=._._global_variable_env_._.) 
+                      if(v != 'sanity_check') stop()
+                      v
                     }, error=function(msg) {
                       message('Global variable storage is compromised.')
                       return(NA)
                     })
+
+  if(is.na(value)) {
+    return(NA)
+  }
 
   value <- tryCatch({
                       get(variable_name, envir=._._global_variable_env_._.)
@@ -25,15 +31,24 @@ get_global_variable <- function(variable_name) {
 }
 
 
-# The ..global_variable_env.. stores globally accessible
-# objects accessible using the set_global_variable and
-# get_global_variable functions.
+# The ._._global_variable_env_._. environment stores global
+# objects. Use the set_global_variable and get_global_variable
+# functions to access them.
 ._._global_variable_env_._. <- new.env()
 
 # Define some global variables.
 .onLoad <- function(libname, pkgname) {
+  # A value used to ensure that this is the Monocle3
+  # global variables.
   set_global_variable('guard_element', 'sanity_check')
+
+  # Counter used to ensure that matrix time stamps generated
+  # by the get_unique_id() function are distinct. This value
+  # is incremented each time that get_unique_id() is called
+  # during an R session.
   set_global_variable('id_count', 1)
+
+  # Object version numbers.
   set_global_variable('reduce_dim_pca_model_version', 1)
   set_global_variable('reduce_dim_lsi_model_version', 1)
   set_global_variable('reduce_dim_aligned_model_version', 1)
@@ -41,6 +56,14 @@ get_global_variable <- function(variable_name) {
   set_global_variable('reduce_dim_umap_model_version', 1)
   set_global_variable('monocle_objects_version', 1)
   set_global_variable('transform_models_version', 1)
+
+  # Default nn_control list for functions that do not need
+  # an index, which is all but the label transfer functions.
+  set_global_variable('nn_control_1', list(method='nn2'))
+
+  # Default nn_control list for functions that need an index,
+  # which are the label transfer functions.
+  set_global_variable('nn_control_2', list(method='annoy', metric='euclidean', n_trees=50))
 
   # Watching preprocess_cds() it appears that R uses OMP_NUM_THREADS
   # threads if OMP_NUM_THREADS > 1 and OPENBLAS_NUM_THREADS is NA.

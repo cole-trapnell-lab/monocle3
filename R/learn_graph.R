@@ -163,8 +163,12 @@ learn_graph <- function(cds,
                                       "reduction_method =", reduction_method,
                                       "before running learn_graph."))
 
-  nn_control <- get_cds_nn_control(cds=cds, reduction_method=reduction_method, search_id='cluster_cells', verbose=verbose)
-  nn_control <- set_nn_control(nn_control=nn_control, k=nn.k, method_default='nn2', verbose=verbose)
+  nn_control <- list()
+  nn_control <- set_nn_control(mode=3,
+                               nn_control=nn_control,
+                               k=nn.k,
+                               nn_control_default=get_global_variable('nn_control_1'),
+                               verbose=verbose)
 
   if (use_partition) {
     partition_list <- cds@clusters[[reduction_method]]$partitions

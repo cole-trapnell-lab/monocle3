@@ -4,16 +4,20 @@
 \alias{reduce_dimension_transform}
 \title{Apply a reduce_transform transform model to a cell_data_set.}
 \usage{
-reduce_dimension_transform(cds, preprocess_method = NULL, method = c("UMAP"))
+reduce_dimension_transform(
+  cds,
+  preprocess_method = NULL,
+  reduction_method = c("UMAP")
+)
 }
 \arguments{
 \item{cds}{A cell_data_set to be transformed.}
 
-\item{preprocess_method}{A previously loaded preprocess method.
-The default is NULL, which uses the preprocess_method that
+\item{preprocess_method}{A previously loaded preprocess reduction
+method.  The default is NULL, which uses the preprocess_method that
 was used when the reduce_dimension model was built.}
 
-\item{method}{A previously loaded reduce_dimension transform
+\item{reduction_method}{A previously loaded reduce_dimension transform
 model that is used to reduce the dimensions of the
 preprocessed count matrix in cds.}
 }

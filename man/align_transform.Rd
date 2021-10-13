@@ -4,12 +4,12 @@
 \alias{align_transform}
 \title{Apply an align_cds transform model to a cell_data_set.}
 \usage{
-align_transform(cds, method = c("Aligned"))
+align_transform(cds, reduction_method = c("Aligned"))
 }
 \arguments{
 \item{cds}{A cell_data_set to be transformed.}
 
-\item{method}{A previously loaded transform model that
+\item{reduction_method}{A previously loaded transform model that
 is used to reduce the dimensions of the preprocessed
 count matrix in cds.}
 }

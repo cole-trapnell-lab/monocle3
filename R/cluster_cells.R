@@ -107,7 +107,11 @@ cluster_cells <- function(cds,
                                       "reduction_method =", reduction_method,
                                       "before running cluster_cells"))
 
-  nn_control <- set_nn_control(nn_control=nn_control, k=k, method_default='nn2', verbose=verbose)
+  nn_control <- set_nn_control(mode=3,
+                               nn_control=nn_control,
+                               k=k,
+                               nn_control_default=get_global_variable('nn_control_1'),
+                               verbose=verbose)
   nn_method <- nn_control[['method']]
 
   # The nn index is made on the full reducedDims(cds)[[reduction_method]]
