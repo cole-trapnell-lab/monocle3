@@ -7,13 +7,13 @@
 load_transform_models(cds, directory_path)
 }
 \arguments{
-\item{cds}{A cell_data_set to be transformed using the models.}
+\item{cds}{a cell_data_set to be transformed using the models.}
 
-\item{directory_path}{A string giving the name of the directory
+\item{directory_path}{a string giving the name of the directory
 from which to read the model files.}
 }
 \value{
-A cell_data_set with the transform models loaded by
+a cell_data_set with the transform models loaded by
 load_transform_models.
 }
 \description{

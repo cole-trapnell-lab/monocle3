@@ -765,22 +765,40 @@ get_citations <- function(cds) {
 
 
 initialize_counts_metadata <- function(cds) {
+  assertthat::assert_that(class(cds) == 'cell_data_set',
+                          msg=paste('cds parameter is not a cell_data_set'))
+
   if(is.null(int_metadata(cds))) {
     int_metadata(cds) <- list()
   }
   int_metadata(cds)[['counts_metadata']] <- list()
+
   return(cds)
 }
 
 
 set_counts_identity <- function(cds, matrix_type, matrix_id) {
+  assertthat::assert_that(class(cds) == 'cell_data_set',
+                          msg=paste('cds parameter is not a cell_data_set'))
+
+  assertthat::assert_that(!is.null(int_metadata(cds)[['counts_metadata']]),
+    msg = paste0('call initialize_counts_metadata() before set_counts_identity()'))                  
+
   int_metadata(cds)[['counts_metadata']][['identity']][['matrix_type']] <- matrix_type
   int_metadata(cds)[['counts_metadata']][['identity']][['matrix_id']] <- matrix_id
+
   return(cds)
 }
 
 
 get_counts_identity <- function(cds) {
+  assertthat::assert_that(class(cds) == 'cell_data_set',
+                          msg=paste('cds parameter is not a cell_data_set'))
+
+  if(is.null(int_metadata(cds)[['counts_metadata']])) {
+    initialize_counts_metadata(cds)
+  }
+
   if(!is.null(int_metadata(cds)[['counts_metadata']][['identity']][['matrix_id']])) {
     matrix_id <- int_metadata(cds)[['counts_metadata']][['identity']][['matrix_id']]
   } else {
@@ -791,17 +809,22 @@ get_counts_identity <- function(cds) {
   } else {
     matrix_type <- 'matrix:counts'
   }
+
   return(list(matrix_id=matrix_id, matrix_type=matrix_type))
 }
 
 
 # Note: int_metadata(cds) requires a list
 initialize_reduce_dim_metadata <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP')) {
+  assertthat::assert_that(class(cds) == 'cell_data_set',
+                          msg=paste('cds parameter is not a cell_data_set'))
+
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
     msg = "reduction_method must be one of 'PCA', 'LSI', 'Aligned', 'tSNE', or 'UMAP'")
   reduction_method <- match.arg(reduction_method)
+
   if(is.null(int_metadata(cds))) {
     int_metadata(cds) <- list()
   }
@@ -810,6 +833,7 @@ initialize_reduce_dim_metadata <- function(cds, reduction_method=c('PCA', 'LSI',
   }
   int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]] <- list()
   int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']] <- list()
+
   return(cds)
 }
 
@@ -818,27 +842,44 @@ set_reduce_dim_matrix_identity <- function(cds, reduction_method=c('PCA', 'LSI',
                                            matrix_type, matrix_id,
                                            prev_matrix_type, prev_matrix_id,
                                            model_type, model_id) {
+  assertthat::assert_that(class(cds) == 'cell_data_set',
+                          msg=paste('cds parameter is not a cell_data_set'))
+
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
     msg = "reduction_method must be one of 'PCA', 'LSI', 'Aligned', 'tSNE', or 'UMAP'")
   reduction_method <- match.arg(reduction_method)
+
+  if(is.null(int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]])) {
+    cds <- initialize_reduce_dim_metadata(cds=cds, reduction_method=reduction_method)
+  }
+
   int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']][['matrix_type']] <- matrix_type
   int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']][['matrix_id']] <- matrix_id
   int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']][['prev_matrix_type']] <- prev_matrix_type
   int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']][['prev_matrix_id']] <- prev_matrix_id
   int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']][['model_type']] <- model_type
   int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']][['model_id']] <- model_id
+
   return(cds)
 }
 
 
 get_reduce_dim_matrix_identity <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP')) {
+  assertthat::assert_that(class(cds) == 'cell_data_set',
+                          msg=paste('cds parameter is not a cell_data_set'))
+
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
     msg = "reduction_method must be one of 'PCA', 'LSI', 'Aligned', 'tSNE', or 'UMAP'")
   reduction_method <- match.arg(reduction_method)
+
+  if(is.null(int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]])) {
+    cds <- initialize_reduce_dim_metadata(cds=cds, reduction_method=reduction_method)
+  }
+
   return(list(matrix_type=int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']][['matrix_type']],
               matrix_id=int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']][['matrix_id']],
               prev_matrix_type=int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']][['prev_matrix_type']],
@@ -848,17 +889,22 @@ get_reduce_dim_matrix_identity <- function(cds, reduction_method=c('PCA', 'LSI',
 }
 
 
-initialize_reduce_dim_aux_model <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP')) {
+initialize_reduce_dim_model_identity <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP')) {
+  assertthat::assert_that(class(cds) == 'cell_data_set',
+                          msg=paste('cds parameter is not a cell_data_set'))
+
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
     msg = "reduction_method must be one of 'PCA', 'LSI', 'Aligned', 'tSNE', or 'UMAP'")
   reduction_method <- match.arg(reduction_method)
+
   if(is.null(cds@reduce_dim_aux[[reduction_method]])) {
     cds@reduce_dim_aux[[reduction_method]] <- SimpleList()
   }
   cds@reduce_dim_aux[[reduction_method]][['model']] <- SimpleList()
   cds@reduce_dim_aux[[reduction_method]][['model']][['identity']] <- SimpleList()
+
   return(cds)
 }
 
@@ -867,40 +913,80 @@ set_reduce_dim_model_identity <- function(cds, reduction_method=c('PCA', 'LSI', 
                                           model_type, model_id,
                                           prev_model_type, prev_model_id,
                                           model_path='none') {
+  assertthat::assert_that(class(cds) == 'cell_data_set',
+                          msg=paste('cds parameter is not a cell_data_set'))
+
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
     msg = "reduction_method must be one of 'PCA', 'LSI', 'Aligned', 'tSNE', or 'UMAP'")
   reduction_method <- match.arg(reduction_method)
+
+  if(is.null(cds@reduce_dim_aux[[reduction_method]][['model']][['identity']])) {
+    cds <- initialize_reduce_dim_model_identity(cds=cds, reduction_method=reduction_method)
+  }
+
   cds@reduce_dim_aux[[reduction_method]][['model']][['identity']][['model_type']] <- model_type
   cds@reduce_dim_aux[[reduction_method]][['model']][['identity']][['model_id']] <- model_id
   cds@reduce_dim_aux[[reduction_method]][['model']][['identity']][['prev_model_type']] <- prev_model_type
   cds@reduce_dim_aux[[reduction_method]][['model']][['identity']][['prev_model_id']] <- prev_model_id
   cds@reduce_dim_aux[[reduction_method]][['model']][['identity']][['model_path']] <- model_path
+
+  global_variable_name <- list(PCA='reduce_dim_pca_model_version',
+                               LSI='reduce_dim_lsi_model_version',
+                               Aligned='reduce_dim_aligned_model_version',
+                               tSNE='reduce_dim_tsne_model_version',
+                               UMAP='reduce_dim_umap_model_version')
+
+  cds@reduce_dim_aux[[reduction_method]][['model']][['identity']][['model_version']] <- get_global_variable(global_variable_name[[reduction_method]])
+
   return(cds)
 }
 
 
 get_reduce_dim_model_identity <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP')) {
+  assertthat::assert_that(class(cds) == 'cell_data_set',
+                          msg=paste('cds parameter is not a cell_data_set'))
+
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
     msg = "reduction_method must be one of 'PCA', 'LSI', 'Aligned', 'tSNE', or 'UMAP'")
   reduction_method <- match.arg(reduction_method)
+
+  if(is.null(cds@reduce_dim_aux[[reduction_method]][['model']][['identity']])) {
+    cds <- initialize_reduce_dim_model_identity(cds=cds, reduction_method=reduction_method)
+  }
+
   return(list(model_type=cds@reduce_dim_aux[[reduction_method]][['model']][['identity']][['model_type']],
               model_id=cds@reduce_dim_aux[[reduction_method]][['model']][['identity']][['model_id']],
               prev_model_type=cds@reduce_dim_aux[[reduction_method]][['model']][['identity']][['prev_model_type']],
               prev_model_id=cds@reduce_dim_aux[[reduction_method]][['model']][['identity']][['prev_model_id']],
-              model_path=cds@reduce_dim_aux[[reduction_method]][['model']][['identity']][['model_path']]))
+              model_path=cds@reduce_dim_aux[[reduction_method]][['model']][['identity']][['model_path']],
+              version=cds@reduce_dim_aux[[reduction_method]][['model']][['identity']][['model_version']]))
 }
 
 
-set_model_identity_path <- function(cds, reduction_method, model_path='none') {
+set_model_identity_path <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP'), model_path='none') {
+  assertthat::assert_that(class(cds) == 'cell_data_set',
+                          msg=paste('cds parameter is not a cell_data_set'))
+
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "reduction_method must be one of 'PCA', 'LSI', 'Aligned', 'tSNE', or 'UMAP'")
+  reduction_method <- match.arg(reduction_method)
+
+  if(is.null(cds@reduce_dim_aux[[reduction_method]][['model']][['identity']])) {
+    cds <- initialize_reduce_dim_model_identity(cds=cds, reduction_method=reduction_method)
+  }
+
   if(!is.null(cds@reduce_dim_aux[[reduction_method]][['model']][['identity']][['model_path']])) {
     cds@reduce_dim_aux[[reduction_method]][['model']][['identity']][['model_path']] <- model_path
   } else {
     cds@reduce_dim_aux[[reduction_method]][['model']][['identity']][['model_path']] <- 'none'
   }
+
   return(cds)
 }
 
@@ -924,6 +1010,11 @@ get_time_stamp <- function() {
 
 
 matrix_multiply_multicore <- function(mat_a, mat_b, cores=1L) {
+  assertthat::assert_that(is.matrix(mat_a) || is_sparse_matrix(mat_a) || is(mat_a, 'DelayedMatrix'),
+    msg=paste0('mat_a must be either a matrix or a sparse matrix'))
+  assertthat::assert_that(is.matrix(mat_b) || is_sparse_matrix(mat_b) || is(mat_b, 'DelayedMatrix'),
+    msg=paste0('mat_b must be either a matrix or a sparse matrix'))
+
   if(cores > 1) {
     omp_num_threads <- get_global_variable('omp_num_threads')
     blas_num_threads <- get_global_variable('blas_num_threads')
@@ -973,4 +1064,10 @@ get_call_stack_as_string <- function() {
   return(scs)
 }
 
+
+# object_name_to_string() returns the name of object as a string
+object_name_to_string <- function( object ) {
+  str <- deparse(substitute(object))
+  return( str )
+}
 

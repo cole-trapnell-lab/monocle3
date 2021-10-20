@@ -50,55 +50,47 @@ get_nn_means <- function(query_data, query_search, ref_col_data, ref_column_name
 }
 
 
-# Purpose: transfer labels from reference to query.
-# Calls: get_nn_cell_label or get_nn_means
-# Notes:
-#   o  on entry, the cds contains the query data set that was
-#      projected into the reference space
-#   o  the reference-related reduce_dim_aux (model/nn) information
-#      is loaded in place of the query version (is this
-#      necessary? Wasn't it loaded in order to project the
-#      query cells? Maybe the nn indexes (in the query cds) were
-#      recalculated using the query cells?)
-#   o  the reference annoy index is searched for (reference cell)
-#      nn's to the query data set cells
-#   o  test the ref_col_data for the required columns
-#   o  the ref_column_name value must be in the colnames(colData(cds)).
-#   o  keep k=10 or so for confidence in the label transfer
-#
-
-#' Transfer cell column data from a reference to a query
+#' @title Transfer cell column data from a reference to a query
 #' cell_data_set.
 #'
 #' @description For each cell in a query cell_data_set,
 #' transfer_cell_labels finds the most similar cell data
 #' in a reference cell_data_set and copies it to the query.
 #'
-#' transfer_cell_labels() requires a nearest neighbor index
-#' made from a reference reduced dimension matrix, the reference
-#' cell data to transfer, and a query cds. The index can be made
-#' from UMAP coordinates using the build_nn_index=TRUE option in
-#' the reduce_dimensions(..., build_nn_index=TRUE) function, for
-#' example. The query cds must have been processed with the
-#' preprocess_transform() and reduce_dimension_transform()
-#' functions using the models created when the reference cds
-#' was processed, rather than with preprocess_cds() and
-#' reduce_dimension(). The models are made when the
-#' reference cds is processed and must be saved to disk at
-#' that time using save_transform_models(). The
-#' load_transform_models() function loads the models into the
-#' query cds where they can be used by preprocess_transform()
-#' and reduce_dimension(). The cells in the reference and query
-#' cdses must be similar in the sense that they map to similar
-#' reduced dimension coordinates. For each cell in the query cds,
-#' transfer_cell_labels() finds the k nearest neighbor reference
-#' cells and, if at least top_frac_threshold fraction of them
-#' have the same ref_column_name value, it copies the value to
-#' the query_column_name column in the query cds. If not, it
-#' checks whether the ratio of the most frequent to the second
+#' @details transfer_cell_labels() requires a nearest neighbor
+#' index made from a reference reduced dimension matrix, the
+#' reference cell data to transfer, and a query cds. The index
+#' can be made from UMAP coordinates using the
+#' build_nn_index=TRUE option in the reduce_dimensions(...,
+#' build_nn_index=TRUE) function, for example. The query cds
+#' must have been processed with the preprocess_transform()
+#' and reduce_dimension_transform() functions using the models
+#' created when the reference cds was processed, rather than
+#' with preprocess_cds() and reduce_dimension().
+#'
+#' The models are made when the reference cds is processed and
+#' must be saved to disk at that time using
+#' save_transform_models(). The load_transform_models() function
+#' loads the models into the query cds where they can be used by
+#' preprocess_transform() and reduce_dimension(). The cells in
+#' the reference and query cdses must be similar in the sense
+#' that they map to similar reduced dimension coordinates.
+#'
+#' When the ref_column_name values are discrete, the
+#' sufficiently most frequent value is transferred. When
+#' the values are continuouse the mean of the k nearest
+#' neighbors is transferred.
+#'
+#' In the case of discrete values, transfer_cell_labels
+#' processes each query cell as follows. It finds the k nearest
+#' neighbor cells in the reference set, and if at least
+#' top_frac_threshold fraction of them have the same value, it
+#' copies that value to the query_column_name column in the
+#' query cds. If the fraction is below top_frac_threshold,
+#' it checks whether the ratio of the most frequent to the second
 #' most frequent value is at least top_next_ratio_threshold, in
-#' which case it copies it. Otherwise, it sets the query value
-#' to NA.
+#' which case it copies the value; otherwise, it sets it to
+#' NA.
 #'
 #' Note: Monocle3 does not have an align_transform() function to
 #' apply align_cds()-related transforms at this time. If your
@@ -118,8 +110,8 @@ get_nn_means <- function(query_data, query_search, ref_col_data, ref_column_name
 #' @param transform_models_dir a string giving the name of the transform
 #'   model directory to load into the query cds. If it is NULL, use
 #'   the transform models in the query cds, which requires that the
-#'   reference models were loaded into the query cds before the
-#'   call to transfer_cell_labels(). The default is NULL.
+#'   reference models were loaded into the query cds before
+#'   calling transfer_cell_labels(). The default is NULL.
 #' @param k an integer giving the number of reference nearest
 #'   neighbors to find. This value must be large enough to find
 #'   meaningful column value fractions. The default is 10.
@@ -128,7 +120,7 @@ get_nn_means <- function(query_data, query_search, ref_col_data, ref_column_name
 #'   details. The default is to use the global nn_control list.
 #' @param top_frac_threshold a numeric value giving the minimum
 #'   value of the top fraction of reference values required
-#'   for transfering the reference value to the query. The top
+#'   for transferring the reference value to the query. The top
 #'   fraction is the fraction of the k neighbors with the most
 #'   frequent value. The default is 0.5.
 #' @param top_next_ratio_threshold a numeric value giving the
@@ -276,21 +268,25 @@ edit_query_cell_labels <- function(preproc_res,
 # Notes:
 #   the column_name value must be in the colnames(colData(cds)).
 
-#' Try to replace NA cell column data values.
+#' @title Replace NA cell column data values left after running
+#'    transfer_cell_labels().
 #'
 #' @description Try to replace NA values left in a query cds by
 #' transfer_cell_labels().
 #'
-#' fix_missing_cell_labels() uses non-NA cell data values in the query cds
-#' to replace NAs in nearby cells. It partitions the cells into a set with
-#' NA and a set with non-NA column data values. It makes a nearest
-#' neighbor index using cells with non-NA values, and for each cell
-#' with NA, it tries to find an acceptable non-NA column data value as
-#' follows. If at least top_frac_threshold fraction of them have the same
-#' value, it replaces the NA with it. If not, it checks whether the ratio
-#' of the most frequent to the second most frequent values is at least
-#' top_next_ratio_threshold, in which case it copies the most frequent
-#' value. Otherwise, it leaves the NA.
+#' @details fix_missing_cell_labels() uses non-NA cell
+#' data values in the query cds to replace NAs in nearby
+#' cells. It partitions the cells into a set with NA and
+#' a set with non-NA column data values. It makes a nearest
+#' neighbor index using cells with non-NA values, and for
+#' each cell with NA, it tries to find an acceptable
+#' non-NA column data value as follows. If at least
+#' top_frac_threshold fraction of them have the same value,
+#' it replaces the NA with it. If not, it checks whether
+#' the ratio of the most frequent to the second most
+#' frequent values is at least top_next_ratio_threshold,
+#' in which case it copies the most frequent value.
+#' Otherwise, it leaves the NA.
 #'
 #' @param cds_query the cell_data_set upon which to perform this operation
 #' @param reduction_method a string specifying the reduced dimension
@@ -298,9 +294,10 @@ edit_query_cell_labels <- function(preproc_res,
 #'   "LSI", and "UMAP". Default is "UMAP".
 #' @param column_name a string giving the name of the query
 #'   cds column to fix.
-#' @param out_notna_models_dir a string giving the name of the transform
+#' @param out_notna_models_dir a string with the name of the transform
 #'   model directory to which to save the not-NA transform models,
-#'   which includes the nearest neighbor index.
+#'   which includes the nearest neighbor index. If NULL, the
+#'   not-NA models are not saved. The default is NULL.
 #' @param k an integer giving the number of reference nearest
 #'   neighbors to find. This value must be large enough to find
 #'   meaningful column value fractions. The default is 10.
@@ -309,7 +306,7 @@ edit_query_cell_labels <- function(preproc_res,
 #'   details. The default is to use the global nn_control list.
 #' @param top_frac_threshold a numeric value giving the minimum
 #'   value of the top fraction of reference values required
-#'   for transfering the reference value to the query. The top
+#'   for transferring the reference value to the query. The top
 #'   fraction is the fraction of the k neighbors with the most
 #'   frequent value. The default is 0.5.
 #' @param top_next_ratio_threshold a numeric value giving the

@@ -34,8 +34,8 @@
 #' @param verbose Whether to emit verbose output during dimensionality
 #'   reduction
 #' @param build_nn_index logical When this argument is set to TRUE,
-#'   preprocess_cds builds the Annoy nearest neighbor index from the
-#'   dimensionally reduced matrix for later use. Default is FALSE.
+#'   preprocess_cds builds and stores the nearest neighbor index from the
+#'   reduced dimension matrix for later use. Default is FALSE.
 #' @param nn_control A list of parameters used to make the nearest
 #'  neighbor index. See the set_nn_control help for detailed information.
 #'
@@ -114,7 +114,7 @@ preprocess_cds <- function(cds,
   #
   if(method == 'PCA') {
     cds <- initialize_reduce_dim_metadata(cds, 'PCA')
-    cds <- initialize_reduce_dim_aux_model(cds, 'PCA')
+    cds <- initialize_reduce_dim_model_identity(cds, 'PCA')
 
     if (verbose) message("Remove noise by PCA ...")
 
@@ -164,7 +164,7 @@ preprocess_cds <- function(cds,
 
   } else if(method == "LSI") {
     cds <- initialize_reduce_dim_metadata(cds, 'LSI')
-    cds <- initialize_reduce_dim_aux_model(cds, 'LSI')
+    cds <- initialize_reduce_dim_model_identity(cds, 'LSI')
 
 #    preproc_res <- tfidf(FM)
     tfidf_res <- tfidf(FM)
@@ -192,6 +192,7 @@ preprocess_cds <- function(cds,
     cds@reduce_dim_aux[['LSI']][['model']][['num_cols']] <- tfidf_res[['num_cols']]
     cds@reduce_dim_aux[['LSI']][['model']][['svd_v']] <- irlba_rotation
     cds@reduce_dim_aux[['LSI']][['model']][['svd_sdev']] <- irlba_res$d/sqrt(max(1, num_col - 1))
+
     # we need svd_v downstream so
     # calculate gene_loadings in cluster_cells.R
 

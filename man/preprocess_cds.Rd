@@ -51,8 +51,8 @@ method = PCA only.}
 reduction}
 
 \item{build_nn_index}{logical When this argument is set to TRUE,
-preprocess_cds builds the Annoy nearest neighbor index from the
-dimensionally reduced matrix for later use. Default is FALSE.}
+preprocess_cds builds and stores the nearest neighbor index from the
+reduced dimension matrix for later use. Default is FALSE.}
 
 \item{nn_control}{A list of parameters used to make the nearest
 neighbor index. See the set_nn_control help for detailed information.}

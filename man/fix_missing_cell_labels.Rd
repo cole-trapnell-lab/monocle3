@@ -2,7 +2,8 @@
 % Please edit documentation in R/label_transfer.R
 \name{fix_missing_cell_labels}
 \alias{fix_missing_cell_labels}
-\title{Try to replace NA cell column data values.}
+\title{Replace NA cell column data values left after running
+transfer_cell_labels().}
 \usage{
 fix_missing_cell_labels(
   cds,
@@ -24,9 +25,10 @@ matrix to use for the label transfer. These are "PCA",
 \item{column_name}{a string giving the name of the query
 cds column to fix.}
 
-\item{out_notna_models_dir}{a string giving the name of the transform
+\item{out_notna_models_dir}{a string with the name of the transform
 model directory to which to save the not-NA transform models,
-which includes the nearest neighbor index.}
+which includes the nearest neighbor index. If NULL, the
+not-NA models are not saved. The default is NULL.}
 
 \item{k}{an integer giving the number of reference nearest
 neighbors to find. This value must be large enough to find
@@ -38,7 +40,7 @@ details. The default is to use the global nn_control list.}
 
 \item{top_frac_threshold}{a numeric value giving the minimum
 value of the top fraction of reference values required
-for transfering the reference value to the query. The top
+for transferring the reference value to the query. The top
 fraction is the fraction of the k neighbors with the most
 frequent value. The default is 0.5.}
 
@@ -56,15 +58,19 @@ an updated cell_data_set object
 \description{
 Try to replace NA values left in a query cds by
 transfer_cell_labels().
-
-fix_missing_cell_labels() uses non-NA cell data values in the query cds
-to replace NAs in nearby cells. It partitions the cells into a set with
-NA and a set with non-NA column data values. It makes a nearest
-neighbor index using cells with non-NA values, and for each cell
-with NA, it tries to find an acceptable non-NA column data value as
-follows. If at least top_frac_threshold fraction of them have the same
-value, it replaces the NA with it. If not, it checks whether the ratio
-of the most frequent to the second most frequent values is at least
-top_next_ratio_threshold, in which case it copies the most frequent
-value. Otherwise, it leaves the NA.
+}
+\details{
+fix_missing_cell_labels() uses non-NA cell
+data values in the query cds to replace NAs in nearby
+cells. It partitions the cells into a set with NA and
+a set with non-NA column data values. It makes a nearest
+neighbor index using cells with non-NA values, and for
+each cell with NA, it tries to find an acceptable
+non-NA column data value as follows. If at least
+top_frac_threshold fraction of them have the same value,
+it replaces the NA with it. If not, it checks whether
+the ratio of the most frequent to the second most
+frequent values is at least top_next_ratio_threshold,
+in which case it copies the most frequent value.
+Otherwise, it leaves the NA.
 }

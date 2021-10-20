@@ -1,37 +1,10 @@
-# Check whether nearest neighbor index exists.
-# Note: if cds@reduce_dim_aux[[reduction_method]][['nn_index']][[nn_method]] exists
-#       then cds@reduce_dim_aux[[reduction_method]][['nn_index']][[nn_method]][['nn_index']]
-#       exists, which is consistent with the clear_cds_nn_index() behavior.
-check_cds_nn_index_exists <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP'), nn_method=c('annoy', 'hnsw')) {
-  assertthat::assert_that(class(cds) == 'cell_data_set',
-                          msg=paste('cds parameter is not a cell_data_set'))
-
-  assertthat::assert_that(
-    tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
-             error = function(e) FALSE),
-    msg = "reduction_method must be one of 'PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP'")
-  reduction_method <- match.arg(reduction_method)
-
-  if(nn_method == 'annoy') {
-    if(is.null(cds@reduce_dim_aux[[reduction_method]]) ||
-       is.null(cds@reduce_dim_aux[[reduction_method]][['nn_index']]) ||
-       is.null(cds@reduce_dim_aux[[reduction_method]][['nn_index']][[nn_method]])) {
-       return(FALSE)
-    }
-  }
-  else
-  if(nn_method == 'hnsw') {
-    if(is.null(cds@reduce_dim_aux[[reduction_method]]) ||
-       is.null(cds@reduce_dim_aux[[reduction_method]][['nn_index']]) ||
-       is.null(cds@reduce_dim_aux[[reduction_method]][['nn_index']][[nn_method]])) {
-       return(FALSE)
-    }
-  }
-  else
-    stop('check_cds_nn_index_exists: unsupported nearest neighbor index type \'', nn_method, '\'')
-
-  return(TRUE)
-}
+# Notes:
+#   To add nearest neighbor method, modify
+#     o  many of the functions in this file
+#     o  learn_graph: learn_graph_control
+#     o  io.R: save and load indices
+#     o  zzz.R: possibly change defaults
+#     o  others?
 
 
 # Check whether annoy index exists and is consistent with matrix and parameters.
@@ -191,7 +164,13 @@ clear_cds_nn_index <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', 
 }
 
 
-check_cds_nn_search_exists <- function(cds, reduction_method = c("UMAP", "tSNE", "PCA", "LSI", "Aligned"), search_id=NULL, verbose=FALSE)
+# Check whether nearest neighbor search information exists
+# for reduction_method. This is not useful at this time. The
+# intention was to store information about the search
+# parameters used in cluster_cells() and use them in for
+# nearest neighbor searches in later function calls. However,
+# this does not seem useful at this time.
+check_cds_nn_search_exists <- function(cds, reduction_method = c("UMAP", "tSNE", "PCA", "LSI", "Aligned"), search_id, verbose=FALSE)
 {
   assertthat::assert_that(methods::is(cds, "cell_data_set"))
   assertthat::assert_that(
@@ -216,7 +195,7 @@ check_cds_nn_search_exists <- function(cds, reduction_method = c("UMAP", "tSNE",
 }
 
 
-#' Verify and set nearest neighbor parameter list.
+#' @title Verify and set nearest neighbor parameter list.
 #'
 #' @description Verifies the listed parameter values
 #'   that will be passed to the nearest neighbor function
@@ -260,7 +239,10 @@ check_cds_nn_search_exists <- function(cds, reduction_method = c("UMAP", "tSNE",
 #'      build and search. Default is 1.}
 #' }
 #'
-#' @param nn_control list An optional list of parameters passed to
+#' @param mode the nearest neighbor operation for which the nn_control
+#'   list will be used. 1=make index, 2=search index, and 3=both make
+#'   and search index. The default mode value is 3.
+#' @param nn_control an optional list of parameters passed to
 #'   the nearest neighbor function specified by nn_control[['method']].
 #'   The nn_control list can be empty in which case defaults are used
 #'   as follows: if the nn_control_default list has non-zero length, it
@@ -269,18 +251,15 @@ check_cds_nn_search_exists <- function(cds, reduction_method = c("UMAP", "tSNE",
 #'   all of the values required by a nearest neighbor method are given
 #    in nn_control, the missing values are set to the default values
 #'   listed below.
-#' @param k integer The number of desired nearest neighbor points to
+#' @param k integer the number of desired nearest neighbor points to
 #'   return from a search. This value is used only to set the annoy
 #'   search_k parameter when search_k is not given in nn_control. The
 #'   value is ignored for index builds. The default is 25.
-#' @param mode The nearest neighbor operation for which the nn_control
-#'   list will be used. 1=make index, 2=search index, and 3=both make
-#'   and search index. The default mode value is 3.
-#' @param nn_control_default An optional nn_control list to use when the
+#' @param nn_control_default an optional nn_control list to use when the
 #'   nn_control parameter has length zero.
-#' @param verbose Whether to emit verbose output.
+#' @param verbose a boolean indicating whether to emit verbose output.
 #'
-#' @return An updated nn_control list.
+#' @return an updated nn_control list.
 #' @export
 set_nn_control <- function(mode=3, nn_control=list(), k=25, nn_control_default=list(), verbose=FALSE) {
 
@@ -295,9 +274,7 @@ set_nn_control <- function(mode=3, nn_control=list(), k=25, nn_control_default=l
     nn_control <- nn_control_default
   else {
     nn_control <- list(method = 'annoy',
-                       metric = 'euclidean',
-                       n_trees = 50,
-                       search_k = k * n_trees)
+                       metric = 'euclidean')
   }
  
   assertthat::assert_that(all(names(nn_control) %in%
@@ -329,7 +306,8 @@ set_nn_control <- function(mode=3, nn_control=list(), k=25, nn_control_default=l
     }
 
     if(bitwAnd(mode, 2)) {
-      nn_control[['search_k']] <- ifelse(is.null(nn_control[['search_k']]), 100 * k, nn_control[['search_k']])
+      nn_control[['n_trees']] <- ifelse(is.null(nn_control[['n_trees']]), 50, nn_control[['n_trees']])
+      nn_control[['search_k']] <- ifelse(is.null(nn_control[['search_k']]), nn_control[['n_trees']] * k, nn_control[['search_k']])
       nn_control[['grain_size']] <- ifelse(is.null(nn_control[['grain_size']]), 1, nn_control[['grain_size']])
       nn_control[['cores']] <- ifelse(is.null(nn_control[['cores']]), 1, nn_control[['cores']])
       assertthat::assert_that(assertthat::is.count(nn_control[['search_k']]))
@@ -382,7 +360,9 @@ set_nn_control <- function(mode=3, nn_control=list(), k=25, nn_control_default=l
 }
 
 
-report_nn_control <- function(label=NULL, nn_control=list()) {
+# Report nn_control list values. This is used primarily for
+# verbose output.
+report_nn_control <- function(label=NULL, nn_control) {
   indent <- ''
   if(!is.null(label)) {
     indent <- '  '
@@ -420,20 +400,20 @@ report_nn_control <- function(label=NULL, nn_control=list()) {
 }
 
 
-#' Make and store a nearest neighbor index in the CDS.
+#' @title Make a nearest neighbor index.
 #'
-#' @description Make the a nearest neighbor index from the specified
-#'  reduction_method matrix using either the default nearest neighbor
-#'  or the method specified in the nn_control list.
+#' @description Make a nearest neighbor index from the specified
+#' reduction_method matrix using either the default nearest neighbor
+#' method or the method specified in the nn_control list parameter
+#' The function returns the index.
 #'
-#' @param cds The cell_data_set upon which to perform this operation
-#' @param reduction_method A string indicating the reduced matrix that you
-#'  want to use to make the nearest neighbor index.
-#' @param nn_control A list of parameters used to make the nearest
-#'  neighbor index. See the set_nn_control help for detailed information.
-#' @param verbose Whether to emit verbose output.
+#' @param subject_matrix the reduced dimension matrix used to build
+#'  the index.
+#' @param nn_control a list of parameters used to make the nearest
+#'  neighbor index. See the set_nn_control help for details.
+#' @param verbose a boolean indicating whether to emit verbose output.
 #'
-#' @return The cds cell data set updated with the nearest neighbor index.
+#' @return a nearest neighbor index.
 #' @export
 make_nn_index <- function(subject_matrix, nn_control=list(), verbose=FALSE) {
 
@@ -449,10 +429,23 @@ make_nn_index <- function(subject_matrix, nn_control=list(), verbose=FALSE) {
   nn_method <- nn_control[['method']]
 
   if(nn_method == 'annoy') {
+    # set verbose to FALSE because when TRUE and nr is small, uwot::annoy_build can fail in
+    #       if (verbose) {
+    #         nstars <- 50
+    #         progress_for(
+    #           nr, nstars,
+    #           function(chunk_start, chunk_end) {
+    #             for (i in chunk_start:chunk_end) {
+    #               ann$addItem(i - 1, X[i, , drop = FALSE])
+    #             }
+    #           }
+    #         )
+    #       }
+    #       else {
     nn_index <- uwot:::annoy_build(X=subject_matrix,
                                    metric=nn_control[['metric']],
                                    n_trees=nn_control[['n_trees']],
-                                   verbose=verbose)
+                                   verbose=FALSE)
   }
   else
   if(nn_method == 'hnsw') {
@@ -475,11 +468,24 @@ make_nn_index <- function(subject_matrix, nn_control=list(), verbose=FALSE) {
 }
 
 
-# Notes:
-#   o  a reducedDims(cds)[[reduction_method]] matrix must be used to make the index
-#   o  set_cds_nn_index assumes that the matrix currently in reducedDims(cds)[[reduction_method]]
-#      was used to make the index so it's safest for make_nn_index to precede directly the call to
-#      set_cds_nn_index
+#' @title Set a nearest neighor index in the cell_data_set.
+#'
+#' @description Store the nearest nn_index neighbor index
+#' in the cds. The reduction_method parameter tells
+#' set_cds_nn_index where in the cds to store the index.
+#'
+#' @param cds a cell_data_set in which to store the nearest neighbor
+#'   index.
+#' @param reduction_method a string giving the reduced dimension matrix used
+#'   to make the nn_index nearest neighbor index.
+#' @param nn_index a nearest neighbor index to store in cds.
+#' @param nn_control a list of parameters used to make the nearest
+#'  neighbor index. See the set_nn_control help for details.
+#' @param verbose a boolean indicating whether to emit verbose output.
+#'
+#' @return a cell_data_set with the stored index.
+#'
+#' @export
 set_cds_nn_index <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Aligned', 'tSNE'), nn_index, nn_control=list(), verbose=FALSE) {
   assertthat::assert_that(class(cds) == 'cell_data_set',
                           msg=paste('cds parameter is not a cell_data_set'))
@@ -533,6 +539,25 @@ set_cds_nn_index <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Alig
 }
 
 
+#' @title Make and store a nearest neighbor index in the cell_data_set.
+#'
+#' @description Make a nearest neighbor index from the specified
+#' reduction_method matrix in the cds using either the default
+#' nearest neighbor method or the method specified in the nn_control
+#' list parameter. This function returns a cell_data_set.
+#'
+#' @param cds a cell_data_set with the reduced dimension matrix from
+#'   which to make the index and in which the nearest neighbor
+#'   index is stored.
+#' @param reduction_method a string giving the reduced dimension matrix
+#'  to use for making the nn_index nearest neighbor index.
+#' @param nn_control a list of parameters to use for making the nearest
+#'  neighbor index. See the set_nn_control help for details.
+#' @param verbose a boolean indicating whether to emit verbose output.
+#'
+#' @return a cell_data_set with the stored index.
+#'
+#' @export
 make_cds_nn_index <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Aligned', 'tSNE'), nn_control=list(), verbose=FALSE) {
   assertthat::assert_that(class(cds) == 'cell_data_set',
                           msg=paste('cds parameter is not a cell_data_set'))
@@ -557,6 +582,8 @@ make_cds_nn_index <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Ali
 }
 
 
+# Retun the nn_index that was made from the reduction_method
+# reduced dimension matrix.
 get_cds_nn_index <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Aligned', 'tSNE'), nn_control=list(), verbose=FALSE) {
 
   assertthat::assert_that(class(cds) == 'cell_data_set',
@@ -597,25 +624,29 @@ get_cds_nn_index <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Alig
 }
 
 
-#  Search nearest neighbor index for cells near the cells in the reduced
-#  dim matrix.
-# 
-# 
-#  @param query_matrix A matrix used to find the nearest neighbors in the
-#   index created from the reduction_method matrix.
-#  @param nn_index A nearest_neighbor index.
-#  @param k An integer for the number of nearest neighbors to return for
-#    each cell. Default is 25.
-#  @param nn_control A list of parameters used to make the nearest
-#   neighbor index. See the set_nn_control help for detailed information.
-#  @param verbose Whether to emit verbose output.
-# 
-#  @return A list list(nn.idx, nn.dists) where nn.idx is
-#   a matrix of nearest neighbor indices and nn.dists is a matrix of
-#   the distance between the index given by the row number and the index
-#   given in nn.idx. If the same reduced dim matrix is used to make the
-#   index and search the index, the index given by the row number should
-#   be in the row, usually in the first column.
+#' @title Search nearest neighor index.
+#'
+#' @description Search nn_index nearest neighbor index for cells near
+#' those in the query_matrix.
+#'
+#' @param query_matrix a reduced dimension matrix used to find the
+#'   nearest neighbors in the index created from the
+#'   reduction_method matrix.
+#' @param nn_index a nearest_neighbor index.
+#' @param k an integer for the number of nearest neighbors to return for
+#'   each cell. Default is 25.
+#' @param nn_control a list of parameters used to make the nearest
+#'  neighbor index. See the set_nn_control help for details.
+#' @param verbose a boolean indicating whether to emit verbose output.
+#'
+#' @return a list list(nn.idx, nn.dists) where nn.idx is
+#'  a matrix of nearest neighbor indices and nn.dists is a matrix of
+#'  the distance between the index given by the row number and the index
+#'  given in nn.idx. If the same reduced dim matrix is used to make the
+#'  index and search the index, the index given by the row number should
+#'  be in the row, usually in the first column.
+#'
+#' @export
 search_nn_index <- function(query_matrix, nn_index, k=25, nn_control=list(), verbose=FALSE) {
 
   nn_control <- set_nn_control(mode=2, nn_control=nn_control, k=k, nn_control_default=list(), verbose=verbose)
@@ -677,9 +708,9 @@ search_nn_index <- function(query_matrix, nn_index, k=25, nn_control=list(), ver
 
 
 # Notice that this function uses the available reducedDims(cds)[[reduction_method]] matrix
-# for verifying the query matrix so be certain that the search (and index build) were run on
-# this matrix so call this function immediately after running the search.
-set_cds_nn_search <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Aligned', 'tSNE'), search_id=NULL, k=NULL, nn_control=NULL, verbose=TRUE) {
+# for verifying the query matrix -- be certain that the search (and index build) were run
+#' on this matrix so call this function immediately after running the search.
+set_cds_nn_search <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Aligned', 'tSNE'), search_id, k, nn_control=list(), verbose=TRUE) {
   assertthat::assert_that(class(cds) == 'cell_data_set',
                           msg=paste('cds parameter is not a cell_data_set'))
 
@@ -749,7 +780,8 @@ set_cds_nn_search <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Ali
 }
 
 
-get_cds_nn_search <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Aligned', 'tSNE'), search_id=NULL, verbose=TRUE) {
+# Get nearest neighbor search information stored in the cds.
+get_cds_nn_search <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Aligned', 'tSNE'), search_id, verbose=TRUE) {
 
   assertthat::assert_that(class(cds) == 'cell_data_set',
                           msg=paste('cds parameter is not a cell_data_set'))
@@ -803,7 +835,8 @@ get_cds_nn_search <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Ali
 }
 
 
-get_cds_nn_control <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Aligned', 'tSNE'), search_id=NULL, verbose=TRUE) {
+# Get index build and search information that's stored in the cds.
+get_cds_nn_control <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Aligned', 'tSNE'), search_id, verbose=TRUE) {
 
   assertthat::assert_that(class(cds) == 'cell_data_set',
                           msg=paste('cds parameter is not a cell_data_set'))
@@ -868,6 +901,28 @@ get_cds_nn_control <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Al
 }
 
 
+#' @title Search a subject matrix for nearest neighbors to a query_matrix.
+#'
+#' @description Make a nearest neighbors index using the subject matrix and
+#' search it for nearest neighbors to the query_matrix.
+#'
+#' @param subject_matrix a reduced dimension matrix used to build a nearest neighbor index.
+#' @param query_matrix a reduced dimension matrix used to search the subject_matrix
+#'   nearest neighbor index.
+#' @param k an integer for the number of nearest neighbors to return for
+#'   each cell. Default is 25.
+#' @param nn_control a list of parameters used to make the nearest
+#'  neighbor index. See the set_nn_control help for details.
+#' @param verbose a boolean indicating whether to emit verbose output.
+#'
+#' @return a list list(nn.idx, nn.dists) where nn.idx is
+#'  a matrix of nearest neighbor indices and nn.dists is a matrix of
+#'  the distance between the index given by the row number and the index
+#'  given in nn.idx. If the query_matrix is the same as the subject
+#'  matrix, the index given by the row number should be in the row, usually
+#' in the first column.
+#'
+#' @export
 search_nn_matrix <- function(subject_matrix, query_matrix, k=25, nn_control=list(), verbose=FALSE) {
 
   assertthat::assert_that(is.matrix(subject_matrix),
@@ -892,10 +947,23 @@ search_nn_matrix <- function(subject_matrix, query_matrix, k=25, nn_control=list
     nn_res <- RANN::nn2(subject_matrix, query_matrix, min(k, nrow(subject_matrix)), searchtype = "standard")
   } else
   if(method == 'annoy') {
+    # set verbose to FALSE because when TRUE and nr is small, uwot::annoy_build can fail in
+    #       if (verbose) {
+    #         nstars <- 50
+    #         progress_for(
+    #           nr, nstars,
+    #           function(chunk_start, chunk_end) {
+    #             for (i in chunk_start:chunk_end) {
+    #               ann$addItem(i - 1, X[i, , drop = FALSE])
+    #             }
+    #           }
+    #         )
+    #       }
+    #       else {
     nn_index <- uwot:::annoy_build(X=subject_matrix,
                                    metric=nn_control[['metric']],
                                    n_trees=nn_control[['n_trees']],
-                                   verbose=verbose)
+                                   verbose=FALSE)
 
     tmp <- uwot:::annoy_search(X=query_matrix,
                                k=k,
@@ -991,8 +1059,6 @@ count_nn_missing_self_index <- function(nn_res) {
   message('count_nn_missing_self_index:')
   message('  ', num_missing, ' out of ', nrow(nn_res[['nn.idx']]), ' rows are missing the row index')
   message('  \'recall\': ', formatC((as.double(nrow(nn_res[['nn.idx']]) - num_missing) / as.double(nrow(nn_res[['nn.idx']]))) * 100.0), "%")
-
-  return(0)
 }
 
 

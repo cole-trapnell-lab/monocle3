@@ -1,22 +1,24 @@
-#' Apply a preprocess transform model to a cell_data_set.
+#' @title Apply a preprocess transform model to a cell_data_set.
 #'
-#' Applies a previously calculated preprocess transform
-#' model to a new count matrix. For more information read
-#' the help information for save_transform_models.
+#' @description Applies a previously calculated preprocess
+#' transform model to a new count matrix. For more
+#' information read the help information for save_transform_models.
 #'
-#' @param cds A cell_data_set to be transformed.
-#' @param reduction_method A previously loaded transform model that
-#'   is used to reduce the dimensions of the count matrix
-#'   in cds.
-#' @param block_size A numeric value for the DelayedArray
+#' @param cds a cell_data_set to be transformed.
+#' @param reduction_method a previously loaded transform
+#'   model that is used to reduce the dimensions of the
+#'   count matrix in cds. The "PCA" and "LSI" transforms
+#'   are supported. The default is "PCA".
+#' @param block_size a numeric value for the DelayedArray
 #'   block size used only in this function. Default is
 #'   NULL, which does not affect the current block size.
-#' @param cores The number of cores to use for the matrix multiplication.
-#' @return A cell_data_set with a preprocess reduced count
+#' @param cores the number of cores to use for the matrix
+#'   multiplication. The default is 1.
+#'
+#' @return a cell_data_set with a preprocess reduced count
 #'   matrix.
 #'
 #' @export
-#'
 preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_size=NULL, cores=1) {
   #
   # Need to add processing for LSI. TF-IDF transform etc.
@@ -90,12 +92,10 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
     xtdasc <- t(xtdasc / vscale)
   
     irlba_res <- list()
-  
   #  irlba_res$x <- xtdasc %*% rotation_matrix[intersect_indices,]
     irlba_res$x <- matrix_multiply_multicore(mat_a=xtdasc,
                                            mat_b=rotation_matrix[intersect_indices,],
                                            cores)
-  
     irlba_res$x <- as.matrix(irlba_res$x)
     class(irlba_res) <- c('irlba_prcomp', 'prcomp')
   
@@ -179,7 +179,6 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
     xtda <- DelayedArray::DelayedArray(xt)
 
     irlba_res <- list()
-
     irlba_res$x <- matrix_multiply_multicore(mat_a=xtda,
                                            mat_b=rotation_matrix[intersect_indices,],
                                            cores)
@@ -212,27 +211,26 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
 }
 
 
-#' Apply an align_cds transform model to a cell_data_set.
-#'
-#' Applies a previously calculated align_cds transform model
-#' to a new preprocess transformed matrix. For more
-#' information read the help information for
-#' save_transform_models.
-#'
-#' Note: this function is a place holder. It does not
-#' map the transformed count matrix to aligned space
-#' at this time because I don't know how to do so.
-#'
-#' @param cds A cell_data_set to be transformed.
-#' @param reduction_method A previously loaded transform model that
-#'   is used to reduce the dimensions of the preprocessed
-#'   count matrix in cds.
-#'
-#' @return A cell_data_set with an align_cds transformed
-#'   reduced count matrix.
-#'
-#' @export
-#'
+#  #' Apply an align_cds transform model to a cell_data_set.
+#  #'
+#  #' Applies a previously calculated align_cds transform model
+#  #' to a new preprocess transformed matrix. For more
+#  #' information read the help information for
+#  #' save_transform_models.
+#  #'
+#  #' Note: this function is a place holder. It does not
+#  #' map the transformed count matrix to aligned space
+#  #' at this time because I don't know how to do so.
+#  #'
+#  #' @param cds A cell_data_set to be transformed.
+#  #' @param reduction_method A previously loaded transform model that
+#  #'   is used to reduce the dimensions of the preprocessed
+#  #'   count matrix in cds.
+#  #'
+#  #' @return A cell_data_set with an align_cds transformed
+#  #'   reduced count matrix.
+#  #'
+#  #' @export
 align_transform <- function(cds, reduction_method=c('Aligned')) {
   #
   # Need to add transformation code.
@@ -255,7 +253,7 @@ align_transform <- function(cds, reduction_method=c('Aligned')) {
                                     " Please preprocess the matrix before",
                                     " calling align_transform using preprocess_transform."))
 
-  stop('This function is a place holder. It does not map the transformed count matrix to aligned space at this time because we don\'t know how to it yet.')
+#  stop('This function is a place holder. It does not map the transformed count matrix to aligned space at this time because we don\'t know how to it yet.')
 
   set.seed(2016)
   alignment_group <- cds@reduce_dim_aux[['Aligned']][['model']][['alignment_group']]
@@ -287,22 +285,22 @@ align_transform <- function(cds, reduction_method=c('Aligned')) {
 }
 
 
-#' Apply a reduce_transform transform model to a cell_data_set.
+#' @title Apply a reduce_transform transform model to a cell_data_set.
 #'
-#' Applies a previously calculated reduce_dimension transform
+#' @description Applies a previously calculated reduce_dimension transform
 #' model to a new preprocess transformed matrix. For more
 #' information read the help information for
 #' save_transform_models.
 #'
-#' @param cds A cell_data_set to be transformed.
-#' @param preprocess_method A previously loaded preprocess reduction
+#' @param cds a cell_data_set to be transformed.
+#' @param preprocess_method a previously loaded preprocess reduction
 #'   method.  The default is NULL, which uses the preprocess_method that
 #'   was used when the reduce_dimension model was built.
-#' @param reduction_method A previously loaded reduce_dimension transform
-#'   model that is used to reduce the dimensions of the
-#'   preprocessed count matrix in cds.
+#' @param reduction_method a previously loaded reduce_dimension transform
+#'   model that is used to reduce the dimensions of the preprocessed
+#'   count matrix in cds. Only "UMAP" is supported.
 #'
-#' @return A cell_data_set with a reduce_dimension transformed
+#' @return a cell_data_set with a transformed
 #'   reduced count matrix.
 #'
 #' @export

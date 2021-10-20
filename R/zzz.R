@@ -7,7 +7,9 @@ set_global_variable <- function(variable_name, value) {
 }
 
 
-get_global_variable <- function(variable_name) {
+# Return value of variable_name. If variable_name is NULL, return a list
+# of all global variables.
+get_global_variable <- function(variable_name=NULL) {
   value <- tryCatch({
                       v <- get('guard_element', envir=._._global_variable_env_._.) 
                       if(v != 'sanity_check') stop()
@@ -21,12 +23,22 @@ get_global_variable <- function(variable_name) {
     return(NA)
   }
 
-  value <- tryCatch({
-                      get(variable_name, envir=._._global_variable_env_._.)
-                    }, error=function(msg) {
-                      message(paste0("\'variable_name\'", ' is not a global variable.'))
-                      return(NA)
-                    })
+  if(!is.null(variable_name)) {
+    value <- tryCatch({
+                        get(variable_name, envir=._._global_variable_env_._.)
+                      }, error=function(msg) {
+                        message(paste0("\'variable_name\'", ' is not a global variable.'))
+                        return(NA)
+                      })
+  }
+  else {
+    value=list()
+    variable_names <- ls(envir=._._global_variable_env_._.)
+    for(variable_name in variable_names) {
+      value[[variable_name]] <- get(variable_name, envir=._._global_variable_env_._.)
+    }
+  }
+
   return(value)
 }
 

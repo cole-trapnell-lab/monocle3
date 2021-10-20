@@ -85,6 +85,25 @@ compatibility with existing code.}
 \item{eps:}{}
 \item{L1.gamma:}{}
 \item{L1.sigma:}{}
+\item{nn.method:}{The method to use for finding nearest neighbors.
+nn.method can be one of 'nn2', 'annoy', or 'hnsw'.}
+\item{nn.metric:}{The distance metric for the annoy or hnsw nearest
+neighbor index build. See help(set_nn_control) for more information.}
+\item{nn.n_trees:}{The number of trees used to build the annoy nearest
+neighbor index. See help(set_nn_control) for more information.}
+\item{nn.search_k:}{The number of nodes to search in an annoy index
+search. See help(set_nn_control) for more information.}
+\item{nn.M:}{Related to internal dimensionality of HNSW index. See
+help(set_nn_control) for more information.}
+\item{nn.ef_construction:}{Controls the HNSW index build speed/accuracy
+tradeoff.}
+\item{nn.ef:}{Controls the HNSW index search speed/accuracy tradeoff.
+See help(set_nn_control) for more information.}
+\item{nn.grain_size:}{Used by annoy and HNSW to set the minimum amount
+of work to do per thread. See help(set_nn_control) for more
+information.}
+\item{nn.cores:}{Used by annoy and HNSW to control the number of
+threads used. See help(set_nn_control) for more information.}
 }
 }
 

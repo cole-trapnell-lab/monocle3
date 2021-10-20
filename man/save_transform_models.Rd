@@ -7,43 +7,42 @@
 save_transform_models(cds, directory_path, comment = "", verbose = TRUE)
 }
 \arguments{
-\item{cds}{A cell_data_set with existing models.}
+\item{cds}{a cell_data_set with existing models.}
 
-\item{directory_path}{A string giving the name of the directory
+\item{directory_path}{a string giving the name of the directory
 in which to write the model files.}
 
-\item{comment}{A string with optional notes that is saved with
+\item{comment}{a string with optional notes that is saved with
 the objects.}
 
-\item{verbose}{A boolean determining whether to print information
+\item{verbose}{a boolean determining whether to print information
 about the saved files.}
 }
 \value{
-None.
+none.
 }
 \description{
 Save the transform models to the specified directory
 by writing the R objects to RDS files and
-the Annoy nearest neighbor indexes to individual index files.
+the nearest neighbor indexes to individual index files.
 save_transform_models saves transform models made by running
-the preprocess_cds, align_cds, and reduce_dimension functions
+the preprocess_cds and reduce_dimension functions
 on an initial cell_data_set. Subsequent cell_data_sets are
 transformed into the reduced dimension space of the initial
 cds by loading the new data into a new cds, loading the
 initial data set transform models into the new cds using
 the load_transform_models function, and applying those transform models
-to the new data set using the preprocess_transform,
-align_transform, and reduce_dimension_transform functions.
-In this case, do not run the preprocess_cds, align_cds, or
+to the new data set using the preprocess_transform
+and reduce_dimension_transform functions.
+In this case, do not run the preprocess_cds or
 reduce_dimension functions on the new cds. Additionally,
-save_transform_models saves Annoy nearest neighbor indexes
-when the preprocess_cds, align_cds, and reduce_dimension
+save_transform_models saves nearest neighbor indexes
+when the preprocess_cds and reduce_dimension
 functions are run with the make_nn_index=TRUE parameter. These
 indexes are used to find matches between cells in the new
-processed cds and the initial cds using the xxx functions.
-save_transform_models scans the initial cell_data_set for
-models and Annoy nearest neighbor indexes and saves those
-that it finds. It does not save transform models
-and indexes that were not made using preprocess_cds,
-align_cds, and reduce_dimension.
+processed cds and the initial cds using index search functions.
+save_transform_models saves the models to a directory.
+It does not save transform models
+and indexes that were not made using preprocess_cds
+and reduce_dimension.
 }

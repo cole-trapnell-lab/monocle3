@@ -13,29 +13,29 @@ save_monocle_objects(
 )
 }
 \arguments{
-\item{cds}{A cell_data_set to save.}
+\item{cds}{a cell_data_set to save.}
 
-\item{directory_path}{A string giving the name of the directory
+\item{directory_path}{a string giving the name of the directory
 in which to write the object files.}
 
-\item{hdf5_assays}{A boolean determining whether the
+\item{hdf5_assays}{a boolean determining whether the
 non-HDF5Array assays objects are saved as HDF5 files. At this
 time cell_data_set HDF5Array assay objects are stored as
 HDF5Assay files regardless of the hdf5_assays parameter value.}
 
-\item{comment}{A string with optional notes that is saved with
+\item{comment}{a string with optional notes that is saved with
 the objects.}
 
-\item{verbose}{A boolean determining whether to print information
+\item{verbose}{a boolean determining whether to print information
 about the saved files.}
 }
 \value{
-None.
+none.
 }
 \description{
 Save a Monocle3 full cell_data_set to a specified directory
 by writing the R objects to an RDS file and
-the Annoy nearest neighbor indexes to individual index files.
+the nearest neighbor indexes to individual index files.
 The assays objects are saved as HDF5Array files when
 hdf5_assays=TRUE or when the cell_data_set assays are
 HDF5Array objects. If any assay in the cell_data set is an

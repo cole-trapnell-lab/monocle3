@@ -49,6 +49,25 @@
 #'   \item{eps:}{}
 #'   \item{L1.gamma:}{}
 #'   \item{L1.sigma:}{}
+#'   \item{nn.method:}{The method to use for finding nearest neighbors.
+#'   nn.method can be one of 'nn2', 'annoy', or 'hnsw'.}
+#'   \item{nn.metric:}{The distance metric for the annoy or hnsw nearest
+#'   neighbor index build. See help(set_nn_control) for more information.}
+#'   \item{nn.n_trees:}{The number of trees used to build the annoy nearest
+#'   neighbor index. See help(set_nn_control) for more information.}
+#'   \item{nn.search_k:}{The number of nodes to search in an annoy index
+#'   search. See help(set_nn_control) for more information.}
+#'   \item{nn.M:}{Related to internal dimensionality of HNSW index. See
+#'   help(set_nn_control) for more information.}
+#'   \item{nn.ef_construction:}{Controls the HNSW index build speed/accuracy
+#'   tradeoff.}
+#'   \item{nn.ef:}{Controls the HNSW index search speed/accuracy tradeoff.
+#'   See help(set_nn_control) for more information.}
+#'   \item{nn.grain_size:}{Used by annoy and HNSW to set the minimum amount
+#'   of work to do per thread. See help(set_nn_control) for more
+#'   information.}
+#'   \item{nn.cores:}{Used by annoy and HNSW to control the number of
+#'   threads used. See help(set_nn_control) for more information.}
 #' }
 #'
 #' @param cds the cell_data_set upon which to perform this operation
@@ -87,7 +106,16 @@ learn_graph <- function(cds,
                                     "maxiter",
                                     "eps",
                                     "L1.gamma",
-                                    "L1.sigma")),
+                                    "L1.sigma",
+                                    "nn.method",
+                                    "nn.metric",
+                                    "nn.n_trees",
+                                    "nn.search_k",
+                                    "nn.M",
+                                    "nn.ef_construction",
+                                    "nn.ef",
+                                    "nn.grain_size",
+                                    "nn.cores")),
                             msg = "Unknown variable in learn_graph_control")
   }
 
@@ -163,7 +191,29 @@ learn_graph <- function(cds,
                                       "reduction_method =", reduction_method,
                                       "before running learn_graph."))
 
+#   nn_control <- list(method=learn_graph_control[['nn.method']],
+#                      metric=learn_graph_control[['nn.metric']],
+#                      n_trees=learn_graph_control[['nn.n_trees']],
+#                      search_k=learn_graph_control[['nn.search_k']],
+#                      M=learn_graph_control[['nn.M']],
+#                      ef_construction=learn_graph_control[['nn.ef_construction']],
+#                      ef=learn_graph_control[['nn.ef']],
+#                      grain_size=learn_graph_control[['nn.grain_size']],
+#                      cores=learn_graph_control[['nn.cores']])
+
   nn_control <- list()
+  if(!is.null(learn_graph_control[['nn.method']])) nn_control[['method']] <- learn_graph_control[['nn.method']]
+  if(!is.null(learn_graph_control[['nn.metric']])) nn_control[['metric']] <- learn_graph_control[['nn.metric']]
+  if(!is.null(learn_graph_control[['nn.n_trees']])) nn_control[['n_trees']] <- learn_graph_control[['nn.n_trees']]
+  if(!is.null(learn_graph_control[['nn.search_k']])) nn_control[['search_k']] <- learn_graph_control[['nn.search_k']]
+  if(!is.null(learn_graph_control[['nn.M']])) nn_control[['M']] <- learn_graph_control[['nn.M']]
+  if(!is.null(learn_graph_control[['nn.ef_construction']])) nn_control[['ef_construction']] <- learn_graph_control[['nn.ef_construction']]
+  if(!is.null(learn_graph_control[['nn.ef']])) nn_control[['ef']] <- learn_graph_control[['nn.ef']]
+  if(!is.null(learn_graph_control[['nn.grain_size']])) nn_control[['grain_size']] <- learn_graph_control[['nn.grain_size']]
+  if(!is.null(learn_graph_control[['nn.cores']])) nn_control[['cores']] <- learn_graph_control[['nn.cores']]
+
+  report_nn_control('nn_control: ', nn_control)
+
   nn_control <- set_nn_control(mode=3,
                                nn_control=nn_control,
                                k=nn.k,
@@ -1067,15 +1117,15 @@ connect_tips <- function(cds,
 
     data <- t(reducedDimS_old[, ])
 
-    cluster_result <- louvain_clustering(data = data,
-                                         pd = pd[, ],
-                                         weight = weight,
-                                         nn_index = NULL,
-                                         k = k,
-                                         nn_control = nn_control,
+    cluster_result <- louvain_clustering(data=data,
+                                         pd=pd[, ],
+                                         weight=weight,
+                                         nn_index=NULL,
+                                         k=k,
+                                         nn_control=nn_control,
                                          louvain_iter=1,
                                          random_seed=0L,
-                                         verbose = verbose)
+                                         verbose=verbose)
     cluster_result$optim_res$membership <- tmp[, 1]
   } else { # use kmean clustering result
     tip_pc_points <- which(igraph::degree(mst_g_old) == 1)
@@ -1084,15 +1134,15 @@ connect_tips <- function(cds,
 
     data <- t(reducedDimS_old[, ]) # raw_data_tip_pc_points
 
-    cluster_result <- louvain_clustering(data = data,
-                                         pd = pd[row.names(data), ],
-                                         weight = weight,
-                                         nn_index = NULL,
-                                         k = k,
-                                         nn_control = nn_control,
+    cluster_result <- louvain_clustering(data=data,
+                                         pd=pd[row.names(data), ],
+                                         weight=weight,
+                                         nn_index=NULL,
+                                         k=k,
+                                         nn_control=nn_control,
                                          louvain_iter=1,
                                          random_seed=random_seed,
-                                         verbose = verbose)
+                                         verbose=verbose)
     cluster_result$optim_res$membership <- kmean_res$cluster
   }
 

@@ -11,18 +11,18 @@ reduce_dimension_transform(
 )
 }
 \arguments{
-\item{cds}{A cell_data_set to be transformed.}
+\item{cds}{a cell_data_set to be transformed.}
 
-\item{preprocess_method}{A previously loaded preprocess reduction
+\item{preprocess_method}{a previously loaded preprocess reduction
 method.  The default is NULL, which uses the preprocess_method that
 was used when the reduce_dimension model was built.}
 
-\item{reduction_method}{A previously loaded reduce_dimension transform
-model that is used to reduce the dimensions of the
-preprocessed count matrix in cds.}
+\item{reduction_method}{a previously loaded reduce_dimension transform
+model that is used to reduce the dimensions of the preprocessed
+count matrix in cds. Only "UMAP" is supported.}
 }
 \value{
-A cell_data_set with a reduce_dimension transformed
+a cell_data_set with a transformed
 reduced count matrix.
 }
 \description{

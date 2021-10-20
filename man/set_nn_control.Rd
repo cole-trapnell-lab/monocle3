@@ -13,11 +13,11 @@ set_nn_control(
 )
 }
 \arguments{
-\item{mode}{The nearest neighbor operation for which the nn_control
+\item{mode}{the nearest neighbor operation for which the nn_control
 list will be used. 1=make index, 2=search index, and 3=both make
 and search index. The default mode value is 3.}
 
-\item{nn_control}{list An optional list of parameters passed to
+\item{nn_control}{an optional list of parameters passed to
 the nearest neighbor function specified by nn_control[\link{'method'}].
 The nn_control list can be empty in which case defaults are used
 as follows: if the nn_control_default list has non-zero length, it
@@ -26,18 +26,18 @@ metric='euclidean', n_trees=50, and search_k=k * n_trees. If not
 all of the values required by a nearest neighbor method are given
 listed below.}
 
-\item{k}{integer The number of desired nearest neighbor points to
+\item{k}{integer the number of desired nearest neighbor points to
 return from a search. This value is used only to set the annoy
 search_k parameter when search_k is not given in nn_control. The
 value is ignored for index builds. The default is 25.}
 
-\item{nn_control_default}{An optional nn_control list to use when the
+\item{nn_control_default}{an optional nn_control list to use when the
 nn_control parameter has length zero.}
 
-\item{verbose}{Whether to emit verbose output.}
+\item{verbose}{a boolean indicating whether to emit verbose output.}
 }
 \value{
-An updated nn_control list.
+an updated nn_control list.
 }
 \description{
 Verifies the listed parameter values

@@ -40,7 +40,7 @@ alignment_group. Default is NULL.}
 reduction}
 
 \item{build_nn_index}{logical When this argument is set to TRUE,
-align_cds builds the Annoy nearest neighbor index from the
+align_cds builds the nearest neighbor index from the
 aligned reduced matrix for later use. Default is FALSE.}
 
 \item{nn_control}{A list of parameters used to make the nearest

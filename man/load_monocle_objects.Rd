@@ -7,11 +7,11 @@
 load_monocle_objects(directory_path)
 }
 \arguments{
-\item{directory_path}{A string giving the name of the directory
+\item{directory_path}{a string giving the name of the directory
 from which to read the saved cell_data_set files.}
 }
 \value{
-A cell_data_set.
+a cell_data_set.
 }
 \description{
 Load a full Monocle3 cell_data_set, which was saved using

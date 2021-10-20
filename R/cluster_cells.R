@@ -118,28 +118,34 @@ cluster_cells <- function(cds,
   # matrix so use/store the nn index object in the cds. This saves nn index
   # build time if the index is used later in another function. In that case,
   # test for nn index consistency.
-  if((nn_method == 'annoy' || nn_method == 'hnsw')) {
-     if(!check_cds_nn_index_is_current(cds=cds, reduction_method=reduction_method, nn_control=nn_control, verbose=verbose)) {
-       nn_index <- make_nn_index(subject_matrix=reducedDims(cds)[[reduction_method]],
-                                 nn_control=nn_control,
-                                 verbose=verbose)
-       cds <- set_cds_nn_index(cds=cds,
-                               reduction_method=reduction_method,
-                               nn_index=nn_index,
-                               nn_control=nn_control,
-                               verbose=verbose)
-     }
-     else {
-       nn_index <- get_cds_nn_index(cds=cds,
-                                    reduction_method=reduction_method,
-                                    nn_control=nn_control,
-                                    verbose=verbose)
-     }
-  }
-  else
-  if(nn_method == 'nn2') {
-    nn_index <- NULL
-  }
+# Check for consistency between matrix and index before
+# using the following code.
+#   if((nn_method == 'annoy' || nn_method == 'hnsw')) {
+#      if(!check_cds_nn_index_is_current(cds=cds, reduction_method=reduction_method, nn_control=nn_control, verbose=verbose)) {
+#        nn_index <- make_nn_index(subject_matrix=reducedDims(cds)[[reduction_method]],
+#                                  nn_control=nn_control,
+#                                  verbose=verbose)
+#        cds <- set_cds_nn_index(cds=cds,
+#                                reduction_method=reduction_method,
+#                                nn_index=nn_index,
+#                                nn_control=nn_control,
+#                                verbose=verbose)
+#      }
+#      else {
+#        nn_index <- get_cds_nn_index(cds=cds,
+#                                     reduction_method=reduction_method,
+#                                     nn_control=nn_control,
+#                                     verbose=verbose)
+#      }
+#   }
+#   else
+#   if(nn_method == 'nn2') {
+#     nn_index <- NULL
+#   }
+
+  # Set nn_index to NULL so that louvain_clustering and
+  # leiden_clustering make a new index.
+  nn_index <- NULL
 
   reduced_dim_res <- reducedDims(cds)[[reduction_method]]
 
@@ -150,21 +156,16 @@ cluster_cells <- function(cds,
     message("Running ", cluster_method, " clustering algorithm ...")
 
   if(cluster_method=='louvain') {
-    cluster_result <- louvain_clustering(data = reduced_dim_res,
-                                         pd = colData(cds),
-                                         weight = weight,
-                                         nn_index = nn_index,
-                                         k = k,
-                                         nn_control = nn_control,
-                                         louvain_iter = num_iter,
-                                         random_seed = random_seed,
-                                         verbose = verbose)
-    cds <- set_cds_nn_search(cds=cds,
-                             reduction_method=reduction_method,
-                             search_id='cluster_cells',
-                             k=k,
-                             nn_control=nn_control,
-                             verbose=verbose)
+    cluster_result <- louvain_clustering(data=reduced_dim_res,
+                                         pd=colData(cds),
+                                         weight=weight,
+                                         nn_index=nn_index,
+                                         k=k,
+                                         nn_control=nn_control,
+                                         louvain_iter=num_iter,
+                                         random_seed=random_seed,
+                                         verbose=verbose)
+
     if (length(unique(cluster_result$optim_res$membership)) > 1) {
       cluster_graph_res <- compute_partitions(cluster_result$g,
                                               cluster_result$optim_res,
@@ -183,22 +184,17 @@ cluster_cells <- function(cds,
   }
   else if(cluster_method=='leiden'){
     cds <- add_citation(cds, "leiden")
-    cluster_result <- leiden_clustering(data = reduced_dim_res,
-                                        pd = colData(cds),
-                                        weight = weight,
-                                        nn_index = nn_index,
-                                        k = k,
-                                        nn_control = nn_control,
-                                        num_iter = num_iter,
-                                        resolution_parameter = resolution,
-                                        random_seed = random_seed,
-                                        verbose = verbose, ...)
-    cds <- set_cds_nn_search(cds=cds,
-                             reduction_method=reduction_method,
-                             search_id='cluster_cells',
-                             k=k+1,
-                             nn_control=nn_control,
-                             verbose=verbose)
+    cluster_result <- leiden_clustering(data=reduced_dim_res,
+                                        pd=colData(cds),
+                                        weight=weight,
+                                        nn_index=nn_index,
+                                        k=k,
+                                        nn_control=nn_control,
+                                        num_iter=num_iter,
+                                        resolution_parameter=resolution,
+                                        random_seed=random_seed,
+                                        verbose=verbose, ...)
+
     if(length(unique(cluster_result$optim_res$membership)) > 1) {
       cluster_graph_res <- compute_partitions(cluster_result$g,
                                               cluster_result$optim_res,
@@ -224,7 +220,7 @@ cluster_cells <- function(cds,
 cluster_cells_make_graph <- function(data,
                                      weight,
                                      cell_names,
-                                     nn_index = NULL,
+                                     nn_index=NULL,
                                      k=k,
                                      nn_control=list(),
                                      verbose) {
@@ -238,9 +234,10 @@ cluster_cells_make_graph <- function(data,
   } else
   if (k > nrow(data) - 2) {
     k <- nrow(data) - 2
-    warning(paste("RANN counts the point itself, k must be smaller than\nthe",
+    warning(paste("The nearest neighbors includes the point itself, k must be smaller than\nthe",
                   "total number of points - 1 (all other points) - 1",
-                  "(itself)!"))
+                  "(itself)!",
+                  "Total number of points is", nrow(data)))
   }
 
   if (verbose) {
@@ -259,7 +256,7 @@ cluster_cells_make_graph <- function(data,
       nn_index <- make_nn_index(subject_matrix=data, nn_control=nn_control, verbose=verbose)
     }
     tmp <- search_nn_index(query_matrix=data,
-                           nn_index= nn_index,
+                           nn_index=nn_index,
                            k=k+1,
                            nn_control=nn_control,
                            verbose=verbose)
@@ -304,13 +301,13 @@ cluster_cells_make_graph <- function(data,
 #      stored in the cds because it does not return a cds.
 louvain_clustering <- function(data,
                                pd,
-                               weight = F,
-                               nn_index = NULL,
-                               k = 20,
+                               weight=F,
+                               nn_index=NULL,
+                               k=20,
                                nn_control=list(),
-                               louvain_iter = 1,
-                               random_seed = 0L,
-                               verbose = FALSE) {
+                               louvain_iter=1,
+                               random_seed=0L,
+                               verbose=FALSE) {
   assertthat::assert_that(assertthat::is.count(k))
 
   cell_names <- row.names(pd)
@@ -391,14 +388,14 @@ louvain_clustering <- function(data,
 #      stored in the cds because it does not return a cds.
 leiden_clustering <- function(data,
                               pd,
-                              weight = NULL,
-                              nn_index = NULL,
-                              k = 20,
-                              nn_control = list(),
-                              num_iter = 2,
-                              resolution_parameter = 0.0001,
-                              random_seed = NULL,
-                              verbose = FALSE, ...) {
+                              weight=NULL,
+                              nn_index=NULL,
+                              k=20,
+                              nn_control=list(),
+                              num_iter=2,
+                              resolution_parameter=0.0001,
+                              random_seed=NULL,
+                              verbose=FALSE, ...) {
   extra_arguments <- list(...)
   if( 'partition_type' %in% names( extra_arguments ) )
     partition_type <- extra_arguments[['partition_type']]

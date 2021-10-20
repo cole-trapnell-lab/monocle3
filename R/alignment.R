@@ -33,7 +33,7 @@
 #' @param verbose Whether to emit verbose output during dimensionality
 #'   reduction
 #' @param build_nn_index logical When this argument is set to TRUE,
-#'   align_cds builds the Annoy nearest neighbor index from the
+#'   align_cds builds the nearest neighbor index from the
 #'   aligned reduced matrix for later use. Default is FALSE.
 #' @param nn_control A list of parameters used to make the nearest
 #'  neighbor index. See the set_nn_control help for detailed information.
@@ -77,7 +77,7 @@ align_cds <- function(cds,
   set.seed(2016)
 
   cds <- initialize_reduce_dim_metadata(cds, 'Aligned')
-  cds <- initialize_reduce_dim_aux_model(cds, 'Aligned')
+  cds <- initialize_reduce_dim_model_identity(cds, 'Aligned')
 
   if (!is.null(residual_model_formula_str)) {
     if (verbose) message("Removing residual effects")

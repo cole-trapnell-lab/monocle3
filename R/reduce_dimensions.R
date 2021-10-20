@@ -41,8 +41,8 @@
 #' @param verbose Logical, whether to emit verbose output.
 #' @param cores Number of cores to use for computing the UMAP.
 #' @param build_nn_index logical When this argument is set to TRUE,
-#'   preprocess_cds builds the Annoy nearest neighbor index from the
-#'   dimensionally reduced matrix for later use. Default is FALSE.
+#'   preprocess_cds builds the nearest neighbor index from the
+#'   reduced dimension matrix for later use. Default is FALSE.
 #' @param nn_control A list of parameters used to make the nearest
 #'  neighbor index. See the set_nn_control help for detailed information.
 #' @param ... additional arguments to pass to the dimensionality reduction
@@ -178,7 +178,7 @@ reduce_dimension <- function(cds,
     if (verbose) message("Reduce dimension by tSNE ...")
 
     cds <- initialize_reduce_dim_metadata(cds, 'tSNE')
-    cds <- initialize_reduce_dim_aux_model(cds, 'tSNE')
+    cds <- initialize_reduce_dim_model_identity(cds, 'tSNE')
 
     tsne_res <- Rtsne::Rtsne(as.matrix(preprocess_mat), dims = max_components,
                              pca = F, check_duplicates=FALSE, ...)
@@ -225,7 +225,7 @@ reduce_dimension <- function(cds,
       message("Running Uniform Manifold Approximation and Projection")
 
     cds <- initialize_reduce_dim_metadata(cds, 'UMAP')
-    cds <- initialize_reduce_dim_aux_model(cds, 'UMAP')
+    cds <- initialize_reduce_dim_model_identity(cds, 'UMAP')
 
     umap_model <- uwot::umap(as.matrix(preprocess_mat),
                              n_components = max_components,

@@ -12,24 +12,26 @@ preprocess_transform(
 )
 }
 \arguments{
-\item{cds}{A cell_data_set to be transformed.}
+\item{cds}{a cell_data_set to be transformed.}
 
-\item{reduction_method}{A previously loaded transform model that
-is used to reduce the dimensions of the count matrix
-in cds.}
+\item{reduction_method}{a previously loaded transform
+model that is used to reduce the dimensions of the
+count matrix in cds. The "PCA" and "LSI" transforms
+are supported. The default is "PCA".}
 
-\item{block_size}{A numeric value for the DelayedArray
+\item{block_size}{a numeric value for the DelayedArray
 block size used only in this function. Default is
 NULL, which does not affect the current block size.}
 
-\item{cores}{The number of cores to use for the matrix multiplication.}
+\item{cores}{the number of cores to use for the matrix
+multiplication. The default is 1.}
 }
 \value{
-A cell_data_set with a preprocess reduced count
+a cell_data_set with a preprocess reduced count
 matrix.
 }
 \description{
-Applies a previously calculated preprocess transform
-model to a new count matrix. For more information read
-the help information for save_transform_models.
+Applies a previously calculated preprocess
+transform model to a new count matrix. For more
+information read the help information for save_transform_models.
 }
