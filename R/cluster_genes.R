@@ -239,9 +239,25 @@ aggregate_gene_expression <- function(cds,
 
     # FIXME: this should allow genes to be part of multiple groups. group_by
     # over the second column with a call to colSum should do it.
-    agg_mat = my.aggregate.Matrix(agg_mat[gene_group_df[,1],],
-                                            as.factor(gene_group_df[,2]),
-                                            fun=gene_agg_fun)
+    gene_groups = unique(gene_group_df[,2])
+    agg_gene_groups = lapply(gene_groups, function(gene_group){
+      genes_in_group = unique(gene_group_df[gene_group_df[,2] == gene_group,1])
+      gene_expr_mat = agg_mat[genes_in_group,]
+      if (length(dn <- dim(gene_expr_mat)) < 2L)
+        return(NA)
+      if (gene_agg_fun == "mean"){
+        res = Matrix::colMeans()
+      }else if (gene_agg_fun == "sum"){
+        res = Matrix::colSums(agg_mat[genes_in_group,])
+      }
+      return(res)
+    })
+
+    agg_mat_colnames = colnames(agg_mat)
+    agg_mat = do.call(rbind, agg_gene_groups)
+    row.names(agg_mat) = gene_groups
+    agg_mat = agg_mat[is.na(agg_gene_groups) == FALSE,]
+    colnames(agg_mat) = agg_mat_colnames
   }
 
   if (is.null(cell_group_df) == FALSE){
@@ -257,15 +273,21 @@ aggregate_gene_expression <- function(cds,
   }
 
   if (scale_agg_values){
+    agg_mat_rownames = row.names(agg_mat)
+    agg_mat_colnames = colnames(agg_mat)
+
     agg_mat = as.matrix(agg_mat)
     agg_mat <- t(scale(t(agg_mat)))
     agg_mat[is.nan(agg_mat)] = 0
     agg_mat[agg_mat < min_agg_value] <- min_agg_value
     agg_mat[agg_mat > max_agg_value] <- max_agg_value
+
+    row.names(agg_mat) = agg_mat_rownames
+    colnames(agg_mat) = agg_mat_colnames
   }
 
   if (exclude.na){
-    agg_mat <- agg_mat[rownames(agg_mat) != "NA", colnames(agg_mat) != "NA",drop=FALSE]
+    agg_mat <- agg_mat[row.names(agg_mat) != "NA", colnames(agg_mat) != "NA",drop=FALSE]
   }
   return(agg_mat)
 }
