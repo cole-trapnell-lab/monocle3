@@ -253,7 +253,7 @@ align_transform <- function(cds, reduction_method=c('Aligned')) {
                                     " Please preprocess the matrix before",
                                     " calling align_transform using preprocess_transform."))
 
-#  stop('This function is a place holder. It does not map the transformed count matrix to aligned space at this time because we don\'t know how to it yet.')
+  stop('This function is a place holder. It does not map the transformed count matrix to aligned space at this time because we don\'t know how to it yet.')
 
   set.seed(2016)
   alignment_group <- cds@reduce_dim_aux[['Aligned']][['model']][['alignment_group']]
