@@ -85,6 +85,7 @@ Imports:
     viridis (>= 0.5.1)
 Remotes:
     cole-trapnell-lab/leidenbase
+    rspatial/terra
 Suggests: 
     testthat (>= 2.1.0),
     pryr (>= 0.1.4),
