@@ -292,8 +292,11 @@ edit_query_cell_labels <- function(preproc_res,
 #' @param reduction_method a string specifying the reduced dimension
 #'   matrix to use for the label transfer. These are "PCA",
 #'   "LSI", and "UMAP". Default is "UMAP".
-#' @param column_name a string giving the name of the query
-#'   cds column to fix.
+#' @param from_column_name a string giving the name of the query
+#'   cds column with NA values to fix.
+#' @param to_column_name a string giving the name of the query
+#'   cds column where the fixed column data will be stored. The
+#'   default is from_column_name
 #' @param out_notna_models_dir a string with the name of the transform
 #'   model directory to which to save the not-NA transform models,
 #'   which includes the nearest neighbor index. If NULL, the
@@ -318,7 +321,8 @@ edit_query_cell_labels <- function(preproc_res,
 #' @export
 fix_missing_cell_labels <- function(cds,
                                     reduction_method=c('UMAP', 'PCA', 'LSI'),
-                                    column_name,
+                                    from_column_name,
+                                    to_column_name=from_column_name,
                                     out_notna_models_dir=NULL,
                                     k=10,
                                     nn_control=list(),
@@ -335,8 +339,8 @@ fix_missing_cell_labels <- function(cds,
   assertthat::assert_that(!is.null(cds@reduce_dim_aux[[reduction_method]]),
                           msg=paste0("Reduction method '", reduction_method, "' is not in the cds."))
   reduction_method <- match.arg(reduction_method)
-  assertthat::assert_that(column_name %in% colnames(colData(cds)),
-                          msg=paste0('column_name \'', column_name, '\' is not in the cds colData'))
+  assertthat::assert_that(from_column_name %in% colnames(colData(cds)),
+                          msg=paste0('from_column_name \'', from_column_name, '\' is not in the cds colData'))
 
   nn_control <- set_nn_control(mode=3,
                                nn_control=nn_control,
@@ -345,7 +349,7 @@ fix_missing_cell_labels <- function(cds,
                                verbose=verbose)
 
   # Partition cds.
-  notna_cds <- cds[, !is.na(colData(cds)[[column_name]])]
+  notna_cds <- cds[, !is.na(colData(cds)[[from_column_name]])]
   
   # Build index on not NA cds, where there is a label.
   notna_nn_index <- make_nn_index(subject_matrix=reducedDims(notna_cds)[[reduction_method]],
@@ -357,19 +361,22 @@ fix_missing_cell_labels <- function(cds,
     save_transform_models(cds=notna_cds, directory_path=out_notna_models_dir)
   }
   
-  na_cds <- cds[, is.na(colData(cds)[[column_name]])]
+  na_cds <- cds[, is.na(colData(cds)[[from_column_name]])]
   new_cell_labels <- edit_query_cell_labels(preproc_res=reducedDims(na_cds)[[reduction_method]],
                                             query_col_data=notna_col_data, 
                                             query_nn_index=notna_nn_index, 
-                                            column_name=column_name,
+                                            column_name=from_column_name,
                                             k=k,
                                             nn_control=nn_control,
                                             top_frac_threshold=top_frac_threshold,
                                             top_next_ratio_threshold=top_next_ratio_threshold,
                                             verbose=verbose)
   
-  na_label_index <- which(is.na(colData(cds)[[column_name]]))
-  colData(cds)[[column_name]][na_label_index] <- new_cell_labels
+  if(to_column_name != from_column_name)
+    colData(cds)[[to_column_name]] <- colData(cds)[[from_column_name]]
+
+  na_label_index <- which(is.na(colData(cds)[[from_column_name]]))
+  colData(cds)[[to_column_name]][na_label_index] <- new_cell_labels
 
   return(cds)
 }

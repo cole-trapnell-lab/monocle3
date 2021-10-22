@@ -8,7 +8,8 @@ transfer_cell_labels().}
 fix_missing_cell_labels(
   cds,
   reduction_method = c("UMAP", "PCA", "LSI"),
-  column_name,
+  from_column_name,
+  to_column_name = from_column_name,
   out_notna_models_dir = NULL,
   k = 10,
   nn_control = list(),
@@ -22,8 +23,12 @@ fix_missing_cell_labels(
 matrix to use for the label transfer. These are "PCA",
 "LSI", and "UMAP". Default is "UMAP".}
 
-\item{column_name}{a string giving the name of the query
-cds column to fix.}
+\item{from_column_name}{a string giving the name of the query
+cds column with NA values to fix.}
+
+\item{to_column_name}{a string giving the name of the query
+cds column where the fixed column data will be stored. The
+default is from_column_name}
 
 \item{out_notna_models_dir}{a string with the name of the transform
 model directory to which to save the not-NA transform models,
