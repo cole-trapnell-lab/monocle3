@@ -245,7 +245,7 @@ test_that("cluster_cells works", {
   expect_equal(length(cds@clusters[["UMAP"]]$cluster_result$optim_res$membership),
                nrow(colData(cds)))
   expect_equal(cds@clusters[["UMAP"]]$cluster_result$optim_res$membership[[1]],
-               9)
+               1)
   expect_equal(length(unique(clusters(cds, reduction_method = "UMAP"))), 9)
 
   # non-standard opts
@@ -257,7 +257,7 @@ test_that("cluster_cells works", {
   expect_equal(length(cds@clusters[["UMAP"]]$cluster_result$optim_res$membership),
                nrow(colData(cds)))
   expect_equal(cds@clusters[["UMAP"]]$cluster_result$optim_res$membership[[1]],
-               10)
+               1)
   expect_equal(length(unique(clusters(cds, reduction_method = "UMAP"))), 10)
 
   ### tSNE
