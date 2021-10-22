@@ -194,11 +194,11 @@ test_that("order_cells works 3d", {
   cds <- order_cells(cds, root_cells = "G07_B02_RT_587")
   expect_equal(max(pseudotime(cds)), 11.7, tol = 1e-1)
   expect_equal(min(pseudotime(cds)), 0)
-  expect_equal(as.numeric(pseudotime(cds)[1]), 2.07, tol = 1e-2)
+  expect_equal(as.numeric(pseudotime(cds)[1]), 1.53, tol = 1e-2)
   cds <- order_cells(cds, root_cells = c("G07_B02_RT_587", "F06_A01_RT_598"))
   expect_equal(max(pseudotime(cds)), 11.7, tol = 1e-1)
   expect_equal(min(pseudotime(cds)), 0)
-  expect_equal(as.numeric(pseudotime(cds)[1]), 2.07, tol = 1e-2)
+  expect_equal(as.numeric(pseudotime(cds)[1]), 1.53, tol = 1e-2)
 })
 
 cds <- cluster_cells(cds, random_seed = 100)
