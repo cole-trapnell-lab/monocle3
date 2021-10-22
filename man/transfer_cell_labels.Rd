@@ -8,7 +8,7 @@ cell_data_set.}
 transfer_cell_labels(
   cds_query,
   reduction_method = c("UMAP", "PCA", "LSI"),
-  ref_col_data,
+  ref_coldata,
   ref_column_name,
   query_column_name = ref_column_name,
   transform_models_dir = NULL,
@@ -26,7 +26,7 @@ transfer_cell_labels(
 matrix to use for the label transfer. These are "PCA",
 "LSI", and "UMAP". Default is "UMAP".}
 
-\item{ref_col_data}{the reference cds colData data frame, which
+\item{ref_coldata}{the reference cds colData data frame, which
 is obtained using the colData(cds_ref) function.}
 
 \item{ref_column_name}{a string giving the name of the reference
