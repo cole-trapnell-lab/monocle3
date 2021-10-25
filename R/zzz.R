@@ -71,7 +71,8 @@ get_global_variable <- function(variable_name=NULL) {
 
   # Default nn_control list for functions that do not need
   # an index, which is all but the label transfer functions.
-  set_global_variable('nn_control_1', list(method='nn2'))
+  set_global_variable('nn_control_1', list(method='annoy', metric='euclidean', n_trees=50))
+#  set_global_variable('nn_control_1', list(method='nn2'))
 
   # Default nn_control list for functions that need an index,
   # which are the label transfer functions.

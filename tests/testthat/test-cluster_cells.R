@@ -125,8 +125,8 @@ test_that("cluster_cells works", {
   expect_equal(length(cds@clusters[["PCA"]]$cluster_result$optim_res$membership),
                nrow(colData(cds)))
   expect_equal(cds@clusters[["PCA"]]$cluster_result$optim_res$membership[[1]],
-               16)
-  expect_equal(length(unique(clusters(cds, reduction_method = "PCA"))), 59)
+               4)
+  expect_equal(length(unique(clusters(cds, reduction_method = "PCA"))), 55)
 
   cds <- cluster_cells(cds, reduction_method = "PCA", k=22, weight = T,
                        num_iter = 2, partition_qval = .1, resolution = .1,
@@ -136,8 +136,8 @@ test_that("cluster_cells works", {
   expect_equal(length(cds@clusters[["PCA"]]$cluster_result$optim_res$membership),
                nrow(colData(cds)))
   expect_equal(as.numeric(cds@clusters[["PCA"]]$cluster_result$optim_res$membership[1]),
-               8)
-  expect_equal(length(unique(clusters(cds, reduction_method = "PCA"))), 24)
+               7)
+  expect_equal(length(unique(clusters(cds, reduction_method = "PCA"))), 21)
 
   cds <- cluster_cells(cds, reduction_method = "PCA", k=22, weight = T,
                        num_iter = 2, partition_qval = .1, resolution = .01,
@@ -167,8 +167,8 @@ test_that("cluster_cells works", {
   expect_equal(length(cds@clusters[["LSI"]]$cluster_result$optim_res$membership),
                nrow(colData(cds)))
   expect_equal(cds@clusters[["LSI"]]$cluster_result$optim_res$membership[[1]],
-               1)
-  expect_equal(length(unique(clusters(cds, reduction_method = "LSI"))), 62)
+               10)
+  expect_equal(length(unique(clusters(cds, reduction_method = "LSI"))), 54)
 })
 
 cds <- load_a549()

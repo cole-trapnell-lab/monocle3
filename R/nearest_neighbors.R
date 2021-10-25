@@ -423,7 +423,7 @@ make_nn_index <- function(subject_matrix, nn_control=list(), verbose=FALSE) {
   if(verbose) {
     message('make_nn_index:')
     report_nn_control('  nn_control: ', nn_control)
-    tic('make_nn_index: build time')
+    tictoc::tic('make_nn_index: build time')
   }
 
   nn_method <- nn_control[['method']]
@@ -461,7 +461,7 @@ make_nn_index <- function(subject_matrix, nn_control=list(), verbose=FALSE) {
     stop('make_nn_index: unsupported nearest neighbor index type \'', nn_method, '\'')
 
   if(verbose) {
-    toc()
+    tictoc::toc()
   }
 
   return(nn_index)
@@ -661,7 +661,7 @@ search_nn_index <- function(query_matrix, nn_index, k=25, nn_control=list(), ver
     message('search_nn_index:')
     message('  k: ', k)
     report_nn_control('  nn_control: ', nn_control)
-    tic('search_nn_index: search time:')
+    tictoc::tic('search_nn_index: search time:')
   }
 
   k <- min(k, nrow(query_matrix))
@@ -699,7 +699,7 @@ search_nn_index <- function(query_matrix, nn_index, k=25, nn_control=list(), ver
     stop('search_nn_index: unsupported nearest neighbor index type \'', nn_method, '\'')
 
   if(verbose) {
-    toc()
+    tictoc::toc()
   }
 
   return(nn_res) 
@@ -940,7 +940,7 @@ search_nn_matrix <- function(subject_matrix, query_matrix, k=25, nn_control=list
     message('search_nn_matrix:')
     message('  k: ', k)
     report_nn_control('  nn_control: ', nn_control)
-    tic('search_nn_matrix: search_time')
+    tictoc::tic('search_nn_matrix: search_time')
   }
 
   if(method == 'nn2') {
@@ -1003,7 +1003,7 @@ search_nn_matrix <- function(subject_matrix, query_matrix, k=25, nn_control=list
     stop('search_nn_matrix: unsupported nearest neighbor method \'', nn_method, '\'')
 
   if(verbose)
-    toc()
+    tictoc::toc()
 
   return(nn_res)
 
