@@ -259,7 +259,7 @@ test_that("cluster_cells works", {
   expect_equal(cds@clusters[["UMAP"]]$cluster_result$optim_res$membership[[1]],
                1)
   expect_equal(length(unique(clusters(cds, reduction_method = "UMAP"))), 12)
-
+  
   ### tSNE
   ##leiden
   cds <- cluster_cells(cds, reduction_method = "tSNE", random_seed = 100)

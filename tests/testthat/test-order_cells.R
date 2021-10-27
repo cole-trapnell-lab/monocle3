@@ -190,7 +190,7 @@ test_that("order_cells works 3d", {
   cds <- order_cells(cds, root_pr_nodes = c("Y_1", "Y_10"))
   expect_equal(max(pseudotime(cds)),  10.0, tol = 1e-1)
   expect_equal(min(pseudotime(cds)), 0)
-  expect_equal(as.numeric(pseudotime(cds)[1]), 2.04e-5, tol = 1e-6)
+  expect_equal(as.numeric(pseudotime(cds)[1]), 2.04e-5, tol = 1e-6):19:
   cds <- order_cells(cds, root_cells = "G07_B02_RT_587")
   expect_equal(max(pseudotime(cds)), 13.4, tol = 1e-1)
   expect_equal(min(pseudotime(cds)), 0)
