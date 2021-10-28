@@ -247,7 +247,7 @@ set_model_identity_path <- function(cds, reduction_method=c('PCA', 'LSI', 'Align
 #'   of a UMAP reduced dimension matrix made from a PCA
 #'   reduced dimension matrix, the cell_data_set has the
 #'   identities of both the UMAP and the PCA matrices. The
-#'   UMAP identity is stored as 'matrix_id' and the PCA
+#'   UMAP identity is stored as 'matrix_id' and the PCA as
 #'   'prev_matrix_id'. Similarly, the model and the previous 
 #'   model identities are stored as 'model_id' and 
 #'   'prev_model_id'. This allows one to trace a matrix

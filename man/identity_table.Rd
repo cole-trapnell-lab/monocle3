@@ -2,7 +2,7 @@
 % Please edit documentation in R/identity.R
 \name{identity_table}
 \alias{identity_table}
-\title{Report the matrix and model identity information.}
+\title{Report matrix and model identity information.}
 \usage{
 identity_table(cds)
 }
@@ -13,31 +13,55 @@ identity_table(cds)
 Write identity information to stdout.
 }
 \description{
-Write the cell_data_set matrix and model identity
-information to stdout.
+Write the cell_data_set matrix and model
+identity information to stdout.
 }
 \details{
-A matrix identity is a time stamp that is made when
-a reduced dimension matrix is created. The time stamp is an
-MD5 checksum string made from the time and a counter, which
-make it unique. Some functions that read count
-matrices also make a matrix identity, for example,
-load_mm_data(). In addition to the matrix identity for the
-reduced dimension matrix, Monocle3 stores the identity of the
-matrix from which the matrix was made. For example, in the
-case of a UMAP reduced dimension matrix made from a PCA reduced
-dimension matrix, the cds has the identity of both the UMAP
-and the PCA matrices. The identity_table() function stores
-the UMAP identity as 'matrix_id' and the PCA identity as
-'prev_matrix_id'. This gives a way to trace a matrix to its
-origin. The ability to trace the matrix may be helpful when
-a cds is saved and restored, and then partially reprocessed.
+A matrix identity is a time stamp that is stored
+in the cell_data_set when a reduced dimension matrix is
+created and when certain functions read count matrices
+into the cell_data_set, such as load_mm_data(). At the
+same time, the same time stamp is stored as the model
+identity in order to link the model to its matrix.
 
-The matrix identity string is stored in the internal metadata
-slot of the cell_data_set.
+Additionally, Monocle3 stores the identity of the matrix
+from which the matrix was made. For example, in the case
+of a UMAP reduced dimension matrix made from a PCA
+reduced dimension matrix, the cell_data_set has the
+identities of both the UMAP and the PCA matrices. The
+UMAP identity is stored as 'matrix_id' and the PCA as
+'prev_matrix_id'. Similarly, the model and the previous
+model identities are stored as 'model_id' and
+'prev_model_id'. This allows one to trace a matrix
+to its origin, which may be helpful when a cell_data_set
+is partially reprocessed; for example, if preprocess_cds()
+is re-run but reduce_dimension() is not. Also, it may be
+helpful when transformation models are loaded with the
+load_transformation_models() function, in which case
+the matrix and model identities will differ.
 
-Note that the same matrix created at different times will
-have different matrix identities. We chose to use a time
-stamp because the alternative of making a checksum from a
-very large matrix can take a long time.
+The identity of the model used to transform a matrix
+is stored with the matrix identity information as
+'model_id'. Ordinarily, the matrix 'matrix_id' and
+'model_id' and the corresponding model 'model_id' will
+have the same string value. However, they differ when
+the preprocess_transform() and reduce_dim_transform()
+functions are used to transform a matrix.
+
+Certain file and directory paths may be stored in the
+cell_data_set.
+
+A time stamp is an MD5 checksum string made from the
+time and a counter, which make it unique.
+
+The matrix identity string is stored in the internal
+metadata slot of the cell_data_set and the model
+identity string is stored in the model object in the
+cds@reduce_dim_aux slot of the cell_data_set.
+
+Note that the same matrix created at different times
+will have different matrix identity strings. We chose
+to use time stamps because the alternative of making
+a checksum from a very large matrix can take a long
+time.
 }
