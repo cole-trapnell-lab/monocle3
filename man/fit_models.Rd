@@ -23,8 +23,8 @@ the genes.}
 
 \item{expression_family}{Specifies the family function used for expression
 responses. Can be one of "quasipoisson", "negbinomial", "poisson",
-"binomial", "gaussian", "zipoisson", or "zinegbinomial". Default is
-"quasipoisson".}
+"binomial", "gaussian", "zipoisson", "zinegbinomial", or "mixed-negbinomial".
+Default is "quasipoisson".}
 
 \item{reduction_method}{Which method to use with clusters() and
 partitions(). Default is "UMAP".}

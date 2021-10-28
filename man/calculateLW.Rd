@@ -5,7 +5,14 @@
 \title{Function to calculate the neighbors list with spatial weights for the chosen
 coding scheme from a cell dataset object}
 \usage{
-calculateLW(cds, k, neighbor_graph, reduction_method, verbose = FALSE)
+calculateLW(
+  cds,
+  k,
+  neighbor_graph,
+  reduction_method,
+  verbose = FALSE,
+  nn_control = list()
+)
 }
 \arguments{
 \item{cds}{The cell_data_set object where the neighbors list is calculated

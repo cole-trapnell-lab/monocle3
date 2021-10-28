@@ -15,8 +15,10 @@ reduce_dimension(
   umap.n_neighbors = 15L,
   umap.fast_sgd = FALSE,
   umap.nn_method = "annoy",
-  cores = 1,
   verbose = FALSE,
+  cores = 1,
+  build_nn_index = FALSE,
+  nn_control = list(),
   ...
 )
 }
@@ -51,9 +53,16 @@ TRUE. See uwot package's \code{\link[umap]{umap}} for details.}
 used by UMAP. Default is "annoy". See uwot package's
 \code{\link[umap]{umap}} for details.}
 
-\item{cores}{Number of compute cores to use.}
-
 \item{verbose}{Logical, whether to emit verbose output.}
+
+\item{cores}{Number of cores to use for computing the UMAP.}
+
+\item{build_nn_index}{logical When this argument is set to TRUE,
+preprocess_cds builds the nearest neighbor index from the
+reduced dimension matrix for later use. Default is FALSE.}
+
+\item{nn_control}{A list of parameters used to make the nearest
+neighbor index. See the set_nn_control help for detailed information.}
 
 \item{...}{additional arguments to pass to the dimensionality reduction
 function.}

@@ -38,8 +38,13 @@
 #' @param umap.nn_method String indicating the nearest neighbor method to be
 #'   used by UMAP. Default is "annoy". See uwot package's
 #'   \code{\link[umap]{umap}} for details.
-#' @param cores Number of compute cores to use.
 #' @param verbose Logical, whether to emit verbose output.
+#' @param cores Number of cores to use for computing the UMAP.
+#' @param build_nn_index logical When this argument is set to TRUE,
+#'   preprocess_cds builds the nearest neighbor index from the
+#'   reduced dimension matrix for later use. Default is FALSE.
+#' @param nn_control A list of parameters used to make the nearest
+#'  neighbor index. See the set_nn_control help for detailed information.
 #' @param ... additional arguments to pass to the dimensionality reduction
 #'   function.
 #' @return an updated cell_data_set object
@@ -58,17 +63,22 @@ reduce_dimension <- function(cds,
                              umap.n_neighbors = 15L,
                              umap.fast_sgd = FALSE,
                              umap.nn_method = "annoy",
-                             cores=1,
-                             verbose=FALSE,
+                             verbose = FALSE,
+                             cores = 1,
+                             build_nn_index = FALSE,
+                             nn_control = list(),
                              ...){
+
   extra_arguments <- list(...)
 
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
     msg = "reduction_method must be one of 'UMAP', 'PCA', 'tSNE', 'LSI', 'Aligned'")
-
   reduction_method <- match.arg(reduction_method)
+
+  assertthat::assert_that(is.logical(build_nn_index),
+                          msg = paste("build_nn_index must be either TRUE or FALSE"))
 
   if (is.null(preprocess_method)){
     if ("Aligned" %in% names(reducedDims(cds))){
@@ -84,8 +94,15 @@ reduce_dimension <- function(cds,
       msg = "preprocess_method must be one of 'PCA' or 'LSI'")
   }
 
-  #preprocess_method <- match.arg(preprocess_method)
+  if(build_nn_index) {
+    nn_control <- set_nn_control(mode=1,
+                                 nn_control=nn_control,
+                                 k=1,
+                                 nn_control_default=get_global_variable('nn_control_2'),
+                                 verbose=verbose)
+  }
 
+  #preprocess_method <- match.arg(preprocess_method)
 
   assertthat::assert_that(assertthat::is.count(max_components))
 
@@ -144,12 +161,24 @@ reduce_dimension <- function(cds,
 
   preprocess_mat <- reducedDims(cds)[[preprocess_method]]
 
+  #
+  # Notes:
+  #   o  the functions save_transform_models/load_transform_models
+  #      expect that the reduce_dim_aux slot consists of a SimpleList
+  #      that stores information about methods with the elements
+  #        reduce_dim_aux[[method]][['model']] for the transform elements
+  #        reduce_dim_aux[[method]][[nn_method]] for the annoy index
+  #      and depends on the elements within model and nn_method.
+  #
   if(reduction_method == "PCA") {
     if (verbose) message("Returning preprocessed PCA matrix")
   } else if(reduction_method == "LSI") {
     if (verbose) message("Returning preprocessed LSI matrix")
   } else if (reduction_method == "tSNE") {
     if (verbose) message("Reduce dimension by tSNE ...")
+
+    cds <- initialize_reduce_dim_metadata(cds, 'tSNE')
+    cds <- initialize_reduce_dim_model_identity(cds, 'tSNE')
 
     tsne_res <- Rtsne::Rtsne(as.matrix(preprocess_mat), dims = max_components,
                              pca = F, check_duplicates=FALSE, ...)
@@ -159,27 +188,108 @@ reduce_dimension <- function(cds,
 
     reducedDims(cds)$tSNE <- tsne_data
 
-  } else if (reduction_method == c("UMAP")) {
+
+    matrix_id <- get_unique_id()
+    reduce_dim_matrix_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method)
+
+    set_reduce_dim_matrix_identity(cds, 'tSNE',
+                                   'matrix:tSNE',
+                                   matrix_id,
+                                   reduce_dim_matrix_identity[['matrix_type']],
+                                   reduce_dim_matrix_identity[['matrix_id']],
+                                   'matrix:tSNE',
+                                   matrix_id)
+    reduce_dim_model_identity <- get_reduce_dim_model_identity(cds, preprocess_method)
+    set_reduce_dim_model_identity(cds, 'tSNE',
+                                  'matrix:tSNE',
+                                  matrix_id,
+                                  reduce_dim_model_identity[['model_type']],
+                                  reduce_dim_model_identity[['model_id']])
+
+    # make nearest neighbor index in tSNE space
+
+    if( build_nn_index ) {
+      nn_index <- make_nn_index(subject_matrix=reducedDims(cds)[[reduction_method]],
+                                nn_control=nn_control,
+                                verbose=verbose)
+      cds <- set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, nn_control=nn_control, verbose=verbose)
+    }
+    else
+      cds <- clear_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_method='all')
+
+  }
+  else
+  if (reduction_method == c("UMAP")) {
     cds <- add_citation(cds, "UMAP")
     if (verbose)
       message("Running Uniform Manifold Approximation and Projection")
 
-    umap_res = uwot::umap(as.matrix(preprocess_mat),
-                          n_components = max_components,
-                          metric = umap.metric,
-                          min_dist = umap.min_dist,
-                          n_neighbors = umap.n_neighbors,
-                          fast_sgd = umap.fast_sgd,
-                          n_threads=cores,
-                          verbose=verbose,
-                          nn_method = umap.nn_method,
-                          ...)
+    cds <- initialize_reduce_dim_metadata(cds, 'UMAP')
+    cds <- initialize_reduce_dim_model_identity(cds, 'UMAP')
 
+    umap_model <- uwot::umap(as.matrix(preprocess_mat),
+                             n_components = max_components,
+                             metric = umap.metric,
+                             min_dist = umap.min_dist,
+                             n_neighbors = umap.n_neighbors,
+                             fast_sgd = umap.fast_sgd,
+                             n_threads=cores,
+                             verbose=verbose,
+                             nn_method = umap.nn_method,
+                             ret_model = TRUE,
+                             ...)
+
+    # Notes:
+    #   o  uwot::umap_transform() returns a slightly different result in
+    #      comparison to uwot::umap() (umap_res$embedding) model, even
+    #      when uwot::umap_transform() uses the model from uwot::umap().
+    #      However, uwot::umap_transform() gives consistent results using
+    #      one model from uwot::umap(). So return the result from
+    #      uwot::umap_transform().
+    #   o  uwot::umap_transform() depends on the RNG state and we want
+    #      consistent results when called here and in *_transform function(s).
+    #
+    set.seed(2016)
+    umap_res <- uwot::umap_transform(X=as.matrix(preprocess_mat), model=umap_model, n_threads=1)
     row.names(umap_res) <- colnames(cds)
-    reducedDims(cds)$UMAP <- umap_res
+    reducedDims(cds)[['UMAP']] <- umap_res
+
+    cds@reduce_dim_aux[['UMAP']][['model']][['umap_preprocess_method']] <- preprocess_method
+    cds@reduce_dim_aux[['UMAP']][['model']][['max_components']] <- max_components
+    cds@reduce_dim_aux[['UMAP']][['model']][['umap_metric']] <- umap.metric
+    cds@reduce_dim_aux[['UMAP']][['model']][['umap_min_dist']] <- umap.min_dist
+    cds@reduce_dim_aux[['UMAP']][['model']][['umap_n_neighbors']] <- umap.n_neighbors
+    cds@reduce_dim_aux[['UMAP']][['model']][['umap_fast_sgd']] <- umap.fast_sgd
+    cds@reduce_dim_aux[['UMAP']][['model']][['umap_model']] <- umap_model
+
+    matrix_id <- get_unique_id()
+    reduce_dim_matrix_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method)
+
+    cds <- set_reduce_dim_matrix_identity(cds, 'UMAP',
+                                          'matrix:UMAP',
+                                          matrix_id,
+                                          reduce_dim_matrix_identity[['matrix_type']],
+                                          reduce_dim_matrix_identity[['matrix_id']],
+                                          'matrix:UMAP',
+                                          matrix_id)
+    reduce_dim_model_identity <- get_reduce_dim_model_identity(cds, preprocess_method)
+    cds <- set_reduce_dim_model_identity(cds, 'UMAP',
+                                         'matrix:UMAP',
+                                         matrix_id,
+                                         reduce_dim_model_identity[['model_type']],
+                                         reduce_dim_model_identity[['model_id']])
+
+    if( build_nn_index ) {
+      nn_index <- make_nn_index(subject_matrix=reducedDims(cds)[[reduction_method]],
+                                nn_control=nn_control,
+                                verbose=verbose)
+      cds <- set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, nn_control=nn_control, verbose=verbose)
+    }
+    else
+      cds <- clear_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_method='all')
   }
 
-  ## Clear out any old graphs:
+  ## Clear out old graphs:
   cds@principal_graph_aux[[reduction_method]] <- NULL
   cds@principal_graph[[reduction_method]] <- NULL
   cds@clusters[[reduction_method]] <- NULL

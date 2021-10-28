@@ -14,7 +14,8 @@ graph_test(
   alternative = "greater",
   expression_family = "quasipoisson",
   cores = 1,
-  verbose = FALSE
+  verbose = FALSE,
+  nn_control = list()
 )
 }
 \arguments{
@@ -47,6 +48,9 @@ differential expression.}
 
 \item{verbose}{Whether to show spatial test (Moran's I) errors and warnings.
 Only valid for cores = 1.}
+
+\item{nn_control}{A list of parameters used to make the nearest
+neighbor index. See the set_nn_control help for detailed information.}
 }
 \value{
 a data frame containing the p values and q-values from the Moran's I

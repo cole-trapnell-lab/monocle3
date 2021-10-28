@@ -35,6 +35,8 @@
 #'   differential expression.
 #' @param verbose Whether to show spatial test (Moran's I) errors and warnings.
 #'   Only valid for cores = 1.
+#' @param nn_control A list of parameters used to make the nearest
+#'  neighbor index. See the set_nn_control help for detailed information.
 #' @return a data frame containing the p values and q-values from the Moran's I
 #'   test on the parallel arrays of models.
 #' @seealso \code{\link[spdep]{moran.test}} \code{\link[spdep]{geary.test}}
@@ -47,13 +49,40 @@ graph_test <- function(cds,
                        alternative = 'greater',
                        expression_family="quasipoisson",
                        cores=1,
-                       verbose=FALSE) {
+                       verbose=FALSE,
+                       nn_control=list()) {
   neighbor_graph <- match.arg(neighbor_graph)
+  reduction_method <- match.arg(reduction_method)
+  assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
+    msg = paste("No dimensionality reduction for",
+                reduction_method, "calculated.",
+                "Please run reduce_dimension with",
+                "reduction_method =", reduction_method,
+                "before running graph_test."))
+  if(neighbor_graph == 'principal_graph') {
+    assertthat::assert_that(!is.null(cds@principal_graph_aux[[reduction_method]]$dp_mst) &&
+                            !is.null(cds@principal_graph_aux[[reduction_method]]$pr_graph_cell_proj_closest_vertex),
+      msg=paste0('No principal graph values for ',
+                 reduction_method,
+                 ' found.',
+                 ' Please run learn_graph with',
+                 ' reduction_method = ',
+                 reduction_method,
+                 ' before running graph_test.'))
+  }
+
+  nn_control <- set_nn_control(mode=3,
+                               nn_control=nn_control,
+                               k=k,
+                               nn_control_default=get_global_variable('nn_control_1'),
+                               verbose=verbose)
+
   lw <- calculateLW(cds,
                     k = k,
                     verbose = verbose,
                     neighbor_graph = neighbor_graph,
-                    reduction_method = reduction_method)
+                    reduction_method = reduction_method,
+                    nn_control = nn_control)
 
   if(verbose) {
     message("Performing Moran's I test: ...")
@@ -93,10 +122,6 @@ graph_test <- function(cds,
   }, sz = sz, alternative = alternative, method = method,
   expression_family = expression_family, mc.cores=cores,
   ignore.interactive = TRUE)
-
-  if(verbose) {
-    message("returning results: ...")
-  }
 
   test_res <- do.call(rbind.data.frame, test_res)
   row.names(test_res) <- row.names(cds)
@@ -270,8 +295,8 @@ calculateLW <- function(cds,
                         k,
                         neighbor_graph,
                         reduction_method,
-                        verbose = FALSE
-) {
+                        verbose = FALSE,
+                        nn_control = list()) {
   if(verbose) {
     message("retrieve the matrices for Moran's I test...")
   }
@@ -279,11 +304,32 @@ calculateLW <- function(cds,
   principal_g <- NULL
 
   cell_coords <- reducedDims(cds)[[reduction_method]]
+  nn_method <- nn_control[['method']]
+
+  if((nn_method == 'annoy' || nn_method == 'hnsw')) {
+    if(check_cds_nn_index_is_current(cds=cds, reduction_method=reduction_method, nn_control=nn_control, verbose=verbose)) {
+      nn_index <- get_cds_nn_index(cds, reduction_method=reduction_method, nn_control=nn_control, verbose=verbose)
+    }
+    else {
+      nn_index <- make_nn_index(subject_matrix=cell_coords, nn_control=nn_control, verbose=verbose)
+    }
+  }
+
   if (neighbor_graph == "knn") {
-    knn_res <- RANN::nn2(cell_coords, cell_coords,
-                         min(k + 1, nrow(cell_coords)),
-                         searchtype = "standard")[[1]]
-  } else if(neighbor_graph == "principal_graph") {
+    if(nn_method == 'nn2') {
+      knn_res <- RANN::nn2(cell_coords, cell_coords,
+                           min(k + 1, nrow(cell_coords)),
+                           searchtype = "standard")[[1]]
+    }
+    else {
+      knn_res <- search_nn_index(query_matrix=cell_coords,
+                                 nn_index=nn_index,
+                                 k=min(k + 1, nrow(cell_coords)),
+                                 nn_control=nn_control,
+                                 verbose=verbose)[[1]]
+    }
+  }
+  else if(neighbor_graph == "principal_graph") {
     pr_graph_node_coords <- cds@principal_graph_aux[[reduction_method]]$dp_mst
     principal_g <-
       igraph::get.adjacency(
@@ -294,9 +340,18 @@ calculateLW <- function(cds,
   exprs_mat <- exprs(cds)
   if(neighbor_graph == "knn") {
     if(is.null(knn_res)) {
-      knn_res <- RANN::nn2(cell_coords, cell_coords,
-                           min(k + 1, nrow(cell_coords)),
-                           searchtype = "standard")[[1]]
+      if(nn_method == 'nn2') {
+        knn_res <- RANN::nn2(cell_coords, cell_coords,
+                             min(k + 1, nrow(cell_coords)),
+                             searchtype = "standard")[[1]]
+      }
+      else {
+       knn_res <- search_nn_index(query_matrix=cell_coords,
+                                  nn_index=nn_index,
+                                  k=min(k + 1, nrow(cell_coords)),
+                                  nn_control=nn_control,
+                                  verbose=verbose)[[1]]
+      }
     }
     links <- jaccard_coeff(knn_res[, -1], F)
     links <- links[links[, 1] > 0, ]
@@ -304,13 +359,13 @@ calculateLW <- function(cds,
     colnames(relations) <- c("from", "to", "weight")
     knn_res_graph <- igraph::graph.data.frame(relations, directed = T)
 
-      knn_list <- lapply(1:nrow(knn_res), function(x) knn_res[x, -1])
-      region_id_names <- colnames(cds)
+    knn_list <- lapply(1:nrow(knn_res), function(x) knn_res[x, -1])
+    region_id_names <- colnames(cds)
 
-      id_map <- 1:ncol(cds)
-      names(id_map) <- id_map
+    id_map <- 1:ncol(cds)
+    names(id_map) <- id_map
 
-      points_selected <- 1:nrow(knn_res)
+    points_selected <- 1:nrow(knn_res)
 
     knn_list <- lapply(points_selected,
                        function(x) id_map[as.character(knn_res[x, -1])])
@@ -337,9 +392,19 @@ calculateLW <- function(cds,
     }
     # an alternative approach to make the kNN graph based on the principal
     # graph
-    knn_res <- RANN::nn2(cell_coords, cell_coords,
-                         min(k + 1, nrow(cell_coords)),
-                         searchtype = "standard")[[1]]
+    if(nn_method == 'nn2') {
+      knn_res <- RANN::nn2(cell_coords, cell_coords,
+                           min(k + 1, nrow(cell_coords)),
+                           searchtype = "standard")[[1]]
+    }
+    else {
+      knn_res <- search_nn_index(query_matrix=cell_coords,
+                                 nn_index=nn_index,
+                                 k=min(k + 1, nrow(cell_coords)),
+                                 nn_control=nn_control,
+                                 verbose=verbose)[[1]]
+    }
+
     # convert the matrix of knn graph from the cell IDs into a matrix of
     # principal points IDs
     # kNN_res_pp_map <- matrix(cell2pp_map[knn_res], ncol = k + 1, byrow = F)
@@ -411,7 +476,8 @@ calculateLW <- function(cds,
                                                res <- 0L
                                              res
                                            })
-  } else {
+  }
+  else {
     stop("Error: unrecognized neighbor_graph option")
   }
   # create the lw list for moran.test

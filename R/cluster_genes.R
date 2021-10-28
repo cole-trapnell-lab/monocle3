@@ -21,6 +21,11 @@
 #' @param random_seed  the seed used by the random number generator in Leiden.
 #' @param cores number of cores computer should use to execute function
 #' @param verbose Whether or not verbose output is printed.
+#' @param preprocess_method a string specifying the low-dimensional space
+#'   to use for gene loadings, currently either PCA or LSI. Default is
+#'   "PCA".
+#' @param nn_control A list of parameters used to make the nearest
+#'  neighbor index. See the set_nn_control help for detailed information.
 #' @param ... Additional arguments passed to UMAP and Louvain analysis.
 #'
 #' @return A dataframe with genes and the modules to which they are assigned.
@@ -42,13 +47,27 @@ find_gene_modules <- function(cds,
                           random_seed = 0L,
                           cores=1,
                           verbose = F,
+                          preprocess_method = c('PCA', 'LSI'),
+                          nn_control = list(),
                           ...) {
   method = 'leiden'
+
+  nn_control <- set_nn_control(mode=3,
+                               nn_control=nn_control,
+                               k=k,
+                               nn_control_default=get_global_variable('nn_control_1'),
+                               verbose=verbose)
+
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(preprocess_method) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "preprocess_method must be one of 'PCA' or 'LSI'")
+  preprocess_method <- match.arg(preprocess_method)
+
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
     msg = "reduction_method must be one of 'UMAP', 'PCA' or 'tSNE'")
-
   reduction_method <- match.arg(reduction_method)
 
   assertthat::assert_that(methods::is(cds, "cell_data_set"))
@@ -66,14 +85,19 @@ find_gene_modules <- function(cds,
                                       "reduction_method =", reduction_method,
                                       "before running cluster_cells"))
 
-  preprocess_mat <- cds@preprocess_aux$gene_loadings
+  # preprocess_mat is gene_loading matrix. The gene_loadings were calculated only
+  # for preprocess_method='PCA' in preprocess_cds() but I extend this to 'LSI' and
+  # calculate gene_loadings here.
+  preprocess_mat <- cds@reduce_dim_aux[[preprocess_method]][['model']]$svd_v %*% diag(cds@reduce_dim_aux[[preprocess_method]][['model']]$svd_sdev)
+
 # Notes:
-#   o  cds@preprocess_aux$beta is npc x nfactor, which causes
+#   o  the beta vector is in cds@reduce_dim_aux[['Aligned']][['model']][['beta']]
+#   o  cds@reduce_dim_aux[['Aligned']][['model']][['beta']] is npc x nfactor, which causes
 #      preprocess_mat to have nfactor columns, often one column
 #   o  I do not know how to adjust gene_loadings for batch effects
 #      so this is disabled for now
-#  if (is.null(cds@preprocess_aux$beta) == FALSE){
-#    preprocess_mat = preprocess_mat %*% (-cds@preprocess_aux$beta)
+#  if (!is.null(cds@reduce_dim_aux[['Aligned']][['model']][['beta']])){
+#    preprocess_mat = preprocess_mat %*% (-cds@reduce_dim_aux[['Aligned']][['model']][['beta']])
 #  }
   preprocess_mat <- preprocess_mat[intersect(rownames(cds), row.names(preprocess_mat)),]
 
@@ -99,15 +123,17 @@ find_gene_modules <- function(cds,
   if(verbose)
     message("Running leiden clustering algorithm ...")
 
-  cluster_result <- leiden_clustering(data = reduced_dim_res,
-                                    pd = rowData(cds)[
-                                      row.names(reduced_dim_res),,drop=FALSE],
-                                    k = k,
-                                    weight = weight,
-                                    num_iter = leiden_iter,
-                                    resolution_parameter = resolution,
-                                    random_seed = random_seed,
-                                    verbose = verbose, ...)
+  cluster_result <- leiden_clustering(data=reduced_dim_res,
+                                      pd=rowData(cds)[row.names(reduced_dim_res),,drop=FALSE],
+                                      weight=weight,
+                                      nn_index=NULL,
+                                      k=k,
+                                      nn_control=nn_control,
+                                      num_iter=leiden_iter,
+                                      resolution_parameter=resolution,
+                                      random_seed=random_seed,
+                                      verbose=verbose,
+                                      ...)
 
   cluster_graph_res <- compute_partitions(cluster_result$g,
                                           cluster_result$optim_res,

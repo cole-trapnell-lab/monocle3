@@ -27,7 +27,7 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
 LinkingTo: 
     Rcpp
 Depends:
@@ -37,6 +37,7 @@ Imports:
     assertthat (>= 0.2.1),
     batchelor,
     BiocGenerics (>= 0.28.0),
+    BiocParallel,
     DelayedArray (>= 0.8.0),
     DelayedMatrixStats (>= 1.4.0),
     dplyr (>= 0.8.0.1),
@@ -68,6 +69,7 @@ Imports:
     reshape2 (>= 1.4.3),
     rsample (>= 0.0.5),
     RhpcBLASctl,
+    RcppHNSW (>= 0.3.0),
     Rtsne (>= 0.15),
     S4Vectors,
     shiny,
@@ -78,6 +80,7 @@ Imports:
     SummarizedExperiment (>= 1.11.5),
     uwot (>= 0.1.8),
     tibble (>= 2.1.1),
+    tictoc,
     tidyr (>= 0.8.3),
     viridis (>= 0.5.1)
 Remotes:

@@ -12,8 +12,8 @@
 #'
 #' @param cds the cell_data_set upon which to perform this operation
 #' @param method a string specifying the initial dimension method to use,
-#'   currently either PCA or LSI. For LSI (latent semantic indexing), it
-#'   converts the (sparse) expression matrix into tf-idf matrix and then
+#'   currently either "PCA" or "LSI". For "LSI" (latent semantic indexing), it
+#'   converts the (sparse) expression matrix into a tf-idf matrix and then
 #'   performs SVD to decompose the gene expression / cells into certain
 #'   modules / topics. Default is "PCA".
 #' @param num_dim the dimensionality of the reduced space.
@@ -33,28 +33,40 @@
 #'   method = PCA only.
 #' @param verbose Whether to emit verbose output during dimensionality
 #'   reduction
-#' @param ... additional arguments to pass to limma::lmFit if
-#'   residual_model_formula is not NULL
+#' @param build_nn_index logical When this argument is set to TRUE,
+#'   preprocess_cds builds and stores the nearest neighbor index from the
+#'   reduced dimension matrix for later use. Default is FALSE.
+#' @param nn_control A list of parameters used to make the nearest
+#'  neighbor index. See the set_nn_control help for detailed information.
+#'
 #' @return an updated cell_data_set object
 #' @export
-preprocess_cds <- function(cds, method = c('PCA', "LSI"),
-                           num_dim=50,
+preprocess_cds <- function(cds,
+                           method = c('PCA', "LSI"),
+                           num_dim = 50,
                            norm_method = c("log", "size_only", "none"),
                            use_genes = NULL,
-                           pseudo_count=NULL,
+                           pseudo_count = NULL,
                            scaling = TRUE,
-                           verbose=FALSE,
+                           verbose = FALSE,
+                           build_nn_index = FALSE,
+                           nn_control = list(),
                            ...) {
 
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(method) == "",TRUE, TRUE),
              error = function(e) FALSE),
     msg = "method must be one of 'PCA' or 'LSI'")
+  method <- match.arg(method)
+
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(norm_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
     msg = "norm_method must be one of 'log', 'size_only' or 'none'")
+  norm_method <- match.arg(norm_method)
+
   assertthat::assert_that(assertthat::is.count(num_dim))
+
   if(!is.null(use_genes)) {
     assertthat::assert_that(is.character(use_genes))
     assertthat::assert_that(all(use_genes %in% row.names(rowData(cds))),
@@ -68,8 +80,13 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
                           msg = paste("One or more cells has a size factor of",
                                       "NA."))
 
-  method <- match.arg(method)
-  norm_method <- match.arg(norm_method)
+  if(build_nn_index) {
+    nn_control <- set_nn_control(mode=1,
+                                 nn_control=nn_control,
+                                 k=1,
+                                 nn_control_default=get_global_variable('nn_control_2'),
+                                 verbose=verbose)
+  }
 
   #ensure results from RNG sensitive algorithms are the same on all calls
   set.seed(2016)
@@ -86,7 +103,19 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
   fm_rowsums = Matrix::rowSums(FM)
   FM <- FM[is.finite(fm_rowsums) & fm_rowsums != 0, ]
 
+  #
+  # Notes:
+  #   o  the functions save_transform_models/load_transform_models
+  #      expect that the reduce_dim_aux slot consists of a SimpleList
+  #      that stores information about methods with the elements
+  #        reduce_dim_aux[[method]][['model']] for the transform elements
+  #        reduce_dim_aux[[method]][[nn_method]] for the nn index
+  #      and depends on the elements within model and nn_method.
+  #
   if(method == 'PCA') {
+    cds <- initialize_reduce_dim_metadata(cds, 'PCA')
+    cds <- initialize_reduce_dim_model_identity(cds, 'PCA')
+
     if (verbose) message("Remove noise by PCA ...")
 
     irlba_res <- sparse_prcomp_irlba(Matrix::t(FM),
@@ -94,32 +123,103 @@ preprocess_cds <- function(cds, method = c('PCA', "LSI"),
                                      center = scaling, scale. = scaling)
     preproc_res <- irlba_res$x
     row.names(preproc_res) <- colnames(cds)
+    reducedDims(cds)[[method]] <- as.matrix(preproc_res)
 
     irlba_rotation <- irlba_res$rotation
     row.names(irlba_rotation) <- rownames(FM)
-    cds@preprocess_aux$gene_loadings <- irlba_rotation %*% diag(irlba_res$sdev)
-    cds@preprocess_aux$prop_var_expl <- irlba_res$sdev^2 / sum(irlba_res$sdev^2)
+    # we need svd_v downstream so
+    # calculate gene_loadings in cluster_cells.R
+    cds@reduce_dim_aux[['PCA']][['model']][['num_dim']] <- num_dim
+    cds@reduce_dim_aux[['PCA']][['model']][['norm_method']] <- norm_method
+    cds@reduce_dim_aux[['PCA']][['model']][['use_genes']] <- use_genes
+    cds@reduce_dim_aux[['PCA']][['model']][['pseudo_count']] <- pseudo_count
+    cds@reduce_dim_aux[['PCA']][['model']][['svd_v']] <- irlba_rotation
+    cds@reduce_dim_aux[['PCA']][['model']][['svd_sdev']] <- irlba_res$sdev
+    cds@reduce_dim_aux[['PCA']][['model']][['svd_center']] <- irlba_res$center
+    cds@reduce_dim_aux[['PCA']][['model']][['svd_scale']] <- irlba_res$svd_scale
+    cds@reduce_dim_aux[['PCA']][['model']][['prop_var_expl']] <- irlba_res$sdev^2 / sum(irlba_res$sdev^2)
+
+    matrix_id <- get_unique_id()
+    counts_identity <- get_counts_identity(cds)
+
+    cds <- set_reduce_dim_matrix_identity(cds, 'PCA',
+                                          'matrix:PCA',
+                                          matrix_id,
+                                          counts_identity[['matrix_type']],
+                                          counts_identity[['matrix_id']],
+                                          'matrix:PCA',
+                                          matrix_id)
+    cds <- set_reduce_dim_model_identity(cds, 'PCA',
+                                         'matrix:PCA',
+                                         matrix_id,
+                                         'none',
+                                         'none')
+
+    if( build_nn_index ) {
+      nn_index <- make_nn_index(subject_matrix=reducedDims(cds)[[method]], nn_control=nn_control, verbose=verbose)
+      cds <- set_cds_nn_index(cds=cds, reduction_method=method, nn_index=nn_index, nn_control=nn_control, verbose=verbose)
+    }
+    else
+      cds <- clear_cds_nn_index(cds=cds, reduction_method=method, nn_method='all')
 
   } else if(method == "LSI") {
+    cds <- initialize_reduce_dim_metadata(cds, 'LSI')
+    cds <- initialize_reduce_dim_model_identity(cds, 'LSI')
 
-    preproc_res <- tfidf(FM)
+#    preproc_res <- tfidf(FM)
+    tfidf_res <- tfidf(FM)
+    preproc_res <- tfidf_res[['tf_idf_counts']]
+
     num_col <- ncol(preproc_res)
     irlba_res <- irlba::irlba(Matrix::t(preproc_res),
                               nv = min(num_dim,min(dim(FM)) - 1))
 
     preproc_res <- irlba_res$u %*% diag(irlba_res$d)
     row.names(preproc_res) <- colnames(cds)
+    reducedDims(cds)[[method]] <- as.matrix(preproc_res)
 
     irlba_rotation = irlba_res$v
     row.names(irlba_rotation) = rownames(FM)
-    cds@preprocess_aux$gene_loadings = irlba_rotation %*% diag( irlba_res$d/sqrt( max(1, num_col - 1) ) )
+    cds@reduce_dim_aux[['LSI']][['model']][['num_dim']] <- num_dim
+    cds@reduce_dim_aux[['LSI']][['model']][['norm_method']] <- norm_method
+    cds@reduce_dim_aux[['LSI']][['model']][['use_genes']] <- use_genes
+    cds@reduce_dim_aux[['LSI']][['model']][['pseudo_count']] <- pseudo_count
+    cds@reduce_dim_aux[['LSI']][['model']][['log_scale_tf']] <- tfidf_res[['log_scale_tf']]
+    cds@reduce_dim_aux[['LSI']][['model']][['frequencies']] <- tfidf_res[['frequencies']]
+    cds@reduce_dim_aux[['LSI']][['model']][['scale_factor']] <- tfidf_res[['scale_factor']]
+    cds@reduce_dim_aux[['LSI']][['model']][['col_sums']] <- tfidf_res[['col_sums']]
+    cds@reduce_dim_aux[['LSI']][['model']][['row_sums']] <- tfidf_res[['row_sums']]
+    cds@reduce_dim_aux[['LSI']][['model']][['num_cols']] <- tfidf_res[['num_cols']]
+    cds@reduce_dim_aux[['LSI']][['model']][['svd_v']] <- irlba_rotation
+    cds@reduce_dim_aux[['LSI']][['model']][['svd_sdev']] <- irlba_res$d/sqrt(max(1, num_col - 1))
 
+    # we need svd_v downstream so
+    # calculate gene_loadings in cluster_cells.R
+
+    matrix_id <- get_unique_id()
+    counts_identity <- get_counts_identity(cds)
+
+    cds <- set_reduce_dim_matrix_identity(cds, 'LSI',
+                                          'matrix:LSI',
+                                          matrix_id,
+                                          counts_identity[['matrix_type']],
+                                          counts_identity[['matrix_id']],
+                                          'matrix:LSI',
+                                          matrix_id)
+    cds <- set_reduce_dim_model_identity(cds, 'LSI',
+                                         'matrix:LSI',
+                                         matrix_id,
+                                         'none',
+                                         'none')
+
+    if( build_nn_index ) {
+      nn_index <- make_nn_index(subject_matrix=reducedDims(cds)[[method]], nn_control=nn_control, verbose=verbose)
+      cds <- set_cds_nn_index(cds=cds, reduction_method=method, nn_index=nn_index, nn_control=nn_control, verbose=verbose)
+    }
+    else
+      cds <- clear_cds_nn_index(cds=cds, reduction_method=method, nn_method='all')
   }
-
-  row.names(preproc_res) <- colnames(cds)
-
-  reducedDims(cds)[[method]] <- as.matrix(preproc_res)
-  cds@preprocess_aux$beta = NULL
+  cds@reduce_dim_aux[['Aligned']] <- NULL
 
   cds
 }
@@ -168,9 +268,11 @@ tfidf <- function(count_matrix, frequencies=TRUE, log_scale_tf=TRUE,
   # Use either raw counts or divide by total counts in each cell
   if (frequencies) {
     # "term frequency" method
-    tf <- Matrix::t(Matrix::t(count_matrix) / Matrix::colSums(count_matrix))
+    col_sums <- Matrix::colSums(count_matrix)
+    tf <- Matrix::t(Matrix::t(count_matrix) / col_sums)
   } else {
     # "raw count" method
+    col_sums <- NA
     tf <- count_matrix
   }
 
@@ -184,7 +286,9 @@ tfidf <- function(count_matrix, frequencies=TRUE, log_scale_tf=TRUE,
   }
 
   # IDF w/ "inverse document frequency smooth" method
-  idf = log(1 + ncol(count_matrix) / Matrix::rowSums(count_matrix > 0))
+  num_cols <- ncol(count_matrix)
+  row_sums <- Matrix::rowSums(count_matrix > 0)
+  idf = log(1 + num_cols / row_sums)
 
   # Try to just to the multiplication and fall back on delayed array
   # TODO hopefully this actually falls back and not get jobs killed in SGE
@@ -207,5 +311,7 @@ tfidf <- function(count_matrix, frequencies=TRUE, log_scale_tf=TRUE,
   rownames(tf_idf_counts) = rownames(count_matrix)
   colnames(tf_idf_counts) = colnames(count_matrix)
   tf_idf_counts = methods::as(tf_idf_counts, "sparseMatrix")
-  return(tf_idf_counts)
+  return(list(tf_idf_counts=tf_idf_counts, frequencies=frequencies, log_scale_tf=log_scale_tf, scale_factor=scale_factor, col_sums=col_sums, row_sums=row_sums, num_cols=num_cols))
 }
+
+

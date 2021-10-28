@@ -16,8 +16,6 @@ and feature metadata.
 \section{Fields}{
 
 \describe{
-\item{\code{preprocess_aux}}{SimpleList, auxiliary information from preprocessing.}
-
 \item{\code{reduce_dim_aux}}{SimpleList, auxiliary information from reduced
 dimension.}
 

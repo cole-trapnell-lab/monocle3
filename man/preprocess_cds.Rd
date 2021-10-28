@@ -13,6 +13,8 @@ preprocess_cds(
   pseudo_count = NULL,
   scaling = TRUE,
   verbose = FALSE,
+  build_nn_index = FALSE,
+  nn_control = list(),
   ...
 )
 }
@@ -20,8 +22,8 @@ preprocess_cds(
 \item{cds}{the cell_data_set upon which to perform this operation}
 
 \item{method}{a string specifying the initial dimension method to use,
-currently either PCA or LSI. For LSI (latent semantic indexing), it
-converts the (sparse) expression matrix into tf-idf matrix and then
+currently either "PCA" or "LSI". For "LSI" (latent semantic indexing), it
+converts the (sparse) expression matrix into a tf-idf matrix and then
 performs SVD to decompose the gene expression / cells into certain
 modules / topics. Default is "PCA".}
 
@@ -48,8 +50,12 @@ method = PCA only.}
 \item{verbose}{Whether to emit verbose output during dimensionality
 reduction}
 
-\item{...}{additional arguments to pass to limma::lmFit if
-residual_model_formula is not NULL}
+\item{build_nn_index}{logical When this argument is set to TRUE,
+preprocess_cds builds and stores the nearest neighbor index from the
+reduced dimension matrix for later use. Default is FALSE.}
+
+\item{nn_control}{A list of parameters used to make the nearest
+neighbor index. See the set_nn_control help for detailed information.}
 }
 \value{
 an updated cell_data_set object
