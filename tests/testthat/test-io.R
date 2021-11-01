@@ -273,6 +273,7 @@ test_that("save_transform_models and load_transform_models", {
   nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['UMAP']], nn_index=get_cds_nn_index(cds, reduction_method='UMAP', nn_control=list(method='annoy', metric='euclidean', n_trees=50)), k=5, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
   expect_equivalent(nn_res[['nn.idx']][[1]], 1)
   expect_equivalent(nn_res[['nn.dists']][[1]], 0)
+  system('rm -r transform_models.01')
 } )
 
 
@@ -292,7 +293,7 @@ test_that("save_monocle_objects and load_monocle_objects", {
   # check count matrix
   expect_equivalent(ncol(counts(cds)), 500)
   expect_equivalent(nrow(counts(cds)), 198)
-  expect_equivalent(colSums(counts(cds))[[1]], 19)
+  expect_equivalent(Matrix::colSums(counts(cds))[[1]], 19)
 
   # check PCA reduced dims matrix and nearest neighbors
   expect_equivalent(ncol(reducedDims(cds)[['PCA']]), 50)
@@ -317,6 +318,7 @@ test_that("save_monocle_objects and load_monocle_objects", {
   nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['UMAP']], nn_index=get_cds_nn_index(cds, reduction_method='UMAP', nn_control=list(method='annoy', metric='euclidean', n_trees=50)), k=5, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
   expect_equivalent(nn_res[['nn.idx']][[1]], 1)
   expect_equivalent(nn_res[['nn.dists']][[1]], 0)
+  system('rm -r monocle_objects.01')
 } )
 
 
@@ -360,6 +362,7 @@ test_that("save_transform_models and load_transform_models", {
   nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['UMAP']], nn_index=get_cds_nn_index(cds, reduction_method='UMAP', nn_control=list(method='annoy', metric='euclidean', n_trees=50)), k=5, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
   expect_equivalent(nn_res[['nn.idx']][[1]], 1)
   expect_equivalent(nn_res[['nn.dists']][[1]], 0)
+  system('rm -r transform_models.01')
 } )
 
 
@@ -379,7 +382,7 @@ test_that("save_monocle_objects and load_monocle_objects", {
   # check count matrix
   expect_equivalent(ncol(counts(cds)), 500)
   expect_equivalent(nrow(counts(cds)), 198)
-  expect_equivalent(colSums(counts(cds))[[1]], 19)
+  expect_equivalent(Matrix::colSums(counts(cds))[[1]], 19)
 
   # check PCA reduced dims matrix and nearest neighbors
   expect_equivalent(ncol(reducedDims(cds)[['PCA']]), 50)
@@ -404,6 +407,7 @@ test_that("save_monocle_objects and load_monocle_objects", {
   nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['UMAP']], nn_index=get_cds_nn_index(cds, reduction_method='UMAP', nn_control=list(method='annoy', metric='euclidean', n_trees=50)), k=5, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
   expect_equivalent(nn_res[['nn.idx']][[1]], 1)
   expect_equivalent(nn_res[['nn.dists']][[1]], 0)
+  system('rm -r monocle_objects.01')
 } )
 
 
