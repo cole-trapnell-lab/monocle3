@@ -20,35 +20,43 @@ transfer_cell_labels(
 )
 }
 \arguments{
-\item{cds_query}{the cell_data_set upon which to perform this operation}
+\item{cds_query}{the cell_data_set upon which to perform
+this operation}
 
-\item{reduction_method}{a string specifying the reduced dimension
-matrix to use for the label transfer. These are "PCA",
-"LSI", and "UMAP". Default is "UMAP".}
+\item{reduction_method}{a string specifying the reduced
+dimension matrix to use for the label transfer. These
+are "PCA", "LSI", and "UMAP". Default is "UMAP".}
 
-\item{ref_coldata}{the reference cds colData data frame, which
-is obtained using the colData(cds_ref) function.}
+\item{ref_coldata}{the reference cell_data_set colData
+data frame, which is obtained using the colData(cds_ref)
+function.}
 
-\item{ref_column_name}{a string giving the name of the reference
-cds column with the value to copy to the query cds.}
+\item{ref_column_name}{a string giving the name of the
+reference cell_data_set column with the values to
+copy to the query cell_data_set.}
 
 \item{query_column_name}{a string giving the name of the
-query cds column where you want the cell stored. The default
-is ref_column_name.}
+query cell_data_set column to which you want the
+values copied. The default is ref_column_name.}
 
-\item{transform_models_dir}{a string giving the name of the transform
-model directory to load into the query cds. If it is NULL, use
-the transform models in the query cds, which requires that the
-reference models were loaded into the query cds before
-calling transfer_cell_labels(). The default is NULL.}
+\item{transform_models_dir}{a string giving the name of
+the transform model directory to load into the query
+cell_data_set. If it is NULL, use the transform models
+in the query cell_data_set, which requires that the
+reference transform models were loaded into the query
+cell_data_set before transfer_cell_labels is called.
+The default is NULL. transfer_cells_labels uses the
+nearest neighbor index, which must be stored in the
+transform model.}
 
 \item{k}{an integer giving the number of reference nearest
 neighbors to find. This value must be large enough to find
 meaningful column value fractions. The default is 10.}
 
-\item{nn_control}{a list of parameters used to make the nearest
-neighbors index. See the set_nn_control help for additional
-details. The default is to use the global nn_control list.}
+\item{nn_control}{a list of parameters used to make and search
+the nearest neighbors indexes. See the set_nn_control help
+for additional details. The default is to use the global
+nn_control list.}
 
 \item{top_frac_threshold}{a numeric value giving the minimum
 value of the top fraction of reference values required
@@ -57,8 +65,10 @@ fraction is the fraction of the k neighbors with the most
 frequent value. The default is 0.5.}
 
 \item{top_next_ratio_threshold}{a numeric value giving the
-minimum value ratio of the counts of the most frequent to the
-second most frequent reference values. The default is 1.5.}
+minimum value of the ratio of the counts of the most
+frequent to the second most frequent reference values
+required for transferring the reference value to the query.
+The default is 1.5.}
 
 \item{verbose}{a boolean controlling verbose output.}
 }
@@ -67,32 +77,35 @@ an updated cell_data_set object
 }
 \description{
 For each cell in a query cell_data_set,
-transfer_cell_labels finds the most similar cell data
-in a reference cell_data_set and copies it to the query.
+transfer_cell_labels finds sufficiently similar cell data
+in a reference cell_data_set and copies the value in
+the specified column to the query cell_data_set.
 }
 \details{
-transfer_cell_labels() requires a nearest neighbor
+transfer_cell_labels requires a nearest neighbor
 index made from a reference reduced dimension matrix, the
-reference cell data to transfer, and a query cds. The index
-can be made from UMAP coordinates using the
+reference cell data to transfer, and a query cell_data_set.
+The index can be made from UMAP coordinates using the
 build_nn_index=TRUE option in the reduce_dimensions(...,
-build_nn_index=TRUE) function, for example. The query cds
-must have been processed with the preprocess_transform()
-and reduce_dimension_transform() functions using the models
-created when the reference cds was processed, rather than
-with preprocess_cds() and reduce_dimension().
+build_nn_index=TRUE) function, for example. The query
+cell_data_set must have been processed with the
+preprocess_transform and reduce_dimension_transform
+functions using the models created when the reference
+cell_data_set was processed, rather than with
+preprocess_cds and reduce_dimension.
 
-The models are made when the reference cds is processed and
-must be saved to disk at that time using
-save_transform_models(). The load_transform_models() function
-loads the models into the query cds where they can be used by
-preprocess_transform() and reduce_dimension(). The cells in
-the reference and query cdses must be similar in the sense
-that they map to similar reduced dimension coordinates.
+The models are made when the reference cell_data_set
+is processed and must be saved to disk at that time using
+save_transform_models. The load_transform_models function
+loads the models into the query cell_data_set where they
+can be used by preprocess_transform and
+reduce_dimension_transform. The cells in the reference and
+query cell_data_sets must be similar in the sense that they
+map to similar reduced dimension coordinates.
 
 When the ref_column_name values are discrete, the
 sufficiently most frequent value is transferred. When
-the values are continuouse the mean of the k nearest
+the values are continuous the mean of the k nearest
 neighbors is transferred.
 
 In the case of discrete values, transfer_cell_labels
@@ -100,13 +113,13 @@ processes each query cell as follows. It finds the k nearest
 neighbor cells in the reference set, and if at least
 top_frac_threshold fraction of them have the same value, it
 copies that value to the query_column_name column in the
-query cds. If the fraction is below top_frac_threshold,
-it checks whether the ratio of the most frequent to the second
-most frequent value is at least top_next_ratio_threshold, in
-which case it copies the value; otherwise, it sets it to
-NA.
+query cell_data_set. If the fraction is below
+top_frac_threshold, it checks whether the ratio of the
+most frequent to the second most frequent value is at
+least top_next_ratio_threshold, in which case it copies
+the value; otherwise, it sets it to NA.
 
-Note: Monocle3 does not have an align_transform() function to
-apply align_cds()-related transforms at this time. If your
+Note: Monocle3 does not have an align_transform function to
+apply align_cds-related transforms at this time. If your
 data sets require batch correction, you need to co-embed them.
 }

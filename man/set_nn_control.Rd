@@ -24,12 +24,14 @@ as follows: if the nn_control_default list has non-zero length, it
 is used; otherwise the annoy nearest neighbor method is used with
 metric='euclidean', n_trees=50, and search_k=k * n_trees. If not
 all of the values required by a nearest neighbor method are given
+in nn_control, the missing values are set to the default values
 listed below.}
 
 \item{k}{integer the number of desired nearest neighbor points to
 return from a search. This value is used only to set the annoy
 search_k parameter when search_k is not given in nn_control. The
-value is ignored for index builds. The default is 25.}
+value is ignored for index builds and does not give the number
+of nearest neighbors to return for a search. The default is 25.}
 
 \item{nn_control_default}{an optional nn_control list to use when the
 nn_control parameter has length zero.}
@@ -52,32 +54,33 @@ values are set to default values.
 The available methods are 'nn2', 'annoy', and 'hnsw'. If not
 specified, the method given by the method_default parameter is
 used.
-Detailed information about each can be found on the WWW sites:
+Detailed information about each method can be found on the
+WWW sites:
 https://cran.r-project.org/web/packages/RANN/,
 https://cran.r-project.org/web/packages/RcppAnnoy/index.html,
 and https://cran.rstudio.com/web/packages/RcppHNSW/index.html.}
-\item{metric}{The distance metric used by the nearest neighbor functions.
-Annoy accepts 'euclidean', 'cosine', 'manhattan', and 'hamming'.
-HNSW accepts 'euclidean', 'l2', 'cosine', and 'ip'. RANN
-uses 'euclidean'.}
+\item{metric}{The distance metric used by the nearest neighbor
+functions.  Annoy accepts 'euclidean', 'cosine', 'manhattan',
+and 'hamming'. HNSW accepts 'euclidean', 'l2', 'cosine', and
+'ip'. RANN uses 'euclidean'.}
 \item{n_trees}{The annoy index build parameter that affects the build
 time and index size. Larger values give more accurate results,
 longer build times, and larger indexes. The default is 50.}
 \item{search_k}{The annoy index search parameter that affects the
-search accuracy and time. Larger values give more accurate results
-and longer search times. Default is 100 * k.}
+search accuracy and time. Larger values give more accurate
+results and longer search times. Default is k * n_trees.}
 \item{M}{The HNSW index build parameter that affects the
-search accuracy and memory requirements. Larger values give more
-accurate search results and increase the index memory use. Default
-is 48.}
+search accuracy and memory requirements. Larger values give
+more accurate search results and increase the index memory
+use. Default is 48.}
 \item{ef_construction}{The HNSW index build parameter that affects
 the search accuracy and index build time. Larger values give more
 accurate search results and longer build times. Default is 200.}
 \item{ef}{The HNSW index search parameter that affects the search
 accuracy and search time. Larger values give more accurate results
-and longer search times. Default is 10.}
-\item{grain_size}{The annoy and HNSW parameter the gives the minimum
-amount of work to do per thread. Default is 1.}
+and longer search times. Default is 30.}
+\item{grain_size}{The annoy and HNSW parameter that gives the
+minimum amount of work to do per thread. Default is 1.}
 \item{cores}{The annoy and HNSW parameter that gives the number of
 threads to use for the annoy index search and for the HNSW index
 build and search. Default is 1.}

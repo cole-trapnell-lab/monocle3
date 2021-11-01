@@ -13,11 +13,13 @@ set_cds_nn_index(
 )
 }
 \arguments{
-\item{cds}{a cell_data_set in which to store the nearest neighbor
-index.}
+\item{cds}{a cell_data_set in which to store the nearest
+neighbor index.}
 
-\item{reduction_method}{a string giving the reduced dimension matrix used
-to make the nn_index nearest neighbor index.}
+\item{reduction_method}{a string giving the reduced
+dimension matrix used to make the nn_index nearest
+neighbor index, and determines where the index is
+stored in the cell_data_set.}
 
 \item{nn_index}{a nearest neighbor index to store in cds.}
 
@@ -30,7 +32,8 @@ neighbor index. See the set_nn_control help for details.}
 a cell_data_set with the stored index.
 }
 \description{
-Store the nearest nn_index neighbor index
-in the cds. The reduction_method parameter tells
-set_cds_nn_index where in the cds to store the index.
+Store the given nearest neighbor index
+in the cell_data_set. The reduction_method parameter
+tells set_cds_nn_index where in the cell_data_set to
+store the index.
 }

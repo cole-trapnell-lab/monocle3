@@ -13,15 +13,15 @@ search_nn_matrix(
 )
 }
 \arguments{
-\item{subject_matrix}{a reduced dimension matrix used to build a nearest neighbor index.}
+\item{subject_matrix}{a matrix used to build a nearest neighbor index.}
 
-\item{query_matrix}{a reduced dimension matrix used to search the subject_matrix
+\item{query_matrix}{a matrix used to search the subject_matrix
 nearest neighbor index.}
 
 \item{k}{an integer for the number of nearest neighbors to return for
 each cell. Default is 25.}
 
-\item{nn_control}{a list of parameters used to make the nearest
+\item{nn_control}{a list of parameters used to make and search the nearest
 neighbor index. See the set_nn_control help for details.}
 
 \item{verbose}{a boolean indicating whether to emit verbose output.}

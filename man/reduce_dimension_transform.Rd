@@ -2,7 +2,7 @@
 % Please edit documentation in R/projection.R
 \name{reduce_dimension_transform}
 \alias{reduce_dimension_transform}
-\title{Apply a reduce_transform transform model to a cell_data_set.}
+\title{Apply a reduce_dimension transform model to a cell_data_set.}
 \usage{
 reduce_dimension_transform(
   cds,
@@ -13,21 +13,22 @@ reduce_dimension_transform(
 \arguments{
 \item{cds}{a cell_data_set to be transformed.}
 
-\item{preprocess_method}{a previously loaded preprocess reduction
-method.  The default is NULL, which uses the preprocess_method that
+\item{preprocess_method}{the reduced dimension matrix to be
+transformed using the reduction_method transform model.
+The default is NULL, which uses the preprocess_method that
 was used when the reduce_dimension model was built.}
 
 \item{reduction_method}{a previously loaded reduce_dimension transform
 model that is used to reduce the dimensions of the preprocessed
-count matrix in cds. Only "UMAP" is supported.}
+matrix in the cell_data_set. Only "UMAP" is supported.}
 }
 \value{
 a cell_data_set with a transformed
 reduced count matrix.
 }
 \description{
-Applies a previously calculated reduce_dimension transform
-model to a new preprocess transformed matrix. For more
-information read the help information for
+Applies a previously calculated reduce_dimension
+transform model to a new preprocess transformed matrix. For
+more information read the help information for
 save_transform_models.
 }

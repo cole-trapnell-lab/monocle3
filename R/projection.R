@@ -7,8 +7,8 @@
 #' @param cds a cell_data_set to be transformed.
 #' @param reduction_method a previously loaded transform
 #'   model that is used to reduce the dimensions of the
-#'   count matrix in cds. The "PCA" and "LSI" transforms
-#'   are supported. The default is "PCA".
+#'   count matrix in the cell_data_set. The "PCA" and "LSI"
+#'   transforms are supported. The default is "PCA".
 #' @param block_size a numeric value for the DelayedArray
 #'   block size used only in this function. Default is
 #'   NULL, which does not affect the current block size.
@@ -231,74 +231,75 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
 #  #'   reduced count matrix.
 #  #'
 #  #' @export
-align_transform <- function(cds, reduction_method=c('Aligned')) {
-  #
-  # Need to add transformation code.
-  #
-  assertthat::assert_that(class(cds) == 'cell_data_set',
-                          msg=paste('cds parameter is not a cell_data_set'))
-  assertthat::assert_that(
-    tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
-             error = function(e) FALSE),
-    msg = "reduction_method must be 'Aligned'")
+# align_transform <- function(cds, reduction_method=c('Aligned')) {
+#   #
+#   # Need to add transformation code.
+#   #
+#   assertthat::assert_that(class(cds) == 'cell_data_set',
+#                           msg=paste('cds parameter is not a cell_data_set'))
+#   assertthat::assert_that(
+#     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
+#              error = function(e) FALSE),
+#     msg = "reduction_method must be 'Aligned'")
+# 
+#   reduction_method <- match.arg(reduction_method)
+# 
+#   preprocess_method <- cds@reduce_dim_aux[['Aligned']][['model']][['preprocess_method']]
+#   preproc_res <- reducedDims(cds)[[preprocess_method]]
+#   assertthat::assert_that(!is.null(preproc_res),
+#                           msg=paste("Preprocessing for '",
+#                                     preprocess_method,
+#                                     "' does not exist.",
+#                                     " Please preprocess the matrix before",
+#                                     " calling align_transform using preprocess_transform."))
+# 
+#   stop('This function is a place holder. It does not map the transformed count matrix to aligned space at this time because we don\'t know how to it yet.')
+# 
+#   set.seed(2016)
+#   alignment_group <- cds@reduce_dim_aux[['Aligned']][['model']][['alignment_group']]
+#   alignment_k <- cds@reduce_dim_aux[['Aligned']][['model']][['alignment_k']]
+#   residual_model_formula_str <- cds@reduce_dim_aux[['Aligned']][['model']][['residual_model_formula_str']]
+#   X.model_mat <- Matrix::sparse.model.matrix( stats::as.formula(residual_model_formula_str), data = colData(cds), drop.unused.levels = TRUE)
+#   fit <- limma::lmFit(Matrix::t(preproc_res), X.model_mat)
+#   beta <- fit$coefficients[, -1, drop = FALSE]
+#   cds@reduce_dim_aux[['Aligned']][['model']][['beta']] <- beta
+#   preproc_res <- Matrix::t(as.matrix(Matrix::t(preproc_res)) - beta %*% Matrix::t(X.model_mat[, -1]))
+#   corrected_PCA = batchelor::reducedMNN(as.matrix(preproc_res), batch=colData(cds)[,alignment_group], k=alignment_k)
+#   preproc_res = corrected_PCA$corrected
+#   reducedDims(cds)[['Aligned']] <- as.matrix(preproc_res)
+# 
+#   matrix_id <- get_unique_id()
+#   reduce_dim_matrix_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method)
+#   reduce_dim_model_identity <- get_reduce_dim_model_identity(cds, reduction_method)
+#   cds <- initialize_reduce_dim_metadata(cds, reduction_method)
+#   cds <- set_reduce_dim_matrix_identity(cds, reduction_method,
+#                                         paste0('matrix:', reduction_method),
+#                                         matrix_id,
+#                                         reduce_dim_matrix_identity[['matrix_type']],
+#                                         reduce_dim_matrix_identity[['matrix_id']],
+#                                         reduce_dim_model_identity[['model_type']],
+#                                         reduce_dim_model_identity[['model_id']])
+#   # Keep the existing, loaded, reduce_dim_model_identity information.
+# 
+#   return(cds)
+# }
 
-  reduction_method <- match.arg(reduction_method)
 
-  preprocess_method <- cds@reduce_dim_aux[['Aligned']][['model']][['preprocess_method']]
-  preproc_res <- reducedDims(cds)[[preprocess_method]]
-  assertthat::assert_that(!is.null(preproc_res),
-                          msg=paste("Preprocessing for '",
-                                    preprocess_method,
-                                    "' does not exist.",
-                                    " Please preprocess the matrix before",
-                                    " calling align_transform using preprocess_transform."))
-
-  stop('This function is a place holder. It does not map the transformed count matrix to aligned space at this time because we don\'t know how to it yet.')
-
-  set.seed(2016)
-  alignment_group <- cds@reduce_dim_aux[['Aligned']][['model']][['alignment_group']]
-  alignment_k <- cds@reduce_dim_aux[['Aligned']][['model']][['alignment_k']]
-  residual_model_formula_str <- cds@reduce_dim_aux[['Aligned']][['model']][['residual_model_formula_str']]
-  X.model_mat <- Matrix::sparse.model.matrix( stats::as.formula(residual_model_formula_str), data = colData(cds), drop.unused.levels = TRUE)
-  fit <- limma::lmFit(Matrix::t(preproc_res), X.model_mat)
-  beta <- fit$coefficients[, -1, drop = FALSE]
-  cds@reduce_dim_aux[['Aligned']][['model']][['beta']] <- beta
-  preproc_res <- Matrix::t(as.matrix(Matrix::t(preproc_res)) - beta %*% Matrix::t(X.model_mat[, -1]))
-  corrected_PCA = batchelor::reducedMNN(as.matrix(preproc_res), batch=colData(cds)[,alignment_group], k=alignment_k)
-  preproc_res = corrected_PCA$corrected
-  reducedDims(cds)[['Aligned']] <- as.matrix(preproc_res)
-
-  matrix_id <- get_unique_id()
-  reduce_dim_matrix_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method)
-  reduce_dim_model_identity <- get_reduce_dim_model_identity(cds, reduction_method)
-  cds <- initialize_reduce_dim_metadata(cds, reduction_method)
-  cds <- set_reduce_dim_matrix_identity(cds, reduction_method,
-                                        paste0('matrix:', reduction_method),
-                                        matrix_id,
-                                        reduce_dim_matrix_identity[['matrix_type']],
-                                        reduce_dim_matrix_identity[['matrix_id']],
-                                        reduce_dim_model_identity[['model_type']],
-                                        reduce_dim_model_identity[['model_id']])
-  # Keep the existing, loaded, reduce_dim_model_identity information.
-
-  return(cds)
-}
-
-
-#' @title Apply a reduce_transform transform model to a cell_data_set.
+#' @title Apply a reduce_dimension transform model to a cell_data_set.
 #'
-#' @description Applies a previously calculated reduce_dimension transform
-#' model to a new preprocess transformed matrix. For more
-#' information read the help information for
-#' save_transform_models.
+#' @description Applies a previously calculated reduce_dimension
+#'   transform model to a new preprocess transformed matrix. For
+#'   more information read the help information for
+#'   save_transform_models.
 #'
 #' @param cds a cell_data_set to be transformed.
-#' @param preprocess_method a previously loaded preprocess reduction
-#'   method.  The default is NULL, which uses the preprocess_method that
+#' @param preprocess_method the reduced dimension matrix to be
+#'   transformed using the reduction_method transform model.
+#'   The default is NULL, which uses the preprocess_method that
 #'   was used when the reduce_dimension model was built.
 #' @param reduction_method a previously loaded reduce_dimension transform
 #'   model that is used to reduce the dimensions of the preprocessed
-#'   count matrix in cds. Only "UMAP" is supported.
+#'   matrix in the cell_data_set. Only "UMAP" is supported.
 #'
 #' @return a cell_data_set with a transformed
 #'   reduced count matrix.

@@ -36,8 +36,8 @@ model identities are stored as 'model_id' and
 to its origin, which may be helpful when a cell_data_set
 is partially reprocessed; for example, if preprocess_cds()
 is re-run but reduce_dimension() is not. Also, it may be
-helpful when transformation models are loaded with the
-load_transformation_models() function, in which case
+helpful when transform models are loaded with the
+load_transform_models() function, in which case
 the matrix and model identities will differ.
 
 The identity of the model used to transform a matrix

@@ -2,7 +2,7 @@
 % Please edit documentation in R/nearest_neighbors.R
 \name{search_nn_index}
 \alias{search_nn_index}
-\title{Search nearest neighor index.}
+\title{Search a nearest neighbor index.}
 \usage{
 search_nn_index(
   query_matrix,
@@ -14,15 +14,14 @@ search_nn_index(
 }
 \arguments{
 \item{query_matrix}{a reduced dimension matrix used to find the
-nearest neighbors in the index created from the
-reduction_method matrix.}
+nearest neighbors in the index nn_index.}
 
 \item{nn_index}{a nearest_neighbor index.}
 
 \item{k}{an integer for the number of nearest neighbors to return for
 each cell. Default is 25.}
 
-\item{nn_control}{a list of parameters used to make the nearest
+\item{nn_control}{a list of parameters used to search the nearest
 neighbor index. See the set_nn_control help for details.}
 
 \item{verbose}{a boolean indicating whether to emit verbose output.}
@@ -36,6 +35,6 @@ index and search the index, the index given by the row number should
 be in the row, usually in the first column.
 }
 \description{
-Search nn_index nearest neighbor index for cells near
+Search a nearest neighbor index for cells near
 those in the query_matrix.
 }

@@ -512,29 +512,30 @@ report_files_saved <- function(file_index) {
 #
 #' Save cell_data_set transform models.
 #'
-#' Save the transform models to the specified directory
-#' by writing the R objects to RDS files and
-#' the nearest neighbor indexes to individual index files. 
-#' save_transform_models saves transform models made by running
-#' the preprocess_cds and reduce_dimension functions
-#' on an initial cell_data_set. Subsequent cell_data_sets are
-#' transformed into the reduced dimension space of the initial
-#' cds by loading the new data into a new cds, loading the
-#' initial data set transform models into the new cds using
-#' the load_transform_models function, and applying those transform models
-#' to the new data set using the preprocess_transform
-#' and reduce_dimension_transform functions.
-#' In this case, do not run the preprocess_cds or
-#' reduce_dimension functions on the new cds. Additionally,
+#' Save the transform models in the cell_data_set to the
+#' specified directory by writing the R objects to RDS
+#' files and the nearest neighbor indexes to
+#' index files. save_transform_models saves transform
+#' models made by running the preprocess_cds and
+#' reduce_dimension functions on an initial cell_data_set.
+#' Subsequent cell_data_sets are transformed into the
+#' reduced dimension space of the initial cell_data_set by
+#' loading the new data into a new cell_data_set, loading
+#' the initial data set transform models into the new
+#' cell_data_set using the load_transform_models function,
+#' and applying those transform models to the new data set
+#' using the preprocess_transform and
+#' reduce_dimension_transform functions. In this case, do
+#' not run the preprocess_cds or reduce_dimension
+#' functions on the new cell_data_set. Additionally,
 #' save_transform_models saves nearest neighbor indexes
 #' when the preprocess_cds and reduce_dimension
-#' functions are run with the make_nn_index=TRUE parameter. These
-#' indexes are used to find matches between cells in the new
-#' processed cds and the initial cds using index search functions.
-#' save_transform_models saves the models to a directory.
-#' It does not save transform models
-#' and indexes that were not made using preprocess_cds
-#' and reduce_dimension.
+#' functions are run with the make_nn_index=TRUE parameter.
+#' These indexes are used to find matches between cells in
+#' the new processed cell_data_set and the initial
+#' cell_data_set using index search functions.
+#' save_transform_models saves the models to a directory
+#' given by directory_path.
 #'
 #' @param cds a cell_data_set with existing models.
 #' @param directory_path a string giving the name of the directory
@@ -877,26 +878,25 @@ test_hdf5_assays <- function(cds) {
 #' Save a Monocle3 full cell_data_set.
 #'
 #' Save a Monocle3 full cell_data_set to a specified directory
-#' by writing the R objects to an RDS file and
-#' the nearest neighbor indexes to individual index files.
-#' The assays objects are saved as HDF5Array files when
-#' hdf5_assays=TRUE or when the cell_data_set assays are
-#' HDF5Array objects. If any assay in the cell_data set is an
-#' HDF5 object, all assays must be. When save_monocle_objects is
-#' run with hdf5_assays=TRUE, the load_monocle_objects function
-#' loads the saved assays into HDF5Array objects in the resulting
-#' cell_data_set. Note: operations such as preprocess_cds that
-#' are run on assays stored as HDF5Arrays are much, much slower
-#' than the same operations run on assays stored as in-memory
-#' matrices. You may want to investigate parameters related to
-#' the Bioconductor DelayArray and BiocParallel packages in this
-#' case.
+#' by writing the R objects to RDS files and the nearest
+#' neighbor indexes to index files. The assays
+#' objects are saved as HDF5Array files when hdf5_assays=TRUE
+#' or when the cell_data_set assays are HDF5Array objects. If
+#' any assay in the cell_data set is an HDF5 object, all assays
+#' must be. When save_monocle_objects is run with hdf5_assays=TRUE,
+#' the load_monocle_objects function loads the saved assays into
+#' HDF5Array objects in the resulting cell_data_set. Note:
+#' operations such as preprocess_cds that are run on assays stored
+#' as HDF5Arrays are much, much slower than the same operations
+#' run on assays stored as in-memory matrices. You may want to
+#' investigate parameters related to the Bioconductor DelayedArray
+#' and BiocParallel packages in this case.
 #'
 #' @param cds a cell_data_set to save.
 #' @param directory_path a string giving the name of the directory
 #'   in which to write the object files.
 #' @param hdf5_assays a boolean determining whether the
-#'   non-HDF5Array assays objects are saved as HDF5 files. At this
+#'   non-HDF5Array assay objects are saved as HDF5 files. At this
 #'   time cell_data_set HDF5Array assay objects are stored as
 #'   HDF5Assay files regardless of the hdf5_assays parameter value.
 #' @param comment a string with optional notes that is saved with

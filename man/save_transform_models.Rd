@@ -22,27 +22,28 @@ about the saved files.}
 none.
 }
 \description{
-Save the transform models to the specified directory
-by writing the R objects to RDS files and
-the nearest neighbor indexes to individual index files.
-save_transform_models saves transform models made by running
-the preprocess_cds and reduce_dimension functions
-on an initial cell_data_set. Subsequent cell_data_sets are
-transformed into the reduced dimension space of the initial
-cds by loading the new data into a new cds, loading the
-initial data set transform models into the new cds using
-the load_transform_models function, and applying those transform models
-to the new data set using the preprocess_transform
-and reduce_dimension_transform functions.
-In this case, do not run the preprocess_cds or
-reduce_dimension functions on the new cds. Additionally,
+Save the transform models in the cell_data_set to the
+specified directory by writing the R objects to RDS
+files and the nearest neighbor indexes to
+index files. save_transform_models saves transform
+models made by running the preprocess_cds and
+reduce_dimension functions on an initial cell_data_set.
+Subsequent cell_data_sets are transformed into the
+reduced dimension space of the initial cell_data_set by
+loading the new data into a new cell_data_set, loading
+the initial data set transform models into the new
+cell_data_set using the load_transform_models function,
+and applying those transform models to the new data set
+using the preprocess_transform and
+reduce_dimension_transform functions. In this case, do
+not run the preprocess_cds or reduce_dimension
+functions on the new cell_data_set. Additionally,
 save_transform_models saves nearest neighbor indexes
 when the preprocess_cds and reduce_dimension
-functions are run with the make_nn_index=TRUE parameter. These
-indexes are used to find matches between cells in the new
-processed cds and the initial cds using index search functions.
-save_transform_models saves the models to a directory.
-It does not save transform models
-and indexes that were not made using preprocess_cds
-and reduce_dimension.
+functions are run with the make_nn_index=TRUE parameter.
+These indexes are used to find matches between cells in
+the new processed cell_data_set and the initial
+cell_data_set using index search functions.
+save_transform_models saves the models to a directory
+given by directory_path.
 }

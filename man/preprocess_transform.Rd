@@ -16,8 +16,8 @@ preprocess_transform(
 
 \item{reduction_method}{a previously loaded transform
 model that is used to reduce the dimensions of the
-count matrix in cds. The "PCA" and "LSI" transforms
-are supported. The default is "PCA".}
+count matrix in the cell_data_set. The "PCA" and "LSI"
+transforms are supported. The default is "PCA".}
 
 \item{block_size}{a numeric value for the DelayedArray
 block size used only in this function. Default is

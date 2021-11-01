@@ -7,11 +7,12 @@
 make_nn_index(subject_matrix, nn_control = list(), verbose = FALSE)
 }
 \arguments{
-\item{subject_matrix}{the reduced dimension matrix used to build
-the index.}
+\item{subject_matrix}{the matrix used to build the
+index.}
 
-\item{nn_control}{a list of parameters used to make the nearest
-neighbor index. See the set_nn_control help for details.}
+\item{nn_control}{a list of parameters used to make the
+nearest neighbor index. See the set_nn_control help
+for details.}
 
 \item{verbose}{a boolean indicating whether to emit verbose output.}
 }
@@ -19,8 +20,9 @@ neighbor index. See the set_nn_control help for details.}
 a nearest neighbor index.
 }
 \description{
-Make a nearest neighbor index from the specified
-reduction_method matrix using either the default nearest neighbor
-method or the method specified in the nn_control list parameter
-The function returns the index.
+Make a nearest neighbor index from the
+subject_matrix using either the default nearest
+neighbor method or the method specified in the
+nn_control list parameter. The function returns
+the index.
 }

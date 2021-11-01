@@ -137,6 +137,8 @@ preprocess_cds <- function(cds,
     cds@reduce_dim_aux[['PCA']][['model']][['svd_sdev']] <- irlba_res$sdev
     cds@reduce_dim_aux[['PCA']][['model']][['svd_center']] <- irlba_res$center
     cds@reduce_dim_aux[['PCA']][['model']][['svd_scale']] <- irlba_res$svd_scale
+    # Note that prop_var_expl is the fraction of variance explained by the retained
+    # PCs, not the fraction of total variance.
     cds@reduce_dim_aux[['PCA']][['model']][['prop_var_expl']] <- irlba_res$sdev^2 / sum(irlba_res$sdev^2)
 
     matrix_id <- get_unique_id()

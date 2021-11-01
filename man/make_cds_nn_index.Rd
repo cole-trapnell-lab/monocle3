@@ -13,8 +13,8 @@ make_cds_nn_index(
 }
 \arguments{
 \item{cds}{a cell_data_set with the reduced dimension matrix from
-which to make the index and in which the nearest neighbor
-index is stored.}
+which to make the nearest neighbor index and with which the index
+is stored.}
 
 \item{reduction_method}{a string giving the reduced dimension matrix
 to use for making the nn_index nearest neighbor index.}
@@ -29,7 +29,8 @@ a cell_data_set with the stored index.
 }
 \description{
 Make a nearest neighbor index from the specified
-reduction_method matrix in the cds using either the default
-nearest neighbor method or the method specified in the nn_control
-list parameter. This function returns a cell_data_set.
+reduction_method matrix in the cell_data_set using either the
+default nearest neighbor method or the method specified in the
+nn_control list parameter, and store the index in the
+cell_data_set. This function returns a cell_data_set.
 }
