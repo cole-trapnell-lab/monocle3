@@ -1,5 +1,15 @@
 # == Cell Ranger 3.0 data
 
+context("test-io")
+skip_not_travis <- function ()
+{
+  if (identical(Sys.getenv("TRAVIS"), "true")) {
+    return(invisible(TRUE))
+  }
+  skip("Not on Travis")
+}
+
+
 #
 # Expected values.
 #
@@ -21,7 +31,7 @@ cr3_matrix_colname <- c( "AAAGTAGCACAGTCGC-1", "AAATGCCCACCCAGTG-1", "AACCGCGCAG
 #
 # Test.
 #
-test_that( "load cell ranger matrix 3.0", {
+test_that("load_mm_data: load cell ranger matrix 3.0", {
   pdir <- "../testdata/cr3.0/outs/filtered_feature_bc_matrix/"
   pmat <- paste0( pdir, "matrix.mtx.gz" )
   prow <- paste0( pdir, "features.tsv.gz" )
@@ -56,7 +66,7 @@ cr2_matrix_colname <- c( "GAACCTGATGAACC-1", "TGACTGGATTCTCA-1", "AGTCAGACTGCACA
 #
 # Test.
 #
-test_that( "load cell ranger matrix 2.0", {
+test_that("load_mm_data: load cell ranger matrix 2.0", {
   pdir <- "../testdata/cr2.0/outs/filtered_gene_bc_matrices/hg19/"
   pmat <- paste0( pdir, "matrix.mtx" )
   prow <- paste0( pdir, "genes.tsv" )
@@ -97,7 +107,7 @@ mm_assay_sum <- 80147
 #
 # Tests.
 #
-test_that( "load MatrixMarket with annotations file ncol=1:nheader=0:header=FALSE", {
+test_that("load_mm_data: load MatrixMarket with annotations file ncol=1:nheader=0:header=FALSE", {
   pdir <- "../testdata/MatrixMarket/"
   pmat <- paste0( pdir, "matrix.mtx.gz" )
   prow <- paste0( pdir, "features_c1h0.txt" )
@@ -109,7 +119,7 @@ test_that( "load MatrixMarket with annotations file ncol=1:nheader=0:header=FALS
 } )
 
 
-test_that( "load MatrixMarket with annotations file ncol=1:nheader=1:header=TRUE", {
+test_that("load_mm_data: load MatrixMarket with annotations file ncol=1:nheader=1:header=TRUE", {
   pdir <- "../testdata/MatrixMarket/"
   pmat <- paste0( pdir, "matrix.mtx.gz" )
   prow <- paste0( pdir, "features_c1h1.txt" )
@@ -123,7 +133,7 @@ test_that( "load MatrixMarket with annotations file ncol=1:nheader=1:header=TRUE
 } )
 
 
-test_that( "load MatrixMarket with annotations file ncol=3:nheader=0:header=FALSE", {
+test_that("load_mm_data: load MatrixMarket with annotations file ncol=3:nheader=0:header=FALSE", {
   pdir <- "../testdata/MatrixMarket/"
   pmat <- paste0( pdir, "matrix.mtx.gz" )
   prow <- paste0( pdir, "features_c3h0.txt" )
@@ -139,7 +149,7 @@ test_that( "load MatrixMarket with annotations file ncol=3:nheader=0:header=FALS
 } )
 
 
-test_that( "load MatrixMarket with annotations file ncol=3:nheader=2:header=TRUE", {
+test_that("load_mm_data: load MatrixMarket with annotations file ncol=3:nheader=2:header=TRUE", {
   pdir <- "../testdata/MatrixMarket/"
   pmat <- paste0( pdir, "matrix.mtx.gz" )
   prow <- paste0( pdir, "features_c3h2.txt" )
@@ -155,7 +165,7 @@ test_that( "load MatrixMarket with annotations file ncol=3:nheader=2:header=TRUE
 } )
 
 
-test_that( "load MatrixMarket with annotations file ncol=3:nheader=3:header=TRUE", {
+test_that("load_mm_data: load MatrixMarket with annotations file ncol=3:nheader=3:header=TRUE", {
   pdir <- "../testdata/MatrixMarket/"
   pmat <- paste0( pdir, "matrix.mtx.gz" )
   prow <- paste0( pdir, "features_c3h3.txt" )
@@ -171,7 +181,7 @@ test_that( "load MatrixMarket with annotations file ncol=3:nheader=3:header=TRUE
 } )
 
 
-test_that( "load MatrixMarket with annotations file ncol=3:nheader=3:header=TRUE and replace metadata dimension labels", {
+test_that("load_mm_data: load MatrixMarket with annotations file ncol=3:nheader=3:header=TRUE and replace metadata dimension labels", {
   pdir <- "../testdata/MatrixMarket/"
   pmat <- paste0( pdir, "matrix.mtx.gz" )
   prow <- paste0( pdir, "features_c3h3.txt" )
@@ -190,7 +200,7 @@ test_that( "load MatrixMarket with annotations file ncol=3:nheader=3:header=TRUE
 } )
 
 
-test_that( "load MatrixMarket with annotations file ncol=2:nheader=1:header=TRUE", {
+test_that("load_mm_data: load MatrixMarket with annotations file ncol=2:nheader=1:header=TRUE", {
   pdir <- "../testdata/MatrixMarket/"
   pmat <- paste0( pdir, "matrix.mtx.gz" )
   prow <- paste0( pdir, "features_c2h1.txt" )
@@ -206,7 +216,7 @@ test_that( "load MatrixMarket with annotations file ncol=2:nheader=1:header=TRUE
 } )
 
 
-test_that( "load MatrixMarket with annotations file ncol=2:nheader=1:header=FALSE and there is a single quote in the gene names", {
+test_that("load_mm_data: load MatrixMarket with annotations file ncol=2:nheader=1:header=FALSE and there is a single quote in the gene names", {
   pdir <- "../testdata/MatrixMarket/"
   pmat <- paste0( pdir, "matrix.mtx.gz" )
   prow <- paste0( pdir, "features_c3h2q.txt" )
@@ -221,4 +231,87 @@ test_that( "load MatrixMarket with annotations file ncol=2:nheader=1:header=FALS
   expect_true( all( as.vector( pData( cds )$cells1 ) == mm_cell_cell_number ) )
   expect_true( all( as.vector( pData( cds )$cells2 ) == mm_cell_umi_token ) )
 } )
+
+
+test_that("save_transform_models and load_transform_models", {
+  skip_on_travis()
+  # set up a cds with nearest neighbor indices and transform models
+  cds <- load_a549()
+  cds <- preprocess_cds(cds, build_nn_index=TRUE, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
+  cds <- align_cds(cds, preprocess_method='PCA', residual_model_formula_str='~n.umi', build_nn_index=TRUE, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
+  cds <- reduce_dimension(cds, preprocess_method='Aligned', build_nn_index=TRUE, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
+  save_transform_models(cds, directory_path='transform_models.01')
+
+  # load cds, load transform models, and process cds with transform models
+  rm(cds)
+  cds <- load_a549()
+  cds <- load_transform_models(cds, directory_path='transform_models.01')
+  cds <- preprocess_transform(cds)
+  cds <- align_beta_transform(cds, preprocess_method='PCA')
+  cds <- reduce_dimension_transform(cds, preprocess_method='Aligned', reduction_method='UMAP')
+
+  # check PCA reduced dims matrix and nearest neighbors
+  expect_equivalent(ncol(reducedDims(cds)[['PCA']]), 50)
+  expect_equivalent(nrow(reducedDims(cds)[['PCA']]), 500)
+  expect_equivalent(reducedDims(cds)[['PCA']][[1,1]], 2.420739, tol=1e-5)
+  nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['PCA']], nn_index=get_cds_nn_index(cds, reduction_method='PCA', nn_control=list(method='annoy', metric='euclidean', n_trees=50)), k=5, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
+  expect_equivalent(nn_res[['nn.idx']][[1]], 1)
+  expect_equivalent(nn_res[['nn.dists']][[1]], 0)
+
+  # check Aligned reduced dims matrix and nearest neighbors
+  expect_equivalent(ncol(reducedDims(cds)[['Aligned']]), 50)
+  expect_equivalent(nrow(reducedDims(cds)[['Aligned']]), 500)
+  expect_equivalent(reducedDims(cds)[['Aligned']][[1,1]], 3.870306, tol=1e-5)
+  nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['Aligned']], nn_index=get_cds_nn_index(cds, reduction_method='Aligned', nn_control=list(method='annoy', metric='euclidean', n_trees=50)), k=5, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
+  expect_equivalent(nn_res[['nn.idx']][[1]], 1)
+  expect_equivalent(nn_res[['nn.dists']][[1]], 0)
+
+  # check UMAP reduced dims matrix and nearest neighbors
+  expect_equivalent(ncol(reducedDims(cds)[['UMAP']]), 2)
+  expect_equivalent(nrow(reducedDims(cds)[['UMAP']]), 500)
+  expect_equivalent(reducedDims(cds)[['UMAP']][[1,1]], 1.96, tol=1e-2)
+  nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['UMAP']], nn_index=get_cds_nn_index(cds, reduction_method='UMAP', nn_control=list(method='annoy', metric='euclidean', n_trees=50)), k=5, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
+  expect_equivalent(nn_res[['nn.idx']][[1]], 1)
+  expect_equivalent(nn_res[['nn.dists']][[1]], 0)
+} )
+
+
+test_that("save_monocle_objects and load_monocle_objects", {
+  skip_on_travis()
+  # set up a cds with nearest neighbor indices and monocle_objects
+  cds <- load_a549()
+  cds <- preprocess_cds(cds, build_nn_index=TRUE, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
+  cds <- align_cds(cds, preprocess_method='PCA', residual_model_formula_str='~n.umi', build_nn_index=TRUE, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
+  cds <- reduce_dimension(cds, preprocess_method='Aligned', build_nn_index=TRUE, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
+  save_monocle_objects(cds, directory_path='monocle_objects.01')
+
+  # load monocle objects models
+  rm(cds)
+  cds <- load_monocle_objects(directory_path='monocle_objects.01')
+
+  # check PCA reduced dims matrix and nearest neighbors
+  expect_equivalent(ncol(reducedDims(cds)[['PCA']]), 50)
+  expect_equivalent(nrow(reducedDims(cds)[['PCA']]), 500)
+  expect_equivalent(reducedDims(cds)[['PCA']][[1,1]], 2.420739, tol=1e-5)
+  nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['PCA']], nn_index=get_cds_nn_index(cds, reduction_method='PCA', nn_control=list(method='annoy', metric='euclidean', n_trees=50)), k=5, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
+  expect_equivalent(nn_res[['nn.idx']][[1]], 1)
+  expect_equivalent(nn_res[['nn.dists']][[1]], 0)
+
+  # check Aligned reduced dims matrix and nearest neighbors
+  expect_equivalent(ncol(reducedDims(cds)[['Aligned']]), 50)
+  expect_equivalent(nrow(reducedDims(cds)[['Aligned']]), 500)
+  expect_equivalent(reducedDims(cds)[['Aligned']][[1,1]], 3.870306, tol=1e-5)
+  nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['Aligned']], nn_index=get_cds_nn_index(cds, reduction_method='Aligned', nn_control=list(method='annoy', metric='euclidean', n_trees=50)), k=5, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
+  expect_equivalent(nn_res[['nn.idx']][[1]], 1)
+  expect_equivalent(nn_res[['nn.dists']][[1]], 0)
+
+  # check UMAP reduced dims matrix and nearest neighbors
+  expect_equivalent(ncol(reducedDims(cds)[['UMAP']]), 2)
+  expect_equivalent(nrow(reducedDims(cds)[['UMAP']]), 500)
+  expect_equivalent(reducedDims(cds)[['UMAP']][[1,1]], 1.96, tol=1e-2)
+  nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['UMAP']], nn_index=get_cds_nn_index(cds, reduction_method='UMAP', nn_control=list(method='annoy', metric='euclidean', n_trees=50)), k=5, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
+  expect_equivalent(nn_res[['nn.idx']][[1]], 1)
+  expect_equivalent(nn_res[['nn.dists']][[1]], 0)
+} )
+
 
