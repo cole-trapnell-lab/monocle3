@@ -399,8 +399,7 @@ test_that("save_monocle_objects and load_monocle_objects", {
   expect_equivalent(nn_res[['nn.dists']][[1]], 0)
 
   # check UMAP reduced dims matrix and nearest neighbors
-#  expect_equivalent(ncol(reducedDims(cds)[['UMAP']]), 2)
-  expect_equivalent(ncol(reducedDims(cds)[['UMAP']]), 5)
+  expect_equivalent(ncol(reducedDims(cds)[['UMAP']]), 2)
   expect_equivalent(nrow(reducedDims(cds)[['UMAP']]), 500)
   expect_equivalent(reducedDims(cds)[['UMAP']][[1,1]], 1.96, tol=1e-2)
   nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['UMAP']], nn_index=get_cds_nn_index(cds, reduction_method='UMAP', nn_control=list(method='annoy', metric='euclidean', n_trees=50)), k=5, nn_control=list(method='annoy', metric='euclidean', n_trees=50))

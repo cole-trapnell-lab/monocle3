@@ -221,7 +221,10 @@ preprocess_cds <- function(cds,
     else
       cds <- clear_cds_nn_index(cds=cds, reduction_method=method, nn_method='all')
   }
-  cds@reduce_dim_aux[['Aligned']] <- NULL
+
+  if(!is.null(cds@reduce_dim_aux[['Aligned']]) && !is.null(cds@reduce_dim_aux[['Aligned']][['model']][['beta']])) {
+    cds@reduce_dim_aux[['Aligned']][['model']][['beta']] <- NULL
+  }
 
   cds
 }
