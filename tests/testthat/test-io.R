@@ -45,7 +45,6 @@ test_that("load_mm_data: load cell ranger matrix 3.0", {
 } )
 
 
-
 # == Cell Ranger 2.0 data
 
 #
@@ -77,7 +76,6 @@ test_that("load_mm_data: load cell ranger matrix 2.0", {
   expect_true( all( as.vector( colnames( assay( cds ) ) )[1:5] == cr2_matrix_colname ) )
   expect_true( all( fData( cds )$V2[1:5] == cr2_feature_V2 ) )
 } )
-
 
 
 # == Matrix Market data derived from Cell Ranger
@@ -401,7 +399,8 @@ test_that("save_monocle_objects and load_monocle_objects", {
   expect_equivalent(nn_res[['nn.dists']][[1]], 0)
 
   # check UMAP reduced dims matrix and nearest neighbors
-  expect_equivalent(ncol(reducedDims(cds)[['UMAP']]), 2)
+#  expect_equivalent(ncol(reducedDims(cds)[['UMAP']]), 2)
+  expect_equivalent(ncol(reducedDims(cds)[['UMAP']]), 5)
   expect_equivalent(nrow(reducedDims(cds)[['UMAP']]), 500)
   expect_equivalent(reducedDims(cds)[['UMAP']][[1,1]], 1.96, tol=1e-2)
   nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['UMAP']], nn_index=get_cds_nn_index(cds, reduction_method='UMAP', nn_control=list(method='annoy', metric='euclidean', n_trees=50)), k=5, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
