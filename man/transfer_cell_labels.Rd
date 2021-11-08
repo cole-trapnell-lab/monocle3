@@ -58,9 +58,9 @@ the nearest neighbors indexes. See the set_nn_control help
 for additional details. The default is to use the global
 nn_control list.}
 
-\item{top_frac_threshold}{a numeric value giving the minimum
-value of the top fraction of reference values required
-for transferring the reference value to the query. The top
+\item{top_frac_threshold}{a numeric value. The top fraction
+of reference values must be greater than top_frac_threshold
+in order to be transferred to the query. The top
 fraction is the fraction of the k neighbors with the most
 frequent value. The default is 0.5.}
 

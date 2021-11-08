@@ -199,9 +199,8 @@ check_cds_nn_search_exists <- function(cds, reduction_method = c("UMAP", "tSNE",
 #' @section Optional nn_control parameters:
 #' \describe{
 #'   \item{method}{The method used to find nearest neighbor points.
-#'      The available methods are 'nn2', 'annoy', and 'hnsw'. If not
-#'      specified, the method given by the method_default parameter is
-#'      used.
+#'      The available methods are 'nn2', 'annoy', and 'hnsw'. The
+#'      default is 'annoy'.
 #'      Detailed information about each method can be found on the
 #'      WWW sites:
 #'      https://cran.r-project.org/web/packages/RANN/,
@@ -210,13 +209,17 @@ check_cds_nn_search_exists <- function(cds, reduction_method = c("UMAP", "tSNE",
 #'   \item{metric}{The distance metric used by the nearest neighbor
 #'      functions.  Annoy accepts 'euclidean', 'cosine', 'manhattan',
 #'      and 'hamming'. HNSW accepts 'euclidean', 'l2', 'cosine', and
-#'      'ip'. RANN uses 'euclidean'.}
+#'      'ip'. RANN uses 'euclidean'.} The default is 'euclidean'.
 #'   \item{n_trees}{The annoy index build parameter that affects the build
 #'      time and index size. Larger values give more accurate results,
 #'      longer build times, and larger indexes. The default is 50.}
 #'   \item{search_k}{The annoy index search parameter that affects the
 #'      search accuracy and time. Larger values give more accurate
-#'      results and longer search times. Default is k * n_trees.}
+#'      results and longer search times. Default is k * n_trees, where
+#'      n_trees is either the default value or the value set in
+#'      nn_control at search time. That is, when set_nn_control is
+#'      called for a search, the n_trees value used to build the index
+#'      is not recalled to set the default search_k.}
 #'   \item{M}{The HNSW index build parameter that affects the
 #'      search accuracy and memory requirements. Larger values give
 #'      more accurate search results and increase the index memory
@@ -259,6 +262,19 @@ check_cds_nn_search_exists <- function(cds, reduction_method = c("UMAP", "tSNE",
 #' @export
 set_nn_control <- function(mode=3, nn_control=list(), k=25, nn_control_default=list(), verbose=FALSE) {
 
+  default_method <- 'annoy'
+  default_metric <- 'euclidean'
+  default_n_trees <- 50
+  default_M <- 48
+  default_ef_construction <- 200
+  default_ef <- 30
+  default_grain_size <- 1
+  default_cores <- 1
+  if(!is.null(nn_control[['n_trees']]))
+    default_search_k <- nn_control[['n_trees']] * k
+  else
+    default_search_k <- default_n_trees * k
+  
   assertthat::assert_that(methods::is(nn_control, "list"))
   assertthat::assert_that(methods::is(nn_control_default, "list"))
   assertthat::assert_that(assertthat::is.count(k))
@@ -268,9 +284,9 @@ set_nn_control <- function(mode=3, nn_control=list(), k=25, nn_control_default=l
   else
   if(length(nn_control_default) > 0)
     nn_control <- nn_control_default
-  else {
-    nn_control <- list(method = 'annoy',
-                       metric = 'euclidean')
+
+  if(is.null(nn_control[['method']])) {
+    nn_control[['method']] <- default_method
   }
  
   assertthat::assert_that(all(names(nn_control) %in%
@@ -292,20 +308,20 @@ set_nn_control <- function(mode=3, nn_control=list(), k=25, nn_control_default=l
     # Do nothing for nn2. Call report_nn_control when verbose <- TRUE
   } else
   if(nn_control[['method']] == 'annoy') {
-    nn_control[['metric']] <- ifelse(is.null(nn_control[['metric']]), 'euclidean', nn_control[['metric']])
+    nn_control[['metric']] <- ifelse(is.null(nn_control[['metric']]), default_metric, nn_control[['metric']])
     assertthat::assert_that(nn_control[['metric']] %in% c('euclidean', 'cosine', 'manhattan', 'hamming'),
                             msg=paste0("set_nn_control: nearest neighbor metric for annoy must be one of 'euclidean', 'cosine', 'manhattan', or 'hamming'"))
 
     if(bitwAnd(mode, 1)) {
-      nn_control[['n_trees']] <- ifelse(is.null(nn_control[['n_trees']]), 50, nn_control[['n_trees']])
+      nn_control[['n_trees']] <- ifelse(is.null(nn_control[['n_trees']]), default_n_trees, nn_control[['n_trees']])
       assertthat::assert_that(assertthat::is.count(nn_control[['n_trees']]))
     }
 
     if(bitwAnd(mode, 2)) {
-      nn_control[['n_trees']] <- ifelse(is.null(nn_control[['n_trees']]), 50, nn_control[['n_trees']])
-      nn_control[['search_k']] <- ifelse(is.null(nn_control[['search_k']]), nn_control[['n_trees']] * k, nn_control[['search_k']])
-      nn_control[['grain_size']] <- ifelse(is.null(nn_control[['grain_size']]), 1, nn_control[['grain_size']])
-      nn_control[['cores']] <- ifelse(is.null(nn_control[['cores']]), 1, nn_control[['cores']])
+      nn_control[['n_trees']] <- ifelse(is.null(nn_control[['n_trees']]), default_n_trees, nn_control[['n_trees']])
+      nn_control[['search_k']] <- ifelse(is.null(nn_control[['search_k']]), default_search_k, nn_control[['search_k']])
+      nn_control[['grain_size']] <- ifelse(is.null(nn_control[['grain_size']]), default_grain_size, nn_control[['grain_size']])
+      nn_control[['cores']] <- ifelse(is.null(nn_control[['cores']]), default_cores, nn_control[['cores']])
       assertthat::assert_that(assertthat::is.count(nn_control[['search_k']]))
       assertthat::assert_that(assertthat::is.count(nn_control[['grain_size']]))
       assertthat::assert_that(assertthat::is.count(nn_control[['cores']]))
@@ -313,20 +329,20 @@ set_nn_control <- function(mode=3, nn_control=list(), k=25, nn_control_default=l
 
   } else
   if(nn_control[['method']] == 'hnsw') {
-    nn_control[['metric']] <- ifelse(is.null(nn_control[['metric']]), 'euclidean', nn_control[['metric']])
+    nn_control[['metric']] <- ifelse(is.null(nn_control[['metric']]), default_metric, nn_control[['metric']])
 
     assertthat::assert_that(nn_control[['metric']] %in% c('euclidean', 'l2', 'cosine', 'ip'),
                             msg=paste0("set_nn_control: nearest neighbor metric for HNSW must be one of 'euclidean', 'l2', 'cosine', or 'ip'"))
 
-    nn_control[['grain_size']] <- ifelse(is.null(nn_control[['grain_size']]), 1, nn_control[['grain_size']])
-    nn_control[['cores']] <- ifelse(is.null(nn_control[['cores']]), 1, nn_control[['cores']])
+    nn_control[['grain_size']] <- ifelse(is.null(nn_control[['grain_size']]), default_grain_size, nn_control[['grain_size']])
+    nn_control[['cores']] <- ifelse(is.null(nn_control[['cores']]), default_cores, nn_control[['cores']])
   
     assertthat::assert_that(assertthat::is.count(nn_control[['grain_size']]))
     assertthat::assert_that(assertthat::is.count(nn_control[['cores']]))
 
     if(bitwAnd(mode, 1)) {
-      nn_control[['M']] <- ifelse(is.null(nn_control[['M']]), 48, nn_control[['M']])
-      nn_control[['ef_construction']] <- ifelse(is.null(nn_control[['ef_construction']]), 200, nn_control[['ef_construction']])
+      nn_control[['M']] <- ifelse(is.null(nn_control[['M']]), default_M, nn_control[['M']])
+      nn_control[['ef_construction']] <- ifelse(is.null(nn_control[['ef_construction']]), default_ef_construction, nn_control[['ef_construction']])
   
       assertthat::assert_that(assertthat::is.count(nn_control[['M']]))
       assertthat::assert_that(assertthat::is.count(nn_control[['ef_construction']]))
@@ -336,7 +352,7 @@ set_nn_control <- function(mode=3, nn_control=list(), k=25, nn_control_default=l
     }
 
     if(bitwAnd(mode, 2)) {
-      nn_control[['ef']] <- ifelse(is.null(nn_control[['ef']]), 30, nn_control[['ef']])
+      nn_control[['ef']] <- ifelse(is.null(nn_control[['ef']]), default_ef, nn_control[['ef']])
       assertthat::assert_that(assertthat::is.count(nn_control[['ef']]))
   
       assertthat::assert_that(nn_control[['ef']] >= k,
@@ -426,6 +442,9 @@ make_nn_index <- function(subject_matrix, nn_control=list(), verbose=FALSE) {
 
   nn_method <- nn_control[['method']]
 
+  if(nn_method == 'nn2') {
+    stop('make_nn_index is not valid for method nn2')
+  } else
   if(nn_method == 'annoy') {
     # set verbose to FALSE because when TRUE and nr is small, uwot::annoy_build can fail in
     #       if (verbose) {
@@ -510,6 +529,9 @@ set_cds_nn_index <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Alig
 
   nn_method <- nn_control[['method']]
 
+  if(nn_method == 'nn2') {
+    stop('set_cds_nn_index is not valid for method nn2')
+  } else
   if(nn_method == 'annoy') {
     cds@reduce_dim_aux[[reduction_method]][['nn_index']][[nn_method]] <- SimpleList()
     cds@reduce_dim_aux[[reduction_method]][['nn_index']][[nn_method]][['nn_index']] <- nn_index
@@ -524,7 +546,7 @@ set_cds_nn_index <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Alig
   if(nn_method == 'hnsw') {
     cds@reduce_dim_aux[[reduction_method]][['nn_index']][[nn_method]] <- SimpleList()
     cds@reduce_dim_aux[[reduction_method]][['nn_index']][[nn_method]][['nn_index']] <- list()
-    cds@reduce_dim_aux[[reduction_method]][['nn_index']][[nn_method]][['nn_index']][['ann']] <- nn_index
+    cds@reduce_dim_aux[[reduction_method]][['nn_index']][[nn_method]][['nn_index']] <- nn_index
     cds@reduce_dim_aux[[reduction_method]][['nn_index']][[nn_method]][['metric']] <- nn_control[['metric']]
     cds@reduce_dim_aux[[reduction_method]][['nn_index']][[nn_method]][['M']] <- nn_control[['M']]
     cds@reduce_dim_aux[[reduction_method]][['nn_index']][[nn_method]][['ef_construction']] <- nn_control[['ef_construction']]
@@ -576,6 +598,12 @@ make_cds_nn_index <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Ali
 
   nn_control <- set_nn_control(mode=1, nn_control=nn_control, k=1, nn_control_default=list(), verbose=verbose)
 
+  nn_method <- nn_control[['method']]
+
+  if(nn_method == 'nn2') {
+    stop('make_cds_nn_index is not valid for method nn2')
+  }
+
   reduced_matrix <- reducedDims(cds)[[reduction_method]]
   nn_index <- make_nn_index(subject_matrix=reduced_matrix, nn_control=nn_control, verbose=verbose)
   cds <- set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, nn_control=nn_control, verbose=verbose)
@@ -597,27 +625,29 @@ get_cds_nn_index <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Alig
     msg = "reduction_method must be one of 'PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP'")
   reduction_method <- match.arg(reduction_method)
 
-  assertthat::assert_that(
-    !is.null(reducedDims(cds)[[reduction_method]]),
-    msg = paste("Data has not been processed with",
-                "chosen reduction_method:",
-                reduction_method))
-
   # We need the build method.
   nn_control <- set_nn_control(mode=1, nn_control=nn_control, k=1, nn_control_default=list(), verbose=verbose)
 
   nn_method <- nn_control[['method']]
+
+  assertthat::assert_that(
+    !is.null(cds@reduce_dim_aux[[reduction_method]][['nn_index']][[nn_method]]),
+    msg = paste("There is no nearest neighbor index",
+                "for reduction_method",
+                reduction_method,
+                "and nearest neighbor method",
+                nn_method))
 
   assertthat::assert_that(nn_method %in% c('annoy', 'hnsw'),
     msg = paste0('get_cds_nn_index: unsupported nearest neighbor index type \'',
                 nn_method, '\'.'))
 
   if(nn_method == 'annoy') {
-    nn_index <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][[nn_method]][['nn_index']][['ann']]
+    nn_index <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][[nn_method]][['nn_index']]
   }
   else
   if(nn_method == 'hnsw') {
-    nn_index <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][[nn_method]][['nn_index']][['ann']]
+    nn_index <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][[nn_method]][['nn_index']]
   }
   else
     stop('get_cds_nn_index: unsupported nearest neighbor index type \'', nn_method, '\'')
@@ -667,6 +697,9 @@ search_nn_index <- function(query_matrix, nn_index, k=25, nn_control=list(), ver
 
   k <- min(k, nrow(query_matrix))
 
+  if(nn_method == 'nn2') {
+    stop('search_nn_index is not valid for method nn2')
+  } else
   if(nn_method == 'annoy') {
     # notes:
     #   o  there may be dependency on uwot version
@@ -710,7 +743,13 @@ search_nn_index <- function(query_matrix, nn_index, k=25, nn_control=list(), ver
 
 # Notice that this function uses the available reducedDims(cds)[[reduction_method]] matrix
 # for verifying the query matrix -- be certain that the search (and index build) were run
-#' on this matrix so call this function immediately after running the search.
+# on this matrix so call this function immediately after running the search.
+# Notes:
+#   o  this function has no use currently
+#   o  it was written to store nn search information in the cds when
+#      we intended to re-use an index for later processing stages but
+#      it appears that there is little or no opportunity to re-use
+#      indices so we are not storing search information at this time.
 set_cds_nn_search <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Aligned', 'tSNE'), search_id, k, nn_control=list(), verbose=TRUE) {
   assertthat::assert_that(class(cds) == 'cell_data_set',
                           msg=paste('cds parameter is not a cell_data_set'))

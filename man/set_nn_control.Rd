@@ -51,9 +51,8 @@ values are set to default values.
 
 \describe{
 \item{method}{The method used to find nearest neighbor points.
-The available methods are 'nn2', 'annoy', and 'hnsw'. If not
-specified, the method given by the method_default parameter is
-used.
+The available methods are 'nn2', 'annoy', and 'hnsw'. The
+default is 'annoy'.
 Detailed information about each method can be found on the
 WWW sites:
 https://cran.r-project.org/web/packages/RANN/,
@@ -62,13 +61,17 @@ and https://cran.rstudio.com/web/packages/RcppHNSW/index.html.}
 \item{metric}{The distance metric used by the nearest neighbor
 functions.  Annoy accepts 'euclidean', 'cosine', 'manhattan',
 and 'hamming'. HNSW accepts 'euclidean', 'l2', 'cosine', and
-'ip'. RANN uses 'euclidean'.}
+'ip'. RANN uses 'euclidean'.} The default is 'euclidean'.
 \item{n_trees}{The annoy index build parameter that affects the build
 time and index size. Larger values give more accurate results,
 longer build times, and larger indexes. The default is 50.}
 \item{search_k}{The annoy index search parameter that affects the
 search accuracy and time. Larger values give more accurate
-results and longer search times. Default is k * n_trees.}
+results and longer search times. Default is k * n_trees, where
+n_trees is either the default value or the value set in
+nn_control at search time. That is, when set_nn_control is
+called for a search, the n_trees value used to build the index
+is not recalled to set the default search_k.}
 \item{M}{The HNSW index build parameter that affects the
 search accuracy and memory requirements. Larger values give
 more accurate search results and increase the index memory

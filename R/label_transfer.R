@@ -9,14 +9,14 @@
 which_mode <- function(x, top_frac_threshold=0.5, top_next_ratio_threshold=1.5) {
   # Make a contigency table of cell labels sorted from
   # most to least frequently occurring.
-  ta <- sort(table(x), decreasing=TRUE)
+  ta <- sort(table(x, useNA='ifany'), decreasing=TRUE)
   tam <- ta[1]
   freq <- tam / length(x)
   top_to_second <- ta[1] / ta[2]
-  if(freq > top_frac_threshold)
+  if((freq > top_frac_threshold))
     mod <- names(tam)[1]
   else
-  if(top_to_second >= top_next_ratio_threshold)
+  if((top_to_second >= top_next_ratio_threshold))
     mod <- names(tam)[1]
   else
     mod <- NA_character_
@@ -132,9 +132,9 @@ get_nn_means <- function(query_data, query_search, ref_coldata, ref_column_name)
 #'   the nearest neighbors indexes. See the set_nn_control help
 #'   for additional details. The default is to use the global
 #'   nn_control list.
-#' @param top_frac_threshold a numeric value giving the minimum
-#'   value of the top fraction of reference values required
-#'   for transferring the reference value to the query. The top
+#' @param top_frac_threshold a numeric value. The top fraction
+#'   of reference values must be greater than top_frac_threshold
+#'   in order to be transferred to the query. The top
 #'   fraction is the fraction of the k neighbors with the most
 #'   frequent value. The default is 0.5.
 #' @param top_next_ratio_threshold a numeric value giving the
@@ -236,17 +236,17 @@ transfer_cell_labels <- function(cds_query,
 
 # fill in NAs ----------------------------------------------------------------
 
-edit_cell_label <- function(curr_label, other_labels, top_frac_threshold=0.5, top_next_ratio_threshold=1.5) {
-  # Change NAs to strings.
-  curr_label <- tidyr::replace_na(curr_label, "NA")
-  other_labels <- tidyr::replace_na(other_labels, "NA")
-  top_label <- which_mode(x=other_labels, top_frac_threshold=top_frac_threshold, top_next_ratio_threshold=top_next_ratio_threshold)
-  
-  # Switch back if necessary.
-  top_label <- gsub("NA", NA_character_, top_label)
-  
-  return(top_label)
-}
+# edit_cell_label <- function(curr_label, other_labels, top_frac_threshold=0.5, top_next_ratio_threshold=1.5) {
+#   # Change NAs to strings.
+#   curr_label <- tidyr::replace_na(curr_label, "NA")
+#   other_labels <- tidyr::replace_na(other_labels, "NA")
+#   top_label <- which_mode(x=other_labels, top_frac_threshold=top_frac_threshold, top_next_ratio_threshold=top_next_ratio_threshold)
+#   
+#   # Switch back if necessary.
+#   top_label <- gsub("NA", NA_character_, top_label)
+#   
+#   return(top_label)
+# }
 
 
 edit_query_cell_labels <- function(preproc_res,
@@ -272,10 +272,13 @@ edit_query_cell_labels <- function(preproc_res,
     query_labels <- query_coldata[query_neighbors, column_name]
     curr_label <- query_labels[1]
     other_labels <- query_labels[2:k]
-    top_label <- edit_cell_label(curr_label=curr_label,
-                                 other_labels=other_labels,
-                                 top_frac_threshold=top_frac_threshold,
-                                 top_next_ratio_threshold=top_next_ratio_threshold)
+
+    top_label <- which_mode(x=other_labels, top_frac_threshold=top_frac_threshold, top_next_ratio_threshold=top_next_ratio_threshold)
+
+#     top_label <- edit_cell_label(curr_label=curr_label,
+#                                  other_labels=other_labels,
+#                                  top_frac_threshold=top_frac_threshold,
+#                                  top_next_ratio_threshold=top_next_ratio_threshold)
   })
 }
 

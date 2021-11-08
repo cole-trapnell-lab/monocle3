@@ -39,6 +39,27 @@ test_that("preprocessing stays the same", {
   expect_equivalent(nrow(reducedDims(cds)$LSI), nrow(colData(cds)))
   expect_equivalent(reducedDims(cds)$LSI[1,1], 13.49733, tol = 1e-5)
 
+  # PCA model
+  cds <- load_a549()
+  cds <- preprocess_cds(cds, method = "PCA", num_dim = 20)
+  expect_equal(cds@reduce_dim_aux[['PCA']][['model']][['num_dim']], 20)
+  expect_equal(cds@reduce_dim_aux[['PCA']][['model']][['norm_method']], 'log')
+  expect_equal(cds@reduce_dim_aux[['PCA']][['model']][['svd_v']][[1,1]], 0.1362, tol=1e-3)
+  expect_equal(cds@reduce_dim_aux[['PCA']][['model']][['svd_sdev']][[1]], 2.67, tol=1e-2)
+  expect_equal(cds@reduce_dim_aux[['PCA']][['model']][['svd_center']][[1]], 2.22475, tol=1e-4)
+  expect_equal(cds@reduce_dim_aux[['PCA']][['model']][['svd_scale']][[1]], 0.9393, tol=1e-3)
+  expect_equal(cds@reduce_dim_aux[['PCA']][['model']][['prop_var_expl']][[1]], 0.1493, tol=1e-3)
+
+  # LSI model
+  cds <- load_a549()
+  cds <- preprocess_cds(cds, method = "LSI", num_dim = 20)
+  expect_equal(cds@reduce_dim_aux[['LSI']][['model']][['num_dim']], 20)
+  expect_equal(cds@reduce_dim_aux[['LSI']][['model']][['norm_method']], 'log')
+  expect_equal(cds@reduce_dim_aux[['LSI']][['model']][['col_sums']][[1]], 18.7, tol=1e-1)
+  expect_equal(cds@reduce_dim_aux[['LSI']][['model']][['row_sums']][[1]], 467, tol=1)
+  expect_equal(cds@reduce_dim_aux[['LSI']][['model']][['svd_v']][[1,1]], 0.16318, tol=1e-3)
+  expect_equal(cds@reduce_dim_aux[['LSI']][['model']][['svd_sdev']][[1]], 32.21, tol=1e-2)
+
   # non-standard options
   cds <- preprocess_cds(cds, method = "PCA", scaling=FALSE,
                         verbose = TRUE, norm_method = "size_only",
@@ -53,7 +74,6 @@ test_that("preprocessing stays the same", {
   expect_equal(ncol(reducedDims(cds)$PCA), 20)
   expect_equal(nrow(reducedDims(cds)$PCA), nrow(colData(cds)))
   expect_equal(reducedDims(cds)$PCA[2,1], 1.982232, tol = 1e-5)
-
 
   # with use_genes
   cds <- preprocess_cds(cds, method = "PCA", num_dim = 20,

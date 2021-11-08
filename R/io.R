@@ -371,8 +371,8 @@ load_annoy_index <- function(nn_index, file_name, metric, ndim) {
 
 
 save_hnsw_index <- function(nn_index, file_name) {
-  if(!is.null(nn_index[['version']])) {
-    tryCatch( nn_index[['ann']]$save(file_name),
+  if(!is.null(nn_index)) {
+    tryCatch( nn_index$save(file_name),
               error = function(e) {message('Unable to save hnsw index: it may not exist in this cds: error message is ', e)})
   }
 }
@@ -380,18 +380,22 @@ save_hnsw_index <- function(nn_index, file_name) {
 
 load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
   if(metric == 'l2') {
-    nn_index[['ann']] <- new(RcppHNSW:::HnswL2, ndim, file_name)
+    nn_index <- new(RcppHNSW:::HnswL2, ndim, file_name)
+    unlink(file_name)
   } else
   if(metric == 'euclidean') {
-    nn_index[['ann']] <- new(RcppHNSW:::HnswL2, ndim, file_name)
-    attr(nn_index[['ann']], "distance") <- "euclidean"
+    nn_index <- new(RcppHNSW:::HnswL2, ndim, file_name)
+    attr(nn_index, "distance") <- "euclidean"
+    unlink(file_name)
   } else
     if(metric == 'cosine') {
-    nn_index[['ann']] <- new(RcppHNSW:::HnswCosine, ndim, file_name)
+    nn_index <- new(RcppHNSW:::HnswCosine, ndim, file_name)
+    unlink(file_name)
   }
   else
   if(metric == 'ip') {
-    nn_index[['ann']] <- new(RcppHNSW:::HnswIp, ndim, file_name)
+    nn_index <- new(RcppHNSW:::HnswIp, ndim, file_name)
+    unlink(file_name)
   }
   return(nn_index)
 }
