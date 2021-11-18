@@ -380,21 +380,21 @@ save_hnsw_index <- function(nn_index, file_name) {
 
 load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
   if(metric == 'l2') {
-    nn_index <- new(RcppHNSW:::HnswL2, ndim, file_name)
+    nn_index <- new(RcppHNSW::HnswL2, ndim, file_name)
     unlink(file_name)
   } else
   if(metric == 'euclidean') {
-    nn_index <- new(RcppHNSW:::HnswL2, ndim, file_name)
+    nn_index <- new(RcppHNSW::HnswL2, ndim, file_name)
     attr(nn_index, "distance") <- "euclidean"
     unlink(file_name)
   } else
     if(metric == 'cosine') {
-    nn_index <- new(RcppHNSW:::HnswCosine, ndim, file_name)
+    nn_index <- new(RcppHNSW::HnswCosine, ndim, file_name)
     unlink(file_name)
   }
   else
   if(metric == 'ip') {
-    nn_index <- new(RcppHNSW:::HnswIp, ndim, file_name)
+    nn_index <- new(RcppHNSW::HnswIp, ndim, file_name)
     unlink(file_name)
   }
   return(nn_index)
@@ -537,7 +537,8 @@ report_files_saved <- function(file_index) {
 #' functions are run with the make_nn_index=TRUE parameter.
 #' These indexes are used to find matches between cells in
 #' the new processed cell_data_set and the initial
-#' cell_data_set using index search functions.
+#' cell_data_set using index search functions. For more
+#' information see the help for transfer_cell_labels.
 #' save_transform_models saves the models to a directory
 #' given by directory_path.
 #'
@@ -871,7 +872,7 @@ test_hdf5_assays <- function(cds) {
   assays <- assays(cds)
   for( idx in seq_along(assays)) {
     asyl <- getListElement(assays, idx)
-    hdf5_test<- unlist(DelayedArray:::seedApply(asyl, is, "HDF5ArraySeed"))
+    hdf5_test<- unlist(DelayedArray::seedApply(asyl, is, "HDF5ArraySeed"))
     if(any(unlist(hdf5_test))) return(TRUE)
   } 
   FALSE

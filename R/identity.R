@@ -2,7 +2,7 @@
 
 
 initialize_counts_metadata <- function(cds) {
-  assertthat::assert_that(class(cds) == 'cell_data_set',
+  assertthat::assert_that(is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
 
   if(is.null(int_metadata(cds))) {
@@ -15,7 +15,7 @@ initialize_counts_metadata <- function(cds) {
 
 
 set_counts_identity <- function(cds, matrix_type, matrix_id) {
-  assertthat::assert_that(class(cds) == 'cell_data_set',
+  assertthat::assert_that(is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
 
   assertthat::assert_that(!is.null(int_metadata(cds)[['counts_metadata']]),
@@ -29,7 +29,7 @@ set_counts_identity <- function(cds, matrix_type, matrix_id) {
 
 
 get_counts_identity <- function(cds) {
-  assertthat::assert_that(class(cds) == 'cell_data_set',
+  assertthat::assert_that(is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
 
   if(is.null(int_metadata(cds)[['counts_metadata']])) {
@@ -53,7 +53,7 @@ get_counts_identity <- function(cds) {
 
 # Note: int_metadata(cds) requires a list
 initialize_reduce_dim_metadata <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP')) {
-  assertthat::assert_that(class(cds) == 'cell_data_set',
+  assertthat::assert_that(is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
 
   assertthat::assert_that(
@@ -79,7 +79,7 @@ set_reduce_dim_matrix_identity <- function(cds, reduction_method=c('PCA', 'LSI',
                                            matrix_type, matrix_id,
                                            prev_matrix_type, prev_matrix_id,
                                            model_type, model_id) {
-  assertthat::assert_that(class(cds) == 'cell_data_set',
+  assertthat::assert_that(is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
 
   assertthat::assert_that(
@@ -104,7 +104,7 @@ set_reduce_dim_matrix_identity <- function(cds, reduction_method=c('PCA', 'LSI',
 
 
 get_reduce_dim_matrix_identity <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP')) {
-  assertthat::assert_that(class(cds) == 'cell_data_set',
+  assertthat::assert_that(is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
 
   assertthat::assert_that(
@@ -129,7 +129,7 @@ get_reduce_dim_matrix_identity <- function(cds, reduction_method=c('PCA', 'LSI',
 
 
 initialize_reduce_dim_model_identity <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP')) {
-  assertthat::assert_that(class(cds) == 'cell_data_set',
+  assertthat::assert_that(is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
 
   assertthat::assert_that(
@@ -152,7 +152,7 @@ set_reduce_dim_model_identity <- function(cds, reduction_method=c('PCA', 'LSI', 
                                           model_type, model_id,
                                           prev_model_type, prev_model_id,
                                           model_path='none') {
-  assertthat::assert_that(class(cds) == 'cell_data_set',
+  assertthat::assert_that(is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
 
   assertthat::assert_that(
@@ -184,7 +184,7 @@ set_reduce_dim_model_identity <- function(cds, reduction_method=c('PCA', 'LSI', 
 
 
 get_reduce_dim_model_identity <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP')) {
-  assertthat::assert_that(class(cds) == 'cell_data_set',
+  assertthat::assert_that(is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
 
   assertthat::assert_that(
@@ -209,7 +209,7 @@ get_reduce_dim_model_identity <- function(cds, reduction_method=c('PCA', 'LSI', 
 
 
 set_model_identity_path <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP'), model_path='none') {
-  assertthat::assert_that(class(cds) == 'cell_data_set',
+  assertthat::assert_that(is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
 
   assertthat::assert_that(
@@ -291,7 +291,7 @@ set_model_identity_path <- function(cds, reduction_method=c('PCA', 'LSI', 'Align
 #'
 #' @export
 identity_table <- function(cds) {
-  assertthat::assert_that(class(cds) == 'cell_data_set',
+  assertthat::assert_that(is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
 
   reduction_methods <- c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP')

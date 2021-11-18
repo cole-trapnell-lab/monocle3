@@ -51,12 +51,15 @@ transform model.}
 
 \item{k}{an integer giving the number of reference nearest
 neighbors to find. This value must be large enough to find
-meaningful column value fractions. The default is 10.}
+meaningful column value fractions. See the top_frac_threshold
+parameter below for additional information. The default is 10.}
 
 \item{nn_control}{a list of parameters used to make and search
 the nearest neighbors indexes. See the set_nn_control help
-for additional details. The default is to use the global
-nn_control list.}
+for additional details. Note that if nn_control[['search_k']]
+is not defined, transfer_cell_labels will try to use
+search_k <- 2 * n_trees * k where n_trees is the value used
+to build the index.}
 
 \item{top_frac_threshold}{a numeric value. The top fraction
 of reference values must be greater than top_frac_threshold
@@ -110,16 +113,21 @@ neighbors is transferred.
 
 In the case of discrete values, transfer_cell_labels
 processes each query cell as follows. It finds the k nearest
-neighbor cells in the reference set, and if at least
+neighbor cells in the reference set, and if more than
 top_frac_threshold fraction of them have the same value, it
 copies that value to the query_column_name column in the
-query cell_data_set. If the fraction is below
+query cell_data_set. If the fraction is at or below
 top_frac_threshold, it checks whether the ratio of the
 most frequent to the second most frequent value is at
 least top_next_ratio_threshold, in which case it copies
 the value; otherwise, it sets it to NA.
 
-Note: Monocle3 does not have an align_transform function to
+Notes:
+\itemize{
+\item Monocle3 does not have an align_transform function to
 apply align_cds-related transforms at this time. If your
 data sets require batch correction, you need to co-embed them.
+\item transfer_cell_labels does not check that the reference
+nearest neighbor index is consistent with the query matrix.
+}
 }

@@ -22,7 +22,12 @@ nearest neighbors in the index nn_index.}
 each cell. Default is 25.}
 
 \item{nn_control}{a list of parameters used to search the nearest
-neighbor index. See the set_nn_control help for details.}
+neighbor index. See the set_nn_control help for details. Note: the
+default annoy search_k parameter value is set to the default value
+of 2 * n_trees * k. It does not know the value of n_trees that was
+used to build the annoy index so if a non-default n_trees value
+was used to build the index, you may need to set search_k in
+nn_control list when you run search_nn_index.}
 
 \item{verbose}{a boolean indicating whether to emit verbose output.}
 }

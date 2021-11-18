@@ -24,7 +24,9 @@ stored in the cell_data_set.}
 \item{nn_index}{a nearest neighbor index to store in cds.}
 
 \item{nn_control}{a list of parameters used to make the nearest
-neighbor index. See the set_nn_control help for details.}
+neighbor index. This is used to identify where the index
+is stored, based on the nearest neighbor method (annoy or hnsw)
+and reduction_method. See the set_nn_control help for details.}
 
 \item{verbose}{a boolean indicating whether to emit verbose output.}
 }

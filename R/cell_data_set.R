@@ -65,11 +65,20 @@ new_cell_data_set <- function(expression_data,
                               cell_metadata = NULL,
                               gene_metadata = NULL) {
 
-  assertthat::assert_that(class(expression_data) == "matrix" ||
-                            is_sparse_matrix(expression_data),
+
+#  assertthat::assert_that(class(expression_data) == "matrix" ||
+#                          is_sparse_matrix(expression_data),
+#                          msg = paste("Argument expression_data must be a",
+#                                      "matrix - either sparse from the",
+#                                      "Matrix package or dense"))
+
+
+  assertthat::assert_that(is(expression_data, 'matrix') ||
+                          is_sparse_matrix(expression_data),
                           msg = paste("Argument expression_data must be a",
                                       "matrix - either sparse from the",
                                       "Matrix package or dense"))
+
   if (!is.null(cell_metadata)) {
     assertthat::assert_that(nrow(cell_metadata) == ncol(expression_data),
                             msg = paste("cell_metadata must be NULL or have",

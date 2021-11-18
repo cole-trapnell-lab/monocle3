@@ -13,7 +13,7 @@ skip_not_travis <- function ()
 cds <- monocle3:::load_worm_embryo()
 set.seed(42)
 
-cds <- preprocess_cds(cds, num_dim = 100, residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+cds <- preprocess_cds(cds, num_dim = 100)
 cds <- reduce_dimension(cds, umap.fast_sgd=FALSE, cores=1)
 cds <- cluster_cells(cds)
 cds <- learn_graph(cds, learn_graph_control=list(ncenter=1000), close_loop=TRUE)

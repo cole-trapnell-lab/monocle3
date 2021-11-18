@@ -89,18 +89,22 @@ get_nn_means <- function(query_data, query_search, ref_coldata, ref_column_name)
 #'
 #' In the case of discrete values, transfer_cell_labels
 #' processes each query cell as follows. It finds the k nearest
-#' neighbor cells in the reference set, and if at least
+#' neighbor cells in the reference set, and if more than
 #' top_frac_threshold fraction of them have the same value, it
 #' copies that value to the query_column_name column in the
-#' query cell_data_set. If the fraction is below
+#' query cell_data_set. If the fraction is at or below
 #' top_frac_threshold, it checks whether the ratio of the
 #' most frequent to the second most frequent value is at
 #' least top_next_ratio_threshold, in which case it copies
 #' the value; otherwise, it sets it to NA.
 #'
-#' Note: Monocle3 does not have an align_transform function to
+#' @details Notes:
+#'   * Monocle3 does not have an align_transform function to
 #' apply align_cds-related transforms at this time. If your
 #' data sets require batch correction, you need to co-embed them.
+#'   * transfer_cell_labels does not check that the reference
+#'     nearest neighbor index is consistent with the query matrix.
+#' @md
 #'
 #' @param cds_query the cell_data_set upon which to perform
 #'   this operation
@@ -127,11 +131,14 @@ get_nn_means <- function(query_data, query_search, ref_coldata, ref_column_name)
 #'   transform model.
 #' @param k an integer giving the number of reference nearest
 #'   neighbors to find. This value must be large enough to find
-#'   meaningful column value fractions. The default is 10.
+#'   meaningful column value fractions. See the top_frac_threshold
+#'   parameter below for additional information. The default is 10.
 #' @param nn_control a list of parameters used to make and search
 #'   the nearest neighbors indexes. See the set_nn_control help
-#'   for additional details. The default is to use the global
-#'   nn_control list.
+#'   for additional details. Note that if nn_control\[\['search_k'\]\]
+#'   is not defined, transfer_cell_labels will try to use
+#'   search_k <- 2 * n_trees * k where n_trees is the value used
+#'   to build the index.
 #' @param top_frac_threshold a numeric value. The top fraction
 #'   of reference values must be greater than top_frac_threshold
 #'   in order to be transferred to the query. The top
@@ -158,7 +165,7 @@ transfer_cell_labels <- function(cds_query,
                                  top_next_ratio_threshold=1.5,
                                  verbose=FALSE) {
 
-  assertthat::assert_that(class(cds_query) == 'cell_data_set',
+  assertthat::assert_that(is(cds_query, 'cell_data_set'),
                           msg=paste0('cds_query parameter is not a cell_data_set'))
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
@@ -182,8 +189,10 @@ transfer_cell_labels <- function(cds_query,
 
   nn_control <- set_nn_control(mode=2,
                                nn_control=nn_control,
-                               k=k,
                                nn_control_default=get_global_variable('nn_control_2'),
+                               cds=cds_query,
+                               reduction_method=reduction_method,
+                               k=k,
                                verbose=verbose)
 
   # Are the ref_column_name values discrete?
@@ -296,14 +305,14 @@ edit_query_cell_labels <- function(preproc_res,
 #' makes a nearest neighbor index using cells with
 #' non-NA values, and for each cell with NA, it tries to
 #' find an acceptable non-NA column data value as follows.
-#' If at least top_frac_threshold fraction of them have the
+#' If more than top_frac_threshold fraction of them have the
 #' same value, it replaces the NA with it. If not, it
 #' checks whether the ratio of the most frequent to the
 #' second most frequent values is at least
 #' top_next_ratio_threshold, in which case it copies the
 #' most frequent value. Otherwise, it leaves the NA.
 #'
-#' @param cds_query the cell_data_set upon which to perform this operation
+#' @param cds the cell_data_set upon which to perform this operation
 #' @param reduction_method a string specifying the reduced dimension
 #'   matrix to use for the label transfer. These are "PCA",
 #'   "LSI", and "UMAP". Default is "UMAP".
@@ -313,23 +322,26 @@ edit_query_cell_labels <- function(preproc_res,
 #'   cds column where the fixed column data will be stored. The
 #'   default is from_column_name
 #' @param out_notna_models_dir a string with the name of the transform
-#'   model directory to which to save the not-NA transform models,
+#'   model directory where you want to save the not-NA transform models,
 #'   which includes the nearest neighbor index. If NULL, the
 #'   not-NA models are not saved. The default is NULL.
 #' @param k an integer giving the number of reference nearest
 #'   neighbors to find. This value must be large enough to find
-#'   meaningful column value fractions. The default is 10.
+#'   meaningful column value fractions. See the top_frac_threshold
+#'   parameter below for additional information. The default is 10.
 #' @param nn_control a list of parameters used to make the nearest
 #'   neighbors index. See the set_nn_control help for additional
 #'   details. The default is to use the global nn_control list.
-#' @param top_frac_threshold a numeric value giving the minimum
-#'   value of the top fraction of reference values required
-#'   for transferring the reference value to the query. The top
+#' @param top_frac_threshold a numeric value. The top fraction
+#'   of reference values must be greater than top_frac_threshold
+#'   in order to be transferred to the query. The top
 #'   fraction is the fraction of the k neighbors with the most
 #'   frequent value. The default is 0.5.
 #' @param top_next_ratio_threshold a numeric value giving the
-#'   minimum value ratio of the counts of the most frequent to the
-#'   second most frequent reference values. The default is 1.5.
+#'   minimum value of the ratio of the counts of the most
+#'   frequent to the second most frequent reference values
+#'   required for transferring the reference value to the query.
+#'   The default is 1.5.
 #' @param verbose a boolean controlling verbose output.
 #'
 #' @return an updated cell_data_set object
@@ -345,7 +357,7 @@ fix_missing_cell_labels <- function(cds,
                                     top_next_ratio_threshold=1.5,
                                     verbose=FALSE) {
 
-  assertthat::assert_that(class(cds) == 'cell_data_set',
+  assertthat::assert_that(is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
@@ -359,8 +371,10 @@ fix_missing_cell_labels <- function(cds,
 
   nn_control <- set_nn_control(mode=3,
                                nn_control=nn_control,
-                               k=k,
                                nn_control_default=get_global_variable('nn_control_2'),
+                               cds=NULL,
+                               reduction_method=NULL,
+                               k=k,
                                verbose=verbose)
 
   # Partition cds.

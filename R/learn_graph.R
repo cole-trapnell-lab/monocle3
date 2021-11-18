@@ -191,16 +191,6 @@ learn_graph <- function(cds,
                                       "reduction_method =", reduction_method,
                                       "before running learn_graph."))
 
-#   nn_control <- list(method=learn_graph_control[['nn.method']],
-#                      metric=learn_graph_control[['nn.metric']],
-#                      n_trees=learn_graph_control[['nn.n_trees']],
-#                      search_k=learn_graph_control[['nn.search_k']],
-#                      M=learn_graph_control[['nn.M']],
-#                      ef_construction=learn_graph_control[['nn.ef_construction']],
-#                      ef=learn_graph_control[['nn.ef']],
-#                      grain_size=learn_graph_control[['nn.grain_size']],
-#                      cores=learn_graph_control[['nn.cores']])
-
   nn_control <- list()
   if(!is.null(learn_graph_control[['nn.method']])) nn_control[['method']] <- learn_graph_control[['nn.method']]
   if(!is.null(learn_graph_control[['nn.metric']])) nn_control[['metric']] <- learn_graph_control[['nn.metric']]
@@ -212,12 +202,15 @@ learn_graph <- function(cds,
   if(!is.null(learn_graph_control[['nn.grain_size']])) nn_control[['grain_size']] <- learn_graph_control[['nn.grain_size']]
   if(!is.null(learn_graph_control[['nn.cores']])) nn_control[['cores']] <- learn_graph_control[['nn.cores']]
 
-  report_nn_control('nn_control: ', nn_control)
+  if(verbose)
+    report_nn_control('nn_control: ', nn_control)
 
   nn_control <- set_nn_control(mode=3,
                                nn_control=nn_control,
-                               k=nn.k,
                                nn_control_default=get_global_variable('nn_control_1'),
+                               cds=NULL,
+                               reduction_method=NULL,
+                               k=nn.k,
                                verbose=verbose)
 
   if (use_partition) {
@@ -322,7 +315,7 @@ multi_component_RGE <- function(cds,
     kmean_res <- NULL
 
     centers <- t(X_subset)[seq(1, ncol(X_subset), length.out=curr_ncenter), ,
-                           drop = F]
+                           drop = FALSE]
     centers <- centers + matrix(stats::rnorm(length(centers), sd = 1e-10),
                                 nrow = nrow(centers)) # add random noise
 
@@ -499,7 +492,7 @@ multi_component_RGE <- function(cds,
          history = merge_rge_res$history)
   cds@principal_graph_aux[[
     reduction_method]]$pr_graph_cell_proj_closest_vertex <-
-    as.data.frame(pr_graph_cell_proj_closest_vertex)[colnames(cds), , drop = F]
+    as.data.frame(pr_graph_cell_proj_closest_vertex)[colnames(cds), , drop = FALSE]
   colnames(ddrtree_res_Y) <- paste0("Y_", 1:ncol(ddrtree_res_Y), sep = "")
 
   return(list(cds = cds,
@@ -591,9 +584,9 @@ prune_tree <- function(stree_ori, stree_loop_closure,
     edge_dists <- apply(added_edges, 1,
                         function(x) igraph::distances(stree_ori, x[1], x[2]))
     valid_edges <- added_edges[which(edge_dists >= minimal_branch_len), ,
-                               drop = F]
+                               drop = FALSE]
     edges_to_remove_df <- added_edges[which(edge_dists < minimal_branch_len), ,
-                                      drop = F]
+                                      drop = FALSE]
   }
   if(nrow(valid_edges) > 0) {
     vertex_top_keep <-
@@ -737,9 +730,6 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE,
 
       which_min <- which.min(distance)
 
-      if(length(which_min) == 0)
-        browser()
-
       P[, i] <- projection[which_min, ]
       nearest_edges[i, ] <- c(closest_vertex_names[i], neighbors[which_min])
     }
@@ -814,8 +804,8 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE,
         # point of the edge
         added_rows <- which(is.na(data_df$new_source) &
                               is.na(data_df$new_target))
-        data_df <- as.data.frame(data_df, stringsAsFactors = F)
-        data_df <- as.data.frame(as.matrix(data_df), stringsAsFactors = F)
+        data_df <- as.data.frame(data_df, stringsAsFactors = FALSE)
+        data_df <- as.data.frame(as.matrix(data_df), stringsAsFactors = FALSE)
         data_df[added_rows, c('new_source', 'new_target')] <-
           data_df[added_rows - 1, c('rowname', 'target')]
 
@@ -893,7 +883,7 @@ findNearestPointOnMST <- function(cds, reduction_method, rge_res_Y){
 
     cur_start_index <- cur_start_index + igraph::vcount(cur_dp_mst)
   }
-  closest_vertex_df <- closest_vertex_df[colnames(cds), , drop = F]
+  closest_vertex_df <- closest_vertex_df[colnames(cds), , drop = FALSE]
   cds@principal_graph_aux[[
     reduction_method]]$pr_graph_cell_proj_closest_vertex <- closest_vertex_df
   cds
@@ -969,7 +959,7 @@ calc_principal_graph <- function(X, C0,
                                  eps = 1e-5,
                                  L1.gamma = 0.5,
                                  L1.sigma = 0.01,
-                                 verbose = T) {
+                                 verbose = TRUE) {
 
   C <- C0;
   K <- ncol(C)
@@ -979,7 +969,7 @@ calc_principal_graph <- function(X, C0,
     norm_sq <- repmat(t(colSums(C^2)), K, 1)
     Phi <- norm_sq + t(norm_sq) - 2 * t(C) %*% C
 
-    g <- igraph::graph.adjacency(Phi, mode = 'lower', diag = T, weighted = T)
+    g <- igraph::graph.adjacency(Phi, mode = 'lower', diag = TRUE, weighted = TRUE)
     g_mst <- igraph::mst(g)
     stree <- igraph::get.adjacency(g_mst, attr = 'weight', type = 'lower')
     stree_ori <- stree
@@ -1031,7 +1021,7 @@ repmat = function(X,m,n){
   ##R equivalent of repmat (matlab)
   mx = dim(X)[1]
   nx = dim(X)[2]
-  matrix(t(matrix(X,mx,nx*n)),mx*m,nx*n,byrow=T)
+  matrix(t(matrix(X,mx,nx*n)),mx*m,nx*n,byrow=TRUE)
 }
 
 
@@ -1091,7 +1081,7 @@ connect_tips <- function(cds,
                          reducedDimS_old,
                          k = 25,
                          nn_control = nn_control,
-                         weight = F,
+                         weight = FALSE,
                          qval_thresh = 0.05,
                          kmean_res,
                          euclidean_distance_ratio = 1,
@@ -1153,7 +1143,7 @@ connect_tips <- function(cds,
   dimnames(cluster_graph_res$cluster_mat) <-
     dimnames(cluster_graph_res$num_links)
   valid_connection <- which(cluster_graph_res$cluster_mat < qval_thresh,
-                            arr.ind = T)
+                            arr.ind = TRUE)
   valid_connection <- valid_connection[apply(valid_connection, 1,
                                              function(x) {
                                                all(x %in% tip_pc_points)
@@ -1167,7 +1157,7 @@ connect_tips <- function(cds,
 
   # if no connection based on PAGA (only existed in simulated data), use the
   # kNN graph instead
-  if(all(G == 0, na.rm = T)) {
+  if(all(G == 0, na.rm = TRUE)) {
     return(list(stree = igraph::get.adjacency(mst_g_old),
                 Y = reducedDimK_old, G = G))
   }
@@ -1187,7 +1177,7 @@ connect_tips <- function(cds,
 
   # find the maximum distance between nodes from the MST
   res <- stats::dist(t(reducedDimK_old))
-  g <- igraph::graph_from_adjacency_matrix(as.matrix(res), weighted = T,
+  g <- igraph::graph_from_adjacency_matrix(as.matrix(res), weighted = TRUE,
                                            mode = 'undirected')
   mst <- igraph::minimum.spanning.tree(g)
   max_node_dist <- max(igraph::E(mst)$weight)

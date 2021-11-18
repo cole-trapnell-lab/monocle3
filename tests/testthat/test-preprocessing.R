@@ -69,8 +69,7 @@ test_that("preprocessing stays the same", {
   expect_equal(reducedDims(cds)$PCA[1,1], -24.30544, tol = 1e-5)
 
   # with reduce dim
-  cds <- preprocess_cds(cds, method = "PCA", num_dim = 20,
-                        residual_model_formula_str = "~PCR_plate")
+  cds <- preprocess_cds(cds, method = "PCA", num_dim = 20)
   expect_equal(ncol(reducedDims(cds)$PCA), 20)
   expect_equal(nrow(reducedDims(cds)$PCA), nrow(colData(cds)))
   expect_equal(reducedDims(cds)$PCA[2,1], 1.982232, tol = 1e-5)

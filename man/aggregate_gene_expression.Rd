@@ -47,6 +47,11 @@ resulting Z scores can take. Lower values are capped at this threshold.}
 
 \item{exclude.na}{Logical indicating whether or not to exclude NA values
 from the aggregated matrix.}
+
+\item{gene_agg_fun}{Function used for gene aggregation. This
+can be either sum or mean. Default is sum.}
+
+\item{cell_agg_fun}{Function used for cell aggregation. Default is mean.}
 }
 \value{
 A matrix of dimension NxM, where N is the number of gene groups and

@@ -506,6 +506,8 @@ normalized_counts <- function(cds,
 #' @param sample_col_name A string to be the column name for the colData column
 #'   that indicates which original cds the cell derives from. Default is
 #'   "sample".
+#' @param keep_reduced_dims Logical indicating whether to keep the reduced
+#'   dimension matrices. Default is FALSE.
 #'
 #' @return A combined cell_data_set object.
 #' @export
@@ -796,11 +798,11 @@ matrix_multiply_multicore <- function(mat_a, mat_b, cores=1L) {
     RhpcBLASctl::omp_set_num_threads(1L)
     RhpcBLASctl::blas_set_num_threads(1L)
   
-    DelayedArray:::setAutoBPPARAM(BPPARAM=BiocParallel:::MulticoreParam(workers=as.integer(cores)))
+    DelayedArray::setAutoBPPARAM(BPPARAM=BiocParallel::MulticoreParam(workers=as.integer(cores)))
   
     mat_c <- mat_a %*% mat_b
   
-    DelayedArray:::setAutoBPPARAM(BPPARAM=BiocParallel:::SerialParam())
+    DelayedArray::setAutoBPPARAM(BPPARAM=BiocParallel::SerialParam())
   
     RhpcBLASctl::omp_set_num_threads(as.integer(omp_num_threads))
     RhpcBLASctl::blas_set_num_threads(as.integer(blas_num_threads))
@@ -848,4 +850,10 @@ object_name_to_string <- function( object ) {
   return( str )
 }
 
+
+stop_no_noise <- function() {
+  opt <- options(show.error.messages = FALSE)
+  on.exit(options(opt))
+  stop()
+}
 

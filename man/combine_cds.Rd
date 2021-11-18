@@ -30,6 +30,9 @@ for consistency. Default is FALSE.}
 \item{sample_col_name}{A string to be the column name for the colData column
 that indicates which original cds the cell derives from. Default is
 "sample".}
+
+\item{keep_reduced_dims}{Logical indicating whether to keep the reduced
+dimension matrices. Default is FALSE.}
 }
 \value{
 A combined cell_data_set object.

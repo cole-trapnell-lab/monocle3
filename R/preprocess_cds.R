@@ -50,8 +50,7 @@ preprocess_cds <- function(cds,
                            scaling = TRUE,
                            verbose = FALSE,
                            build_nn_index = FALSE,
-                           nn_control = list(),
-                           ...) {
+                           nn_control = list()) {
 
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(method) == "",TRUE, TRUE),
@@ -83,8 +82,10 @@ preprocess_cds <- function(cds,
   if(build_nn_index) {
     nn_control <- set_nn_control(mode=1,
                                  nn_control=nn_control,
-                                 k=1,
                                  nn_control_default=get_global_variable('nn_control_2'),
+                                 cds=NULL,
+                                 reduction_method=NULL,
+                                 k=NULL,
                                  verbose=verbose)
   }
 

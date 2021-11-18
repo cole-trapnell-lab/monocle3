@@ -5,36 +5,52 @@
 \title{Verify and set nearest neighbor parameter list.}
 \usage{
 set_nn_control(
-  mode = 3,
+  mode,
   nn_control = list(),
-  k = 25,
   nn_control_default = list(),
+  cds = NULL,
+  reduction_method = NULL,
+  k = NULL,
   verbose = FALSE
 )
 }
 \arguments{
 \item{mode}{the nearest neighbor operation for which the nn_control
 list will be used. 1=make index, 2=search index, and 3=both make
-and search index. The default mode value is 3.}
+and search index. Required parameter.}
 
 \item{nn_control}{an optional list of parameters passed to
-the nearest neighbor function specified by nn_control[\link{'method'}].
-The nn_control list can be empty in which case defaults are used
-as follows: if the nn_control_default list has non-zero length, it
-is used; otherwise the annoy nearest neighbor method is used with
-metric='euclidean', n_trees=50, and search_k=k * n_trees. If not
-all of the values required by a nearest neighbor method are given
-in nn_control, the missing values are set to the default values
-listed below.}
+the nearest neighbor function specified by nn_control[['method']].
+If a value is not given in nn_control, the value in nn_control_default
+is used. If neither is given, a fallback default is assigned.}
+
+\item{nn_control_default}{an optional nn_control list to use when
+a parameter is not given in nn_control.}
+
+\item{cds}{a cell_data_set where a nearest neighbor index may be
+stored. This may be used to look up parameters that were used
+to make an index that is stored in the cds. For example, the default
+annoy search_k parameter depends on the n_trees values used to
+make the index. The default is NULL.}
+
+\item{reduction_method}{a reduction method where a nearest neighbor
+index may be stored in the cell_data_set, cds. This may be used
+to look up parameters that were used to make an index that is
+stored in the cds. For example, the default search_k parameter
+depends on the n_trees values used to make the index. The default
+is NULL.}
 
 \item{k}{integer the number of desired nearest neighbor points to
-return from a search. This value is used only to set the annoy
-search_k parameter when search_k is not given in nn_control. The
-value is ignored for index builds and does not give the number
-of nearest neighbors to return for a search. The default is 25.}
+return from a search. k is used to
+\itemize{
+\item set the annoy search_k parameter when search_k is not given in
+nn_control or nn_control_default where search_k is 2 * n_trees * k.
+\item test the hnsw ef parameter, which must be at least as large
+as k.
+}
 
-\item{nn_control_default}{an optional nn_control list to use when the
-nn_control parameter has length zero.}
+k is ignored for index builds and does not give the number
+of nearest neighbors to return for a search.}
 
 \item{verbose}{a boolean indicating whether to emit verbose output.}
 }
@@ -44,15 +60,16 @@ an updated nn_control list.
 \description{
 Verifies the listed parameter values
 that will be passed to the nearest neighbor function
-given by nn_control[\link{'method'}]. Unspecified
-values are set to default values.
+given by nn_control[['method']]. Unspecified
+values are set to default values. To see the default
+values, call the function with
+nn_control=list(show_values=TRUE).
 }
 \section{Optional nn_control parameters}{
 
 \describe{
 \item{method}{The method used to find nearest neighbor points.
-The available methods are 'nn2', 'annoy', and 'hnsw'. The
-default is 'annoy'.
+The available methods are 'nn2', 'annoy', and 'hnsw'.
 Detailed information about each method can be found on the
 WWW sites:
 https://cran.r-project.org/web/packages/RANN/,
@@ -61,32 +78,45 @@ and https://cran.rstudio.com/web/packages/RcppHNSW/index.html.}
 \item{metric}{The distance metric used by the nearest neighbor
 functions.  Annoy accepts 'euclidean', 'cosine', 'manhattan',
 and 'hamming'. HNSW accepts 'euclidean', 'l2', 'cosine', and
-'ip'. RANN uses 'euclidean'.} The default is 'euclidean'.
+'ip'. RANN uses 'euclidean'.}
 \item{n_trees}{The annoy index build parameter that affects the build
 time and index size. Larger values give more accurate results,
-longer build times, and larger indexes. The default is 50.}
+longer build times, and larger indexes.}
 \item{search_k}{The annoy index search parameter that affects the
 search accuracy and time. Larger values give more accurate
-results and longer search times. Default is k * n_trees, where
-n_trees is either the default value or the value set in
-nn_control at search time. That is, when set_nn_control is
-called for a search, the n_trees value used to build the index
-is not recalled to set the default search_k.}
+results and longer search times. Default is 2 * n_trees * k.
+In order to set search_k, the following conditions are tested
+and the first TRUE condition is used: nn_control[['search_k']]
+exists; mode=2 and cds, reduction_method, and k are not NULL,
+and the expected index (given by cds, reduction_method, and
+nn_control[['method']]) exists; nn_control[['n_trees']] exists;
+nn_control_default[['search_k']] exists;
+nn_control_default[['n_trees']] exists. If none of those is
+TRUE, the fallback default n_trees value is used. If the
+set_nn_control k parameter value is not NULL, it is used;
+otherwise, the default is used.}
+
 \item{M}{The HNSW index build parameter that affects the
 search accuracy and memory requirements. Larger values give
 more accurate search results and increase the index memory
-use. Default is 48.}
+use.}
 \item{ef_construction}{The HNSW index build parameter that affects
 the search accuracy and index build time. Larger values give more
 accurate search results and longer build times. Default is 200.}
 \item{ef}{The HNSW index search parameter that affects the search
 accuracy and search time. Larger values give more accurate results
-and longer search times. Default is 30.}
+and longer search times. ef must be greater than or equal to k.}
 \item{grain_size}{The annoy and HNSW parameter that gives the
-minimum amount of work to do per thread. Default is 1.}
+minimum amount of work to do per thread.}
 \item{cores}{The annoy and HNSW parameter that gives the number of
 threads to use for the annoy index search and for the HNSW index
-build and search. Default is 1.}
+build and search.}
+\item{show_values}{A logical value used to show the
+nearest neighbor parameters to use, and then exit the function.
+When show_values=TRUE is the only nn_control value, the
+parameters are the defaults for the function. Each function
+that calls set_nn_control may have its own nn_control_default
+list.}
 }
 }
 

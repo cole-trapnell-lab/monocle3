@@ -73,8 +73,10 @@ graph_test <- function(cds,
 
   nn_control <- set_nn_control(mode=3,
                                nn_control=nn_control,
-                               k=k,
                                nn_control_default=get_global_variable('nn_control_1'),
+                               cds=NULL,
+                               reduction_method=NULL,
+                               k=k,
                                verbose=verbose)
 
   lw <- calculateLW(cds,
@@ -307,12 +309,15 @@ calculateLW <- function(cds,
   nn_method <- nn_control[['method']]
 
   if((nn_method == 'annoy' || nn_method == 'hnsw')) {
-    if(check_cds_nn_index_is_current(cds=cds, reduction_method=reduction_method, nn_control=nn_control, verbose=verbose)) {
-      nn_index <- get_cds_nn_index(cds, reduction_method=reduction_method, nn_control=nn_control, verbose=verbose)
-    }
-    else {
-      nn_index <- make_nn_index(subject_matrix=cell_coords, nn_control=nn_control, verbose=verbose)
-    }
+#     if(check_cds_nn_index_is_current(cds=cds, reduction_method=reduction_method, nn_control=nn_control, verbose=verbose)) {
+#       nn_index <- get_cds_nn_index(cds, reduction_method=reduction_method, nn_control=nn_control, verbose=verbose)
+#     }
+#     else {
+#       nn_index <- make_nn_index(subject_matrix=cell_coords, nn_control=nn_control, verbose=verbose)
+#     }
+    # Always make a nearest neighbor index in case the matrix is altered
+    # after the index is made.
+    nn_index <- make_nn_index(subject_matrix=cell_coords, nn_control=nn_control, verbose=verbose)
   }
 
   if (neighbor_graph == "knn") {
@@ -353,11 +358,11 @@ calculateLW <- function(cds,
                                   verbose=verbose)[[1]]
       }
     }
-    links <- jaccard_coeff(knn_res[, -1], F)
+    links <- jaccard_coeff(knn_res[, -1], FALSE)
     links <- links[links[, 1] > 0, ]
     relations <- as.data.frame(links)
     colnames(relations) <- c("from", "to", "weight")
-    knn_res_graph <- igraph::graph.data.frame(relations, directed = T)
+    knn_res_graph <- igraph::graph.data.frame(relations, directed = TRUE)
 
     knn_list <- lapply(1:nrow(knn_res), function(x) knn_res[x, -1])
     region_id_names <- colnames(cds)
@@ -407,7 +412,7 @@ calculateLW <- function(cds,
 
     # convert the matrix of knn graph from the cell IDs into a matrix of
     # principal points IDs
-    # kNN_res_pp_map <- matrix(cell2pp_map[knn_res], ncol = k + 1, byrow = F)
+    # kNN_res_pp_map <- matrix(cell2pp_map[knn_res], ncol = k + 1, byrow = FALSE)
 
     # kNN can be built within group of cells corresponding to each principal
     # points
@@ -424,11 +429,11 @@ calculateLW <- function(cds,
                                          as.numeric(levels(uniq_member))],
                          membership_matrix)
 
-    links <- jaccard_coeff(knn_res[, -1], F)
+    links <- jaccard_coeff(knn_res[, -1], FALSE)
     links <- links[links[, 1] > 0, ]
     relations <- as.data.frame(links)
     colnames(relations) <- c("from", "to", "weight")
-    knn_res_graph <- igraph::graph.data.frame(relations, directed = T)
+    knn_res_graph <- igraph::graph.data.frame(relations, directed = TRUE)
 
     # remove edges across cells belong to two disconnected principal points
     tmp_a <- igraph::get.adjacency(knn_res_graph)

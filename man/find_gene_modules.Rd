@@ -20,7 +20,7 @@ find_gene_modules(
   resolution = NULL,
   random_seed = 0L,
   cores = 1,
-  verbose = F,
+  verbose = FALSE,
   preprocess_method = c("PCA", "LSI"),
   nn_control = list(),
   ...

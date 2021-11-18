@@ -46,7 +46,7 @@ find_gene_modules <- function(cds,
                           resolution = NULL,
                           random_seed = 0L,
                           cores=1,
-                          verbose = F,
+                          verbose = FALSE,
                           preprocess_method = c('PCA', 'LSI'),
                           nn_control = list(),
                           ...) {
@@ -54,8 +54,10 @@ find_gene_modules <- function(cds,
 
   nn_control <- set_nn_control(mode=3,
                                nn_control=nn_control,
-                               k=k,
                                nn_control_default=get_global_variable('nn_control_1'),
+                               cds=NULL,
+                               reduction_method=NULL,
+                               k=k,
                                verbose=verbose)
 
   assertthat::assert_that(
@@ -197,6 +199,9 @@ my.aggregate.Matrix = function (x, groupings = NULL, form = NULL, fun = "sum", .
 #'   resulting Z scores can take. Lower values are capped at this threshold.
 #' @param exclude.na Logical indicating whether or not to exclude NA values
 #'   from the aggregated matrix.
+#' @param gene_agg_fun Function used for gene aggregation. This
+#'   can be either sum or mean. Default is sum.
+#' @param cell_agg_fun Function used for cell aggregation. Default is mean.
 #'
 #' @return A matrix of dimension NxM, where N is the number of gene groups and
 #'   M is the number of cell groups.

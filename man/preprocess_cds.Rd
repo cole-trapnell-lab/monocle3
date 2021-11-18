@@ -14,8 +14,7 @@ preprocess_cds(
   scaling = TRUE,
   verbose = FALSE,
   build_nn_index = FALSE,
-  nn_control = list(),
-  ...
+  nn_control = list()
 )
 }
 \arguments{

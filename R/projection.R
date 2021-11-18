@@ -23,7 +23,7 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
   #
   # Need to add processing for LSI. TF-IDF transform etc.
   #
-  assertthat::assert_that(class(cds) == 'cell_data_set',
+  assertthat::assert_that(is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
@@ -235,7 +235,7 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
 #   #
 #   # Need to add transformation code.
 #   #
-#   assertthat::assert_that(class(cds) == 'cell_data_set',
+#   assertthat::assert_that(is(cds, 'cell_data_set'),
 #                           msg=paste('cds parameter is not a cell_data_set'))
 #   assertthat::assert_that(
 #     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
@@ -307,7 +307,7 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
 #' @export
 #'
 reduce_dimension_transform <- function(cds, preprocess_method=NULL, reduction_method=c('UMAP')) {
-  assertthat::assert_that(class(cds) == 'cell_data_set',
+  assertthat::assert_that(is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
@@ -343,7 +343,7 @@ reduce_dimension_transform <- function(cds, preprocess_method=NULL, reduction_me
   #
   set.seed(2016)
   umap_model <- cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']]
-  reducedDims(cds)[[reduction_method]] <- uwot:::umap_transform(X=preproc_res, model=umap_model, init='weighted', n_sgd_threads=1)
+  reducedDims(cds)[[reduction_method]] <- uwot::umap_transform(X=preproc_res, model=umap_model, init='weighted', n_sgd_threads=1)
 
   matrix_id <- get_unique_id()
   reduce_dim_matrix_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method)

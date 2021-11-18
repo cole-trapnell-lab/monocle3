@@ -23,7 +23,7 @@ test_that("order_cells error messages work", {
   expect_error(order_cells(cds, root_cells = c("G07_B02_RT_587"), root_pr_nodes = c("Y_1")), "Please specify either root_pr_nodes or root_cells, not both.")
   expect_error(order_cells(cds, root_cells = c("hannah")), "All provided root_cells must be present in the cell data set.")
   expect_error(order_cells(cds, root_pr_nodes = c("hannah")), "All provided root_pr_nodes must be present in the principal graph.")
-  expect_error(order_cells(cds), paste("No root node was chosen!"))
+  expect_error(order_cells(cds), "(When not in interactive mode, either root_pr_nodes or root_cells must be provided.|No root node was chosen!)")
   expect_error(order_cells(cds, reduction_method = "tSNE"), "Currently only 'UMAP' is accepted as a reduction_method.")
 })
 

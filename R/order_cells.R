@@ -114,7 +114,7 @@ order_cells <- function(cds,
 
 extract_general_graph_ordering <- function(cds,
                                            root_pr_nodes,
-                                           verbose=T,
+                                           verbose=TRUE,
                                            reduction_method) {
   Z <- t(reducedDims(cds)[[reduction_method]])
   Y <- cds@principal_graph_aux[[reduction_method]]$dp_mst
@@ -131,7 +131,7 @@ extract_general_graph_ordering <- function(cds,
   # 1. identify nearest cells to the selected principal node
   # 2. build a cell-wise graph for each Louvain group
   # 3. run the distance function to assign pseudotime for each cell
-  closest_vertex <- find_nearest_vertex(Y[, root_pr_nodes, drop = F], Z)
+  closest_vertex <- find_nearest_vertex(Y[, root_pr_nodes, drop = FALSE], Z)
   closest_vertex_id <- colnames(cds)[closest_vertex]
 
   cell_wise_graph <-

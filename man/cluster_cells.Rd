@@ -14,7 +14,7 @@ cluster_cells(
   weight = FALSE,
   resolution = NULL,
   random_seed = NULL,
-  verbose = F,
+  verbose = FALSE,
   nn_control = list(),
   ...
 )

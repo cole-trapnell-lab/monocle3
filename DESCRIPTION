@@ -23,6 +23,20 @@ Description: Monocle 3 performs clustering, differential expression and
     clustering, visualization, and other useful tasks on single-cell expression 
     data.  It is designed to work with RNA-Seq data, but could be used with 
     other types as well.
+biocViews:
+    Software,
+    SingleCell,
+    RNAseq,
+    ATACseq,
+    Normalization,
+    Preprocessing,
+    DimensionReduction,
+    Visualization,
+    QualityControl,
+    Clustering,
+    Classification,
+    Annotation,
+    GeneExpression
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
@@ -45,6 +59,7 @@ Imports:
     ggrastr,
     ggrepel (>= 0.8.1),
     grr,
+    HDF5Array,
     igraph (>= 1.2.4),
     irlba (>= 2.3.3),
     leidenbase,
@@ -55,6 +70,7 @@ Imports:
     Matrix (>= 1.2-17),
     Matrix.utils,
     methods,
+    openssl,
     pbapply (>= 1.4-0),
     pbmcapply (>= 1.4.1),
     pheatmap,

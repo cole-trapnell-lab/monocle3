@@ -68,7 +68,7 @@ cluster_cells <- function(cds,
                           weight = FALSE,
                           resolution = NULL,
                           random_seed = NULL,
-                          verbose = F,
+                          verbose = FALSE,
                           nn_control = list(),
                           ...) {
   assertthat::assert_that(
@@ -109,8 +109,10 @@ cluster_cells <- function(cds,
 
   nn_control <- set_nn_control(mode=3,
                                nn_control=nn_control,
-                               k=k,
                                nn_control_default=get_global_variable('nn_control_1'),
+                               cds=NULL,
+                               reduction_method=NULL,
+                               k=k,
                                verbose=verbose)
   nn_method <- nn_control[['method']]
 
@@ -118,6 +120,10 @@ cluster_cells <- function(cds,
   # matrix so use/store the nn index object in the cds. This saves nn index
   # build time if the index is used later in another function. In that case,
   # test for nn index consistency.
+  # Later note: the cds may be subsetted in which case the index will be
+  #             invalid and I don't know how to check for a subsetted
+  #             or otherwise modified cds so I comment out the following
+  #             code that tries to use an existing index.
 # Check for consistency between matrix and index before
 # using the following code.
 #   if((nn_method == 'annoy' || nn_method == 'hnsw')) {
@@ -301,7 +307,7 @@ cluster_cells_make_graph <- function(data,
 #      stored in the cds because it does not return a cds.
 louvain_clustering <- function(data,
                                pd,
-                               weight=F,
+                               weight=FALSE,
                                nn_index=NULL,
                                k=20,
                                nn_control=list(),
@@ -587,7 +593,7 @@ compute_partitions <- function(g,
   sig_links[cluster_mat > qval_thresh] = 0
   diag(sig_links) <- 0
 
-  cluster_g <- igraph::graph_from_adjacency_matrix(sig_links, weighted = T,
+  cluster_g <- igraph::graph_from_adjacency_matrix(sig_links, weighted = TRUE,
                                                    mode = 'undirected')
 
   list(cluster_g = cluster_g, num_links = num_links, cluster_mat = cluster_mat)

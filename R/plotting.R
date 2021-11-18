@@ -1515,7 +1515,23 @@ plot_genes_by_group <- function(cds,
                                   "by running",
                                   "rowData(cds)$gene_short_name <- row.names(rowData(cds))"))
 
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(norm_method) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "method must be one of 'log' or 'size_only'")
   norm_method = match.arg(norm_method)
+
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(ordering_type) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "method must be one of 'cluster_row_col', 'maximal_on_diag', or 'none'")
+  ordering_type <- match.arg(ordering_type)
+
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(axis_order) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "method must be one of 'group_marker' or 'marker_group'")
+  axis_order <- match.arg(axis_order)
 
   gene_ids = as.data.frame(fData(cds)) %>%
     tibble::rownames_to_column() %>%
@@ -1583,16 +1599,17 @@ plot_genes_by_group <- function(cds,
     col_dist[is.na(col_dist)] <- 1
 
     ph <- pheatmap::pheatmap(res,
-                             useRaster = T,
+                             useRaster = TRUE,
                              cluster_cols=TRUE,
                              cluster_rows=TRUE,
-                             show_rownames=F,
-                             show_colnames=F,
+                             show_rownames=FALSE,
+                             show_colnames=FALSE,
                              clustering_distance_cols=col_dist,
                              clustering_distance_rows=row_dist,
                              clustering_method = 'ward.D2',
                              silent=TRUE,
                              filename=NA)
+
 
     ExpVal$Gene <- factor(ExpVal$Gene,
                           levels = colnames(res)[ph$tree_col$order])

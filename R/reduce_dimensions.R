@@ -97,8 +97,10 @@ reduce_dimension <- function(cds,
   if(build_nn_index) {
     nn_control <- set_nn_control(mode=1,
                                  nn_control=nn_control,
-                                 k=1,
                                  nn_control_default=get_global_variable('nn_control_2'),
+                                 cds=NULL,
+                                 reduction_method=NULL,
+                                 k=NULL,
                                  verbose=verbose)
   }
 
@@ -181,7 +183,7 @@ reduce_dimension <- function(cds,
     cds <- initialize_reduce_dim_model_identity(cds, 'tSNE')
 
     tsne_res <- Rtsne::Rtsne(as.matrix(preprocess_mat), dims = max_components,
-                             pca = F, check_duplicates=FALSE, ...)
+                             pca = FALSE, check_duplicates=FALSE, ...)
 
     tsne_data <- tsne_res$Y[, 1:max_components]
     row.names(tsne_data) <- colnames(tsne_data)

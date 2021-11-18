@@ -43,7 +43,8 @@ when the preprocess_cds and reduce_dimension
 functions are run with the make_nn_index=TRUE parameter.
 These indexes are used to find matches between cells in
 the new processed cell_data_set and the initial
-cell_data_set using index search functions.
+cell_data_set using index search functions. For more
+information see the help for transfer_cell_labels.
 save_transform_models saves the models to a directory
 given by directory_path.
 }

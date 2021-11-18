@@ -19,6 +19,8 @@ fix_missing_cell_labels(
 )
 }
 \arguments{
+\item{cds}{the cell_data_set upon which to perform this operation}
+
 \item{reduction_method}{a string specifying the reduced dimension
 matrix to use for the label transfer. These are "PCA",
 "LSI", and "UMAP". Default is "UMAP".}
@@ -31,31 +33,32 @@ cds column where the fixed column data will be stored. The
 default is from_column_name}
 
 \item{out_notna_models_dir}{a string with the name of the transform
-model directory to which to save the not-NA transform models,
+model directory where you want to save the not-NA transform models,
 which includes the nearest neighbor index. If NULL, the
 not-NA models are not saved. The default is NULL.}
 
 \item{k}{an integer giving the number of reference nearest
 neighbors to find. This value must be large enough to find
-meaningful column value fractions. The default is 10.}
+meaningful column value fractions. See the top_frac_threshold
+parameter below for additional information. The default is 10.}
 
 \item{nn_control}{a list of parameters used to make the nearest
 neighbors index. See the set_nn_control help for additional
 details. The default is to use the global nn_control list.}
 
-\item{top_frac_threshold}{a numeric value giving the minimum
-value of the top fraction of reference values required
-for transferring the reference value to the query. The top
+\item{top_frac_threshold}{a numeric value. The top fraction
+of reference values must be greater than top_frac_threshold
+in order to be transferred to the query. The top
 fraction is the fraction of the k neighbors with the most
 frequent value. The default is 0.5.}
 
 \item{top_next_ratio_threshold}{a numeric value giving the
-minimum value ratio of the counts of the most frequent to the
-second most frequent reference values. The default is 1.5.}
+minimum value of the ratio of the counts of the most
+frequent to the second most frequent reference values
+required for transferring the reference value to the query.
+The default is 1.5.}
 
 \item{verbose}{a boolean controlling verbose output.}
-
-\item{cds_query}{the cell_data_set upon which to perform this operation}
 }
 \value{
 an updated cell_data_set object
@@ -72,7 +75,7 @@ with NA and a set with non-NA column data values. It
 makes a nearest neighbor index using cells with
 non-NA values, and for each cell with NA, it tries to
 find an acceptable non-NA column data value as follows.
-If at least top_frac_threshold fraction of them have the
+If more than top_frac_threshold fraction of them have the
 same value, it replaces the NA with it. If not, it
 checks whether the ratio of the most frequent to the
 second most frequent values is at least
