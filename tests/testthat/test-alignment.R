@@ -76,18 +76,25 @@ test_that("Alignment works on synthetic data", {
 
   expect_equal(batched_cds@reduce_dim_aux[['Aligned']][['model']][['beta']][[1]], 2.071, tol=1e-2)
   expect_equal(batched_cds@reduce_dim_aux[['Aligned']][['model']][['alignment_k']], 20, tol=1e1)
-  expect_equal(length(unique(partitions(batched_cds, reduction_method="Aligned"))), 6)
+  expect_equal(length(unique(partitions(batched_cds, reduction_method="Aligned"))), 5)
 
   batched_cds = preprocess_cds(batched_cds, num_dim=3)
   batched_cds = suppressWarnings(align_cds(batched_cds, alignment_group="batch"))
   batched_cds = cluster_cells(batched_cds, k=10, reduction_method="Aligned", resolution=1e-3)
   plot_cells(batched_cds, reduction_method="Aligned", color_cells_by="batch")
 
-  expect_equal(length(unique(partitions(batched_cds, reduction_method="Aligned"))), 3)
+  expect_equal(length(unique(partitions(batched_cds, reduction_method="Aligned"))), 9)
 
 
     #plot_cells(batched_cds, reduction_method="PCA", color_cells_by="cluster")
 
   #plot_cells(batched_cds, reduction_method="PCA", color_cells_by="cell_type")
   #plot_cells(batched_cds, reduction_method="PCA", color_cells_by="batch")
+})
+
+test_that('Nearest neighbor index', {
+  batched_cds = make_fake_batched_cds()
+  batched_cds = preprocess_cds(batched_cds, num_dim=3)
+  batched_cds = align_cds(batched_cds, residual_model_formula_str="~batch", build_nn_index=TRUE)
+  expect_equal(batched_cds@reduce_dim_aux[['Aligned']][['nn_index']][['annoy']][['metric']], 'cosine')
 })

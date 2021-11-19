@@ -10,6 +10,14 @@ set.seed(100)
 cds <- load_a549()
 cds <- estimate_size_factors(cds)
 
+
+test_that('Nearest neighbors', {
+  cds <- preprocess_cds(cds)
+  cds <- reduce_dimension(cds, build_nn_index=TRUE)
+  expect_equal(cds@reduce_dim_aux[['UMAP']][['nn_index']][['annoy']][['metric']], 'euclidean')
+})
+
+
 test_that("reduce_dimension runs", {
   skip_on_travis()
   expect_error(cds <- reduce_dimension(cds, umap.fast_sgd=FALSE, cores=1),

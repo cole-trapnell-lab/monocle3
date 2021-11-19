@@ -69,7 +69,7 @@ align_cds <- function(cds,
   if(build_nn_index) {
     nn_control <- set_nn_control(mode=1,
                                  nn_control=nn_control,
-                                 nn_control_default=get_global_variable('nn_control_2'),
+                                 nn_control_default=get_global_variable('nn_control_annoy_cosine'),
                                  cds=NULL,
                                  reduction_method=NULL,
                                  k=NULL,

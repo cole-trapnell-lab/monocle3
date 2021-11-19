@@ -71,12 +71,11 @@ get_global_variable <- function(variable_name=NULL) {
 
   # Default nn_control list for functions that do not need
   # an index, which is all but the label transfer functions.
-  set_global_variable('nn_control_1', list(method='annoy', metric='euclidean', n_trees=50, M=48, ef_construction=200, ef=150, grain_size=1, cores=1))
-#  set_global_variable('nn_control_1', list(method='nn2'))
+  set_global_variable('nn_control_annoy_euclidean', list(method='annoy', metric='euclidean', n_trees=50, M=48, ef_construction=200, ef=150, grain_size=1, cores=1))
 
   # Default nn_control list for functions that need an index,
   # which are the label transfer functions.
-  set_global_variable('nn_control_2', list(method='annoy', metric='euclidean', n_trees=50, M=48, ef_construction=200, ef=150, grain_size=1, cores=1))
+  set_global_variable('nn_control_annoy_cosine', list(method='annoy', metric='cosine', n_trees=50, M=48, ef_construction=200, ef=150, grain_size=1, cores=1))
 
   # Watching preprocess_cds() it appears that R uses OMP_NUM_THREADS
   # threads if OMP_NUM_THREADS > 1 and OPENBLAS_NUM_THREADS is NA.

@@ -95,9 +95,14 @@ reduce_dimension <- function(cds,
   }
 
   if(build_nn_index) {
+    if(reduction_method == 'tSNE' || reduction_method == 'UMAP')
+      nn_control_default <- get_global_variable('nn_control_annoy_euclidean')
+    else
+      nn_control_default <- get_global_variable('nn_control_annoy_cosine')
+
     nn_control <- set_nn_control(mode=1,
                                  nn_control=nn_control,
-                                 nn_control_default=get_global_variable('nn_control_2'),
+                                 nn_control_default=nn_control_default,
                                  cds=NULL,
                                  reduction_method=NULL,
                                  k=NULL,
@@ -173,9 +178,29 @@ reduce_dimension <- function(cds,
   #      and depends on the elements within model and nn_method.
   #
   if(reduction_method == "PCA") {
+    if(build_nn_index && is.null(cds@reduce_dim_aux[[reduction_method]][['nn_index']])) {
+      nn_index <- make_nn_index(subject_matrix=reducedDims(cds)[[reduction_method]],
+                                nn_control=nn_control,
+                                verbose=verbose)
+      cds <- set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, nn_control=nn_control, verbose=verbose)
+    }
     if (verbose) message("Returning preprocessed PCA matrix")
   } else if(reduction_method == "LSI") {
+    if(build_nn_index && is.null(cds@reduce_dim_aux[[reduction_method]][['nn_index']])) {
+      nn_index <- make_nn_index(subject_matrix=reducedDims(cds)[[reduction_method]],
+                                nn_control=nn_control,
+                                verbose=verbose)
+      cds <- set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, nn_control=nn_control, verbose=verbose)
+    }
     if (verbose) message("Returning preprocessed LSI matrix")
+  } else if(reduction_method == "Aligned") {
+    if(build_nn_index && is.null(cds@reduce_dim_aux[[reduction_method]][['nn_index']])) {
+      nn_index <- make_nn_index(subject_matrix=reducedDims(cds)[[reduction_method]],
+                                nn_control=nn_control,
+                                verbose=verbose)
+      cds <- set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, nn_control=nn_control, verbose=verbose)
+    }
+    if (verbose) message("Returning preprocessed Aligned matrix")
   } else if (reduction_method == "tSNE") {
     if (verbose) message("Reduce dimension by tSNE ...")
 

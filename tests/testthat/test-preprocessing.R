@@ -81,6 +81,12 @@ test_that("preprocessing stays the same", {
   expect_equal(nrow(reducedDims(cds)$PCA), nrow(colData(cds)))
   expect_equal(reducedDims(cds)$PCA[2,1], -0.5347819, tol = 1e-5)
 
+  # nearest neighbor index
+  cds <- preprocess_cds(cds, method='PCA', num_dim=20, build_nn_index=TRUE)
+  expect_equal(cds@reduce_dim_aux[['PCA']][['nn_index']][['annoy']][['metric']], 'cosine')
+  cds <- preprocess_cds(cds, method='LSI', num_dim=20, build_nn_index=TRUE)
+  expect_equal(cds@reduce_dim_aux[['LSI']][['nn_index']][['annoy']][['metric']], 'cosine')
+
 })
 
 

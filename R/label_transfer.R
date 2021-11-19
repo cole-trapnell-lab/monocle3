@@ -187,9 +187,14 @@ transfer_cell_labels <- function(cds_query,
   assertthat::assert_that(ref_column_name %in% colnames(ref_coldata),
                           msg=paste0('ref_column_name \'', ref_column_name, '\' is not in the ref_col_ata'))
 
+  if(reduction_method == 'UMAP')
+    nn_control_default <- get_global_variable('nn_control_annoy_euclidean')
+  else
+    nn_control_default <- get_global_variable('nn_control_annoy_cosine')
+
   nn_control <- set_nn_control(mode=2,
                                nn_control=nn_control,
-                               nn_control_default=get_global_variable('nn_control_2'),
+                               nn_control_default=nn_control_default,
                                cds=cds_query,
                                reduction_method=reduction_method,
                                k=k,
@@ -369,9 +374,14 @@ fix_missing_cell_labels <- function(cds,
   assertthat::assert_that(from_column_name %in% colnames(colData(cds)),
                           msg=paste0('from_column_name \'', from_column_name, '\' is not in the cds colData'))
 
+  if(reduction_method == 'UMAP')
+    nn_control_default <- get_global_variable('nn_control_annoy_euclidean')
+  else
+    nn_control_default <- get_global_variable('nn_control_annoy_cosine')
+
   nn_control <- set_nn_control(mode=3,
                                nn_control=nn_control,
-                               nn_control_default=get_global_variable('nn_control_2'),
+                               nn_control_default=nn_control_default,
                                cds=NULL,
                                reduction_method=NULL,
                                k=k,

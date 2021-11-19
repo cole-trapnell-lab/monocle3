@@ -52,9 +52,10 @@ find_gene_modules <- function(cds,
                           ...) {
   method = 'leiden'
 
+  nn_control_default <- get_global_variable('nn_control_euclidean')
   nn_control <- set_nn_control(mode=3,
                                nn_control=nn_control,
-                               nn_control_default=get_global_variable('nn_control_1'),
+                               nn_control_default=nn_control_default,
                                cds=NULL,
                                reduction_method=NULL,
                                k=k,
