@@ -331,7 +331,10 @@ test_that("nearest_neighbors: make and search annoy index", {
 
   # make annoy index
   nn_index <- make_nn_index(reducedDims(cds)[['PCA']], nn_control=nn_control)
-  expect_equal(as.character(class(nn_index[['ann']])), 'Rcpp_AnnoyEuclidean')
+  if(is.null(nn_index[['ann']]))
+    expect_equal(as.character(class(nn_index)), 'Rcpp_AnnoyEuclidean')
+  else
+    expect_equal(as.character(class(nn_index[['ann']])), 'Rcpp_AnnoyEuclidean')
 
   # search annoy index
   nn_res <- search_nn_index(reducedDims(cds)[['PCA']], nn_index=nn_index, k=2, nn_control=nn_control)
@@ -342,14 +345,23 @@ test_that("nearest_neighbors: make and search annoy index", {
 
   # store annoy index in cds
   cds2 <- set_cds_nn_index(cds, reduction_method='PCA', nn_index, nn_control=nn_control)
-  expect_equal(as.character(class(cds2@reduce_dim_aux[['PCA']][['nn_index']][['annoy']][['nn_index']][['ann']])), 'Rcpp_AnnoyEuclidean')
+  if(is.null(cds2@reduce_dim_aux[['PCA']][['nn_index']][['annoy']][['nn_index']][['ann']]))
+    expect_equal(as.character(class(cds2@reduce_dim_aux[['PCA']][['nn_index']][['annoy']][['nn_index']])), 'Rcpp_AnnoyEuclidean')
+  else
+    expect_equal(as.character(class(cds2@reduce_dim_aux[['PCA']][['nn_index']][['annoy']][['nn_index']][['ann']])), 'Rcpp_AnnoyEuclidean')
 
   nn_index2 <- get_cds_nn_index(cds2, reduction_method='PCA', nn_control=nn_control)
-  expect_equal(as.character(class(nn_index2[['ann']])), 'Rcpp_AnnoyEuclidean')
+  if(is.null(nn_index2[['ann']]))
+    expect_equal(as.character(class(nn_index2)), 'Rcpp_AnnoyEuclidean')
+  else
+    expect_equal(as.character(class(nn_index2[['ann']])), 'Rcpp_AnnoyEuclidean')
 
   rm(cds2)
   cds2 <- make_cds_nn_index(cds, reduction_method='PCA', nn_control=nn_control)
-  expect_equal(as.character(class(cds2@reduce_dim_aux[['PCA']][['nn_index']][['annoy']][['nn_index']][['ann']])), 'Rcpp_AnnoyEuclidean')
+  if(is.null(cds2@reduce_dim_aux[['PCA']][['nn_index']][['annoy']][['nn_index']][['ann']]))
+    expect_equal(as.character(class(cds2@reduce_dim_aux[['PCA']][['nn_index']][['annoy']][['nn_index']])), 'Rcpp_AnnoyEuclidean')
+  else
+    expect_equal(as.character(class(cds2@reduce_dim_aux[['PCA']][['nn_index']][['annoy']][['nn_index']][['ann']])), 'Rcpp_AnnoyEuclidean')
 
   rm(cds2)
   nn_res <- search_nn_matrix(reducedDims(cds)[['PCA']], reducedDims(cds)[['PCA']], k=2, nn_control=nn_control)

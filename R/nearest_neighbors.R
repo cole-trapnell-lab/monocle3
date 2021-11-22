@@ -495,6 +495,19 @@ report_nn_control <- function(label=NULL, nn_control) {
 }
 
 
+new_annoy_index <- function(metric, ndim) {
+  nn_class <- switch( metric,
+                      cosine = RcppAnnoy::AnnoyAngular,
+                      euclidean = RcppAnnoy::AnnoyEuclidean,
+                      hamming = RcppAnnoy::AnnoyHamming,
+                      manhattan = RcppAnnoy::AnnoyManhattan,
+                      stop(paste0('unsupported annoy metric ', metric))
+                    )
+  nn_index <- new(nn_class, ndim)
+  return(nn_index)
+}
+
+
 #' @title Make a nearest neighbor index.
 #'
 #' @description Make a nearest neighbor index from the
@@ -513,6 +526,9 @@ report_nn_control <- function(label=NULL, nn_control) {
 #' @return a nearest neighbor index.
 #' @export
 make_nn_index <- function(subject_matrix, nn_control=list(), verbose=FALSE) {
+  assertthat::assert_that(is(subject_matrix, 'matrix') ||
+                          is_sparse_matrix(subject_matrix),
+    msg=paste0('make_nn_matrix: the subject_matrix object must be of type matrix'))
 
   # We check the index build parameters.
   nn_control <- set_nn_control(mode=1, nn_control=nn_control, nn_control_default=list(), cds=NULL, reduction_method=NULL, k=NULL, verbose=verbose)
@@ -529,23 +545,16 @@ make_nn_index <- function(subject_matrix, nn_control=list(), verbose=FALSE) {
     stop('make_nn_index is not valid for method nn2')
   } else
   if(nn_method == 'annoy') {
-    # set verbose to FALSE because when TRUE and nr is small, uwot::annoy_build can fail in
-    #       if (verbose) {
-    #         nstars <- 50
-    #         progress_for(
-    #           nr, nstars,
-    #           function(chunk_start, chunk_end) {
-    #             for (i in chunk_start:chunk_end) {
-    #               ann$addItem(i - 1, X[i, , drop = FALSE])
-    #             }
-    #           }
-    #         )
-    #       }
-    #       else {
-    nn_index <- uwot:::annoy_build(X=subject_matrix,
-                                   metric=nn_control[['metric']],
-                                   n_trees=nn_control[['n_trees']],
-                                   verbose=FALSE)
+    num_row <- nrow(subject_matrix)
+    num_col <- ncol(subject_matrix)
+    nn_index <- new_annoy_index(nn_control[['metric']], num_col)
+    n_trees <- nn_control[['n_trees']]
+    cores <- nn_control[['cores']]
+    if(num_row > 0 ) {
+      for(i in seq(num_row))
+        nn_index$addItem(i-1, subject_matrix[i,])
+      nn_index$build(n_trees)
+    }
   }
   else
   if(nn_method == 'hnsw') {
@@ -769,6 +778,9 @@ get_cds_nn_index <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Alig
 #'
 #' @export
 search_nn_index <- function(query_matrix, nn_index, k=25, nn_control=list(), verbose=FALSE) {
+  assertthat::assert_that(is(query_matrix, 'matrix') ||
+                          is_sparse_matrix(query_matrix),
+    msg=paste0('make_nn_matrix: the query_matrix object must be of type matrix'))
 
   nn_control <- set_nn_control(mode=2, nn_control=nn_control, nn_control_default=list(), cds=NULL, reduction_method=NULL, k=k, verbose=verbose)
 
@@ -797,13 +809,22 @@ search_nn_index <- function(query_matrix, nn_index, k=25, nn_control=list(), ver
     #   o  set list names to nn.idx and nn.dists for compatibility with
     #      RANN::nn2()
     #
-    tmp <- uwot:::annoy_search(X=query_matrix,
-                               k=k,
-                               ann=nn_index,
-                               search_k=nn_control[['search_k']],
-                               n_threads=nn_control[['cores']],
-                               nn_control[['grain_size']], verbose=verbose)
-    nn_res <- list(nn.idx = tmp[['idx']], nn.dists = tmp[['dist']])
+    num_row <- nrow(query_matrix)
+    idx <- matrix(nrow=num_row, ncol=k)
+    dists <- matrix(nrow=num_row, ncol=k)
+    search_k <- nn_control[['search_k']]
+    for(i in seq(num_row)) {
+      nn_list <- nn_index$getNNsByVectorList(query_matrix[i,], k, search_k, TRUE)
+      idx[i,] <- nn_list$item + 1
+      dists[i,] <- nn_list$distance
+    }
+    if(nn_control[['metric']] == 'cosine') {
+      for(i in seq(num_row))
+        dists[i,] <- 0.5 * dists[i,] * dists[i,]
+      
+    }
+
+    nn_res <- list(nn.idx=idx, nn.dists=dists)
   }
   else
   if(nn_method == 'hnsw') {
@@ -1056,11 +1077,12 @@ get_cds_nn_control <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Al
 #'
 #' @export
 search_nn_matrix <- function(subject_matrix, query_matrix, k=25, nn_control=list(), verbose=FALSE) {
-
-  assertthat::assert_that(is.matrix(subject_matrix),
+  assertthat::assert_that(is(subject_matrix, 'matrix') ||
+                          is_sparse_matrix(subject_matrix),
     msg=paste0('search_nn_matrix: the subject_matrix object must be of type matrix'))
 
-  assertthat::assert_that(is.matrix(query_matrix),
+  assertthat::assert_that(is(query_matrix, 'matrix') ||
+                          is_sparse_matrix(query_matrix),
     msg=paste0('search_nn_matrix: the query_matrix object must be of type matrix'))
 
   nn_control <- set_nn_control(mode=3, nn_control=nn_control, nn_control_default=list(), cds=NULL, reduction_method=NULL, k=k, verbose=verbose)
@@ -1075,64 +1097,58 @@ search_nn_matrix <- function(subject_matrix, query_matrix, k=25, nn_control=list
     tictoc::tic('search_nn_matrix: search_time')
   }
 
+
   if(method == 'nn2') {
     nn_res <- RANN::nn2(subject_matrix, query_matrix, min(k, nrow(subject_matrix)), searchtype = "standard")
-  } else
-  if(method == 'annoy') {
-    # set verbose to FALSE because when TRUE and nr is small, uwot::annoy_build can fail in
-    #       if (verbose) {
-    #         nstars <- 50
-    #         progress_for(
-    #           nr, nstars,
-    #           function(chunk_start, chunk_end) {
-    #             for (i in chunk_start:chunk_end) {
-    #               ann$addItem(i - 1, X[i, , drop = FALSE])
-    #             }
-    #           }
-    #         )
-    #       }
-    #       else {
-    nn_index <- uwot:::annoy_build(X=subject_matrix,
-                                   metric=nn_control[['metric']],
-                                   n_trees=nn_control[['n_trees']],
-                                   verbose=FALSE)
-
-    tmp <- uwot:::annoy_search(X=query_matrix,
-                               k=k,
-                               ann=nn_index,
-                               search_k=nn_control[['search_k']],
-                               prep_data=TRUE,
-                               tmpdir=tempdir(),
-                               n_threads=nn_control[['cores']],
-                               grain_size=nn_control[['grain_size']],
-                               verbose=verbose)
-    nn_res <- list(nn.idx = tmp[['idx']], nn.dists = tmp[['dist']])
-    swap_nn_row_index_point(nn_res, verbose=verbose)
-  } else
-  if(method == 'hnsw') {
-    progress <- 'bar'
-    nn_index <- RcppHNSW::hnsw_build(X=subject_matrix,
-                                      distance=nn_control[['metric']],
-                                      M=nn_control[['M']],
-                                      ef=nn_control[['ef_construction']],
-                                      verbose=verbose,
-                                      progress=progress,
-                                      n_threads=nn_control[['cores']],
-                                      grain_size=nn_control[['grain_size']])
-  
-    tmp <- RcppHNSW::hnsw_search(X=query_matrix,
-                                  ann=nn_index,
-                                  k=k,
-                                  ef=nn_control[['ef']],
-                                  verbose=verbose,
-                                  progress=progress,
-                                  n_threads=nn_control[['cores']],
-                                  grain_size=nn_control[['grain_size']])
-    nn_res <- list(nn.idx = tmp[['idx']], nn.dists = tmp[['dist']])
-    swap_nn_row_index_point(nn_res, verbose=verbose)
+  } else {
+    nn_index <- make_nn_index(subject_matrix, nn_control=nn_control, verbose=verbose)
+    nn_res <- search_nn_index(query_matrix=query_matrix, nn_index=nn_index, k=k, nn_control=nn_control, verbose=verbose)
+    nn_res <- swap_nn_row_index_point(nn_res, verbose=verbose)
   }
-  else
-    stop('search_nn_matrix: unsupported nearest neighbor method \'', nn_method, '\'')
+
+
+#   if(method == 'annoy') {
+#     nn_index <- uwot:::annoy_build(X=subject_matrix,
+#                                    metric=nn_control[['metric']],
+#                                    n_trees=nn_control[['n_trees']],
+#                                    verbose=FALSE)
+# 
+#     tmp <- uwot:::annoy_search(X=query_matrix,
+#                                k=k,
+#                                ann=nn_index,
+#                                search_k=nn_control[['search_k']],
+#                                prep_data=TRUE,
+#                                tmpdir=tempdir(),
+#                                n_threads=nn_control[['cores']],
+#                                grain_size=nn_control[['grain_size']],
+#                                verbose=verbose)
+#     nn_res <- list(nn.idx = tmp[['idx']], nn.dists = tmp[['dist']])
+#     swap_nn_row_index_point(nn_res, verbose=verbose)
+#   } else
+#   if(method == 'hnsw') {
+#     progress <- 'bar'
+#     nn_index <- RcppHNSW::hnsw_build(X=subject_matrix,
+#                                       distance=nn_control[['metric']],
+#                                       M=nn_control[['M']],
+#                                       ef=nn_control[['ef_construction']],
+#                                       verbose=verbose,
+#                                       progress=progress,
+#                                       n_threads=nn_control[['cores']],
+#                                       grain_size=nn_control[['grain_size']])
+#   
+#     tmp <- RcppHNSW::hnsw_search(X=query_matrix,
+#                                   ann=nn_index,
+#                                   k=k,
+#                                   ef=nn_control[['ef']],
+#                                   verbose=verbose,
+#                                   progress=progress,
+#                                   n_threads=nn_control[['cores']],
+#                                   grain_size=nn_control[['grain_size']])
+#     nn_res <- list(nn.idx = tmp[['idx']], nn.dists = tmp[['dist']])
+#     swap_nn_row_index_point(nn_res, verbose=verbose)
+#   }
+#   else
+#     stop('search_nn_matrix: unsupported nearest neighbor method \'', nn_method, '\'')
 
   if(verbose)
     tictoc::toc()
