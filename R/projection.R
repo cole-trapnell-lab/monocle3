@@ -194,7 +194,7 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
     DelayedArray::setAutoBlockSize(block_size0)
   }
 
-  matrix_id <- get_unique_id()
+  matrix_id <- get_unique_id(reducedDims(cds)[[reduction_method]])
   counts_identity <- get_counts_identity(cds)
   reduce_dim_model_identity <- get_reduce_dim_model_identity(cds, reduction_method)
   cds <- initialize_reduce_dim_metadata(cds, reduction_method)
@@ -207,6 +207,16 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
                                         reduce_dim_model_identity[['model_id']])
   # Keep the existing, loaded, reduce_dim_model_identity information.
 
+  return(cds)
+}
+
+
+#' align_transform is not supported. Co-embed your data sets if
+#' you need batch correction.
+#' @export
+align_transform <- function(cds, reduction_method=c('Aligned')) {
+  stop(paste('align_transform is not supported. If you need batch correction',
+              'you will need to co-embed the data sets.'))
   return(cds)
 }
 
@@ -345,7 +355,7 @@ reduce_dimension_transform <- function(cds, preprocess_method=NULL, reduction_me
   umap_model <- cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']]
   reducedDims(cds)[[reduction_method]] <- uwot::umap_transform(X=preproc_res, model=umap_model, init='weighted', n_sgd_threads=1)
 
-  matrix_id <- get_unique_id()
+  matrix_id <- get_unique_id(reducedDims(cds)[[reduction_method]])
   reduce_dim_matrix_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method)
   reduce_dim_model_identity <- get_reduce_dim_model_identity(cds, reduction_method)
   cds <- initialize_reduce_dim_metadata(cds, reduction_method)
@@ -377,7 +387,7 @@ align_beta_transform <- function(cds, preprocess_method = 'PCA') {
   reducedDims(cds)[['Aligned']] <- Matrix::t(as.matrix(Matrix::t(preproc_res)) -
                                    beta %*% Matrix::t(X.model_mat[, -1]))
 
-  matrix_id <- get_unique_id()
+  matrix_id <- get_unique_id(reducedDims(cds)[['Aligned']])
   cds <- initialize_reduce_dim_metadata(cds, reduction_method)
   reduce_dim_matrix_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method)
   reduce_dim_model_identity <- get_reduce_dim_model_identity(cds, reduction_method)

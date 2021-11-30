@@ -142,7 +142,7 @@ preprocess_cds <- function(cds,
     # PCs, not the fraction of total variance.
     cds@reduce_dim_aux[['PCA']][['model']][['prop_var_expl']] <- irlba_res$sdev^2 / sum(irlba_res$sdev^2)
 
-    matrix_id <- get_unique_id()
+    matrix_id <- get_unique_id(reducedDims(cds)[['PCA']])
     counts_identity <- get_counts_identity(cds)
 
     cds <- set_reduce_dim_matrix_identity(cds, 'PCA',
@@ -199,7 +199,7 @@ preprocess_cds <- function(cds,
     # we need svd_v downstream so
     # calculate gene_loadings in cluster_cells.R
 
-    matrix_id <- get_unique_id()
+    matrix_id <- get_unique_id(reducedDims(cds)[['LSI']])
     counts_identity <- get_counts_identity(cds)
 
     cds <- set_reduce_dim_matrix_identity(cds, 'LSI',

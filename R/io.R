@@ -33,7 +33,7 @@ load_worm_embryo <- function(){
   cds <- estimate_size_factors(cds)
 
   cds <- initialize_counts_metadata(cds)
-  matrix_id <- get_unique_id()
+  matrix_id <- get_unique_id(counts(cds))
   cds <- set_counts_identity(cds, 'URL: http://staff.washington.edu/hpliner/data/packer_embryo_expression.rds', matrix_id)
 
   cds
@@ -220,7 +220,7 @@ load_mm_data <- function( mat_path,
   cds <- estimate_size_factors(cds)
 
   cds <- initialize_counts_metadata(cds)
-  matrix_id <- get_unique_id()
+  matrix_id <- get_unique_id(counts(cds))
   cds <- set_counts_identity(cds, mat_path, matrix_id)
  
   return( cds )
@@ -300,7 +300,7 @@ load_mtx_data <- function( mat_path,
   cds <- estimate_size_factors(cds)
 
   cds <- initialize_counts_metadata(cds)
-  matrix_id <- get_unique_id()
+  matrix_id <- get_unique_id(counts(cds))
   cds <- set_counts_identity(cds, mat_path, matrix_id)
 
   return(cds)
@@ -353,30 +353,12 @@ save_annoy_index <- function(nn_index, file_name) {
 
 
 # see comments for save_annoy_index
-# untested code when is.null(nn_index[['type']])
-# load_annoy_index <- function(nn_index, file_name, metric, ndim) {
-#   if(!is.null(nn_index[['type']])) {
-#     if(nn_index[['type']] == 'annoyv1') {
-#       nn_index[['ann']] <- uwot:::create_ann(metric, ndim)
-#       nn_index[['ann']]$load(file_name)
-#     } else {
-#       stop('Unrecognized uwot annoy index type')
-#     }
-#   } else {
-#     nn_index <- uwot:::create_ann(metric, ndim)
-#     nn_index$load(file_name)
-#   }
-#   return(nn_index)
-# }
-
-
-# see comments for save_annoy_index
-# untested code when is.null(nn_index[['type']])
+# modified for RcppAnnoy
 load_annoy_index <- function(nn_index, file_name, metric, ndim) {
   if(!is.null(nn_index[['type']])) {
     if(nn_index[['type']] == 'annoyv1') {
-      nn_index[['ann']] <- new_annoy_index(metric, ndim)
-      nn_index[['ann']]$load(file_name)
+      nn_index <- new_annoy_index(metric, ndim)
+      nn_index$load(file_name)
     } else {
       stop('Unrecognized annoy index type')
     }

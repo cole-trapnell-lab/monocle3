@@ -309,13 +309,7 @@ calculateLW <- function(cds,
   cell_coords <- reducedDims(cds)[[reduction_method]]
   nn_method <- nn_control[['method']]
 
-  if((nn_method == 'annoy' || nn_method == 'hnsw')) {
-#     if(check_cds_nn_index_is_current(cds=cds, reduction_method=reduction_method, nn_control=nn_control, verbose=verbose)) {
-#       nn_index <- get_cds_nn_index(cds, reduction_method=reduction_method, nn_control=nn_control, verbose=verbose)
-#     }
-#     else {
-#       nn_index <- make_nn_index(subject_matrix=cell_coords, nn_control=nn_control, verbose=verbose)
-#     }
+  if(nn_method == 'annoy' || nn_method == 'hnsw') {
     # Always make a nearest neighbor index in case the matrix is altered
     # after the index is made.
     nn_index <- make_nn_index(subject_matrix=cell_coords, nn_control=nn_control, verbose=verbose)
@@ -332,7 +326,10 @@ calculateLW <- function(cds,
                                  nn_index=nn_index,
                                  k=min(k + 1, nrow(cell_coords)),
                                  nn_control=nn_control,
-                                 verbose=verbose)[[1]]
+                                 verbose=verbose)
+      if(nn_method == 'annoy' || nn_method == 'hnsw')
+        knn_res <- swap_nn_row_index_point(nn_res=knn_res, verbose=verbose)
+      knn_res <- knn_res[[1]]
     }
   }
   else if(neighbor_graph == "principal_graph") {
@@ -352,11 +349,14 @@ calculateLW <- function(cds,
                              searchtype = "standard")[[1]]
       }
       else {
-       knn_res <- search_nn_index(query_matrix=cell_coords,
-                                  nn_index=nn_index,
-                                  k=min(k + 1, nrow(cell_coords)),
-                                  nn_control=nn_control,
-                                  verbose=verbose)[[1]]
+        knn_res <- search_nn_index(query_matrix=cell_coords,
+                                   nn_index=nn_index,
+                                   k=min(k + 1, nrow(cell_coords)),
+                                   nn_control=nn_control,
+                                   verbose=verbose)
+        if(nn_method == 'annoy' || nn_method == 'hnsw')
+          knn_res <- swap_nn_row_index_point(nn_res=knn_res, verbose=verbose)
+        knn_res <- knn_res[[1]]
       }
     }
     links <- jaccard_coeff(knn_res[, -1], FALSE)
@@ -408,7 +408,10 @@ calculateLW <- function(cds,
                                  nn_index=nn_index,
                                  k=min(k + 1, nrow(cell_coords)),
                                  nn_control=nn_control,
-                                 verbose=verbose)[[1]]
+                                 verbose=verbose)
+      if(nn_method == 'annoy' || nn_method == 'hnsw')
+        knn_res <- swap_nn_row_index_point(nn_res=knn_res, verbose=verbose)
+      knn_res <- knn_res[[1]]
     }
 
     # convert the matrix of knn graph from the cell IDs into a matrix of

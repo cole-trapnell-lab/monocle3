@@ -767,7 +767,7 @@ get_citations <- function(cds) {
 
 
 # Make a unique identifier string.
-get_unique_id <- function() {
+get_unique_id <- function(object=NULL) {
   id_count <- get_global_variable('id_count')
   rtime <- as.numeric(Sys.time())*100000 + id_count
   id_hash <- openssl::md5(as.character(rtime))

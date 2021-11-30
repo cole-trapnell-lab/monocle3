@@ -344,8 +344,11 @@ multi_component_RGE <- function(cds,
     if (verbose)
       message("Finding kNN with ", k, " neighbors")
 
+    nn_method <- nn_control[['method']]
+#    dx <- RANN::nn2(mat, k = min(k, nrow(mat) - 1))  # replaced by search_nn_matrix below
     dx <- search_nn_matrix(subject_matrix=mat, query_matrix=mat, k=min(k, nrow(mat) - 1), nn_control=nn_control, verbose=verbose)
-#    dx <- RANN::nn2(mat, k = min(k, nrow(mat) - 1))  # replaced by search_nn_matrix above
+    if(nn_method == 'annoy' || nn_method == 'hnsw')
+      dx <- swap_nn_row_index_point(nn_res=dx, verbose=verbose)
 
     nn.index <- dx$nn.idx[, -1]
     nn.dist <- dx$nn.dists[, -1]

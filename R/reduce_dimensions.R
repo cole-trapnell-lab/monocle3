@@ -216,7 +216,7 @@ reduce_dimension <- function(cds,
     reducedDims(cds)$tSNE <- tsne_data
 
 
-    matrix_id <- get_unique_id()
+    matrix_id <- get_unique_id(reducedDims(cds)[['tSNE']])
     reduce_dim_matrix_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method)
 
     set_reduce_dim_matrix_identity(cds, 'tSNE',
@@ -289,7 +289,7 @@ reduce_dimension <- function(cds,
     cds@reduce_dim_aux[['UMAP']][['model']][['umap_fast_sgd']] <- umap.fast_sgd
     cds@reduce_dim_aux[['UMAP']][['model']][['umap_model']] <- umap_model
 
-    matrix_id <- get_unique_id()
+    matrix_id <- get_unique_id(reducedDims(cds)[['UMAP']])
     reduce_dim_matrix_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method)
 
     cds <- set_reduce_dim_matrix_identity(cds, 'UMAP',

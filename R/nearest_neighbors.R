@@ -551,7 +551,7 @@ make_nn_index <- function(subject_matrix, nn_control=list(), verbose=FALSE) {
     n_trees <- nn_control[['n_trees']]
     cores <- nn_control[['cores']]
     if(num_row > 0 ) {
-      for(i in seq(num_row))
+      for(i in 1:num_row)
         nn_index$addItem(i-1, subject_matrix[i,])
       nn_index$build(n_trees)
     }
@@ -804,27 +804,27 @@ search_nn_index <- function(query_matrix, nn_index, k=25, nn_control=list(), ver
   } else
   if(nn_method == 'annoy') {
     # notes:
-    #   o  there may be dependency on uwot version
-    #   o  ensure that nn_res[[1]] are indices and nn_res[[2]] are distances
     #   o  set list names to nn.idx and nn.dists for compatibility with
     #      RANN::nn2()
     #
     num_row <- nrow(query_matrix)
     idx <- matrix(nrow=num_row, ncol=k)
-    dists <- matrix(nrow=num_row, ncol=k)
+    dist <- matrix(nrow=num_row, ncol=k)
     search_k <- nn_control[['search_k']]
-    for(i in seq(num_row)) {
+    num_bad <- 0
+    for(i in 1:num_row) {
       nn_list <- nn_index$getNNsByVectorList(query_matrix[i,], k, search_k, TRUE)
-      idx[i,] <- nn_list$item + 1
-      dists[i,] <- nn_list$distance
+      if(length(nn_list$item) != k)
+        num_bad <- num_bad + 1
+      idx[i,] <- nn_list$item
+      dist[i,] <- nn_list$distance
     }
+    if(num_bad)
+      stop('annoy was unable to find ', k, ' nearest neighbors for ', num_bad, ' rows. You may need to increase the n_trees and/or search_k parameter values.')
     if(nn_control[['metric']] == 'cosine') {
-      for(i in seq(num_row))
-        dists[i,] <- 0.5 * dists[i,] * dists[i,]
-      
+      dist <- 0.5 * dist * dist
     }
-
-    nn_res <- list(nn.idx=idx, nn.dists=dists)
+    nn_res <- list(nn.idx=idx+1, nn.dists=dist)
   }
   else
   if(nn_method == 'hnsw') {
@@ -847,8 +847,7 @@ search_nn_index <- function(query_matrix, nn_index, k=25, nn_control=list(), ver
     tictoc::toc()
   }
 
-  return(nn_res) 
-
+  return(nn_res)
 }
 
 
@@ -1103,58 +1102,12 @@ search_nn_matrix <- function(subject_matrix, query_matrix, k=25, nn_control=list
   } else {
     nn_index <- make_nn_index(subject_matrix, nn_control=nn_control, verbose=verbose)
     nn_res <- search_nn_index(query_matrix=query_matrix, nn_index=nn_index, k=k, nn_control=nn_control, verbose=verbose)
-    nn_res <- swap_nn_row_index_point(nn_res, verbose=verbose)
   }
-
-
-#   if(method == 'annoy') {
-#     nn_index <- uwot:::annoy_build(X=subject_matrix,
-#                                    metric=nn_control[['metric']],
-#                                    n_trees=nn_control[['n_trees']],
-#                                    verbose=FALSE)
-# 
-#     tmp <- uwot:::annoy_search(X=query_matrix,
-#                                k=k,
-#                                ann=nn_index,
-#                                search_k=nn_control[['search_k']],
-#                                prep_data=TRUE,
-#                                tmpdir=tempdir(),
-#                                n_threads=nn_control[['cores']],
-#                                grain_size=nn_control[['grain_size']],
-#                                verbose=verbose)
-#     nn_res <- list(nn.idx = tmp[['idx']], nn.dists = tmp[['dist']])
-#     swap_nn_row_index_point(nn_res, verbose=verbose)
-#   } else
-#   if(method == 'hnsw') {
-#     progress <- 'bar'
-#     nn_index <- RcppHNSW::hnsw_build(X=subject_matrix,
-#                                       distance=nn_control[['metric']],
-#                                       M=nn_control[['M']],
-#                                       ef=nn_control[['ef_construction']],
-#                                       verbose=verbose,
-#                                       progress=progress,
-#                                       n_threads=nn_control[['cores']],
-#                                       grain_size=nn_control[['grain_size']])
-#   
-#     tmp <- RcppHNSW::hnsw_search(X=query_matrix,
-#                                   ann=nn_index,
-#                                   k=k,
-#                                   ef=nn_control[['ef']],
-#                                   verbose=verbose,
-#                                   progress=progress,
-#                                   n_threads=nn_control[['cores']],
-#                                   grain_size=nn_control[['grain_size']])
-#     nn_res <- list(nn.idx = tmp[['idx']], nn.dists = tmp[['dist']])
-#     swap_nn_row_index_point(nn_res, verbose=verbose)
-#   }
-#   else
-#     stop('search_nn_matrix: unsupported nearest neighbor method \'', nn_method, '\'')
 
   if(verbose)
     tictoc::toc()
 
   return(nn_res)
-
 }
 
 
@@ -1179,7 +1132,7 @@ check_nn_col1 <- function(mat) {
 count_nn_missing_self_index <- function(nn_res) {
   idx <- nn_res[['nn.idx']]
   dst <- nn_res[['nn.dists']]
-  len <- length(idx[[1]])
+  len <- length(idx[1,])
   num_missing <- 0
 
   for (irow in 1:nrow(idx)) {
@@ -1222,8 +1175,10 @@ count_nn_missing_self_index <- function(nn_res) {
 # there is more than one point with zero distance,
 # or, the function may miss the row index point.
 #
-# Of course, do not use this if the search point set
-# differs from the index set.
+# Notes:
+#   o  we assume that the self index distance is zero
+#   o  do not use this if the search point set differs
+#      from the index build set.
 #
 swap_nn_row_index_point <- function(nn_res, verbose=FALSE) {
 
@@ -1266,12 +1221,22 @@ swap_nn_row_index_point <- function(nn_res, verbose=FALSE) {
           if(diagnostics) {
             message('swap_nn_row_index_point: dst row pre fix: ', paste(vdst, collapse=' '))
           }
+          dzero <- TRUE
+          for(i in seq(1, length(vidx), 1)) {
+            if(vdst[[i]] > .Machine$double.xmin) {
+              dzero <- FALSE
+            }
+          }
           vidx <- c(irow, vidx[1:(length(vidx)-1)])
           vdst <- c(0, vdst[1:(length(vdst)-1)])
           dst[irow,] <- vdst
           if(diagnostics) {
             message('swap_nn_row_index_point: dst row post fix: ', paste(vdst, collapse=' '))
           }
+          if(!dzero)
+            message(paste('Warning: at least one row of the nearest neighbor search result is missing\n',
+                          'the row number (self). You may need to make the index build and/or search\n',
+                          'more sensitive.'))
         }
       }
       idx[irow,] <- vidx
