@@ -165,7 +165,7 @@ fit_model_helper <- function(x,
     #f_expression <- round(x)
     f_expression <- x
     if (expression_family %in% c("negbinomial")){
-      model_formula_str <- paste(model_formula_str, " + offset(log(Size_Factor))",
+      model_formula_str <- paste(model_formula_str, " + stats::offset(log(Size_Factor))",
                                  sep = "")
     }
 
