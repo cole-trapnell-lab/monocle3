@@ -50,7 +50,7 @@ test_that("fit_models() returns correct output for negative binomial regression"
   expect_null(fitted_vals)
 
   fitted_vals = stats::predict(pos_ctrl_gene_fit$model[[1]],
-                               newdata=colData(test_cds))
+                               newdata=cbind(colData(test_cds) %>% as.data.frame, Size_Factor=1))
   expect_equal(sum(is.na(fitted_vals)), 0)
   expect_equal(unname(fitted_vals[1]), 0.09561581)
 
@@ -75,7 +75,7 @@ test_that("fit_models() returns correct output for Poisson regression",{
 
   pos_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "ANGPTL4",]
   pos_ctrl_gene_fit = fit_models(pos_ctrl_gene, model_formula_str = "~log_dose",
-                                 expression_family = "poisson")
+                                 expression_family = "poisson", verbose=TRUE)
   expect_equal(pos_ctrl_gene_fit$status[[1]], "OK")
   pos_ctrl_coefs = coefficient_table(pos_ctrl_gene_fit)
   expect_equal(pos_ctrl_coefs$estimate, c(-0.1661872, 0.2560421),
@@ -89,7 +89,7 @@ test_that("fit_models() returns correct output for Poisson regression",{
   expect_null(fitted_vals)
 
   fitted_vals = stats::predict(pos_ctrl_gene_fit$model[[1]],
-                               newdata=colData(test_cds))
+                               newdata=cbind(colData(test_cds) %>% as.data.frame, Size_Factor=1))
   expect_equal(sum(is.na(fitted_vals)), 0)
   expect_equal(unname(fitted_vals[1]), 0.08996605, tolerance=1e-1)
 
@@ -126,7 +126,7 @@ test_that("fit_models() returns correct output for quasipoisson regression",{
   expect_null(fitted_vals)
 
   fitted_vals = stats::predict(pos_ctrl_gene_fit$model[[1]],
-                               newdata=colData(test_cds))
+                               newdata=cbind(colData(test_cds) %>% as.data.frame, Size_Factor=1))
   expect_equal(sum(is.na(fitted_vals)), 0)
   expect_equal(unname(fitted_vals[1]), 0.08996605, tolerance=1e-1)
 
@@ -183,7 +183,7 @@ test_that("fit_models() returns correct output for zero-inflated Poisson regress
   expect_null(fitted_vals)
 
   fitted_vals = stats::predict(pos_ctrl_gene_fit$model[[1]],
-                               newdata=colData(test_cds))
+                               newdata=cbind(colData(test_cds) %>% as.data.frame, Size_Factor=1))
   expect_equal(sum(is.na(fitted_vals)), 0)
   expect_equal(unname(fitted_vals[1]), 1.090315, tolerance=1e-1)
 
@@ -223,7 +223,7 @@ test_that("fit_models() returns correct output for zero-inflated negative binomi
   expect_null(fitted_vals)
 
   fitted_vals = stats::predict(pos_ctrl_gene_fit$model[[1]],
-                               newdata=colData(test_cds))
+                               newdata=cbind(colData(test_cds) %>% as.data.frame, Size_Factor=1))
   expect_equal(sum(is.na(fitted_vals)), 0)
   expect_equal(unname(fitted_vals[1]), 1.112072, tolerance=1e-1)
 

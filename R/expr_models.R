@@ -164,7 +164,7 @@ fit_model_helper <- function(x,
     #x <- x / Size_Factor
     #f_expression <- round(x)
     f_expression <- x
-    if (expression_family %in% c("negbinomial", "mixed-negbinomial")){
+    if (expression_family %in% c("negbinomial")){
       model_formula_str <- paste(model_formula_str, " + offset(log(Size_Factor))",
                                  sep = "")
     }
@@ -218,6 +218,7 @@ fit_model_helper <- function(x,
                                    "mixed-negbinomial" = glmer.nb(model_formula,
                                                                     nAGQ=0,
                                                                     control=glmerControl(optimizer = "nloptwrap"),
+                                                                    offset = log(Size_Factor),
                                                                     ...)
     ))
     FM_summary = summary(FM_fit)
@@ -284,6 +285,7 @@ fit_models <- function(cds,
     coldata_df$cluster = clusters(cds, reduction_method)[colnames(cds)]
     coldata_df$partition = partitions(cds, reduction_method)[colnames(cds)]
     coldata_df$pseudotime = pseudotime(cds, reduction_method)
+    coldata_df$Size_Factor = size_factors(cds)
   }, error = function(e) {} )
 
   # Test model formula validity.
