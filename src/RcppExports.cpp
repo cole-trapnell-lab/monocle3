@@ -5,6 +5,11 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // jaccard_coeff
 NumericMatrix jaccard_coeff(SEXP R_idx, SEXP R_weight);
 RcppExport SEXP _monocle3_jaccard_coeff(SEXP R_idxSEXP, SEXP R_weightSEXP) {
