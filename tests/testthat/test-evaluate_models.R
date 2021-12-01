@@ -34,13 +34,13 @@ test_that("evaluate_models() returns correct output for negative binomial models
   test_cds = cds[rowData(cds)$gene_short_name == "ANGPTL4",]
   fit = fit_models(test_cds, model_formula_str = "~log_dose", expression_family = "negbinomial")
   evaluated_fit = suppressWarnings(evaluate_fits(fit))
-  expect_equal(evaluated_fit$null_deviance, 497, tolerance=1e-3)
+  expect_equal(evaluated_fit$null_deviance, 557, tolerance=1e-3)
   expect_equal(evaluated_fit$df_null, 499)
-  expect_equal(evaluated_fit$logLik, -692, tolerance=1e-3)
-  expect_equal(evaluated_fit$AIC, 1389, tolerance=1e-3)
-  expect_equal(evaluated_fit$BIC, 1389, tolerance=1e-3)
-  expect_equal(evaluated_fit$deviance, 467, tolerance=1e-3)
-  expect_equal(evaluated_fit$df_residual, 498)
+  expect_equal(evaluated_fit$logLik, -686, tolerance=1e-3)
+  expect_equal(evaluated_fit$AIC, 1380, tolerance=1e-3)
+  expect_equal(evaluated_fit$BIC, 1380, tolerance=1e-3)
+  expect_equal(evaluated_fit$deviance, 472, tolerance=1e-1)
+  expect_equal(evaluated_fit$df_residual, 497)
 })
 
 test_that("evaluate_models() returns correct output for zero-inflated poisson models",{
