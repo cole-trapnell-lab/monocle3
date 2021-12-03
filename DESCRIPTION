@@ -55,6 +55,7 @@ Imports:
     DelayedArray (>= 0.8.0),
     DelayedMatrixStats (>= 1.4.0),
     dplyr (>= 0.8.0.1),
+    future,
     ggplot2 (>= 3.1.1),
     ggrastr,
     ggrepel (>= 0.8.1),

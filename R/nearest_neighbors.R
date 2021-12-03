@@ -750,6 +750,30 @@ get_cds_nn_index <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Alig
 }
 
 
+#' @export
+search_nn_annoy_index <- function(query_matrix, nn_index, metric, k, search_k, beg_row_index, end_row_index) {
+  assertthat::assert_that(beg_row_index <= end_row_index,
+                          msg=paste0('search_nn_annoy_index: beg_row_index must be <= end_row_index'))
+
+  nrow <- end_row_index - beg_row_index + 1
+  idx <- matrix(nrow=nrow, ncol=k)
+  dists <- matrix(nrow=nrow, ncol=k)
+  num_bad <- 0
+  offset <- beg_row_index - 1
+  for(i in seq(1, nrow)) {
+    nn_list <- nn_index$getNNsByVectorList(query_matrix[i+offset,], k, search_k, TRUE)
+    if(length(nn_list$item) != k)
+      num_bad <- num_bad + 1
+    idx[i,] <- nn_list$item
+    dists[i,] <- nn_list$distance
+  }
+  if(metric == 'cosine') {
+    dists <- 0.5 * dists * dists
+  }
+  return(list(idx=idx+1, dists=dists, num_bad=num_bad))
+}
+
+
 #' @title Search a nearest neighbor index.
 #'
 #' @description Search a nearest neighbor index for cells near
@@ -799,6 +823,8 @@ search_nn_index <- function(query_matrix, nn_index, k=25, nn_control=list(), ver
 
   k <- min(k, nrow(query_matrix))
 
+  cores <- nn_control[['cores']]
+
   if(nn_method == 'nn2') {
     stop('search_nn_index is not valid for method nn2')
   } else
@@ -809,22 +835,44 @@ search_nn_index <- function(query_matrix, nn_index, k=25, nn_control=list(), ver
     #
     num_row <- nrow(query_matrix)
     idx <- matrix(nrow=num_row, ncol=k)
-    dist <- matrix(nrow=num_row, ncol=k)
+    dists <- matrix(nrow=num_row, ncol=k)
+    metric <- nn_control[['metric']]
     search_k <- nn_control[['search_k']]
-    num_bad <- 0
-    for(i in 1:num_row) {
-      nn_list <- nn_index$getNNsByVectorList(query_matrix[i,], k, search_k, TRUE)
-      if(length(nn_list$item) != k)
-        num_bad <- num_bad + 1
-      idx[i,] <- nn_list$item
-      dist[i,] <- nn_list$distance
+
+    if(cores <= 1) {
+      nn_res <- search_nn_annoy_index(query_matrix=query_matrix, nn_index=nn_index, metric=metric, k=k, search_k=search_k, beg_row_index=1, end_row_index=num_row)
+      if(nn_res[['num_bad']])
+        stop('annoy was unable to find ', k, ' nearest neighbors for ', nn_res[["num_bad"]], ' rows. You may need to increase the n_trees and/or search_k parameter values.')
+      nn_res <- list(nn.idx=nn_res[['idx']], nn.dists=nn_res[['dists']])
     }
-    if(num_bad)
-      stop('annoy was unable to find ', k, ' nearest neighbors for ', num_bad, ' rows. You may need to increase the n_trees and/or search_k parameter values.')
-    if(nn_control[['metric']] == 'cosine') {
-      dist <- 0.5 * dist * dist
+    else {
+      if(cores > num_row) cores <- num_row
+      tasks <- tasks_per_block(num_row, cores)
+      beg_block <- c(0,cumsum(tasks))[1:cores]+1
+      end_block <- cumsum(tasks)
+      nn_blocks <- list()
+      inplan <- plan()
+      plan(plan(), workers=cores)
+      on.exit(plan(inplan), add=TRUE)
+      for(iblock in seq(cores)) {
+        nn_blocks[[iblock]] <- future::future( {
+           monocle3::search_nn_annoy_index(query_matrix=query_matrix, nn_index=nn_index, metric=metric, k=k, search_k=search_k, beg_row_index=beg_block[[iblock]], end_row_index=end_block[[iblock]])
+         } )
+      }
+      tot_bad <- 0
+      for(iblock in seq(cores)) {
+        nn_res <- future::value(nn_blocks[[iblock]])
+        if(nrow(nn_res[['idx']]) != end_block[[iblock]] - beg_block[[iblock]] + 1) {
+          stop('bad row count in nn_res')
+        }
+        idx[beg_block[[iblock]]:end_block[[iblock]],] <- nn_res[['idx']]
+        dists[beg_block[[iblock]]:end_block[[iblock]],] <- nn_res[['dists']]
+        tot_bad <- tot_bad + nn_res[['num_bad']]
+      }
+      if(tot_bad)
+        stop('annoy was unable to find ', k, ' nearest neighbors for ', tot_bad, ' rows. You may need to increase the n_trees and/or search_k parameter values.')
+      nn_res <- list(nn.idx=idx, nn.dists=dists)
     }
-    nn_res <- list(nn.idx=idx+1, nn.dists=dist)
   }
   else
   if(nn_method == 'hnsw') {
@@ -836,7 +884,7 @@ search_nn_index <- function(query_matrix, nn_index, k=25, nn_control=list(), ver
                                   k=k,
                                   ef=nn_control[['ef']],
                                   verbose=verbose,
-                                  n_threads=nn_control[['cores']],
+                                  n_threads=cores,
                                   grain_size=nn_control[['grain_size']])
     nn_res <- list(nn.idx=tmp[['idx']], nn.dists=tmp[['dist']])
   }
@@ -1129,7 +1177,7 @@ check_nn_col1 <- function(mat) {
 # exists in the row. Count the cases for which
 # this is not true and the distances are not
 # all zero.
-count_nn_missing_self_index <- function(nn_res) {
+count_nn_missing_self_index <- function(nn_res, verbose=FALSE) {
   idx <- nn_res[['nn.idx']]
   dst <- nn_res[['nn.dists']]
   len <- length(idx[1,])
@@ -1157,9 +1205,13 @@ count_nn_missing_self_index <- function(nn_res) {
     }
   }
 
-  message('count_nn_missing_self_index:')
-  message('  ', num_missing, ' out of ', nrow(nn_res[['nn.idx']]), ' rows are missing the row index')
-  message('  \'recall\': ', formatC((as.double(nrow(nn_res[['nn.idx']]) - num_missing) / as.double(nrow(nn_res[['nn.idx']]))) * 100.0), "%")
+  if(verbose) {
+    message('count_nn_missing_self_index:')
+    message('  ', num_missing, ' out of ', nrow(nn_res[['nn.idx']]), ' rows are missing the row index')
+    message('  \'recall\': ', formatC((as.double(nrow(nn_res[['nn.idx']]) - num_missing) / as.double(nrow(nn_res[['nn.idx']]))) * 100.0), "%")
+  }
+
+  return(num_missing)
 }
 
 
@@ -1183,7 +1235,7 @@ count_nn_missing_self_index <- function(nn_res) {
 swap_nn_row_index_point <- function(nn_res, verbose=FALSE) {
 
   if(verbose) {
-    count_nn_missing_self_index(nn_res)
+    count_nn_missing_self_index(nn_res, verbose)
   }
 
   # Skip if there is no need to swap indices.
@@ -1195,6 +1247,7 @@ swap_nn_row_index_point <- function(nn_res, verbose=FALSE) {
 
   diagnostics <- FALSE
 
+  num_no_recall <- 0
   for (irow in 1:nrow(idx)) {
     vidx <- idx[irow,]
     vdst <- dst[irow,]
@@ -1221,10 +1274,9 @@ swap_nn_row_index_point <- function(nn_res, verbose=FALSE) {
           if(diagnostics) {
             message('swap_nn_row_index_point: dst row pre fix: ', paste(vdst, collapse=' '))
           }
-          dzero <- TRUE
           for(i in seq(1, length(vidx), 1)) {
             if(vdst[[i]] > .Machine$double.xmin) {
-              dzero <- FALSE
+              num_no_recall <- num_no_recall + 1
             }
           }
           vidx <- c(irow, vidx[1:(length(vidx)-1)])
@@ -1233,10 +1285,6 @@ swap_nn_row_index_point <- function(nn_res, verbose=FALSE) {
           if(diagnostics) {
             message('swap_nn_row_index_point: dst row post fix: ', paste(vdst, collapse=' '))
           }
-          if(!dzero)
-            message(paste('Warning: at least one row of the nearest neighbor search result is missing\n',
-                          'the row number (self). You may need to make the index build and/or search\n',
-                          'more sensitive.'))
         }
       }
       idx[irow,] <- vidx
@@ -1246,6 +1294,16 @@ swap_nn_row_index_point <- function(nn_res, verbose=FALSE) {
     }
   }
 
+  if(num_no_recall > 0) {
+    frac_recall <- (nrow(idx)-num_no_recall) / nrow(idx)
+    format_recall <- sprintf('%3.1f', frac_recall * 100.0)
+    message(paste0('Warning: the search result is expected to include the query row value (self)\n',
+                  'because the NN index includes the query objects; however, this search result\n',
+                  'is missing ', num_no_recall, ' self values (recall: ', format_recall, '%). Monocle3 has added the self\n',
+                  'values to the first column of the search result in order to allow further\n',
+                  'analysis -- but it is missing important nearest neighbors so you need to\n',
+                  'increase the sensitivity for making and/or searching the index.'))
+  }
   nn_res_out <- list(nn.idx=idx, nn.dists=dst)
 
   return(nn_res_out)

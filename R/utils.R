@@ -857,3 +857,17 @@ stop_no_noise <- function() {
   stop()
 }
 
+
+# number of tasks per block for multicore processing
+# task vector limits
+#   vbeg <- c(0,cumsum(tasks_per_block(11,3)))[1:3]+1
+#   vend <- cumsum(tasks_per_block(11,3))
+tasks_per_block <- function(ntask=NULL, nblock=NULL) {
+  tasks_block <- rep(trunc(ntask/nblock), nblock)
+  remain <- ntask %% nblock
+  if(remain)
+    for(i in seq(remain)) 
+      tasks_block[i] <- tasks_block[i] + 1
+  return(tasks_block)
+}
+
