@@ -232,16 +232,32 @@ set_model_identity_path <- function(cds, reduction_method=c('PCA', 'LSI', 'Align
 }
 
 
+identity_as_string <- function( object_id ) {
+  if(is.character(object_id)) {
+    object_id_string <- object_id
+  }
+  else
+  if(!is.null(object_id[['checksum']])) {
+    object_id_string <- sprintf('%s  dim: %s', object_id[['checksum']], paste(object_id[['dim']], collapse=':'))
+  }
+  else {
+    object_id_string <- object_id
+  }
+
+  return( object_id_string)
+}
+
+
 #' @title Report matrix and model identity information.
 #'
 #' @description Write the cell_data_set matrix and model 
 #'   identity information to stdout.
 #'
-#' @details A matrix identity is a time stamp that is stored 
+#' @details A matrix identity is a checksum that is stored 
 #'   in the cell_data_set when a reduced dimension matrix is 
 #'   created and when certain functions read count matrices
 #'   into the cell_data_set, such as load_mm_data(). At the 
-#'   same time, the same time stamp is stored as the model 
+#'   same time, the same checksum is stored as the model 
 #'   identity in order to link the model to its matrix.
 #'   
 #'   Additionally, Monocle3 stores the identity of the matrix
@@ -271,19 +287,14 @@ set_model_identity_path <- function(cds, reduction_method=c('PCA', 'LSI', 'Align
 #'   Certain file and directory paths may be stored in the
 #'   cell_data_set.
 #'
-#'   A time stamp is an MD5 checksum string made from the
-#'   time and a counter, which make it unique.
-#'   
+#'   Checksums are calculated using the digest function in
+#'   the digest package. The matrix dimensions are stored
+#'   with the checksum.
+#'
 #'   The matrix identity string is stored in the internal
 #'   metadata slot of the cell_data_set and the model
 #'   identity string is stored in the model object in the
 #'   cds@reduce_dim_aux slot of the cell_data_set.
-#'
-#'   Note that the same matrix created at different times 
-#'   will have different matrix identity strings. We chose 
-#'   to use time stamps because the alternative of making 
-#'   a checksum from a very large matrix can take a long 
-#'   time.
 #'
 #' @param cds the cell_data_set to use.
 #'
@@ -297,7 +308,7 @@ identity_table <- function(cds) {
   reduction_methods <- c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP')
   counts_identity <- get_counts_identity(cds)
   write(sprintf('Count matrix identity'), stdout())
-  write(sprintf('  matrix_id: %s', counts_identity[['matrix_id']]), stdout())
+  write(sprintf('  matrix_id: %s', identity_as_string(counts_identity[['matrix_id']])), stdout())
   write(sprintf('  matrix_type: %s', counts_identity[['matrix_type']]), stdout())
   write('', stdout())
 
@@ -307,11 +318,11 @@ identity_table <- function(cds) {
     if(!is.null(reducedDims(cds)[[reduction_method]]) && matrix_identity[['identity_exists']]) {
       write(sprintf('  %s', reduction_method), stdout())
       write(sprintf('    %s\t%s', 'matrix_type', matrix_identity[['matrix_type']]), stdout())
-      write(sprintf('    %s\t%s', 'matrix_id', matrix_identity[['matrix_id']]), stdout())
+      write(sprintf('    %s\t%s', 'matrix_id', identity_as_string(matrix_identity[['matrix_id']])), stdout())
       write(sprintf('    %s\t%s', 'prev_matrix_type', matrix_identity[['prev_matrix_type']]), stdout())
-      write(sprintf('    %s\t%s', 'prev_matrix_id', matrix_identity[['prev_matrix_id']]), stdout())
+      write(sprintf('    %s\t%s', 'prev_matrix_id', identity_as_string(matrix_identity[['prev_matrix_id']])), stdout())
       write(sprintf('    %s\t%s', 'model_type', matrix_identity[['model_type']]), stdout())
-      write(sprintf('    %s\t%s', 'model_id', matrix_identity[['model_id']]), stdout())
+      write(sprintf('    %s\t%s', 'model_id', identity_as_string(matrix_identity[['model_id']])), stdout())
     } else {
        write(sprintf('  %s\n    no identity information', reduction_method), stdout())
     }
@@ -324,9 +335,9 @@ identity_table <- function(cds) {
     if(model_identity[['identity_exists']]) {
       write(sprintf('  %s', reduction_method), stdout())
       write(sprintf('    %s\t%s', 'model_type', model_identity[['model_type']]), stdout())
-      write(sprintf('    %s\t%s', 'model_id', model_identity[['model_id']]), stdout())
+      write(sprintf('    %s\t%s', 'model_id', identity_as_string(model_identity[['model_id']])), stdout())
       write(sprintf('    %s\t%s', 'prev_model_type', model_identity[['prev_model_type']]), stdout())
-      write(sprintf('    %s\t%s', 'prev_model_id', model_identity[['prev_model_id']]), stdout())
+      write(sprintf('    %s\t%s', 'prev_model_id', identity_as_string(model_identity[['prev_model_id']])), stdout())
       write(sprintf('    %s\t%s', 'model_path', model_identity[['model_path']]), stdout())
       write(sprintf('    %s\t%s', 'model_version', model_identity[['model_version']]), stdout())
     } else {
