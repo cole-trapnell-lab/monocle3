@@ -305,7 +305,7 @@ select_annoy_search_k <- function(mode, nn_control, nn_control_default, cds, red
 #'   \item{ef}{The HNSW index search parameter that affects the search
 #'      accuracy and search time. Larger values give more accurate results
 #'      and longer search times. ef must be greater than or equal to k.}
-#'   \item{grain_size}{The annoy and HNSW parameter that gives the
+#'   \item{grain_size}{The HNSW parameter that gives the
 #'      minimum amount of work to do per thread.}
 #'   \item{cores}{The annoy and HNSW parameter that gives the number of
 #'      threads to use for the annoy index search and for the HNSW index
@@ -495,6 +495,19 @@ report_nn_control <- function(label=NULL, nn_control) {
 }
 
 
+new_annoy_index <- function(metric, ndim) {
+  nn_class <- switch( metric,
+                      cosine = RcppAnnoy::AnnoyAngular,
+                      euclidean = RcppAnnoy::AnnoyEuclidean,
+                      hamming = RcppAnnoy::AnnoyHamming,
+                      manhattan = RcppAnnoy::AnnoyManhattan,
+                      stop(paste0('unsupported annoy metric ', metric))
+                    )
+  nn_index <- new(nn_class, ndim)
+  return(nn_index)
+}
+
+
 #' @title Make a nearest neighbor index.
 #'
 #' @description Make a nearest neighbor index from the
@@ -513,6 +526,9 @@ report_nn_control <- function(label=NULL, nn_control) {
 #' @return a nearest neighbor index.
 #' @export
 make_nn_index <- function(subject_matrix, nn_control=list(), verbose=FALSE) {
+  assertthat::assert_that(is(subject_matrix, 'matrix') ||
+                          is_sparse_matrix(subject_matrix),
+    msg=paste0('make_nn_matrix: the subject_matrix object must be of type matrix'))
 
   # We check the index build parameters.
   nn_control <- set_nn_control(mode=1, nn_control=nn_control, nn_control_default=list(), cds=NULL, reduction_method=NULL, k=NULL, verbose=verbose)
@@ -524,33 +540,28 @@ make_nn_index <- function(subject_matrix, nn_control=list(), verbose=FALSE) {
   }
 
   nn_method <- nn_control[['method']]
+  metric = nn_control[['metric']]
 
   if(nn_method == 'nn2') {
     stop('make_nn_index is not valid for method nn2')
   } else
   if(nn_method == 'annoy') {
-    # set verbose to FALSE because when TRUE and nr is small, uwot::annoy_build can fail in
-    #       if (verbose) {
-    #         nstars <- 50
-    #         progress_for(
-    #           nr, nstars,
-    #           function(chunk_start, chunk_end) {
-    #             for (i in chunk_start:chunk_end) {
-    #               ann$addItem(i - 1, X[i, , drop = FALSE])
-    #             }
-    #           }
-    #         )
-    #       }
-    #       else {
-    nn_index <- uwot:::annoy_build(X=subject_matrix,
-                                   metric=nn_control[['metric']],
-                                   n_trees=nn_control[['n_trees']],
-                                   verbose=FALSE)
+    monocle3_annoy_index_version <- get_global_variable('monocle3_annoy_index_version')
+    num_row <- nrow(subject_matrix)
+    num_col <- ncol(subject_matrix)
+    annoy_index <- new_annoy_index(metric, num_col)
+    n_trees <- nn_control[['n_trees']]
+    if(num_row > 0 ) {
+      for(i in 1:num_row)
+        annoy_index$addItem(i-1, subject_matrix[i,])
+      annoy_index$build(n_trees)
+    }
+    nn_index <- list(annoy_index=annoy_index, version=monocle3_annoy_index_version, metric=metric, ndim=num_col)
   }
   else
   if(nn_method == 'hnsw') {
     nn_index <- RcppHNSW::hnsw_build(X=subject_matrix,
-                                      distance=nn_control[['metric']],
+                                      distance=metric,
                                       M=nn_control[['M']],
                                       ef=nn_control[['ef_construction']],
                                       verbose=verbose,
@@ -624,7 +635,7 @@ set_cds_nn_index <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Alig
     cds@reduce_dim_aux[[reduction_method]][['nn_index']][[nn_method]][['n_trees']] <- nn_control[['n_trees']]
     cds@reduce_dim_aux[[reduction_method]][['nn_index']][[nn_method]][['nrow']] <- nrow(reduced_matrix)
     cds@reduce_dim_aux[[reduction_method]][['nn_index']][[nn_method]][['ncol']] <- ncol(reduced_matrix)
-    cds@reduce_dim_aux[[reduction_method]][['nn_index']][[nn_method]][['index_version']] <- packageVersion('uwot')
+    cds@reduce_dim_aux[[reduction_method]][['nn_index']][[nn_method]][['index_version']] <- packageVersion('RcppAnnoy')
     cds@reduce_dim_aux[[reduction_method]][['nn_index']][[nn_method]][['matrix_id']] <- get_reduce_dim_matrix_identity(cds, reduction_method)[['matrix_id']]
   }
   else
@@ -740,6 +751,35 @@ get_cds_nn_index <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Alig
   return(nn_index)
 }
 
+search_nn_annoy_index <- function(query_matrix, nn_index, metric, k, search_k, beg_row_index, end_row_index) {
+  assertthat::assert_that(beg_row_index <= end_row_index,
+                          msg=paste0('search_nn_annoy_index: beg_row_index must be <= end_row_index'))
+
+  if(!is.null(nn_index[['version']]))
+    annoy_index <- nn_index[['annoy_index']]
+  else
+  if(!is.null(nn_index[['type']]))
+    annoy_index <- nn_index[['ann']]
+  else
+    annoy_index <- nn_index
+  nrow <- end_row_index - beg_row_index + 1
+  idx <- matrix(nrow=nrow, ncol=k)
+  dists <- matrix(nrow=nrow, ncol=k)
+  num_bad <- 0
+  offset <- beg_row_index - 1
+  for(i in seq(1, nrow)) {
+    nn_list <- annoy_index$getNNsByVectorList(query_matrix[i+offset,], k, search_k, TRUE)
+    if(length(nn_list$item) != k)
+      num_bad <- num_bad + 1
+    idx[i,] <- nn_list$item
+    dists[i,] <- nn_list$distance
+  }
+  if(metric == 'cosine') {
+    dists <- 0.5 * dists * dists
+  }
+  return(list(idx=idx+1, dists=dists, num_bad=num_bad))
+}
+
 
 #' @title Search a nearest neighbor index.
 #'
@@ -769,6 +809,9 @@ get_cds_nn_index <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Alig
 #'
 #' @export
 search_nn_index <- function(query_matrix, nn_index, k=25, nn_control=list(), verbose=FALSE) {
+  assertthat::assert_that(is(query_matrix, 'matrix') ||
+                          is_sparse_matrix(query_matrix),
+    msg=paste0('make_nn_matrix: the query_matrix object must be of type matrix'))
 
   nn_control <- set_nn_control(mode=2, nn_control=nn_control, nn_control_default=list(), cds=NULL, reduction_method=NULL, k=k, verbose=verbose)
 
@@ -787,23 +830,54 @@ search_nn_index <- function(query_matrix, nn_index, k=25, nn_control=list(), ver
 
   k <- min(k, nrow(query_matrix))
 
+  cores <- nn_control[['cores']]
+
   if(nn_method == 'nn2') {
     stop('search_nn_index is not valid for method nn2')
   } else
   if(nn_method == 'annoy') {
     # notes:
-    #   o  there may be dependency on uwot version
-    #   o  ensure that nn_res[[1]] are indices and nn_res[[2]] are distances
     #   o  set list names to nn.idx and nn.dists for compatibility with
     #      RANN::nn2()
     #
-    tmp <- uwot:::annoy_search(X=query_matrix,
-                               k=k,
-                               ann=nn_index,
-                               search_k=nn_control[['search_k']],
-                               n_threads=nn_control[['cores']],
-                               nn_control[['grain_size']], verbose=verbose)
-    nn_res <- list(nn.idx = tmp[['idx']], nn.dists = tmp[['dist']])
+    num_row <- nrow(query_matrix)
+    idx <- matrix(nrow=num_row, ncol=k)
+    dists <- matrix(nrow=num_row, ncol=k)
+    metric <- nn_control[['metric']]
+    search_k <- nn_control[['search_k']]
+
+    if(cores <= 1) {
+      nn_res <- search_nn_annoy_index(query_matrix=query_matrix, nn_index=nn_index, metric=metric, k=k, search_k=search_k, beg_row_index=1, end_row_index=num_row)
+      if(nn_res[['num_bad']])
+        stop('annoy was unable to find ', k, ' nearest neighbors for ', nn_res[["num_bad"]], ' rows. You may need to increase the n_trees and/or search_k parameter values.')
+      nn_res <- list(nn.idx=nn_res[['idx']], nn.dists=nn_res[['dists']])
+    }
+    else {
+      if(cores > num_row) cores <- num_row
+      tasks <- tasks_per_block(num_row, cores)
+      beg_block <- c(0,cumsum(tasks))[1:cores]+1
+      end_block <- cumsum(tasks)
+      nn_blocks <- list()
+      inplan <- future::plan()
+      plan(multicore, workers=cores)
+      on.exit(future::plan(inplan), add=TRUE)
+      for(iblock in seq(cores)) {
+        nn_blocks[[iblock]] <- future::future( { search_nn_annoy_index(query_matrix=query_matrix, nn_index=nn_index, metric=metric, k=k, search_k=search_k, beg_row_index=beg_block[[iblock]], end_row_index=end_block[[iblock]]) })
+      }
+      tot_bad <- 0
+      for(iblock in seq(cores)) {
+        nn_res <- future::value(nn_blocks[[iblock]])
+        if(nrow(nn_res[['idx']]) != end_block[[iblock]] - beg_block[[iblock]] + 1) {
+          stop('bad row count in nn_res')
+        }
+        idx[beg_block[[iblock]]:end_block[[iblock]],] <- nn_res[['idx']]
+        dists[beg_block[[iblock]]:end_block[[iblock]],] <- nn_res[['dists']]
+        tot_bad <- tot_bad + nn_res[['num_bad']]
+      }
+      if(tot_bad)
+        stop('annoy was unable to find ', k, ' nearest neighbors for ', tot_bad, ' rows. You may need to increase the n_trees and/or search_k parameter values.')
+      nn_res <- list(nn.idx=idx, nn.dists=dists)
+    }
   }
   else
   if(nn_method == 'hnsw') {
@@ -815,7 +889,7 @@ search_nn_index <- function(query_matrix, nn_index, k=25, nn_control=list(), ver
                                   k=k,
                                   ef=nn_control[['ef']],
                                   verbose=verbose,
-                                  n_threads=nn_control[['cores']],
+                                  n_threads=cores,
                                   grain_size=nn_control[['grain_size']])
     nn_res <- list(nn.idx=tmp[['idx']], nn.dists=tmp[['dist']])
   }
@@ -826,8 +900,7 @@ search_nn_index <- function(query_matrix, nn_index, k=25, nn_control=list(), ver
     tictoc::toc()
   }
 
-  return(nn_res) 
-
+  return(nn_res)
 }
 
 
@@ -1056,11 +1129,12 @@ get_cds_nn_control <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Al
 #'
 #' @export
 search_nn_matrix <- function(subject_matrix, query_matrix, k=25, nn_control=list(), verbose=FALSE) {
-
-  assertthat::assert_that(is.matrix(subject_matrix),
+  assertthat::assert_that(is(subject_matrix, 'matrix') ||
+                          is_sparse_matrix(subject_matrix),
     msg=paste0('search_nn_matrix: the subject_matrix object must be of type matrix'))
 
-  assertthat::assert_that(is.matrix(query_matrix),
+  assertthat::assert_that(is(query_matrix, 'matrix') ||
+                          is_sparse_matrix(query_matrix),
     msg=paste0('search_nn_matrix: the query_matrix object must be of type matrix'))
 
   nn_control <- set_nn_control(mode=3, nn_control=nn_control, nn_control_default=list(), cds=NULL, reduction_method=NULL, k=k, verbose=verbose)
@@ -1075,70 +1149,19 @@ search_nn_matrix <- function(subject_matrix, query_matrix, k=25, nn_control=list
     tictoc::tic('search_nn_matrix: search_time')
   }
 
+
   if(method == 'nn2') {
     nn_res <- RANN::nn2(subject_matrix, query_matrix, min(k, nrow(subject_matrix)), searchtype = "standard")
-  } else
-  if(method == 'annoy') {
-    # set verbose to FALSE because when TRUE and nr is small, uwot::annoy_build can fail in
-    #       if (verbose) {
-    #         nstars <- 50
-    #         progress_for(
-    #           nr, nstars,
-    #           function(chunk_start, chunk_end) {
-    #             for (i in chunk_start:chunk_end) {
-    #               ann$addItem(i - 1, X[i, , drop = FALSE])
-    #             }
-    #           }
-    #         )
-    #       }
-    #       else {
-    nn_index <- uwot:::annoy_build(X=subject_matrix,
-                                   metric=nn_control[['metric']],
-                                   n_trees=nn_control[['n_trees']],
-                                   verbose=FALSE)
-
-    tmp <- uwot:::annoy_search(X=query_matrix,
-                               k=k,
-                               ann=nn_index,
-                               search_k=nn_control[['search_k']],
-                               prep_data=TRUE,
-                               tmpdir=tempdir(),
-                               n_threads=nn_control[['cores']],
-                               grain_size=nn_control[['grain_size']],
-                               verbose=verbose)
-    nn_res <- list(nn.idx = tmp[['idx']], nn.dists = tmp[['dist']])
-    swap_nn_row_index_point(nn_res, verbose=verbose)
-  } else
-  if(method == 'hnsw') {
-    progress <- 'bar'
-    nn_index <- RcppHNSW::hnsw_build(X=subject_matrix,
-                                      distance=nn_control[['metric']],
-                                      M=nn_control[['M']],
-                                      ef=nn_control[['ef_construction']],
-                                      verbose=verbose,
-                                      progress=progress,
-                                      n_threads=nn_control[['cores']],
-                                      grain_size=nn_control[['grain_size']])
-  
-    tmp <- RcppHNSW::hnsw_search(X=query_matrix,
-                                  ann=nn_index,
-                                  k=k,
-                                  ef=nn_control[['ef']],
-                                  verbose=verbose,
-                                  progress=progress,
-                                  n_threads=nn_control[['cores']],
-                                  grain_size=nn_control[['grain_size']])
-    nn_res <- list(nn.idx = tmp[['idx']], nn.dists = tmp[['dist']])
-    swap_nn_row_index_point(nn_res, verbose=verbose)
   }
-  else
-    stop('search_nn_matrix: unsupported nearest neighbor method \'', nn_method, '\'')
+  else {
+    nn_index <- make_nn_index(subject_matrix, nn_control=nn_control, verbose=verbose)
+    nn_res <- search_nn_index(query_matrix=query_matrix, nn_index=nn_index, k=k, nn_control=nn_control, verbose=verbose)
+  }
 
   if(verbose)
     tictoc::toc()
 
   return(nn_res)
-
 }
 
 
@@ -1160,10 +1183,10 @@ check_nn_col1 <- function(mat) {
 # exists in the row. Count the cases for which
 # this is not true and the distances are not
 # all zero.
-count_nn_missing_self_index <- function(nn_res) {
+count_nn_missing_self_index <- function(nn_res, verbose=FALSE) {
   idx <- nn_res[['nn.idx']]
   dst <- nn_res[['nn.dists']]
-  len <- length(idx[[1]])
+  len <- length(idx[1,])
   num_missing <- 0
 
   for (irow in 1:nrow(idx)) {
@@ -1188,9 +1211,13 @@ count_nn_missing_self_index <- function(nn_res) {
     }
   }
 
-  message('count_nn_missing_self_index:')
-  message('  ', num_missing, ' out of ', nrow(nn_res[['nn.idx']]), ' rows are missing the row index')
-  message('  \'recall\': ', formatC((as.double(nrow(nn_res[['nn.idx']]) - num_missing) / as.double(nrow(nn_res[['nn.idx']]))) * 100.0), "%")
+  if(verbose) {
+    message('count_nn_missing_self_index:')
+    message('  ', num_missing, ' out of ', nrow(nn_res[['nn.idx']]), ' rows are missing the row index')
+    message('  \'recall\': ', formatC((as.double(nrow(nn_res[['nn.idx']]) - num_missing) / as.double(nrow(nn_res[['nn.idx']]))) * 100.0), "%")
+  }
+
+  return(num_missing)
 }
 
 
@@ -1206,13 +1233,15 @@ count_nn_missing_self_index <- function(nn_res) {
 # there is more than one point with zero distance,
 # or, the function may miss the row index point.
 #
-# Of course, do not use this if the search point set
-# differs from the index set.
+# Notes:
+#   o  we assume that the self index distance is zero
+#   o  do not use this if the search point set differs
+#      from the index build set.
 #
 swap_nn_row_index_point <- function(nn_res, verbose=FALSE) {
 
   if(verbose) {
-    count_nn_missing_self_index(nn_res)
+    count_nn_missing_self_index(nn_res, verbose)
   }
 
   # Skip if there is no need to swap indices.
@@ -1224,6 +1253,7 @@ swap_nn_row_index_point <- function(nn_res, verbose=FALSE) {
 
   diagnostics <- FALSE
 
+  num_no_recall <- 0
   for (irow in 1:nrow(idx)) {
     vidx <- idx[irow,]
     vdst <- dst[irow,]
@@ -1250,6 +1280,11 @@ swap_nn_row_index_point <- function(nn_res, verbose=FALSE) {
           if(diagnostics) {
             message('swap_nn_row_index_point: dst row pre fix: ', paste(vdst, collapse=' '))
           }
+          for(i in seq(1, length(vidx), 1)) {
+            if(vdst[[i]] > .Machine$double.xmin) {
+              num_no_recall <- num_no_recall + 1
+            }
+          }
           vidx <- c(irow, vidx[1:(length(vidx)-1)])
           vdst <- c(0, vdst[1:(length(vdst)-1)])
           dst[irow,] <- vdst
@@ -1265,6 +1300,16 @@ swap_nn_row_index_point <- function(nn_res, verbose=FALSE) {
     }
   }
 
+  if(num_no_recall > 0) {
+    frac_recall <- (nrow(idx)-num_no_recall) / nrow(idx)
+    format_recall <- sprintf('%3.1f', frac_recall * 100.0)
+    message(paste0('Warning: the search result is expected to include the query row value (self)\n',
+                  'because the NN index includes the query objects; however, this search result\n',
+                  'is missing ', num_no_recall, ' self values (recall: ', format_recall, '%). Monocle3 has added the self\n',
+                  'values to the first column of the search result in order to allow further\n',
+                  'analysis -- but it is missing important nearest neighbors so you need to\n',
+                  'increase the sensitivity for making and/or searching the index.'))
+  }
   nn_res_out <- list(nn.idx=idx, nn.dists=dst)
 
   return(nn_res_out)

@@ -767,7 +767,7 @@ get_citations <- function(cds) {
 
 
 # Make a unique identifier string.
-get_unique_id <- function() {
+get_unique_id <- function(object=NULL) {
   id_count <- get_global_variable('id_count')
   rtime <- as.numeric(Sys.time())*100000 + id_count
   id_hash <- openssl::md5(as.character(rtime))
@@ -855,5 +855,19 @@ stop_no_noise <- function() {
   opt <- options(show.error.messages = FALSE)
   on.exit(options(opt))
   stop()
+}
+
+
+# number of tasks per block for multicore processing
+# task vector limits
+#   vbeg <- c(0,cumsum(tasks_per_block(11,3)))[1:3]+1
+#   vend <- cumsum(tasks_per_block(11,3))
+tasks_per_block <- function(ntask=NULL, nblock=NULL) {
+  tasks_block <- rep(trunc(ntask/nblock), nblock)
+  remain <- ntask %% nblock
+  if(remain)
+    for(i in seq(remain)) 
+      tasks_block[i] <- tasks_block[i] + 1
+  return(tasks_block)
 }
 

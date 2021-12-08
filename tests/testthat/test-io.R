@@ -252,7 +252,13 @@ test_that("save_transform_models and load_transform_models", {
   cds <- reduce_dimension_transform(cds, preprocess_method='Aligned', reduction_method='UMAP')
 
   nn_index <- get_cds_nn_index(cds, reduction_method='PCA', nn_control=list(method='annoy'))
-  expect_equal(as.character(class(nn_index[['ann']])), 'Rcpp_AnnoyEuclidean')
+  if(!is.null(nn_index[['version']]))
+    expect_equal(as.character(class(nn_index[['annoy_index']])), 'Rcpp_AnnoyEuclidean')
+  else
+  if(!is.null(nn_index[['type']]))
+    expect_equal(as.character(class(nn_index[['ann']])), 'Rcpp_AnnoyEuclidean')
+  else
+    expect_equal(as.character(class(nn_index)), 'Rcpp_AnnoyEuclidean')
 
   # check PCA reduced dims matrix and nearest neighbors
   expect_equivalent(ncol(reducedDims(cds)[['PCA']]), 50)
@@ -308,7 +314,13 @@ test_that("save_monocle_objects and load_monocle_objects", {
   cds <- load_monocle_objects(directory_path=monocle_objects)
 
   nn_index <- get_cds_nn_index(cds, reduction_method='PCA', nn_control=list(method='annoy'))
-  expect_equal(as.character(class(nn_index[['ann']])), 'Rcpp_AnnoyEuclidean')
+  if(!is.null(nn_index[['version']]))
+    expect_equal(as.character(class(nn_index[['annoy_index']])), 'Rcpp_AnnoyEuclidean')
+  else
+  if(!is.null(nn_index[['type']]))
+    expect_equal(as.character(class(nn_index[['ann']])), 'Rcpp_AnnoyEuclidean')
+  else
+    expect_equal(as.character(class(nn_index)), 'Rcpp_AnnoyEuclidean')
 
   # check count matrix
   expect_equivalent(ncol(counts(cds)), 500)

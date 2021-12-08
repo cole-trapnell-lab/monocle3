@@ -214,15 +214,15 @@ select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
   if (use_3d){
     edge_df <- dp_mst %>%
       igraph::as_data_frame() %>%
-      dplyr::select_(source = "from", target = "to") %>%
+      dplyr::select(source = "from", target = "to") %>%
       dplyr::left_join(ica_space_df %>%
-                         dplyr::select_(source="sample_name",
+                         dplyr::select(source="sample_name",
                                     source_prin_graph_dim_1="prin_graph_dim_1",
                                     source_prin_graph_dim_2="prin_graph_dim_2",
                                     source_prin_graph_dim_3="prin_graph_dim_3"),
                        by = "source") %>%
       dplyr::left_join(ica_space_df %>%
-                         dplyr::select_(target="sample_name",
+                         dplyr::select(target="sample_name",
                                     target_prin_graph_dim_1="prin_graph_dim_1",
                                     target_prin_graph_dim_2="prin_graph_dim_2",
                                     target_prin_graph_dim_3="prin_graph_dim_3"),
@@ -230,14 +230,14 @@ select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
   }else{
     edge_df <- dp_mst %>%
       igraph::as_data_frame() %>%
-      dplyr::select_(source = "from", target = "to") %>%
+      dplyr::select(source = "from", target = "to") %>%
       dplyr::left_join(ica_space_df %>%
-                         dplyr::select_(source="sample_name",
+                         dplyr::select(source="sample_name",
                                     source_prin_graph_dim_1="prin_graph_dim_1",
                                     source_prin_graph_dim_2="prin_graph_dim_2"),
                        by = "source") %>%
       dplyr::left_join(ica_space_df %>%
-                         dplyr::select_(target="sample_name",
+                         dplyr::select(target="sample_name",
                                     target_prin_graph_dim_1="prin_graph_dim_1",
                                     target_prin_graph_dim_2="prin_graph_dim_2"),
                        by = "target")

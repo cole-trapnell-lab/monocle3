@@ -125,7 +125,7 @@ align_cds <- function(cds,
   cds@reduce_dim_aux[['Aligned']][['model']][['alignment_k']] <- alignment_k
   cds@reduce_dim_aux[['Aligned']][['model']][['residual_model_formula_str']] <- residual_model_formula_str
 
-  matrix_id <- get_unique_id()
+  matrix_id <- get_unique_id(reducedDims(cds)[["Aligned"]])
   reduce_dim_matrix_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method) 
 
   cds <- set_reduce_dim_matrix_identity(cds, 'Aligned',

@@ -106,7 +106,7 @@ accurate search results and longer build times. Default is 200.}
 \item{ef}{The HNSW index search parameter that affects the search
 accuracy and search time. Larger values give more accurate results
 and longer search times. ef must be greater than or equal to k.}
-\item{grain_size}{The annoy and HNSW parameter that gives the
+\item{grain_size}{The HNSW parameter that gives the
 minimum amount of work to do per thread.}
 \item{cores}{The annoy and HNSW parameter that gives the number of
 threads to use for the annoy index search and for the HNSW index

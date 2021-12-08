@@ -68,6 +68,7 @@ get_global_variable <- function(variable_name=NULL) {
   set_global_variable('reduce_dim_umap_model_version', 1)
   set_global_variable('monocle_objects_version', 1)
   set_global_variable('transform_models_version', 1)
+  set_global_variable('monocle3_annoy_index_version', 1)
 
   # Default nn_control list for functions that do not need
   # an index, which is all but the label transfer functions.

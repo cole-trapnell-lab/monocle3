@@ -278,7 +278,7 @@ plot_cells_3d <- function(cds,
 
     ica_space_df <- t(cds@principal_graph_aux[[reduction_method]]$dp_mst) %>%
       as.data.frame() %>%
-      dplyr::select_(prin_graph_dim_1 = x, prin_graph_dim_2 = y,
+      dplyr::select(prin_graph_dim_1 = x, prin_graph_dim_2 = y,
                      prin_graph_dim_3 = z) %>%
       dplyr::mutate(sample_name = rownames(.),
                     sample_state = rownames(.))
@@ -287,15 +287,15 @@ plot_cells_3d <- function(cds,
 
     edge_df <- dp_mst %>%
       igraph::as_data_frame() %>%
-      dplyr::select_(source = "from", target = "to") %>%
+      dplyr::select(source = "from", target = "to") %>%
       dplyr::left_join(ica_space_df %>%
-                         dplyr::select_(source="sample_name",
+                         dplyr::select(source="sample_name",
                                         source_prin_graph_dim_1="prin_graph_dim_1",
                                         source_prin_graph_dim_2="prin_graph_dim_2",
                                         source_prin_graph_dim_3="prin_graph_dim_3"),
                        by = "source") %>%
       dplyr::left_join(ica_space_df %>%
-                         dplyr::select_(target="sample_name",
+                         dplyr::select(target="sample_name",
                                         target_prin_graph_dim_1="prin_graph_dim_1",
                                         target_prin_graph_dim_2="prin_graph_dim_2",
                                         target_prin_graph_dim_3="prin_graph_dim_3"),
@@ -529,7 +529,7 @@ plot_cells <- function(cds,
 
     ica_space_df <- t(cds@principal_graph_aux[[reduction_method]]$dp_mst) %>%
       as.data.frame() %>%
-      dplyr::select_(prin_graph_dim_1 = x, prin_graph_dim_2 = y) %>%
+      dplyr::select(prin_graph_dim_1 = x, prin_graph_dim_2 = y) %>%
       dplyr::mutate(sample_name = rownames(.),
                     sample_state = rownames(.))
 
@@ -537,15 +537,15 @@ plot_cells <- function(cds,
 
     edge_df <- dp_mst %>%
       igraph::as_data_frame() %>%
-      dplyr::select_(source = "from", target = "to") %>%
+      dplyr::select(source = "from", target = "to") %>%
       dplyr::left_join(ica_space_df %>%
-                         dplyr::select_(
+                         dplyr::select(
                            source="sample_name",
                            source_prin_graph_dim_1="prin_graph_dim_1",
                            source_prin_graph_dim_2="prin_graph_dim_2"),
                        by = "source") %>%
       dplyr::left_join(ica_space_df %>%
-                         dplyr::select_(
+                         dplyr::select(
                            target="sample_name",
                            target_prin_graph_dim_1="prin_graph_dim_1",
                            target_prin_graph_dim_2="prin_graph_dim_2"),
@@ -706,7 +706,7 @@ plot_cells <- function(cds,
                                      name = expression_legend_label,
                                      na.value = NA, end = 0.8,
                                      alpha = alpha) +
-        guides(alpha = FALSE) + facet_wrap(~feature_label)
+        guides(alpha = 'none') + facet_wrap(~feature_label)
     } else {
       g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2)) +
         plotting_func(aes(data_dim_1, data_dim_2), size=I(cell_size),
@@ -720,7 +720,7 @@ plot_cells <- function(cds,
                                      name = expression_legend_label,
                                      na.value = NA, end = 0.8,
                                      alpha = alpha) +
-        guides(alpha = FALSE) + facet_wrap(~feature_label)
+        guides(alpha = 'none') + facet_wrap(~feature_label)
     }
   } else {
     g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2))
@@ -1240,7 +1240,7 @@ plot_genes_violin <- function (cds_subset,
 
   cds_exprs[,group_cells_by] <- as.factor(cds_exprs[,group_cells_by])
   q <- q + geom_violin(aes_string(fill = group_cells_by), scale="width") +
-    guides(fill=FALSE)
+    guides(fill='none')
   q <- q + stat_summary(fun=mean, geom="point", size=1, color="black")
   q <- q + facet_wrap(~feature_label, nrow = nrow,
                       ncol = ncol, scales = "free_y")
