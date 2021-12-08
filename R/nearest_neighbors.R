@@ -305,7 +305,7 @@ select_annoy_search_k <- function(mode, nn_control, nn_control_default, cds, red
 #'   \item{ef}{The HNSW index search parameter that affects the search
 #'      accuracy and search time. Larger values give more accurate results
 #'      and longer search times. ef must be greater than or equal to k.}
-#'   \item{grain_size}{The annoy and HNSW parameter that gives the
+#'   \item{grain_size}{The HNSW parameter that gives the
 #'      minimum amount of work to do per thread.}
 #'   \item{cores}{The annoy and HNSW parameter that gives the number of
 #'      threads to use for the annoy index search and for the HNSW index
@@ -540,26 +540,28 @@ make_nn_index <- function(subject_matrix, nn_control=list(), verbose=FALSE) {
   }
 
   nn_method <- nn_control[['method']]
+  metric = nn_control[['metric']]
 
   if(nn_method == 'nn2') {
     stop('make_nn_index is not valid for method nn2')
   } else
   if(nn_method == 'annoy') {
+    monocle3_annoy_index_version <- get_global_variable('monocle3_annoy_index_version')
     num_row <- nrow(subject_matrix)
     num_col <- ncol(subject_matrix)
-    nn_index <- new_annoy_index(nn_control[['metric']], num_col)
+    annoy_index <- new_annoy_index(metric, num_col)
     n_trees <- nn_control[['n_trees']]
-    cores <- nn_control[['cores']]
     if(num_row > 0 ) {
       for(i in 1:num_row)
-        nn_index$addItem(i-1, subject_matrix[i,])
-      nn_index$build(n_trees)
+        annoy_index$addItem(i-1, subject_matrix[i,])
+      annoy_index$build(n_trees)
     }
+    nn_index <- list(annoy_index=annoy_index, version=monocle3_annoy_index_version, metric=metric, ndim=num_col)
   }
   else
   if(nn_method == 'hnsw') {
     nn_index <- RcppHNSW::hnsw_build(X=subject_matrix,
-                                      distance=nn_control[['metric']],
+                                      distance=metric,
                                       M=nn_control[['M']],
                                       ef=nn_control[['ef_construction']],
                                       verbose=verbose,
@@ -633,7 +635,7 @@ set_cds_nn_index <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Alig
     cds@reduce_dim_aux[[reduction_method]][['nn_index']][[nn_method]][['n_trees']] <- nn_control[['n_trees']]
     cds@reduce_dim_aux[[reduction_method]][['nn_index']][[nn_method]][['nrow']] <- nrow(reduced_matrix)
     cds@reduce_dim_aux[[reduction_method]][['nn_index']][[nn_method]][['ncol']] <- ncol(reduced_matrix)
-    cds@reduce_dim_aux[[reduction_method]][['nn_index']][[nn_method]][['index_version']] <- packageVersion('uwot')
+    cds@reduce_dim_aux[[reduction_method]][['nn_index']][[nn_method]][['index_version']] <- packageVersion('RcppAnnoy')
     cds@reduce_dim_aux[[reduction_method]][['nn_index']][[nn_method]][['matrix_id']] <- get_reduce_dim_matrix_identity(cds, reduction_method)[['matrix_id']]
   }
   else
@@ -749,19 +751,24 @@ get_cds_nn_index <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Alig
   return(nn_index)
 }
 
-
-#' @export
 search_nn_annoy_index <- function(query_matrix, nn_index, metric, k, search_k, beg_row_index, end_row_index) {
   assertthat::assert_that(beg_row_index <= end_row_index,
                           msg=paste0('search_nn_annoy_index: beg_row_index must be <= end_row_index'))
 
+  if(!is.null(nn_index[['version']]))
+    annoy_index <- nn_index[['annoy_index']]
+  else
+  if(!is.null(nn_index[['type']]))
+    annoy_index <- nn_index[['ann']]
+  else
+    annoy_index <- nn_index
   nrow <- end_row_index - beg_row_index + 1
   idx <- matrix(nrow=nrow, ncol=k)
   dists <- matrix(nrow=nrow, ncol=k)
   num_bad <- 0
   offset <- beg_row_index - 1
   for(i in seq(1, nrow)) {
-    nn_list <- nn_index$getNNsByVectorList(query_matrix[i+offset,], k, search_k, TRUE)
+    nn_list <- annoy_index$getNNsByVectorList(query_matrix[i+offset,], k, search_k, TRUE)
     if(length(nn_list$item) != k)
       num_bad <- num_bad + 1
     idx[i,] <- nn_list$item
@@ -851,13 +858,11 @@ search_nn_index <- function(query_matrix, nn_index, k=25, nn_control=list(), ver
       beg_block <- c(0,cumsum(tasks))[1:cores]+1
       end_block <- cumsum(tasks)
       nn_blocks <- list()
-      inplan <- plan()
-      plan(plan(), workers=cores)
-      on.exit(plan(inplan), add=TRUE)
+      inplan <- future::plan()
+      plan(multicore, workers=cores)
+      on.exit(future::plan(inplan), add=TRUE)
       for(iblock in seq(cores)) {
-        nn_blocks[[iblock]] <- future::future( {
-           monocle3::search_nn_annoy_index(query_matrix=query_matrix, nn_index=nn_index, metric=metric, k=k, search_k=search_k, beg_row_index=beg_block[[iblock]], end_row_index=end_block[[iblock]])
-         } )
+        nn_blocks[[iblock]] <- future::future( { search_nn_annoy_index(query_matrix=query_matrix, nn_index=nn_index, metric=metric, k=k, search_k=search_k, beg_row_index=beg_block[[iblock]], end_row_index=end_block[[iblock]]) })
       }
       tot_bad <- 0
       for(iblock in seq(cores)) {
@@ -1147,7 +1152,8 @@ search_nn_matrix <- function(subject_matrix, query_matrix, k=25, nn_control=list
 
   if(method == 'nn2') {
     nn_res <- RANN::nn2(subject_matrix, query_matrix, min(k, nrow(subject_matrix)), searchtype = "standard")
-  } else {
+  }
+  else {
     nn_index <- make_nn_index(subject_matrix, nn_control=nn_control, verbose=verbose)
     nn_res <- search_nn_index(query_matrix=query_matrix, nn_index=nn_index, k=k, nn_control=nn_control, verbose=verbose)
   }

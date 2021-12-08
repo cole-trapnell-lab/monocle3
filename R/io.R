@@ -339,14 +339,25 @@ load_mtx_data <- function( mat_path,
 #        UMAP model or by uwot::annoy_build().
 # untested code when is.null(nn_index[['type']])
 save_annoy_index <- function(nn_index, file_name) {
+  if(!is.null(nn_index[['version']])) {
+    if(nn_index[['version']] == 1) {
+      tryCatch( nn_index[['annoy_index']]$save(file_name),
+                error = function(e) {message(paste0('Unable to save annoy index: it may not exist in this cds: error message is ', e))})
+    } else {
+      stop('Unrecognized Monocle3 annoy index type')
+    }
+  }
+  else
   if(!is.null(nn_index[['type']])) {
     if(nn_index[['type']] == 'annoyv1') {
       tryCatch( nn_index[['ann']]$save(file_name),
                 error = function(e) {message(paste0('Unable to save annoy index: it may not exist in this cds: error message is ', e))})
-    } else {
+    }
+    else {
       stop('Unrecognized uwot annoy index type')
     }
-  } else {
+  } 
+  else {
     nn_index$save(file_name)
   }
 }
@@ -355,14 +366,29 @@ save_annoy_index <- function(nn_index, file_name) {
 # see comments for save_annoy_index
 # modified for RcppAnnoy
 load_annoy_index <- function(nn_index, file_name, metric, ndim) {
-  if(!is.null(nn_index[['type']])) {
-    if(nn_index[['type']] == 'annoyv1') {
-      nn_index <- new_annoy_index(metric, ndim)
-      nn_index$load(file_name)
-    } else {
+  if(!is.null(nn_index[['version']])) {
+    if(nn_index[['version']] == 1) {
+      annoy_index <- new_annoy_index(metric, ndim)
+      annoy_index$load(file_name)
+      nn_index[['annoy_index']] <- annoy_index
+    }
+    else {
       stop('Unrecognized annoy index type')
     }
-  } else {
+  }
+  else
+  if(!is.null(nn_index[['type']])) {
+    if(nn_index[['type']] == 'annoyv1') {
+      annoy_index <- new_annoy_index(metric, ndim)
+      annoy_index$load(file_name)
+      nn_index[['ann']] <- annoy_index
+    }
+    else {
+      stop('Unrecognized annoy index type')
+    }
+  }
+  else {
+    # Assume to be an older uwot annoy index version.
     nn_index <- new_annoy_index(metric, ndim)
     nn_index$load(file_name)
   }

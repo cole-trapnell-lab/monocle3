@@ -220,7 +220,7 @@ mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1,
   on.exit(cleanup)
 
   if (is.null(required_packages) == FALSE){
-    BiocGenerics::clusterCall(cl, function(pkgs) {
+    parallel::clusterCall(cl, function(pkgs) {
       options(conflicts.policy =
                 list(error = FALSE,
                      warn = FALSE,
