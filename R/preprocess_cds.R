@@ -36,7 +36,7 @@
 #' @param build_nn_index logical When this argument is set to TRUE,
 #'   preprocess_cds builds and stores the nearest neighbor index from the
 #'   reduced dimension matrix for later use. Default is FALSE.
-#' @param nn_control A list of parameters used to make the nearest
+#' @param nn_control An optional list of parameters used to make the nearest
 #'  neighbor index. See the set_nn_control help for detailed information.
 #'
 #' @return an updated cell_data_set object
@@ -83,8 +83,7 @@ preprocess_cds <- function(cds,
     nn_control <- set_nn_control(mode=1,
                                  nn_control=nn_control,
                                  nn_control_default=get_global_variable('nn_control_annoy_cosine'),
-                                 cds=NULL,
-                                 reduction_method=NULL,
+                                 nn_index=NULL,
                                  k=NULL,
                                  verbose=verbose)
   }
@@ -160,7 +159,7 @@ preprocess_cds <- function(cds,
 
     if( build_nn_index ) {
       nn_index <- make_nn_index(subject_matrix=reducedDims(cds)[[method]], nn_control=nn_control, verbose=verbose)
-      cds <- set_cds_nn_index(cds=cds, reduction_method=method, nn_index=nn_index, nn_control=nn_control, verbose=verbose)
+      cds <- set_cds_nn_index(cds=cds, reduction_method=method, nn_index=nn_index, verbose=verbose)
     }
     else
       cds <- clear_cds_nn_index(cds=cds, reduction_method=method, nn_method='all')
@@ -217,7 +216,7 @@ preprocess_cds <- function(cds,
 
     if( build_nn_index ) {
       nn_index <- make_nn_index(subject_matrix=reducedDims(cds)[[method]], nn_control=nn_control, verbose=verbose)
-      cds <- set_cds_nn_index(cds=cds, reduction_method=method, nn_index=nn_index, nn_control=nn_control, verbose=verbose)
+      cds <- set_cds_nn_index(cds=cds, reduction_method=method, nn_index=nn_index, verbose=verbose)
     }
     else
       cds <- clear_cds_nn_index(cds=cds, reduction_method=method, nn_method='all')

@@ -96,5 +96,5 @@ test_that('Nearest neighbor index', {
   batched_cds = make_fake_batched_cds()
   batched_cds = preprocess_cds(batched_cds, num_dim=3)
   batched_cds = align_cds(batched_cds, residual_model_formula_str="~batch", build_nn_index=TRUE)
-  expect_equal(batched_cds@reduce_dim_aux[['Aligned']][['nn_index']][['annoy']][['metric']], 'cosine')
+  expect_equal(batched_cds@reduce_dim_aux[['Aligned']][['nn_index']][['annoy']][['nn_index']][['metric']], 'cosine')
 })

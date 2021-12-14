@@ -57,8 +57,10 @@ larger than 1.}
 \item{verbose}{A logic flag to determine whether or not we should print the
 run details.}
 
-\item{nn_control}{A list of parameters used to make the nearest
-neighbor index. See the set_nn_control help for detailed information.}
+\item{nn_control}{An optional list of parameters used to make the nearest
+neighbor index. See the set_nn_control help for detailed information.
+The default metric is cosine for reduction_methods PCA, LSI, and Aligned,
+and is euclidean for reduction_methods tSNE and UMAP.}
 
 \item{...}{Additional arguments passed to the leidenbase package.}
 }

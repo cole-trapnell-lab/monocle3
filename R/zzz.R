@@ -60,7 +60,9 @@ get_global_variable <- function(variable_name=NULL) {
   # during an R session.
   set_global_variable('id_count', 1)
 
-  # Object version numbers.
+  # Object version numbers. These are used by the Monocle3
+  # to recognize objects so we suggest that you not change
+  # them.
   set_global_variable('reduce_dim_pca_model_version', 1)
   set_global_variable('reduce_dim_lsi_model_version', 1)
   set_global_variable('reduce_dim_aligned_model_version', 1)
@@ -68,7 +70,8 @@ get_global_variable <- function(variable_name=NULL) {
   set_global_variable('reduce_dim_umap_model_version', 1)
   set_global_variable('monocle_objects_version', 1)
   set_global_variable('transform_models_version', 1)
-  set_global_variable('monocle3_annoy_index_version', 1)
+  set_global_variable('monocle3_annoy_index_version', 2)
+  set_global_variable('monocle3_hnsw_index_version', 1)
 
   # Default nn_control list for functions that do not need
   # an index, which is all but the label transfer functions.

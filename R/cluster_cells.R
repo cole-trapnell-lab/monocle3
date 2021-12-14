@@ -38,8 +38,10 @@
 #'   larger than 1.
 #' @param verbose A logic flag to determine whether or not we should print the
 #'   run details.
-#' @param nn_control A list of parameters used to make the nearest
+#' @param nn_control An optional list of parameters used to make the nearest
 #'  neighbor index. See the set_nn_control help for detailed information.
+#'  The default metric is cosine for reduction_methods PCA, LSI, and Aligned,
+#'  and is euclidean for reduction_methods tSNE and UMAP.
 #' @param ... Additional arguments passed to the leidenbase package.
 #'
 #' @return an updated cell_data_set object, with cluster and partition
@@ -115,8 +117,7 @@ cluster_cells <- function(cds,
   nn_control <- set_nn_control(mode=3,
                                nn_control=nn_control,
                                nn_control_default=nn_control_default,
-                               cds=NULL,
-                               reduction_method=NULL,
+                               nn_index=NULL,
                                k=k,
                                verbose=verbose)
   nn_method <- nn_control[['method']]
@@ -139,13 +140,12 @@ cluster_cells <- function(cds,
 #        cds <- set_cds_nn_index(cds=cds,
 #                                reduction_method=reduction_method,
 #                                nn_index=nn_index,
-#                                nn_control=nn_control,
 #                                verbose=verbose)
 #      }
 #      else {
 #        nn_index <- get_cds_nn_index(cds=cds,
 #                                     reduction_method=reduction_method,
-#                                     nn_control=nn_control,
+#                                     nn_method=nn_method,
 #                                     verbose=verbose)
 #      }
 #   }

@@ -8,8 +8,7 @@ set_nn_control(
   mode,
   nn_control = list(),
   nn_control_default = list(),
-  cds = NULL,
-  reduction_method = NULL,
+  nn_index = NULL,
   k = NULL,
   verbose = FALSE
 )
@@ -27,18 +26,10 @@ is used. If neither is given, a fallback default is assigned.}
 \item{nn_control_default}{an optional nn_control list to use when
 a parameter is not given in nn_control.}
 
-\item{cds}{a cell_data_set where a nearest neighbor index may be
-stored. This may be used to look up parameters that were used
-to make an index that is stored in the cds. For example, the default
-annoy search_k parameter depends on the n_trees values used to
-make the index. The default is NULL.}
-
-\item{reduction_method}{a reduction method where a nearest neighbor
-index may be stored in the cell_data_set, cds. This may be used
-to look up parameters that were used to make an index that is
-stored in the cds. For example, the default search_k parameter
-depends on the n_trees values used to make the index. The default
-is NULL.}
+\item{nn_index}{an nn_index. This may be used to look up parameters
+that were used to make an index. For example, the default search_k
+parameter depends on the n_trees values used to make the index.
+The default is NULL.}
 
 \item{k}{integer the number of desired nearest neighbor points to
 return from a search. k is used to
@@ -87,15 +78,13 @@ search accuracy and time. Larger values give more accurate
 results and longer search times. Default is 2 * n_trees * k.
 In order to set search_k, the following conditions are tested
 and the first TRUE condition is used: nn_control[['search_k']]
-exists; mode=2 and cds, reduction_method, and k are not NULL,
-and the expected index (given by cds, reduction_method, and
-nn_control[['method']]) exists; nn_control[['n_trees']] exists;
+exists; mode=2 and nn_index and k are not NULL;
+nn_control[['n_trees']] exists;
 nn_control_default[['search_k']] exists;
 nn_control_default[['n_trees']] exists. If none of those is
 TRUE, the fallback default n_trees value is used. If the
 set_nn_control k parameter value is not NULL, it is used;
 otherwise, the default is used.}
-
 \item{M}{The HNSW index build parameter that affects the
 search accuracy and memory requirements. Larger values give
 more accurate search results and increase the index memory

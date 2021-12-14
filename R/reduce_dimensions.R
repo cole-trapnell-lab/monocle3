@@ -43,8 +43,12 @@
 #' @param build_nn_index logical When this argument is set to TRUE,
 #'   preprocess_cds builds the nearest neighbor index from the
 #'   reduced dimension matrix for later use. Default is FALSE.
-#' @param nn_control A list of parameters used to make the nearest
+#' @param nn_control An optional list of parameters used to make the nearest
 #'  neighbor index. See the set_nn_control help for detailed information.
+#'  The default metric is cosine for reduction_methods PCA, LSI, and Aligned,
+#'  and is euclidean for reduction_methods tSNE and UMAP. Note: distances in
+#'  tSNE space reflect spatial differences poorly so using nearest neighbors
+#'  with it may be meaningless.
 #' @param ... additional arguments to pass to the dimensionality reduction
 #'   function.
 #' @return an updated cell_data_set object
@@ -103,8 +107,7 @@ reduce_dimension <- function(cds,
     nn_control <- set_nn_control(mode=1,
                                  nn_control=nn_control,
                                  nn_control_default=nn_control_default,
-                                 cds=NULL,
-                                 reduction_method=NULL,
+                                 nn_index=NULL,
                                  k=NULL,
                                  verbose=verbose)
   }
@@ -182,7 +185,7 @@ reduce_dimension <- function(cds,
       nn_index <- make_nn_index(subject_matrix=reducedDims(cds)[[reduction_method]],
                                 nn_control=nn_control,
                                 verbose=verbose)
-      cds <- set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, nn_control=nn_control, verbose=verbose)
+      cds <- set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, verbose=verbose)
     }
     if (verbose) message("Returning preprocessed PCA matrix")
   } else if(reduction_method == "LSI") {
@@ -190,7 +193,7 @@ reduce_dimension <- function(cds,
       nn_index <- make_nn_index(subject_matrix=reducedDims(cds)[[reduction_method]],
                                 nn_control=nn_control,
                                 verbose=verbose)
-      cds <- set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, nn_control=nn_control, verbose=verbose)
+      cds <- set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, verbose=verbose)
     }
     if (verbose) message("Returning preprocessed LSI matrix")
   } else if(reduction_method == "Aligned") {
@@ -198,7 +201,7 @@ reduce_dimension <- function(cds,
       nn_index <- make_nn_index(subject_matrix=reducedDims(cds)[[reduction_method]],
                                 nn_control=nn_control,
                                 verbose=verbose)
-      cds <- set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, nn_control=nn_control, verbose=verbose)
+      cds <- set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, verbose=verbose)
     }
     if (verbose) message("Returning preprocessed Aligned matrix")
   } else if (reduction_method == "tSNE") {
@@ -239,7 +242,7 @@ reduce_dimension <- function(cds,
       nn_index <- make_nn_index(subject_matrix=reducedDims(cds)[[reduction_method]],
                                 nn_control=nn_control,
                                 verbose=verbose)
-      cds <- set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, nn_control=nn_control, verbose=verbose)
+      cds <- set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, verbose=verbose)
     }
     else
       cds <- clear_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_method='all')
@@ -310,7 +313,7 @@ reduce_dimension <- function(cds,
       nn_index <- make_nn_index(subject_matrix=reducedDims(cds)[[reduction_method]],
                                 nn_control=nn_control,
                                 verbose=verbose)
-      cds <- set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, nn_control=nn_control, verbose=verbose)
+      cds <- set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, verbose=verbose)
     }
     else
       cds <- clear_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_method='all')

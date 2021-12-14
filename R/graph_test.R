@@ -35,7 +35,7 @@
 #'   differential expression.
 #' @param verbose Whether to show spatial test (Moran's I) errors and warnings.
 #'   Only valid for cores = 1.
-#' @param nn_control A list of parameters used to make the nearest
+#' @param nn_control An optional list of parameters used to make the nearest
 #'  neighbor index. See the set_nn_control help for detailed information.
 #' @return a data frame containing the p values and q-values from the Moran's I
 #'   test on the parallel arrays of models.
@@ -75,8 +75,7 @@ graph_test <- function(cds,
   nn_control <- set_nn_control(mode=3,
                                nn_control=nn_control,
                                nn_control_default=nn_control_default,
-                               cds=NULL,
-                               reduction_method=NULL,
+                               nn_index=NULL,
                                k=k,
                                verbose=verbose)
 

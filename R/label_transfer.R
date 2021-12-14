@@ -133,12 +133,14 @@ get_nn_means <- function(query_data, query_search, ref_coldata, ref_column_name)
 #'   neighbors to find. This value must be large enough to find
 #'   meaningful column value fractions. See the top_frac_threshold
 #'   parameter below for additional information. The default is 10.
-#' @param nn_control a list of parameters used to make and search
-#'   the nearest neighbors indexes. See the set_nn_control help
+#' @param nn_control An optional list of parameters used to make and search
+#'   the nearest neighbors indices. See the set_nn_control help
 #'   for additional details. Note that if nn_control\[\['search_k'\]\]
 #'   is not defined, transfer_cell_labels will try to use
 #'   search_k <- 2 * n_trees * k where n_trees is the value used
-#'   to build the index.
+#'   to build the index. The default metric is cosine for
+#'   reduction_methods PCA and LSI and is euclidean for
+#'   reduction_method UMAP.
 #' @param top_frac_threshold a numeric value. The top fraction
 #'   of reference values must be greater than top_frac_threshold
 #'   in order to be transferred to the query. The top
@@ -192,11 +194,38 @@ transfer_cell_labels <- function(cds_query,
   else
     nn_control_default <- get_global_variable('nn_control_annoy_cosine')
 
+  # Use set_nn_control to find nn method, which we need in order to select the correct index,
+  # and we may need the index to set the nn_control[['search_k']].
+  nn_control_tmp <- set_nn_control(mode=2,
+                                   nn_control=nn_control,
+                                   nn_control_default=nn_control_default,
+                                   nn_index=NULL,
+                                   k=k,
+                                   verbose=verbose)
+
+  cds_nn_index <- get_cds_nn_index(cds=cds_query, reduction_method=reduction_method, nn_control_tmp[['method']], verbose=verbose)
+
+  cds_reduced_dims <- reducedDims(cds_query)[[reduction_method]]
+  if(ncol(cds_reduced_dims) != cds_nn_index[['ncol']]) {
+    stop('transfer_cell_labels: reduced dimension matrix and nearest neighbor index dimensions do not match')
+  }
+
+  checksum_matrix_rownames <- cds_nn_index[['checksum_rownames']]
+  if(!is.na(checksum_matrix_rownames)) {
+    checksum_coldata_rownames <- digest::digest(rownames(ref_coldata))
+    if(checksum_matrix_rownames != checksum_coldata_rownames) {
+      stop('transfer_cell_labels: matrix and colData rownames do not match')
+    }
+  }
+  else
+  if(!is.na(cds_nn_index[['nrow']]) && (nrow(ref_coldata) != cds_nn_index[['nrow']])) {
+    stop('transfer_cell_labels: matrix and colData row counts do not match')
+  }
+
   nn_control <- set_nn_control(mode=2,
                                nn_control=nn_control,
                                nn_control_default=nn_control_default,
-                               cds=cds_query,
-                               reduction_method=reduction_method,
+                               nn_index=cds_nn_index,
                                k=k,
                                verbose=verbose)
 
@@ -206,7 +235,7 @@ transfer_cell_labels <- function(cds_query,
   # Load the reference projection models and nn indexes
   # into the query cds.
   if(!is.null(transform_models_dir)) {
-    cds_query <- load_transform_models(cds=cds_query, directory_path=transform_models_dir)
+    cds_query <- load_transform_models(cds=cds_query, directory_path=transform_models_dir, verbose=verbose)
   }
 
   assertthat::assert_that(!is.null(cds_query@reduce_dim_aux[[reduction_method]]),
@@ -221,8 +250,6 @@ transfer_cell_labels <- function(cds_query,
   # The cds@reduce_dim_aux[[reduction_method]] contains the reduction_method
   # coordinates for the reference data set, which were
   # loaded using load_transform_models() above.
-  cds_reduced_dims <- reducedDims(cds_query)[[reduction_method]]
-  cds_nn_index <- get_cds_nn_index(cds=cds_query, reduction_method=reduction_method, nn_control=nn_control, verbose=verbose)
   cds_res <- search_nn_index(query_matrix=cds_reduced_dims, nn_index=cds_nn_index,
                              k=k, nn_control=nn_control, verbose=verbose)
  
@@ -334,9 +361,11 @@ edit_query_cell_labels <- function(preproc_res,
 #'   neighbors to find. This value must be large enough to find
 #'   meaningful column value fractions. See the top_frac_threshold
 #'   parameter below for additional information. The default is 10.
-#' @param nn_control a list of parameters used to make the nearest
-#'   neighbors index. See the set_nn_control help for additional
-#'   details. The default is to use the global nn_control list.
+#' @param nn_control An optional list of parameters used to make the
+#'   nearest neighbors index. See the set_nn_control help for
+#'   additional details. The default metric is cosine for
+#'   reduction_methods PCA and LSI and is euclidean for
+#'   reduction_method UMAP.
 #' @param top_frac_threshold a numeric value. The top fraction
 #'   of reference values must be greater than top_frac_threshold
 #'   in order to be transferred to the query. The top
@@ -382,8 +411,7 @@ fix_missing_cell_labels <- function(cds,
   nn_control <- set_nn_control(mode=3,
                                nn_control=nn_control,
                                nn_control_default=nn_control_default,
-                               cds=NULL,
-                               reduction_method=NULL,
+                               nn_index=NULL,
                                k=k,
                                verbose=verbose)
 
@@ -397,7 +425,7 @@ fix_missing_cell_labels <- function(cds,
   notna_coldata <- as.data.frame(colData(notna_cds))
 
   if(!is.null(out_notna_models_dir)) {
-    save_transform_models(cds=notna_cds, directory_path=out_notna_models_dir)
+    save_transform_models(cds=notna_cds, directory_path=out_notna_models_dir, verbose=verbose)
   }
   
   na_cds <- cds[, is.na(colData(cds)[[from_column_name]])]

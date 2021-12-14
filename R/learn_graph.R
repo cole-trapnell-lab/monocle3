@@ -209,8 +209,7 @@ learn_graph <- function(cds,
   nn_control <- set_nn_control(mode=3,
                                nn_control=nn_control,
                                nn_control_default=nn_control_default,
-                               cds=NULL,
-                               reduction_method=NULL,
+                               nn_index=NULL,
                                k=nn.k,
                                verbose=verbose)
 

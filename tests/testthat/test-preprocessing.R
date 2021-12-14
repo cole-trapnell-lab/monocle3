@@ -83,9 +83,9 @@ test_that("preprocessing stays the same", {
 
   # nearest neighbor index
   cds <- preprocess_cds(cds, method='PCA', num_dim=20, build_nn_index=TRUE)
-  expect_equal(cds@reduce_dim_aux[['PCA']][['nn_index']][['annoy']][['metric']], 'cosine')
+  expect_equal(cds@reduce_dim_aux[['PCA']][['nn_index']][['annoy']][['nn_index']][['metric']], 'cosine')
   cds <- preprocess_cds(cds, method='LSI', num_dim=20, build_nn_index=TRUE)
-  expect_equal(cds@reduce_dim_aux[['LSI']][['nn_index']][['annoy']][['metric']], 'cosine')
+  expect_equal(cds@reduce_dim_aux[['LSI']][['nn_index']][['annoy']][['nn_index']][['metric']], 'cosine')
 
 })
 

@@ -35,7 +35,7 @@
 #' @param build_nn_index logical When this argument is set to TRUE,
 #'   align_cds builds the nearest neighbor index from the
 #'   aligned reduced matrix for later use. Default is FALSE.
-#' @param nn_control A list of parameters used to make the nearest
+#' @param nn_control An optional list of parameters used to make the nearest
 #'  neighbor index. See the set_nn_control help for detailed information.
 #' @param ... additional arguments to pass to limma::lmFit if
 #'   residual_model_formula is not NULL
@@ -70,8 +70,7 @@ align_cds <- function(cds,
     nn_control <- set_nn_control(mode=1,
                                  nn_control=nn_control,
                                  nn_control_default=get_global_variable('nn_control_annoy_cosine'),
-                                 cds=NULL,
-                                 reduction_method=NULL,
+                                 nn_index=NULL,
                                  k=NULL,
                                  verbose=verbose)
   }
@@ -149,7 +148,6 @@ align_cds <- function(cds,
     cds <- set_cds_nn_index(cds=cds,
                             reduction_method='Aligned',
                             nn_index,
-                            nn_control=nn_control,
                             verbose=verbose)
   }
   else

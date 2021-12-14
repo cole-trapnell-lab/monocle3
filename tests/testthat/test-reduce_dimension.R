@@ -14,7 +14,7 @@ cds <- estimate_size_factors(cds)
 test_that('Nearest neighbors', {
   cds <- preprocess_cds(cds)
   cds <- reduce_dimension(cds, build_nn_index=TRUE)
-  expect_equal(cds@reduce_dim_aux[['UMAP']][['nn_index']][['annoy']][['metric']], 'euclidean')
+  expect_equal(cds@reduce_dim_aux[['UMAP']][['nn_index']][['annoy']][['nn_index']][['metric']], 'euclidean')
 })
 
 

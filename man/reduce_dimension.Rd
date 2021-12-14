@@ -61,8 +61,12 @@ used by UMAP. Default is "annoy". See uwot package's
 preprocess_cds builds the nearest neighbor index from the
 reduced dimension matrix for later use. Default is FALSE.}
 
-\item{nn_control}{A list of parameters used to make the nearest
-neighbor index. See the set_nn_control help for detailed information.}
+\item{nn_control}{An optional list of parameters used to make the nearest
+neighbor index. See the set_nn_control help for detailed information.
+The default metric is cosine for reduction_methods PCA, LSI, and Aligned,
+and is euclidean for reduction_methods tSNE and UMAP. Note: distances in
+tSNE space reflect spatial differences poorly so using nearest neighbors
+with it may be meaningless.}
 
 \item{...}{additional arguments to pass to the dimensionality reduction
 function.}

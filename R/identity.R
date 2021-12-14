@@ -284,14 +284,18 @@ identity_as_string <- function( object_id ) {
 #'   the preprocess_transform() and reduce_dim_transform()
 #'   functions are used to transform a matrix.
 #' 
-#'   Certain file and directory paths may be stored in the
-#'   cell_data_set.
+#'   Notes:
+#'   * Certain file and directory paths may be stored in the
+#'   cell_data_set as identifiers.
 #'
-#'   Checksums are calculated using the digest function in
+#'   * Checksums are calculated using the digest function in
 #'   the digest package. The matrix dimensions are stored
 #'   with the checksum.
 #'
-#'   The matrix identity string is stored in the internal
+#'   * Matrix transformations such as subsetting and row and
+#'   or column reordering do not affect the matrix identity.
+#'
+#'   * The matrix identity string is stored in the internal
 #'   metadata slot of the cell_data_set and the model
 #'   identity string is stored in the model object in the
 #'   cds@reduce_dim_aux slot of the cell_data_set.

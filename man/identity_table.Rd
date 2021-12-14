@@ -48,15 +48,18 @@ have the same string value. However, they differ when
 the preprocess_transform() and reduce_dim_transform()
 functions are used to transform a matrix.
 
-Certain file and directory paths may be stored in the
-cell_data_set.
-
-Checksums are calculated using the digest function in
+Notes:
+\itemize{
+\item Certain file and directory paths may be stored in the
+cell_data_set as identifiers.
+\item Checksums are calculated using the digest function in
 the digest package. The matrix dimensions are stored
 with the checksum.
-
-The matrix identity string is stored in the internal
+\item Matrix transformations such as subsetting and row and
+or column reordering do not affect the matrix identity.
+\item The matrix identity string is stored in the internal
 metadata slot of the cell_data_set and the model
 identity string is stored in the model object in the
 cds@reduce_dim_aux slot of the cell_data_set.
+}
 }
