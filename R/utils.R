@@ -124,7 +124,7 @@ split_cols <- function (x, ncl) {
 
 #' @keywords internal
 sparse_par_r_apply <- function (cl, x, FUN, convert_to_dense, ...) {
-  par_res <- do.call(c, BiocGenerics::clusterApply(cl = cl,
+  par_res <- do.call(c, parallel::clusterApply(cl = cl,
                                                    x = split_rows(x,
                                                                   length(cl)),
                                      fun = sparse_apply, MARGIN = 1L,
@@ -137,7 +137,7 @@ sparse_par_r_apply <- function (cl, x, FUN, convert_to_dense, ...) {
 
 #' @keywords internal
 sparse_par_c_apply <- function (cl = NULL, x, FUN, convert_to_dense, ...) {
-  par_res <- do.call(c, BiocGenerics::clusterApply(cl = cl,
+  par_res <- do.call(c, parallel::clusterApply(cl = cl,
                                                    x = split_cols(x,
                                                                   length(cl)),
                                      fun = sparse_apply, MARGIN = 2L,
