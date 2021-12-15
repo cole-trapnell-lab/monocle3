@@ -164,7 +164,7 @@ test_that("order_cells works", {
   expect_equal(min(pseudotime(cds)), 0)
   expect_equal(as.numeric(pseudotime(cds)[1]), 5.88, tol = 1e-2)
   cds <- order_cells(cds, root_pr_nodes = c("Y_1", "Y_10"))
-  expect_equal(max(pseudotime(cds)), 10.09, tol = 1e-2)
+  expect_equal(max(pseudotime(cds)), 10.9, tol = 1e-1)
   expect_equal(min(pseudotime(cds)), 0)
   expect_equal(as.numeric(pseudotime(cds)[1]), 5.05, tol = 1e-2)
   cds <- order_cells(cds, root_cells = "G07_B02_RT_587")
