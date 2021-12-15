@@ -103,5 +103,8 @@ get_global_variable <- function(variable_name=NULL) {
   
   set_global_variable('omp_num_threads', omp_num_threads)
   set_global_variable('blas_num_threads', blas_num_threads)
+
+  # for travis
+  Sys.setenv('TESTTHAT_MAX_FAILS' = Inf)
 }
 
