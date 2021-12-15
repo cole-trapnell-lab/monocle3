@@ -389,7 +389,7 @@ test_that("save_transform_models and load_transform_models", {
   cds <- reduce_dimension_transform(cds, preprocess_method='Aligned', reduction_method='UMAP')
 
   nn_index <- get_cds_nn_index(cds, reduction_method='PCA', nn_method=nn_method)
-  expect_equal(as.character(class(nn_index[['ann']])), 'Rcpp_AnnoyEuclidean')
+  expect_equal(as.character(class(nn_index[['annoy_index']])), 'Rcpp_AnnoyEuclidean')
 
   # check PCA reduced dims matrix and nearest neighbors
   expect_equivalent(ncol(reducedDims(cds)[['PCA']]), 50)
@@ -410,7 +410,7 @@ test_that("save_transform_models and load_transform_models", {
   # check UMAP reduced dims matrix and nearest neighbors
   expect_equivalent(ncol(reducedDims(cds)[['UMAP']]), 2)
   expect_equivalent(nrow(reducedDims(cds)[['UMAP']]), 500)
-  expect_equivalent(reducedDims(cds)[['UMAP']][[1,1]], 1.96, tol=1e-2)
+  expect_equivalent(reducedDims(cds)[['UMAP']][[1,1]], 1.93, tol=1e-2)
   nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['UMAP']], nn_index=get_cds_nn_index(cds, reduction_method='UMAP', nn_method=nn_method), k=5, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   expect_equivalent(nn_res[['nn.idx']][[1]], 1)
   expect_equivalent(nn_res[['nn.dists']][[1]], 0)
@@ -427,7 +427,7 @@ test_that("save_transform_models and load_transform_models", {
   cds <- preprocess_cds(cds)
   cds <- load_transform_models(cds, directory_path=transform_models)
   nn_index <- get_cds_nn_index(cds, reduction_method='PCA', nn_method=nn_method)
-  expect_equal(as.character(class(nn_index)), 'Rcpp_HnswL2')
+  expect_equal(as.character(class(nn_index[['hnsw_index']])), 'Rcpp_HnswL2')
   system(paste0('rm -r ', transform_models))
 } )
 
@@ -447,7 +447,7 @@ test_that("save_monocle_objects and load_monocle_objects", {
   cds <- load_monocle_objects(directory_path=monocle_objects)
 
   nn_index <- get_cds_nn_index(cds, reduction_method='PCA', nn_method=nn_method)
-  expect_equal(as.character(class(nn_index[['ann']])), 'Rcpp_AnnoyEuclidean')
+  expect_equal(as.character(class(nn_index[['annoy_index']])), 'Rcpp_AnnoyEuclidean')
 
   # check count matrix
   expect_equivalent(ncol(counts(cds)), 500)
@@ -473,7 +473,7 @@ test_that("save_monocle_objects and load_monocle_objects", {
   # check UMAP reduced dims matrix and nearest neighbors
   expect_equivalent(ncol(reducedDims(cds)[['UMAP']]), 2)
   expect_equivalent(nrow(reducedDims(cds)[['UMAP']]), 500)
-  expect_equivalent(reducedDims(cds)[['UMAP']][[1,1]], 1.96, tol=1e-2)
+  expect_equivalent(reducedDims(cds)[['UMAP']][[1,1]], 1.93, tol=1e-2)
   nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['UMAP']], nn_index=get_cds_nn_index(cds, reduction_method='UMAP', nn_method=nn_method), k=5, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   expect_equivalent(nn_res[['nn.idx']][[1]], 1)
   expect_equivalent(nn_res[['nn.dists']][[1]], 0)
@@ -489,7 +489,7 @@ test_that("save_monocle_objects and load_monocle_objects", {
   cds <- load_a549()
   cds <- load_monocle_objects(directory_path=monocle_objects)
   nn_index <- get_cds_nn_index(cds, reduction_method='PCA', nn_method=nn_method)
-  expect_equal(as.character(class(nn_index)), 'Rcpp_HnswL2')
+  expect_equal(as.character(class(nn_index[['hnsw_index']])), 'Rcpp_HnswL2')
   system(paste0('rm -r ', monocle_objects))
 } )
 

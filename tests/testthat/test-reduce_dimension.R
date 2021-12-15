@@ -122,13 +122,13 @@ test_that("reduce_dimension runs", {
   cds <- reduce_dimension(cds, umap.fast_sgd=FALSE, cores=1)
   expect_equal(nrow(reducedDims(cds)$UMAP), nrow(colData(cds)))
   expect_equal(ncol(reducedDims(cds)$UMAP), 2)
-  expect_equal(as.numeric(reducedDims(cds)$UMAP[1,1]), -2.86,
+  expect_equal(as.numeric(reducedDims(cds)$UMAP[1,1]), -2.14,
                tolerance = 1e-2)
 
   cds <- reduce_dimension(cds, max_components = 3, umap.fast_sgd=FALSE, cores=1, reduction_method = "UMAP")
   expect_equal(nrow(reducedDims(cds)$UMAP), nrow(colData(cds)))
   expect_equal(ncol(reducedDims(cds)$UMAP), 3)
-  expect_equal(as.numeric(reducedDims(cds)$UMAP[1,1]), 1.69,
+  expect_equal(as.numeric(reducedDims(cds)$UMAP[1,1]), 1.65,
                tolerance = 1e-2)
 
   cds <- reduce_dimension(cds, reduction_method = "tSNE")
@@ -152,8 +152,8 @@ test_that("reduce_dimension runs", {
   cds <- reduce_dimension(cds, umap.fast_sgd=FALSE, cores=1, preprocess_method = "LSI")
   expect_equal(nrow(reducedDims(cds)$UMAP), nrow(colData(cds)))
   expect_equal(ncol(reducedDims(cds)$UMAP), 2)
-  expect_equal(as.numeric(reducedDims(cds)$UMAP[1,1]), -0.163,
-               tolerance = 1e-3)
+  expect_equal(as.numeric(reducedDims(cds)$UMAP[1,1]), -0.0531,
+               tolerance = 1e-4)
 
   cds <- reduce_dimension(cds, reduction_method = "tSNE", preprocess_method = "LSI")
   expect_equal(nrow(reducedDims(cds)$tSNE), nrow(colData(cds)))
