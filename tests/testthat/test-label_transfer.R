@@ -50,9 +50,18 @@ test_that("label transfer", {
   nmatch1 <- nrow(colData(cds)[!is.na(colData(cds)[['cell.type']]) & !is.na(colData(cds)[['cell.type.xfr']]) & colData(cds)[['cell.type']] == colData(cds)[['cell.type.xfr']],])
   nmatch2 <- nrow(colData(cds)[!is.na(colData(cds)[['cell.type.xfr']]) & !is.na(colData(cds)[['cell.type.fix']]) & colData(cds)[['cell.type.xfr']] == colData(cds)[['cell.type.fix']],])
   num_row <- nrow(colData(cds))
-#
+
   # expect_gt apparently allows only integer comparisons.
   expect_gt(100.0 * as.double(nmatch1) / as.double(num_row), 60.0)
   expect_gt(nmatch2, nmatch1)
+
+  # check that transfer_cell_labels uses the expected search_k parameter.
+  cds <- reduce_dimension(cds, build_nn_index=TRUE, nn_control=list(method='annoy', n_trees=80))
+  expect_message(transfer_cell_labels(cds, reduction_method='UMAP', colData(cds), 'cell.type', 'cell.type.xfr', verbose=TRUE), 'search_k: 1600')
+
+  # check that transfer_cell_labels stops when the nn index rownames
+  # checksums do not match the reference colData rownames.
+  cds_s <- cds[,-1]
+  expect_error(transfer_cell_labels(cds, reduction_method='UMAP', colData(cds_s), 'cell.type', 'cell.type.xfr', verbose=TRUE))
 } )
 

@@ -54,12 +54,14 @@ neighbors to find. This value must be large enough to find
 meaningful column value fractions. See the top_frac_threshold
 parameter below for additional information. The default is 10.}
 
-\item{nn_control}{a list of parameters used to make and search
-the nearest neighbors indexes. See the set_nn_control help
+\item{nn_control}{An optional list of parameters used to make and search
+the nearest neighbors indices. See the set_nn_control help
 for additional details. Note that if nn_control[['search_k']]
 is not defined, transfer_cell_labels will try to use
 search_k <- 2 * n_trees * k where n_trees is the value used
-to build the index.}
+to build the index. The default metric is cosine for
+reduction_methods PCA and LSI and is euclidean for
+reduction_method UMAP.}
 
 \item{top_frac_threshold}{a numeric value. The top fraction
 of reference values must be greater than top_frac_threshold

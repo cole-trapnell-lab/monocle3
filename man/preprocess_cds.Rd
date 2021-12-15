@@ -53,7 +53,7 @@ reduction}
 preprocess_cds builds and stores the nearest neighbor index from the
 reduced dimension matrix for later use. Default is FALSE.}
 
-\item{nn_control}{A list of parameters used to make the nearest
+\item{nn_control}{An optional list of parameters used to make the nearest
 neighbor index. See the set_nn_control help for detailed information.}
 }
 \value{

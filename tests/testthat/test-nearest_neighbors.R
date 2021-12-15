@@ -188,122 +188,124 @@ test_that("nearest_neighbors: set_nn_control", {
   #
   cds_sk <- load_a549()
   reduction_method <- 'PCA'
-  nn_control <- list(method='annoy', metric='euclidean', n_trees=80)
+  nn_method <- 'annoy'
+  nn_control <- list(method=nn_method, metric='euclidean', n_trees=80)
   cds_sk <- preprocess_cds(cds_sk, method=reduction_method, nn_control=nn_control, build_nn_index=TRUE)
 
+  nn_index <- get_cds_nn_index(cds=cds_sk, reduction_method=reduction_method, nn_method=nn_method, verbose=FALSE)
 
   # mode=3, cds, reduction_method and nn_control[['search_k']] only
   nn_control_in <- list(method='annoy', search_k=56)
-  nn_control <- set_nn_control(mode=3, nn_control=nn_control_in, cds=cds_sk, reduction_method=reduction_method, k=2)
+  nn_control <- set_nn_control(mode=3, nn_control=nn_control_in, nn_index=nn_index, k=2)
   expect_equal(nn_control[['search_k']], 56)
   
   # mode=3, cds, reduction_method and nn_control[['n_trees']] only
   nn_control_in <- list(method='annoy', n_trees=22)
-  nn_control <- set_nn_control(mode=3, nn_control=nn_control_in, cds=cds_sk, reduction_method=reduction_method, k=2)
+  nn_control <- set_nn_control(mode=3, nn_control=nn_control_in, nn_index=nn_index, k=2)
   expect_equal(nn_control[['search_k']], 88)
 
   # mode=3, cds, reduction_method and nn_control[['search_k']] and nn_control[['n_trees']]
   nn_control_in <- list(method='annoy', search_k=56, n_trees=32)
-  nn_control <- set_nn_control(mode=3, nn_control=nn_control_in, cds=cds_sk, reduction_method=reduction_method, k=2)
+  nn_control <- set_nn_control(mode=3, nn_control=nn_control_in, nn_index=nn_index, k=2)
   expect_equal(nn_control[['search_k']], 56)
 
 
   # mode=3, cds, reduction_method and nn_control_default[['search_k']] only
   nn_control_default_in <- list(method='annoy', search_k=58)
-  nn_control <- set_nn_control(mode=3, nn_control_default=nn_control_default_in, cds=cds_sk, reduction_method=reduction_method, k=2)
+  nn_control <- set_nn_control(mode=3, nn_control_default=nn_control_default_in, nn_index=nn_index, k=2)
   expect_equal(nn_control[['search_k']], 58)
 
   # mode=3, cds, reduction_method and nn_control_default[['n_trees']] only
   nn_control_default_in <- list(method='annoy', n_trees=28)
-  nn_control <- set_nn_control(mode=3, nn_control_default=nn_control_default_in, cds=cds_sk, reduction_method=reduction_method, k=2)
+  nn_control <- set_nn_control(mode=3, nn_control_default=nn_control_default_in, nn_index=nn_index, k=2)
   expect_equal(nn_control[['search_k']], 112)
 
   # mode=3, cds, reduction_method and nn_control_default[['search_k']] and nn_control_default[['n_trees']]
   nn_control_default_in <- list(method='annoy', search_k=60, n_trees=40)
-  nn_control <- set_nn_control(mode=3, nn_control_default=nn_control_default_in, cds=cds_sk, reduction_method=reduction_method, k=2)
+  nn_control <- set_nn_control(mode=3, nn_control_default=nn_control_default_in, nn_index=nn_index, k=2)
   expect_equal(nn_control[['search_k']], 60)
 
 
   # mode=3, cds, reduction_method and nn_control[['search_k']] and nn_control_default[['search_k']]
   nn_control_in <- list(method='annoy', search_k=65)
   nn_control_default_in <- list(method='annoy', search_k=15)
-  nn_control <- set_nn_control(mode=3, nn_control=nn_control_in, nn_control_default=nn_control_default_in, cds=cds_sk, reduction_method=reduction_method, k=2)
+  nn_control <- set_nn_control(mode=3, nn_control=nn_control_in, nn_control_default=nn_control_default_in, nn_index=nn_index, k=2)
   expect_equal(nn_control[['search_k']], 65)
 
   # mode=3, cds, reduction_method and nn_control[['n_trees']] and nn_control_default[['n_trees']]
   nn_control_in <- list(method='annoy', n_trees=15)
   nn_control_default_in <- list(method='annoy', n_trees=25)
-  nn_control <- set_nn_control(mode=3, nn_control=nn_control_in, nn_control_default=nn_control_default_in, cds=cds_sk, reduction_method=reduction_method, k=2)
+  nn_control <- set_nn_control(mode=3, nn_control=nn_control_in, nn_control_default=nn_control_default_in, nn_index=nn_index, k=2)
   expect_equal(nn_control[['search_k']], 60)
 
   # mode=3, cds, reduction_method and nn_control[['search_k']] and nn_control_default[['n_trees']]
   nn_control_in <- list(method='annoy', search_k=60)
   nn_control_default_in <- list(method='annoy', n_trees=40)
-  nn_control <- set_nn_control(mode=3, nn_control=nn_control_in, nn_control_default=nn_control_default_in, cds=cds_sk, reduction_method=reduction_method, k=2)
+  nn_control <- set_nn_control(mode=3, nn_control=nn_control_in, nn_control_default=nn_control_default_in, nn_index=nn_index, k=2)
   expect_equal(nn_control[['search_k']], 60)
 
   # mode=3, cds, reduction_method and nn_control[['n_trees']] and nn_control_default[['search_k']]
   nn_control_in <- list(method='annoy', n_trees=10)
   nn_control_default_in <- list(method='annoy', search_k=48)
-  nn_control <- set_nn_control(mode=3, nn_control=nn_control_in, nn_control_default=nn_control_default_in, cds=cds_sk, reduction_method=reduction_method, k=2)
+  nn_control <- set_nn_control(mode=3, nn_control=nn_control_in, nn_control_default=nn_control_default_in, nn_index=nn_index, k=2)
   expect_equal(nn_control[['search_k']], 40)
 
 
 
   # mode=2, cds, reduction_method and nn_control[['search_k']] only
   nn_control_in <- list(method='annoy', search_k=56)
-  nn_control <- set_nn_control(mode=2, nn_control=nn_control_in, cds=cds_sk, reduction_method=reduction_method, k=2)
+  nn_control <- set_nn_control(mode=2, nn_control=nn_control_in, nn_index=nn_index, k=2)
   expect_equal(nn_control[['search_k']], 56)
 
   # mode=2, cds, reduction_method and nn_control[['n_trees']] only
   nn_control_in <- list(method='annoy', n_trees=22)
-  nn_control <- set_nn_control(mode=2, nn_control=nn_control_in, cds=cds_sk, reduction_method=reduction_method, k=2)
+  nn_control <- set_nn_control(mode=2, nn_control=nn_control_in, nn_index=nn_index, k=2)
   expect_equal(nn_control[['search_k']], 320)
 
   # mode=2, cds, reduction_method and nn_control[['search_k']] and nn_control[['n_trees']]
   nn_control_in <- list(method='annoy', search_k=56, n_trees=32)
-  nn_control <- set_nn_control(mode=2, nn_control=nn_control_in, cds=cds_sk, reduction_method=reduction_method, k=2)
+  nn_control <- set_nn_control(mode=2, nn_control=nn_control_in, nn_index=nn_index, k=2)
   expect_equal(nn_control[['search_k']], 56)
 
 
-  # mode=2, cds, reduction_method and nn_control_default[['search_k']] only
+  # mode=2, nn_index and nn_control_default[['search_k']] only
   nn_control_default_in <- list(method='annoy', search_k=58)
-  nn_control <- set_nn_control(mode=2, nn_control_default=nn_control_default_in, cds=cds_sk, reduction_method=reduction_method, k=2)
+  nn_control <- set_nn_control(mode=2, nn_control_default=nn_control_default_in, nn_index=nn_index, k=2)
   expect_equal(nn_control[['search_k']], 320)
 
   # mode=2, cds, reduction_method and nn_control_default[['n_trees']] only
   nn_control_default_in <- list(method='annoy', n_trees=28)
-  nn_control <- set_nn_control(mode=2, nn_control_default=nn_control_default_in, cds=cds_sk, reduction_method=reduction_method, k=2)
+  nn_control <- set_nn_control(mode=2, nn_control_default=nn_control_default_in, nn_index=nn_index, k=2)
   expect_equal(nn_control[['search_k']], 320)
 
   # mode=2, cds, reduction_method and nn_control_default[['search_k']] and nn_control_default[['n_trees']]
   nn_control_default_in <- list(method='annoy', search_k=60, n_trees=40)
-  nn_control <- set_nn_control(mode=2, nn_control_default=nn_control_default_in, cds=cds_sk, reduction_method=reduction_method, k=2)
+  nn_control <- set_nn_control(mode=2, nn_control_default=nn_control_default_in, nn_index=nn_index, k=2)
   expect_equal(nn_control[['search_k']], 320)
 
 
   # mode=2, cds, reduction_method and nn_control[['search_k']] and nn_control_default[['search_k']]
   nn_control_in <- list(method='annoy', search_k=60)
   nn_control_default_in <- list(method='annoy', search_k=15)
-  nn_control <- set_nn_control(mode=2, nn_control=nn_control_in, nn_control_default=nn_control_default_in, cds=cds_sk, reduction_method=reduction_method, k=2)
+  nn_control <- set_nn_control(mode=2, nn_control=nn_control_in, nn_control_default=nn_control_default_in, nn_index=nn_index, k=2)
   expect_equal(nn_control[['search_k']], 60)
 
   # mode=2, cds, reduction_method and nn_control[['n_trees']] and nn_control_default[['n_trees']]
   nn_control_in <- list(method='annoy', n_trees=15)
   nn_control_default_in <- list(method='annoy', n_trees=25)
-  nn_control <- set_nn_control(mode=2, nn_control=nn_control_in, nn_control_default=nn_control_default_in, cds=cds_sk, reduction_method=reduction_method, k=2)
+  nn_control <- set_nn_control(mode=2, nn_control=nn_control_in, nn_control_default=nn_control_default_in, nn_index=nn_index, k=2)
   expect_equal(nn_control[['search_k']], 320)
 
   # mode=2, cds, reduction_method and nn_control[['search_k']] and nn_control_default[['n_trees']]
   nn_control_in <- list(method='annoy', search_k=60)
   nn_control_default_in <- list(method='annoy', n_trees=40)
-  nn_control <- set_nn_control(mode=2, nn_control=nn_control_in, nn_control_default=nn_control_default_in, cds=cds_sk, reduction_method=reduction_method, k=2)
+  nn_control <- set_nn_control(mode=2, nn_control=nn_control_in, nn_control_default=nn_control_default_in, nn_index=nn_index, k=2)
   expect_equal(nn_control[['search_k']], 60)
 
   # mode=2, cds, reduction_method and nn_control[['n_trees']] and nn_control_default[['search_k']]
   nn_control_in <- list(method='annoy', n_trees=10)
   nn_control_default_in <- list(method='annoy', search_k=48)
-  nn_control <- set_nn_control(mode=2, nn_control=nn_control_in, nn_control_default=nn_control_default_in, cds=cds_sk, reduction_method=reduction_method, k=2)
+  nn_control <- set_nn_control(mode=2, nn_control=nn_control_in, nn_control_default=nn_control_default_in, nn_index=nn_index, k=2)
   expect_equal(nn_control[['search_k']], 320)
 
 } )
@@ -314,7 +316,6 @@ test_that("nearest_neighbors: make and search nn2 index", {
 
   # The following functions are invalid with nn2 (nn2 does not return an index).
   expect_error(make_nn_index(reducedDims(cds)[['PCA']], nn_control=nn_control))
-  expect_error(set_cds_nn_index(cds, reduction_method='PCA', nn_control=nn_control))
   expect_error(make_cds_nn_index(cds, reduction_method='PCA', nn_control=nn_control))
   expect_error(search_nn_index(reducedDims(cds)[['PCA']], nn_control=nn_control))
 
@@ -327,7 +328,8 @@ test_that("nearest_neighbors: make and search nn2 index", {
 
 
 test_that("nearest_neighbors: make and search annoy index", {
-  nn_control=list(method='annoy')
+  nn_method <- 'annoy'
+  nn_control <- list(method=nn_method)
 
   # make annoy index
   nn_index <- make_nn_index(reducedDims(cds)[['PCA']], nn_control=nn_control)
@@ -347,7 +349,7 @@ test_that("nearest_neighbors: make and search annoy index", {
   expect_equal(nn_res[['nn.dists']][[2,2]], 5.402802, tol=1e-3)
 
   # store annoy index in cds
-  cds2 <- set_cds_nn_index(cds, reduction_method='PCA', nn_index, nn_control=nn_control)
+  cds2 <- set_cds_nn_index(cds, reduction_method='PCA', nn_index)
   if(!is.null(cds2@reduce_dim_aux[['PCA']][['nn_index']][['annoy']][['nn_index']][['version']]))
     expect_equal(as.character(class(cds2@reduce_dim_aux[['PCA']][['nn_index']][['annoy']][['nn_index']][['annoy_index']])), 'Rcpp_AnnoyEuclidean')
   else
@@ -356,7 +358,7 @@ test_that("nearest_neighbors: make and search annoy index", {
   else
     expect_equal(as.character(class(cds2@reduce_dim_aux[['PCA']][['nn_index']][['annoy']][['nn_index']])), 'Rcpp_AnnoyEuclidean')
 
-  nn_index2 <- get_cds_nn_index(cds2, reduction_method='PCA', nn_control=nn_control)
+  nn_index2 <- get_cds_nn_index(cds2, reduction_method='PCA', nn_method=nn_method, verbose=FALSE)
   if(!is.null(nn_index2[['version']]))
     expect_equal(as.character(class(nn_index2[['annoy_index']])), 'Rcpp_AnnoyEuclidean')
   else
@@ -381,15 +383,31 @@ test_that("nearest_neighbors: make and search annoy index", {
   expect_equal(nn_res[['nn.idx']][[2,2]], 264)
   expect_equal(nn_res[['nn.dists']][[2,1]], 0, tol=1e-4)
   expect_equal(nn_res[['nn.dists']][[2,2]], 5.402802, tol=1e-3)
+
+  nn_method <- 'annoy'
+  nn_control <- list(method=nn_method, metric='euclidean', n_trees=80)
+
+  # make annoy index
+  nn_index <- make_nn_index(reducedDims(cds)[['PCA']], nn_control=nn_control)
+
+  # search annoy index
+  nn_res <- search_nn_index(reducedDims(cds)[['PCA']], nn_index=nn_index, k=2, nn_control=nn_control)
+  expect_message(search_nn_index(reducedDims(cds)[['PCA']], nn_index=nn_index, k=2, nn_control=nn_control, verbose=TRUE), regexp='search_k: 320')
+  expect_equal(nn_res[['nn.idx']][[2,1]], 2)
+  expect_equal(nn_res[['nn.idx']][[2,2]], 264)
+  expect_equal(nn_res[['nn.dists']][[2,1]], 0, tol=1e-4)
+  expect_equal(nn_res[['nn.dists']][[2,2]], 5.402802, tol=1e-3)
+
 } )
 
 
 test_that("nearest_neighbors: make and search hnsw index", {
-  nn_control=list(method='hnsw')
+  nn_method <- 'hnsw'
+  nn_control <- list(method=nn_method)
 
   # make hnsw index
   nn_index <- make_nn_index(reducedDims(cds)[['PCA']], nn_control=nn_control)
-  expect_equal(as.character(class(nn_index)), 'Rcpp_HnswL2')
+  expect_equal(as.character(class(nn_index[['hnsw_index']])), 'Rcpp_HnswL2')
 
   # search hnsw index
   nn_res <- search_nn_index(reducedDims(cds)[['PCA']], nn_index=nn_index, k=2, nn_control=nn_control)
@@ -399,15 +417,15 @@ test_that("nearest_neighbors: make and search hnsw index", {
   expect_equal(nn_res[['nn.dists']][[2,2]], 5.402802, tol=1e-3)
 
   # store hnsw index in cds
-  cds2 <- set_cds_nn_index(cds, reduction_method='PCA', nn_index, nn_control=nn_control)
-  expect_equal(as.character(class(cds2@reduce_dim_aux[['PCA']][['nn_index']][['hnsw']][['nn_index']])), 'Rcpp_HnswL2')
+  cds2 <- set_cds_nn_index(cds, reduction_method='PCA', nn_index)
+  expect_equal(as.character(class(cds2@reduce_dim_aux[['PCA']][['nn_index']][['hnsw']][['nn_index']][['hnsw_index']])), 'Rcpp_HnswL2')
 
-  nn_index2 <- get_cds_nn_index(cds2, reduction_method='PCA', nn_control=nn_control)
-  expect_equal(as.character(class(nn_index2)), 'Rcpp_HnswL2')
+  nn_index2 <- get_cds_nn_index(cds2, reduction_method='PCA', nn_method=nn_method, verbose=FALSE)
+  expect_equal(as.character(class(nn_index2[['hnsw_index']])), 'Rcpp_HnswL2')
 
   rm(cds2)
   cds2 <- make_cds_nn_index(cds, reduction_method='PCA', nn_control=nn_control)
-  expect_equal(as.character(class(cds2@reduce_dim_aux[['PCA']][['nn_index']][['hnsw']][['nn_index']])), 'Rcpp_HnswL2')
+  expect_equal(as.character(class(cds2@reduce_dim_aux[['PCA']][['nn_index']][['hnsw']][['nn_index']][['hnsw_index']])), 'Rcpp_HnswL2')
 
   rm(cds2)
   nn_res <- search_nn_matrix(reducedDims(cds)[['PCA']], reducedDims(cds)[['PCA']], k=2, nn_control=nn_control)

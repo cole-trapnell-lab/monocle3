@@ -307,6 +307,90 @@ load_mtx_data <- function( mat_path,
 }
 
 
+update_annoy_index <- function(annoy) {
+  if(!is.null(annoy[['nn_index']][['version']]) && annoy[['nn_index']][['version']] == 2) {
+    annoy_out <- annoy
+  }
+  else
+  if(!is.null(annoy[['nn_index']][['version']]) && annoy[['nn_index']][['version']] == 1) {
+    annoy_out <- SimpleList()
+    annoy_out[['nn_index']] <- list()
+    annoy_out[['nn_index']][['method']] <- 'annoy'
+    annoy_out[['nn_index']][['annoy_index']] <- annoy[['nn_index']][['annoy_index']]
+    annoy_out[['nn_index']][['version']] <- 2
+    annoy_out[['nn_index']][['annoy_index_version']] <- annoy[['index_version']]
+    annoy_out[['nn_index']][['metric']] <- annoy[['metric']]
+    annoy_out[['nn_index']][['n_trees']] <- annoy[['n_trees']]
+    annoy_out[['nn_index']][['nrow']] <- annoy[['nrow']]
+    annoy_out[['nn_index']][['ncol']] <- annoy[['ncol']]
+    annoy_out[['nn_index']][['checksum_rownames']] <- NA_character_
+    annoy_out[['matrix_id']] <- annoy[['matrix_id']]
+    annoy_out[['updated']] <- TRUE
+  }
+  else
+  if(!is.null(annoy[['nn_index']][['type']]) && annoy[['nn_index']][['type']] == 'annoyv1') {
+    annoy_out <- SimpleList()
+    annoy_out[['nn_index']] <- list()
+    annoy_out[['nn_index']][['method']] <- 'annoy'
+    annoy_out[['nn_index']][['annoy_index']] <- annoy[['nn_index']][['ann']]
+    annoy_out[['nn_index']][['version']] <- 2
+    annoy_out[['nn_index']][['annoy_index_version']] <- annoy[['index_version']]
+    annoy_out[['nn_index']][['metric']] <- annoy[['metric']]
+    annoy_out[['nn_index']][['n_trees']] <- annoy[['n_trees']]
+    annoy_out[['nn_index']][['nrow']] <- annoy[['nrow']]
+    annoy_out[['nn_index']][['ncol']] <- annoy[['ncol']]
+    annoy_out[['nn_index']][['checksum_rownames']] <- NA_character_
+    annoy_out[['matrix_id']] <- annoy[['matrix_id']]
+    annoy_out[['updated']] <- TRUE
+  }
+  else
+  if(is.null(annoy[['nn_index']][['type']])) {
+    annoy_out <- SimpleList()
+    annoy_out[['nn_index']] <- list()
+    annoy_out[['nn_index']][['method']] <- 'annoy'
+    annoy_out[['nn_index']][['annoy_index']] <- annoy[['nn_index']]
+    annoy_out[['nn_index']][['version']] <- 2
+    annoy_out[['nn_index']][['annoy_index_version']] <- NA_character_
+    annoy_out[['nn_index']][['metric']] <- annoy[['metric']]
+    annoy_out[['nn_index']][['metric']] <- ifelse(!is.null(annoy[['metric']]), annoy[['metric']], NA_character_)
+    annoy_out[['nn_index']][['n_trees']] <- ifelse(!is.null(annoy[['n_trees']]), annoy[['n_trees']], NA_integer_)
+    annoy_out[['nn_index']][['nrow']] <- ifelse(!is.null(annoy[['n_trees']]), annoy[['n_trees']], NA_integer_)
+    annoy_out[['nn_index']][['ncol']] <- ifelse(!is.null(annoy[['n_trees']]), annoy[['n_trees']], NA_integer_)
+    annoy_out[['nn_index']][['checksum_rownames']] <- NA_character_
+    annoy_out[['matrix_id']] <- NA_character_
+    annoy_out[['updated']] <- TRUE
+  }
+
+  return(annoy_out)
+}
+
+
+update_hnsw_index <- function(hnsw) {
+  if(!is.null(hnsw[['nn_index']][['version']]) && hnsw[['nn_index']][['version']] == 1) {
+    hnsw_out <- hnsw
+  }
+  else
+  if(!is.null(hnsw[['nn_index']][['version']]) && hnsw[['nn_index']][['version']] == 1) {
+    hnsw_out <- SimpleList()
+    annoy_out[['nn_index']] <- list()
+    hnsw_out[['nn_index']][['method']] <- 'hnsw'
+    hnsw_out[['nn_index']][['hnsw_index']] <- hnsw[['nn_index']]
+    hnsw_out[['nn_index']][['version']] <- 1
+    hnsw_out[['nn_index']][['hnsw_index_version']] <- hnsw[['index_version']]
+    hnsw_out[['nn_index']][['metric']] <- hnsw[['metric']]
+    hnsw_out[['nn_index']][['M']] <- hnsw[['M']]
+    hnsw_out[['nn_index']][['ef_construction']] <- hnsw[['ef_construction']]
+    hnsw_out[['nn_index']][['nrow']] <- hnsw[['nrow']]
+    hnsw_out[['nn_index']][['ncol']] <- hnsw[['ncol']]
+    hnsw_out[['nn_index']][['checksum_rownames']] <- NA_character_
+    hnsw_out[['matrix_id']] <- hnsw[['matrix_id']]
+    annoy_out[['updated']] <- TRUE
+  }
+
+  return(hnsw_out)
+}
+
+
 # Save Annoy model files.
 # Complexities
 #   o  uwot annoy model object is declared to be subject to change
@@ -340,7 +424,7 @@ load_mtx_data <- function( mat_path,
 # untested code when is.null(nn_index[['type']])
 save_annoy_index <- function(nn_index, file_name) {
   if(!is.null(nn_index[['version']])) {
-    if(nn_index[['version']] == 1) {
+    if(nn_index[['version']] == 1 || nn_index[['version']] == 2) {
       tryCatch( nn_index[['annoy_index']]$save(file_name),
                 error = function(e) {message(paste0('Unable to save annoy index: it may not exist in this cds: error message is ', e))})
     } else {
@@ -367,9 +451,16 @@ save_annoy_index <- function(nn_index, file_name) {
 # modified for RcppAnnoy
 load_annoy_index <- function(nn_index, file_name, metric, ndim) {
   if(!is.null(nn_index[['version']])) {
-    if(nn_index[['version']] == 1) {
+    if(nn_index[['version']] == 1 || nn_index[['version']] == 2) {
       annoy_index <- new_annoy_index(metric, ndim)
-      annoy_index$load(file_name)
+      tryCatch(
+        {
+          annoy_index$load(file_name)
+        }, error = function(emsg)
+        {
+          stop('load_annoy_index: bad status reading annoy index file')
+        }
+      )
       nn_index[['annoy_index']] <- annoy_index
     }
     else {
@@ -380,7 +471,14 @@ load_annoy_index <- function(nn_index, file_name, metric, ndim) {
   if(!is.null(nn_index[['type']])) {
     if(nn_index[['type']] == 'annoyv1') {
       annoy_index <- new_annoy_index(metric, ndim)
-      annoy_index$load(file_name)
+      tryCatch(
+        {
+          annoy_index$load(file_name)
+        }, error = function(emsg)
+        {
+          stop('load_annoy_index: bad status reading annoy index file')
+        }
+      )
       nn_index[['ann']] <- annoy_index
     }
     else {
@@ -396,33 +494,123 @@ load_annoy_index <- function(nn_index, file_name, metric, ndim) {
 }
 
 
-save_hnsw_index <- function(nn_index, file_name) {
-  if(!is.null(nn_index)) {
-    tryCatch( nn_index$save(file_name),
-              error = function(e) {message('Unable to save hnsw index: it may not exist in this cds: error message is ', e)})
+save_umap_annoy_index <- function(nn_index, file_name) {
+  if(!is.null(nn_index[['type']])) {
+    if(nn_index[['type']] == 'annoyv1') {
+      tryCatch( nn_index[['ann']]$save(file_name),
+                error = function(e) {message(paste0('Unable to save annoy index: it may not exist in this cds: error message is ', e))})
+    }
+    else {
+      stop('Unrecognized umap annoy index type')
+    }
   }
+  else {
+    nn_index$save(file_name)
+  }
+}
+
+
+load_umap_annoy_index <- function(nn_index, file_name, metric, ndim) {
+  if(!is.null(nn_index[['type']])) {
+    if(nn_index[['type']] == 'annoyv1') {
+      annoy_index <- new_annoy_index(metric, ndim)
+      tryCatch(
+        {
+          annoy_index$load(file_name)
+        }, error = function(emsg)
+        {
+          stop('load_annoy_index: bad status reading annoy index file')
+        }
+      )
+      nn_index[['ann']] <- annoy_index
+    }
+    else {
+      stop('Unrecognized umap annoy index type')
+    }
+  }
+  else {
+    # Assume to be an older uwot annoy index version.
+    nn_index <- new_annoy_index(metric, ndim)
+    tryCatch(
+      {
+        nn_index$load(file_name)
+      }, error = function(emsg)
+      {
+        stop('load_annoy_index: bad status reading annoy index file')
+      }
+    )
+  }
+  return(nn_index)
+}
+
+
+save_hnsw_index <- function(nn_index, file_name) {
+  if(is.null(nn_index)) return
+
+  if(!is.null(nn_index[['version']])) {
+    out_index <- nn_index[['hnsw_index']]
+  }
+  else {
+    out_index <- nn_index
+  }
+  tryCatch(out_index$save(file_name),
+           error = function(e) {message('Unable to save hnsw index: it may not exist in this cds: error message is ', e)})
 }
 
 
 load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
   if(metric == 'l2') {
-    nn_index <- new(RcppHNSW::HnswL2, ndim, file_name)
+    tryCatch(
+      {
+        new_index <- new(RcppHNSW::HnswL2, ndim, file_name)
+      }, error = function(emsg)
+      {
+        stop('load_hnsw_index: bad status reading hnsw index file')
+      }
+    )
     unlink(file_name)
   } else
   if(metric == 'euclidean') {
-    nn_index <- new(RcppHNSW::HnswL2, ndim, file_name)
-    attr(nn_index, "distance") <- "euclidean"
+    tryCatch(
+      {
+        new_index <- new(RcppHNSW::HnswL2, ndim, file_name)
+      }, error = function(emsg)
+      {
+        stop('load_hnsw_index: bad status reading hnsw index file')
+      }
+    )
+    attr(new_index, "distance") <- "euclidean"
     unlink(file_name)
   } else
     if(metric == 'cosine') {
-    nn_index <- new(RcppHNSW::HnswCosine, ndim, file_name)
+    tryCatch(
+      {
+        new_index <- new(RcppHNSW::HnswCosine, ndim, file_name)
+      }, error = function(emsg)
+      {
+        stop('load_hnsw_index: bad status reading hnsw index file')
+      }
+    )
     unlink(file_name)
-  }
-  else
+  } else
   if(metric == 'ip') {
-    nn_index <- new(RcppHNSW::HnswIp, ndim, file_name)
+    tryCatch(
+      {
+        new_index <- new(RcppHNSW::HnswIp, ndim, file_name)
+      }, error = function(emsg)
+      {
+        stop('load_hnsw_index: bad status reading hnsw index file')
+      }
+    )
     unlink(file_name)
-  }
+  } else
+    stop(paste('Unrecognized HNSW metric', metric))
+
+  if(!is.null(nn_index[['version']]))
+    nn_index[['hnsw_index']] <- new_index
+  else
+    nn_index <- new_index
+
   return(nn_index)
 }
 
@@ -437,14 +625,14 @@ save_umap_nn_indexes <- function(umap_model, file_name) {
   metrics <- names(umap_model[['metric']])
   n_metrics <- length(metrics)
   if(n_metrics == 1) {
-    save_annoy_index(umap_model[['nn_index']], file_name)
+    save_umap_annoy_index(umap_model[['nn_index']], file_name)
     md5sum_umap_index <- tools::md5sum(file_name)
   } else {
     warning('save_umap_nn_indexes is untested with more than one umap metric')
     md5sum_vec <- character()
     for(i in seq(1, n_metrics, 1)) {
       file_name_expand <- paste0(file_name, i)
-      save_annoy_index(umap_model[['nn_index']][[i]], file_name_expand)
+      save_umap_annoy_index(umap_model[['nn_index']][[i]], file_name_expand)
       md5sum <- tools::md5sum(file_name_expand)
       append(md5sum_vec, md5sum)
     }
@@ -466,7 +654,7 @@ load_umap_nn_indexes <- function(umap_model, file_name, md5sum_umap_index) {
     metric <- metrics[[1]]
     annoy_metric <- if(metric == 'correlation') 'cosine' else metric
     annoy_ndim <- umap_model[['metric']][[1]][['ndim']]
-    umap_model[['nn_index']] <- load_annoy_index(umap_model[['nn_index']], file_name, annoy_metric, annoy_ndim)
+    umap_model[['nn_index']] <- load_umap_annoy_index(umap_model[['nn_index']], file_name, annoy_metric, annoy_ndim)
   } else {
     warning('load_umap_nn_indexes is untested with more than one umap metric')
     if(!is.null(md5sum_umap_index)) {
@@ -481,7 +669,7 @@ load_umap_nn_indexes <- function(umap_model, file_name, md5sum_umap_index) {
       metric <- metrics[[i]]
       annoy_metric <- if(metric == 'correlation') 'cosine' else metric
       annoy_ndim <- length(umap_model[['metric']][[i]])
-      umap_model[['nn_index']][[i]] <- load_annoy_index(umap_model[['nn_index']][[i]], file_name_expand, annoy_metric, annoy_ndim)
+      umap_model[['nn_index']][[i]] <- load_umap_annoy_index(umap_model[['nn_index']][[i]], file_name_expand, annoy_metric, annoy_ndim)
     }
   }
   return(umap_model)
@@ -846,8 +1034,10 @@ load_transform_models <- function(cds, directory_path) {
           })
       } else
       if(file_format == 'annoy_index') {
-        metric <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['metric']]
-        ncolumn <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['ncol']]
+        cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']] <- update_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']])
+
+        metric <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']][['metric']]
+        ncolumn <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']][['ncol']]
         cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']] <- tryCatch(
           {
             load_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']], file_path, metric, ncolumn)
@@ -858,8 +1048,10 @@ load_transform_models <- function(cds, directory_path) {
           })
       } else
       if(file_format == 'hnsw_index') {
-        metric <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['metric']]
-        ncolumn <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['ncol']]
+        cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']] <- update_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']])
+
+        metric <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']][['metric']]
+        ncolumn <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']][['ncol']]
         cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']] <- tryCatch(
           {
             load_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']], file_path, metric, ncolumn)
@@ -1264,8 +1456,10 @@ load_monocle_objects <- function(directory_path) {
     } else
     if(cds_object == 'reduce_dim_aux') {
       if(file_format == 'annoy_index') {
-        metric <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['metric']]
-        ncolumn <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['ncol']]
+        cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']] <- update_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']])
+
+        metric <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']][['metric']]
+        ncolumn <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']][['ncol']]
         cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']] <- tryCatch(
           {
             load_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']], file_path, metric, ncolumn)
@@ -1276,8 +1470,10 @@ load_monocle_objects <- function(directory_path) {
           })
       } else
       if(file_format == 'hnsw_index') {
-        metric <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['metric']]
-        ncolumn <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['ncol']]
+        cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']] <- update_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']])
+
+        metric <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']][['metric']]
+        ncolumn <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']][['ncol']]
         cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']] <- tryCatch(
           {
             load_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']], file_path, metric, ncolumn)

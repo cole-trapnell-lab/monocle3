@@ -124,7 +124,7 @@ split_cols <- function (x, ncl) {
 
 #' @keywords internal
 sparse_par_r_apply <- function (cl, x, FUN, convert_to_dense, ...) {
-  par_res <- do.call(c, BiocGenerics::clusterApply(cl = cl,
+  par_res <- do.call(c, parallel::clusterApply(cl = cl,
                                                    x = split_rows(x,
                                                                   length(cl)),
                                      fun = sparse_apply, MARGIN = 1L,
@@ -137,7 +137,7 @@ sparse_par_r_apply <- function (cl, x, FUN, convert_to_dense, ...) {
 
 #' @keywords internal
 sparse_par_c_apply <- function (cl = NULL, x, FUN, convert_to_dense, ...) {
-  par_res <- do.call(c, BiocGenerics::clusterApply(cl = cl,
+  par_res <- do.call(c, parallel::clusterApply(cl = cl,
                                                    x = split_cols(x,
                                                                   length(cl)),
                                      fun = sparse_apply, MARGIN = 2L,
@@ -768,12 +768,24 @@ get_citations <- function(cds) {
 
 # Make a unique identifier string.
 get_unique_id <- function(object=NULL) {
-  id_count <- get_global_variable('id_count')
-  rtime <- as.numeric(Sys.time())*100000 + id_count
-  id_hash <- openssl::md5(as.character(rtime))
-  id_count <- id_count + 1
-  set_global_variable('id_count', id_count)
-  return(id_hash)
+
+  if(!is.null(object)) {
+    object_dim <- dim(object)
+    object_checksum <- digest::digest(object)
+    if(!is.null(object_dim))
+      object_id <- list(checksum=object_checksum, dim=object_dim)
+    else
+      object_id <- list(checksum=object_checksum, dim=length(object))
+  }
+  else {
+    id_count <- get_global_variable('id_count')
+    rtime <- as.numeric(Sys.time()) * 100000 + id_count
+    object_id <- openssl::md5(as.character(rtime))
+    id_count <- id_count + 1
+    set_global_variable('id_count', id_count)
+  }
+
+  return(object_id)
 }
 
 

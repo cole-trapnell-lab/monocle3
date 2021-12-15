@@ -17,11 +17,11 @@ Write the cell_data_set matrix and model
 identity information to stdout.
 }
 \details{
-A matrix identity is a time stamp that is stored
+A matrix identity is a checksum that is stored
 in the cell_data_set when a reduced dimension matrix is
 created and when certain functions read count matrices
 into the cell_data_set, such as load_mm_data(). At the
-same time, the same time stamp is stored as the model
+same time, the same checksum is stored as the model
 identity in order to link the model to its matrix.
 
 Additionally, Monocle3 stores the identity of the matrix
@@ -48,20 +48,18 @@ have the same string value. However, they differ when
 the preprocess_transform() and reduce_dim_transform()
 functions are used to transform a matrix.
 
-Certain file and directory paths may be stored in the
-cell_data_set.
-
-A time stamp is an MD5 checksum string made from the
-time and a counter, which make it unique.
-
-The matrix identity string is stored in the internal
+Notes:
+\itemize{
+\item Certain file and directory paths may be stored in the
+cell_data_set as identifiers.
+\item Checksums are calculated using the digest function in
+the digest package. The matrix dimensions are stored
+with the checksum.
+\item Matrix transformations such as subsetting and row and
+or column reordering do not affect the matrix identity.
+\item The matrix identity string is stored in the internal
 metadata slot of the cell_data_set and the model
 identity string is stored in the model object in the
 cds@reduce_dim_aux slot of the cell_data_set.
-
-Note that the same matrix created at different times
-will have different matrix identity strings. We chose
-to use time stamps because the alternative of making
-a checksum from a very large matrix can take a long
-time.
+}
 }

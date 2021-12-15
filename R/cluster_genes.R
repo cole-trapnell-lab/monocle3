@@ -24,7 +24,7 @@
 #' @param preprocess_method a string specifying the low-dimensional space
 #'   to use for gene loadings, currently either PCA or LSI. Default is
 #'   "PCA".
-#' @param nn_control A list of parameters used to make the nearest
+#' @param nn_control An optional list of parameters used to make the nearest
 #'  neighbor index. See the set_nn_control help for detailed information.
 #' @param ... Additional arguments passed to UMAP and Louvain analysis.
 #'
@@ -56,8 +56,7 @@ find_gene_modules <- function(cds,
   nn_control <- set_nn_control(mode=3,
                                nn_control=nn_control,
                                nn_control_default=nn_control_default,
-                               cds=NULL,
-                               reduction_method=NULL,
+                               nn_index=NULL,
                                k=k,
                                verbose=verbose)
 

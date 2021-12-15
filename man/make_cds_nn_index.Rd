@@ -17,7 +17,9 @@ which to make the nearest neighbor index and with which the index
 is stored.}
 
 \item{reduction_method}{a string giving the reduced dimension matrix
-to use for making the nn_index nearest neighbor index.}
+to use for making the nn_index nearest neighbor index.
+Note: distances in tSNE space reflect spatial differences poorly
+so using nearest neighbors with it may be meaningless.}
 
 \item{nn_control}{a list of parameters to use for making the nearest
 neighbor index. See the set_nn_control help for details.}

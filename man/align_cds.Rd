@@ -43,7 +43,7 @@ reduction}
 align_cds builds the nearest neighbor index from the
 aligned reduced matrix for later use. Default is FALSE.}
 
-\item{nn_control}{A list of parameters used to make the nearest
+\item{nn_control}{An optional list of parameters used to make the nearest
 neighbor index. See the set_nn_control help for detailed information.}
 
 \item{...}{additional arguments to pass to limma::lmFit if

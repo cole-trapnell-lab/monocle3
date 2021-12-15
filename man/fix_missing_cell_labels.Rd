@@ -42,9 +42,11 @@ neighbors to find. This value must be large enough to find
 meaningful column value fractions. See the top_frac_threshold
 parameter below for additional information. The default is 10.}
 
-\item{nn_control}{a list of parameters used to make the nearest
-neighbors index. See the set_nn_control help for additional
-details. The default is to use the global nn_control list.}
+\item{nn_control}{An optional list of parameters used to make the
+nearest neighbors index. See the set_nn_control help for
+additional details. The default metric is cosine for
+reduction_methods PCA and LSI and is euclidean for
+reduction_method UMAP.}
 
 \item{top_frac_threshold}{a numeric value. The top fraction
 of reference values must be greater than top_frac_threshold

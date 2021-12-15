@@ -237,10 +237,11 @@ test_that("load_mm_data: load MatrixMarket with annotations file ncol=2:nheader=
 test_that("save_transform_models and load_transform_models", {
   skip_on_travis()
   # set up a cds with nearest neighbor indices and transform models
+  nn_method <- 'annoy'
   cds <- load_a549()
-  cds <- preprocess_cds(cds, build_nn_index=TRUE, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
-  cds <- align_cds(cds, preprocess_method='PCA', residual_model_formula_str='~n.umi', build_nn_index=TRUE, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
-  cds <- reduce_dimension(cds, preprocess_method='Aligned', build_nn_index=TRUE, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
+  cds <- preprocess_cds(cds, build_nn_index=TRUE, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
+  cds <- align_cds(cds, preprocess_method='PCA', residual_model_formula_str='~n.umi', build_nn_index=TRUE, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
+  cds <- reduce_dimension(cds, preprocess_method='Aligned', build_nn_index=TRUE, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   save_transform_models(cds, directory_path=transform_models)
 
   # load cds, load transform models, and process cds with transform models
@@ -251,7 +252,7 @@ test_that("save_transform_models and load_transform_models", {
   cds <- align_beta_transform(cds, preprocess_method='PCA')
   cds <- reduce_dimension_transform(cds, preprocess_method='Aligned', reduction_method='UMAP')
 
-  nn_index <- get_cds_nn_index(cds, reduction_method='PCA', nn_control=list(method='annoy'))
+  nn_index <- get_cds_nn_index(cds, reduction_method='PCA', nn_method=nn_method)
   if(!is.null(nn_index[['version']]))
     expect_equal(as.character(class(nn_index[['annoy_index']])), 'Rcpp_AnnoyEuclidean')
   else
@@ -264,7 +265,7 @@ test_that("save_transform_models and load_transform_models", {
   expect_equivalent(ncol(reducedDims(cds)[['PCA']]), 50)
   expect_equivalent(nrow(reducedDims(cds)[['PCA']]), 500)
   expect_equivalent(reducedDims(cds)[['PCA']][[1,1]], 2.420739, tol=1e-5)
-  nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['PCA']], nn_index=get_cds_nn_index(cds, reduction_method='PCA', nn_control=list(method='annoy', metric='euclidean', n_trees=50)), k=5, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
+  nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['PCA']], nn_index=get_cds_nn_index(cds, reduction_method='PCA', nn_method=nn_method, verbose=FALSE))
   expect_equivalent(nn_res[['nn.idx']][[1]], 1)
   expect_equivalent(nn_res[['nn.dists']][[1]], 0)
 
@@ -272,7 +273,7 @@ test_that("save_transform_models and load_transform_models", {
   expect_equivalent(ncol(reducedDims(cds)[['Aligned']]), 50)
   expect_equivalent(nrow(reducedDims(cds)[['Aligned']]), 500)
   expect_equivalent(reducedDims(cds)[['Aligned']][[1,1]], 3.870306, tol=1e-5)
-  nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['Aligned']], nn_index=get_cds_nn_index(cds, reduction_method='Aligned', nn_control=list(method='annoy', metric='euclidean', n_trees=50)), k=5, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
+  nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['Aligned']], nn_index=get_cds_nn_index(cds, reduction_method='Aligned', nn_method=nn_method, verbose=FALSE), k=5, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   expect_equivalent(nn_res[['nn.idx']][[1]], 1)
   expect_equivalent(nn_res[['nn.dists']][[1]], 0)
 
@@ -280,22 +281,23 @@ test_that("save_transform_models and load_transform_models", {
   expect_equivalent(ncol(reducedDims(cds)[['UMAP']]), 2)
   expect_equivalent(nrow(reducedDims(cds)[['UMAP']]), 500)
   expect_equivalent(reducedDims(cds)[['UMAP']][[1,1]], 1.96, tol=1e-2)
-  nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['UMAP']], nn_index=get_cds_nn_index(cds, reduction_method='UMAP', nn_control=list(method='annoy', metric='euclidean', n_trees=50)), k=5, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
+  nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['UMAP']], nn_index=get_cds_nn_index(cds, reduction_method='UMAP', nn_method=nn_method, verbose=FALSE), k=5, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   expect_equivalent(nn_res[['nn.idx']][[1]], 1)
   expect_equivalent(nn_res[['nn.dists']][[1]], 0)
   system(paste0('rm -r ', transform_models))
 
   rm(cds)
   rm(nn_index)
+  nn_method <- 'hnsw'
   cds <- load_a549()
-  cds <- preprocess_cds(cds, build_nn_index=TRUE, nn_control=list(method='hnsw', metric='euclidean', n_trees=50))
+  cds <- preprocess_cds(cds, build_nn_index=TRUE, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   save_transform_models(cds, directory_path=transform_models)
   rm(cds)
   cds <- load_a549()
   cds <- preprocess_cds(cds) 
   cds <- load_transform_models(cds, directory_path=transform_models)
-  nn_index <- get_cds_nn_index(cds, reduction_method='PCA', nn_control=list(method='hnsw'))
-  expect_equal(as.character(class(nn_index)), 'Rcpp_HnswL2')
+  nn_index <- get_cds_nn_index(cds, reduction_method='PCA', nn_method=nn_method)
+  expect_equal(as.character(class(nn_index[['hnsw_index']])), 'Rcpp_HnswL2')
   system(paste0('rm -r ', transform_models))
 } )
 
@@ -303,17 +305,18 @@ test_that("save_transform_models and load_transform_models", {
 test_that("save_monocle_objects and load_monocle_objects", {
   skip_on_travis()
   # set up a cds with nearest neighbor indices and monocle_objects
+  nn_method <- 'annoy'
   cds <- load_a549()
-  cds <- preprocess_cds(cds, build_nn_index=TRUE, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
-  cds <- align_cds(cds, preprocess_method='PCA', residual_model_formula_str='~n.umi', build_nn_index=TRUE, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
-  cds <- reduce_dimension(cds, preprocess_method='Aligned', build_nn_index=TRUE, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
+  cds <- preprocess_cds(cds, build_nn_index=TRUE, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
+  cds <- align_cds(cds, preprocess_method='PCA', residual_model_formula_str='~n.umi', build_nn_index=TRUE, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
+  cds <- reduce_dimension(cds, preprocess_method='Aligned', build_nn_index=TRUE, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   save_monocle_objects(cds, directory_path=monocle_objects)
 
   # load monocle objects models
   rm(cds)
   cds <- load_monocle_objects(directory_path=monocle_objects)
 
-  nn_index <- get_cds_nn_index(cds, reduction_method='PCA', nn_control=list(method='annoy'))
+  nn_index <- get_cds_nn_index(cds, reduction_method='PCA', nn_method=nn_method)
   if(!is.null(nn_index[['version']]))
     expect_equal(as.character(class(nn_index[['annoy_index']])), 'Rcpp_AnnoyEuclidean')
   else
@@ -331,7 +334,7 @@ test_that("save_monocle_objects and load_monocle_objects", {
   expect_equivalent(ncol(reducedDims(cds)[['PCA']]), 50)
   expect_equivalent(nrow(reducedDims(cds)[['PCA']]), 500)
   expect_equivalent(reducedDims(cds)[['PCA']][[1,1]], 2.420739, tol=1e-5)
-  nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['PCA']], nn_index=get_cds_nn_index(cds, reduction_method='PCA', nn_control=list(method='annoy', metric='euclidean', n_trees=50)), k=5, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
+  nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['PCA']], nn_index=get_cds_nn_index(cds, reduction_method='PCA', nn_method=nn_method), k=5, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   expect_equivalent(nn_res[['nn.idx']][[1]], 1)
   expect_equivalent(nn_res[['nn.dists']][[1]], 0)
 
@@ -339,7 +342,7 @@ test_that("save_monocle_objects and load_monocle_objects", {
   expect_equivalent(ncol(reducedDims(cds)[['Aligned']]), 50)
   expect_equivalent(nrow(reducedDims(cds)[['Aligned']]), 500)
   expect_equivalent(reducedDims(cds)[['Aligned']][[1,1]], 3.870306, tol=1e-5)
-  nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['Aligned']], nn_index=get_cds_nn_index(cds, reduction_method='Aligned', nn_control=list(method='annoy', metric='euclidean', n_trees=50)), k=5, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
+  nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['Aligned']], nn_index=get_cds_nn_index(cds, reduction_method='Aligned', nn_method=nn_method), k=5, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   expect_equivalent(nn_res[['nn.idx']][[1]], 1)
   expect_equivalent(nn_res[['nn.dists']][[1]], 0)
 
@@ -347,21 +350,22 @@ test_that("save_monocle_objects and load_monocle_objects", {
   expect_equivalent(ncol(reducedDims(cds)[['UMAP']]), 2)
   expect_equivalent(nrow(reducedDims(cds)[['UMAP']]), 500)
   expect_equivalent(reducedDims(cds)[['UMAP']][[1,1]], 1.96, tol=1e-2)
-  nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['UMAP']], nn_index=get_cds_nn_index(cds, reduction_method='UMAP', nn_control=list(method='annoy', metric='euclidean', n_trees=50)), k=5, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
+  nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['UMAP']], nn_index=get_cds_nn_index(cds, reduction_method='UMAP', nn_method=nn_method), k=5, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   expect_equivalent(nn_res[['nn.idx']][[1]], 1)
   expect_equivalent(nn_res[['nn.dists']][[1]], 0)
   system(paste0('rm -r ', monocle_objects))
 
   rm(cds)
   rm(nn_index)
+  nn_method <- 'hnsw'
   cds <- load_a549()
-  cds <- preprocess_cds(cds, build_nn_index=TRUE, nn_control=list(method='hnsw', metric='euclidean', n_trees=50))
+  cds <- preprocess_cds(cds, build_nn_index=TRUE, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   save_monocle_objects(cds, directory_path=monocle_objects)
   rm(cds)
   cds <- load_a549()
   cds <- load_monocle_objects(directory_path=monocle_objects)
-  nn_index <- get_cds_nn_index(cds, reduction_method='PCA', nn_control=list(method='hnsw'))
-  expect_equal(as.character(class(nn_index)), 'Rcpp_HnswL2')
+  nn_index <- get_cds_nn_index(cds, reduction_method='PCA', nn_method=nn_method)
+  expect_equal(as.character(class(nn_index[['hnsw_index']])), 'Rcpp_HnswL2')
   system(paste0('rm -r ', monocle_objects))
 } )
 
@@ -369,10 +373,11 @@ test_that("save_monocle_objects and load_monocle_objects", {
 test_that("save_transform_models and load_transform_models", {
   skip_not_travis()
   # set up a cds with nearest neighbor indices and transform models
+  nn_method <- 'annoy'
   cds <- load_a549()
-  cds <- preprocess_cds(cds, build_nn_index=TRUE, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
-  cds <- align_cds(cds, preprocess_method='PCA', residual_model_formula_str='~n.umi', build_nn_index=TRUE, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
-  cds <- reduce_dimension(cds, preprocess_method='Aligned', build_nn_index=TRUE, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
+  cds <- preprocess_cds(cds, build_nn_index=TRUE, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
+  cds <- align_cds(cds, preprocess_method='PCA', residual_model_formula_str='~n.umi', build_nn_index=TRUE, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
+  cds <- reduce_dimension(cds, preprocess_method='Aligned', build_nn_index=TRUE, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   save_transform_models(cds, directory_path=transform_models)
 
   # load cds, load transform models, and process cds with transform models
@@ -383,14 +388,14 @@ test_that("save_transform_models and load_transform_models", {
   cds <- align_beta_transform(cds, preprocess_method='PCA')
   cds <- reduce_dimension_transform(cds, preprocess_method='Aligned', reduction_method='UMAP')
 
-  nn_index <- get_cds_nn_index(cds, reduction_method='PCA', nn_control=list(method='annoy'))
-  expect_equal(as.character(class(nn_index[['ann']])), 'Rcpp_AnnoyEuclidean')
+  nn_index <- get_cds_nn_index(cds, reduction_method='PCA', nn_method=nn_method)
+  expect_equal(as.character(class(nn_index[['annoy_index']])), 'Rcpp_AnnoyEuclidean')
 
   # check PCA reduced dims matrix and nearest neighbors
   expect_equivalent(ncol(reducedDims(cds)[['PCA']]), 50)
   expect_equivalent(nrow(reducedDims(cds)[['PCA']]), 500)
   expect_equivalent(reducedDims(cds)[['PCA']][[1,1]], 2.420739, tol=1e-5)
-  nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['PCA']], nn_index=get_cds_nn_index(cds, reduction_method='PCA', nn_control=list(method='annoy', metric='euclidean', n_trees=50)), k=5, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
+  nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['PCA']], nn_index=get_cds_nn_index(cds, reduction_method='PCA', nn_method=nn_method), k=5, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   expect_equivalent(nn_res[['nn.idx']][[1]], 1)
   expect_equivalent(nn_res[['nn.dists']][[1]], 0)
 
@@ -398,30 +403,31 @@ test_that("save_transform_models and load_transform_models", {
   expect_equivalent(ncol(reducedDims(cds)[['Aligned']]), 50)
   expect_equivalent(nrow(reducedDims(cds)[['Aligned']]), 500)
   expect_equivalent(reducedDims(cds)[['Aligned']][[1,1]], 3.870306, tol=1e-5)
-  nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['Aligned']], nn_index=get_cds_nn_index(cds, reduction_method='Aligned', nn_control=list(method='annoy', metric='euclidean', n_trees=50)), k=5, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
+  nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['Aligned']], nn_index=get_cds_nn_index(cds, reduction_method='Aligned', nn_method=nn_method), k=5, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   expect_equivalent(nn_res[['nn.idx']][[1]], 1)
   expect_equivalent(nn_res[['nn.dists']][[1]], 0)
 
   # check UMAP reduced dims matrix and nearest neighbors
   expect_equivalent(ncol(reducedDims(cds)[['UMAP']]), 2)
   expect_equivalent(nrow(reducedDims(cds)[['UMAP']]), 500)
-  expect_equivalent(reducedDims(cds)[['UMAP']][[1,1]], 1.96, tol=1e-2)
-  nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['UMAP']], nn_index=get_cds_nn_index(cds, reduction_method='UMAP', nn_control=list(method='annoy', metric='euclidean', n_trees=50)), k=5, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
+  expect_equivalent(reducedDims(cds)[['UMAP']][[1,1]], 1.93, tol=1e-2)
+  nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['UMAP']], nn_index=get_cds_nn_index(cds, reduction_method='UMAP', nn_method=nn_method), k=5, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   expect_equivalent(nn_res[['nn.idx']][[1]], 1)
   expect_equivalent(nn_res[['nn.dists']][[1]], 0)
   system(paste0('rm -r ', transform_models))
 
   rm(cds)
   rm(nn_index)
+  nn_method <- 'hnsw'
   cds <- load_a549()
-  cds <- preprocess_cds(cds, build_nn_index=TRUE, nn_control=list(method='hnsw', metric='euclidean', n_trees=50))
+  cds <- preprocess_cds(cds, build_nn_index=TRUE, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   save_transform_models(cds, directory_path=transform_models)
   rm(cds)
   cds <- load_a549()
   cds <- preprocess_cds(cds)
   cds <- load_transform_models(cds, directory_path=transform_models)
-  nn_index <- get_cds_nn_index(cds, reduction_method='PCA', nn_control=list(method='hnsw'))
-  expect_equal(as.character(class(nn_index)), 'Rcpp_HnswL2')
+  nn_index <- get_cds_nn_index(cds, reduction_method='PCA', nn_method=nn_method)
+  expect_equal(as.character(class(nn_index[['hnsw_index']])), 'Rcpp_HnswL2')
   system(paste0('rm -r ', transform_models))
 } )
 
@@ -429,18 +435,19 @@ test_that("save_transform_models and load_transform_models", {
 test_that("save_monocle_objects and load_monocle_objects", {
   skip_not_travis()
   # set up a cds with nearest neighbor indices and monocle_objects
+  nn_method <- 'annoy'
   cds <- load_a549()
-  cds <- preprocess_cds(cds, build_nn_index=TRUE, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
-  cds <- align_cds(cds, preprocess_method='PCA', residual_model_formula_str='~n.umi', build_nn_index=TRUE, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
-  cds <- reduce_dimension(cds, preprocess_method='Aligned', build_nn_index=TRUE, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
+  cds <- preprocess_cds(cds, build_nn_index=TRUE, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
+  cds <- align_cds(cds, preprocess_method='PCA', residual_model_formula_str='~n.umi', build_nn_index=TRUE, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
+  cds <- reduce_dimension(cds, preprocess_method='Aligned', build_nn_index=TRUE, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   save_monocle_objects(cds, directory_path=monocle_objects)
 
   # load monocle objects models
   rm(cds)
   cds <- load_monocle_objects(directory_path=monocle_objects)
 
-  nn_index <- get_cds_nn_index(cds, reduction_method='PCA', nn_control=list(method='annoy'))
-  expect_equal(as.character(class(nn_index[['ann']])), 'Rcpp_AnnoyEuclidean')
+  nn_index <- get_cds_nn_index(cds, reduction_method='PCA', nn_method=nn_method)
+  expect_equal(as.character(class(nn_index[['annoy_index']])), 'Rcpp_AnnoyEuclidean')
 
   # check count matrix
   expect_equivalent(ncol(counts(cds)), 500)
@@ -451,7 +458,7 @@ test_that("save_monocle_objects and load_monocle_objects", {
   expect_equivalent(ncol(reducedDims(cds)[['PCA']]), 50)
   expect_equivalent(nrow(reducedDims(cds)[['PCA']]), 500)
   expect_equivalent(reducedDims(cds)[['PCA']][[1,1]], 2.420739, tol=1e-5)
-  nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['PCA']], nn_index=get_cds_nn_index(cds, reduction_method='PCA', nn_control=list(method='annoy', metric='euclidean', n_trees=50)), k=5, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
+  nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['PCA']], nn_index=get_cds_nn_index(cds, reduction_method='PCA', nn_method=nn_method), k=5, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   expect_equivalent(nn_res[['nn.idx']][[1]], 1)
   expect_equivalent(nn_res[['nn.dists']][[1]], 0)
 
@@ -459,29 +466,30 @@ test_that("save_monocle_objects and load_monocle_objects", {
   expect_equivalent(ncol(reducedDims(cds)[['Aligned']]), 50)
   expect_equivalent(nrow(reducedDims(cds)[['Aligned']]), 500)
   expect_equivalent(reducedDims(cds)[['Aligned']][[1,1]], 3.870306, tol=1e-5)
-  nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['Aligned']], nn_index=get_cds_nn_index(cds, reduction_method='Aligned', nn_control=list(method='annoy', metric='euclidean', n_trees=50)), k=5, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
+  nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['Aligned']], nn_index=get_cds_nn_index(cds, reduction_method='Aligned', nn_method=nn_method), k=5, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   expect_equivalent(nn_res[['nn.idx']][[1]], 1)
   expect_equivalent(nn_res[['nn.dists']][[1]], 0)
 
   # check UMAP reduced dims matrix and nearest neighbors
   expect_equivalent(ncol(reducedDims(cds)[['UMAP']]), 2)
   expect_equivalent(nrow(reducedDims(cds)[['UMAP']]), 500)
-  expect_equivalent(reducedDims(cds)[['UMAP']][[1,1]], 1.96, tol=1e-2)
-  nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['UMAP']], nn_index=get_cds_nn_index(cds, reduction_method='UMAP', nn_control=list(method='annoy', metric='euclidean', n_trees=50)), k=5, nn_control=list(method='annoy', metric='euclidean', n_trees=50))
+  expect_equivalent(reducedDims(cds)[['UMAP']][[1,1]], 1.93, tol=1e-2)
+  nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['UMAP']], nn_index=get_cds_nn_index(cds, reduction_method='UMAP', nn_method=nn_method), k=5, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   expect_equivalent(nn_res[['nn.idx']][[1]], 1)
   expect_equivalent(nn_res[['nn.dists']][[1]], 0)
   system(paste0('rm -r ', monocle_objects))
 
   rm(cds)
   rm(nn_index)
+  nn_method <- 'hnsw'
   cds <- load_a549()
-  cds <- preprocess_cds(cds, build_nn_index=TRUE, nn_control=list(method='hnsw', metric='euclidean', n_trees=50))
+  cds <- preprocess_cds(cds, build_nn_index=TRUE, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   save_monocle_objects(cds, directory_path=monocle_objects)
   rm(cds)
   cds <- load_a549()
   cds <- load_monocle_objects(directory_path=monocle_objects)
-  nn_index <- get_cds_nn_index(cds, reduction_method='PCA', nn_control=list(method='hnsw'))
-  expect_equal(as.character(class(nn_index)), 'Rcpp_HnswL2')
+  nn_index <- get_cds_nn_index(cds, reduction_method='PCA', nn_method=nn_method)
+  expect_equal(as.character(class(nn_index[['hnsw_index']])), 'Rcpp_HnswL2')
   system(paste0('rm -r ', monocle_objects))
 } )
 
