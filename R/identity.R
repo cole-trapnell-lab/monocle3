@@ -1,6 +1,9 @@
 # Functions for matrix and model identities.
 
 
+#' @importFrom methods is
+#' @importFrom SingleCellExperiment int_metadata
+#' @importFrom SingleCellExperiment "int_metadata<-"
 initialize_counts_metadata <- function(cds) {
   assertthat::assert_that(is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
@@ -14,6 +17,9 @@ initialize_counts_metadata <- function(cds) {
 }
 
 
+#' @importFrom methods is
+#' @importFrom SingleCellExperiment int_metadata
+#' @importFrom SingleCellExperiment "int_metadata<-"
 set_counts_identity <- function(cds, matrix_type, matrix_id) {
   assertthat::assert_that(is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
@@ -28,6 +34,8 @@ set_counts_identity <- function(cds, matrix_type, matrix_id) {
 }
 
 
+#' @importFrom methods is
+#' @importFrom SingleCellExperiment int_metadata
 get_counts_identity <- function(cds) {
   assertthat::assert_that(is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
@@ -52,6 +60,9 @@ get_counts_identity <- function(cds) {
 
 
 # Note: int_metadata(cds) requires a list
+#' @importFrom methods is
+#' @importFrom SingleCellExperiment int_metadata
+#' @importFrom SingleCellExperiment "int_metadata<-"
 initialize_reduce_dim_metadata <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP')) {
   assertthat::assert_that(is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
@@ -75,6 +86,9 @@ initialize_reduce_dim_metadata <- function(cds, reduction_method=c('PCA', 'LSI',
 }
 
 
+#' @importFrom methods is
+#' @importFrom SingleCellExperiment int_metadata
+#' @importFrom SingleCellExperiment "int_metadata<-"
 set_reduce_dim_matrix_identity <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP'),
                                            matrix_type, matrix_id,
                                            prev_matrix_type, prev_matrix_id,
@@ -103,6 +117,8 @@ set_reduce_dim_matrix_identity <- function(cds, reduction_method=c('PCA', 'LSI',
 }
 
 
+#' @importFrom methods is
+#' @importFrom SingleCellExperiment int_metadata
 get_reduce_dim_matrix_identity <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP')) {
   assertthat::assert_that(is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
@@ -128,6 +144,7 @@ get_reduce_dim_matrix_identity <- function(cds, reduction_method=c('PCA', 'LSI',
 }
 
 
+#' @importFrom methods is
 initialize_reduce_dim_model_identity <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP')) {
   assertthat::assert_that(is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
@@ -148,6 +165,7 @@ initialize_reduce_dim_model_identity <- function(cds, reduction_method=c('PCA', 
 }
 
 
+#' @importFrom methods is
 set_reduce_dim_model_identity <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP'),
                                           model_type, model_id,
                                           prev_model_type, prev_model_id,
@@ -183,6 +201,7 @@ set_reduce_dim_model_identity <- function(cds, reduction_method=c('PCA', 'LSI', 
 }
 
 
+#' @importFrom methods is
 get_reduce_dim_model_identity <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP')) {
   assertthat::assert_that(is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
@@ -208,6 +227,7 @@ get_reduce_dim_model_identity <- function(cds, reduction_method=c('PCA', 'LSI', 
 }
 
 
+#' @importFrom methods is
 set_model_identity_path <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP'), model_path='none') {
   assertthat::assert_that(is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
@@ -304,6 +324,7 @@ identity_as_string <- function( object_id ) {
 #'
 #' @return Write identity information to stdout.
 #'
+#' @importFrom methods is
 #' @export
 identity_table <- function(cds) {
   assertthat::assert_that(is(cds, 'cell_data_set'),

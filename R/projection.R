@@ -211,8 +211,19 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
 }
 
 
-#' align_transform is not supported. Co-embed your data sets if
-#' you need batch correction.
+#' @title Apply an alignment transform model to a cell_data_set.
+#'
+#' @description align_transform is not supported. Co-embed your
+#'  data sets if you need batch correction.
+#'
+#' @param cds a cell_data_set to be transformed.
+#' @param reduction_method a previously loaded transform
+#'   model that is used to reduce the dimensions of the
+#'   count matrix in the cell_data_set. The "Aligned"
+#'   transform is not supported.
+#'
+#' @return The cds is returned without processing.
+#'
 #' @export
 align_transform <- function(cds, reduction_method=c('Aligned')) {
   stop(paste('align_transform is not supported. If you need batch correction',
@@ -314,6 +325,7 @@ align_transform <- function(cds, reduction_method=c('Aligned')) {
 #' @return a cell_data_set with a transformed
 #'   reduced count matrix.
 #'
+#' @importFrom methods is
 #' @export
 #'
 reduce_dimension_transform <- function(cds, preprocess_method=NULL, reduction_method=c('UMAP')) {

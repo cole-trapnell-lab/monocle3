@@ -154,6 +154,7 @@ get_nn_means <- function(query_data, query_search, ref_coldata, ref_column_name)
 #' @param verbose a boolean controlling verbose output.
 #'
 #' @return an updated cell_data_set object
+#' @importFrom methods is
 #' @export
 transfer_cell_labels <- function(cds_query,
                                  reduction_method=c('UMAP', 'PCA', 'LSI'),
@@ -235,7 +236,7 @@ transfer_cell_labels <- function(cds_query,
   # Load the reference projection models and nn indexes
   # into the query cds.
   if(!is.null(transform_models_dir)) {
-    cds_query <- load_transform_models(cds=cds_query, directory_path=transform_models_dir, verbose=verbose)
+    cds_query <- load_transform_models(cds=cds_query, directory_path=transform_models_dir)
   }
 
   assertthat::assert_that(!is.null(cds_query@reduce_dim_aux[[reduction_method]]),
@@ -379,6 +380,7 @@ edit_query_cell_labels <- function(preproc_res,
 #' @param verbose a boolean controlling verbose output.
 #'
 #' @return an updated cell_data_set object
+#' @importFrom methods is
 #' @export
 fix_missing_cell_labels <- function(cds,
                                     reduction_method=c('UMAP', 'PCA', 'LSI'),

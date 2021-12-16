@@ -3,6 +3,7 @@
 
 # Check whether nn index exists and is consistent with matrix and parameters.
 # This function is not in use currently and may fall into disrepair.
+#' @importFrom methods is
 check_cds_nn_index_is_current <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP'), nn_control=list(), verbose=FALSE) {
 
   assertthat::assert_that(is(cds, 'cell_data_set'),
@@ -116,6 +117,7 @@ check_cds_nn_index_is_current <- function(cds, reduction_method=c('PCA', 'LSI', 
 #       is removed or changed, the other objects in
 #       cds@reduce_dim_aux[[reduction_method]][['nn_index']][[nn_method]] need to be
 #       updated.
+#' @importFrom methods is
 clear_cds_nn_index <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP'), nn_method=c('annoy', 'hnsw', 'all')) {
   assertthat::assert_that(is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
@@ -487,10 +489,11 @@ report_nn_control <- function(label=NULL, nn_control) {
     message(indent, '  grain_size: ', ifelse(!is.null(nn_control[['grain_size']]), nn_control[['grain_size']], as.character(NA)))
   }
   else
-    stop('report_nn_control: unsupported nearest neighbor method \'', nn_method, '\'')
+    stop('report_nn_control: unsupported nearest neighbor method \'', nn_control[['method']], '\'')
 }
 
 
+#' @importFrom methods new
 new_annoy_index <- function(metric, ndim) {
   nn_class <- switch( metric,
                       cosine = RcppAnnoy::AnnoyAngular,
@@ -520,6 +523,8 @@ new_annoy_index <- function(metric, ndim) {
 #' @param verbose a boolean indicating whether to emit verbose output.
 #'
 #' @return a nearest neighbor index.
+#' @importFrom methods is
+#' @importFrom utils packageVersion
 #' @export
 make_nn_index <- function(subject_matrix, nn_control=list(), verbose=FALSE) {
   assertthat::assert_that(is(subject_matrix, 'matrix') ||
@@ -605,6 +610,7 @@ make_nn_index <- function(subject_matrix, nn_control=list(), verbose=FALSE) {
 #'
 #' @return a cell_data_set with the stored index.
 #'
+#' @importFrom methods is
 #' @export
 set_cds_nn_index <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Aligned', 'tSNE'), nn_index, verbose=FALSE) {
   assertthat::assert_that(is(cds, 'cell_data_set'),
@@ -666,6 +672,7 @@ set_cds_nn_index <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Alig
 #'
 #' @return a cell_data_set with the stored index.
 #'
+#' @importFrom methods is
 #' @export
 make_cds_nn_index <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Aligned', 'tSNE'), nn_control=list(), verbose=FALSE) {
   assertthat::assert_that(is(cds, 'cell_data_set'),
@@ -702,6 +709,7 @@ make_cds_nn_index <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Ali
 
 # Return the nn_index that was made from the reduction_method
 # reduced dimension matrix.
+#' @importFrom methods is
 get_cds_nn_index <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Aligned', 'tSNE'), nn_method, verbose=FALSE) {
 
   assertthat::assert_that(is(cds, 'cell_data_set'),
@@ -861,6 +869,9 @@ search_nn_annoy_index <- function(query_matrix, nn_index, metric, k, search_k, b
 #'  index and search the index, the index given by the row number should
 #'  be in the row, usually in the first column.
 #'
+#' @importFrom methods is
+#' @importFrom future plan
+#' @importFrom future multicore
 #' @export
 search_nn_index <- function(query_matrix, nn_index, k=25, nn_control=list(), verbose=FALSE) {
   assertthat::assert_that(is(query_matrix, 'matrix') ||
@@ -1018,6 +1029,7 @@ search_nn_index <- function(query_matrix, nn_index, k=25, nn_control=list(), ver
 #'  index and search the index, the index given by the row number should
 #'  be in the row, usually in the first column.
 #'
+#' @importFrom methods is
 #' @export
 search_cds_nn_index <- function(query_matrix, cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Aligned', 'tSNE'), k=25, nn_control=list(), verbose=TRUE) {
   assertthat::assert_that(is(query_matrix, 'matrix') ||
@@ -1080,6 +1092,7 @@ search_cds_nn_index <- function(query_matrix, cds, reduction_method=c('UMAP', 'P
 #      it appears that there is little or no opportunity to re-use
 #      indices so we are not storing search information at this time.
 # This function is not in use currently and may fall into disrepair.
+#' @importFrom methods is
 set_cds_nn_search <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Aligned', 'tSNE'), search_id, ef, k, nn_control=list(), verbose=TRUE) {
   assertthat::assert_that(is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
@@ -1104,7 +1117,7 @@ set_cds_nn_search <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Ali
   reduced_matrix <- reducedDims(cds)[[reduction_method]]
 
   nn_control_default <- get_global_variable('nn_control_annoy_euclidean')
-  nn_control <- set_nn_control(mode=2, nn_control=nn_control, nn_control_default=nn_control_default, nn_index=NULL, reduction_method=reduction_method, k=k, verbose=verbose)
+  nn_control <- set_nn_control(mode=2, nn_control=nn_control, nn_control_default=nn_control_default, nn_index=NULL, k=k, verbose=verbose)
 
   nn_method <- nn_control[['method']]
 
@@ -1123,7 +1136,7 @@ set_cds_nn_search <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Ali
   if(nn_method == 'annoy') {
     cds@reduce_dim_aux[[reduction_method]][['nn_search']][[search_id]] <- SimpleList()
     cds@reduce_dim_aux[[reduction_method]][['nn_search']][[search_id]][['method']] <- nn_method
-    cds@reduce_dim_aux[[reduction_method]][['nn_search']][[search_id]][['search_k']] <- search_k
+    cds@reduce_dim_aux[[reduction_method]][['nn_search']][[search_id]][['search_k']] <- nn_contol[['search_k']]
     cds@reduce_dim_aux[[reduction_method]][['nn_search']][[search_id]][['k']] <- k
     cds@reduce_dim_aux[[reduction_method]][['nn_search']][[search_id]][['nrow']] <- nrow(reduced_matrix)
     cds@reduce_dim_aux[[reduction_method]][['nn_search']][[search_id]][['ncol']] <- ncol(reduced_matrix)
@@ -1151,6 +1164,7 @@ set_cds_nn_search <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Ali
 
 # Get nearest neighbor search information stored in the cds.
 # This function is not in use currently and may fall into disrepair.
+#' @importFrom methods is
 get_cds_nn_search <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Aligned', 'tSNE'), search_id, verbose=TRUE) {
 
   assertthat::assert_that(is(cds, 'cell_data_set'),
@@ -1207,6 +1221,7 @@ get_cds_nn_search <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Ali
 
 # Get index build and search information that's stored in the cds.
 # This function is not used at this time. It may fall into disrepair.
+#' @importFrom methods is
 get_cds_nn_control <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Aligned', 'tSNE'), search_id, verbose=TRUE) {
 
   assertthat::assert_that(is(cds, 'cell_data_set'),
@@ -1293,6 +1308,7 @@ get_cds_nn_control <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Al
 #'  matrix, the index given by the row number should be in the row, usually
 #' in the first column.
 #'
+#' @importFrom methods is
 #' @export
 search_nn_matrix <- function(subject_matrix, query_matrix, k=25, nn_control=list(), verbose=FALSE) {
   assertthat::assert_that(is(subject_matrix, 'matrix') ||

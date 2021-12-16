@@ -107,6 +107,7 @@ setMethod("principal_graph", "cell_data_set", function(x) {
 #'
 #' @export
 #' @importClassesFrom S4Vectors List
+#' @importClassesFrom methods className
 setReplaceMethod("principal_graph", "cell_data_set", function(x, value) {
   value <- methods::as(value, className("List","S4Vectors"))
   if (is.null(names(value))) {
@@ -144,6 +145,7 @@ setMethod("principal_graph_aux", "cell_data_set", function(x) {
 #' @param value A SimpleList of principal graph auxiliary information.
 #' @export
 #' @importClassesFrom S4Vectors List
+#' @importClassesFrom methods className
 setReplaceMethod("principal_graph_aux", "cell_data_set", function(x, value) {
   value <- methods::as(value, className("List","S4Vectors"))
   if (is.null(names(value))) {

@@ -44,6 +44,11 @@ setClass("cell_data_set",
 #'   (e.g. genes), where
 #'   \code{row.names(gene_metadata) = row.names(expression_data)}.
 #' @return a new cell_data_set object
+#' @importFrom methods is
+#' @importFrom SingleCellExperiment int_elementMetadata
+#' @importFrom SingleCellExperiment int_colData
+#' @importFrom SingleCellExperiment int_metadata
+#' @importFrom S4Vectors elementMetadata
 #' @export
 #' @examples
 #' small_a549_colData_df <- readRDS(system.file("extdata",

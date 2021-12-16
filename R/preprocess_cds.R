@@ -40,6 +40,7 @@
 #'  neighbor index. See the set_nn_control help for detailed information.
 #'
 #' @return an updated cell_data_set object
+#' @importFrom methods is
 #' @export
 preprocess_cds <- function(cds,
                            method = c('PCA', "LSI"),

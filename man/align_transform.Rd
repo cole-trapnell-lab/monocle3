@@ -2,12 +2,22 @@
 % Please edit documentation in R/projection.R
 \name{align_transform}
 \alias{align_transform}
-\title{align_transform is not supported. Co-embed your data sets if
-you need batch correction.}
+\title{Apply an alignment transform model to a cell_data_set.}
 \usage{
 align_transform(cds, reduction_method = c("Aligned"))
 }
+\arguments{
+\item{cds}{a cell_data_set to be transformed.}
+
+\item{reduction_method}{a previously loaded transform
+model that is used to reduce the dimensions of the
+count matrix in the cell_data_set. The "Aligned"
+transform is not supported.}
+}
+\value{
+The cds is returned without processing.
+}
 \description{
-align_transform is not supported. Co-embed your data sets if
-you need batch correction.
+align_transform is not supported. Co-embed your
+data sets if you need batch correction.
 }

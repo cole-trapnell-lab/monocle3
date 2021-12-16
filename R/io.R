@@ -21,6 +21,7 @@ load_a549 <- function(){
 
 #' Build a cell_data_set from the data stored in inst/extdata directory.
 #' @keywords internal
+#' @importFrom SingleCellExperiment counts
 load_worm_embryo <- function(){
   expression_matrix <- readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_expression.rds"))
   cell_metadata <- readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_colData.rds"))
@@ -43,6 +44,7 @@ load_worm_embryo <- function(){
 #' Test if a file has a Matrix Market header.
 #' @param matpath Path to test file.
 #' @return TRUE if matpath file has Matrix Market header.
+#' @importFrom utils read.table
 #' @noRd
 is_matrix_market_file <- function( matpath )
 {
@@ -56,6 +58,7 @@ is_matrix_market_file <- function( matpath )
 #' @return list consisting of matdim_names, which label matrix dimension,
 #' and metadata, if present in the file, which are
 #' additional dimension metadata.
+#' @importFrom utils read.table
 #' @noRd
 load_annotations_data <- function( anno_path, metadata_column_names=NULL, header=FALSE, sep="", quote="\"'", annotation_type=NULL )
 {
@@ -171,6 +174,7 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
 #' second has short gene names, and the third has gene biotypes.
 #' }
 #'
+#' @importFrom SingleCellExperiment counts
 #' @export
 #'
 load_mm_data <- function( mat_path,
@@ -235,6 +239,8 @@ load_mm_data <- function( mat_path,
 #' @param umi_cutoff UMI per cell cutoff, default is 100.
 #'
 #' @return cds object
+#' @importFrom utils read.table
+#' @importFrom SingleCellExperiment counts
 #' @export
 #'
 load_mtx_data <- function( mat_path,
@@ -558,6 +564,7 @@ save_hnsw_index <- function(nn_index, file_name) {
 }
 
 
+#' @importFrom methods new
 load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
   if(metric == 'l2') {
     tryCatch(
@@ -766,6 +773,7 @@ report_files_saved <- function(file_index) {
 #'
 #' @return none.
 #'
+#' @importFrom utils packageVersion
 #' @export
 save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE) {
   appendLF <- TRUE
@@ -1086,6 +1094,8 @@ load_transform_models <- function(cds, directory_path) {
 #
 # Check cds assays for HDF5Array objects.
 #
+#' @importFrom methods is
+#' @importFrom S4Vectors getListElement
 test_hdf5_assays <- function(cds) {
   assays <- assays(cds)
   for( idx in seq_along(assays)) {
@@ -1129,6 +1139,7 @@ test_hdf5_assays <- function(cds) {
 #'
 #' @return none.
 #'
+#' @importFrom utils packageVersion
 #' @export
 save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment="", verbose=TRUE) {
   appendLF <- TRUE
@@ -1625,6 +1636,8 @@ load_monocle_objects <- function(directory_path) {
 #      check?
 #   o  can there be an inconsistency between the model and matrix identity
 #      version information?
+#' @importFrom SingleCellExperiment int_metadata
+
 load_monocle_rds <- function(file_path) {
   appendLF <- TRUE
   catch_error <- FALSE

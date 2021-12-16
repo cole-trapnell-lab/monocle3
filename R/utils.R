@@ -797,6 +797,7 @@ get_time_stamp <- function() {
 
 
 # Manage parallel processing for matrix multiplication.
+#' @importFrom methods is
 matrix_multiply_multicore <- function(mat_a, mat_b, cores=1L) {
   assertthat::assert_that(is.matrix(mat_a) || is_sparse_matrix(mat_a) || is(mat_a, 'DelayedMatrix'),
     msg=paste0('mat_a must be either a matrix or a sparse matrix'))

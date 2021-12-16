@@ -86,6 +86,13 @@ clean_zeroinfl_model_object = function(cm) {
   return(cm)
 }
 
+
+#' importFrom methods new
+#' @importFrom stats logLik
+#' @importFrom stats AIC
+#' @importFrom stats BIC
+#' @importFrom stats df.residual
+#' @noRd
 clean_glmerMod_model_object <- function(model) {
   rcl="glmResp"
   #trivial.y=FALSE
@@ -147,6 +154,8 @@ clean_model_object = function(model) {
 #' @param ... test
 #' @name fit_model_helper
 #' @keywords internal
+#' @importFrom lme4 glmer.nb
+#' @importFrom lme4 glmerControl
 fit_model_helper <- function(x,
                              model_formula_str,
                              expression_family,
