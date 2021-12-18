@@ -91,6 +91,11 @@ process after \code{preprocess_cds}.
 
 UMAP is implemented from the package uwot.
 }
+\examples{
+  cds <- load_worm_embryo()
+  cds <- preprocess_cds(cds)
+  cds <- reduce_dimension(cds)
+}
 \references{
 UMAP: McInnes, L, Healy, J, UMAP: Uniform Manifold Approximation
 and Projection for Dimension Reduction, ArXiv e-prints 1802.03426, 2018

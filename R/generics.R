@@ -3,6 +3,17 @@
 #' @param x A cell_data_set object.
 #' @param reduction_method Reduced dimension to extract pseudotime for.
 #'
+#' @examples
+#'  cds <- load_worm_embryo()
+#'  cds <- preprocess_cds(cds, num_dim=50)
+#'  cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+#'  cds <- reduce_dimension(cds) 
+#'  ciliated_genes <- c("che-1", "hlh-17", "nhr-6", "dmd-6", "ceh-36", "ham-1")
+#'  cds <- cluster_cells(cds)
+#'  cds <- learn_graph(cds)
+#'  cds <- order_cells(cds)
+#'  ps_tim <- pseudotime(cds)
+#' 
 #' @export
 setGeneric("pseudotime", function(x, reduction_method = "UMAP")
   standardGeneric("pseudotime"))
@@ -10,6 +21,17 @@ setGeneric("pseudotime", function(x, reduction_method = "UMAP")
 #' Method to extract pseudotime from CDS object
 #' @param x A cell_data_set object.
 #' @param reduction_method Reduced dimension to extract clusters for.
+#'
+#' @examples
+#'  cds <- load_worm_embryo()
+#'  cds <- preprocess_cds(cds, num_dim=50)
+#'  cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+#'  cds <- reduce_dimension(cds)
+#'  ciliated_genes <- c("che-1", "hlh-17", "nhr-6", "dmd-6", "ceh-36", "ham-1")
+#'  cds <- cluster_cells(cds)
+#'  cds <- learn_graph(cds)
+#'  cds <- order_cells(cds)
+#'  ps_tim <- pseudotime(cds)
 #'
 #' @export
 setMethod("pseudotime", "cell_data_set",
@@ -29,6 +51,14 @@ setMethod("pseudotime", "cell_data_set",
 #'
 #' @param x A cell_data_set object.
 #' @param reduction_method Reduced dimension to extract clusters for.
+#'
+#' @examples
+#'   cds <- load_worm_embryo()
+#'   cds <- preprocess_cds(cds)
+#'   cds <- reduce_dimension(cds)
+#'   cds <- cluster_cells(cds)
+#'   clusters_factors <- clusters(cds, "UMAP")
+#'
 #' @export
 setGeneric("clusters", function(x, reduction_method = "UMAP")
   standardGeneric("clusters"))
@@ -36,6 +66,13 @@ setGeneric("clusters", function(x, reduction_method = "UMAP")
 #' Method to extract clusters from CDS object
 #' @param x A cell_data_set object.
 #' @param reduction_method Reduced dimension to extract clusters for.
+#'
+#' @examples
+#'   cds <- load_worm_embryo()
+#'   cds <- preprocess_cds(cds)
+#'   cds <- reduce_dimension(cds)
+#'   cds <- cluster_cells(cds)
+#'   clusters_factors <- clusters(cds, "UMAP")
 #'
 #' @export
 setMethod("clusters", "cell_data_set",
@@ -56,6 +93,13 @@ setMethod("clusters", "cell_data_set",
 #' @param x A cell_data_set object.
 #' @param reduction_method Reduced dimension to partitions clusters for.
 #'
+#' @examples
+#'   cds <- load_worm_embryo()
+#'   cds <- preprocess_cds(cds)
+#'   cds <- reduce_dimension(cds)
+#'   cds <- cluster_cells(cds)
+#'   partitions_factors <- partitions(cds, "UMAP")
+#'
 #' @export
 setGeneric("partitions", function(x, reduction_method = "UMAP")
   standardGeneric("partitions"))
@@ -63,6 +107,13 @@ setGeneric("partitions", function(x, reduction_method = "UMAP")
 #' Method to extract partitions from CDS object
 #' @param x A cell_data_set object.
 #' @param reduction_method Reduced dimension to partitions clusters for.
+#'
+#' @examples
+#'   cds <- load_worm_embryo()
+#'   cds <- preprocess_cds(cds)
+#'   cds <- reduce_dimension(cds)
+#'   cds <- cluster_cells(cds)
+#'   partitions_factors <- partitions(cds, "UMAP")
 #'
 #' @export
 setMethod("partitions", "cell_data_set",
@@ -81,6 +132,16 @@ setMethod("partitions", "cell_data_set",
 #' Generic to extract principal graph from CDS
 #' @param x A cell_data_set object.
 #'
+#' @examples
+#'  cds <- load_worm_embryo()
+#'  cds <- preprocess_cds(cds, num_dim=50)
+#'  cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+#'  cds <- reduce_dimension(cds)
+#'  ciliated_genes <- c("che-1", "hlh-17", "nhr-6", "dmd-6", "ceh-36", "ham-1")
+#'  cds <- cluster_cells(cds)
+#'  cds <- learn_graph(cds)
+#'  pr_gr <- principal_graph(cds)
+#'
 #' @export
 setGeneric("principal_graph", function(x) standardGeneric("principal_graph"))
 
@@ -88,12 +149,34 @@ setGeneric("principal_graph", function(x) standardGeneric("principal_graph"))
 #' @param x A cell_data_set object.
 #' @param value A principal graph object.
 #'
+#' @examples
+#'  cds <- load_worm_embryo()
+#'  cds <- preprocess_cds(cds, num_dim=50)
+#'  cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+#'  cds <- reduce_dimension(cds)
+#'  ciliated_genes <- c("che-1", "hlh-17", "nhr-6", "dmd-6", "ceh-36", "ham-1")
+#'  cds <- cluster_cells(cds)
+#'  cds <- learn_graph(cds)
+#'  pr_gr <- principal_graph(cds)
+#'  principal_graph(cds) <- NULL
+#'  principal_graph(cds) <- pr_gr
+#'
 #' @export
 setGeneric("principal_graph<-", function(x, value)
   standardGeneric("principal_graph<-"))
 
 #' Method to extract principal graph from CDS
 #' @param x A cell_data_set object.
+#'
+#' @examples
+#'  cds <- load_worm_embryo()
+#'  cds <- preprocess_cds(cds, num_dim=50)
+#'  cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+#'  cds <- reduce_dimension(cds)
+#'  ciliated_genes <- c("che-1", "hlh-17", "nhr-6", "dmd-6", "ceh-36", "ham-1")
+#'  cds <- cluster_cells(cds)
+#'  cds <- learn_graph(cds)
+#'  pr_gr <- principal_graph(cds)
 #'
 #' @export
 setMethod("principal_graph", "cell_data_set", function(x) {
@@ -104,6 +187,18 @@ setMethod("principal_graph", "cell_data_set", function(x) {
 #' Generic to set principal graph to CDS
 #' @param x A cell_data_set object.
 #' @param value A principal graph object.
+#'
+#' @examples
+#'  cds <- load_worm_embryo()
+#'  cds <- preprocess_cds(cds, num_dim=50)
+#'  cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+#'  cds <- reduce_dimension(cds)
+#'  ciliated_genes <- c("che-1", "hlh-17", "nhr-6", "dmd-6", "ceh-36", "ham-1")
+#'  cds <- cluster_cells(cds)
+#'  cds <- learn_graph(cds)
+#'  pr_gr <- principal_graph(cds)
+#'  principal_graph(cds) <- NULL
+#'  principal_graph(cds) <- pr_gr
 #'
 #' @export
 #' @importClassesFrom S4Vectors List
@@ -120,6 +215,17 @@ setReplaceMethod("principal_graph", "cell_data_set", function(x, value) {
 
 #' Generic to extract principal graph auxiliary information from CDS
 #' @param x A cell_data_set object.
+#'
+#' @examples
+#'  cds <- load_worm_embryo()
+#'  cds <- preprocess_cds(cds, num_dim=50)
+#'  cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+#'  cds <- reduce_dimension(cds)
+#'  ciliated_genes <- c("che-1", "hlh-17", "nhr-6", "dmd-6", "ceh-36", "ham-1")
+#'  cds <- cluster_cells(cds)
+#'  cds <- learn_graph(cds)
+#'  pr_gr_aux <- principal_graph_aux(cds)
+#'
 #' @export
 setGeneric("principal_graph_aux", function(x)
   standardGeneric("principal_graph_aux"))
@@ -127,13 +233,36 @@ setGeneric("principal_graph_aux", function(x)
 #' Generic to set principal graph auxiliary information into CDS
 #' @param x A cell_data_set object.
 #' @param value A SimpleList of principal graph auxiliary information.
+#'
+#' @examples
+#'  cds <- load_worm_embryo()
+#'  cds <- preprocess_cds(cds, num_dim=50)
+#'  cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+#'  cds <- reduce_dimension(cds)
+#'  ciliated_genes <- c("che-1", "hlh-17", "nhr-6", "dmd-6", "ceh-36", "ham-1")
+#'  cds <- cluster_cells(cds)
+#'  cds <- learn_graph(cds)
+#'  pr_gr_aux <- principal_graph_aux(cds)
+#'  principal_graph_aux(cds) <- NULL
+#'  principal_graph_aux(cds) <- pr_gr_aux
+#'
 #' @export
 setGeneric("principal_graph_aux<-", function(x, value)
   standardGeneric("principal_graph_aux<-"))
 
 #' Method to extract principal graph auxiliary information from CDS
 #' @param x A cell_data_set object.
-#' @export
+#'
+#' @examples
+#'  cds <- load_worm_embryo()
+#'  cds <- preprocess_cds(cds, num_dim=50)
+#'  cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+#'  cds <- reduce_dimension(cds)
+#'  ciliated_genes <- c("che-1", "hlh-17", "nhr-6", "dmd-6", "ceh-36", "ham-1")
+#'  cds <- cluster_cells(cds)
+#'  cds <- learn_graph(cds)
+#'  pr_gr_aux <- principal_graph_aux(cds)
+#'
 #' @export
 setMethod("principal_graph_aux", "cell_data_set", function(x) {
   value <- x@principal_graph_aux
@@ -143,6 +272,19 @@ setMethod("principal_graph_aux", "cell_data_set", function(x) {
 #' Method to set principal graph auxiliary information into CDS
 #' @param x A cell_data_set object.
 #' @param value A SimpleList of principal graph auxiliary information.
+#' 
+#' @examples
+#'  cds <- load_worm_embryo()
+#'  cds <- preprocess_cds(cds, num_dim=50)
+#'  cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+#'  cds <- reduce_dimension(cds)
+#'  ciliated_genes <- c("che-1", "hlh-17", "nhr-6", "dmd-6", "ceh-36", "ham-1")
+#'  cds <- cluster_cells(cds)
+#'  cds <- learn_graph(cds)
+#'  pr_gr_aux <- principal_graph_aux(cds)
+#'  principal_graph_aux(cds) <- NULL
+#'  principal_graph_aux(cds) <- pr_gr_aux
+#'
 #' @export
 #' @importClassesFrom S4Vectors List
 #' @importClassesFrom methods className
@@ -162,11 +304,19 @@ setReplaceMethod("principal_graph_aux", "cell_data_set", function(x, value) {
 #' Generic to access cds count matrix
 #' @param x A cell_data_set object.
 #'
+#' @examples
+#'  cds <- load_a549()
+#'  exprs(cds)
+#'
 #' @export
 setGeneric("exprs", function(x) standardGeneric("exprs"))
 
 #' Method to access cds count matrix
 #' @param x A cell_data_set object.
+#'
+#' @examples
+#'  cds <- load_a549()
+#'  exprs(cds)
 #'
 #' @export
 setMethod("exprs", "cell_data_set", function(x) {
@@ -177,6 +327,10 @@ setMethod("exprs", "cell_data_set", function(x) {
 #' Generic to access cds colData table
 #' @param x A cell_data_set object.
 #'
+#' @examples
+#'   cds <- load_a549()
+#'   pData(cds)
+#'
 #' @export
 setGeneric("pData", function(x) standardGeneric("pData"))
 
@@ -184,11 +338,19 @@ setGeneric("pData", function(x) standardGeneric("pData"))
 #' @param x A cell_data_set object.
 #' @param value A data frame to set to colData table.
 #'
+#' @examples
+#'   cds <- load_a549()
+#'   pData(cds)[['row_index']] <- seq(nrow(pData(cds)))
+#'
 #' @export
 setGeneric("pData<-", function(x, value) standardGeneric("pData<-"))
 
 #' Method to access cds colData table
 #' @param x A cell_data_set object.
+#'
+#' @examples
+#'   cds <- load_a549()
+#'   pData(cds)
 #'
 #' @export
 setMethod("pData", "cell_data_set", function(x) {
@@ -199,6 +361,10 @@ setMethod("pData", "cell_data_set", function(x) {
 #' Method to set cds colData table
 #' @param x A cell_data_set object.
 #' @param value A data frame to set to colData table.
+#'
+#' @examples
+#'   cds <- load_a549()
+#'   pData(cds)[['row_index']] <- seq(nrow(pData(cds)))
 #'
 #' @export
 #' @importClassesFrom S4Vectors List
@@ -211,6 +377,10 @@ setReplaceMethod("pData", "cell_data_set", function(x, value) {
 #' Generic to access cds rowData table
 #' @param x A cell_data_set object.
 #'
+#' @examples
+#'   cds <- load_a549()
+#'   fData(cds)
+#'
 #' @export
 setGeneric("fData", function(x) standardGeneric("fData"))
 
@@ -218,11 +388,19 @@ setGeneric("fData", function(x) standardGeneric("fData"))
 #' @param x A cell_data_set object.
 #' @param value A data frame to set to colData table.
 #'
+#' @examples
+#'   cds <- load_a549()
+#'   fData(cds)[['row_index']] <- seq(nrow(fData(cds)))
+#'
 #' @export
 setGeneric("fData<-", function(x, value) standardGeneric("fData<-"))
 
-#' Generic to access cds rowData table
+#' Method to access cds rowData table
 #' @param x A cell_data_set object.
+#'
+#' @examples
+#'   cds <- load_a549()
+#'   fData(cds)
 #'
 #' @export
 setMethod("fData", "cell_data_set", function(x) {
@@ -233,6 +411,10 @@ setMethod("fData", "cell_data_set", function(x) {
 #' Method to set cds rowData table
 #' @param x A cell_data_set object.
 #' @param value A data frame to set to colData table.
+#'
+#' @examples
+#'   cds <- load_a549()
+#'   fData(cds)[['row_index']] <- seq(nrow(fData(cds)))
 #'
 #' @export
 #' @importClassesFrom S4Vectors List

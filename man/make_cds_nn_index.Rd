@@ -36,3 +36,9 @@ default nearest neighbor method or the method specified in the
 nn_control list parameter, and store the index in the
 cell_data_set. This function returns a cell_data_set.
 }
+\examples{
+  cds <- load_worm_embryo()
+  cds <- preprocess_cds(cds)
+  cds <- make_cds_nn_index(cds, 'PCA')
+
+}

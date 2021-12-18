@@ -81,6 +81,13 @@ using a kNN pruning method. Cluster assignments can be accessed using the
 \code{\link{clusters}} function and partition assignments can be
 accessed using the \code{\link{partitions}} function.
 }
+\examples{
+  cds <- load_worm_embryo()
+  cds <- preprocess_cds(cds)
+  cds <- reduce_dimension(cds)
+  cds <- cluster_cells(cds)
+
+}
 \references{
 Rodriguez, A., & Laio, A. (2014). Clustering by fast search and
 find of density peaks. Science, 344(6191), 1492-1496.

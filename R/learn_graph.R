@@ -84,6 +84,15 @@
 #'   of potential control parameters is provided in details.
 #' @param verbose Whether to emit verbose output during graph learning.
 #' @return an updated cell_data_set object
+#'
+#' @examples
+#'   cds <- load_worm_embryo()
+#'   cds <- preprocess_cds(cds, num_dim=50)
+#'   cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+#'   cds <- reduce_dimension(cds)
+#'   cds <- cluster_cells(cds)
+#'   cds <- learn_graph(cds)
+#'
 #' @export
 learn_graph <- function(cds,
                         use_partition = TRUE,
@@ -255,6 +264,10 @@ learn_graph <- function(cds,
   cds
 }
 
+
+#' @importFrom future cluster
+#' @importFrom BiocGenerics density
+#' @noRd
 multi_component_RGE <- function(cds,
                                 scale = FALSE,
                                 reduction_method,

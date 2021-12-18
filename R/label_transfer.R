@@ -154,6 +154,23 @@ get_nn_means <- function(query_data, query_search, ref_coldata, ref_column_name)
 #' @param verbose a boolean controlling verbose output.
 #'
 #' @return an updated cell_data_set object
+#'
+#' @examples
+#'   cds <- load_worm_l2()
+#'   ncell <- nrow(colData(cds))
+#'   cell_sample <- sample(seq(ncell), 2 * ncell / 3)
+#'   cell_set <- seq(ncell) %in% cell_sample
+#'   cds1 <- cds[,cell_set]
+#'   cds1 <- preprocess_cds(cds1)
+#'   cds1 <- reduce_dimension(cds1, build_nn_index=TRUE)
+#'   save_transform_models(cds1, 'tm')
+#!
+#'   cds2 <- cds[,!cell_set]
+#'   cds2 <- load_transform_models(cds2, 'tm')
+#'   cds2 <- preprocess_transform(cds2, 'PCA')
+#'   cds2 <- reduce_dimension_transform(cds2)
+#'   cds2 <- transfer_cell_labels(cds2, 'UMAP', colData(cds1), 'cao_cell_type', 'transfer_cell_type')
+#'
 #' @importFrom methods is
 #' @export
 transfer_cell_labels <- function(cds_query,
@@ -380,6 +397,24 @@ edit_query_cell_labels <- function(preproc_res,
 #' @param verbose a boolean controlling verbose output.
 #'
 #' @return an updated cell_data_set object
+#'
+#' @examples
+#'   cds <- load_worm_l2()
+#'   ncell <- nrow(colData(cds))
+#'   cell_sample <- sample(seq(ncell), 2 * ncell / 3)
+#'   cell_set <- seq(ncell) %in% cell_sample
+#'   cds1 <- cds[,cell_set]
+#'   cds1 <- preprocess_cds(cds1)
+#'   cds1 <- reduce_dimension(cds1, build_nn_index=TRUE)
+#'   save_transform_models(cds1, 'tm')
+#!
+#'   cds2 <- cds[,!cell_set]
+#'   cds2 <- load_transform_models(cds2, 'tm')
+#'   cds2 <- preprocess_transform(cds2, 'PCA')
+#'   cds2 <- reduce_dimension_transform(cds2)
+#'   cds2 <- transfer_cell_labels(cds2, 'UMAP', colData(cds1), 'cao_cell_type', 'transfer_cell_type')
+#'   cds2 <- fix_missing_cell_labels(cds2, 'UMAP', 'transfer_cell_type', 'fixed_cell_type')
+#'
 #' @importFrom methods is
 #' @export
 fix_missing_cell_labels <- function(cds,

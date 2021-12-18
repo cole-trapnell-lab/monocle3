@@ -70,3 +70,7 @@ by size factor only. Next, \code{preprocess_cds} calculates a lower
 dimensional space that will be used as the input for further dimensionality
 reduction like tSNE and UMAP.
 }
+\examples{
+  cds <- load_worm_embryo()
+  cds <- preprocess_cds(cds)
+}

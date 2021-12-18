@@ -47,6 +47,8 @@ monocle_theme_opts <- function()
 #' plot_cells_3d(cds, markers=c("Rbfox3, Neurod1", "Sox2"))
 #' }
 #'
+#' @importFrom future value
+#' @importFrom plyr .
 #' @export
 plot_cells_3d <- function(cds,
                           dims = c(1,2,3),
@@ -375,6 +377,8 @@ plot_cells_3d <- function(cds,
 #'   order_cells and choose_graph_segments in non-interactive mode.
 #'
 #' @return a ggplot2 plot object
+#' @importFrom plyr .
+#' @importFrom future value
 #' @export
 #' @examples
 #' \dontrun{

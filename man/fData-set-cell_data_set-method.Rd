@@ -14,3 +14,8 @@
 \description{
 Method to set cds rowData table
 }
+\examples{
+  cds <- load_a549()
+  fData(cds)[['row_index']] <- seq(nrow(fData(cds)))
+
+}

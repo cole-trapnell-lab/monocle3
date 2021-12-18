@@ -12,3 +12,8 @@ exprs(x)
 \description{
 Generic to access cds count matrix
 }
+\examples{
+ cds <- load_a549()
+ exprs(cds)
+
+}

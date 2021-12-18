@@ -60,8 +60,6 @@ and \emph{matrix.mtx.gz} in the directories as
 }
 }
 \examples{
-\dontrun{
-# Load from a Cell Ranger output directory
-gene_bc_matrix <- load_cellranger_data("/home/user/cellranger_output")
-}
+cell_ranger_data <- system.file("extdata", "cell_ranger_3", package = "monocle3")
+gene_bc_matrix <- load_cellranger_data(cell_ranger_data)
 }

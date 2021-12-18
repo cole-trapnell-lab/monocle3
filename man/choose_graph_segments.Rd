@@ -41,3 +41,13 @@ graph node names.
 \description{
 Choose cells along the path of a principal graph
 }
+\examples{
+  cds <- load_worm_embryo()
+  cds <- preprocess_cds(cds, num_dim=50)
+  cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+  cds <- reduce_dimension(cds)
+  cds <- cluster_cells(cds)
+  cds <- learn_graph(cds)
+  cds_choose <- choose_graph_segments(cds, "UMAP")
+
+}

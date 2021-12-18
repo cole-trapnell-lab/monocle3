@@ -40,6 +40,10 @@
 #' @param ... additional arguments to pass to limma::lmFit if
 #'   residual_model_formula is not NULL
 #' @return an updated cell_data_set object
+#' @examples
+#'   cds <- load_worm_embryo()
+#'   cds <- preprocess_cds(cds)
+#'   cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
 #' @export
 align_cds <- function(cds,
                       preprocess_method = c("PCA", "LSI"),

@@ -14,6 +14,12 @@ is_sparse_matrix <- function(x){
 #'
 #' @return Updated cell_data_set object with a new colData column called
 #'   'Size_Factor'.
+#'
+#' @examples
+#'   cds <- load_a549()
+#'   colData(cds)[['Size_Factor']] <- NULL
+#'   cds <- estimate_size_factors(cds)
+#'
 #' @export
 estimate_size_factors <- function(cds,
                                   round_exprs=TRUE,
@@ -452,6 +458,12 @@ detect_genes <- function(cds, min_expr=0){
 #'   "log" (Default), "binary" and "size_only".
 #' @param pseudocount A pseudocount to add before log transformation. Ignored
 #'   if norm_method is not "log". Default is 1.
+#' @return Size-factor normalized, and optionally log-transformed, expression
+#'   matrix.
+#'
+#' @examples
+#'   cds <- load_a549()
+#'   normalized_matrix <- normalized_counts(cds)
 #'
 #' @export
 normalized_counts <- function(cds,

@@ -133,3 +133,19 @@ data sets require batch correction, you need to co-embed them.
 nearest neighbor index is consistent with the query matrix.
 }
 }
+\examples{
+  cds <- load_worm_l2()
+  ncell <- nrow(colData(cds))
+  cell_sample <- sample(seq(ncell), 2 * ncell / 3)
+  cell_set <- seq(ncell) \%in\% cell_sample
+  cds1 <- cds[,cell_set]
+  cds1 <- preprocess_cds(cds1)
+  cds1 <- reduce_dimension(cds1, build_nn_index=TRUE)
+  save_transform_models(cds1, 'tm')
+  cds2 <- cds[,!cell_set]
+  cds2 <- load_transform_models(cds2, 'tm')
+  cds2 <- preprocess_transform(cds2, 'PCA')
+  cds2 <- reduce_dimension_transform(cds2)
+  cds2 <- transfer_cell_labels(cds2, 'UMAP', colData(cds1), 'cao_cell_type', 'transfer_cell_type')
+
+}

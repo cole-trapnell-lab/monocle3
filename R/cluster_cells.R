@@ -59,6 +59,13 @@
 #' @references Jacob H. Levine and et. al. Data-Driven Phenotypic Dissection of
 #'   AML Reveals Progenitor-like Cells that Correlate with Prognosis.
 #'   Cell, 2015.
+#'
+#' @examples
+#'   cds <- load_worm_embryo()
+#'   cds <- preprocess_cds(cds)
+#'   cds <- reduce_dimension(cds)
+#'   cds <- cluster_cells(cds)
+#'
 #' @useDynLib monocle3, .registration = TRUE
 #' @export
 cluster_cells <- function(cds,

@@ -11,7 +11,7 @@ search_cds_nn_index(
   reduction_method = c("UMAP", "PCA", "LSI", "Aligned", "tSNE"),
   k = 25,
   nn_control = list(),
-  verbose = TRUE
+  verbose = FALSE
 )
 }
 \arguments{
@@ -52,4 +52,11 @@ be in the row, usually in the first column.
 \description{
 Search a nearest neighbor index for cells near
 those in the query_matrix.
+}
+\examples{
+  cds <- load_worm_embryo()
+  cds <- preprocess_cds(cds)
+  cds <- make_cds_nn_index(cds, 'PCA')
+  nn_res <- search_cds_nn_index(reducedDims(cds)[['PCA']], cds, 'PCA', 10)
+
 }

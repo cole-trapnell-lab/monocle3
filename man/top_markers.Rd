@@ -64,3 +64,17 @@ a data.frame where the rows are genes and the columns are
 \description{
 Identify the genes most specifically expressed in groups of cells
 }
+\examples{
+  library(dplyr)
+  cds <- load_worm_embryo()
+  cds <- preprocess_cds(cds)
+  cds <- reduce_dimension(cds)
+  cds <- cluster_cells(cds)
+  marker_test_res <- top_markers(cds, group_cells_by="partition", reference_cells=1000)
+  top_specific_markers <- marker_test_res \%>\%
+                           filter(fraction_expressing >= 0.10) \%>\%
+                           group_by(cell_group) \%>\%
+                           top_n(1, pseudo_R2)
+  top_specific_marker_ids <- unique(top_specific_markers \%>\% pull(gene_id))
+
+}

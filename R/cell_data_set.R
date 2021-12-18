@@ -49,6 +49,7 @@ setClass("cell_data_set",
 #' @importFrom SingleCellExperiment int_colData
 #' @importFrom SingleCellExperiment int_metadata
 #' @importFrom S4Vectors elementMetadata
+#' @importFrom SummarizedExperiment rowRanges
 #' @export
 #' @examples
 #' small_a549_colData_df <- readRDS(system.file("extdata",

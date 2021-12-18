@@ -2,10 +2,16 @@
 % Please edit documentation in R/io.R
 \name{load_a549}
 \alias{load_a549}
-\title{Build a cell_data_set from the data stored in inst/extdata directory.}
+\title{Build a small cell_data_set.}
 \usage{
 load_a549()
 }
+\value{
+cds object
+}
 \description{
-Build a cell_data_set from the data stored in inst/extdata directory.
+Build a small cell_data_set.
+}
+\examples{
+  cds <- load_a549()
 }

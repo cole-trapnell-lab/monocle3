@@ -14,3 +14,11 @@
 \description{
 Method to extract partitions from CDS object
 }
+\examples{
+  cds <- load_worm_embryo()
+  cds <- preprocess_cds(cds)
+  cds <- reduce_dimension(cds)
+  cds <- cluster_cells(cds)
+  partitions_factors <- partitions(cds, "UMAP")
+
+}
