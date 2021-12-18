@@ -11,7 +11,7 @@
 #' @return A subset CDS object. If return_list = FALSE, a list of cell names.
 #'
 #' @examples
-#' \dontrun {
+#' \dontrun{
 #'   cds <- load_worm_embryo()
 #'   cds <- preprocess_cds(cds)
 #'   cds <- reduce_dimension(cds)
