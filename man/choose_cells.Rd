@@ -29,11 +29,3 @@ A subset CDS object. If return_list = FALSE, a list of cell names.
 \description{
 Choose cells interactively to subset a cds
 }
-\examples{
-  cds <- load_worm_embryo()
-  cds <- preprocess_cds(cds)
-  cds <- reduce_dimension(cds)
-  cds <- cluster_cells(cds)
-  cds_choose <- choose_cells(cds, "UMAP")
-
-}
