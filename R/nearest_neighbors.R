@@ -1066,7 +1066,7 @@ search_cds_nn_index <- function(query_matrix, cds, reduction_method=c('UMAP', 'P
                                    nn_index=NULL,
                                    k=k,
                                    verbose=verbose)
-  nn_index <- get_cds_nn_index(cds=cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Aligned', 'tSNE'), nn_control_tmp[['method']], verbose=FALSE)
+  nn_index <- get_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_control_tmp[['method']], verbose=FALSE)
 
   nn_control <- set_nn_control(mode=2,
                                nn_control=nn_control,
