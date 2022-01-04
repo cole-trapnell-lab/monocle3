@@ -26,7 +26,7 @@ before_script:
 
 script:
   - |
-    export _R_CHECK_DONTTEST_EXAMPLES_=FALSE
+    export _R_CHECK_DONTTEST_EXAMPLES_=false
     R CMD build .
     export PKG_TARBALL=$(Rscript -e 'pkg <- devtools::as.package("."); cat(paste0(pkg$package,"_",pkg$version,".tar.gz"))')
     if [ ! -f "$PKG_TARBALL" ]; then exit 1; fi
