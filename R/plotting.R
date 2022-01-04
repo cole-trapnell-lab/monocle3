@@ -49,7 +49,7 @@ monocle_theme_opts <- function()
 #' }
 #'
 #' @importFrom future value
-#' @importFrom plyr .
+#' @importFrom plyr "."
 #' @export
 plot_cells_3d <- function(cds,
                           dims = c(1,2,3),
