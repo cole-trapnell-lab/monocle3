@@ -16,9 +16,11 @@ is_sparse_matrix <- function(x){
 #'   'Size_Factor'.
 #'
 #' @examples
-#'   cds <- load_a549()
-#'   colData(cds)[['Size_Factor']] <- NULL
-#'   cds <- estimate_size_factors(cds)
+#'   \donttest {
+#'     cds <- load_a549()
+#'     colData(cds)[['Size_Factor']] <- NULL
+#'     cds <- estimate_size_factors(cds)
+#'   }
 #'
 #' @export
 estimate_size_factors <- function(cds,
@@ -462,8 +464,10 @@ detect_genes <- function(cds, min_expr=0){
 #'   matrix.
 #'
 #' @examples
-#'   cds <- load_a549()
-#'   normalized_matrix <- normalized_counts(cds)
+#'   \donttest {
+#'     cds <- load_a549()
+#'     normalized_matrix <- normalized_counts(cds)
+#'   }
 #'
 #' @export
 normalized_counts <- function(cds,

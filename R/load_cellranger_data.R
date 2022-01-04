@@ -61,9 +61,13 @@ get_genome_in_matrix_path <- function(matrix_path, genome=NULL) {
 #' @param barcode_filtered Load only the cell-containing barcodes
 #' @param umi_cutoff Numeric, desired cutoff to include a cell. Default is 100.
 #' @return a new cell_data_set object
+#'
 #' @examples
-#' cell_ranger_data <- system.file("extdata", "cell_ranger_3", package = "monocle3")
-#' gene_bc_matrix <- load_cellranger_data(cell_ranger_data)
+#'   \donttest {
+#'     cell_ranger_data <- system.file("extdata", "cell_ranger_3", package = "monocle3")
+#'     gene_bc_matrix <- load_cellranger_data(cell_ranger_data)
+#'   }
+#'
 #' @export
 load_cellranger_data <- function(pipestance_path=NULL, genome=NULL,
                                  barcode_filtered=TRUE, umi_cutoff = 100) {

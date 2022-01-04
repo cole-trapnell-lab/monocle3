@@ -42,6 +42,7 @@ monocle_theme_opts <- function()
 #'   cells by numeric scale. Default is "Viridis".
 #' @return a plotly plot object
 #' @export
+#'
 #' @examples
 #' \dontrun{
 #' plot_cells_3d(cds, markers=c("Rbfox3, Neurod1", "Sox2"))
@@ -379,14 +380,16 @@ plot_cells_3d <- function(cds,
 #' @return a ggplot2 plot object
 #' @importFrom plyr .
 #' @importFrom future value
-#' @export
+#'
 #' @examples
-#' \dontrun{
-#' lung <- load_A549()
-#' plot_cells(lung)
-#' plot_cells(lung, color_cells_by="log_dose")
-#' plot_cells(lung, markers="GDF15")
-#' }
+#'   \dontrun{
+#'     lung <- load_A549()
+#'     plot_cells(lung)
+#'     plot_cells(lung, color_cells_by="log_dose")
+#'     plot_cells(lung, markers="GDF15")
+#'   }
+#'
+#' @export
 plot_cells <- function(cds,
                        x=1,
                        y=2,
@@ -1089,11 +1092,15 @@ plot_genes_in_pseudotime <-function(cds_subset,
 #'
 #' @param cds cell_data_set of the experiment.
 #' @return ggplot object.
-#' @export
+#'
 #' @examples
-#' cds <- load_a549()
-#' cds <- preprocess_cds(cds)
-#' plot_pc_variance_explained(cds)
+#'   \donttest {
+#'     cds <- load_a549()
+#'     cds <- preprocess_cds(cds)
+#'     plot_pc_variance_explained(cds)
+#    }
+#'
+#' @export
 plot_pc_variance_explained <- function(cds) {
   assertthat::assert_that(methods::is(cds, "cell_data_set"))
   assertthat::assert_that(!is.null(reducedDims(cds)[["PCA"]]),
@@ -1140,14 +1147,17 @@ plot_pc_variance_explained <- function(cds) {
 #' @param pseudocount A pseudo-count added to the gene expression. Default is 0.
 #' @return a ggplot2 plot object
 #' @import ggplot2
-#' @export
-#' @examples
-#' cds <- load_a549()
-#' cds_subset <- cds[row.names(subset(rowData(cds),
-#'                  gene_short_name %in% c("ACTA1", "ID1", "CCNB2"))),]
-#' plot_genes_violin(cds_subset, group_cells_by="culture_plate", ncol=2,
-#'                   min_expr=0.1)
 #'
+#' @examples
+#'   \donttest {
+#'     cds <- load_a549()
+#'     cds_subset <- cds[row.names(subset(rowData(cds),
+#'                      gene_short_name %in% c("ACTA1", "ID1", "CCNB2"))),]
+#'     plot_genes_violin(cds_subset, group_cells_by="culture_plate", ncol=2,
+#'                       min_expr=0.1)
+#'   }
+#'
+#' @export
 plot_genes_violin <- function (cds_subset,
                                group_cells_by = NULL,
                                min_expr = 0,
@@ -1296,12 +1306,16 @@ plot_genes_violin <- function (cds_subset,
 #'   error bars. Default is 0.95.
 #' @return a ggplot2 plot object
 #' @import ggplot2
-#' @export
+#'
 #' @examples
-#' cds <- load_a549()
-#' cds_subset <- cds[row.names(subset(rowData(cds),
-#'                                   gene_short_name %in% c("NDRG4", "HBG2"))),]
-#' plot_percent_cells_positive(cds_subset, group_cells_by="culture_plate")
+#'   \donttest {
+#'     cds <- load_a549()
+#'     cds_subset <- cds[row.names(subset(rowData(cds),
+#'                                       gene_short_name %in% c("NDRG4", "HBG2"))),]
+#'     plot_percent_cells_positive(cds_subset, group_cells_by="culture_plate")
+#'   }
+#'
+#' @export
 plot_percent_cells_positive <- function(cds_subset,
                                         group_cells_by = NULL,
                                         min_expr = 0,

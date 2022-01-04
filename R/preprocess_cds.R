@@ -40,9 +40,13 @@
 #'  neighbor index. See the set_nn_control help for detailed information.
 #'
 #' @return an updated cell_data_set object
+#'
 #' @examples
-#'   cds <- load_worm_embryo()
-#'   cds <- preprocess_cds(cds)
+#'   \donttest {
+#'     cds <- load_worm_embryo()
+#'     cds <- preprocess_cds(cds)
+#'   }
+#'
 #' @importFrom methods is
 #' @export
 preprocess_cds <- function(cds,

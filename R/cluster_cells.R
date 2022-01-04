@@ -61,10 +61,12 @@
 #'   Cell, 2015.
 #'
 #' @examples
-#'   cds <- load_worm_embryo()
-#'   cds <- preprocess_cds(cds)
-#'   cds <- reduce_dimension(cds)
-#'   cds <- cluster_cells(cds)
+#'   \donttest { 
+#'     cds <- load_worm_embryo()
+#'     cds <- preprocess_cds(cds)
+#'     cds <- reduce_dimension(cds)
+#'     cds <- cluster_cells(cds)
+#'   }
 #'
 #' @useDynLib monocle3, .registration = TRUE
 #' @export

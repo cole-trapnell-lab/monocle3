@@ -525,9 +525,11 @@ new_annoy_index <- function(metric, ndim) {
 #' @return a nearest neighbor index.
 #'
 #' @examples
-#'   cds <- load_worm_embryo()
-#'   cds <- preprocess_cds(cds)
-#'   nn_index <- make_nn_index(reducedDims(cds)[['PCA']])
+#'   \donttest {
+#'     cds <- load_worm_embryo()
+#'     cds <- preprocess_cds(cds)
+#'     nn_index <- make_nn_index(reducedDims(cds)[['PCA']])
+#'   }
 #'
 #' @importFrom methods is
 #' @importFrom utils packageVersion
@@ -679,9 +681,11 @@ set_cds_nn_index <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Alig
 #' @return a cell_data_set with the stored index.
 #'
 #' @examples
-#'   cds <- load_worm_embryo()
-#'   cds <- preprocess_cds(cds)
-#'   cds <- make_cds_nn_index(cds, 'PCA')
+#'   \donttest {
+#'     cds <- load_worm_embryo()
+#'     cds <- preprocess_cds(cds)
+#'     cds <- make_cds_nn_index(cds, 'PCA')
+#'   }
 #'
 #' @importFrom methods is
 #' @export
@@ -881,10 +885,12 @@ search_nn_annoy_index <- function(query_matrix, nn_index, metric, k, search_k, b
 #'  be in the row, usually in the first column.
 #'
 #' @examples
-#'   cds <- load_worm_embryo()
-#'   cds <- preprocess_cds(cds)
-#'   nn_index <- make_nn_index(reducedDims(cds)[['PCA']])
-#'   nn_res <- search_nn_index(reducedDims(cds)[['PCA']], nn_index, 10)
+#'   \donttest {
+#'     cds <- load_worm_embryo()
+#'     cds <- preprocess_cds(cds)
+#'     nn_index <- make_nn_index(reducedDims(cds)[['PCA']])
+#'     nn_res <- search_nn_index(reducedDims(cds)[['PCA']], nn_index, 10)
+#'   }
 #'
 #' @importFrom methods is
 #' @importFrom future plan
@@ -1047,10 +1053,12 @@ search_nn_index <- function(query_matrix, nn_index, k=25, nn_control=list(), ver
 #'  be in the row, usually in the first column.
 #'
 #' @examples
-#'   cds <- load_worm_embryo()
-#'   cds <- preprocess_cds(cds)
-#'   cds <- make_cds_nn_index(cds, 'PCA')
-#'   nn_res <- search_cds_nn_index(reducedDims(cds)[['PCA']], cds, 'PCA', 10)
+#'   \donttest {
+#'     cds <- load_worm_embryo()
+#'     cds <- preprocess_cds(cds)
+#'     cds <- make_cds_nn_index(cds, 'PCA')
+#'     nn_res <- search_cds_nn_index(reducedDims(cds)[['PCA']], cds, 'PCA', 10)
+#'   }
 #'
 #' @importFrom methods is
 #' @export

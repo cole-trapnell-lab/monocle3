@@ -56,10 +56,14 @@
 #'   and Projection for Dimension Reduction, ArXiv e-prints 1802.03426, 2018
 #' @references tSNE: Laurens van der Maaten and Geoffrey Hinton. Visualizing
 #'   data using t-SNE. J. Mach. Learn. Res., 9(Nov):2579– 2605, 2008.
+#'
 #' @examples
-#'   cds <- load_worm_embryo()
-#'   cds <- preprocess_cds(cds)
-#'   cds <- reduce_dimension(cds)
+#'   \donttest {
+#'     cds <- load_worm_embryo()
+#'     cds <- preprocess_cds(cds)
+#'     cds <- reduce_dimension(cds)
+#'   }
+#'
 #' @importFrom methods is
 #' @export
 reduce_dimension <- function(cds,
