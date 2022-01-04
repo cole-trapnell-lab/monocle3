@@ -98,13 +98,13 @@ Imports:
     stringr (>= 1.4.0),
     SummarizedExperiment (>= 1.11.5),
     uwot (>= 0.1.8),
+    terra (>= 1.4-22),
     tibble (>= 2.1.1),
     tictoc,
     tidyr (>= 0.8.3),
     viridis (>= 0.5.1)
 Remotes:
-    cole-trapnell-lab/leidenbase,
-    rspatial/terra
+    cole-trapnell-lab/leidenbase
 Suggests: 
     testthat (>= 2.1.0),
     pryr (>= 0.1.4),
