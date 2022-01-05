@@ -71,7 +71,7 @@ no correlation, and -1 means that neighboring cells will be
 \emph{anti-correlated}.
 }
 \examples{
-  \donttest {
+  \donttest{
     cds <- load_worm_l2()
     cds <- preprocess_cds(cds, num_dim = 100)
     cds <- reduce_dimension(cds)

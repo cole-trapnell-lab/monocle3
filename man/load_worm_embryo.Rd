@@ -13,7 +13,7 @@ cds object
 Build a cell_data_set from C. elegans embryo data.
 }
 \examples{
-  \donttest {
+  \donttest{
     cds <- load_worm_embryo()
   }
 

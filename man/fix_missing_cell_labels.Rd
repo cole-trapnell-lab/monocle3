@@ -85,7 +85,7 @@ top_next_ratio_threshold, in which case it copies the
 most frequent value. Otherwise, it leaves the NA.
 }
 \examples{
-  \donttest {
+  \donttest{
     cds <- load_worm_l2()
     ncell <- nrow(colData(cds))
     cell_sample <- sample(seq(ncell), 2 * ncell / 3)

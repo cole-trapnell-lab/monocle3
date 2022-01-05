@@ -54,7 +54,7 @@ Search a nearest neighbor index for cells near
 those in the query_matrix.
 }
 \examples{
-  \donttest {
+  \donttest{
     cds <- load_worm_embryo()
     cds <- preprocess_cds(cds)
     cds <- make_cds_nn_index(cds, 'PCA')

@@ -13,7 +13,7 @@
 Method to access cds count matrix
 }
 \examples{
- \donttest {
+ \donttest{
    cds <- load_a549()
    exprs(cds)
  }

@@ -28,7 +28,7 @@ Updated cell_data_set object with a new colData column called
 Function to calculate size factors for single-cell RNA-seq data
 }
 \examples{
-  \donttest {
+  \donttest{
     cds <- load_a549()
     colData(cds)[['Size_Factor']] <- NULL
     cds <- estimate_size_factors(cds)

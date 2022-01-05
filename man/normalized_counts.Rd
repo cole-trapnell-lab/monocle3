@@ -29,7 +29,7 @@ Return a size-factor normalized and (optionally) log-transformed expression
 matrix
 }
 \examples{
-  \donttest {
+  \donttest{
     cds <- load_a549()
     normalized_matrix <- normalized_counts(cds)
   }

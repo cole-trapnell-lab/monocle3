@@ -13,7 +13,7 @@ cds object
 Build a small cell_data_set.
 }
 \examples{
-  \donttest {
+  \donttest{
     cds <- load_a549()
   }
 

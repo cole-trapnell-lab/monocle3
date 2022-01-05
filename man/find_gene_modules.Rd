@@ -79,7 +79,7 @@ A dataframe with genes and the modules to which they are assigned.
 Cluster genes into modules that are co-expressed across cells.
 }
 \examples{
-  \donttest {
+  \donttest{
     cds <- load_worm_l2()
     cds <- preprocess_cds(cds, num_dim = 100)
     cds <- reduce_dimension(cds)

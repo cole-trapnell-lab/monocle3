@@ -19,7 +19,7 @@ save_monocle_objects. For more information read the help
 information for save_monocle_objects.
 }
 \examples{
-  \donttest {
+  \donttest{
     cds <- load_a549()
     save_monocle_objects(cds, 'mo')
     cds1 <- load_monocle_objects('mo')

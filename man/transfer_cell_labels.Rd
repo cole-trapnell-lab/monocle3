@@ -134,7 +134,7 @@ nearest neighbor index is consistent with the query matrix.
 }
 }
 \examples{
-  \donttest {
+  \donttest{
     cds <- load_worm_l2()
     ncell <- nrow(colData(cds))
     cell_sample <- sample(seq(ncell), 2 * ncell / 3)

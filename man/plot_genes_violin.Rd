@@ -56,7 +56,7 @@ cells by, and produces a ggplot2 object that plots the level of expression
 for each group of cells.
 }
 \examples{
-  \donttest {
+  \donttest{
     cds <- load_a549()
     cds_subset <- cds[row.names(subset(rowData(cds),
                      gene_short_name \%in\% c("ACTA1", "ID1", "CCNB2"))),]

@@ -92,7 +92,7 @@ process after \code{preprocess_cds}.
 UMAP is implemented from the package uwot.
 }
 \examples{
-  \donttest {
+  \donttest{
     cds <- load_worm_embryo()
     cds <- preprocess_cds(cds)
     cds <- reduce_dimension(cds)

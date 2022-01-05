@@ -62,7 +62,7 @@ Creates a matrix with aggregated expression values for arbitrary groups of
 genes
 }
 \examples{
-  \donttest {
+  \donttest{
     expression_matrix <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_expression.rds"))
     cell_metadata <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_colData.rds"))
     gene_annotation <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_rowData.rds"))

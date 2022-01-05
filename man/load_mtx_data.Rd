@@ -22,7 +22,7 @@ cds object
 Load data from matrix market format
 }
 \examples{
-  \donttest {
+  \donttest{
     pmat<-system.file("extdata", "matrix.mtx.gz", package = "monocle3")
     prow<-system.file("extdata", "features_c3h0.txt", package = "monocle3")
     pcol<-system.file("extdata", "barcodes_c2h0.txt", package = "monocle3")

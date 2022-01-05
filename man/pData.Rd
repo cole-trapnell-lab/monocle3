@@ -13,7 +13,7 @@ pData(x)
 Generic to access cds colData table
 }
 \examples{
-  \donttest {
+  \donttest{
     cds <- load_a549()
     pData(cds)
   }

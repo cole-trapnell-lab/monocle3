@@ -13,7 +13,7 @@
 Method to access cds rowData table
 }
 \examples{
-  \donttest {
+  \donttest{
     cds <- load_a549()
     fData(cds)
   }

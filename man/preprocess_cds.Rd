@@ -71,7 +71,7 @@ dimensional space that will be used as the input for further dimensionality
 reduction like tSNE and UMAP.
 }
 \examples{
-  \donttest {
+  \donttest{
     cds <- load_worm_embryo()
     cds <- preprocess_cds(cds)
   }

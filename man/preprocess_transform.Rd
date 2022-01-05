@@ -36,7 +36,7 @@ transform model to a new count matrix. For more
 information read the help information for save_transform_models.
 }
 \examples{
-  \donttest {
+  \donttest{
     cds <- load_worm_embryo()
     ncell <- nrow(colData(cds))
     cell_sample <- sample(seq(ncell), 2 * ncell / 3)

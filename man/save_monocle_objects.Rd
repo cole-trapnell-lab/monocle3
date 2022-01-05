@@ -49,7 +49,7 @@ investigate parameters related to the Bioconductor DelayedArray
 and BiocParallel packages in this case.
 }
 \examples{
-  \donttest {
+  \donttest{
     cds <- load_a549()
     save_monocle_objects(cds, 'mo')
   }

@@ -68,7 +68,7 @@ shows the percentage (or number) of cells that express a gene in each
 sub-group in the cell_data_set.
 }
 \examples{
-  \donttest {
+  \donttest{
     cds <- load_a549()
     cds_subset <- cds[row.names(subset(rowData(cds),
                                       gene_short_name \%in\% c("NDRG4", "HBG2"))),]

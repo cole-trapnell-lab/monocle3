@@ -65,7 +65,7 @@ a data.frame where the rows are genes and the columns are
 Identify the genes most specifically expressed in groups of cells
 }
 \examples{
-  \donttest {
+  \donttest{
     library(dplyr)
     cds <- load_worm_embryo()
     cds <- preprocess_cds(cds)
