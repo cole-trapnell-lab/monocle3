@@ -70,7 +70,9 @@ single-cell RNA-sequencing data are corrected by matching mutual nearest
 neighbors." Nat. Biotechnol., 36(5), 421-427. doi: 10.1038/nbt.4091
 }
 \examples{
-  cds <- load_worm_embryo()
-  cds <- preprocess_cds(cds)
-  cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+  \donttest {
+    cds <- load_worm_embryo()
+    cds <- preprocess_cds(cds)
+    cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+  }
 }

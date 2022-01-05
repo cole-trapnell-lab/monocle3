@@ -27,8 +27,10 @@ nn_control list parameter. The function returns
 the index.
 }
 \examples{
-  cds <- load_worm_embryo()
-  cds <- preprocess_cds(cds)
-  nn_index <- make_nn_index(reducedDims(cds)[['PCA']])
+  \donttest {
+    cds <- load_worm_embryo()
+    cds <- preprocess_cds(cds)
+    nn_index <- make_nn_index(reducedDims(cds)[['PCA']])
+  }
 
 }

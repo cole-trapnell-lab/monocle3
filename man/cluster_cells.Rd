@@ -82,10 +82,12 @@ using a kNN pruning method. Cluster assignments can be accessed using the
 accessed using the \code{\link{partitions}} function.
 }
 \examples{
-  cds <- load_worm_embryo()
-  cds <- preprocess_cds(cds)
-  cds <- reduce_dimension(cds)
-  cds <- cluster_cells(cds)
+  \donttest { 
+    cds <- load_worm_embryo()
+    cds <- preprocess_cds(cds)
+    cds <- reduce_dimension(cds)
+    cds <- cluster_cells(cds)
+  }
 
 }
 \references{

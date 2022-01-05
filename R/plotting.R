@@ -378,7 +378,7 @@ plot_cells_3d <- function(cds,
 #'   order_cells and choose_graph_segments in non-interactive mode.
 #'
 #' @return a ggplot2 plot object
-#' @importFrom plyr .
+#' @importFrom plyr "."
 #' @importFrom future value
 #'
 #' @examples

@@ -60,6 +60,9 @@ and \emph{matrix.mtx.gz} in the directories as
 }
 }
 \examples{
-cell_ranger_data <- system.file("extdata", "cell_ranger_3", package = "monocle3")
-gene_bc_matrix <- load_cellranger_data(cell_ranger_data)
+  \donttest {
+    cell_ranger_data <- system.file("extdata", "cell_ranger_3", package = "monocle3")
+    gene_bc_matrix <- load_cellranger_data(cell_ranger_data)
+  }
+
 }

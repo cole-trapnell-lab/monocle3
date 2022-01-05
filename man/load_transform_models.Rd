@@ -23,10 +23,12 @@ the cell_data_set. For more information read the help information
 for save_transform_models.
 }
 \examples{
-  cds <- load_a549()
-  cds <- preprocess_cds(cds)
-  cds <- reduce_dimension(cds)
-  save_transform_models(cds, 'tm')
-  cds1 <- load_a549()
-  cds1 <- load_transform_models(cds1, 'tm')
+  \donttest {
+    cds <- load_a549()
+    cds <- preprocess_cds(cds)
+    cds <- reduce_dimension(cds)
+    save_transform_models(cds, 'tm')
+    cds1 <- load_a549()
+    cds1 <- load_transform_models(cds1, 'tm')
+  }
 }

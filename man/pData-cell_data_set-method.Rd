@@ -13,7 +13,9 @@
 Method to access cds colData table
 }
 \examples{
-  cds <- load_a549()
-  pData(cds)
+  \donttest {
+    cds <- load_a549()
+    pData(cds)
+  }
 
 }

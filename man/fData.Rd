@@ -13,7 +13,9 @@ fData(x)
 Generic to access cds rowData table
 }
 \examples{
-  cds <- load_a549()
-  fData(cds)
+  \donttest {
+    cds <- load_a549()
+    fData(cds)
+  }
 
 }
