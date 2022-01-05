@@ -58,7 +58,7 @@
 #'   data using t-SNE. J. Mach. Learn. Res., 9(Nov):2579– 2605, 2008.
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_worm_embryo()
 #'     cds <- preprocess_cds(cds)
 #'     cds <- reduce_dimension(cds)

@@ -34,7 +34,7 @@
 #' * marker_test_q_value numeric vector of likelihood ratio q-values
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     library(dplyr)
 #'     cds <- load_worm_embryo()
 #'     cds <- preprocess_cds(cds)

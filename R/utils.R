@@ -16,7 +16,7 @@ is_sparse_matrix <- function(x){
 #'   'Size_Factor'.
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_a549()
 #'     colData(cds)[['Size_Factor']] <- NULL
 #'     cds <- estimate_size_factors(cds)
@@ -464,7 +464,7 @@ detect_genes <- function(cds, min_expr=0){
 #'   matrix.
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_a549()
 #'     normalized_matrix <- normalized_counts(cds)
 #'   }

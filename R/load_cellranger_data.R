@@ -63,7 +63,7 @@ get_genome_in_matrix_path <- function(matrix_path, genome=NULL) {
 #' @return a new cell_data_set object
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cell_ranger_data <- system.file("extdata", "cell_ranger_3", package = "monocle3")
 #'     gene_bc_matrix <- load_cellranger_data(cell_ranger_data)
 #'   }

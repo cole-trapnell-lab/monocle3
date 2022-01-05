@@ -156,7 +156,7 @@ get_nn_means <- function(query_data, query_search, ref_coldata, ref_column_name)
 #' @return an updated cell_data_set object
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_worm_l2()
 #'     ncell <- nrow(colData(cds))
 #'     cell_sample <- sample(seq(ncell), 2 * ncell / 3)
@@ -401,7 +401,7 @@ edit_query_cell_labels <- function(preproc_res,
 #' @return an updated cell_data_set object
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_worm_l2()
 #'     ncell <- nrow(colData(cds))
 #'     cell_sample <- sample(seq(ncell), 2 * ncell / 3)

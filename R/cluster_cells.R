@@ -61,7 +61,7 @@
 #'   Cell, 2015.
 #'
 #' @examples
-#'   \donttest { 
+#'   \donttest{ 
 #'     cds <- load_worm_embryo()
 #'     cds <- preprocess_cds(cds)
 #'     cds <- reduce_dimension(cds)

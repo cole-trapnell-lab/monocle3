@@ -19,7 +19,7 @@
 #'   matrix.
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_worm_embryo()
 #'     ncell <- nrow(colData(cds))
 #'     cell_sample <- sample(seq(ncell), 2 * ncell / 3)
@@ -340,7 +340,7 @@ align_transform <- function(cds, reduction_method=c('Aligned')) {
 #'   reduced count matrix.
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_worm_embryo()
 #'     ncell <- nrow(colData(cds))
 #'     cell_sample <- sample(seq(ncell), 2 * ncell / 3)

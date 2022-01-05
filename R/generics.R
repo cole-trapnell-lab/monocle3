@@ -4,7 +4,7 @@
 #' @param reduction_method Reduced dimension to extract pseudotime for.
 #'
 #' @examples
-#'  \donttest {
+#'  \donttest{
 #'    cds <- load_worm_embryo()
 #'    cds <- preprocess_cds(cds, num_dim=50)
 #'    cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
@@ -25,7 +25,7 @@ setGeneric("pseudotime", function(x, reduction_method = "UMAP")
 #' @param reduction_method Reduced dimension to extract clusters for.
 #'
 #' @examples
-#'  \donttest {
+#'  \donttest{
 #'    cds <- load_worm_embryo()
 #'    cds <- preprocess_cds(cds, num_dim=50)
 #'    cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
@@ -57,7 +57,7 @@ setMethod("pseudotime", "cell_data_set",
 #' @param reduction_method Reduced dimension to extract clusters for.
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_worm_embryo()
 #'     cds <- preprocess_cds(cds)
 #'     cds <- reduce_dimension(cds)
@@ -74,7 +74,7 @@ setGeneric("clusters", function(x, reduction_method = "UMAP")
 #' @param reduction_method Reduced dimension to extract clusters for.
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_worm_embryo()
 #'     cds <- preprocess_cds(cds)
 #'     cds <- reduce_dimension(cds)
@@ -102,7 +102,7 @@ setMethod("clusters", "cell_data_set",
 #' @param reduction_method Reduced dimension to partitions clusters for.
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_worm_embryo()
 #'     cds <- preprocess_cds(cds)
 #'     cds <- reduce_dimension(cds)
@@ -119,7 +119,7 @@ setGeneric("partitions", function(x, reduction_method = "UMAP")
 #' @param reduction_method Reduced dimension to partitions clusters for.
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_worm_embryo()
 #'     cds <- preprocess_cds(cds)
 #'     cds <- reduce_dimension(cds)
@@ -145,7 +145,7 @@ setMethod("partitions", "cell_data_set",
 #' @param x A cell_data_set object.
 #'
 #' @examples
-#'  \donttest {
+#'  \donttest{
 #'    cds <- load_worm_embryo()
 #'    cds <- preprocess_cds(cds, num_dim=50)
 #'    cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
@@ -164,7 +164,7 @@ setGeneric("principal_graph", function(x) standardGeneric("principal_graph"))
 #' @param value A principal graph object.
 #'
 #' @examples
-#'  \donttest {
+#'  \donttest{
 #'    cds <- load_worm_embryo()
 #'    cds <- preprocess_cds(cds, num_dim=50)
 #'    cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
@@ -185,7 +185,7 @@ setGeneric("principal_graph<-", function(x, value)
 #' @param x A cell_data_set object.
 #'
 #' @examples
-#'  \donttest {
+#'  \donttest{
 #'    cds <- load_worm_embryo()
 #'    cds <- preprocess_cds(cds, num_dim=50)
 #'    cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
@@ -207,7 +207,7 @@ setMethod("principal_graph", "cell_data_set", function(x) {
 #' @param value A principal graph object.
 #'
 #' @examples
-#'  \donttest {
+#'  \donttest{
 #'    cds <- load_worm_embryo()
 #'    cds <- preprocess_cds(cds, num_dim=50)
 #'    cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
@@ -237,7 +237,7 @@ setReplaceMethod("principal_graph", "cell_data_set", function(x, value) {
 #' @param x A cell_data_set object.
 #'
 #' @examples
-#'  \donttest {
+#'  \donttest{
 #'    cds <- load_worm_embryo()
 #'    cds <- preprocess_cds(cds, num_dim=50)
 #'    cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
@@ -257,7 +257,7 @@ setGeneric("principal_graph_aux", function(x)
 #' @param value A SimpleList of principal graph auxiliary information.
 #'
 #' @examples
-#'  \donttest {
+#'  \donttest{
 #'    cds <- load_worm_embryo()
 #'    cds <- preprocess_cds(cds, num_dim=50)
 #'    cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
@@ -278,7 +278,7 @@ setGeneric("principal_graph_aux<-", function(x, value)
 #' @param x A cell_data_set object.
 #'
 #' @examples
-#'  \donttest {
+#'  \donttest{
 #'    cds <- load_worm_embryo()
 #'    cds <- preprocess_cds(cds, num_dim=50)
 #'    cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
@@ -300,7 +300,7 @@ setMethod("principal_graph_aux", "cell_data_set", function(x) {
 #' @param value A SimpleList of principal graph auxiliary information.
 #' 
 #' @examples
-#'  \donttest {
+#'  \donttest{
 #'    cds <- load_worm_embryo()
 #'    cds <- preprocess_cds(cds, num_dim=50)
 #'    cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
@@ -333,7 +333,7 @@ setReplaceMethod("principal_graph_aux", "cell_data_set", function(x, value) {
 #' @param x A cell_data_set object.
 #'
 #' @examples
-#'  \donttest {
+#'  \donttest{
 #'    cds <- load_a549()
 #'    exprs(cds)
 #'  }
@@ -345,7 +345,7 @@ setGeneric("exprs", function(x) standardGeneric("exprs"))
 #' @param x A cell_data_set object.
 #'
 #' @examples
-#'  \donttest {
+#'  \donttest{
 #'    cds <- load_a549()
 #'    exprs(cds)
 #'  }
@@ -360,7 +360,7 @@ setMethod("exprs", "cell_data_set", function(x) {
 #' @param x A cell_data_set object.
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_a549()
 #'     pData(cds)
 #'   }
@@ -373,7 +373,7 @@ setGeneric("pData", function(x) standardGeneric("pData"))
 #' @param value A data frame to set to colData table.
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_a549()
 #'     pData(cds)[['row_index']] <- seq(nrow(pData(cds)))
 #'   }
@@ -385,7 +385,7 @@ setGeneric("pData<-", function(x, value) standardGeneric("pData<-"))
 #' @param x A cell_data_set object.
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_a549()
 #'     pData(cds)
 #'   }
@@ -401,7 +401,7 @@ setMethod("pData", "cell_data_set", function(x) {
 #' @param value A data frame to set to colData table.
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_a549()
 #'     pData(cds)[['row_index']] <- seq(nrow(pData(cds)))
 #'   }
@@ -418,7 +418,7 @@ setReplaceMethod("pData", "cell_data_set", function(x, value) {
 #' @param x A cell_data_set object.
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_a549()
 #'     fData(cds)
 #'   }
@@ -431,7 +431,7 @@ setGeneric("fData", function(x) standardGeneric("fData"))
 #' @param value A data frame to set to colData table.
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_a549()
 #'     fData(cds)[['row_index']] <- seq(nrow(fData(cds)))
 #'   }
@@ -443,7 +443,7 @@ setGeneric("fData<-", function(x, value) standardGeneric("fData<-"))
 #' @param x A cell_data_set object.
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_a549()
 #'     fData(cds)
 #'   }
@@ -459,7 +459,7 @@ setMethod("fData", "cell_data_set", function(x) {
 #' @param value A data frame to set to colData table.
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_a549()
 #'     fData(cds)[['row_index']] <- seq(nrow(fData(cds)))
 #'   }

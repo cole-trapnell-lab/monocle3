@@ -42,7 +42,7 @@
 #' @return an updated cell_data_set object
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_worm_embryo()
 #'     cds <- preprocess_cds(cds)
 #'   }

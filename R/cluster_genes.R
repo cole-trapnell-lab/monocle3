@@ -31,7 +31,7 @@
 #' @return A dataframe with genes and the modules to which they are assigned.
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_worm_l2()
 #'     cds <- preprocess_cds(cds, num_dim = 100)
 #'     cds <- reduce_dimension(cds)
@@ -258,7 +258,7 @@ my.aggregate.Matrix = function (x, groupings = NULL, form = NULL, fun = "sum", .
 #' @return A matrix of dimension NxM, where N is the number of gene groups and
 #'   M is the number of cell groups.
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     expression_matrix <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_expression.rds"))
 #'     cell_metadata <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_colData.rds"))
 #'     gene_annotation <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_rowData.rds"))

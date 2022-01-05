@@ -276,7 +276,7 @@ fit_model_helper <- function(x,
 #'   * status character vector of model fitting status: OK when model converged, otherwise FAIL
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_worm_embryo()
 #'     cds <- preprocess_cds(cds, num_dim=50)
 #'     cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
@@ -530,7 +530,7 @@ extract_coefficient_helper = function(model, model_summary,
 #'   \code{\link{fit_models}}.
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_worm_embryo()
 #'     cds <- preprocess_cds(cds, num_dim=50)
 #'     cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
@@ -610,7 +610,7 @@ compare_models <- function(model_tbl_full, model_tbl_reduced){
 #'   \code{\link{fit_models}}.
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_worm_embryo()
 #'     cds <- preprocess_cds(cds, num_dim=50)
 #'     cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")

@@ -325,7 +325,7 @@ identity_as_string <- function( object_id ) {
 #' @return Write identity information to stdout.
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_worm_embryo()
 #'     cds <- preprocess_cds(cds)
 #'     cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")

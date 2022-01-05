@@ -1094,7 +1094,7 @@ plot_genes_in_pseudotime <-function(cds_subset,
 #' @return ggplot object.
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_a549()
 #'     cds <- preprocess_cds(cds)
 #'     plot_pc_variance_explained(cds)
@@ -1149,7 +1149,7 @@ plot_pc_variance_explained <- function(cds) {
 #' @import ggplot2
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_a549()
 #'     cds_subset <- cds[row.names(subset(rowData(cds),
 #'                      gene_short_name %in% c("ACTA1", "ID1", "CCNB2"))),]
@@ -1308,7 +1308,7 @@ plot_genes_violin <- function (cds_subset,
 #' @import ggplot2
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_a549()
 #'     cds_subset <- cds[row.names(subset(rowData(cds),
 #'                                       gene_short_name %in% c("NDRG4", "HBG2"))),]

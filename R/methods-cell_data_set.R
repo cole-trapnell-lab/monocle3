@@ -27,7 +27,7 @@ setValidity( "cell_data_set", function( object ) {
 #' @return An updated cell_data_set object
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_a549()
 #'     size_factors(cds)
 #'   }

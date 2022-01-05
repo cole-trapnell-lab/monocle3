@@ -42,7 +42,7 @@
 #' @seealso \code{\link[spdep]{moran.test}} \code{\link[spdep]{geary.test}}
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_worm_l2()
 #'     cds <- preprocess_cds(cds, num_dim = 100)
 #'     cds <- reduce_dimension(cds)

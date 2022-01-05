@@ -525,7 +525,7 @@ new_annoy_index <- function(metric, ndim) {
 #' @return a nearest neighbor index.
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_worm_embryo()
 #'     cds <- preprocess_cds(cds)
 #'     nn_index <- make_nn_index(reducedDims(cds)[['PCA']])
@@ -681,7 +681,7 @@ set_cds_nn_index <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Alig
 #' @return a cell_data_set with the stored index.
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_worm_embryo()
 #'     cds <- preprocess_cds(cds)
 #'     cds <- make_cds_nn_index(cds, 'PCA')
@@ -885,7 +885,7 @@ search_nn_annoy_index <- function(query_matrix, nn_index, metric, k, search_k, b
 #'  be in the row, usually in the first column.
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_worm_embryo()
 #'     cds <- preprocess_cds(cds)
 #'     nn_index <- make_nn_index(reducedDims(cds)[['PCA']])
@@ -1053,7 +1053,7 @@ search_nn_index <- function(query_matrix, nn_index, k=25, nn_control=list(), ver
 #'  be in the row, usually in the first column.
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_worm_embryo()
 #'     cds <- preprocess_cds(cds)
 #'     cds <- make_cds_nn_index(cds, 'PCA')

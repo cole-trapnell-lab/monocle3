@@ -2,7 +2,7 @@
 #'
 #' @return cds object
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_a549()
 #'   }
 #'
@@ -29,7 +29,7 @@ load_a549 <- function(){
 #' Build a cell_data_set from C. elegans embryo data.
 #' @return cds object
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_worm_embryo()
 #'   }
 #'
@@ -57,7 +57,7 @@ load_worm_embryo <- function(){
 #' Build a cell_data_set from C. elegans L2 data.
 #' @return cds object
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_worm_l2()
 #'   }
 #'
@@ -196,7 +196,7 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
 #' * load_mm_data estimates size factors.
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     pmat<-system.file("extdata", "matrix.mtx.gz", package = "monocle3")
 #'     prow<-system.file("extdata", "features_c3h0.txt", package = "monocle3")
 #'     pcol<-system.file("extdata", "barcodes_c2h0.txt", package = "monocle3")
@@ -275,7 +275,7 @@ load_mm_data <- function( mat_path,
 #' @importFrom SingleCellExperiment counts
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     pmat<-system.file("extdata", "matrix.mtx.gz", package = "monocle3")
 #'     prow<-system.file("extdata", "features_c3h0.txt", package = "monocle3")
 #'     pcol<-system.file("extdata", "barcodes_c2h0.txt", package = "monocle3")
@@ -814,7 +814,7 @@ report_files_saved <- function(file_index) {
 #' @return none.
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_a549()
 #'     cds <- preprocess_cds(cds)
 #'     cds <- reduce_dimension(cds)
@@ -1018,7 +1018,7 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
 #'   load_transform_models.
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_a549()
 #'     cds <- preprocess_cds(cds)
 #'     cds <- reduce_dimension(cds)
@@ -1196,7 +1196,7 @@ test_hdf5_assays <- function(cds) {
 #' @return none.
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_a549()
 #'     save_monocle_objects(cds, 'mo')
 #'   }
@@ -1428,7 +1428,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
 #' @return a cell_data_set.
 #'
 #' @examples
-#'   \donttest {
+#'   \donttest{
 #'     cds <- load_a549()
 #'     save_monocle_objects(cds, 'mo')
 #'     cds1 <- load_monocle_objects('mo')
