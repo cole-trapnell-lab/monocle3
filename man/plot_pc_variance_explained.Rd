@@ -21,3 +21,11 @@ PCA from the normalized expression data determined using preprocess_cds.
 This is the fraction of the component variance relative to the variance
 of the components retained in the PCA; not the total variance.
 }
+\examples{
+  \donttest{
+    cds <- load_a549()
+    cds <- preprocess_cds(cds)
+    plot_pc_variance_explained(cds)
+  }
+
+}

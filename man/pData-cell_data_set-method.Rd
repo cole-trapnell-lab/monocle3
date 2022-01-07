@@ -12,10 +12,3 @@
 \description{
 Method to access cds colData table
 }
-\examples{
-  \donttest{
-    cds <- load_a549()
-    pData(cds)
-  }
-
-}

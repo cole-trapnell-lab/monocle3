@@ -24,19 +24,6 @@ setGeneric("pseudotime", function(x, reduction_method = "UMAP")
 #' @param x A cell_data_set object.
 #' @param reduction_method Reduced dimension to extract clusters for.
 #'
-#' @examples
-#'  \donttest{
-#'    cds <- load_worm_embryo()
-#'    cds <- preprocess_cds(cds, num_dim=50)
-#'    cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
-#'    cds <- reduce_dimension(cds)
-#'    ciliated_genes <- c("che-1", "hlh-17", "nhr-6", "dmd-6", "ceh-36", "ham-1")
-#'    cds <- cluster_cells(cds)
-#'    cds <- learn_graph(cds)
-#'    cds <- order_cells(cds)
-#'    ps_tim <- pseudotime(cds)
-#'  }
-#'
 #' @export
 setMethod("pseudotime", "cell_data_set",
           function(x, reduction_method = "UMAP") {
@@ -73,15 +60,6 @@ setGeneric("clusters", function(x, reduction_method = "UMAP")
 #' @param x A cell_data_set object.
 #' @param reduction_method Reduced dimension to extract clusters for.
 #'
-#' @examples
-#'   \donttest{
-#'     cds <- load_worm_embryo()
-#'     cds <- preprocess_cds(cds)
-#'     cds <- reduce_dimension(cds)
-#'     cds <- cluster_cells(cds)
-#'     clusters_factors <- clusters(cds, "UMAP")
-#'   }
-#'
 #' @export
 setMethod("clusters", "cell_data_set",
           function(x, reduction_method = "UMAP") {
@@ -117,15 +95,6 @@ setGeneric("partitions", function(x, reduction_method = "UMAP")
 #' Method to extract partitions from CDS object
 #' @param x A cell_data_set object.
 #' @param reduction_method Reduced dimension to partitions clusters for.
-#'
-#' @examples
-#'   \donttest{
-#'     cds <- load_worm_embryo()
-#'     cds <- preprocess_cds(cds)
-#'     cds <- reduce_dimension(cds)
-#'     cds <- cluster_cells(cds)
-#'     partitions_factors <- partitions(cds, "UMAP")
-#'   }
 #'
 #' @export
 setMethod("partitions", "cell_data_set",
@@ -183,18 +152,6 @@ setGeneric("principal_graph<-", function(x, value)
 
 #' Method to extract principal graph from CDS
 #' @param x A cell_data_set object.
-#'
-#' @examples
-#'  \donttest{
-#'    cds <- load_worm_embryo()
-#'    cds <- preprocess_cds(cds, num_dim=50)
-#'    cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
-#'    cds <- reduce_dimension(cds)
-#'    ciliated_genes <- c("che-1", "hlh-17", "nhr-6", "dmd-6", "ceh-36", "ham-1")
-#'    cds <- cluster_cells(cds)
-#'    cds <- learn_graph(cds)
-#'    pr_gr <- principal_graph(cds)
-#'  }
 #'
 #' @export
 setMethod("principal_graph", "cell_data_set", function(x) {
@@ -277,18 +234,6 @@ setGeneric("principal_graph_aux<-", function(x, value)
 #' Method to extract principal graph auxiliary information from CDS
 #' @param x A cell_data_set object.
 #'
-#' @examples
-#'  \donttest{
-#'    cds <- load_worm_embryo()
-#'    cds <- preprocess_cds(cds, num_dim=50)
-#'    cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
-#'    cds <- reduce_dimension(cds)
-#'    ciliated_genes <- c("che-1", "hlh-17", "nhr-6", "dmd-6", "ceh-36", "ham-1")
-#'    cds <- cluster_cells(cds)
-#'    cds <- learn_graph(cds)
-#'    pr_gr_aux <- principal_graph_aux(cds)
-#'  }
-#'
 #' @export
 setMethod("principal_graph_aux", "cell_data_set", function(x) {
   value <- x@principal_graph_aux
@@ -344,12 +289,6 @@ setGeneric("exprs", function(x) standardGeneric("exprs"))
 #' Method to access cds count matrix
 #' @param x A cell_data_set object.
 #'
-#' @examples
-#'  \donttest{
-#'    cds <- load_a549()
-#'    exprs(cds)
-#'  }
-#'
 #' @export
 setMethod("exprs", "cell_data_set", function(x) {
   value <- assays(x)$counts
@@ -383,12 +322,6 @@ setGeneric("pData<-", function(x, value) standardGeneric("pData<-"))
 
 #' Method to access cds colData table
 #' @param x A cell_data_set object.
-#'
-#' @examples
-#'   \donttest{
-#'     cds <- load_a549()
-#'     pData(cds)
-#'   }
 #'
 #' @export
 setMethod("pData", "cell_data_set", function(x) {
@@ -457,12 +390,6 @@ setMethod("fData", "cell_data_set", function(x) {
 #' Method to set cds rowData table
 #' @param x A cell_data_set object.
 #' @param value A data frame to set to colData table.
-#'
-#' @examples
-#'   \donttest{
-#'     cds <- load_a549()
-#'     fData(cds)[['row_index']] <- seq(nrow(fData(cds)))
-#'   }
 #'
 #' @export
 #' @importClassesFrom S4Vectors List

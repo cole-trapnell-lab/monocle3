@@ -1098,7 +1098,7 @@ plot_genes_in_pseudotime <-function(cds_subset,
 #'     cds <- load_a549()
 #'     cds <- preprocess_cds(cds)
 #'     plot_pc_variance_explained(cds)
-#    }
+#'   }
 #'
 #' @export
 plot_pc_variance_explained <- function(cds) {

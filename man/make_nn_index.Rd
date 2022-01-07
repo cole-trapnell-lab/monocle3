@@ -28,7 +28,7 @@ the index.
 }
 \examples{
   \donttest{
-    cds <- load_worm_embryo()
+    cds <- load_a549()
     cds <- preprocess_cds(cds)
     nn_index <- make_nn_index(reducedDims(cds)[['PCA']])
   }

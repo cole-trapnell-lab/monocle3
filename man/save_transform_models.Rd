@@ -49,7 +49,7 @@ save_transform_models saves the models to a directory
 given by directory_path.
 }
 \examples{
-  \donttest{
+  \dontrun{
     cds <- load_a549()
     cds <- preprocess_cds(cds)
     cds <- reduce_dimension(cds)

@@ -12,10 +12,3 @@
 \description{
 Method to access cds count matrix
 }
-\examples{
- \donttest{
-   cds <- load_a549()
-   exprs(cds)
- }
-
-}

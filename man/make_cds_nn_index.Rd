@@ -38,7 +38,7 @@ cell_data_set. This function returns a cell_data_set.
 }
 \examples{
   \donttest{
-    cds <- load_worm_embryo()
+    cds <- load_a549()
     cds <- preprocess_cds(cds)
     cds <- make_cds_nn_index(cds, 'PCA')
   }

@@ -28,11 +28,6 @@ load_a549 <- function(){
 
 #' Build a cell_data_set from C. elegans embryo data.
 #' @return cds object
-#' @examples
-#'   \donttest{
-#'     cds <- load_worm_embryo()
-#'   }
-#'
 #' @importFrom SingleCellExperiment counts
 #' @export
 load_worm_embryo <- function(){
@@ -56,11 +51,6 @@ load_worm_embryo <- function(){
 
 #' Build a cell_data_set from C. elegans L2 data.
 #' @return cds object
-#' @examples
-#'   \donttest{
-#'     cds <- load_worm_l2()
-#'   }
-#'
 #' @importFrom SingleCellExperiment counts
 #' @export
 load_worm_l2 <- function(){
@@ -814,7 +804,7 @@ report_files_saved <- function(file_index) {
 #' @return none.
 #'
 #' @examples
-#'   \donttest{
+#'   \dontrun{
 #'     cds <- load_a549()
 #'     cds <- preprocess_cds(cds)
 #'     cds <- reduce_dimension(cds)
@@ -823,6 +813,8 @@ report_files_saved <- function(file_index) {
 #'
 #' @importFrom utils packageVersion
 #' @export
+# Bioconductor forbids writing to user directories so examples
+# is not run.
 save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE) {
   appendLF <- TRUE
   # file information is written to an RDS file
@@ -1018,7 +1010,7 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
 #'   load_transform_models.
 #'
 #' @examples
-#'   \donttest{
+#'   \dontrun{
 #'     cds <- load_a549()
 #'     cds <- preprocess_cds(cds)
 #'     cds <- reduce_dimension(cds)
@@ -1027,6 +1019,8 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
 #'     cds1 <- load_transform_models(cds1, 'tm')
 #'   }
 #' @export
+# Bioconductor forbids writing to user directories so examples
+# is not run.
 load_transform_models <- function(cds, directory_path) {
   appendLF <- TRUE
   # Check for directory.
@@ -1196,13 +1190,15 @@ test_hdf5_assays <- function(cds) {
 #' @return none.
 #'
 #' @examples
-#'   \donttest{
+#'   \dontrun{
 #'     cds <- load_a549()
 #'     save_monocle_objects(cds, 'mo')
 #'   }
 #'
 #' @importFrom utils packageVersion
 #' @export
+# Bioconductor forbids writing to user directories so examples
+# is not run.
 save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment="", verbose=TRUE) {
   appendLF <- TRUE
   # file information is written to an RDS file
@@ -1428,13 +1424,15 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
 #' @return a cell_data_set.
 #'
 #' @examples
-#'   \donttest{
+#'   \dontrun{
 #'     cds <- load_a549()
 #'     save_monocle_objects(cds, 'mo')
 #'     cds1 <- load_monocle_objects('mo')
 #'   }
 #'
 #' @export
+# Bioconductor forbids writing to user directories so examples
+# is not run.
 load_monocle_objects <- function(directory_path) {
   appendLF <- FALSE
   # Check for directory.
