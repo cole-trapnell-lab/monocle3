@@ -1,0 +1,38 @@
+== worm embryo rds file preparation
+
+cds <- load_worm_embryo()
+var_fea <- read.table('variable_features.txt')
+fea_nam <- var_fea[[2]]
+cds <- cds[,colData(cds)[['cell.type']] %in% c('AWB', 'ADF', 'ASG', 'AWA', 'ASG_AWA', 'ADF_AWB')]
+cds<-cds[rownames(cds) %in% fea_nam[1:5000],]
+
+writeRDS(rowData(cds), file='worm_embryo_rowdata.rds')
+writeRDS(colData(cds), file='worm_embryo_coldata.rds')
+writeRDS(expr(cds), file='worm_embryo_expression_matrix.rds')
+
+
+== load worm embryo files
+
+cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
+gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
+expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
+
+cds <- new_cell_data_set(expression_data=expression_matrix,
+                         cell_metadata=cell_metadata,
+                         gene_metadata=gene_metadata)
+
+
+== processing worm embryo cds to order cells
+
+cds <- load_worm_embryo()
+var_fea <- read.table('/home/brent/variable_features.txt')
+fea_nam <- var_fea[[2]]
+cds_ss <- cds[,colData(cds)[['cell.type']] %in% c('AWB', 'ADF', 'ASG', 'AWA', 'ASG_AWA', 'ADF_AWB')]
+cds_ss_rw<-cds_ss[rownames(cds_ss) %in% fea_nam[1:5000],]
+cds <- cds_ss_rw
+cds<-preprocess_cds(cds,num_dim=50)
+cds<-align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+cds <- reduce_dimension(cds)
+cds<-cluster_cells(cds)
+cds <- learn_graph(cds)
+cds <- order_cells(cds,root_pr_nodes='Y_9')
