@@ -72,7 +72,14 @@ no correlation, and -1 means that neighboring cells will be
 }
 \examples{
   \donttest{
-    cds <- load_worm_l2()
+     expression_matrix <- readRDS(system.file('extdata', 'worm_l2/worm_l2_expression_matrix.rds', package='monocle3'))
+     cell_metadata <- readRDS(system.file('extdata', 'worm_l2/worm_l2_coldata.rds', package='monocle3'))
+     gene_metadata <- readRDS(system.file('extdata', 'worm_l2/worm_l2_rowdata.rds', package='monocle3'))
+
+     cds <- new_cell_data_set(expression_data=expression_matrix,
+                              cell_metadata=cell_metadata,
+                              gene_metadata=gene_metadata)
+
     cds <- preprocess_cds(cds, num_dim = 100)
     cds <- reduce_dimension(cds)
     cds <- cluster_cells(cds, resolution=1e-5)
@@ -117,7 +124,7 @@ no correlation, and -1 means that neighboring cells will be
                                                     "37"="Ciliated sensory neurons",
                                                     "38"="Pharyngeal muscle")
     neurons_cds <- cds[,grepl("neurons", colData(cds)$assigned_cell_type, ignore.case=TRUE)]
-    pr_graph_test_res <- graph_test(neurons_cds, neighbor_graph="knn")
+    pr_graph_test_res <- graph_test(cds, neighbor_graph="knn")
   }
 
 }

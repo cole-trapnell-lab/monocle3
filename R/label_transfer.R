@@ -156,8 +156,15 @@ get_nn_means <- function(query_data, query_search, ref_coldata, ref_column_name)
 #' @return an updated cell_data_set object
 #'
 #' @examples
-#'   \donttest{
-#'     cds <- load_worm_l2()
+#'   \dontrun{
+#'      expression_matrix <- readRDS(system.file('extdata', 'worm_l2/worm_l2_expression_matrix.rds', package='monocle3'))
+#'      cell_metadata <- readRDS(system.file('extdata', 'worm_l2/worm_l2_coldata.rds', package='monocle3'))
+#'      gene_metadata <- readRDS(system.file('extdata', 'worm_l2/worm_l2_rowdata.rds', package='monocle3'))
+#'
+#'      cds <- new_cell_data_set(expression_data=expression_matrix,
+#'                               cell_metadata=cell_metadata,
+#'                               gene_metadata=gene_metadata)
+#'
 #'     ncell <- nrow(colData(cds))
 #'     cell_sample <- sample(seq(ncell), 2 * ncell / 3)
 #'     cell_set <- seq(ncell) %in% cell_sample
@@ -175,6 +182,8 @@ get_nn_means <- function(query_data, query_search, ref_coldata, ref_column_name)
 #'
 #' @importFrom methods is
 #' @export
+# Bioconductor forbids writing to user directories so examples
+# is not run.
 transfer_cell_labels <- function(cds_query,
                                  reduction_method=c('UMAP', 'PCA', 'LSI'),
                                  ref_coldata,
@@ -401,8 +410,15 @@ edit_query_cell_labels <- function(preproc_res,
 #' @return an updated cell_data_set object
 #'
 #' @examples
-#'   \donttest{
-#'     cds <- load_worm_l2()
+#'   \dontrun{
+#'      expression_matrix <- readRDS(system.file('extdata', 'worm_l2/worm_l2_expression_matrix.rds', package='monocle3'))
+#'      cell_metadata <- readRDS(system.file('extdata', 'worm_l2/worm_l2_coldata.rds', package='monocle3'))
+#'      gene_metadata <- readRDS(system.file('extdata', 'worm_l2/worm_l2_rowdata.rds', package='monocle3'))
+#'
+#'      cds <- new_cell_data_set(expression_data=expression_matrix,
+#'                               cell_metadata=cell_metadata,
+#'                               gene_metadata=gene_metadata)
+#'
 #'     ncell <- nrow(colData(cds))
 #'     cell_sample <- sample(seq(ncell), 2 * ncell / 3)
 #'     cell_set <- seq(ncell) %in% cell_sample
@@ -421,6 +437,8 @@ edit_query_cell_labels <- function(preproc_res,
 #'
 #' @importFrom methods is
 #' @export
+# Bioconductor forbids writing to user directories so examples
+# is not run.
 fix_missing_cell_labels <- function(cds,
                                     reduction_method=c('UMAP', 'PCA', 'LSI'),
                                     from_column_name,

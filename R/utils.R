@@ -349,14 +349,15 @@ smart_es_apply <- function(cds, MARGIN, FUN, convert_to_dense,
 #' two functions.
 #'
 #' @examples
-#' \dontrun{set.seed(1)
-#' x  <- matrix(rnorm(200), nrow=20)
-#' p1 <- prcomp_irlba(x, n=3)
-#' summary(p1)
+#' \dontrun{
+#'   set.seed(1)
+#'   x  <- matrix(rnorm(200), nrow=20)
+#'   p1 <- irlba::prcomp_irlba(x, n=3)
+#'   summary(p1)
 #'
-#' # Compare with
-#' p2 <- prcomp(x, tol=0.7)
-#' summary(p2)}
+#'   # Compare with
+#'   p2 <- prcomp(x, tol=0.7)
+#'   summary(p2)}
 #'
 #' @seealso \code{\link{prcomp}}
 sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
@@ -440,7 +441,7 @@ sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
 #' @export
 #' @examples
 #' \dontrun{
-#' cds <- detect_genes(cds, min_expr=0.1)
+#'    cds <- detect_genes(cds, min_expr=0.1)
 #' }
 detect_genes <- function(cds, min_expr=0){
   assertthat::assert_that(methods::is(cds, "cell_data_set"))
@@ -768,9 +769,9 @@ add_citation <- function(cds, citation_key) {
 #' @export
 #'
 #' @examples {
-#' \dontrun{
-#' get_citations(cds)
-#' }
+#'   \dontrun{
+#'      get_citations(cds)
+#'   }
 #' }
 get_citations <- function(cds) {
   message(paste("Your analysis used methods from the following recent work.",

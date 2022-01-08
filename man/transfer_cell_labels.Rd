@@ -134,8 +134,15 @@ nearest neighbor index is consistent with the query matrix.
 }
 }
 \examples{
-  \donttest{
-    cds <- load_worm_l2()
+  \dontrun{
+     expression_matrix <- readRDS(system.file('extdata', 'worm_l2/worm_l2_expression_matrix.rds', package='monocle3'))
+     cell_metadata <- readRDS(system.file('extdata', 'worm_l2/worm_l2_coldata.rds', package='monocle3'))
+     gene_metadata <- readRDS(system.file('extdata', 'worm_l2/worm_l2_rowdata.rds', package='monocle3'))
+
+     cds <- new_cell_data_set(expression_data=expression_matrix,
+                              cell_metadata=cell_metadata,
+                              gene_metadata=gene_metadata)
+
     ncell <- nrow(colData(cds))
     cell_sample <- sample(seq(ncell), 2 * ncell / 3)
     cell_set <- seq(ncell) \%in\% cell_sample

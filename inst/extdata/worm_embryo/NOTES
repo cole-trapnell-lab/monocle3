@@ -1,17 +1,47 @@
-== worm embryo rds file preparation
+== load worm embryo data and select cell subset
 
-cds <- load_worm_embryo()
-var_fea <- read.table('variable_features.txt')
-fea_nam <- var_fea[[2]]
-cds <- cds[,colData(cds)[['cell.type']] %in% c('AWB', 'ADF', 'ASG', 'AWA', 'ASG_AWA', 'ADF_AWB')]
-cds<-cds[rownames(cds) %in% fea_nam[1:5000],]
+expression_matrix <- readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_expression.rds"))
+cell_metadata <- readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_colData.rds"))
+gene_annotation <- readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_rowData.rds"))
 
-writeRDS(rowData(cds), file='worm_embryo_rowdata.rds')
-writeRDS(colData(cds), file='worm_embryo_coldata.rds')
-writeRDS(expr(cds), file='worm_embryo_expression_matrix.rds')
+cds <- new_cell_data_set(expression_matrix,
+                         cell_metadata = cell_metadata,
+                         gene_metadata = gene_annotation)
+
+cds <- cds[,colData(cds)[['cell.type']] %in% c('Neuroblast_ASG_AWA', 'ASG_AWA', 'ADL', 'AWC_ON', 'AWC', 'AWA', 'AWB', 'ASG', 'ADL_parent')]
+
+library(Matrix)
+writeMM(counts(cds), file='worm_embryo_expression_matrix.mtx')
+write.table(colnames(cds), file='worm_embryo_colnames.txt', row.names=FALSE, col.names=FALSE)
+write.table(rownames(cds), file='worm_embryo_rownames.txt', row.names=FALSE, col.names=FALSE)
 
 
-== load worm embryo files
+== Seurat variable feature selection
+
+dat <- ReadMtx('worm_embryo_expression_matrix.mtx', cells='worm_embryo_colnames.txt', features='worm_embryo_rownames.txt', cell.column=1, feature.column=1)
+
+worm_embryo <- CreateSeuratObject(counts = dat, project = "worm_embryo", min.cells = 3, min.features = 100)
+
+worm_embryo <- NormalizeData(worm_embryo)
+worm_embryo <- FindVariableFeatures(worm_embryo, selection.method = "vst", nfeatures = 10000)
+
+var_fea <- VariableFeatures(worm_embryo)
+
+write.table(var_fea, file='/home/brent/git/monocle3/worm_embryo_variable_features.txt', row.names=FALSE, col.names=FALSE)
+
+
+== subset cds on most variable features
+
+
+var_fea <- read.table('worm_embryo_variable_features.txt')
+cds<-cds[rownames(cds) %in% var_fea[[1]][1:10000],]
+
+saveRDS(rowData(cds), file='worm_embryo_rowdata.rds')
+saveRDS(colData(cds), file='worm_embryo_coldata.rds')
+saveRDS(counts(cds), file='worm_embryo_expression_matrix.rds')
+
+
+== load sub-setted worm embryo data
 
 cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
 gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
@@ -22,17 +52,20 @@ cds <- new_cell_data_set(expression_data=expression_matrix,
                          gene_metadata=gene_metadata)
 
 
-== processing worm embryo cds to order cells
+== process worm embryo cds to order cells
 
-cds <- load_worm_embryo()
-var_fea <- read.table('/home/brent/variable_features.txt')
-fea_nam <- var_fea[[2]]
-cds_ss <- cds[,colData(cds)[['cell.type']] %in% c('AWB', 'ADF', 'ASG', 'AWA', 'ASG_AWA', 'ADF_AWB')]
-cds_ss_rw<-cds_ss[rownames(cds_ss) %in% fea_nam[1:5000],]
-cds <- cds_ss_rw
-cds<-preprocess_cds(cds,num_dim=50)
-cds<-align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
+gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
+expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
+
+cds <- new_cell_data_set(expression_data=expression_matrix,
+                         cell_metadata=cell_metadata,
+                         gene_metadata=gene_metadata)
+
+cds <- preprocess_cds(cds,num_dim=50)
+cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
 cds <- reduce_dimension(cds)
-cds<-cluster_cells(cds)
+cds <- cluster_cells(cds)
 cds <- learn_graph(cds)
-cds <- order_cells(cds,root_pr_nodes='Y_9')
+cds <- order_cells(cds,root_pr_nodes='Y_27')
+

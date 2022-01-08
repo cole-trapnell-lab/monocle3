@@ -41,7 +41,7 @@
 #'     cds <- reduce_dimension(cds)
 #'     cds <- cluster_cells(cds)
 #'     cds <- learn_graph(cds)
-#'     cds <- order_cells(cds)
+#'     cds <- order_cells(cds, root_pr_nodes='Y_21')
 #'   }
 #'
 #' @export

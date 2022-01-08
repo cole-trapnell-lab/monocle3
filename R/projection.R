@@ -40,6 +40,8 @@
 #'   }
 #'
 #' @export
+# Bioconductor forbids writing to user directories so examples
+# is not run.
 preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_size=NULL, cores=1) {
   #
   # Need to add processing for LSI. TF-IDF transform etc.
@@ -372,6 +374,8 @@ align_transform <- function(cds, reduction_method=c('Aligned')) {
 #' @importFrom methods is
 #' @export
 #'
+# Bioconductor forbids writing to user directories so examples
+# is not run.
 reduce_dimension_transform <- function(cds, preprocess_method=NULL, reduction_method=c('UMAP')) {
   assertthat::assert_that(is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))

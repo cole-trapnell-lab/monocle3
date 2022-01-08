@@ -43,7 +43,14 @@
 #'
 #' @examples
 #'   \donttest{
-#'     cds <- load_worm_l2()
+#'      expression_matrix <- readRDS(system.file('extdata', 'worm_l2/worm_l2_expression_matrix.rds', package='monocle3'))
+#'      cell_metadata <- readRDS(system.file('extdata', 'worm_l2/worm_l2_coldata.rds', package='monocle3'))
+#'      gene_metadata <- readRDS(system.file('extdata', 'worm_l2/worm_l2_rowdata.rds', package='monocle3'))
+#'
+#'      cds <- new_cell_data_set(expression_data=expression_matrix,
+#'                               cell_metadata=cell_metadata,
+#'                               gene_metadata=gene_metadata)
+#'
 #'     cds <- preprocess_cds(cds, num_dim = 100)
 #'     cds <- reduce_dimension(cds)
 #'     cds <- cluster_cells(cds, resolution=1e-5)
@@ -88,7 +95,7 @@
 #'                                                     "37"="Ciliated sensory neurons",
 #'                                                     "38"="Pharyngeal muscle")
 #'     neurons_cds <- cds[,grepl("neurons", colData(cds)$assigned_cell_type, ignore.case=TRUE)]
-#'     pr_graph_test_res <- graph_test(neurons_cds, neighbor_graph="knn")
+#'     pr_graph_test_res <- graph_test(cds, neighbor_graph="knn")
 #'   }
 #'
 #' @export
@@ -121,7 +128,6 @@ graph_test <- function(cds,
                  reduction_method,
                  ' before running graph_test.'))
   }
-
   nn_control_default <- get_global_variable('nn_control_annoy_euclidean')
   nn_control <- set_nn_control(mode=3,
                                nn_control=nn_control,
@@ -130,11 +136,11 @@ graph_test <- function(cds,
                                k=k,
                                verbose=verbose)
 
-  lw <- calculateLW(cds,
+  lw <- calculateLW(cds=cds,
                     k = k,
-                    verbose = verbose,
                     neighbor_graph = neighbor_graph,
                     reduction_method = reduction_method,
+                    verbose = verbose,
                     nn_control = nn_control)
 
   if(verbose) {
@@ -357,6 +363,10 @@ calculateLW <- function(cds,
   principal_g <- NULL
 
   cell_coords <- reducedDims(cds)[[reduction_method]]
+  if(nrow(cell_coords) == 0) {
+    stop('calculateLW: the reduced dims matrix has too few rows')
+  }
+
   nn_method <- nn_control[['method']]
 
   if(nn_method == 'annoy' || nn_method == 'hnsw') {

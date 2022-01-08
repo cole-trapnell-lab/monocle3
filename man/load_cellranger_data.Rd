@@ -30,33 +30,32 @@ or CRISPR features), only the Gene Expression data is returned.
 }
 \details{
 \itemize{
-\item the \emph{pipestance_path} argument takes the name of a Cell Ranger
+\item the pipestance_path argument takes the name of a Cell Ranger
 output directory, in which it looks for the required data files,
-for example, \emph{pipestance_path=10x_data}
-\item for Cell Ranger version 2 data, \emph{load_cellranger_data} expects to
-find the required files \emph{barcodes.tsv}, \emph{genes.tsv}, and
-\emph{matrix.mtx}
-in the directories as
+for example, pipestance_path=10x_data
+\item for Cell Ranger version 2 data, load_cellranger_data expects to
+find the required files barcodes.tsv, genes.tsv, and
+matrix.mtx in the directories as
 \itemize{
-\item \emph{10x_data/outs/filtered_gene_bc_matrices/<genome>/barcodes.tsv}
-\item \emph{10x_data/outs/filtered_gene_bc_matrices/<genome>/genes.tsv}
-\item \emph{10x_data/outs/filtered_gene_bc_matrices/<genome>/matrix.mtx}
+\item 10x_data/outs/filtered_gene_bc_matrices/<genome>/barcodes.tsv
+\item 10x_data/outs/filtered_gene_bc_matrices/<genome>/genes.tsv
+\item 10x_data/outs/filtered_gene_bc_matrices/<genome>/matrix.mtx
 }
 
-where <genome> is the name of a genome. \emph{load_cellranger_data}
-expects to find either a single \emph{genome} directory in
-\emph{10x_data/outs/filtered_gene_bc_matrices} or a \emph{genome}
-directory with the name given with the \emph{genome} argument.
-\item for Cell Ranger version 3 data, \emph{load_cellranger_data} expects to
-find the required files \emph{barcodes.tsv.gz}, \emph{features.tsv.gz},
-and \emph{matrix.mtx.gz} in the directories as
+where <genome> is the name of a genome. load_cellranger_data
+expects to find either a single genome directory in
+10x_data/outs/filtered_gene_bc_matrices or a genome
+directory with the name given with the genome argument.
+\item for Cell Ranger version 3 data, load_cellranger_data expects to
+find the required files barcodes.tsv.gz, features.tsv.gz,
+and matrix.mtx.gz in the directories as
 \itemize{
-\item \emph{10x_data/outs/filtered_feature_bc_matrix/barcodes.tsv.gz}
-\item \emph{10x_data/outs/filtered_feature_bc_matrix/features.tsv.gz}
-\item \emph{10x_data/outs/filtered_feature_bc_matrix/matrix.mtx.gz}
+\item 10x_data/outs/filtered_feature_bc_matrix/barcodes.tsv.gz
+\item 10x_data/outs/filtered_feature_bc_matrix/features.tsv.gz
+\item 10x_data/outs/filtered_feature_bc_matrix/matrix.mtx.gz
 }
 \item if any of the files is not in the expected directory,
-\emph{load_cellranger_data} will terminate with an error
+load_cellranger_data will terminate with an error
 }
 }
 \examples{
