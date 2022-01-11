@@ -14,6 +14,14 @@ is_sparse_matrix <- function(x){
 #'
 #' @return Updated cell_data_set object with a new colData column called
 #'   'Size_Factor'.
+#'
+#' @examples
+#'   \donttest{
+#'     cds <- load_a549()
+#'     colData(cds)[['Size_Factor']] <- NULL
+#'     cds <- estimate_size_factors(cds)
+#'   }
+#'
 #' @export
 estimate_size_factors <- function(cds,
                                   round_exprs=TRUE,
@@ -341,14 +349,15 @@ smart_es_apply <- function(cds, MARGIN, FUN, convert_to_dense,
 #' two functions.
 #'
 #' @examples
-#' \dontrun{set.seed(1)
-#' x  <- matrix(rnorm(200), nrow=20)
-#' p1 <- prcomp_irlba(x, n=3)
-#' summary(p1)
+#' \dontrun{
+#'   set.seed(1)
+#'   x  <- matrix(rnorm(200), nrow=20)
+#'   p1 <- irlba::prcomp_irlba(x, n=3)
+#'   summary(p1)
 #'
-#' # Compare with
-#' p2 <- prcomp(x, tol=0.7)
-#' summary(p2)}
+#'   # Compare with
+#'   p2 <- prcomp(x, tol=0.7)
+#'   summary(p2)}
 #'
 #' @seealso \code{\link{prcomp}}
 sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
@@ -362,7 +371,7 @@ sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
             function to control that algorithm's convergence tolerance. See
             `?prcomp_irlba` for help.")
   orig_x <- x
-  if (class(x) != "DelayedMatrix")
+  if (is(x, "DelayedMatrix"))
     x = DelayedArray::DelayedArray(x)
 
   args <- list(A=orig_x, nv=n)
@@ -432,7 +441,7 @@ sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
 #' @export
 #' @examples
 #' \dontrun{
-#' cds <- detect_genes(cds, min_expr=0.1)
+#'    cds <- detect_genes(cds, min_expr=0.1)
 #' }
 detect_genes <- function(cds, min_expr=0){
   assertthat::assert_that(methods::is(cds, "cell_data_set"))
@@ -452,6 +461,14 @@ detect_genes <- function(cds, min_expr=0){
 #'   "log" (Default), "binary" and "size_only".
 #' @param pseudocount A pseudocount to add before log transformation. Ignored
 #'   if norm_method is not "log". Default is 1.
+#' @return Size-factor normalized, and optionally log-transformed, expression
+#'   matrix.
+#'
+#' @examples
+#'   \donttest{
+#'     cds <- load_a549()
+#'     normalized_matrix <- normalized_counts(cds)
+#'   }
 #'
 #' @export
 normalized_counts <- function(cds,
@@ -628,7 +645,7 @@ combine_cds <- function(cds_list,
     fd <- fd[intersect(row.names(fd), gene_list),, drop=FALSE]
     not_in <- fdata_cols[!fdata_cols %in% names(fd)]
     for(col in names(fd)) {
-      if(class(fd[,col]) == "factor") {
+      if(is(fd[,col], "factor")) {
         fd[,col] <- as.character(fd[,col])
       }
     }
@@ -752,9 +769,9 @@ add_citation <- function(cds, citation_key) {
 #' @export
 #'
 #' @examples {
-#' \dontrun{
-#' get_citations(cds)
-#' }
+#'   \dontrun{
+#'      get_citations(cds)
+#'   }
 #' }
 get_citations <- function(cds) {
   message(paste("Your analysis used methods from the following recent work.",

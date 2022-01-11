@@ -87,7 +87,7 @@ clean_zeroinfl_model_object = function(cm) {
 }
 
 
-#' importFrom methods new
+#' @importFrom methods new
 #' @importFrom stats logLik
 #' @importFrom stats AIC
 #' @importFrom stats BIC
@@ -274,6 +274,24 @@ fit_model_helper <- function(x,
 #'   * model GLM model list returned by speedglm
 #'   * model_summary model summary list returned by `summary(model)`
 #'   * status character vector of model fitting status: OK when model converged, otherwise FAIL
+#'
+#' @examples
+#'   \donttest{
+#'     cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
+#'     gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
+#'     expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
+#'    
+#'     cds <- new_cell_data_set(expression_data=expression_matrix,
+#'                              cell_metadata=cell_metadata,
+#'                              gene_metadata=gene_metadata)
+#'
+#'     cds <- preprocess_cds(cds, num_dim=50)
+#'     cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+#'     cds <- reduce_dimension(cds)
+#'     ciliated_genes <- c("che-1", "hlh-17", "nhr-6", "dmd-6", "ceh-36", "ham-1")
+#'     cds_subset <- cds[rowData(cds)$gene_short_name %in% ciliated_genes,]
+#'     gene_fits <- fit_models(cds_subset, model_formula_str = "~embryo.time")
+#'   }
 #'
 #' @export
 fit_models <- function(cds,
@@ -517,6 +535,26 @@ extract_coefficient_helper = function(model, model_summary,
 #'
 #' @param model_tbl A tibble of model objects, generally the output of
 #'   \code{\link{fit_models}}.
+#'
+#' @examples
+#'   \donttest{
+#'     cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
+#'     gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
+#'     expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
+#'    
+#'     cds <- new_cell_data_set(expression_data=expression_matrix,
+#'                              cell_metadata=cell_metadata,
+#'                              gene_metadata=gene_metadata)
+#'
+#'     cds <- preprocess_cds(cds, num_dim=50)
+#'     cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+#'     cds <- reduce_dimension(cds)
+#'     ciliated_genes <- c("che-1", "hlh-17", "nhr-6", "dmd-6", "ceh-36", "ham-1")
+#'     cds_subset <- cds[rowData(cds)$gene_short_name %in% ciliated_genes,]
+#'     gene_fits <- fit_models(cds_subset, model_formula_str = "~embryo.time")
+#'     fit_coefs <- coefficient_table(gene_fits)
+#'   }
+#'
 #' @importFrom dplyr %>%
 #' @export
 coefficient_table <- function(model_tbl) {
@@ -537,6 +575,8 @@ coefficient_table <- function(model_tbl) {
 #' @param model_tbl_reduced A tibble of model objects, generally output of
 #'   \code{\link{fit_models}}, to be compared with \code{model_tbl_full}.
 #'
+#' @importFrom igraph dfs
+#' @importFrom plyr "."
 #' @export
 compare_models <- function(model_tbl_full, model_tbl_reduced){
   model_x_eval <- evaluate_fits(model_tbl_full)
@@ -582,6 +622,26 @@ compare_models <- function(model_tbl_full, model_tbl_reduced){
 #' @importFrom dplyr %>%
 #' @param model_tbl A tibble of model objects, generally output of
 #'   \code{\link{fit_models}}.
+#'
+#' @examples
+#'   \donttest{
+#'     cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
+#'     gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
+#'     expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
+#'    
+#'     cds <- new_cell_data_set(expression_data=expression_matrix,
+#'                              cell_metadata=cell_metadata,
+#'                              gene_metadata=gene_metadata)
+#'
+#'     cds <- preprocess_cds(cds, num_dim=50)
+#'     cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+#'     cds <- reduce_dimension(cds)
+#'     ciliated_genes <- c("che-1", "hlh-17", "nhr-6", "dmd-6", "ceh-36", "ham-1")
+#'     cds_subset <- cds[rowData(cds)$gene_short_name %in% ciliated_genes,]
+#'     gene_fits <- fit_models(cds_subset, model_formula_str = "~embryo.time")
+#'     evaluate_fits(gene_fits)
+#'   }
+#'
 #' @export
 evaluate_fits <- function(model_tbl){
   private_glance <- function(m){

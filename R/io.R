@@ -1,4 +1,11 @@
-#' Build a cell_data_set from the data stored in inst/extdata directory.
+#' Build a small cell_data_set.
+#'
+#' @return cds object
+#' @examples
+#'   \donttest{
+#'     cds <- load_a549()
+#'   }
+#'
 #' @export
 load_a549 <- function(){
   small_a549_colData_df <- readRDS(system.file("extdata",
@@ -19,9 +26,10 @@ load_a549 <- function(){
 }
 
 
-#' Build a cell_data_set from the data stored in inst/extdata directory.
-#' @keywords internal
+#' Build a cell_data_set from C. elegans embryo data.
+#' @return cds object
 #' @importFrom SingleCellExperiment counts
+#' @export
 load_worm_embryo <- function(){
   expression_matrix <- readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_expression.rds"))
   cell_metadata <- readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_colData.rds"))
@@ -36,6 +44,24 @@ load_worm_embryo <- function(){
   cds <- initialize_counts_metadata(cds)
   matrix_id <- get_unique_id(counts(cds))
   cds <- set_counts_identity(cds, 'URL: http://staff.washington.edu/hpliner/data/packer_embryo_expression.rds', matrix_id)
+
+  cds
+}
+
+
+#' Build a cell_data_set from C. elegans L2 data.
+#' @return cds object
+#' @importFrom SingleCellExperiment counts
+#' @export
+load_worm_l2 <- function(){
+  expression_matrix <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_expression.rds"))
+  cell_metadata <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_colData.rds"))
+  gene_annotation <- gene_annotation <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_rowData.rds"))
+
+  cds <- new_cell_data_set(expression_matrix,
+      cell_metadata = cell_metadata,
+      gene_metadata = gene_annotation)
+  cds <- estimate_size_factors(cds)
 
   cds
 }
@@ -160,23 +186,19 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
 #' * load_mm_data estimates size factors.
 #'
 #' @examples
-#' \dontrun{
-#' library( monocle3 )
-#' pmat<-system.file("extdata", "matrix.mtx.gz", package = "monocle3")
-#' prow<-system.file("extdata", "features_c3h0.txt", package = "monocle3")
-#' pcol<-system.file("extdata", "barcodes_c2h0.txt", package = "monocle3")
-#' cds <- load_mm_data( pmat, prow, pcol,
-#'                      feature_metadata_column_names = c('gene_short_name',
-#'                      'gene_biotype'), sep='' )
+#'   \donttest{
+#'     pmat<-system.file("extdata", "matrix.mtx.gz", package = "monocle3")
+#'     prow<-system.file("extdata", "features_c3h0.txt", package = "monocle3")
+#'     pcol<-system.file("extdata", "barcodes_c2h0.txt", package = "monocle3")
+#'     cds <- load_mm_data( pmat, prow, pcol, feature_metadata_column_names = c('gene_short_name', 'gene_biotype'), sep='' )
 #'
-#' In this example, the features_c3h0.txt file has three columns,
-#' separated by spaces. The first column has official gene names, the
-#' second has short gene names, and the third has gene biotypes.
-#' }
+#'     # In this example, the features_c3h0.txt file has three columns,
+#'     # separated by spaces. The first column has official gene names, the
+#'     # second has short gene names, and the third has gene biotypes.
+#'   }
 #'
 #' @importFrom SingleCellExperiment counts
 #' @export
-#'
 load_mm_data <- function( mat_path,
     feature_anno_path,
     cell_anno_path,
@@ -241,8 +263,16 @@ load_mm_data <- function( mat_path,
 #' @return cds object
 #' @importFrom utils read.table
 #' @importFrom SingleCellExperiment counts
-#' @export
 #'
+#' @examples
+#'   \donttest{
+#'     pmat<-system.file("extdata", "matrix.mtx.gz", package = "monocle3")
+#'     prow<-system.file("extdata", "features_c3h0.txt", package = "monocle3")
+#'     pcol<-system.file("extdata", "barcodes_c2h0.txt", package = "monocle3")
+#'     cds <- load_mtx_data( pmat, prow, pcol)
+#'   }
+#'
+#' @export
 load_mtx_data <- function( mat_path,
     gene_anno_path,
     cell_anno_path,
@@ -773,8 +803,18 @@ report_files_saved <- function(file_index) {
 #'
 #' @return none.
 #'
+#' @examples
+#'   \dontrun{
+#'     cds <- load_a549()
+#'     cds <- preprocess_cds(cds)
+#'     cds <- reduce_dimension(cds)
+#'     save_transform_models(cds, 'tm')
+#'   }
+#'
 #' @importFrom utils packageVersion
 #' @export
+# Bioconductor forbids writing to user directories so examples
+# is not run.
 save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE) {
   appendLF <- TRUE
   # file information is written to an RDS file
@@ -969,7 +1009,18 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
 #' @return a cell_data_set with the transform models loaded by
 #'   load_transform_models.
 #'
+#' @examples
+#'   \dontrun{
+#'     cds <- load_a549()
+#'     cds <- preprocess_cds(cds)
+#'     cds <- reduce_dimension(cds)
+#'     save_transform_models(cds, 'tm')
+#'     cds1 <- load_a549()
+#'     cds1 <- load_transform_models(cds1, 'tm')
+#'   }
 #' @export
+# Bioconductor forbids writing to user directories so examples
+# is not run.
 load_transform_models <- function(cds, directory_path) {
   appendLF <- TRUE
   # Check for directory.
@@ -1136,11 +1187,18 @@ test_hdf5_assays <- function(cds) {
 #'   the objects.
 #' @param verbose a boolean determining whether to print information
 #'   about the saved files.
-#'
 #' @return none.
+#'
+#' @examples
+#'   \dontrun{
+#'     cds <- load_a549()
+#'     save_monocle_objects(cds, 'mo')
+#'   }
 #'
 #' @importFrom utils packageVersion
 #' @export
+# Bioconductor forbids writing to user directories so examples
+# is not run.
 save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment="", verbose=TRUE) {
   appendLF <- TRUE
   # file information is written to an RDS file
@@ -1363,10 +1421,18 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
 #'
 #' @param directory_path a string giving the name of the directory
 #'   from which to read the saved cell_data_set files.
-#'
 #' @return a cell_data_set.
 #'
+#' @examples
+#'   \dontrun{
+#'     cds <- load_a549()
+#'     save_monocle_objects(cds, 'mo')
+#'     cds1 <- load_monocle_objects('mo')
+#'   }
+#'
 #' @export
+# Bioconductor forbids writing to user directories so examples
+# is not run.
 load_monocle_objects <- function(directory_path) {
   appendLF <- FALSE
   # Check for directory.

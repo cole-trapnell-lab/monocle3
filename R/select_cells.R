@@ -9,6 +9,7 @@
 #'   Default is FALSE.
 #'
 #' @return A subset CDS object. If return_list = FALSE, a list of cell names.
+#'
 #' @export
 #'
 choose_cells <- function(cds,
@@ -146,6 +147,8 @@ choose_cells <- function(cds,
 #'
 #' @return A subset CDS object. If return_list = FALSE, a list of cell and
 #'   graph node names.
+#'
+#' @importFrom plyr "."
 #' @export
 #'
 choose_graph_segments <- function(cds,
@@ -407,6 +410,8 @@ traverse_graph <- function(g, starting_cell, end_cells){
 }
 
 
+#' @importFrom plyr "."
+#' @noRd
 plot_principal_graph <- function(cds,
                                  data_df,
                                  princ_points,

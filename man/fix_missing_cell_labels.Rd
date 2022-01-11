@@ -84,3 +84,30 @@ second most frequent values is at least
 top_next_ratio_threshold, in which case it copies the
 most frequent value. Otherwise, it leaves the NA.
 }
+\examples{
+  \dontrun{
+     expression_matrix <- readRDS(system.file('extdata', 'worm_l2/worm_l2_expression_matrix.rds', package='monocle3'))
+     cell_metadata <- readRDS(system.file('extdata', 'worm_l2/worm_l2_coldata.rds', package='monocle3'))
+     gene_metadata <- readRDS(system.file('extdata', 'worm_l2/worm_l2_rowdata.rds', package='monocle3'))
+
+     cds <- new_cell_data_set(expression_data=expression_matrix,
+                              cell_metadata=cell_metadata,
+                              gene_metadata=gene_metadata)
+
+    ncell <- nrow(colData(cds))
+    cell_sample <- sample(seq(ncell), 2 * ncell / 3)
+    cell_set <- seq(ncell) \%in\% cell_sample
+    cds1 <- cds[,cell_set]
+    cds1 <- preprocess_cds(cds1)
+    cds1 <- reduce_dimension(cds1, build_nn_index=TRUE)
+    save_transform_models(cds1, 'tm')
+
+    cds2 <- cds[,!cell_set]
+    cds2 <- load_transform_models(cds2, 'tm')
+    cds2 <- preprocess_transform(cds2, 'PCA')
+    cds2 <- reduce_dimension_transform(cds2)
+    cds2 <- transfer_cell_labels(cds2, 'UMAP', colData(cds1), 'cao_cell_type', 'transfer_cell_type')
+    cds2 <- fix_missing_cell_labels(cds2, 'UMAP', 'transfer_cell_type', 'fixed_cell_type')
+  }
+
+}

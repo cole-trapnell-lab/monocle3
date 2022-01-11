@@ -36,3 +36,11 @@ default nearest neighbor method or the method specified in the
 nn_control list parameter, and store the index in the
 cell_data_set. This function returns a cell_data_set.
 }
+\examples{
+  \donttest{
+    cds <- load_a549()
+    cds <- preprocess_cds(cds)
+    cds <- make_cds_nn_index(cds, 'PCA')
+  }
+
+}

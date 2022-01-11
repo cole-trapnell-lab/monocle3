@@ -72,14 +72,15 @@ argument \code{tol} is used, which is interpreted differently between the
 two functions.
 }
 \examples{
-\dontrun{set.seed(1)
-x  <- matrix(rnorm(200), nrow=20)
-p1 <- prcomp_irlba(x, n=3)
-summary(p1)
+\dontrun{
+  set.seed(1)
+  x  <- matrix(rnorm(200), nrow=20)
+  p1 <- irlba::prcomp_irlba(x, n=3)
+  summary(p1)
 
-# Compare with
-p2 <- prcomp(x, tol=0.7)
-summary(p2)}
+  # Compare with
+  p2 <- prcomp(x, tol=0.7)
+  summary(p2)}
 
 }
 \seealso{

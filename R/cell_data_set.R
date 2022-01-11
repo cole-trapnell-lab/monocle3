@@ -49,29 +49,31 @@ setClass("cell_data_set",
 #' @importFrom SingleCellExperiment int_colData
 #' @importFrom SingleCellExperiment int_metadata
 #' @importFrom S4Vectors elementMetadata
-#' @export
+#' @importFrom SummarizedExperiment rowRanges
+#'
 #' @examples
-#' small_a549_colData_df <- readRDS(system.file("extdata",
-#'                                              "small_a549_dex_pdata.rda",
-#'                                              package = "monocle3"))
-#' small_a549_rowData_df <- readRDS(system.file("extdata",
-#'                                              "small_a549_dex_fdata.rda",
-#'                                              package = "monocle3"))
-#' small_a549_exprs <- readRDS(system.file("extdata",
-#'                                         "small_a549_dex_exprs.rda",
-#'                                         package = "monocle3"))
-#' small_a549_exprs <- small_a549_exprs[,row.names(small_a549_colData_df)]
+#'   small_a549_colData_df <- readRDS(system.file("extdata",
+#'                                                "small_a549_dex_pdata.rda",
+#'                                                package = "monocle3"))
+#'   small_a549_rowData_df <- readRDS(system.file("extdata",
+#'                                                "small_a549_dex_fdata.rda",
+#'                                                package = "monocle3"))
+#'   small_a549_exprs <- readRDS(system.file("extdata",
+#'                                           "small_a549_dex_exprs.rda",
+#'                                           package = "monocle3"))
+#'   small_a549_exprs <- small_a549_exprs[,row.names(small_a549_colData_df)]
 #'
-#' cds <- new_cell_data_set(expression_data = small_a549_exprs,
-#'                          cell_metadata = small_a549_colData_df,
-#'                          gene_metadata = small_a549_rowData_df)
+#'   cds <- new_cell_data_set(expression_data = small_a549_exprs,
+#'                            cell_metadata = small_a549_colData_df,
+#'                            gene_metadata = small_a549_rowData_df)
 #'
+#' @export
 new_cell_data_set <- function(expression_data,
                               cell_metadata = NULL,
                               gene_metadata = NULL) {
 
 
-#  assertthat::assert_that(class(expression_data) == "matrix" ||
+#  assertthat::assert_that(is(expression_data, 'matrix) ||
 #                          is_sparse_matrix(expression_data),
 #                          msg = paste("Argument expression_data must be a",
 #                                      "matrix - either sparse from the",

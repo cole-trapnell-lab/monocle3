@@ -43,3 +43,12 @@ be in the row, usually in the first column.
 Search a nearest neighbor index for cells near
 those in the query_matrix.
 }
+\examples{
+  \donttest{
+    cds <- load_a549()
+    cds <- preprocess_cds(cds)
+    nn_index <- make_nn_index(reducedDims(cds)[['PCA']])
+    nn_res <- search_nn_index(reducedDims(cds)[['PCA']], nn_index, 10)
+  }
+
+}

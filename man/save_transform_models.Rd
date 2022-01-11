@@ -48,3 +48,12 @@ information see the help for transfer_cell_labels.
 save_transform_models saves the models to a directory
 given by directory_path.
 }
+\examples{
+  \dontrun{
+    cds <- load_a549()
+    cds <- preprocess_cds(cds)
+    cds <- reduce_dimension(cds)
+    save_transform_models(cds, 'tm')
+  }
+
+}

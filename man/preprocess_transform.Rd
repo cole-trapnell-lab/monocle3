@@ -35,3 +35,25 @@ Applies a previously calculated preprocess
 transform model to a new count matrix. For more
 information read the help information for save_transform_models.
 }
+\examples{
+  \dontrun{
+    cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
+    gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
+    expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
+   
+    cds <- new_cell_data_set(expression_data=expression_matrix,
+                             cell_metadata=cell_metadata,
+                             gene_metadata=gene_metadata)
+
+    ncell <- nrow(colData(cds))
+    cell_sample <- sample(seq(ncell), 2 * ncell / 3)
+    cell_set <- seq(ncell) \%in\% cell_sample
+    cds1 <- cds[,cell_set]
+    cds1 <- preprocess_cds(cds1)
+    save_transform_models(cds1, 'tm')
+    cds2 <- cds[,!cell_set]
+    cds2 <- load_transform_models(cds2, 'tm')
+    cds2 <- preprocess_transform(cds2, 'PCA')
+  }
+
+}

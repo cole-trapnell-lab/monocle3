@@ -26,3 +26,11 @@ neighbor method or the method specified in the
 nn_control list parameter. The function returns
 the index.
 }
+\examples{
+  \donttest{
+    cds <- load_a549()
+    cds <- preprocess_cds(cds)
+    nn_index <- make_nn_index(reducedDims(cds)[['PCA']])
+  }
+
+}

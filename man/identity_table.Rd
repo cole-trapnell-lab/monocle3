@@ -63,3 +63,12 @@ identity string is stored in the model object in the
 cds@reduce_dim_aux slot of the cell_data_set.
 }
 }
+\examples{
+  \donttest{
+    cds <- load_a549()
+    cds <- preprocess_cds(cds)
+    cds <- reduce_dimension(cds)
+    identity_table(cds)
+  }
+
+}

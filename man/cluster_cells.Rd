@@ -81,6 +81,22 @@ using a kNN pruning method. Cluster assignments can be accessed using the
 \code{\link{clusters}} function and partition assignments can be
 accessed using the \code{\link{partitions}} function.
 }
+\examples{
+  \donttest{ 
+    cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
+    gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
+    expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
+   
+    cds <- new_cell_data_set(expression_data=expression_matrix,
+                             cell_metadata=cell_metadata,
+                             gene_metadata=gene_metadata)
+
+    cds <- preprocess_cds(cds)
+    cds <- reduce_dimension(cds)
+    cds <- cluster_cells(cds)
+  }
+
+}
 \references{
 Rodriguez, A., & Laio, A. (2014). Clustering by fast search and
 find of density peaks. Science, 344(6191), 1492-1496.

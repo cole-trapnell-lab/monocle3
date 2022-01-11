@@ -523,6 +523,14 @@ new_annoy_index <- function(metric, ndim) {
 #' @param verbose a boolean indicating whether to emit verbose output.
 #'
 #' @return a nearest neighbor index.
+#'
+#' @examples
+#'   \donttest{
+#'     cds <- load_a549()
+#'     cds <- preprocess_cds(cds)
+#'     nn_index <- make_nn_index(reducedDims(cds)[['PCA']])
+#'   }
+#'
 #' @importFrom methods is
 #' @importFrom utils packageVersion
 #' @export
@@ -671,6 +679,13 @@ set_cds_nn_index <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Alig
 #' @param verbose a boolean indicating whether to emit verbose output.
 #'
 #' @return a cell_data_set with the stored index.
+#'
+#' @examples
+#'   \donttest{
+#'     cds <- load_a549()
+#'     cds <- preprocess_cds(cds)
+#'     cds <- make_cds_nn_index(cds, 'PCA')
+#'   }
 #'
 #' @importFrom methods is
 #' @export
@@ -869,6 +884,14 @@ search_nn_annoy_index <- function(query_matrix, nn_index, metric, k, search_k, b
 #'  index and search the index, the index given by the row number should
 #'  be in the row, usually in the first column.
 #'
+#' @examples
+#'   \donttest{
+#'     cds <- load_a549()
+#'     cds <- preprocess_cds(cds)
+#'     nn_index <- make_nn_index(reducedDims(cds)[['PCA']])
+#'     nn_res <- search_nn_index(reducedDims(cds)[['PCA']], nn_index, 10)
+#'   }
+#'
 #' @importFrom methods is
 #' @importFrom future plan
 #' @importFrom future multicore
@@ -1029,9 +1052,17 @@ search_nn_index <- function(query_matrix, nn_index, k=25, nn_control=list(), ver
 #'  index and search the index, the index given by the row number should
 #'  be in the row, usually in the first column.
 #'
+#' @examples
+#'   \donttest{
+#'     cds <- load_a549()
+#'     cds <- preprocess_cds(cds)
+#'     cds <- make_cds_nn_index(cds, 'PCA')
+#'     nn_res <- search_cds_nn_index(reducedDims(cds)[['PCA']], cds, 'PCA', 10)
+#'   }
+#'
 #' @importFrom methods is
 #' @export
-search_cds_nn_index <- function(query_matrix, cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Aligned', 'tSNE'), k=25, nn_control=list(), verbose=TRUE) {
+search_cds_nn_index <- function(query_matrix, cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Aligned', 'tSNE'), k=25, nn_control=list(), verbose=FALSE) {
   assertthat::assert_that(is(query_matrix, 'matrix') ||
                           is_sparse_matrix(query_matrix),
     msg=paste0('make_nn_matrix: the query_matrix object must be of type matrix'))

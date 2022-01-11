@@ -119,10 +119,11 @@ a ggplot2 plot object
 Plots the cells along with their trajectories.
 }
 \examples{
-\dontrun{
-lung <- load_A549()
-plot_cells(lung)
-plot_cells(lung, color_cells_by="log_dose")
-plot_cells(lung, markers="GDF15")
-}
+  \dontrun{
+    lung <- load_A549()
+    plot_cells(lung)
+    plot_cells(lung, color_cells_by="log_dose")
+    plot_cells(lung, markers="GDF15")
+  }
+
 }

@@ -49,7 +49,7 @@ test_that("cluster_cells works", {
   expect_equal(length(unique(clusters(cds, reduction_method = "UMAP"))), 1)
 
   # non-standard opts
-  cds <- cluster_cells(cds, k=22, resolution = c(0.75, 0.3), weight = T,
+  cds <- cluster_cells(cds, k=22, resolution = c(0.75, 0.3), weight = TRUE,
                        num_iter = 1, partition_qval = .1, verbose = TRUE,
                        random_seed = 100)
   expect_is(cds@clusters[["UMAP"]], "list")
@@ -71,7 +71,7 @@ test_that("cluster_cells works", {
   expect_equal(length(unique(clusters(cds, reduction_method = "UMAP"))), 9)
 
   # non-standard opts
-  cds <- cluster_cells(cds, cluster_method = "louvain", k=22, weight = T,
+  cds <- cluster_cells(cds, cluster_method = "louvain", k=22, weight = TRUE,
                        num_iter = 1, partition_qval = .1, verbose = TRUE,
                        random_seed = 100)
   expect_is(cds@clusters[["UMAP"]], "list")
@@ -95,7 +95,7 @@ test_that("cluster_cells works", {
 
   # non-standard opts
   cds <- cluster_cells(cds, reduction_method = "tSNE", k=22,
-                       resolution = c(0.75, 0.3), weight = T, num_iter = 1,
+                       resolution = c(0.75, 0.3), weight = TRUE, num_iter = 1,
                        partition_qval = .1, verbose = TRUE, random_seed = 100)
   expect_is(cds@clusters[["tSNE"]], "list")
   expect_equal(length(cds@clusters[["tSNE"]]), 3)
@@ -118,7 +118,7 @@ test_that("cluster_cells works", {
 
   # non-standard opts
   cds <- cluster_cells(cds, reduction_method = "PCA", k=22,
-                       resolution = c(0.75, 0.3), weight = T, num_iter = 2,
+                       resolution = c(0.75, 0.3), weight = TRUE, num_iter = 2,
                        partition_qval = .1, verbose = TRUE, random_seed = 100)
   expect_is(cds@clusters[["PCA"]], "list")
   expect_equal(length(cds@clusters[["PCA"]]), 3)
@@ -128,7 +128,7 @@ test_that("cluster_cells works", {
                4)
   expect_equal(length(unique(clusters(cds, reduction_method = "PCA"))), 37)
 
-  cds <- cluster_cells(cds, reduction_method = "PCA", k=22, weight = T,
+  cds <- cluster_cells(cds, reduction_method = "PCA", k=22, weight = TRUE,
                        num_iter = 2, partition_qval = .1, resolution = .1,
                        random_seed = 100)
   expect_is(cds@clusters[["PCA"]], "list")
@@ -139,11 +139,11 @@ test_that("cluster_cells works", {
                1)
   expect_equal(length(unique(clusters(cds, reduction_method = "PCA"))), 12)
 
-  cds <- cluster_cells(cds, reduction_method = "PCA", k=22, weight = T,
+  cds <- cluster_cells(cds, reduction_method = "PCA", k=22, weight = TRUE,
                        num_iter = 2, partition_qval = .1, resolution = .01,
                        random_seed = 100)
   expect_equal(length(unique(clusters(cds, reduction_method = "PCA"))), 1)
-  cds <- cluster_cells(cds, reduction_method = "PCA", k=22, weight = T,
+  cds <- cluster_cells(cds, reduction_method = "PCA", k=22, weight = TRUE,
                        num_iter = 2, partition_qval = .1, resolution = 20,
                        random_seed = 100)
   expect_equal(length(unique(clusters(cds, reduction_method = "PCA"))), 500)
@@ -160,7 +160,7 @@ test_that("cluster_cells works", {
 
   # non-standard opts
   cds <- cluster_cells(cds, reduction_method = "LSI", k=22,
-                       resolution = c(0.75, 0.3), weight = T, num_iter = 2,
+                       resolution = c(0.75, 0.3), weight = TRUE, num_iter = 2,
                        partition_qval = .1, verbose = TRUE, random_seed = 100)
   expect_is(cds@clusters[["LSI"]], "list")
   expect_equal(length(cds@clusters[["LSI"]]), 3)
@@ -227,7 +227,7 @@ test_that("cluster_cells works", {
   expect_equal(length(unique(clusters(cds, reduction_method = "UMAP"))), 1)
 
   # non-standard opts
-  cds <- cluster_cells(cds, k=22, resolution = c(0.75, 0.3), weight = T,
+  cds <- cluster_cells(cds, k=22, resolution = c(0.75, 0.3), weight = TRUE,
                        num_iter = 1, partition_qval = .1, verbose = TRUE,
                        random_seed = 100)
   expect_is(cds@clusters[["UMAP"]], "list")
@@ -249,7 +249,7 @@ test_that("cluster_cells works", {
   expect_equal(length(unique(clusters(cds, reduction_method = "UMAP"))), 9)
 
   # non-standard opts
-  cds <- cluster_cells(cds, cluster_method = "louvain", k=22, weight = T,
+  cds <- cluster_cells(cds, cluster_method = "louvain", k=22, weight = TRUE,
                        num_iter = 1, partition_qval = .1, verbose = TRUE,
                        random_seed = 100)
   expect_is(cds@clusters[["UMAP"]], "list")
@@ -273,7 +273,7 @@ test_that("cluster_cells works", {
 
   # non-standard opts
   cds <- cluster_cells(cds, reduction_method = "tSNE", k=22,
-                       resolution = c(0.75, 0.3), weight = T, num_iter = 1,
+                       resolution = c(0.75, 0.3), weight = TRUE, num_iter = 1,
                        partition_qval = .1, verbose = TRUE, random_seed = 100)
   expect_is(cds@clusters[["tSNE"]], "list")
   expect_equal(length(cds@clusters[["tSNE"]]), 3)
@@ -296,7 +296,7 @@ test_that("cluster_cells works", {
 
   # non-standard opts
   cds <- cluster_cells(cds, reduction_method = "PCA", k=22,
-                       resolution = c(0.75, 0.3), weight = T, num_iter = 2,
+                       resolution = c(0.75, 0.3), weight = TRUE, num_iter = 2,
                        partition_qval = .1, verbose = TRUE, random_seed = 100)
   expect_is(cds@clusters[["PCA"]], "list")
   expect_equal(length(cds@clusters[["PCA"]]), 3)
@@ -306,7 +306,7 @@ test_that("cluster_cells works", {
                4)
   expect_equal(length(unique(clusters(cds, reduction_method = "PCA"))), 37)
 
-  cds <- cluster_cells(cds, reduction_method = "PCA", k=22, weight = T,
+  cds <- cluster_cells(cds, reduction_method = "PCA", k=22, weight = TRUE,
                        num_iter = 2, partition_qval = .1, resolution = .1,
                        random_seed = 100)
   expect_is(cds@clusters[["PCA"]], "list")
@@ -317,11 +317,11 @@ test_that("cluster_cells works", {
                1)
   expect_equal(length(unique(clusters(cds, reduction_method = "PCA"))), 12)
 
-  cds <- cluster_cells(cds, reduction_method = "PCA", k=22, weight = T,
+  cds <- cluster_cells(cds, reduction_method = "PCA", k=22, weight = TRUE,
                        num_iter = 2, partition_qval = .1, resolution = .01,
                        random_seed = 100)
   expect_equal(length(unique(clusters(cds, reduction_method = "PCA"))), 1)
-  cds <- cluster_cells(cds, reduction_method = "PCA", k=22, weight = T,
+  cds <- cluster_cells(cds, reduction_method = "PCA", k=22, weight = TRUE,
                        num_iter = 2, partition_qval = .1, resolution = 20,
                        random_seed = 100)
   expect_equal(length(unique(clusters(cds, reduction_method = "PCA"))), 500)
@@ -338,7 +338,7 @@ test_that("cluster_cells works", {
 
   # non-standard opts
   cds <- cluster_cells(cds, reduction_method = "LSI", k=22,
-                       resolution = c(0.75, 0.3), weight = T, num_iter = 2,
+                       resolution = c(0.75, 0.3), weight = TRUE, num_iter = 2,
                        partition_qval = .1, verbose = TRUE, random_seed = 100)
   expect_is(cds@clusters[["LSI"]], "list")
   expect_equal(length(cds@clusters[["LSI"]]), 3)

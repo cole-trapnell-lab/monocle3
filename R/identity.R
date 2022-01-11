@@ -258,7 +258,7 @@ identity_as_string <- function( object_id ) {
   }
   else
   if(!is.null(object_id[['checksum']])) {
-    object_id_string <- sprintf('%s  dim: %s', object_id[['checksum']], paste(object_id[['dim']], collapse=':'))
+    object_id_string <- sprintf('%s  dim: %s', object_id[['checksum']], paste(object_id[['dim']], collapse=' '))
   }
   else {
     object_id_string <- object_id
@@ -324,6 +324,14 @@ identity_as_string <- function( object_id ) {
 #'
 #' @return Write identity information to stdout.
 #'
+#' @examples
+#'   \donttest{
+#'     cds <- load_a549()
+#'     cds <- preprocess_cds(cds)
+#'     cds <- reduce_dimension(cds)
+#'     identity_table(cds)
+#'   }
+#'
 #' @importFrom methods is
 #' @export
 identity_table <- function(cds) {
@@ -349,7 +357,7 @@ identity_table <- function(cds) {
       write(sprintf('    %s\t%s', 'model_type', matrix_identity[['model_type']]), stdout())
       write(sprintf('    %s\t%s', 'model_id', identity_as_string(matrix_identity[['model_id']])), stdout())
     } else {
-       write(sprintf('  %s\n    no identity information', reduction_method), stdout())
+       write(sprintf('  %s\n    none', reduction_method), stdout())
     }
     write('', stdout())
   }
@@ -366,7 +374,7 @@ identity_table <- function(cds) {
       write(sprintf('    %s\t%s', 'model_path', model_identity[['model_path']]), stdout())
       write(sprintf('    %s\t%s', 'model_version', model_identity[['model_version']]), stdout())
     } else {
-       write(sprintf('  %s\n    no identity information', reduction_method), stdout())
+       write(sprintf('  %s\n    none', reduction_method), stdout())
     }
     write('', stdout())
   }

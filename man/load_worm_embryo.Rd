@@ -2,11 +2,13 @@
 % Please edit documentation in R/io.R
 \name{load_worm_embryo}
 \alias{load_worm_embryo}
-\title{Build a cell_data_set from the data stored in inst/extdata directory.}
+\title{Build a cell_data_set from C. elegans embryo data.}
 \usage{
 load_worm_embryo()
 }
-\description{
-Build a cell_data_set from the data stored in inst/extdata directory.
+\value{
+cds object
 }
-\keyword{internal}
+\description{
+Build a cell_data_set from C. elegans embryo data.
+}

@@ -20,7 +20,18 @@ normalized_counts(
 \item{pseudocount}{A pseudocount to add before log transformation. Ignored
 if norm_method is not "log". Default is 1.}
 }
+\value{
+Size-factor normalized, and optionally log-transformed, expression
+matrix.
+}
 \description{
 Return a size-factor normalized and (optionally) log-transformed expression
 matrix
+}
+\examples{
+  \donttest{
+    cds <- load_a549()
+    normalized_matrix <- normalized_counts(cds)
+  }
+
 }

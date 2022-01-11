@@ -14,3 +14,10 @@ fData(x) <- value
 \description{
 Generic to set cds rowData table
 }
+\examples{
+  \donttest{
+    cds <- load_a549()
+    fData(cds)[['row_index']] <- seq(nrow(fData(cds)))
+  }
+
+}

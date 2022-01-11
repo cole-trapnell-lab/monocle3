@@ -48,3 +48,10 @@ run on assays stored as in-memory matrices. You may want to
 investigate parameters related to the Bioconductor DelayedArray
 and BiocParallel packages in this case.
 }
+\examples{
+  \dontrun{
+    cds <- load_a549()
+    save_monocle_objects(cds, 'mo')
+  }
+
+}
