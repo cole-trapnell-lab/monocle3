@@ -1,7 +1,7 @@
 Package: monocle3
 Title: Clustering, differential expression, and trajectory analysis for single-
     cell RNA-Seq
-Version: 1.2.4
+Version: 1.2.5
 Authors@R: 
     person(given = "Hannah",
            family = "Pliner",
@@ -26,8 +26,8 @@ Description: Monocle 3 performs clustering, differential expression and
 biocViews:
     Software,
     SingleCell,
-    RNAseq,
-    ATACseq,
+    RNASeq,
+    ATACSeq,
     Normalization,
     Preprocessing,
     DimensionReduction,
@@ -36,7 +36,8 @@ biocViews:
     Clustering,
     Classification,
     Annotation,
-    GeneExpression
+    GeneExpression,
+    DifferentialExpression
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
@@ -95,8 +96,10 @@ Imports:
     slam (>= 0.1-45),
     spdep (>= 1.1-2),
     speedglm (>= 0.3-2),
+    stats,
     stringr (>= 1.4.0),
     SummarizedExperiment (>= 1.11.5),
+    utils,
     uwot (>= 0.1.8),
     terra (>= 1.4-22),
     tibble (>= 2.1.1),

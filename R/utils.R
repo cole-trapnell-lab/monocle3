@@ -371,7 +371,7 @@ sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
             function to control that algorithm's convergence tolerance. See
             `?prcomp_irlba` for help.")
   orig_x <- x
-  if (class(x) != "DelayedMatrix")
+  if (is(x, "DelayedMatrix"))
     x = DelayedArray::DelayedArray(x)
 
   args <- list(A=orig_x, nv=n)
@@ -645,7 +645,7 @@ combine_cds <- function(cds_list,
     fd <- fd[intersect(row.names(fd), gene_list),, drop=FALSE]
     not_in <- fdata_cols[!fdata_cols %in% names(fd)]
     for(col in names(fd)) {
-      if(class(fd[,col]) == "factor") {
+      if(is(fd[,col], "factor")) {
         fd[,col] <- as.character(fd[,col])
       }
     }

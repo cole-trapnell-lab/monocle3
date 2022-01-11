@@ -247,8 +247,7 @@ plot_cells_3d <- function(cds,
                              colors = color_palette,
                              mode="markers", alpha = I(alpha))
       }
-    } else if(class(data_df$cell_color) == "numeric") {
-
+    } else if(is(data_df$cell_color, "numeric")) {
       p <- plotly::plot_ly(data_df) %>%
         plotly::add_trace(x = ~data_dim_1, y = ~data_dim_2, z = ~data_dim_3,
                           type = 'scatter3d', size=I(cell_size), alpha = I(alpha),
@@ -749,7 +748,7 @@ plot_cells <- function(cds,
       }
       g <- g + guides(color = guide_legend(title = color_cells_by,
                                            override.aes = list(size = 4)))
-    } else if (class(data_df$cell_color) == "numeric"){
+    } else if (is(data_df$cell_color, "numeric")) {
       g <- g + geom_point(aes(color = cell_color), size=I(cell_size),
                           stroke = I(cell_stroke), na.rm = TRUE, alpha = alpha)
       g <- g + viridis::scale_color_viridis(name = color_cells_by, option="C")
@@ -1060,7 +1059,7 @@ plot_genes_in_pseudotime <-function(cds_subset,
                         size = I(cell_size),
                         position=position_jitter(horizontal_jitter,
                                                  vertical_jitter))
-    if (class(colData(cds_subset)[,color_cells_by]) == "numeric"){
+    if (is(colData(cds_subset)[,color_cells_by], "numeric")) {
       q <- q + viridis::scale_color_viridis(option="C")
     }
   }
