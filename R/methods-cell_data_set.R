@@ -25,10 +25,14 @@ setValidity( "cell_data_set", function( object ) {
 #'
 #' @param cds A cell_data_set object.
 #' @return An updated cell_data_set object
-#' @export
+#'
 #' @examples
-#'   cds <- load_a549()
-#'   size_factors(cds)
+#'   \donttest{
+#'     cds <- load_a549()
+#'     size_factors(cds)
+#'   }
+#'
+#' @export
 size_factors <- function( cds ) {
   stopifnot( methods::is( cds, "cell_data_set" ) )
   sf <- colData(cds)$Size_Factor

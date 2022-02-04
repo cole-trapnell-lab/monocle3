@@ -40,9 +40,19 @@
 #'  neighbor index. See the set_nn_control help for detailed information.
 #'
 #' @return an updated cell_data_set object
+#'
 #' @examples
-#'   cds <- load_worm_embryo()
-#'   cds <- preprocess_cds(cds)
+#'   \donttest{
+#'     cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
+#'     gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
+#'     expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
+#'    
+#'     cds <- new_cell_data_set(expression_data=expression_matrix,
+#'                              cell_metadata=cell_metadata,
+#'                              gene_metadata=gene_metadata)
+#'     cds <- preprocess_cds(cds)
+#'   }
+#'
 #' @importFrom methods is
 #' @export
 preprocess_cds <- function(cds,

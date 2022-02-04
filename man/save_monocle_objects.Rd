@@ -49,6 +49,9 @@ investigate parameters related to the Bioconductor DelayedArray
 and BiocParallel packages in this case.
 }
 \examples{
-  cds <- load_a549()
-  save_monocle_objects(cds, 'mo')
+  \dontrun{
+    cds <- load_a549()
+    save_monocle_objects(cds, 'mo')
+  }
+
 }

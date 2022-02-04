@@ -17,8 +17,8 @@ Access citations for methods used during analysis.
 }
 \examples{
 {
-\dontrun{
-get_citations(cds)
-}
+  \dontrun{
+     get_citations(cds)
+  }
 }
 }

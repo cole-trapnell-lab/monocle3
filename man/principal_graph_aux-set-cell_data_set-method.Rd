@@ -15,15 +15,24 @@
 Method to set principal graph auxiliary information into CDS
 }
 \examples{
- cds <- load_worm_embryo()
- cds <- preprocess_cds(cds, num_dim=50)
- cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
- cds <- reduce_dimension(cds)
- ciliated_genes <- c("che-1", "hlh-17", "nhr-6", "dmd-6", "ceh-36", "ham-1")
- cds <- cluster_cells(cds)
- cds <- learn_graph(cds)
- pr_gr_aux <- principal_graph_aux(cds)
- principal_graph_aux(cds) <- NULL
- principal_graph_aux(cds) <- pr_gr_aux
+ \donttest{
+    cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
+    gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
+    expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
+
+    cds <- new_cell_data_set(expression_data=expression_matrix,
+                             cell_metadata=cell_metadata,
+                             gene_metadata=gene_metadata)
+
+   cds <- preprocess_cds(cds, num_dim=50)
+   cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+   cds <- reduce_dimension(cds)
+   ciliated_genes <- c("che-1", "hlh-17", "nhr-6", "dmd-6", "ceh-36", "ham-1")
+   cds <- cluster_cells(cds)
+   cds <- learn_graph(cds)
+   pr_gr_aux <- principal_graph_aux(cds)
+   principal_graph_aux(cds) <- NULL
+   principal_graph_aux(cds) <- pr_gr_aux
+ }
 
 }

@@ -19,18 +19,29 @@
 #'   matrix.
 #'
 #' @examples
-#'   cds <- load_worm_embryo()
-#'   ncell <- nrow(colData(cds))
-#'   cell_sample <- sample(seq(ncell), 2 * ncell / 3)
-#'   cell_set <- seq(ncell) %in% cell_sample
-#'   cds1 <- cds[,cell_set]
-#'   cds1 <- preprocess_cds(cds1)
-#'   save_transform_models(cds1, 'tm')
-#'   cds2 <- cds[,!cell_set]
-#'   cds2 <- load_transform_models(cds2, 'tm')
-#'   cds2 <- preprocess_transform(cds2, 'PCA')
+#'   \dontrun{
+#'     cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
+#'     gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
+#'     expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
+#'    
+#'     cds <- new_cell_data_set(expression_data=expression_matrix,
+#'                              cell_metadata=cell_metadata,
+#'                              gene_metadata=gene_metadata)
+#'
+#'     ncell <- nrow(colData(cds))
+#'     cell_sample <- sample(seq(ncell), 2 * ncell / 3)
+#'     cell_set <- seq(ncell) %in% cell_sample
+#'     cds1 <- cds[,cell_set]
+#'     cds1 <- preprocess_cds(cds1)
+#'     save_transform_models(cds1, 'tm')
+#'     cds2 <- cds[,!cell_set]
+#'     cds2 <- load_transform_models(cds2, 'tm')
+#'     cds2 <- preprocess_transform(cds2, 'PCA')
+#'   }
 #'
 #' @export
+# Bioconductor forbids writing to user directories so examples
+# is not run.
 preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_size=NULL, cores=1) {
   #
   # Need to add processing for LSI. TF-IDF transform etc.
@@ -338,22 +349,33 @@ align_transform <- function(cds, reduction_method=c('Aligned')) {
 #'   reduced count matrix.
 #'
 #' @examples
-#'   cds <- load_worm_embryo()
-#'   ncell <- nrow(colData(cds))
-#'   cell_sample <- sample(seq(ncell), 2 * ncell / 3)
-#'   cell_set <- seq(ncell) %in% cell_sample
-#'   cds1 <- cds[,cell_set]
-#'   cds1 <- preprocess_cds(cds1)
-#'   cds1 <- reduce_dimension(cds1)
-#'   save_transform_models(cds1, 'tm')
-#'   cds2 <- cds[,!cell_set]
-#'   cds2 <- load_transform_models(cds2, 'tm')
-#'   cds2 <- preprocess_transform(cds2, 'PCA')
-#'   cds2 <- reduce_dimension_transform(cds2)
+#'   \dontrun{
+#'     cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
+#'     gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
+#'     expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
+#'    
+#'     cds <- new_cell_data_set(expression_data=expression_matrix,
+#'                              cell_metadata=cell_metadata,
+#'                              gene_metadata=gene_metadata)
+#'
+#'     ncell <- nrow(colData(cds))
+#'     cell_sample <- sample(seq(ncell), 2 * ncell / 3)
+#'     cell_set <- seq(ncell) %in% cell_sample
+#'     cds1 <- cds[,cell_set]
+#'     cds1 <- preprocess_cds(cds1)
+#'     cds1 <- reduce_dimension(cds1)
+#'     save_transform_models(cds1, 'tm')
+#'     cds2 <- cds[,!cell_set]
+#'     cds2 <- load_transform_models(cds2, 'tm')
+#'     cds2 <- preprocess_transform(cds2, 'PCA')
+#'     cds2 <- reduce_dimension_transform(cds2)
+#'   }
 #'
 #' @importFrom methods is
 #' @export
 #'
+# Bioconductor forbids writing to user directories so examples
+# is not run.
 reduce_dimension_transform <- function(cds, preprocess_method=NULL, reduction_method=c('UMAP')) {
   assertthat::assert_that(is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))

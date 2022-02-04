@@ -56,10 +56,21 @@
 #'   and Projection for Dimension Reduction, ArXiv e-prints 1802.03426, 2018
 #' @references tSNE: Laurens van der Maaten and Geoffrey Hinton. Visualizing
 #'   data using t-SNE. J. Mach. Learn. Res., 9(Nov):2579– 2605, 2008.
+#'
 #' @examples
-#'   cds <- load_worm_embryo()
-#'   cds <- preprocess_cds(cds)
-#'   cds <- reduce_dimension(cds)
+#'   \donttest{
+#'     cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
+#'     gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
+#'     expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
+#'    
+#'     cds <- new_cell_data_set(expression_data=expression_matrix,
+#'                              cell_metadata=cell_metadata,
+#'                              gene_metadata=gene_metadata)
+#'
+#'     cds <- preprocess_cds(cds)
+#'     cds <- reduce_dimension(cds)
+#'   }
+#'
 #' @importFrom methods is
 #' @export
 reduce_dimension <- function(cds,

@@ -14,11 +14,3 @@
 \description{
 Method to extract clusters from CDS object
 }
-\examples{
-  cds <- load_worm_embryo()
-  cds <- preprocess_cds(cds)
-  cds <- reduce_dimension(cds)
-  cds <- cluster_cells(cds)
-  clusters_factors <- clusters(cds, "UMAP")
-
-}

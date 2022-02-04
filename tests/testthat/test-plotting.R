@@ -72,7 +72,7 @@ test_that("plot_genes_in_pseudotime doesn't error", {
                            panel_order = c("MT-ATP8", "NDRG4", "KIF28P"))
 
   plot_genes_in_pseudotime(cds_subset, color_cells_by = "culture_plate")
-  plot_genes_in_pseudotime(cds_subset, label_by_short_name = F)
+  plot_genes_in_pseudotime(cds_subset, label_by_short_name = FALSE)
   plot_genes_in_pseudotime(cds_subset, vertical_jitter = 1)
   plot_genes_in_pseudotime(cds_subset, horizontal_jitter = 1)
   expect_equal(1, 1)

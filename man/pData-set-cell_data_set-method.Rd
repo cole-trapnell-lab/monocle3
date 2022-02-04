@@ -15,7 +15,9 @@
 Method to set cds colData table
 }
 \examples{
-  cds <- load_a549()
-  pData(cds)[['row_index']] <- seq(nrow(pData(cds)))
+  \donttest{
+    cds <- load_a549()
+    pData(cds)[['row_index']] <- seq(nrow(pData(cds)))
+  }
 
 }

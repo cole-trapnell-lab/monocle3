@@ -92,9 +92,19 @@ process after \code{preprocess_cds}.
 UMAP is implemented from the package uwot.
 }
 \examples{
-  cds <- load_worm_embryo()
-  cds <- preprocess_cds(cds)
-  cds <- reduce_dimension(cds)
+  \donttest{
+    cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
+    gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
+    expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
+   
+    cds <- new_cell_data_set(expression_data=expression_matrix,
+                             cell_metadata=cell_metadata,
+                             gene_metadata=gene_metadata)
+
+    cds <- preprocess_cds(cds)
+    cds <- reduce_dimension(cds)
+  }
+
 }
 \references{
 UMAP: McInnes, L, Healy, J, UMAP: Uniform Manifold Approximation
