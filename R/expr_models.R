@@ -88,20 +88,16 @@ clean_zeroinfl_model_object = function(cm) {
 
 
 #' @importFrom methods new
-#' @importFrom stats logLik
-#' @importFrom stats AIC
-#' @importFrom stats BIC
-#' @importFrom stats df.residual
 #' @noRd
 clean_glmerMod_model_object <- function(model) {
   rcl="glmResp"
   #trivial.y=FALSE
   #fac <- as.numeric(rcl != "nlsResp")
   model@devcomp$cmp <- c(model@devcomp$cmp,
-                         logLik=logLik(model),
-                         AIC=AIC(logLik(model)),
-                         BIC=BIC(logLik(model)),
-                         df_residual = df.residual(model))
+                         logLik=stats::logLik(model),
+                         AIC=stats::AIC(stats::logLik(model)),
+                         BIC=stats::BIC(stats::logLik(model)),
+                         df_residual = stats::df.residual(model))
   cm <- new(switch(rcl, lmerResp="lmerMod", glmResp="glmerMod", nlsResp="nlmerMod"),
             call=model@call,
             #frame=model@frame, # takes up quite a bit of space, but messes up evaluate_fits if we delete
@@ -153,9 +149,8 @@ clean_model_object = function(model) {
 #'   cores = 1.
 #' @param ... test
 #' @name fit_model_helper
+#' @importFrom lme4 glmer
 #' @keywords internal
-#' @importFrom lme4 glmer.nb
-#' @importFrom lme4 glmerControl
 fit_model_helper <- function(x,
                              model_formula_str,
                              expression_family,
@@ -224,11 +219,11 @@ fit_model_helper <- function(x,
                                                                     dist="negbin",
                                                                     offset = log(Size_Factor),
                                                                     ...),
-                                   "mixed-negbinomial" = glmer.nb(model_formula,
-                                                                    nAGQ=0,
-                                                                    control=glmerControl(optimizer = "nloptwrap"),
-                                                                    offset = log(Size_Factor),
-                                                                    ...)
+                                   "mixed-negbinomial" = lme4::glmer.nb(model_formula,
+                                                                        nAGQ=0,
+                                                                        control=lme4::glmerControl(optimizer = "nloptwrap"),
+                                                                        offset = log(Size_Factor),
+                                                                        ...)
     ))
     FM_summary = summary(FM_fit)
     if (clean_model){
