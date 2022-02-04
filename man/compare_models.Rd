@@ -2,7 +2,7 @@
 % Please edit documentation in R/expr_models.R
 \name{compare_models}
 \alias{compare_models}
-\title{Compares goodness of fit for two ways of fitting a set of genes' expression}
+\title{Compare goodness of fit of two models.}
 \usage{
 compare_models(model_tbl_full, model_tbl_reduced)
 }

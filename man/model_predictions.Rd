@@ -2,7 +2,7 @@
 % Please edit documentation in R/expr_models.R
 \name{model_predictions}
 \alias{model_predictions}
-\title{Predict output of fitted models and return as a matrix}
+\title{Predict output of fitted models.}
 \usage{
 model_predictions(model_tbl, new_data, type = "response")
 }

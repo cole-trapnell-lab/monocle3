@@ -44,6 +44,7 @@ setClass("cell_data_set",
 #'   (e.g. genes), where
 #'   \code{row.names(gene_metadata) = row.names(expression_data)}.
 #' @return a new cell_data_set object
+#' @importFrom Biobase package.version
 #' @importFrom methods is
 #' @importFrom SingleCellExperiment int_elementMetadata
 #' @importFrom SingleCellExperiment int_colData

@@ -581,7 +581,7 @@ load_umap_annoy_index <- function(nn_index, file_name, metric, ndim) {
 
 
 save_hnsw_index <- function(nn_index, file_name) {
-  if(is.null(nn_index)) return
+  if(is.null(nn_index)) return()
 
   if(!is.null(nn_index[['version']])) {
     out_index <- nn_index[['hnsw_index']]

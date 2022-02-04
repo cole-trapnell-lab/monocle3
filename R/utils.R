@@ -175,6 +175,7 @@ sparse_par_c_apply <- function (cl = NULL, x, FUN, convert_to_dense, ...) {
 #' @param ... Additional parameters for FUN.
 #' @param cores The number of cores to use for evaluation.
 #'
+#' @importFrom Biobase multiassign
 #' @return The result of with(colData(cds) apply(counts(cds)), MARGIN, FUN, ...))
 mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1,
                         convert_to_dense=TRUE,
@@ -255,6 +256,7 @@ mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1,
   res
 }
 
+#' @importFrom Biobase multiassign
 smart_es_apply <- function(cds, MARGIN, FUN, convert_to_dense,
                            reduction_method="UMAP", ...) {
   parent <- environment(FUN)

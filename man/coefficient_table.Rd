@@ -2,7 +2,7 @@
 % Please edit documentation in R/expr_models.R
 \name{coefficient_table}
 \alias{coefficient_table}
-\title{Extracts a table of coefficients from a tibble containing model objects}
+\title{Extract coefficient table from a fit_models result.}
 \usage{
 coefficient_table(model_tbl)
 }

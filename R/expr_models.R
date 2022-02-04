@@ -87,21 +87,19 @@ clean_zeroinfl_model_object = function(cm) {
 }
 
 
+#' @title Clean glmerMod model objects
+#' @description None
 #' @importFrom methods new
-#' @importFrom stats logLik
-#' @importFrom stats AIC
-#' @importFrom stats BIC
-#' @importFrom stats df.residual
 #' @noRd
 clean_glmerMod_model_object <- function(model) {
   rcl="glmResp"
   #trivial.y=FALSE
   #fac <- as.numeric(rcl != "nlsResp")
   model@devcomp$cmp <- c(model@devcomp$cmp,
-                         logLik=logLik(model),
-                         AIC=AIC(logLik(model)),
-                         BIC=BIC(logLik(model)),
-                         df_residual = df.residual(model))
+                         logLik=stats::logLik(model),
+                         AIC=stats::AIC(stats::logLik(model)),
+                         BIC=stats::BIC(stats::logLik(model)),
+                         df_residual = stats::df.residual(model))
   cm <- new(switch(rcl, lmerResp="lmerMod", glmResp="glmerMod", nlsResp="nlmerMod"),
             call=model@call,
             #frame=model@frame, # takes up quite a bit of space, but messes up evaluate_fits if we delete
@@ -153,9 +151,8 @@ clean_model_object = function(model) {
 #'   cores = 1.
 #' @param ... test
 #' @name fit_model_helper
+#' @importFrom lme4 glmer
 #' @keywords internal
-#' @importFrom lme4 glmer.nb
-#' @importFrom lme4 glmerControl
 fit_model_helper <- function(x,
                              model_formula_str,
                              expression_family,
@@ -192,7 +189,6 @@ fit_model_helper <- function(x,
   tryCatch({
     if (verbose) messageWrapper = function(expr) { expr }
     else messageWrapper = suppressWarnings
-
     FM_fit = messageWrapper(switch(expression_family,
                                    "negbinomial" = MASS::glm.nb(model_formula, epsilon=1e-3,
                                                                 model=FALSE, y=FALSE, ...),
@@ -224,11 +220,11 @@ fit_model_helper <- function(x,
                                                                     dist="negbin",
                                                                     offset = log(Size_Factor),
                                                                     ...),
-                                   "mixed-negbinomial" = glmer.nb(model_formula,
-                                                                    nAGQ=0,
-                                                                    control=glmerControl(optimizer = "nloptwrap"),
-                                                                    offset = log(Size_Factor),
-                                                                    ...)
+                                   "mixed-negbinomial" = lme4::glmer.nb(model_formula,
+                                                                        nAGQ=0,
+                                                                        control=lme4::glmerControl(optimizer = "nloptwrap"),
+                                                                        offset = log(Size_Factor),
+                                                                        ...)
     ))
     FM_summary = summary(FM_fit)
     if (clean_model){
@@ -531,6 +527,8 @@ extract_coefficient_helper = function(model, model_summary,
   }
 }
 
+#' @title Extract coefficient table from a fit_models result.
+#' @description
 #' Extracts a table of coefficients from a tibble containing model objects
 #'
 #' @param model_tbl A tibble of model objects, generally the output of
@@ -568,6 +566,8 @@ coefficient_table <- function(model_tbl) {
   return(M_f)
 }
 
+#' @title Compare goodness of fit of two models.
+#' @description
 #' Compares goodness of fit for two ways of fitting a set of genes' expression
 #'
 #' @param model_tbl_full A tibble of model objects, generally output of
@@ -617,9 +617,10 @@ compare_models <- function(model_tbl_full, model_tbl_reduced){
 }
 
 
+#' @title Evaluate fit of model objects.
+#' @description
 #' Evaluate the fits of model objects.
 #'
-#' @importFrom dplyr %>%
 #' @param model_tbl A tibble of model objects, generally output of
 #'   \code{\link{fit_models}}.
 #'
@@ -634,7 +635,8 @@ compare_models <- function(model_tbl_full, model_tbl_reduced){
 #'                              gene_metadata=gene_metadata)
 #'
 #'     cds <- preprocess_cds(cds, num_dim=50)
-#'     cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+#'     cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str =
+#'                      "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
 #'     cds <- reduce_dimension(cds)
 #'     ciliated_genes <- c("che-1", "hlh-17", "nhr-6", "dmd-6", "ceh-36", "ham-1")
 #'     cds_subset <- cds[rowData(cds)$gene_short_name %in% ciliated_genes,]
@@ -642,6 +644,7 @@ compare_models <- function(model_tbl_full, model_tbl_reduced){
 #'     evaluate_fits(gene_fits)
 #'   }
 #'
+#' @importFrom dplyr %>%
 #' @export
 evaluate_fits <- function(model_tbl){
   private_glance <- function(m){
@@ -714,6 +717,8 @@ likelihood_ratio_test_pval <- function(model_summary_x, model_summary_y) {
   p_val = stats::pchisq(LLR, dfs, lower.tail = FALSE)
 }
 
+#' @title Predict output of fitted models.
+#' @description
 #' Predict output of fitted models and return as a matrix
 #'
 #' @param model_tbl A tibble of model objects, generally output of

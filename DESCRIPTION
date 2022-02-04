@@ -46,6 +46,7 @@ RoxygenNote: 7.1.2
 LinkingTo: 
     Rcpp
 Depends:
+	R (>= 3.5.0),
     Biobase, 
     SingleCellExperiment
 Imports:
@@ -67,7 +68,7 @@ Imports:
     irlba (>= 2.3.3),
     leidenbase,
     limma (>= 3.38.3),
-    lme4,
+    lme4 (>= 1.1-27),
     lmtest (>= 0.9-36),
     MASS (>= 7.3-51.4),
     Matrix (>= 1.2-17),
