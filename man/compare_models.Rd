@@ -14,5 +14,9 @@ compare_models(model_tbl_full, model_tbl_reduced)
 \code{\link{fit_models}}, to be compared with \code{model_tbl_full}.}
 }
 \description{
-Compares goodness of fit for two ways of fitting a set of genes' expression
+Compares goodness of fit for two ways of fitting a set of genes'
+expression using a likelihood ratio test. The likelihood ratio
+test helps one decide whether the improvement in fit is large enough
+to justify the additional complexity of extra terms in the full
+model in comparison to the reduced model.
 }

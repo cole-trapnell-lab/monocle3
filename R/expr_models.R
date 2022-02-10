@@ -87,9 +87,6 @@ clean_zeroinfl_model_object = function(cm) {
 }
 
 
-#' @title Clean glmerMod model objects
-#' @description None
-#' @importFrom methods new
 #' @noRd
 clean_glmerMod_model_object <- function(model) {
   rcl="glmResp"
@@ -100,7 +97,7 @@ clean_glmerMod_model_object <- function(model) {
                          AIC=stats::AIC(stats::logLik(model)),
                          BIC=stats::BIC(stats::logLik(model)),
                          df_residual = stats::df.residual(model))
-  cm <- new(switch(rcl, lmerResp="lmerMod", glmResp="glmerMod", nlsResp="nlmerMod"),
+  cm <- methods::new(switch(rcl, lmerResp="lmerMod", glmResp="glmerMod", nlsResp="nlmerMod"),
             call=model@call,
             #frame=model@frame, # takes up quite a bit of space, but messes up evaluate_fits if we delete
             flist=model@flist,
@@ -152,7 +149,7 @@ clean_model_object = function(model) {
 #' @param ... test
 #' @name fit_model_helper
 #' @importFrom lme4 glmer
-#' @keywords internal
+#' @noRd
 fit_model_helper <- function(x,
                              model_formula_str,
                              expression_family,
@@ -273,16 +270,25 @@ fit_model_helper <- function(x,
 #'
 #' @examples
 #'   \donttest{
-#'     cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
-#'     gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
-#'     expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
+#'     cell_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_coldata.rds',
+#'                                          package='monocle3'))
+#'     gene_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_rowdata.rds',
+#'                                          package='monocle3'))
+#'     expression_matrix <- readRDS(system.file('extdata',
+#'                                              'worm_embryo/worm_embryo_expression_matrix.rds',
+#'                                              package='monocle3'))
 #'    
 #'     cds <- new_cell_data_set(expression_data=expression_matrix,
 #'                              cell_metadata=cell_metadata,
 #'                              gene_metadata=gene_metadata)
 #'
 #'     cds <- preprocess_cds(cds, num_dim=50)
-#'     cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+#'     cds <- align_cds(cds, alignment_group = "batch",
+#'                      residual_model_formula_str = "~ bg.300.loading + bg.400.loading +
+#'                      bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading +
+#'                      bg.b02.loading")
 #'     cds <- reduce_dimension(cds)
 #'     ciliated_genes <- c("che-1", "hlh-17", "nhr-6", "dmd-6", "ceh-36", "ham-1")
 #'     cds_subset <- cds[rowData(cds)$gene_short_name %in% ciliated_genes,]
@@ -298,7 +304,7 @@ fit_models <- function(cds,
                        clean_model = TRUE,
                        verbose = FALSE,
                        ...) {
-
+  model <- status <- NULL # no visible binding
   model_form <- stats::as.formula(model_formula_str)
   if (!"num_cells_expressed" %in% names(rowData(cds))) {
     cds <- detect_genes(cds)
@@ -528,24 +534,37 @@ extract_coefficient_helper = function(model, model_summary,
 }
 
 #' @title Extract coefficient table from a fit_models result.
-#' @description
-#' Extracts a table of coefficients from a tibble containing model objects
+#' @description Extracts a table of coefficients from a tibble
+#'    containing model objects. It tests whether each coefficient
+#'    differs significantly from zero under the Wald test and
+#'    adjusts the p-values for multiple hypothesis testing using
+#'    the method of Benjamini and Hochberg, placing these
+#'    adjusted values in the q-value column.
 #'
 #' @param model_tbl A tibble of model objects, generally the output of
 #'   \code{\link{fit_models}}.
 #'
 #' @examples
 #'   \donttest{
-#'     cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
-#'     gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
-#'     expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
+#'     cell_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_coldata.rds',
+#'                                          package='monocle3'))
+#'     gene_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_rowdata.rds',
+#'                                          package='monocle3'))
+#'     expression_matrix <- readRDS(system.file('extdata',
+#'                                              'worm_embryo/worm_embryo_expression_matrix.rds',
+#'                                              package='monocle3'))
 #'    
 #'     cds <- new_cell_data_set(expression_data=expression_matrix,
 #'                              cell_metadata=cell_metadata,
 #'                              gene_metadata=gene_metadata)
 #'
 #'     cds <- preprocess_cds(cds, num_dim=50)
-#'     cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+#'     cds <- align_cds(cds, alignment_group = "batch",
+#'                      residual_model_formula_str = "~ bg.300.loading + bg.400.loading +
+#'                      bg.500.1.loading + bg.500.2.loading + bg.r17.loading +
+#'                      bg.b01.loading + bg.b02.loading")
 #'     cds <- reduce_dimension(cds)
 #'     ciliated_genes <- c("che-1", "hlh-17", "nhr-6", "dmd-6", "ceh-36", "ham-1")
 #'     cds_subset <- cds[rowData(cds)$gene_short_name %in% ciliated_genes,]
@@ -556,6 +575,7 @@ extract_coefficient_helper = function(model, model_summary,
 #' @importFrom dplyr %>%
 #' @export
 coefficient_table <- function(model_tbl) {
+  model <- model_summary <- terms <- term <- model_component <- p_value <- NULL # no visible binding
   M_f = model_tbl %>%
     dplyr::mutate(terms = purrr::map2(.f = purrr::possibly(
       extract_coefficient_helper, NA_real_), .x = model,
@@ -568,7 +588,11 @@ coefficient_table <- function(model_tbl) {
 
 #' @title Compare goodness of fit of two models.
 #' @description
-#' Compares goodness of fit for two ways of fitting a set of genes' expression
+#' Compares goodness of fit for two ways of fitting a set of genes'
+#' expression using a likelihood ratio test. The likelihood ratio
+#' test helps one decide whether the improvement in fit is large enough
+#' to justify the additional complexity of extra terms in the full
+#' model in comparison to the reduced model.
 #'
 #' @param model_tbl_full A tibble of model objects, generally output of
 #'   \code{\link{fit_models}}, to be compared with \code{model_tbl_reduced}
@@ -579,6 +603,7 @@ coefficient_table <- function(model_tbl) {
 #' @importFrom plyr "."
 #' @export
 compare_models <- function(model_tbl_full, model_tbl_reduced){
+  df_residual.x <- df_residual.y <- logLik.x <- logLik.y <- LLR <- NULL # no visible binding
   model_x_eval <- evaluate_fits(model_tbl_full)
   model_y_eval <- evaluate_fits(model_tbl_reduced)
   if ("gene_short_name" %in% names(model_x_eval) &
@@ -618,25 +643,34 @@ compare_models <- function(model_tbl_full, model_tbl_reduced){
 
 
 #' @title Evaluate fit of model objects.
-#' @description
-#' Evaluate the fits of model objects.
+#' @description Evaluate_fits takes a tibble created by the fit_models
+#'    function and returns a table that assists with evaluating how well
+#'    the model explains the gene expression data.
 #'
 #' @param model_tbl A tibble of model objects, generally output of
 #'   \code{\link{fit_models}}.
 #'
 #' @examples
 #'   \donttest{
-#'     cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
-#'     gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
-#'     expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
+#'     cell_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_coldata.rds',
+#'                                          package='monocle3'))
+#'     gene_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_rowdata.rds',
+#'                                          package='monocle3'))
+#'     expression_matrix <- readRDS(system.file('extdata',
+#'                                              'worm_embryo/worm_embryo_expression_matrix.rds',
+#'                                              package='monocle3'))
 #'    
 #'     cds <- new_cell_data_set(expression_data=expression_matrix,
 #'                              cell_metadata=cell_metadata,
 #'                              gene_metadata=gene_metadata)
 #'
 #'     cds <- preprocess_cds(cds, num_dim=50)
-#'     cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str =
-#'                      "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+#'     cds <- align_cds(cds, alignment_group = "batch",
+#'                      residual_model_formula_str = "~ bg.300.loading + bg.400.loading +
+#'                      bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading +
+#'                      bg.b02.loading")
 #'     cds <- reduce_dimension(cds)
 #'     ciliated_genes <- c("che-1", "hlh-17", "nhr-6", "dmd-6", "ceh-36", "ham-1")
 #'     cds_subset <- cds[rowData(cds)$gene_short_name %in% ciliated_genes,]
@@ -647,9 +681,8 @@ compare_models <- function(model_tbl_full, model_tbl_reduced){
 #' @importFrom dplyr %>%
 #' @export
 evaluate_fits <- function(model_tbl){
+  model <- glanced <- NULL
   private_glance <- function(m){
-
-
     mass_glance <- function(m) {
       tibble::tibble(null_deviance = m$null.deviance,
                      df_null = m$df.null,
@@ -717,9 +750,8 @@ likelihood_ratio_test_pval <- function(model_summary_x, model_summary_y) {
   p_val = stats::pchisq(LLR, dfs, lower.tail = FALSE)
 }
 
-#' @title Predict output of fitted models.
-#' @description
-#' Predict output of fitted models and return as a matrix
+#' @title Predict values of new data using fit_models model.
+#' @description Predict new data values and return as a matrix
 #'
 #' @param model_tbl A tibble of model objects, generally output of
 #'   \code{\link{fit_models}}.
@@ -729,6 +761,7 @@ likelihood_ratio_test_pval <- function(model_summary_x, model_summary_y) {
 #'
 #' @export
 model_predictions <- function(model_tbl, new_data, type="response") {
+  model <- NULL # no visible binding
   predict_helper <- function(model, new_data){
     tryCatch({
       stats::predict(model, newdata=new_data, type=type)

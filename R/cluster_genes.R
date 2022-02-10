@@ -31,10 +31,16 @@
 #' @return A dataframe with genes and the modules to which they are assigned.
 #'
 #' @examples
-#'   \donttest{
-#'      expression_matrix <- readRDS(system.file('extdata', 'worm_l2/worm_l2_expression_matrix.rds', package='monocle3'))
-#'      cell_metadata <- readRDS(system.file('extdata', 'worm_l2/worm_l2_coldata.rds', package='monocle3'))
-#'      gene_metadata <- readRDS(system.file('extdata', 'worm_l2/worm_l2_rowdata.rds', package='monocle3'))
+#'   \dontrun{
+#'      expression_matrix <- readRDS(system.file('extdata',
+#'                                               'worm_l2/worm_l2_expression_matrix.rds',
+#'                                               package='monocle3'))
+#'      cell_metadata <- readRDS(system.file('extdata',
+#'                                           'worm_l2/worm_l2_coldata.rds',
+#'                                           package='monocle3'))
+#'      gene_metadata <- readRDS(system.file('extdata',
+#'                                           'worm_l2/worm_l2_rowdata.rds',
+#'                                           package='monocle3'))
 #'
 #'      cds <- new_cell_data_set(expression_data=expression_matrix,
 #'                               cell_metadata=cell_metadata,
@@ -139,7 +145,7 @@ find_gene_modules <- function(cds,
   ## TO DO what is resolution?
   assertthat::assert_that(is.numeric(partition_qval))
   assertthat::assert_that(is.logical(verbose))
-  assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
+  assertthat::assert_that(!is.null(SingleCellExperiment::reducedDims(cds)[[reduction_method]]),
                           msg = paste("No dimensionality reduction for",
                                       reduction_method, "calculated.",
                                       "Please run reduce_dimension with",
@@ -215,7 +221,7 @@ find_gene_modules <- function(cds,
 }
 
 #' A function to aggregate columns within a matrix.
-#' @keywords internal
+#' @noRd
 my.aggregate.Matrix = function (x, groupings = NULL, form = NULL, fun = "sum", ...)
 {
   if (!methods::is(x, "Matrix"))
@@ -265,10 +271,16 @@ my.aggregate.Matrix = function (x, groupings = NULL, form = NULL, fun = "sum", .
 #' @return A matrix of dimension NxM, where N is the number of gene groups and
 #'   M is the number of cell groups.
 #' @examples
-#'   \donttest{
-#'      expression_matrix <- readRDS(system.file('extdata', 'worm_l2/worm_l2_expression_matrix.rds', package='monocle3'))
-#'      cell_metadata <- readRDS(system.file('extdata', 'worm_l2/worm_l2_coldata.rds', package='monocle3'))
-#'      gene_metadata <- readRDS(system.file('extdata', 'worm_l2/worm_l2_rowdata.rds', package='monocle3'))
+#'   \dontrun{
+#'      expression_matrix <- readRDS(system.file('extdata',
+#'                                                'worm_l2/worm_l2_expression_matrix.rds',
+#'                                                package='monocle3'))
+#'      cell_metadata <- readRDS(system.file('extdata',
+#'                               'worm_l2/worm_l2_coldata.rds',
+#'                                package='monocle3'))
+#'      gene_metadata <- readRDS(system.file('extdata',
+#'                               'worm_l2/worm_l2_rowdata.rds',
+#'                               package='monocle3'))
 #'
 #'      cds <- new_cell_data_set(expression_data=expression_matrix,
 #'                               cell_metadata=cell_metadata,
@@ -321,7 +333,8 @@ my.aggregate.Matrix = function (x, groupings = NULL, form = NULL, fun = "sum", .
 #'     pr_graph_test_res <- graph_test(neurons_cds, neighbor_graph="knn")
 #'     pr_deg_ids <- row.names(subset(pr_graph_test_res, q_value < 0.05))
 #'     gene_module_df <- find_gene_modules(neurons_cds[pr_deg_ids,], resolution=1e-2)
-#'     cell_group_df <- tibble::tibble(cell=row.names(colData(neurons_cds)), cell_group=partitions(cds)[colnames(neurons_cds)])
+#'     cell_group_df <- tibble::tibble(cell=row.names(colData(neurons_cds)),
+#'                                     cell_group=partitions(cds)[colnames(neurons_cds)])
 #'     agg_mat <- aggregate_gene_expression(neurons_cds, gene_module_df, cell_group_df)
 #'   }
 #'

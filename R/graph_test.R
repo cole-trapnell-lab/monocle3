@@ -43,9 +43,15 @@
 #'
 #' @examples
 #'   \donttest{
-#'      expression_matrix <- readRDS(system.file('extdata', 'worm_l2/worm_l2_expression_matrix.rds', package='monocle3'))
-#'      cell_metadata <- readRDS(system.file('extdata', 'worm_l2/worm_l2_coldata.rds', package='monocle3'))
-#'      gene_metadata <- readRDS(system.file('extdata', 'worm_l2/worm_l2_rowdata.rds', package='monocle3'))
+#'      expression_matrix <- readRDS(system.file('extdata',
+#'                                                'worm_l2/worm_l2_expression_matrix.rds',
+#'                                                package='monocle3'))
+#'      cell_metadata <- readRDS(system.file('extdata',
+#'                               'worm_l2/worm_l2_coldata.rds',
+#'                                package='monocle3'))
+#'      gene_metadata <- readRDS(system.file('extdata',
+#'                               'worm_l2/worm_l2_rowdata.rds',
+#'                               package='monocle3'))
 #'
 #'      cds <- new_cell_data_set(expression_data=expression_matrix,
 #'                               cell_metadata=cell_metadata,
@@ -109,9 +115,10 @@ graph_test <- function(cds,
                        cores=1,
                        verbose=FALSE,
                        nn_control=list()) {
+  status <- NULL # no visible binding
   neighbor_graph <- match.arg(neighbor_graph)
   reduction_method <- match.arg(reduction_method)
-  assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
+  assertthat::assert_that(!is.null(SingleCellExperiment::reducedDims(cds)[[reduction_method]]),
     msg = paste("No dimensionality reduction for",
                 reduction_method, "calculated.",
                 "Please run reduce_dimension with",
@@ -348,7 +355,7 @@ my.geary.test <- function (x, listw, wc, randomisation = TRUE,
 #' @param  k The maximum number of nearest neighbors to compute
 #' @param verbose A logic flag that determines whether or not to print
 #' execution details
-#' @keywords internal
+#' @noRd
 #'
 calculateLW <- function(cds,
                         k,
@@ -362,7 +369,7 @@ calculateLW <- function(cds,
   knn_res <- NULL
   principal_g <- NULL
 
-  cell_coords <- reducedDims(cds)[[reduction_method]]
+  cell_coords <- SingleCellExperiment::reducedDims(cds)[[reduction_method]]
   if(nrow(cell_coords) == 0) {
     stop('calculateLW: the reduced dims matrix has too few rows')
   }

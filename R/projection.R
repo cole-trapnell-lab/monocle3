@@ -20,9 +20,15 @@
 #'
 #' @examples
 #'   \dontrun{
-#'     cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
-#'     gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
-#'     expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
+#'     cell_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_coldata.rds',
+#'                                          package='monocle3'))
+#'     gene_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_rowdata.rds',
+#'                                          package='monocle3'))
+#'     expression_matrix <- readRDS(system.file('extdata',
+#'                                              'worm_embryo/worm_embryo_expression_matrix.rds',
+#'                                              package='monocle3'))
 #'    
 #'     cds <- new_cell_data_set(expression_data=expression_matrix,
 #'                              cell_metadata=cell_metadata,
@@ -46,7 +52,7 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
   #
   # Need to add processing for LSI. TF-IDF transform etc.
   #
-  assertthat::assert_that(is(cds, 'cell_data_set'),
+  assertthat::assert_that(methods::is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
@@ -123,7 +129,7 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
     class(irlba_res) <- c('irlba_prcomp', 'prcomp')
   
     # 'reference' gene names are in the cds@preproc
-    reducedDims(cds)[[reduction_method]] <- irlba_res$x
+    SingleCellExperiment::reducedDims(cds)[[reduction_method]] <- irlba_res$x
 
   }
   else if(reduction_method == 'LSI') {
@@ -209,7 +215,7 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
     class(irlba_res) <- c('irlba_prcomp', 'prcomp')
 
     # 'reference' gene names are in the cds@preproc
-    reducedDims(cds)[[reduction_method]] <- irlba_res$x
+    SingleCellExperiment::reducedDims(cds)[[reduction_method]] <- irlba_res$x
 
   }
 
@@ -217,7 +223,7 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
     DelayedArray::setAutoBlockSize(block_size0)
   }
 
-  matrix_id <- get_unique_id(reducedDims(cds)[[reduction_method]])
+  matrix_id <- get_unique_id(SingleCellExperiment::reducedDims(cds)[[reduction_method]])
   counts_identity <- get_counts_identity(cds)
   reduce_dim_model_identity <- get_reduce_dim_model_identity(cds, reduction_method)
   cds <- initialize_reduce_dim_metadata(cds, reduction_method)
@@ -279,7 +285,7 @@ align_transform <- function(cds, reduction_method=c('Aligned')) {
 #   #
 #   # Need to add transformation code.
 #   #
-#   assertthat::assert_that(is(cds, 'cell_data_set'),
+#   assertthat::assert_that(methods::is(cds, 'cell_data_set'),
 #                           msg=paste('cds parameter is not a cell_data_set'))
 #   assertthat::assert_that(
 #     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
@@ -289,7 +295,7 @@ align_transform <- function(cds, reduction_method=c('Aligned')) {
 #   reduction_method <- match.arg(reduction_method)
 # 
 #   preprocess_method <- cds@reduce_dim_aux[['Aligned']][['model']][['preprocess_method']]
-#   preproc_res <- reducedDims(cds)[[preprocess_method]]
+#   preproc_res <- SingleCellExperiment::reducedDims(cds)[[preprocess_method]]
 #   assertthat::assert_that(!is.null(preproc_res),
 #                           msg=paste("Preprocessing for '",
 #                                     preprocess_method,
@@ -310,7 +316,7 @@ align_transform <- function(cds, reduction_method=c('Aligned')) {
 #   preproc_res <- Matrix::t(as.matrix(Matrix::t(preproc_res)) - beta %*% Matrix::t(X.model_mat[, -1]))
 #   corrected_PCA = batchelor::reducedMNN(as.matrix(preproc_res), batch=colData(cds)[,alignment_group], k=alignment_k)
 #   preproc_res = corrected_PCA$corrected
-#   reducedDims(cds)[['Aligned']] <- as.matrix(preproc_res)
+#   SingleCellExperiment::reducedDims(cds)[['Aligned']] <- as.matrix(preproc_res)
 # 
 #   matrix_id <- get_unique_id()
 #   reduce_dim_matrix_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method)
@@ -350,14 +356,18 @@ align_transform <- function(cds, reduction_method=c('Aligned')) {
 #'
 #' @examples
 #'   \dontrun{
-#'     cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
-#'     gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
-#'     expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
-#'    
+#'     cell_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_coldata.rds',
+#'                                          package='monocle3'))
+#'     gene_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_rowdata.rds',
+#'                                          package='monocle3'))
+#'     expression_matrix <- readRDS(system.file('extdata',
+#'                                              'worm_embryo/worm_embryo_expression_matrix.rds',
+#'                                              package='monocle3'))
 #'     cds <- new_cell_data_set(expression_data=expression_matrix,
 #'                              cell_metadata=cell_metadata,
 #'                              gene_metadata=gene_metadata)
-#'
 #'     ncell <- nrow(colData(cds))
 #'     cell_sample <- sample(seq(ncell), 2 * ncell / 3)
 #'     cell_set <- seq(ncell) %in% cell_sample
@@ -371,13 +381,12 @@ align_transform <- function(cds, reduction_method=c('Aligned')) {
 #'     cds2 <- reduce_dimension_transform(cds2)
 #'   }
 #'
-#' @importFrom methods is
 #' @export
 #'
 # Bioconductor forbids writing to user directories so examples
 # is not run.
 reduce_dimension_transform <- function(cds, preprocess_method=NULL, reduction_method=c('UMAP')) {
-  assertthat::assert_that(is(cds, 'cell_data_set'),
+  assertthat::assert_that(methods::is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
@@ -397,7 +406,7 @@ reduce_dimension_transform <- function(cds, preprocess_method=NULL, reduction_me
 
   reduction_method <- match.arg(reduction_method)
 
-  preproc_res <- reducedDims(cds)[[preprocess_method]]
+  preproc_res <- SingleCellExperiment::reducedDims(cds)[[preprocess_method]]
   assertthat::assert_that(!is.null(preproc_res),
                           msg=paste("Preprocessing for '",
                                     preprocess_method,
@@ -413,9 +422,9 @@ reduce_dimension_transform <- function(cds, preprocess_method=NULL, reduction_me
   #
   set.seed(2016)
   umap_model <- cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']]
-  reducedDims(cds)[[reduction_method]] <- uwot::umap_transform(X=preproc_res, model=umap_model, init='weighted', n_sgd_threads=1)
+  SingleCellExperiment::reducedDims(cds)[[reduction_method]] <- uwot::umap_transform(X=preproc_res, model=umap_model, init='weighted', n_sgd_threads=1)
 
-  matrix_id <- get_unique_id(reducedDims(cds)[[reduction_method]])
+  matrix_id <- get_unique_id(SingleCellExperiment::reducedDims(cds)[[reduction_method]])
   reduce_dim_matrix_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method)
   reduce_dim_model_identity <- get_reduce_dim_model_identity(cds, reduction_method)
   cds <- initialize_reduce_dim_metadata(cds, reduction_method)
@@ -437,17 +446,17 @@ reduce_dimension_transform <- function(cds, preprocess_method=NULL, reduction_me
 #
 align_beta_transform <- function(cds, preprocess_method = 'PCA') {
   reduction_method <- 'Aligned'
-  preproc_res <- reducedDims(cds)[[preprocess_method]]
+  preproc_res <- SingleCellExperiment::reducedDims(cds)[[preprocess_method]]
   beta <- cds@reduce_dim_aux[['Aligned']][['model']][['beta']]
   residual_model_formula_str <- cds@reduce_dim_aux[['Aligned']][['model']][['residual_model_formula_str']]
   X.model_mat <- Matrix::sparse.model.matrix(
     stats::as.formula(residual_model_formula_str),
     data = colData(cds),
     drop.unused.levels = TRUE)
-  reducedDims(cds)[['Aligned']] <- Matrix::t(as.matrix(Matrix::t(preproc_res)) -
+  SingleCellExperiment::reducedDims(cds)[['Aligned']] <- Matrix::t(as.matrix(Matrix::t(preproc_res)) -
                                    beta %*% Matrix::t(X.model_mat[, -1]))
 
-  matrix_id <- get_unique_id(reducedDims(cds)[['Aligned']])
+  matrix_id <- get_unique_id(SingleCellExperiment::reducedDims(cds)[['Aligned']])
   cds <- initialize_reduce_dim_metadata(cds, reduction_method)
   reduce_dim_matrix_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method)
   reduce_dim_model_identity <- get_reduce_dim_model_identity(cds, reduction_method)

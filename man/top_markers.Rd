@@ -68,9 +68,15 @@ Identify the genes most specifically expressed in groups of cells
   \donttest{
     library(dplyr)
 
-    cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
-    gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
-    expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
+    cell_metadata <- readRDS(system.file('extdata',
+                                         'worm_embryo/worm_embryo_coldata.rds',
+                                         package='monocle3'))
+    gene_metadata <- readRDS(system.file('extdata',
+                                         'worm_embryo/worm_embryo_rowdata.rds',
+                                         package='monocle3'))
+    expression_matrix <- readRDS(system.file('extdata',
+                                             'worm_embryo/worm_embryo_expression_matrix.rds',
+                                             package='monocle3'))
    
     cds <- new_cell_data_set(expression_data=expression_matrix,
                              cell_metadata=cell_metadata,

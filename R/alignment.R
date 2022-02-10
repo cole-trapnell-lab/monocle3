@@ -42,16 +42,25 @@
 #' @return an updated cell_data_set object
 #' @examples
 #'   \donttest{
-#'     cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
-#'     gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
-#'     expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
+#'     cell_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_coldata.rds',
+#'                                          package='monocle3'))
+#'     gene_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_rowdata.rds',
+#'                                          package='monocle3'))
+#'     expression_matrix <- readRDS(system.file('extdata',
+#'                                              'worm_embryo/worm_embryo_expression_matrix.rds',
+#'                                              package='monocle3'))
 #'    
 #'     cds <- new_cell_data_set(expression_data=expression_matrix,
 #'                              cell_metadata=cell_metadata,
 #'                              gene_metadata=gene_metadata)
 #'
 #'     cds <- preprocess_cds(cds)
-#'     cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+#'     cds <- align_cds(cds, alignment_group =
+#'                      "batch", residual_model_formula_str = "~ bg.300.loading +
+#'                       bg.400.loading + bg.500.1.loading + bg.500.2.loading +
+#'                       bg.r17.loading + bg.b01.loading + bg.b02.loading")
 #'   }
 #' @export
 align_cds <- function(cds,
@@ -69,7 +78,7 @@ align_cds <- function(cds,
     msg = "preprocess_method must be one of 'PCA' or 'LSI'")
   preprocess_method <- match.arg(preprocess_method)
 
-  preproc_res <- reducedDims(cds)[[preprocess_method]]
+  preproc_res <- SingleCellExperiment::reducedDims(cds)[[preprocess_method]]
   assertthat::assert_that(!is.null(preproc_res),
                           msg = paste0("Preprocessing for '",
                                       preprocess_method, "' does not exist. ",
@@ -121,12 +130,12 @@ align_cds <- function(cds,
     preproc_res = corrected_PCA$corrected
     cds <- add_citation(cds, "MNN_correct")
   }
-  reducedDims(cds)[["Aligned"]] <- as.matrix(preproc_res)
+  SingleCellExperiment::reducedDims(cds)[["Aligned"]] <- as.matrix(preproc_res)
 
   #
   # Notes:
   #   o  the functions save_transform_models/load_transform_models
-  #      expect that the reduce_dim_aux slot consists of a SimpleList
+  #      expect that the reduce_dim_aux slot consists of a S4Vectors::SimpleList
   #      that stores information about methods with the elements
   #        reduce_dim_aux[[method]][['model']] for the transform elements
   #        reduce_dim_aux[[method]][[nn_method]] for the annoy index
@@ -137,7 +146,7 @@ align_cds <- function(cds,
   cds@reduce_dim_aux[['Aligned']][['model']][['alignment_k']] <- alignment_k
   cds@reduce_dim_aux[['Aligned']][['model']][['residual_model_formula_str']] <- residual_model_formula_str
 
-  matrix_id <- get_unique_id(reducedDims(cds)[["Aligned"]])
+  matrix_id <- get_unique_id(SingleCellExperiment::reducedDims(cds)[["Aligned"]])
   reduce_dim_matrix_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method) 
 
   cds <- set_reduce_dim_matrix_identity(cds, 'Aligned',
@@ -155,7 +164,7 @@ align_cds <- function(cds,
                                        reduce_dim_model_identity[['model_id']])
 
   if( build_nn_index ) {
-    nn_index <- make_nn_index(subject_matrix=reducedDims(cds)[['Aligned']],
+    nn_index <- make_nn_index(subject_matrix=SingleCellExperiment::reducedDims(cds)[['Aligned']],
                               nn_control=nn_control,
                               verbose=verbose)
     cds <- set_cds_nn_index(cds=cds,

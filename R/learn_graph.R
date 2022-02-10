@@ -87,16 +87,25 @@
 #'
 #' @examples
 #'   \donttest{
-#'     cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
-#'     gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
-#'     expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
-#'    
+#'     cell_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_coldata.rds',
+#'                                          package='monocle3'))
+#'     gene_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_rowdata.rds',
+#'                                          package='monocle3'))
+#'     expression_matrix <- readRDS(system.file('extdata',
+#'                                              'worm_embryo/worm_embryo_expression_matrix.rds',
+#'                                              package='monocle3'))
+#'
 #'     cds <- new_cell_data_set(expression_data=expression_matrix,
 #'                              cell_metadata=cell_metadata,
 #'                              gene_metadata=gene_metadata)
 #'
-#'     cds <- preprocess_cds(cds, num_dim=50)
-#'     cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+#'     cds <- preprocess_cds(cds)
+#'     cds <- align_cds(cds, alignment_group =
+#'                      "batch", residual_model_formula_str = "~ bg.300.loading +
+#'                       bg.400.loading + bg.500.1.loading + bg.500.2.loading +
+#'                       bg.r17.loading + bg.b01.loading + bg.b02.loading")
 #'     cds <- reduce_dimension(cds)
 #'     cds <- cluster_cells(cds)
 #'     cds <- learn_graph(cds)
@@ -108,6 +117,7 @@ learn_graph <- function(cds,
                         close_loop = TRUE,
                         learn_graph_control = NULL,
                         verbose = FALSE) {
+
   reduction_method <- "UMAP"
   if (!is.null(learn_graph_control)) {
     assertthat::assert_that(methods::is(learn_graph_control, "list"))
@@ -195,7 +205,7 @@ learn_graph <- function(cds,
   assertthat::assert_that(is.numeric(L1.sigma))
   assertthat::assert_that(is.numeric(L1.sigma))
 
-  assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
+  assertthat::assert_that(!is.null(SingleCellExperiment::reducedDims(cds)[[reduction_method]]),
                           msg = paste("No dimensionality reduction for",
                                       reduction_method, "calculated.",
                                       "Please run reduce_dimension with",
@@ -241,7 +251,7 @@ learn_graph <- function(cds,
     multi_component_RGE(cds, scale = scale,
                         reduction_method = reduction_method,
                         partition_list = partition_list,
-                        irlba_pca_res = reducedDims(cds)[[reduction_method]],
+                        irlba_pca_res = SingleCellExperiment::reducedDims(cds)[[reduction_method]],
                         max_components = max_components,
                         ncenter = ncenter,
                         nn.k = nn.k,
@@ -274,7 +284,6 @@ learn_graph <- function(cds,
 }
 
 
-#' @importFrom future cluster
 #' @importFrom BiocGenerics density
 #' @noRd
 multi_component_RGE <- function(cds,
@@ -296,6 +305,7 @@ multi_component_RGE <- function(cds,
                                 prune_graph = TRUE,
                                 minimal_branch_len = minimal_branch_len,
                                 verbose = FALSE) {
+  cluster <- NULL # no visible binding
   X <- t(irlba_pca_res)
 
   dp_mst <- NULL
@@ -400,7 +410,7 @@ multi_component_RGE <- function(cds,
     stree_ori <- stree
     if(close_loop) {
       reduce_dims_old <-
-        t(reducedDims(cds)[[reduction_method]])[, partition_list == cur_comp]
+        t(SingleCellExperiment::reducedDims(cds)[[reduction_method]])[, partition_list == cur_comp]
       connect_tips_res <-
         connect_tips(cds,
                      pd = colData(cds)[partition_list == cur_comp, ],
@@ -483,7 +493,7 @@ multi_component_RGE <- function(cds,
   row.names(pr_graph_cell_proj_closest_vertex) <- cell_name_vec
 
   ddrtree_res_W <- as.matrix(rge_res$W)
-  ddrtree_res_Z <- reducedDims(cds)[[reduction_method]]
+  ddrtree_res_Z <- SingleCellExperiment::reducedDims(cds)[[reduction_method]]
   ddrtree_res_Y <- reducedDimK_coord
 
   R <- Matrix::sparseMatrix(i = 1, j = 1, x = 0,
@@ -540,7 +550,7 @@ cal_ncenter <- function(num_cell_communities, ncells,
 #' @param block_size the number of input matrix rows to process per block
 #' @param process_targets_in_blocks whether to process the targets points in
 #'   blocks instead
-#' @keywords internal
+#' @noRd
 find_nearest_vertex <- function(data_matrix, target_points, block_size=50000,
                                 process_targets_in_blocks=FALSE){
   closest_vertex = c()
@@ -704,8 +714,9 @@ prune_tree <- function(stree_ori, stree_loop_closure,
 
 project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE,
                         verbose, reduction_method, rge_res_Y){
+  target <- group <- distance_2_source <- rowname <- NULL # no visible binding
   dp_mst <- principal_graph(cds)[[reduction_method]]
-  Z <- t(reducedDims(cds)[[reduction_method]])
+  Z <- t(SingleCellExperiment::reducedDims(cds)[[reduction_method]])
   Y <- rge_res_Y
 
   cds <- findNearestPointOnMST(cds, reduction_method, rge_res_Y)
@@ -888,9 +899,9 @@ findNearestPointOnMST <- function(cds, reduction_method, rge_res_Y){
     cur_dp_mst <- dp_mst_list[[i]]
 
     if(length(dp_mst_list) == 1) {
-      Z <- t(reducedDims(cds)[[reduction_method]])
+      Z <- t(SingleCellExperiment::reducedDims(cds)[[reduction_method]])
     } else {
-      Z <- t(reducedDims(cds)[[reduction_method]])[, cds@clusters[[
+      Z <- t(SingleCellExperiment::reducedDims(cds)[[reduction_method]])[, cds@clusters[[
         reduction_method]]$partitions == i]
     }
     Y <- rge_res_Y[, igraph::V(cur_dp_mst)$name]
@@ -1113,6 +1124,9 @@ connect_tips <- function(cds,
                          geodesic_distance_ratio = 1/3,
                          medioids,
                          verbose = FALSE) {
+
+  random_seed <- 0L # no visible binding for louvain_clustering below
+
   reduction_method <- 'UMAP'
 
   if(is.null(row.names(stree)) & is.null(row.names(stree))) {

@@ -5,16 +5,25 @@
 #'
 #' @examples
 #'  \donttest{
-#'    cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
-#'    gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
-#'    expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
+#'    cell_metadata <- readRDS(system.file('extdata',
+#'                             'worm_embryo/worm_embryo_coldata.rds',
+#'                             package='monocle3'))
+#'    gene_metadata <- readRDS(system.file('extdata',
+#'                                         'worm_embryo/worm_embryo_rowdata.rds',
+#'                                         package='monocle3'))
+#'    expression_matrix <- readRDS(system.file('extdata',
+#'                                             'worm_embryo/worm_embryo_expression_matrix.rds',
+#'                                              package='monocle3'))
 #'
 #'    cds <- new_cell_data_set(expression_data=expression_matrix,
 #'                             cell_metadata=cell_metadata,
 #'                             gene_metadata=gene_metadata)
 #'
 #'    cds <- preprocess_cds(cds, num_dim=50)
-#'    cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+#'    cds <- align_cds(cds, alignment_group = "batch",
+#'                     residual_model_formula_str = "~ bg.300.loading + bg.400.loading +
+#'                     bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading +
+#'                     bg.b02.loading")
 #'    cds <- reduce_dimension(cds) 
 #'    ciliated_genes <- c("che-1", "hlh-17", "nhr-6", "dmd-6", "ceh-36", "ham-1")
 #'    cds <- cluster_cells(cds)
@@ -52,10 +61,15 @@ setMethod("pseudotime", "cell_data_set",
 #'
 #' @examples
 #'   \donttest{
-#'     cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
-#'     gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
-#'     expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
-#'
+#'     cell_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_coldata.rds',
+#'                                          package='monocle3'))
+#'     gene_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_rowdata.rds',
+#'                                          package='monocle3'))
+#'     expression_matrix <- readRDS(system.file('extdata',
+#'                                              'worm_embryo/worm_embryo_expression_matrix.rds',
+#'                                              package='monocle3'))
 #'     cds <- new_cell_data_set(expression_data=expression_matrix,
 #'                              cell_metadata=cell_metadata,
 #'                              gene_metadata=gene_metadata)
@@ -95,10 +109,15 @@ setMethod("clusters", "cell_data_set",
 #'
 #' @examples
 #'   \donttest{
-#'     cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
-#'     gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
-#'     expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
-#'
+#'     cell_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_coldata.rds',
+#'                                          package='monocle3'))
+#'     gene_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_rowdata.rds',
+#'                                          package='monocle3'))
+#'     expression_matrix <- readRDS(system.file('extdata',
+#'                                              'worm_embryo/worm_embryo_expression_matrix.rds',
+#'                                              package='monocle3'))
 #'     cds <- new_cell_data_set(expression_data=expression_matrix,
 #'                              cell_metadata=cell_metadata,
 #'                              gene_metadata=gene_metadata)
@@ -136,16 +155,25 @@ setMethod("partitions", "cell_data_set",
 #'
 #' @examples
 #'  \donttest{
-#'     cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
-#'     gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
-#'     expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
+#'     cell_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_coldata.rds',
+#'                                          package='monocle3'))
+#'     gene_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_rowdata.rds',
+#'                                          package='monocle3'))
+#'     expression_matrix <- readRDS(system.file('extdata',
+#'                                              'worm_embryo/worm_embryo_expression_matrix.rds',
+#'                                              package='monocle3'))
 #'
 #'     cds <- new_cell_data_set(expression_data=expression_matrix,
 #'                              cell_metadata=cell_metadata,
 #'                              gene_metadata=gene_metadata)
 #'
-#'    cds <- preprocess_cds(cds, num_dim=50)
-#'    cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+#'     cds <- preprocess_cds(cds)
+#'     cds <- align_cds(cds, alignment_group =
+#'                      "batch", residual_model_formula_str = "~ bg.300.loading +
+#'                       bg.400.loading + bg.500.1.loading + bg.500.2.loading +
+#'                       bg.r17.loading + bg.b01.loading + bg.b02.loading")
 #'    cds <- reduce_dimension(cds)
 #'    ciliated_genes <- c("che-1", "hlh-17", "nhr-6", "dmd-6", "ceh-36", "ham-1")
 #'    cds <- cluster_cells(cds)
@@ -162,16 +190,25 @@ setGeneric("principal_graph", function(x) standardGeneric("principal_graph"))
 #'
 #' @examples
 #'  \donttest{
-#'     cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
-#'     gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
-#'     expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
+#'     cell_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_coldata.rds',
+#'                                          package='monocle3'))
+#'     gene_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_rowdata.rds',
+#'                                          package='monocle3'))
+#'     expression_matrix <- readRDS(system.file('extdata',
+#'                                              'worm_embryo/worm_embryo_expression_matrix.rds',
+#'                                              package='monocle3'))
 #'
 #'     cds <- new_cell_data_set(expression_data=expression_matrix,
 #'                              cell_metadata=cell_metadata,
 #'                              gene_metadata=gene_metadata)
 #'
-#'    cds <- preprocess_cds(cds, num_dim=50)
-#'    cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+#'     cds <- preprocess_cds(cds)
+#'     cds <- align_cds(cds, alignment_group =
+#'                      "batch", residual_model_formula_str = "~ bg.300.loading +
+#'                       bg.400.loading + bg.500.1.loading + bg.500.2.loading +
+#'                       bg.r17.loading + bg.b01.loading + bg.b02.loading")
 #'    cds <- reduce_dimension(cds)
 #'    ciliated_genes <- c("che-1", "hlh-17", "nhr-6", "dmd-6", "ceh-36", "ham-1")
 #'    cds <- cluster_cells(cds)
@@ -200,16 +237,25 @@ setMethod("principal_graph", "cell_data_set", function(x) {
 #'
 #' @examples
 #'  \donttest{
-#'     cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
-#'     gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
-#'     expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
+#'     cell_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_coldata.rds',
+#'                                          package='monocle3'))
+#'     gene_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_rowdata.rds',
+#'                                          package='monocle3'))
+#'     expression_matrix <- readRDS(system.file('extdata',
+#'                                              'worm_embryo/worm_embryo_expression_matrix.rds',
+#'                                              package='monocle3'))
 #'
 #'     cds <- new_cell_data_set(expression_data=expression_matrix,
 #'                              cell_metadata=cell_metadata,
 #'                              gene_metadata=gene_metadata)
 #'
-#'    cds <- preprocess_cds(cds, num_dim=50)
-#'    cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+#'     cds <- preprocess_cds(cds)
+#'     cds <- align_cds(cds, alignment_group =
+#'                      "batch", residual_model_formula_str = "~ bg.300.loading +
+#'                       bg.400.loading + bg.500.1.loading + bg.500.2.loading +
+#'                       bg.r17.loading + bg.b01.loading + bg.b02.loading")
 #'    cds <- reduce_dimension(cds)
 #'    ciliated_genes <- c("che-1", "hlh-17", "nhr-6", "dmd-6", "ceh-36", "ham-1")
 #'    cds <- cluster_cells(cds)
@@ -221,9 +267,8 @@ setMethod("principal_graph", "cell_data_set", function(x) {
 #'
 #' @export
 #' @importClassesFrom S4Vectors List
-#' @importClassesFrom methods className
 setReplaceMethod("principal_graph", "cell_data_set", function(x, value) {
-  value <- methods::as(value, className("List","S4Vectors"))
+  value <- methods::as(value, methods::className("List","S4Vectors"))
   if (is.null(names(value))) {
     names(value) <- character(length(value))
   }
@@ -237,16 +282,25 @@ setReplaceMethod("principal_graph", "cell_data_set", function(x, value) {
 #'
 #' @examples
 #'  \donttest{
-#'     cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
-#'     gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
-#'     expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
+#'     cell_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_coldata.rds',
+#'                                          package='monocle3'))
+#'     gene_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_rowdata.rds',
+#'                                          package='monocle3'))
+#'     expression_matrix <- readRDS(system.file('extdata',
+#'                                              'worm_embryo/worm_embryo_expression_matrix.rds',
+#'                                              package='monocle3'))
 #'
 #'     cds <- new_cell_data_set(expression_data=expression_matrix,
 #'                              cell_metadata=cell_metadata,
 #'                              gene_metadata=gene_metadata)
 #'
-#'    cds <- preprocess_cds(cds, num_dim=50)
-#'    cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+#'     cds <- preprocess_cds(cds)
+#'     cds <- align_cds(cds, alignment_group =
+#'                      "batch", residual_model_formula_str = "~ bg.300.loading +
+#'                       bg.400.loading + bg.500.1.loading + bg.500.2.loading +
+#'                       bg.r17.loading + bg.b01.loading + bg.b02.loading")
 #'    cds <- reduce_dimension(cds)
 #'    ciliated_genes <- c("che-1", "hlh-17", "nhr-6", "dmd-6", "ceh-36", "ham-1")
 #'    cds <- cluster_cells(cds)
@@ -260,20 +314,29 @@ setGeneric("principal_graph_aux", function(x)
 
 #' Generic to set principal graph auxiliary information into CDS
 #' @param x A cell_data_set object.
-#' @param value A SimpleList of principal graph auxiliary information.
+#' @param value A S4Vectors::SimpleList of principal graph auxiliary information.
 #'
 #' @examples
 #'  \donttest{
-#'     cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
-#'     gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
-#'     expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
+#'     cell_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_coldata.rds',
+#'                                          package='monocle3'))
+#'     gene_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_rowdata.rds',
+#'                                          package='monocle3'))
+#'     expression_matrix <- readRDS(system.file('extdata',
+#'                                              'worm_embryo/worm_embryo_expression_matrix.rds',
+#'                                              package='monocle3'))
 #'
 #'     cds <- new_cell_data_set(expression_data=expression_matrix,
 #'                              cell_metadata=cell_metadata,
 #'                              gene_metadata=gene_metadata)
 #'
-#'    cds <- preprocess_cds(cds, num_dim=50)
-#'    cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+#'     cds <- preprocess_cds(cds)
+#'     cds <- align_cds(cds, alignment_group =
+#'                      "batch", residual_model_formula_str = "~ bg.300.loading +
+#'                       bg.400.loading + bg.500.1.loading + bg.500.2.loading +
+#'                       bg.r17.loading + bg.b01.loading + bg.b02.loading")
 #'    cds <- reduce_dimension(cds)
 #'    ciliated_genes <- c("che-1", "hlh-17", "nhr-6", "dmd-6", "ceh-36", "ham-1")
 #'    cds <- cluster_cells(cds)
@@ -298,20 +361,29 @@ setMethod("principal_graph_aux", "cell_data_set", function(x) {
 
 #' Method to set principal graph auxiliary information into CDS
 #' @param x A cell_data_set object.
-#' @param value A SimpleList of principal graph auxiliary information.
+#' @param value A S4Vectors::SimpleList of principal graph auxiliary information.
 #' 
 #' @examples
 #'  \donttest{
-#'     cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
-#'     gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
-#'     expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
+#'     cell_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_coldata.rds',
+#'                                          package='monocle3'))
+#'     gene_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_rowdata.rds',
+#'                                          package='monocle3'))
+#'     expression_matrix <- readRDS(system.file('extdata',
+#'                                              'worm_embryo/worm_embryo_expression_matrix.rds',
+#'                                              package='monocle3'))
 #'
 #'     cds <- new_cell_data_set(expression_data=expression_matrix,
 #'                              cell_metadata=cell_metadata,
 #'                              gene_metadata=gene_metadata)
 #'
-#'    cds <- preprocess_cds(cds, num_dim=50)
-#'    cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+#'     cds <- preprocess_cds(cds)
+#'     cds <- align_cds(cds, alignment_group =
+#'                      "batch", residual_model_formula_str = "~ bg.300.loading +
+#'                       bg.400.loading + bg.500.1.loading + bg.500.2.loading +
+#'                       bg.r17.loading + bg.b01.loading + bg.b02.loading")
 #'    cds <- reduce_dimension(cds)
 #'    ciliated_genes <- c("che-1", "hlh-17", "nhr-6", "dmd-6", "ceh-36", "ham-1")
 #'    cds <- cluster_cells(cds)
@@ -323,9 +395,8 @@ setMethod("principal_graph_aux", "cell_data_set", function(x) {
 #'
 #' @export
 #' @importClassesFrom S4Vectors List
-#' @importClassesFrom methods className
 setReplaceMethod("principal_graph_aux", "cell_data_set", function(x, value) {
-  value <- methods::as(value, className("List","S4Vectors"))
+  value <- methods::as(value, methods::className("List","S4Vectors"))
   if (is.null(names(value))) {
     names(value) <- character(length(value))
   }

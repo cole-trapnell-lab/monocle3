@@ -37,9 +37,15 @@
 #'   \donttest{
 #'     library(dplyr)
 #'
-#'     cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
-#'     gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
-#'     expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
+#'     cell_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_coldata.rds',
+#'                                          package='monocle3'))
+#'     gene_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_rowdata.rds',
+#'                                          package='monocle3'))
+#'     expression_matrix <- readRDS(system.file('extdata',
+#'                                              'worm_embryo/worm_embryo_expression_matrix.rds',
+#'                                              package='monocle3'))
 #'    
 #'     cds <- new_cell_data_set(expression_data=expression_matrix,
 #'                              cell_metadata=cell_metadata,
@@ -65,8 +71,11 @@ top_markers <- function(cds,
                         reference_cells=NULL,
                         speedglm.maxiter=25,
                         cores=1,
-                        verbose=FALSE
-){
+                        verbose=FALSE) {
+
+  rowname <- cell_group <- marker_score <- cell_id <- mean_expression <- NULL # no visible binding
+  fraction_expressing <- specificity <- pseudo_R2 <- NULL # no visible binding
+  lrtest_p_value <- lrtest_q_value <- gene_short_name <- NULL # no visible binding
 
   # Yes, it's stupid we have cell ids both as a column and as the rownames.
   cell_group_df <- data.frame(row.names=row.names(colData(cds)),
@@ -402,6 +411,7 @@ generate_garnett_marker_file <- function(marker_test_res,
                                          file = "./marker_file.txt",
                                          max_genes_per_group = 10,
                                          remove_duplicate_genes = FALSE) {
+  group_name <- marker_score <- NULL
   marker_test_res <- as.data.frame(marker_test_res)
   if(is.null(marker_test_res$group_name)) {
     marker_test_res$group_name <- paste("Cell type", marker_test_res$cell_group)

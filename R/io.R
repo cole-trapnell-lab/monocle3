@@ -70,11 +70,10 @@ load_worm_l2 <- function(){
 #' Test if a file has a Matrix Market header.
 #' @param matpath Path to test file.
 #' @return TRUE if matpath file has Matrix Market header.
-#' @importFrom utils read.table
 #' @noRd
 is_matrix_market_file <- function( matpath )
 {
-  first_line <- read.table( matpath, nrows=1 )
+  first_line <- utils::read.table( matpath, nrows=1 )
   grepl( "%%MatrixMarket", first_line$V1 )
 }
 
@@ -84,14 +83,13 @@ is_matrix_market_file <- function( matpath )
 #' @return list consisting of matdim_names, which label matrix dimension,
 #' and metadata, if present in the file, which are
 #' additional dimension metadata.
-#' @importFrom utils read.table
 #' @noRd
 load_annotations_data <- function( anno_path, metadata_column_names=NULL, header=FALSE, sep="", quote="\"'", annotation_type=NULL )
 {
   assertthat::assert_that( ! is.null( annotation_type ) )
   tryCatch(
       {
-        annotations <- read.table( anno_path, header=header, sep=sep, quote=quote, stringsAsFactors=FALSE )
+        annotations <- utils::read.table( anno_path, header=header, sep=sep, quote=quote, stringsAsFactors=FALSE )
       }, error = function( emsg )
       {
         stop( 'load_mm_data: bad status reading ', annotation_type, ' file \'', anno_path, '\'\n  ',
@@ -190,7 +188,9 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
 #'     pmat<-system.file("extdata", "matrix.mtx.gz", package = "monocle3")
 #'     prow<-system.file("extdata", "features_c3h0.txt", package = "monocle3")
 #'     pcol<-system.file("extdata", "barcodes_c2h0.txt", package = "monocle3")
-#'     cds <- load_mm_data( pmat, prow, pcol, feature_metadata_column_names = c('gene_short_name', 'gene_biotype'), sep='' )
+#'     cds <- load_mm_data( pmat, prow, pcol,
+#'                          feature_metadata_column_names =
+#'                          c('gene_short_name', 'gene_biotype'), sep='' )
 #'
 #'     # In this example, the features_c3h0.txt file has three columns,
 #'     # separated by spaces. The first column has official gene names, the
@@ -261,7 +261,6 @@ load_mm_data <- function( mat_path,
 #' @param umi_cutoff UMI per cell cutoff, default is 100.
 #'
 #' @return cds object
-#' @importFrom utils read.table
 #' @importFrom SingleCellExperiment counts
 #'
 #' @examples
@@ -349,7 +348,7 @@ update_annoy_index <- function(annoy) {
   }
   else
   if(!is.null(annoy[['nn_index']][['version']]) && annoy[['nn_index']][['version']] == 1) {
-    annoy_out <- SimpleList()
+    annoy_out <- S4Vectors::SimpleList()
     annoy_out[['nn_index']] <- list()
     annoy_out[['nn_index']][['method']] <- 'annoy'
     annoy_out[['nn_index']][['annoy_index']] <- annoy[['nn_index']][['annoy_index']]
@@ -365,7 +364,7 @@ update_annoy_index <- function(annoy) {
   }
   else
   if(!is.null(annoy[['nn_index']][['type']]) && annoy[['nn_index']][['type']] == 'annoyv1') {
-    annoy_out <- SimpleList()
+    annoy_out <- S4Vectors::SimpleList()
     annoy_out[['nn_index']] <- list()
     annoy_out[['nn_index']][['method']] <- 'annoy'
     annoy_out[['nn_index']][['annoy_index']] <- annoy[['nn_index']][['ann']]
@@ -381,7 +380,7 @@ update_annoy_index <- function(annoy) {
   }
   else
   if(is.null(annoy[['nn_index']][['type']])) {
-    annoy_out <- SimpleList()
+    annoy_out <- S4Vectors::SimpleList()
     annoy_out[['nn_index']] <- list()
     annoy_out[['nn_index']][['method']] <- 'annoy'
     annoy_out[['nn_index']][['annoy_index']] <- annoy[['nn_index']]
@@ -407,7 +406,7 @@ update_hnsw_index <- function(hnsw) {
   }
   else
   if(!is.null(hnsw[['nn_index']][['version']]) && hnsw[['nn_index']][['version']] == 1) {
-    hnsw_out <- SimpleList()
+    hnsw_out <- S4Vectors::SimpleList()
     annoy_out[['nn_index']] <- list()
     hnsw_out[['nn_index']][['method']] <- 'hnsw'
     hnsw_out[['nn_index']][['hnsw_index']] <- hnsw[['nn_index']]
@@ -594,12 +593,11 @@ save_hnsw_index <- function(nn_index, file_name) {
 }
 
 
-#' @importFrom methods new
 load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
   if(metric == 'l2') {
     tryCatch(
       {
-        new_index <- new(RcppHNSW::HnswL2, ndim, file_name)
+        new_index <- methods::new(RcppHNSW::HnswL2, ndim, file_name)
       }, error = function(emsg)
       {
         stop('load_hnsw_index: bad status reading hnsw index file')
@@ -610,7 +608,7 @@ load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
   if(metric == 'euclidean') {
     tryCatch(
       {
-        new_index <- new(RcppHNSW::HnswL2, ndim, file_name)
+        new_index <- methods::new(RcppHNSW::HnswL2, ndim, file_name)
       }, error = function(emsg)
       {
         stop('load_hnsw_index: bad status reading hnsw index file')
@@ -622,7 +620,7 @@ load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
     if(metric == 'cosine') {
     tryCatch(
       {
-        new_index <- new(RcppHNSW::HnswCosine, ndim, file_name)
+        new_index <- methods::new(RcppHNSW::HnswCosine, ndim, file_name)
       }, error = function(emsg)
       {
         stop('load_hnsw_index: bad status reading hnsw index file')
@@ -633,7 +631,7 @@ load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
   if(metric == 'ip') {
     tryCatch(
       {
-        new_index <- new(RcppHNSW::HnswIp, ndim, file_name)
+        new_index <- methods::new(RcppHNSW::HnswIp, ndim, file_name)
       }, error = function(emsg)
       {
         stop('load_hnsw_index: bad status reading hnsw index file')
@@ -811,7 +809,6 @@ report_files_saved <- function(file_index) {
 #'     save_transform_models(cds, 'tm')
 #'   }
 #'
-#' @importFrom utils packageVersion
 #' @export
 # Bioconductor forbids writing to user directories so examples
 # is not run.
@@ -829,10 +826,10 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
   file_index <- list( 'save_function' = 'save_transform_models',
                       'archive_date' = Sys.time(),
                       'r_version' = R.Version()$version.string,
-                      'uwot_version' = packageVersion('uwot'),
-                      'hnsw_version' = packageVersion('RcppHNSW'),
-                      'monocle_version' = packageVersion('monocle3'),
-                      'cds_version' = metadata(cds)$cds_version,
+                      'uwot_version' = utils::packageVersion('uwot'),
+                      'hnsw_version' = utils::packageVersion('RcppHNSW'),
+                      'monocle_version' = utils::packageVersion('monocle3'),
+                      'cds_version' = S4Vectors::metadata(cds)$cds_version,
                       'archive_version' = get_global_variable('transform_models_version'),
                       'directory' = directory_path,
                       'comment' = comment,
@@ -1145,13 +1142,12 @@ load_transform_models <- function(cds, directory_path) {
 #
 # Check cds assays for HDF5Array objects.
 #
-#' @importFrom methods is
 #' @importFrom S4Vectors getListElement
 test_hdf5_assays <- function(cds) {
   assays <- assays(cds)
   for( idx in seq_along(assays)) {
     asyl <- getListElement(assays, idx)
-    hdf5_test<- unlist(DelayedArray::seedApply(asyl, is, "HDF5ArraySeed"))
+    hdf5_test<- unlist(DelayedArray::seedApply(asyl, methods::is, "HDF5ArraySeed"))
     if(any(unlist(hdf5_test))) return(TRUE)
   } 
   FALSE
@@ -1195,7 +1191,6 @@ test_hdf5_assays <- function(cds) {
 #'     save_monocle_objects(cds, 'mo')
 #'   }
 #'
-#' @importFrom utils packageVersion
 #' @export
 # Bioconductor forbids writing to user directories so examples
 # is not run.
@@ -1213,11 +1208,11 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
   file_index <- list( 'save_function' = 'save_monocle_objects',
                       'archive_date' = Sys.time(),
                       'r_version' = R.Version()$version.string,
-                      'uwot_version' = packageVersion('uwot'),
-                      'hnsw_version' = packageVersion('RcppHNSW'),
-                      'hdf5array_version' = packageVersion('HDF5Array'),
-                      'monocle_version' = packageVersion('monocle3'),
-                      'cds_version' = metadata(cds)$cds_version,
+                      'uwot_version' = utils::packageVersion('uwot'),
+                      'hnsw_version' = utils::packageVersion('RcppHNSW'),
+                      'hdf5array_version' = utils::packageVersion('HDF5Array'),
+                      'monocle_version' = utils::packageVersion('monocle3'),
+                      'cds_version' = S4Vectors::metadata(cds)$cds_version,
                       'archive_version' = get_global_variable('monocle_objects_version'),
                       'directory' = directory_path,
                       'comment' = comment,
@@ -1702,7 +1697,6 @@ load_monocle_objects <- function(directory_path) {
 #      check?
 #   o  can there be an inconsistency between the model and matrix identity
 #      version information?
-#' @importFrom SingleCellExperiment int_metadata
 
 load_monocle_rds <- function(file_path) {
   appendLF <- TRUE
@@ -1726,7 +1720,7 @@ load_monocle_rds <- function(file_path) {
   }
 
   cds <- cds_tmp
-  if(!is.null(reducedDims(cds_tmp)[['PCA']])) {
+  if(!is.null(SingleCellExperiment::reducedDims(cds_tmp)[['PCA']])) {
     if(is.null(cds_tmp@reduce_dim_aux[['PCA']][['model']][['identity']])) {
       cds <- initialize_reduce_dim_model_identity(cds, 'PCA')
     }
@@ -1741,7 +1735,7 @@ load_monocle_rds <- function(file_path) {
     }
   }
 
-  if(!is.null(reducedDims(cds_tmp)[['LSI']])) {
+  if(!is.null(SingleCellExperiment::reducedDims(cds_tmp)[['LSI']])) {
     if(is.null(cds_tmp@reduce_dim_aux[['LSI']][['model']][['identity']])) {
       cds <- initialize_reduce_dim_model_identity(cds, 'LSI')
     }
@@ -1753,7 +1747,7 @@ load_monocle_rds <- function(file_path) {
     }
   }
 
-  if(!is.null(reducedDims(cds_tmp)[['Aligned']])) {
+  if(!is.null(SingleCellExperiment::reducedDims(cds_tmp)[['Aligned']])) {
     if(is.null(cds_tmp@reduce_dim_aux[['Aligned']][['model']][['identity']])) {
       cds <- initialize_reduce_dim_model_identity(cds, 'Aligned')
     }
@@ -1762,19 +1756,19 @@ load_monocle_rds <- function(file_path) {
     }
   }
 
-  if(!is.null(reducedDims(cds_tmp)[['tSNE']])) {
+  if(!is.null(SingleCellExperiment::reducedDims(cds_tmp)[['tSNE']])) {
     if(is.null(cds_tmp@reduce_dim_aux[['tSNE']][['model']][['identity']])) {
       cds <- initialize_reduce_dim_model_identity(cds, 'tSNE')
     }
   }
 
-  if(!is.null(reducedDims(cds_tmp)[['UMAP']])) {
+  if(!is.null(SingleCellExperiment::reducedDims(cds_tmp)[['UMAP']])) {
     if(is.null(cds_tmp@reduce_dim_aux[['UMAP']][['model']][['identity']])) {
       cds <- initialize_reduce_dim_model_identity(cds, 'UMAP')
     }
   }
 
-  if(is.null(int_metadata(cds_tmp)[['counts_metadata']])) {
+  if(is.null(SingleCellExperiment::int_metadata(cds_tmp)[['counts_metadata']])) {
     cds <- initialize_counts_metadata(cds)
   }
 

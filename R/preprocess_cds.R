@@ -43,17 +43,21 @@
 #'
 #' @examples
 #'   \donttest{
-#'     cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
-#'     gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
-#'     expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
-#'    
+#'     cell_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_coldata.rds',
+#'                                          package='monocle3'))
+#'     gene_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_rowdata.rds',
+#'                                          package='monocle3'))
+#'     expression_matrix <- readRDS(system.file('extdata',
+#'                                              'worm_embryo/worm_embryo_expression_matrix.rds',
+#'                                              package='monocle3'))
 #'     cds <- new_cell_data_set(expression_data=expression_matrix,
 #'                              cell_metadata=cell_metadata,
 #'                              gene_metadata=gene_metadata)
 #'     cds <- preprocess_cds(cds)
 #'   }
 #'
-#' @importFrom methods is
 #' @export
 preprocess_cds <- function(cds,
                            method = c('PCA', "LSI"),
@@ -120,7 +124,7 @@ preprocess_cds <- function(cds,
   #
   # Notes:
   #   o  the functions save_transform_models/load_transform_models
-  #      expect that the reduce_dim_aux slot consists of a SimpleList
+  #      expect that the reduce_dim_aux slot consists of a S4Vectors::SimpleList
   #      that stores information about methods with the elements
   #        reduce_dim_aux[[method]][['model']] for the transform elements
   #        reduce_dim_aux[[method]][[nn_method]] for the nn index
@@ -137,7 +141,7 @@ preprocess_cds <- function(cds,
                                      center = scaling, scale. = scaling)
     preproc_res <- irlba_res$x
     row.names(preproc_res) <- colnames(cds)
-    reducedDims(cds)[[method]] <- as.matrix(preproc_res)
+    SingleCellExperiment::reducedDims(cds)[[method]] <- as.matrix(preproc_res)
 
     irlba_rotation <- irlba_res$rotation
     row.names(irlba_rotation) <- rownames(FM)
@@ -155,7 +159,7 @@ preprocess_cds <- function(cds,
     # PCs, not the fraction of total variance.
     cds@reduce_dim_aux[['PCA']][['model']][['prop_var_expl']] <- irlba_res$sdev^2 / sum(irlba_res$sdev^2)
 
-    matrix_id <- get_unique_id(reducedDims(cds)[['PCA']])
+    matrix_id <- get_unique_id(SingleCellExperiment::reducedDims(cds)[['PCA']])
     counts_identity <- get_counts_identity(cds)
 
     cds <- set_reduce_dim_matrix_identity(cds, 'PCA',
@@ -172,7 +176,7 @@ preprocess_cds <- function(cds,
                                          'none')
 
     if( build_nn_index ) {
-      nn_index <- make_nn_index(subject_matrix=reducedDims(cds)[[method]], nn_control=nn_control, verbose=verbose)
+      nn_index <- make_nn_index(subject_matrix=SingleCellExperiment::reducedDims(cds)[[method]], nn_control=nn_control, verbose=verbose)
       cds <- set_cds_nn_index(cds=cds, reduction_method=method, nn_index=nn_index, verbose=verbose)
     }
     else
@@ -192,7 +196,7 @@ preprocess_cds <- function(cds,
 
     preproc_res <- irlba_res$u %*% diag(irlba_res$d)
     row.names(preproc_res) <- colnames(cds)
-    reducedDims(cds)[[method]] <- as.matrix(preproc_res)
+    SingleCellExperiment::reducedDims(cds)[[method]] <- as.matrix(preproc_res)
 
     irlba_rotation = irlba_res$v
     row.names(irlba_rotation) = rownames(FM)
@@ -212,7 +216,7 @@ preprocess_cds <- function(cds,
     # we need svd_v downstream so
     # calculate gene_loadings in cluster_cells.R
 
-    matrix_id <- get_unique_id(reducedDims(cds)[['LSI']])
+    matrix_id <- get_unique_id(SingleCellExperiment::reducedDims(cds)[['LSI']])
     counts_identity <- get_counts_identity(cds)
 
     cds <- set_reduce_dim_matrix_identity(cds, 'LSI',
@@ -229,7 +233,7 @@ preprocess_cds <- function(cds,
                                          'none')
 
     if( build_nn_index ) {
-      nn_index <- make_nn_index(subject_matrix=reducedDims(cds)[[method]], nn_control=nn_control, verbose=verbose)
+      nn_index <- make_nn_index(subject_matrix=SingleCellExperiment::reducedDims(cds)[[method]], nn_control=nn_control, verbose=verbose)
       cds <- set_cds_nn_index(cds=cds, reduction_method=method, nn_index=nn_index, verbose=verbose)
     }
     else

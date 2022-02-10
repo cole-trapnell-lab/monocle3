@@ -28,16 +28,25 @@
 #'
 #' @examples
 #'   \donttest{
-#'     cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
-#'     gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
-#'     expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
-#'    
+#'     cell_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_coldata.rds',
+#'                                          package='monocle3'))
+#'     gene_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_rowdata.rds',
+#'                                          package='monocle3'))
+#'     expression_matrix <- readRDS(system.file('extdata',
+#'                                              'worm_embryo/worm_embryo_expression_matrix.rds',
+#'                                              package='monocle3'))
+#'
 #'     cds <- new_cell_data_set(expression_data=expression_matrix,
 #'                              cell_metadata=cell_metadata,
 #'                              gene_metadata=gene_metadata)
 #'
-#'     cds <- preprocess_cds(cds, num_dim=50)
-#'     cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+#'     cds <- preprocess_cds(cds)
+#'     cds <- align_cds(cds, alignment_group =
+#'                      "batch", residual_model_formula_str = "~ bg.300.loading +
+#'                       bg.400.loading + bg.500.1.loading + bg.500.2.loading +
+#'                       bg.r17.loading + bg.b01.loading + bg.b02.loading")
 #'     cds <- reduce_dimension(cds)
 #'     cds <- cluster_cells(cds)
 #'     cds <- learn_graph(cds)
@@ -55,7 +64,7 @@ order_cells <- function(cds,
   assertthat::assert_that(assertthat::are_equal("UMAP", reduction_method),
                           msg = paste("Currently only 'UMAP' is accepted as a",
                                       "reduction_method."))
-  assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
+  assertthat::assert_that(!is.null(SingleCellExperiment::reducedDims(cds)[[reduction_method]]),
                           msg = paste0("No dimensionality reduction for ",
                                       reduction_method, " calculated. ",
                                       "Please run reduce_dimension with ",
@@ -135,7 +144,7 @@ extract_general_graph_ordering <- function(cds,
                                            root_pr_nodes,
                                            verbose=TRUE,
                                            reduction_method) {
-  Z <- t(reducedDims(cds)[[reduction_method]])
+  Z <- t(SingleCellExperiment::reducedDims(cds)[[reduction_method]])
   Y <- cds@principal_graph_aux[[reduction_method]]$dp_mst
   pr_graph <- principal_graph(cds)[[reduction_method]]
 
@@ -178,10 +187,13 @@ extract_general_graph_ordering <- function(cds,
 # Select the roots of the principal graph
 select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
                                     reduction_method) {
+  prin_graph_dim_1 <- prin_graph_dim_2 <- V1 <- V2 <- NULL # no visible binding
+  source_prin_graph_dim_1 <- target_prin_graph_dim_1 <- NULL # no visible binding
+  source_prin_graph_dim_2 <- target_prin_graph_dim_2 <- NULL # no visible binding
   reduced_dim_coords <- t(cds@principal_graph_aux[[reduction_method]]$dp_mst)
 
   ica_space_df <- as.data.frame(reduced_dim_coords)
-  reduced_dims <- as.data.frame(reducedDims(cds)[[reduction_method]])
+  reduced_dims <- as.data.frame(SingleCellExperiment::reducedDims(cds)[[reduction_method]])
 
   #
   # The line (below in this file) that looks like
