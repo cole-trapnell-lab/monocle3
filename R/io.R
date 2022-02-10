@@ -18,7 +18,7 @@ load_a549 <- function(){
           "small_a549_dex_exprs.rda",
           package = "monocle3"))
   small_a549_exprs <- small_a549_exprs[,row.names(small_a549_colData_df)]
-  
+
   cds <- new_cell_data_set(expression_data = small_a549_exprs,
       cell_metadata = small_a549_colData_df,
       gene_metadata = small_a549_rowData_df)
@@ -35,7 +35,7 @@ load_worm_embryo <- function(){
   cell_metadata <- readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_colData.rds"))
   gene_annotation <- readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_rowData.rds"))
   gene_annotation$use_for_ordering <- NULL
-  
+
   cds <- new_cell_data_set(expression_matrix,
       cell_metadata = cell_metadata,
       gene_metadata = gene_annotation)
@@ -97,7 +97,7 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
             '  note: possible problems include the wrong filename, a missing file,\n',
             '  and incorrect file format parameters, for example \'header\', \'sep\', and \'quote\'' )
       })
-  
+
   metadata = NULL
   if( .row_names_info( annotations ) < 0 )
   {
@@ -110,7 +110,7 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
     names <- rownames( annotations )
     metadata <- annotations
   }
-  
+
   if( ! ( is.null( metadata_column_names ) || is.null( metadata ) ) )
   {
     assertthat::assert_that( length( metadata_column_names ) == ncol( metadata ),
@@ -124,10 +124,10 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
             ')' ) )
     colnames( metadata ) <- metadata_column_names
   }
-  
+
   if( ! is.null( metadata ) )
-    rownames(metadata)<-names
-  
+    rownames(metadata) <- names
+
   list( names=names, metadata=metadata )
 }
 
@@ -212,15 +212,15 @@ load_mm_data <- function( mat_path,
   assertthat::assert_that(assertthat::is.readable(feature_anno_path), msg='unable to read feature annotation file')
   assertthat::assert_that(assertthat::is.readable(cell_anno_path), msg='unable to read cell annotation file')
   assertthat::assert_that(is.numeric(umi_cutoff))
-  
+
   feature_annotations <- load_annotations_data( feature_anno_path, feature_metadata_column_names, header, sep, quote=quote, annotation_type='features' )
   cell_annotations <- load_annotations_data( cell_anno_path, cell_metadata_column_names, header, sep, quote=quote, annotation_type='cells' )
-  
+
   assertthat::assert_that( ! any( duplicated( feature_annotations$names ) ), msg='duplicate feature names in feature annotation file' )
   assertthat::assert_that( ! any( duplicated( cell_annotations$names ) ), msg='duplicate cell names in cell annotation file' )
-  
+
   mat <- Matrix::readMM( mat_path )
-  
+
   assertthat::assert_that( length( feature_annotations$names ) == nrow( mat ),
       msg=paste0( 'feature name count (',
           length( feature_annotations$names ),
@@ -233,14 +233,14 @@ load_mm_data <- function( mat_path,
           ') != matrix column count (',
           ncol( mat ),
           ')' ) )
-  
+
   rownames( mat ) <- feature_annotations$names
   colnames( mat ) <- cell_annotations$names
-  
+
   cds <- new_cell_data_set( mat,
       cell_metadata = cell_annotations$metadata,
       gene_metadata = feature_annotations$metadata )
-  
+
   colData(cds)$n.umi <- Matrix::colSums(exprs(cds))
   cds <- cds[,colData(cds)$n.umi >= umi_cutoff]
   cds <- estimate_size_factors(cds)
@@ -248,7 +248,7 @@ load_mm_data <- function( mat_path,
   cds <- initialize_counts_metadata(cds)
   matrix_id <- get_unique_id(counts(cds))
   cds <- set_counts_identity(cds, mat_path, matrix_id)
- 
+
   return( cds )
 }
 
@@ -280,7 +280,7 @@ load_mtx_data <- function( mat_path,
   assertthat::assert_that(assertthat::is.readable(gene_anno_path))
   assertthat::assert_that(assertthat::is.readable(cell_anno_path))
   assertthat::assert_that(is.numeric(umi_cutoff))
-  
+
   if( is_matrix_market_file( mat_path ) )
   {
     #
@@ -297,37 +297,37 @@ load_mtx_data <- function( mat_path,
         sep="\t" )
     return( cds )
   }
-  
+
   df <- utils::read.table(mat_path, col.names = c("gene.idx", "cell.idx", "count"),
       colClasses = c("integer", "integer", "integer"))
-  
+
   gene.annotations <- utils::read.table(gene_anno_path,
       col.names = c("id", "gene_short_name"),
       colClasses = c("character", "character"))
-  
+
   cell.annotations <- utils::read.table(cell_anno_path, col.names = c("cell"),
       colClasses = c("character"))
-  
+
   rownames(gene.annotations) <- gene.annotations$id
   rownames(cell.annotations) <- cell.annotations$cell
-  
+
   # add a dummy cell to ensure that all genes are included in the matrix
   # even if a gene isn't expressed in any cell
   df <- rbind(df, data.frame(gene.idx = c(1, nrow(gene.annotations)),
           cell.idx = rep(nrow(cell.annotations) + 1, 2),
           count = c(1, 1)))
-  
+
   mat <- Matrix::sparseMatrix(i = df$gene.idx, j = df$cell.idx, x = df$count)
-  
+
   if(ncol(mat) == 1) {
     mat <- mat[,0, drop=FALSE]
   } else {
     mat <- mat[, 1:(ncol(mat)-1), drop=FALSE]
   }
-  
+
   rownames(mat) <- gene.annotations$id
   colnames(mat) <- cell.annotations$cell
-  
+
   cds <- new_cell_data_set(mat, cell_metadata = cell.annotations,
       gene_metadata = gene.annotations)
   colData(cds)$n.umi <- Matrix::colSums(exprs(cds))
@@ -475,7 +475,7 @@ save_annoy_index <- function(nn_index, file_name) {
     else {
       stop('Unrecognized uwot annoy index type')
     }
-  } 
+  }
   else {
     nn_index$save(file_name)
   }
@@ -716,7 +716,6 @@ load_umap_nn_indexes <- function(umap_model, file_name, md5sum_umap_index) {
 #
 report_files_saved <- function(file_index) {
   appendLF <- TRUE
-  processes <- list()
   files <- file_index[['files']]
   for( i in seq_along(files[['cds_object']])) {
     cds_object <- files[['cds_object']][[i]]
@@ -794,7 +793,7 @@ report_files_saved <- function(file_index) {
 #' @param cds a cell_data_set with existing models.
 #' @param directory_path a string giving the name of the directory
 #'   in which to write the model files.
-#' @param comment a string with optional notes that is saved with 
+#' @param comment a string with optional notes that is saved with
 #'   the objects.
 #' @param verbose a boolean determining whether to print information
 #'   about the saved files.
@@ -1081,7 +1080,7 @@ load_transform_models <- function(cds, directory_path) {
     if(cds_object == 'reduce_dim_aux') {
       if(file_format == 'rds') {
         cds@reduce_dim_aux[[reduction_method]] <- tryCatch(
-          { 
+          {
             readRDS(file_path)
           },
           error = function(cond) {
@@ -1129,7 +1128,7 @@ load_transform_models <- function(cds, directory_path) {
       } else {
         stop('Unrecognized file format value \'', file_format, '\'')
       }
-      cds <- set_model_identity_path(cds, reduction_method, directory_path) 
+      cds <- set_model_identity_path(cds, reduction_method, directory_path)
     } else {
       stop('Unrecognized cds_object value \'', cds_object, '\'')
     }
@@ -1147,9 +1146,9 @@ test_hdf5_assays <- function(cds) {
   assays <- assays(cds)
   for( idx in seq_along(assays)) {
     asyl <- getListElement(assays, idx)
-    hdf5_test<- unlist(DelayedArray::seedApply(asyl, methods::is, "HDF5ArraySeed"))
+    hdf5_test <- unlist(DelayedArray::seedApply(asyl, methods::is, "HDF5ArraySeed"))
     if(any(unlist(hdf5_test))) return(TRUE)
-  } 
+  }
   FALSE
 }
 

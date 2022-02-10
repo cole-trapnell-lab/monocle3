@@ -411,7 +411,7 @@ generate_garnett_marker_file <- function(marker_test_res,
                                          file = "./marker_file.txt",
                                          max_genes_per_group = 10,
                                          remove_duplicate_genes = FALSE) {
-  group_name <- marker_score <- NULL
+  group_name <- marker_score <- NULL # no visible binding
   marker_test_res <- as.data.frame(marker_test_res)
   if(is.null(marker_test_res$group_name)) {
     marker_test_res$group_name <- paste("Cell type", marker_test_res$cell_group)

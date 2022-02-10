@@ -184,7 +184,7 @@ learn_graph <- function(cds,
                      learn_graph_control$L1.gamma)
   L1.sigma <- ifelse(is.null(learn_graph_control$L1.sigma), 0.01,
                      learn_graph_control$L1.sigma)
-  
+
   assertthat::assert_that(methods::is(cds, "cell_data_set"))
   assertthat::assert_that(reduction_method %in% c('UMAP'), msg=paste0('unsupported or invalid reduction method \'', reduction_method, '\''))
   assertthat::assert_that(is.logical(use_partition))
@@ -603,11 +603,11 @@ prune_tree <- function(stree_ori, stree_loop_closure,
   stree_ori[stree_ori != 0] <- 1
   stree_ori <- igraph::graph_from_adjacency_matrix(stree_ori,
                                                    mode = 'undirected',
-                                                   weight = NULL)
+                                                   weighted = NULL)
   stree_loop_closure[stree_loop_closure != 0] <- 1
   stree_loop_closure <- igraph::graph_from_adjacency_matrix(stree_loop_closure,
                                                             mode = 'undirected',
-                                                            weight = NULL)
+                                                            weighted = NULL)
 
   # get closed loops:
   added_edges <- igraph::get.edgelist(stree_loop_closure - stree_ori)

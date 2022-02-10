@@ -681,7 +681,7 @@ compare_models <- function(model_tbl_full, model_tbl_reduced){
 #' @importFrom dplyr %>%
 #' @export
 evaluate_fits <- function(model_tbl){
-  model <- glanced <- NULL
+  model <- glanced <- NULL # no visible binding
   private_glance <- function(m){
     mass_glance <- function(m) {
       tibble::tibble(null_deviance = m$null.deviance,
@@ -741,7 +741,7 @@ evaluate_fits <- function(model_tbl){
 
   }
   model_tbl %>% dplyr::mutate(glanced = purrr::map(model, private_glance)) %>%
-    tidyr::unnest(glanced, .drop=TRUE)
+    tidyr::unnest_legacy(glanced, .drop=TRUE)
 }
 
 likelihood_ratio_test_pval <- function(model_summary_x, model_summary_y) {
