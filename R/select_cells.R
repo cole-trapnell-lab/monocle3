@@ -385,7 +385,7 @@ get_principal_path <- function(cds, reduction_method,
     traverse_res <- traverse_graph(dp_mst, starting_cell, end_cell)
     path_cells <- names(traverse_res$shortest_path[[1]])
     if(length(path_cells) == 0) {
-      stop(paste0("Starting and ending nodes are not connected"))
+      stop("Starting and ending nodes are not connected")
     }
 
     subset_principal_nodes <- c(subset_principal_nodes, path_cells)
@@ -468,8 +468,8 @@ plot_principal_graph <- function(cds,
   g <- g + geom_point(color=data_df$chosen_cells, size=I(cell_size),
                       na.rm = TRUE, alpha = I(alpha))
 
-  message(paste("cluster_cells() has not been called yet, can't color cells",
-                "by cluster"))
+  message("cluster_cells() has not been called yet, can't color cells ",
+                "by cluster")
 
   g <- g + geom_point(aes(x = x, y = y, color = chosen), data=princ_points) +
     scale_color_manual(values = c("Start" = "green", "End" = "blue",

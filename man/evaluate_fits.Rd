@@ -10,6 +10,9 @@ evaluate_fits(model_tbl)
 \item{model_tbl}{A tibble of model objects, generally output of
 \code{\link{fit_models}}.}
 }
+\value{
+A table with fit information on each gene.
+}
 \description{
 Evaluate_fits takes a tibble created by the fit_models
 function and returns a table that assists with evaluating how well

@@ -87,7 +87,7 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
   
     FM <- normalize_expr_data(cds, norm_method=norm_method, pseudo_count=pseudo_count)
     if (nrow(FM) == 0) {
-      stop("Error: all rows have standard deviation zero")
+      stop("all rows have standard deviation zero")
     }
   
     # Don't select matrix rows by use_genes because intersect() does
@@ -145,7 +145,7 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
 
     FM <- normalize_expr_data(cds, norm_method=norm_method, pseudo_count=pseudo_count)
     if (nrow(FM) == 0) {
-      stop("Error: all rows have standard deviation zero")
+      stop("all rows have standard deviation zero")
     }
  
     fm_rowsums = Matrix::rowSums(FM)
@@ -255,8 +255,8 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
 #'
 #' @export
 align_transform <- function(cds, reduction_method=c('Aligned')) {
-  stop(paste('align_transform is not supported. If you need batch correction',
-              'you will need to co-embed the data sets.'))
+  stop('align_transform is not supported. If you need batch correction ',
+              'you will need to co-embed the data sets.')
   return(cds)
 }
 

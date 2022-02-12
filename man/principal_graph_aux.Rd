@@ -9,6 +9,9 @@ principal_graph_aux(x)
 \arguments{
 \item{x}{A cell_data_set object.}
 }
+\value{
+Principal graph auxiliary information.
+}
 \description{
 Generic to extract principal graph auxiliary information from CDS
 }

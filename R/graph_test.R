@@ -235,14 +235,14 @@ my.moran.test <- function (x, listw, wc, alternative = "greater",
     tmp <- K * (wc$S1 * (wc$nn - wc$n) - 2 * wc$n * wc$S2 +
                   6 * S02)
     if (tmp > VI)
-      warning(paste0("Kurtosis overflow,\ndistribution of variable does ",
-                     "not meet test assumptions"))
+      warning("Kurtosis overflow,\ndistribution of variable does ",
+                     "not meet test assumptions")
     VI <- (VI - tmp)/(wc$n1 * wc$n2 * wc$n3 * S02)
     if (!drop.EI2)
       VI <- (VI - EI^2)
     if (VI < 0)
-      warning(paste0("Negative variance,\ndistribution of variable does ",
-                     "not meet test assumptions"))
+      warning("Negative variance,\ndistribution of variable does ",
+                     "not meet test assumptions")
   }
   else {
     VI <- (wc$nn * wc$S1 - wc$n * wc$S2 + 3 * S02)/(S02 *
@@ -250,8 +250,8 @@ my.moran.test <- function (x, listw, wc, alternative = "greater",
     if (!drop.EI2)
       VI <- (VI - EI^2)
     if (VI < 0)
-      warning(paste0("Negative variance,\ndistribution of variable does ",
-                     "not meet test assumptions"))
+      warning("Negative variance,\ndistribution of variable does ",
+                     "not meet test assumptions")
   }
   ZI <- (I - EI)/sqrt(VI)
   statistic <- ZI
@@ -284,9 +284,9 @@ my.geary.test <- function (x, listw, wc, randomisation = TRUE,
   alternative <- match.arg(alternative, c("less", "greater",
                                           "two.sided"))
   if (!inherits(listw, "listw"))
-    stop(paste(deparse(substitute(listw)), "is not a listw object"))
+    stop(deparse(substitute(listw)), " is not a listw object")
   if (!is.numeric(x))
-    stop(paste(deparse(substitute(x)), "is not a numeric vector"))
+    stop(deparse(substitute(x)), " is not a numeric vector")
   if (any(is.na(x)))
     stop("NA in X")
   n <- length(listw$neighbours)
@@ -356,7 +356,6 @@ my.geary.test <- function (x, listw, wc, randomisation = TRUE,
 #' @param verbose A logic flag that determines whether or not to print
 #' execution details
 #' @noRd
-#'
 calculateLW <- function(cds,
                         k,
                         neighbor_graph,
@@ -432,12 +431,15 @@ calculateLW <- function(cds,
     colnames(relations) <- c("from", "to", "weight")
     knn_res_graph <- igraph::graph.data.frame(relations, directed = TRUE)
 
+    if(nrow(knn_res) < 1) warning('bad loop: nrow(knn_res) < 1')
     knn_list <- lapply(1:nrow(knn_res), function(x) knn_res[x, -1])
     region_id_names <- colnames(cds)
 
+    if(ncol(cds) < 1) warning('bad loop: ncol(cds) < 1')
     id_map <- 1:ncol(cds)
     names(id_map) <- id_map
 
+    if(nrow(knn_res) < 1) warning('bad loop: nrow(knn_res) < 1')
     points_selected <- 1:nrow(knn_res)
 
     knn_list <- lapply(points_selected,
@@ -449,8 +451,8 @@ calculateLW <- function(cds,
       cds@principal_graph_aux[[
         reduction_method]]$pr_graph_cell_proj_closest_vertex
     if(is.null(cell2pp_map)) {
-      stop(paste("Error: projection matrix for each cell to principal",
-                 "points doesn't exist, you may need to rerun learn_graph"))
+      stop("projection matrix for each cell to principal ",
+           "points doesn't exist, you may need to rerun learn_graph")
     }
 
     # This cds object might be a subset of the one on which ordering was
@@ -516,6 +518,7 @@ calculateLW <- function(cds,
 
     tmp <- NULL
 
+    if(num_blocks < 1) warning("bad loop: num_blocks < 1")
     for (j in 1:num_blocks){
       if (j < num_blocks){
         block_a <- tmp_a[((((j-1) * block_size)+1):(j*block_size)), ]
@@ -541,6 +544,7 @@ calculateLW <- function(cds,
 
       region_id_names <- colnames(cds)
 
+      if(ncol(cds) < 1) warning('bad loop: ncol(cds) < 1')
       id_map <- 1:ncol(cds)
       names(id_map) <- id_map
 
@@ -554,7 +558,7 @@ calculateLW <- function(cds,
                                            })
   }
   else {
-    stop("Error: unrecognized neighbor_graph option")
+    stop("unrecognized neighbor_graph option")
   }
   # create the lw list for moran.test
   names(knn_list) <- id_map[names(knn_list)]

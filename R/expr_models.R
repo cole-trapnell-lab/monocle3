@@ -355,7 +355,7 @@ fit_models <- function(cds,
         info_msg <- paste0(info_msg, '  \'', mf_term, '\': ' , mf_num_na - mf_num_nan, ' of ', mf_length, ' values are NA\n')
     }
     rm( mf_term, mf_length, mf_num_inf, mf_num_nan, mf_num_na )
-    stop (paste0( 'Error in model formula: ', conditionMessage( cnd ), '\n', info_msg ) )
+    stop( 'bad model formula: ', conditionMessage( cnd ), '\n', info_msg)
   })
 
   disp_func <- NULL
@@ -544,6 +544,8 @@ extract_coefficient_helper = function(model, model_summary,
 #' @param model_tbl A tibble of model objects, generally the output of
 #'   \code{\link{fit_models}}.
 #'
+#' @return A table of coefficient data for each gene.
+#'
 #' @examples
 #'   \donttest{
 #'     cell_metadata <- readRDS(system.file('extdata',
@@ -598,6 +600,8 @@ coefficient_table <- function(model_tbl) {
 #'   \code{\link{fit_models}}, to be compared with \code{model_tbl_reduced}
 #' @param model_tbl_reduced A tibble of model objects, generally output of
 #'   \code{\link{fit_models}}, to be compared with \code{model_tbl_full}.
+#'
+#' @return The result of a likelihood test by gene.
 #'
 #' @importFrom igraph dfs
 #' @importFrom plyr "."
@@ -677,6 +681,8 @@ compare_models <- function(model_tbl_full, model_tbl_reduced){
 #'     gene_fits <- fit_models(cds_subset, model_formula_str = "~embryo.time")
 #'     evaluate_fits(gene_fits)
 #'   }
+#'
+#' @return A table with fit information on each gene.
 #'
 #' @importFrom dplyr %>%
 #' @export
@@ -758,6 +764,8 @@ likelihood_ratio_test_pval <- function(model_summary_x, model_summary_y) {
 #' @param new_data A data frame of new data to be passed to predict for
 #'   prediction.
 #' @param type String of type to pass to predict. Default is "response".
+#'
+#' @return Prediction matrix.
 #'
 #' @export
 model_predictions <- function(model_tbl, new_data, type="response") {

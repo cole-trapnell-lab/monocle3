@@ -11,6 +11,9 @@ fData(x) <- value
 
 \item{value}{A data frame to set to colData table.}
 }
+\value{
+x.
+}
 \description{
 Generic to set cds rowData table
 }

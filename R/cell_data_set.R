@@ -110,8 +110,8 @@ new_cell_data_set <- function(expression_data,
   }
 
   if(!('gene_short_name' %in% colnames(gene_metadata))) {
-    warning(paste("Warning: gene_metadata must contain a column verbatim",
-                  "named 'gene_short_name' for certain functions."))
+    warning("gene_metadata must contain a column verbatim ",
+            "named 'gene_short_name' for certain functions.")
   }
 
   sce <- SingleCellExperiment(list(counts=methods::as(expression_data, "dgCMatrix")),

@@ -114,8 +114,8 @@ cluster_cells <- function(cds,
   assertthat::assert_that(assertthat::is.count(k))
 
   if (!is.null(resolution) & cluster_method == "louvain") {
-    message(paste("Resolution can only be used when cluster_method is",
-                  "'leiden'. Switching to leiden clustering."))
+    message("Resolution can only be used when cluster_method is ",
+                  "'leiden'. Switching to leiden clustering.")
     cluster_method <- "leiden"
   }
 
@@ -267,10 +267,10 @@ cluster_cells_make_graph <- function(data,
   } else
   if (k > nrow(data) - 2) {
     k <- nrow(data) - 2
-    warning(paste("The nearest neighbors includes the point itself, k must be smaller than\nthe",
-                  "total number of points - 1 (all other points) - 1",
-                  "(itself)!",
-                  "Total number of points is", nrow(data)))
+    warning("The nearest neighbors includes the point itself, k must be smaller than\nthe ",
+                  "total number of points - 1 (all other points) - 1 ",
+                  "(itself)! ",
+                  "Total number of points is", nrow(data))
   }
 
   if (verbose) {
@@ -368,6 +368,7 @@ louvain_clustering <- function(data,
     random_seed <- NULL
   }
 
+  if(louvain_iter < 1) warning("bad loop: louvain_iter is < 1")
   for (iter in 1:louvain_iter) {
     if(verbose) {
       cat("Running louvain iteration ", iter, "...\n")
@@ -495,6 +496,7 @@ leiden_clustering <- function(data,
   best_resolution_parameter <- 'No resolution'
   # These three vertex partition types have a resolution parameter
   # so scan parameter range, if given.
+  if(length(resolution_parameter) < 1) warning("bad loop: length(resolution_parameter) < 1")
   for(i in 1:length(resolution_parameter)) {
     cur_resolution_parameter <- resolution_parameter[i]
     cluster_result <- leidenbase::leiden_find_partition( graph_result[['g']],
@@ -543,7 +545,8 @@ leiden_clustering <- function(data,
     message('  Clustering statistics')
     selected <- vector( mode='character',
                         length = length( resolution_parameter ) )
-    for( irespar in 1:length( resolution_parameter ) )
+    if(length(resolution_parameter) < 1 ) warning("bad loop: length(resolution_parameter) < 1")
+    for(irespar in 1:length(resolution_parameter))
     {
       if( identical( table_results[['resolution_parameter']][irespar],
                      best_resolution_parameter ) )

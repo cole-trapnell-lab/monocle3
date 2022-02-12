@@ -30,11 +30,11 @@ estimate_size_factors <- function(cds,
 {
   method <- match.arg(method)
   if(any(Matrix::colSums(SingleCellExperiment::counts(cds)) == 0)) {
-    warning(paste("Your CDS object contains cells with zero reads.",
-                  "This causes size factor calculation to fail. Please remove",
-                  "the zero read cells using",
-                  "cds <- cds[,Matrix::colSums(exprs(cds)) != 0] and then",
-                  "run cds <- estimate_size_factors(cds)"))
+    warning("Your CDS object contains cells with zero reads. ",
+                  "This causes size factor calculation to fail. Please remove ",
+                  "the zero read cells using ",
+                  "cds <- cds[,Matrix::colSums(exprs(cds)) != 0] and then ",
+                  "run cds <- estimate_size_factors(cds)")
     return(cds)
   }
   if (is_sparse_matrix(SingleCellExperiment::counts(cds))){
@@ -547,12 +547,12 @@ combine_cds <- function(cds_list,
 
   if (sample_col_name == "sample" &
       any(sapply(cds_list, function(cds) "sample" %in% names(colData(cds))))) {
-    warning(paste0("By default, the combine_cds function adds a column called ",
+    warning("By default, the combine_cds function adds a column called ",
                    "'sample' which indicates which initial cds a cell came ",
                    "from. One or more of your input cds objects contains a ",
                    "'sample' column, which will be overwritten. We recommend ",
                    "you rename this column or provide an alternative column ",
-                   "name using the 'sample_col_name' parameter."))
+                   "name using the 'sample_col_name' parameter.")
   }
   assertthat::assert_that(!any(sapply(cds_list, function(cds)
     sum(is.na(names(colData(cds)))) != 0)),
@@ -605,17 +605,17 @@ combine_cds <- function(cds_list,
   gene_list <- unique(gene_list)
   if(length(overlap_list) == 0) {
     if (keep_all_genes) {
-      warning(paste("No genes are shared amongst all the CDS objects."))
+      warning("No genes are shared amongst all the CDS objects.")
     } else {
-      stop(paste("No genes are shared amongst all the CDS objects. To generate",
-                 "a combined CDS with all genes, use keep_all_genes = TRUE"))
+      stop("No genes are shared amongst all the CDS objects. To generate ",
+                 "a combined CDS with all genes, use keep_all_genes = TRUE")
     }
   }
   pdata_cols <- unique(pdata_cols)
   fdata_cols <- unique(fdata_cols)
   if (sum(duplicated(all_cells)) != 0 & cell_names_unique) {
-    stop(paste("Cell names are not unique across CDSs - cell_names_unique",
-               "must be FALSE."))
+    stop("Cell names are not unique across CDSs - cell_names_unique ",
+               "must be FALSE.")
   }
   all_cells <- unique(all_cells)
   for(i in seq(1, length(cds_list), 1)) {
@@ -691,10 +691,10 @@ combine_cds <- function(cds_list,
   confs <- sum(all_fd == "conf", na.rm=TRUE)
 
   if (confs > 0) {
-   warning(paste0("When combining rowData, conflicting values were found - ",
+   warning("When combining rowData, conflicting values were found - ",
                   "conflicts will be labelled 'conf' in the combined cds ",
                   "to prevent conflicts, either change conflicting values to ",
-                  "match, or rename columns from different cds' to be unique."))
+                  "match, or rename columns from different cds' to be unique.")
   }
   #all_fd <- do.call(cbind, fd_list)
   all_fd <- all_fd[,fdata_cols, drop=FALSE]
@@ -776,8 +776,8 @@ add_citation <- function(cds, citation_key) {
 #'   }
 #' }
 get_citations <- function(cds) {
-  message(paste("Your analysis used methods from the following recent work.",
-                "Please cite them wherever you are presenting your analyses."))
+  message("Your analysis used methods from the following recent work. ",
+                "Please cite them wherever you are presenting your analyses.")
   if(is.null(S4Vectors::metadata(cds)$citations)) {
     cds <- add_citation(cds, "Monocle")
   }

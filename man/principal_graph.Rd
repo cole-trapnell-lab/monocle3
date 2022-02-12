@@ -9,6 +9,9 @@ principal_graph(x)
 \arguments{
 \item{x}{A cell_data_set object.}
 }
+\value{
+Principle graph.
+}
 \description{
 Generic to extract principal graph from CDS
 }

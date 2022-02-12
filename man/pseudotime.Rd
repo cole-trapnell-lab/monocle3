@@ -11,6 +11,9 @@ pseudotime(x, reduction_method = "UMAP")
 
 \item{reduction_method}{Reduced dimension to extract pseudotime for.}
 }
+\value{
+Pseudotime values.
+}
 \description{
 Generic to extract pseudotime from CDS object
 }

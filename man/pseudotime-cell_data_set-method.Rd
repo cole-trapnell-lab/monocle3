@@ -11,6 +11,9 @@
 
 \item{reduction_method}{Reduced dimension to extract clusters for.}
 }
+\value{
+Pseudotime values.
+}
 \description{
 Method to extract pseudotime from CDS object
 }

@@ -111,7 +111,7 @@ preprocess_cds <- function(cds,
   FM <- normalize_expr_data(cds, norm_method, pseudo_count)
 
   if (nrow(FM) == 0) {
-    stop("Error: all rows have standard deviation zero")
+    stop("all rows have standard deviation zero")
   }
 
   if (!is.null(use_genes)) {

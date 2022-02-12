@@ -9,6 +9,9 @@
 \arguments{
 \item{x}{A cell_data_set object.}
 }
+\value{
+rowData table.
+}
 \description{
 Method to access cds rowData table
 }

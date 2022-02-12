@@ -322,6 +322,7 @@ load_mtx_data <- function( mat_path,
   if(ncol(mat) == 1) {
     mat <- mat[,0, drop=FALSE]
   } else {
+    if(ncol(mat) < 2) warning('bad loop: ncol(mat) < 2')
     mat <- mat[, 1:(ncol(mat)-1), drop=FALSE]
   }
 
@@ -461,7 +462,7 @@ save_annoy_index <- function(nn_index, file_name) {
   if(!is.null(nn_index[['version']])) {
     if(nn_index[['version']] == 1 || nn_index[['version']] == 2) {
       tryCatch( nn_index[['annoy_index']]$save(file_name),
-                error = function(e) {message(paste0('Unable to save annoy index: it may not exist in this cds: error message is ', e))})
+                error = function(e) {message('Unable to save annoy index: it may not exist in this cds: error message is ', e)})
     } else {
       stop('Unrecognized Monocle3 annoy index type')
     }
@@ -470,7 +471,7 @@ save_annoy_index <- function(nn_index, file_name) {
   if(!is.null(nn_index[['type']])) {
     if(nn_index[['type']] == 'annoyv1') {
       tryCatch( nn_index[['ann']]$save(file_name),
-                error = function(e) {message(paste0('Unable to save annoy index: it may not exist in this cds: error message is ', e))})
+                error = function(e) {message('Unable to save annoy index: it may not exist in this cds: error message is ', e)})
     }
     else {
       stop('Unrecognized uwot annoy index type')
@@ -533,7 +534,7 @@ save_umap_annoy_index <- function(nn_index, file_name) {
   if(!is.null(nn_index[['type']])) {
     if(nn_index[['type']] == 'annoyv1') {
       tryCatch( nn_index[['ann']]$save(file_name),
-                error = function(e) {message(paste0('Unable to save annoy index: it may not exist in this cds: error message is ', e))})
+                error = function(e) {message('Unable to save annoy index: it may not exist in this cds: error message is ', e)})
     }
     else {
       stop('Unrecognized umap annoy index type')
@@ -639,7 +640,7 @@ load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
     )
     unlink(file_name)
   } else
-    stop(paste('Unrecognized HNSW metric', metric))
+    stop('Unrecognized HNSW metric ', metric)
 
   if(!is.null(nn_index[['version']]))
     nn_index[['hnsw_index']] <- new_index
@@ -903,7 +904,7 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
         saveRDS(cds@reduce_dim_aux[[reduction_method]], file=file.path(directory_path, methods_reduce_dim[[reduction_method]][['rds_path']]))
       },
       error = function(cond) {
-                     message('Error writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['rds_path']]), '\': ', cond, appendLF=appendLF)
+                     message('problem writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['rds_path']]), '\': ', cond, appendLF=appendLF)
                      return(NULL)
       },
       finally = {
@@ -923,7 +924,7 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
           save_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']], file.path(directory_path, methods_reduce_dim[[reduction_method]][['annoy_index_path']]))
         },
         error = function(cond) {
-                       message('Error writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['annoy_index_path']]), '\': ', cond, appendLF=appendLF)
+                       message('problem writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['annoy_index_path']]), '\': ', cond, appendLF=appendLF)
                        return(NULL)
         },
         finally = {
@@ -945,7 +946,7 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
           save_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']], file.path(directory_path, methods_reduce_dim[[reduction_method]][['hnsw_index_path']]))
         },
         error = function(cond) {
-                       message('Error writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['hnsw_index_path']]), '\': ', cond, appendLF=appendLF)
+                       message('problem writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['hnsw_index_path']]), '\': ', cond, appendLF=appendLF)
                        return(NULL)
         },
         finally = {
@@ -966,7 +967,7 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
           md5sum <- save_umap_nn_indexes(cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']], file.path(directory_path, methods_reduce_dim[[reduction_method]][['umap_index_path']]))
         },
         error = function(cond) {
-                       message('Error writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['umap_index_path']]), '\': ', cond, appendLF=appendLF)
+                       message('problem writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['umap_index_path']]), '\': ', cond, appendLF=appendLF)
                        return(NULL)
         },
         finally = {
@@ -1034,7 +1035,7 @@ load_transform_models <- function(cds, directory_path) {
       readRDS(file_index_path)
     },
     error = function(cond) {
-              message('Error reading file \'', file_index_path, '\': ', cond, appendLF=appendLF);
+              message('problem reading file \'', file_index_path, '\': ', cond, appendLF=appendLF);
               return(NULL)
     }
   )
@@ -1084,7 +1085,7 @@ load_transform_models <- function(cds, directory_path) {
             readRDS(file_path)
           },
           error = function(cond) {
-            message('Error reading file \'', file_path, '\'', appendLF=appendLF)
+            message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
       } else
@@ -1098,7 +1099,7 @@ load_transform_models <- function(cds, directory_path) {
             load_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']], file_path, metric, ncolumn)
           },
           error = function(cond) {
-            message('Error reading file \'', file_path, '\'', appendLF=appendLF)
+            message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
       } else
@@ -1112,7 +1113,7 @@ load_transform_models <- function(cds, directory_path) {
             load_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']], file_path, metric, ncolumn)
           },
           error = function(cond) {
-            message('Error reading file \'', file_path, '\'', appendLF=appendLF)
+            message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
       } else
@@ -1122,7 +1123,7 @@ load_transform_models <- function(cds, directory_path) {
             load_umap_nn_indexes(cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']], file_path, md5sum)
           },
           error = function(cond) {
-            message('Error reading file \'', file_path, '\'', appendLF=appendLF)
+            message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
          })
       } else {
@@ -1291,7 +1292,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
         saveRDS(cds, file.path(directory_path, rds_path))
       },
       error = function(cond) {
-                       message('Error writing file \'', file.path(directory_path, rds_path), '\': ', cond, appendLF=appendLF)
+                       message('problem writing file \'', file.path(directory_path, rds_path), '\': ', cond, appendLF=appendLF)
                        return(NULL)
       },
       finally = {
@@ -1311,7 +1312,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
         HDF5Array::saveHDF5SummarizedExperiment(cds, file.path(directory_path, hdf5_path), replace=TRUE)
       },
       error = function(cond) {
-                       message('Error writing file \'', file.path(directory_path, hdf5_path), '\': ', cond, appendLF=appendLF)
+                       message('problem writing file \'', file.path(directory_path, hdf5_path), '\': ', cond, appendLF=appendLF)
                        return(NULL)
       },
       finally = {
@@ -1339,7 +1340,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
           save_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']], file.path(directory_path, methods_reduce_dim[[reduction_method]][['annoy_index_path']]))
         },
         error = function(cond) {
-                       message('Error writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['annoy_index_path']]), '\': ', cond, appendLF=appendLF)
+                       message('problem writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['annoy_index_path']]), '\': ', cond, appendLF=appendLF)
                        return(NULL)
         },
         finally = {
@@ -1360,7 +1361,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
           save_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']], file.path(directory_path, methods_reduce_dim[[reduction_method]][['hnsw_index_path']]))
         },
         error = function(cond) {
-                       message('Error writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['hswn_index_path']]), '\': ', cond, appendLF=appendLF)
+                       message('problem writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['hswn_index_path']]), '\': ', cond, appendLF=appendLF)
                        return(NULL)
         },
         finally = {
@@ -1381,7 +1382,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
           md5sum <- save_umap_nn_indexes(cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']], file.path(directory_path, methods_reduce_dim[[reduction_method]][['umap_index_path']]))
         },
         error = function(cond) {
-                       message('Error writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['umap_index_path']]), '\': ', cond, appendLF=appendLF)
+                       message('problem writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['umap_index_path']]), '\': ', cond, appendLF=appendLF)
                        return(NULL)
         },
         finally = {
@@ -1448,11 +1449,11 @@ load_monocle_objects <- function(directory_path) {
       readRDS(file_index_path)
     },
     error = function(cond) {
-              message('Error reading file \'', file_index_path, '\': ', cond, appendLF=appendLF);
+              message('problem reading file \'', file_index_path, '\': ', cond, appendLF=appendLF);
               catch_error <<- TRUE
     },
     warning = function(cond) {
-              message('Error reading file \'', file_index_path, '\': ', cond, appendLF=appendLF);
+              message('problem reading file \'', file_index_path, '\': ', cond, appendLF=appendLF);
               catch_error <<- TRUE
     }
   )
@@ -1508,7 +1509,7 @@ load_monocle_objects <- function(directory_path) {
             readRDS(file_path)
           },
           error = function(cond) {
-            message('Error reading file \'', file_path, '\'', appendLF=appendLF)
+            message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
       } else
@@ -1518,7 +1519,7 @@ load_monocle_objects <- function(directory_path) {
             HDF5Array::loadHDF5SummarizedExperiment(file_path)
           },
           error = function(cond) {
-            message('Error reading file \'', file_path, '\'', appendLF=appendLF)
+            message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
       } else {
@@ -1536,7 +1537,7 @@ load_monocle_objects <- function(directory_path) {
             load_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']], file_path, metric, ncolumn)
           },
           error = function(cond) {
-            message('Error reading file \'', file_path, '\'', appendLF=appendLF)
+            message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
       } else
@@ -1550,7 +1551,7 @@ load_monocle_objects <- function(directory_path) {
             load_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']], file_path, metric, ncolumn)
           },
           error = function(cond) {
-            message('Error reading file \'', file_path, '\'', appendLF=appendLF)
+            message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
       } else
@@ -1560,7 +1561,7 @@ load_monocle_objects <- function(directory_path) {
             load_umap_nn_indexes(cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']], file_path, md5sum)
           },
           error = function(cond) {
-            message('Error reading file \'', file_path, '\'', appendLF=appendLF)
+            message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
          })
       } else {
@@ -1705,11 +1706,11 @@ load_monocle_rds <- function(file_path) {
                          readRDS(file_path)
                        },
                        error=function(cond) {
-                         message('Error reading file \'', file_path, '\': ', cond, appendLF=appendLF);
+                         message('problem reading file \'', file_path, '\': ', cond, appendLF=appendLF);
                          catch_error <<- TRUE
                        },
                        warning=function(cond) {
-                         message('Error reading file \'', file_path, '\': ', cond, appendLF=appendLF);
+                         message('problem reading file \'', file_path, '\': ', cond, appendLF=appendLF);
                          catch_error <<- TRUE
                        }
                      )

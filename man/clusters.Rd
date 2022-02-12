@@ -11,6 +11,9 @@ clusters(x, reduction_method = "UMAP")
 
 \item{reduction_method}{Reduced dimension to extract clusters for.}
 }
+\value{
+Clusters.
+}
 \description{
 Generic to extract clusters from CDS object
 }

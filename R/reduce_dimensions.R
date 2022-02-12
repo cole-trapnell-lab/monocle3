@@ -107,10 +107,11 @@ reduce_dimension <- function(cds,
   if (is.null(preprocess_method)){
     if ("Aligned" %in% names(SingleCellExperiment::reducedDims(cds))){
       preprocess_method = "Aligned"
-      message(paste("No preprocess_method specified, and aligned coordinates have been computed previously. Using preprocess_method = 'Aligned'"))
+      message("No preprocess_method specified, and aligned coordinates ",
+              "have been computed previously. Using preprocess_method = 'Aligned'")
     }else{
       preprocess_method = "PCA"
-      message(paste("No preprocess_method specified, using preprocess_method = 'PCA'"))
+      message("No preprocess_method specified, using preprocess_method = 'PCA'")
     }
   }else{
     assertthat::assert_that(
@@ -184,9 +185,9 @@ reduce_dimension <- function(cds,
   set.seed(2016)
 
   if (reduction_method=="UMAP" && (umap.fast_sgd == TRUE || cores > 1)){
-    message(paste("Note: reduce_dimension will produce slightly different",
-                  "output each time you run it unless you set",
-                  "'umap.fast_sgd = FALSE' and 'cores = 1'"))
+    message("Note: reduce_dimension will produce slightly different ",
+                  "output each time you run it unless you set ",
+                  "'umap.fast_sgd = FALSE' and 'cores = 1'")
   }
 
   preprocess_mat <- SingleCellExperiment::reducedDims(cds)[[preprocess_method]]
@@ -233,6 +234,7 @@ reduce_dimension <- function(cds,
     tsne_res <- Rtsne::Rtsne(as.matrix(preprocess_mat), dims = max_components,
                              pca = FALSE, check_duplicates=FALSE, ...)
 
+    if(max_components < 1) warning('bad loop: max_components < 1')
     tsne_data <- tsne_res$Y[, 1:max_components]
     row.names(tsne_data) <- colnames(tsne_data)
 

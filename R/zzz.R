@@ -27,7 +27,7 @@ get_global_variable <- function(variable_name=NULL) {
     value <- tryCatch({
                         get(variable_name, envir=._._global_variable_env_._.)
                       }, error=function(msg) {
-                        message(paste0("\'", variable_name, "\'", ' is not a global variable.'))
+                        message("\'", variable_name, "\'", ' is not a global variable.')
                         return(NA)
                       })
   }

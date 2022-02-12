@@ -15,6 +15,9 @@ prediction.}
 
 \item{type}{String of type to pass to predict. Default is "response".}
 }
+\value{
+Prediction matrix.
+}
 \description{
 Predict new data values and return as a matrix
 }

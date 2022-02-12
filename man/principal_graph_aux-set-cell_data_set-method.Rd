@@ -11,6 +11,9 @@
 
 \item{value}{A S4Vectors::SimpleList of principal graph auxiliary information.}
 }
+\value{
+x.
+}
 \description{
 Method to set principal graph auxiliary information into CDS
 }

@@ -498,7 +498,7 @@ new_annoy_index <- function(metric, ndim) {
                       euclidean = RcppAnnoy::AnnoyEuclidean,
                       hamming = RcppAnnoy::AnnoyHamming,
                       manhattan = RcppAnnoy::AnnoyManhattan,
-                      stop(paste0('unsupported annoy metric ', metric))
+                      stop('unsupported annoy metric ', metric)
                     )
   nn_index <- new(nn_class, ndim)
   return(nn_index)
@@ -763,7 +763,7 @@ test_annoy_index <- function(nn_index, verbose=FALSE) {
   if(is.null(nn_index[['annoy_index']])) {
     if(!verbose) {
       cs <- get_call_stack_as_string()
-      message(paste0('test_annoy_index: the annoy nearest neighbor does not exist\ncall stack: ', cs))
+      message('test_annoy_index: the annoy nearest neighbor does not exist\ncall stack: ', cs)
     }
     else {
       message('test_annoy_index: the annoy nearest neighbor does not exist.')
@@ -777,7 +777,7 @@ test_annoy_index <- function(nn_index, verbose=FALSE) {
   error=function(emsg) {
     if(!verbose) {
       cs <- get_call_stack_as_string()
-      message(paste0('test_annoy_index: the annoy nearest neighbor does not exist\ncall stack: ', cs))
+      message('test_annoy_index: the annoy nearest neighbor does not exist\ncall stack: ', cs)
     }
     else {
       message('test_annoy_index: the annoy nearest neighbor does not exist.')  
@@ -796,7 +796,7 @@ test_hnsw_index <- function(nn_index, verbose=FALSE) {
   if(is.null(nn_index[['hnsw_index']])) {
     if(!verbose) {
       cs <- get_call_stack_as_string()
-      message(paste0('test_hnsw_index: the hnsw nearest neighbor does not exist\ncall stack: ', cs))
+      message('test_hnsw_index: the hnsw nearest neighbor does not exist\ncall stack: ', cs)
     }
     else {
       message('test_hnsw_index: the hnsw nearest neighbor does not exist.')
@@ -810,7 +810,7 @@ test_hnsw_index <- function(nn_index, verbose=FALSE) {
   error=function(emsg) {
     if(!verbose) {
       cs <- get_call_stack_as_string()
-      message(paste0('test_hnsw_index: the hnsw nearest neighbor does not exist\ncall stack: ', cs))
+      message('test_hnsw_index: the hnsw nearest neighbor does not exist\ncall stack: ', cs)
     }
     else {
       message('test_hnsw_index: the hnsw nearest neighbor does not exist.')
@@ -1389,12 +1389,19 @@ count_nn_missing_self_index <- function(nn_res, verbose=FALSE) {
   len <- length(idx[1,])
   num_missing <- 0
 
+  if(nrow(idx) == 0)
+    return(0)
+
   for (irow in 1:nrow(idx)) {
     vidx <- idx[irow,]
     vdst <- dst[irow,]
     if(vidx[[1]] != irow) {
       dself <- FALSE
       dzero <- TRUE
+      if(length(vidx) == 1) {
+        num_missing <- num_missing + 1
+        next
+      }
       for(i in seq(1, len, 1)) {
         if(vidx[[i]] == irow) {
           dself = TRUE
@@ -1454,6 +1461,10 @@ swap_nn_row_index_point <- function(nn_res, verbose=FALSE) {
   diagnostics <- FALSE
 
   num_no_recall <- 0
+
+  if(nrow(idx) == 0 )
+    return(nn_res) 
+
   for (irow in 1:nrow(idx)) {
     vidx <- idx[irow,]
     vdst <- dst[irow,]
@@ -1461,6 +1472,11 @@ swap_nn_row_index_point <- function(nn_res, verbose=FALSE) {
       if(diagnostics) {
         message('swap_nn_row_index_point: adjust nn matrix row: ', irow)
         message('swap_nn_row_index_point: idx row pre fix: ', paste(vidx, collapse=' '))
+      }
+
+      if(length(vidx) == 1) {
+        num_no_recall <- num_no_recall + 1
+        next
       }
 
       if(vidx[[2]] == irow) {
@@ -1503,7 +1519,7 @@ swap_nn_row_index_point <- function(nn_res, verbose=FALSE) {
   if(num_no_recall > 0) {
     frac_recall <- (nrow(idx)-num_no_recall) / nrow(idx)
     format_recall <- sprintf('%3.1f', frac_recall * 100.0)
-    message(paste0('Warning: the search result is expected to include the query row value (self)\n',
+    message(paste0('the search result is expected to include the query row value (self)\n',
                   'because the NN index includes the query objects; however, this search result\n',
                   'is missing ', num_no_recall, ' self values (recall: ', format_recall, '%). Monocle3 has added the self\n',
                   'values to the first column of the search result in order to allow further\n',

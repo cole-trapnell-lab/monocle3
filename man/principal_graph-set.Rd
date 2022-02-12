@@ -11,6 +11,9 @@ principal_graph(x) <- value
 
 \item{value}{A principal graph object.}
 }
+\value{
+x.
+}
 \description{
 Generic to set principal graph to CDS
 }

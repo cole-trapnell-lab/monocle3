@@ -11,6 +11,9 @@ partitions(x, reduction_method = "UMAP")
 
 \item{reduction_method}{Reduced dimension to partitions clusters for.}
 }
+\value{
+Partitions.
+}
 \description{
 Generic to extract partitions from CDS object
 }

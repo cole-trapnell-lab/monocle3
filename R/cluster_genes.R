@@ -352,7 +352,7 @@ aggregate_gene_expression <- function(cds,
                                       gene_agg_fun="sum",
                                       cell_agg_fun="mean"){
   if (is.null(gene_group_df) && is.null(cell_group_df))
-    stop("Error: one of either gene_group_df or cell_group_df must not be NULL")
+    stop("one of either gene_group_df or cell_group_df must not be NULL.")
   agg_mat <- normalized_counts(cds, norm_method=norm_method,
                                pseudocount=pseudocount)
   if (is.null(gene_group_df) == FALSE){

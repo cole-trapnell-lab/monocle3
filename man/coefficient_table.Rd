@@ -10,6 +10,9 @@ coefficient_table(model_tbl)
 \item{model_tbl}{A tibble of model objects, generally the output of
 \code{\link{fit_models}}.}
 }
+\value{
+A table of coefficient data for each gene.
+}
 \description{
 Extracts a table of coefficients from a tibble
 containing model objects. It tests whether each coefficient
