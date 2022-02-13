@@ -176,7 +176,7 @@ plot_cells_3d <- function(cds,
         markers_exprs <- reshape2::melt(markers_exprs)
         colnames(markers_exprs)[1:2] <- c('feature_id','cell_id')
         markers_exprs <- merge(markers_exprs, markers_rowData,
-                                     by.x = "feature_id", by.y="row.names")
+                               by.x = "feature_id", by.y="row.names")
         markers_exprs$feature_label <-
           as.character(markers_exprs$gene_short_name)
         markers_exprs$feature_label[is.na(markers_exprs$feature_label)] <-
@@ -189,7 +189,7 @@ plot_cells_3d <- function(cds,
 
   if (is.null(markers_exprs) == FALSE && nrow(markers_exprs) > 0){
     data_df <- merge(data_df, markers_exprs, by.x="sample_name",
-                           by.y="cell_id")
+                     by.y="cell_id")
     data_df$expression <- with(data_df, ifelse(value >= min_expr, value, NA))
     sub1 <- data_df[!is.na(data_df$expression),]
     sub2 <- data_df[is.na(data_df$expression),]
@@ -603,7 +603,7 @@ plot_cells <- function(cds,
         markers_exprs <- reshape2::melt(markers_exprs)
         colnames(markers_exprs)[1:2] <- c('feature_id','cell_id')
         markers_exprs <- merge(markers_exprs, markers_rowData,
-                                     by.x = "feature_id", by.y="row.names")
+                               by.x = "feature_id", by.y="row.names")
         if (is.null(markers_exprs$gene_short_name)) {
           markers_exprs$feature_label <-
             as.character(markers_exprs$feature_id)
@@ -698,7 +698,7 @@ plot_cells <- function(cds,
 
 		  if (!is.null(markers_exprs) && nrow(markers_exprs) > 0){
 			data_df <- merge(data_df, markers_exprs, by.x="sample_name",
-							       by.y="cell_id")
+							 by.y="cell_id")
 			data_df$value <- with(data_df, ifelse(value >= min_expr, value, NA))
 			ya_sub <- data_df[!is.na(data_df$value),]
 			na_sub <- data_df[is.na(data_df$value),]

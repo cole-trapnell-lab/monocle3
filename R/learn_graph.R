@@ -1142,8 +1142,8 @@ connect_tips <- function(cds,
 
   reduction_method <- 'UMAP'
 
-  if(ncol(stree) < 1) warning('bad loop: ncol(stree) < 1')
   if(is.null(row.names(stree)) & is.null(row.names(stree))) {
+    if(ncol(stree) < 1) warning('bad loop: ncol(stree) < 1')
     dimnames(stree) <- list(paste0('Y_', 1:ncol(stree)),
                             paste0('Y_', 1:ncol(stree)))
   }

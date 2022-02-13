@@ -469,8 +469,8 @@ generate_garnett_marker_file <- function(marker_test_res,
     }
 
     sub <- good_markers[good_markers$group_name == group,]
-    if(max_genes_per_group < 1) warning('bad loop: max_genes_per_group < 1')
     if (nrow(sub) > max_genes_per_group) {
+      if(max_genes_per_group < 1) warning('bad loop: max_genes_per_group < 1')
       sub <- sub[order(sub$marker_test_q_value),][1:max_genes_per_group,]
     }
     if ("gene_short_name" %in% colnames(sub)){
