@@ -46,7 +46,7 @@ RoxygenNote: 7.1.2
 LinkingTo: 
     Rcpp
 Depends:
-	R (>= 4.1.0),
+	R (>= 4.0.0),
     Biobase, 
     SingleCellExperiment
 Imports:

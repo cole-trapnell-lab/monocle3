@@ -1226,8 +1226,6 @@ plot_genes_violin <- function (cds_subset,
   cds_exprs$expression[cds_exprs$expression < min_expr] <- min_expr
 
 
-str(merge)
-
   cds_exprs <- merge(cds_exprs, rowData(cds_subset), by.x = "f_id",
                      by.y = "row.names")
   cds_exprs <- merge(cds_exprs, colData(cds_subset), by.x = "Cell",
