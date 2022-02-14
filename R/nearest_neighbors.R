@@ -491,7 +491,6 @@ report_nn_control <- function(label=NULL, nn_control) {
 }
 
 
-#' @importFrom methods new
 new_annoy_index <- function(metric, ndim) {
   nn_class <- switch( metric,
                       cosine = RcppAnnoy::AnnoyAngular,
@@ -500,7 +499,7 @@ new_annoy_index <- function(metric, ndim) {
                       manhattan = RcppAnnoy::AnnoyManhattan,
                       stop('unsupported annoy metric ', metric)
                     )
-  nn_index <- new(nn_class, ndim)
+  nn_index <- methods::new(nn_class, ndim)
   return(nn_index)
 }
 
