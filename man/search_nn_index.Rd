@@ -47,8 +47,8 @@ those in the query_matrix.
   \donttest{
     cds <- load_a549()
     cds <- preprocess_cds(cds)
-    nn_index <- make_nn_index(reducedDims(cds)[['PCA']])
-    nn_res <- search_nn_index(reducedDims(cds)[['PCA']], nn_index, 10)
+    nn_index <- make_nn_index(SingleCellExperiment::reducedDims(cds)[['PCA']])
+    nn_res <- search_nn_index(SingleCellExperiment::reducedDims(cds)[['PCA']], nn_index, 10)
   }
 
 }

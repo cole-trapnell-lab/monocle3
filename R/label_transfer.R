@@ -157,14 +157,19 @@ get_nn_means <- function(query_data, query_search, ref_coldata, ref_column_name)
 #'
 #' @examples
 #'   \dontrun{
-#'      expression_matrix <- readRDS(system.file('extdata', 'worm_l2/worm_l2_expression_matrix.rds', package='monocle3'))
-#'      cell_metadata <- readRDS(system.file('extdata', 'worm_l2/worm_l2_coldata.rds', package='monocle3'))
-#'      gene_metadata <- readRDS(system.file('extdata', 'worm_l2/worm_l2_rowdata.rds', package='monocle3'))
+#'      expression_matrix <- readRDS(system.file('extdata',
+#'                                                'worm_l2/worm_l2_expression_matrix.rds',
+#'                                                package='monocle3'))
+#'      cell_metadata <- readRDS(system.file('extdata',
+#'                               'worm_l2/worm_l2_coldata.rds',
+#'                                package='monocle3'))
+#'      gene_metadata <- readRDS(system.file('extdata',
+#'                               'worm_l2/worm_l2_rowdata.rds',
+#'                               package='monocle3'))
 #'
 #'      cds <- new_cell_data_set(expression_data=expression_matrix,
 #'                               cell_metadata=cell_metadata,
 #'                               gene_metadata=gene_metadata)
-#'
 #'     ncell <- nrow(colData(cds))
 #'     cell_sample <- sample(seq(ncell), 2 * ncell / 3)
 #'     cell_set <- seq(ncell) %in% cell_sample
@@ -180,7 +185,6 @@ get_nn_means <- function(query_data, query_search, ref_coldata, ref_column_name)
 #'     cds2 <- transfer_cell_labels(cds2, 'UMAP', colData(cds1), 'cao_cell_type', 'transfer_cell_type')
 #'   }
 #'
-#' @importFrom methods is
 #' @export
 # Bioconductor forbids writing to user directories so examples
 # is not run.
@@ -196,7 +200,7 @@ transfer_cell_labels <- function(cds_query,
                                  top_next_ratio_threshold=1.5,
                                  verbose=FALSE) {
 
-  assertthat::assert_that(is(cds_query, 'cell_data_set'),
+  assertthat::assert_that(methods::is(cds_query, 'cell_data_set'),
                           msg=paste0('cds_query parameter is not a cell_data_set'))
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
@@ -234,7 +238,7 @@ transfer_cell_labels <- function(cds_query,
 
   cds_nn_index <- get_cds_nn_index(cds=cds_query, reduction_method=reduction_method, nn_control_tmp[['method']], verbose=verbose)
 
-  cds_reduced_dims <- reducedDims(cds_query)[[reduction_method]]
+  cds_reduced_dims <- SingleCellExperiment::reducedDims(cds_query)[[reduction_method]]
   if(ncol(cds_reduced_dims) != cds_nn_index[['ncol']]) {
     stop('transfer_cell_labels: reduced dimension matrix and nearest neighbor index dimensions do not match')
   }
@@ -411,9 +415,15 @@ edit_query_cell_labels <- function(preproc_res,
 #'
 #' @examples
 #'   \dontrun{
-#'      expression_matrix <- readRDS(system.file('extdata', 'worm_l2/worm_l2_expression_matrix.rds', package='monocle3'))
-#'      cell_metadata <- readRDS(system.file('extdata', 'worm_l2/worm_l2_coldata.rds', package='monocle3'))
-#'      gene_metadata <- readRDS(system.file('extdata', 'worm_l2/worm_l2_rowdata.rds', package='monocle3'))
+#'      expression_matrix <- readRDS(system.file('extdata',
+#'                                               'worm_l2/worm_l2_expression_matrix.rds',
+#'                                               package='monocle3'))
+#'      cell_metadata <- readRDS(system.file('extdata',
+#                                            'worm_l2/worm_l2_coldata.rds',
+#'                                           package='monocle3'))
+#'      gene_metadata <- readRDS(system.file('extdata',
+#'                                           'worm_l2/worm_l2_rowdata.rds',
+#'                                           package='monocle3'))
 #'
 #'      cds <- new_cell_data_set(expression_data=expression_matrix,
 #'                               cell_metadata=cell_metadata,
@@ -435,7 +445,6 @@ edit_query_cell_labels <- function(preproc_res,
 #'     cds2 <- fix_missing_cell_labels(cds2, 'UMAP', 'transfer_cell_type', 'fixed_cell_type')
 #'   }
 #'
-#' @importFrom methods is
 #' @export
 # Bioconductor forbids writing to user directories so examples
 # is not run.
@@ -450,7 +459,7 @@ fix_missing_cell_labels <- function(cds,
                                     top_next_ratio_threshold=1.5,
                                     verbose=FALSE) {
 
-  assertthat::assert_that(is(cds, 'cell_data_set'),
+  assertthat::assert_that(methods::is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
@@ -478,7 +487,7 @@ fix_missing_cell_labels <- function(cds,
   notna_cds <- cds[, !is.na(colData(cds)[[from_column_name]])]
   
   # Build index on not NA cds, where there is a label.
-  notna_nn_index <- make_nn_index(subject_matrix=reducedDims(notna_cds)[[reduction_method]],
+  notna_nn_index <- make_nn_index(subject_matrix=SingleCellExperiment::reducedDims(notna_cds)[[reduction_method]],
                                   nn_control=nn_control,
                                   verbose=verbose)
   notna_coldata <- as.data.frame(colData(notna_cds))
@@ -488,7 +497,7 @@ fix_missing_cell_labels <- function(cds,
   }
   
   na_cds <- cds[, is.na(colData(cds)[[from_column_name]])]
-  new_cell_labels <- edit_query_cell_labels(preproc_res=reducedDims(na_cds)[[reduction_method]],
+  new_cell_labels <- edit_query_cell_labels(preproc_res=SingleCellExperiment::reducedDims(na_cds)[[reduction_method]],
                                             query_coldata=notna_coldata, 
                                             query_nn_index=notna_nn_index, 
                                             column_name=from_column_name,

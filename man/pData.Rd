@@ -9,6 +9,9 @@ pData(x)
 \arguments{
 \item{x}{A cell_data_set object.}
 }
+\value{
+colData.
+}
 \description{
 Generic to access cds colData table
 }

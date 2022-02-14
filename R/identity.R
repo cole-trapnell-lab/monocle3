@@ -1,56 +1,48 @@
 # Functions for matrix and model identities.
 
 
-#' @importFrom methods is
-#' @importFrom SingleCellExperiment int_metadata
-#' @importFrom SingleCellExperiment "int_metadata<-"
 initialize_counts_metadata <- function(cds) {
-  assertthat::assert_that(is(cds, 'cell_data_set'),
+  assertthat::assert_that(methods::is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
 
-  if(is.null(int_metadata(cds))) {
-    int_metadata(cds) <- list()
+  if(is.null(SingleCellExperiment::int_metadata(cds))) {
+    SingleCellExperiment::int_metadata(cds) <- list()
   }
-  int_metadata(cds)[['counts_metadata']] <- list()
+  SingleCellExperiment::int_metadata(cds)[['counts_metadata']] <- list()
 
   return(cds)
 }
 
 
-#' @importFrom methods is
-#' @importFrom SingleCellExperiment int_metadata
-#' @importFrom SingleCellExperiment "int_metadata<-"
 set_counts_identity <- function(cds, matrix_type, matrix_id) {
-  assertthat::assert_that(is(cds, 'cell_data_set'),
+  assertthat::assert_that(methods::is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
 
-  assertthat::assert_that(!is.null(int_metadata(cds)[['counts_metadata']]),
+  assertthat::assert_that(!is.null(SingleCellExperiment::int_metadata(cds)[['counts_metadata']]),
     msg = paste0('call initialize_counts_metadata() before set_counts_identity()'))                  
 
-  int_metadata(cds)[['counts_metadata']][['identity']][['matrix_type']] <- matrix_type
-  int_metadata(cds)[['counts_metadata']][['identity']][['matrix_id']] <- matrix_id
+  SingleCellExperiment::int_metadata(cds)[['counts_metadata']][['identity']][['matrix_type']] <- matrix_type
+  SingleCellExperiment::int_metadata(cds)[['counts_metadata']][['identity']][['matrix_id']] <- matrix_id
 
   return(cds)
 }
 
 
-#' @importFrom methods is
-#' @importFrom SingleCellExperiment int_metadata
 get_counts_identity <- function(cds) {
-  assertthat::assert_that(is(cds, 'cell_data_set'),
+  assertthat::assert_that(methods::is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
 
-  if(is.null(int_metadata(cds)[['counts_metadata']])) {
+  if(is.null(SingleCellExperiment::int_metadata(cds)[['counts_metadata']])) {
     initialize_counts_metadata(cds)
   }
 
-  if(!is.null(int_metadata(cds)[['counts_metadata']][['identity']][['matrix_id']])) {
-    matrix_id <- int_metadata(cds)[['counts_metadata']][['identity']][['matrix_id']]
+  if(!is.null(SingleCellExperiment::int_metadata(cds)[['counts_metadata']][['identity']][['matrix_id']])) {
+    matrix_id <- SingleCellExperiment::int_metadata(cds)[['counts_metadata']][['identity']][['matrix_id']]
   } else {
     matrix_id <- 'none'
   }
-  if(!is.null(int_metadata(cds)[['counts_metadata']][['identity']][['matrix_type']])) {
-    matrix_type <- int_metadata(cds)[['counts_metadata']][['identity']][['matrix_type']]
+  if(!is.null(SingleCellExperiment::int_metadata(cds)[['counts_metadata']][['identity']][['matrix_type']])) {
+    matrix_type <- SingleCellExperiment::int_metadata(cds)[['counts_metadata']][['identity']][['matrix_type']]
   } else {
     matrix_type <- 'matrix:counts'
   }
@@ -59,12 +51,9 @@ get_counts_identity <- function(cds) {
 }
 
 
-# Note: int_metadata(cds) requires a list
-#' @importFrom methods is
-#' @importFrom SingleCellExperiment int_metadata
-#' @importFrom SingleCellExperiment "int_metadata<-"
+# Note: SingleCellExperiment::int_metadata(cds) requires a list
 initialize_reduce_dim_metadata <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP')) {
-  assertthat::assert_that(is(cds, 'cell_data_set'),
+  assertthat::assert_that(methods::is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
 
   assertthat::assert_that(
@@ -73,27 +62,24 @@ initialize_reduce_dim_metadata <- function(cds, reduction_method=c('PCA', 'LSI',
     msg = "reduction_method must be one of 'PCA', 'LSI', 'Aligned', 'tSNE', or 'UMAP'")
   reduction_method <- match.arg(reduction_method)
 
-  if(is.null(int_metadata(cds))) {
-    int_metadata(cds) <- list()
+  if(is.null(SingleCellExperiment::int_metadata(cds))) {
+    SingleCellExperiment::int_metadata(cds) <- list()
   }
-  if(is.null(int_metadata(cds)[['reduce_dim_metadata']])) {
-    int_metadata(cds)[['reduce_dim_metadata']] <- list()
+  if(is.null(SingleCellExperiment::int_metadata(cds)[['reduce_dim_metadata']])) {
+    SingleCellExperiment::int_metadata(cds)[['reduce_dim_metadata']] <- list()
   }
-  int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]] <- list()
-  int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']] <- list()
+  SingleCellExperiment::int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]] <- list()
+  SingleCellExperiment::int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']] <- list()
 
   return(cds)
 }
 
 
-#' @importFrom methods is
-#' @importFrom SingleCellExperiment int_metadata
-#' @importFrom SingleCellExperiment "int_metadata<-"
 set_reduce_dim_matrix_identity <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP'),
                                            matrix_type, matrix_id,
                                            prev_matrix_type, prev_matrix_id,
                                            model_type, model_id) {
-  assertthat::assert_that(is(cds, 'cell_data_set'),
+  assertthat::assert_that(methods::is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
 
   assertthat::assert_that(
@@ -102,25 +88,23 @@ set_reduce_dim_matrix_identity <- function(cds, reduction_method=c('PCA', 'LSI',
     msg = "reduction_method must be one of 'PCA', 'LSI', 'Aligned', 'tSNE', or 'UMAP'")
   reduction_method <- match.arg(reduction_method)
 
-  if(is.null(int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]])) {
+  if(is.null(SingleCellExperiment::int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]])) {
     cds <- initialize_reduce_dim_metadata(cds=cds, reduction_method=reduction_method)
   }
 
-  int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']][['matrix_type']] <- matrix_type
-  int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']][['matrix_id']] <- matrix_id
-  int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']][['prev_matrix_type']] <- prev_matrix_type
-  int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']][['prev_matrix_id']] <- prev_matrix_id
-  int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']][['model_type']] <- model_type
-  int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']][['model_id']] <- model_id
+  SingleCellExperiment::int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']][['matrix_type']] <- matrix_type
+  SingleCellExperiment::int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']][['matrix_id']] <- matrix_id
+  SingleCellExperiment::int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']][['prev_matrix_type']] <- prev_matrix_type
+  SingleCellExperiment::int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']][['prev_matrix_id']] <- prev_matrix_id
+  SingleCellExperiment::int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']][['model_type']] <- model_type
+  SingleCellExperiment::int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']][['model_id']] <- model_id
 
   return(cds)
 }
 
 
-#' @importFrom methods is
-#' @importFrom SingleCellExperiment int_metadata
 get_reduce_dim_matrix_identity <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP')) {
-  assertthat::assert_that(is(cds, 'cell_data_set'),
+  assertthat::assert_that(methods::is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
 
   assertthat::assert_that(
@@ -129,24 +113,23 @@ get_reduce_dim_matrix_identity <- function(cds, reduction_method=c('PCA', 'LSI',
     msg = "reduction_method must be one of 'PCA', 'LSI', 'Aligned', 'tSNE', or 'UMAP'")
   reduction_method <- match.arg(reduction_method)
 
-  if(is.null(int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]])) {
+  if(is.null(SingleCellExperiment::int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]])) {
     cds <- initialize_reduce_dim_metadata(cds=cds, reduction_method=reduction_method)
     return(list(identity_exists=FALSE))
   }
 
   return(list(identity_exists=TRUE,
-              matrix_type=int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']][['matrix_type']],
-              matrix_id=int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']][['matrix_id']],
-              prev_matrix_type=int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']][['prev_matrix_type']],
-              prev_matrix_id=int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']][['prev_matrix_id']],
-              model_type=int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']][['model_type']],
-              model_id=int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']][['model_id']]))
+              matrix_type=SingleCellExperiment::int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']][['matrix_type']],
+              matrix_id=SingleCellExperiment::int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']][['matrix_id']],
+              prev_matrix_type=SingleCellExperiment::int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']][['prev_matrix_type']],
+              prev_matrix_id=SingleCellExperiment::int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']][['prev_matrix_id']],
+              model_type=SingleCellExperiment::int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']][['model_type']],
+              model_id=SingleCellExperiment::int_metadata(cds)[['reduce_dim_metadata']][[reduction_method]][['identity']][['model_id']]))
 }
 
 
-#' @importFrom methods is
 initialize_reduce_dim_model_identity <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP')) {
-  assertthat::assert_that(is(cds, 'cell_data_set'),
+  assertthat::assert_that(methods::is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
 
   assertthat::assert_that(
@@ -156,21 +139,20 @@ initialize_reduce_dim_model_identity <- function(cds, reduction_method=c('PCA', 
   reduction_method <- match.arg(reduction_method)
 
   if(is.null(cds@reduce_dim_aux[[reduction_method]])) {
-    cds@reduce_dim_aux[[reduction_method]] <- SimpleList()
+    cds@reduce_dim_aux[[reduction_method]] <- S4Vectors::SimpleList()
   }
-  cds@reduce_dim_aux[[reduction_method]][['model']] <- SimpleList()
-  cds@reduce_dim_aux[[reduction_method]][['model']][['identity']] <- SimpleList()
+  cds@reduce_dim_aux[[reduction_method]][['model']] <- S4Vectors::SimpleList()
+  cds@reduce_dim_aux[[reduction_method]][['model']][['identity']] <- S4Vectors::SimpleList()
 
   return(cds)
 }
 
 
-#' @importFrom methods is
 set_reduce_dim_model_identity <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP'),
                                           model_type, model_id,
                                           prev_model_type, prev_model_id,
                                           model_path='none') {
-  assertthat::assert_that(is(cds, 'cell_data_set'),
+  assertthat::assert_that(methods::is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
 
   assertthat::assert_that(
@@ -201,9 +183,8 @@ set_reduce_dim_model_identity <- function(cds, reduction_method=c('PCA', 'LSI', 
 }
 
 
-#' @importFrom methods is
 get_reduce_dim_model_identity <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP')) {
-  assertthat::assert_that(is(cds, 'cell_data_set'),
+  assertthat::assert_that(methods::is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
 
   assertthat::assert_that(
@@ -227,9 +208,8 @@ get_reduce_dim_model_identity <- function(cds, reduction_method=c('PCA', 'LSI', 
 }
 
 
-#' @importFrom methods is
 set_model_identity_path <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP'), model_path='none') {
-  assertthat::assert_that(is(cds, 'cell_data_set'),
+  assertthat::assert_that(methods::is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
 
   assertthat::assert_that(
@@ -332,10 +312,9 @@ identity_as_string <- function( object_id ) {
 #'     identity_table(cds)
 #'   }
 #'
-#' @importFrom methods is
 #' @export
 identity_table <- function(cds) {
-  assertthat::assert_that(is(cds, 'cell_data_set'),
+  assertthat::assert_that(methods::is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
 
   reduction_methods <- c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP')
@@ -348,7 +327,7 @@ identity_table <- function(cds) {
   write(sprintf('Reduced dimension matrix identity'), stdout())
   for(reduction_method in reduction_methods) {
     matrix_identity <- get_reduce_dim_matrix_identity(cds, reduction_method)
-    if(!is.null(reducedDims(cds)[[reduction_method]]) && matrix_identity[['identity_exists']]) {
+    if(!is.null(SingleCellExperiment::reducedDims(cds)[[reduction_method]]) && matrix_identity[['identity_exists']]) {
       write(sprintf('  %s', reduction_method), stdout())
       write(sprintf('    %s\t%s', 'matrix_type', matrix_identity[['matrix_type']]), stdout())
       write(sprintf('    %s\t%s', 'matrix_id', identity_as_string(matrix_identity[['matrix_id']])), stdout())

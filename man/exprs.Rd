@@ -9,6 +9,9 @@ exprs(x)
 \arguments{
 \item{x}{A cell_data_set object.}
 }
+\value{
+Count matrix.
+}
 \description{
 Generic to access cds count matrix
 }

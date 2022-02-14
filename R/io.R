@@ -18,7 +18,7 @@ load_a549 <- function(){
           "small_a549_dex_exprs.rda",
           package = "monocle3"))
   small_a549_exprs <- small_a549_exprs[,row.names(small_a549_colData_df)]
-  
+
   cds <- new_cell_data_set(expression_data = small_a549_exprs,
       cell_metadata = small_a549_colData_df,
       gene_metadata = small_a549_rowData_df)
@@ -35,7 +35,7 @@ load_worm_embryo <- function(){
   cell_metadata <- readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_colData.rds"))
   gene_annotation <- readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_rowData.rds"))
   gene_annotation$use_for_ordering <- NULL
-  
+
   cds <- new_cell_data_set(expression_matrix,
       cell_metadata = cell_metadata,
       gene_metadata = gene_annotation)
@@ -70,11 +70,10 @@ load_worm_l2 <- function(){
 #' Test if a file has a Matrix Market header.
 #' @param matpath Path to test file.
 #' @return TRUE if matpath file has Matrix Market header.
-#' @importFrom utils read.table
 #' @noRd
 is_matrix_market_file <- function( matpath )
 {
-  first_line <- read.table( matpath, nrows=1 )
+  first_line <- utils::read.table( matpath, nrows=1 )
   grepl( "%%MatrixMarket", first_line$V1 )
 }
 
@@ -84,14 +83,13 @@ is_matrix_market_file <- function( matpath )
 #' @return list consisting of matdim_names, which label matrix dimension,
 #' and metadata, if present in the file, which are
 #' additional dimension metadata.
-#' @importFrom utils read.table
 #' @noRd
 load_annotations_data <- function( anno_path, metadata_column_names=NULL, header=FALSE, sep="", quote="\"'", annotation_type=NULL )
 {
   assertthat::assert_that( ! is.null( annotation_type ) )
   tryCatch(
       {
-        annotations <- read.table( anno_path, header=header, sep=sep, quote=quote, stringsAsFactors=FALSE )
+        annotations <- utils::read.table( anno_path, header=header, sep=sep, quote=quote, stringsAsFactors=FALSE )
       }, error = function( emsg )
       {
         stop( 'load_mm_data: bad status reading ', annotation_type, ' file \'', anno_path, '\'\n  ',
@@ -99,7 +97,7 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
             '  note: possible problems include the wrong filename, a missing file,\n',
             '  and incorrect file format parameters, for example \'header\', \'sep\', and \'quote\'' )
       })
-  
+
   metadata = NULL
   if( .row_names_info( annotations ) < 0 )
   {
@@ -112,7 +110,7 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
     names <- rownames( annotations )
     metadata <- annotations
   }
-  
+
   if( ! ( is.null( metadata_column_names ) || is.null( metadata ) ) )
   {
     assertthat::assert_that( length( metadata_column_names ) == ncol( metadata ),
@@ -126,10 +124,10 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
             ')' ) )
     colnames( metadata ) <- metadata_column_names
   }
-  
+
   if( ! is.null( metadata ) )
-    rownames(metadata)<-names
-  
+    rownames(metadata) <- names
+
   list( names=names, metadata=metadata )
 }
 
@@ -190,7 +188,9 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
 #'     pmat<-system.file("extdata", "matrix.mtx.gz", package = "monocle3")
 #'     prow<-system.file("extdata", "features_c3h0.txt", package = "monocle3")
 #'     pcol<-system.file("extdata", "barcodes_c2h0.txt", package = "monocle3")
-#'     cds <- load_mm_data( pmat, prow, pcol, feature_metadata_column_names = c('gene_short_name', 'gene_biotype'), sep='' )
+#'     cds <- load_mm_data( pmat, prow, pcol,
+#'                          feature_metadata_column_names =
+#'                          c('gene_short_name', 'gene_biotype'), sep='' )
 #'
 #'     # In this example, the features_c3h0.txt file has three columns,
 #'     # separated by spaces. The first column has official gene names, the
@@ -212,15 +212,15 @@ load_mm_data <- function( mat_path,
   assertthat::assert_that(assertthat::is.readable(feature_anno_path), msg='unable to read feature annotation file')
   assertthat::assert_that(assertthat::is.readable(cell_anno_path), msg='unable to read cell annotation file')
   assertthat::assert_that(is.numeric(umi_cutoff))
-  
+
   feature_annotations <- load_annotations_data( feature_anno_path, feature_metadata_column_names, header, sep, quote=quote, annotation_type='features' )
   cell_annotations <- load_annotations_data( cell_anno_path, cell_metadata_column_names, header, sep, quote=quote, annotation_type='cells' )
-  
+
   assertthat::assert_that( ! any( duplicated( feature_annotations$names ) ), msg='duplicate feature names in feature annotation file' )
   assertthat::assert_that( ! any( duplicated( cell_annotations$names ) ), msg='duplicate cell names in cell annotation file' )
-  
+
   mat <- Matrix::readMM( mat_path )
-  
+
   assertthat::assert_that( length( feature_annotations$names ) == nrow( mat ),
       msg=paste0( 'feature name count (',
           length( feature_annotations$names ),
@@ -233,14 +233,14 @@ load_mm_data <- function( mat_path,
           ') != matrix column count (',
           ncol( mat ),
           ')' ) )
-  
+
   rownames( mat ) <- feature_annotations$names
   colnames( mat ) <- cell_annotations$names
-  
+
   cds <- new_cell_data_set( mat,
       cell_metadata = cell_annotations$metadata,
       gene_metadata = feature_annotations$metadata )
-  
+
   colData(cds)$n.umi <- Matrix::colSums(exprs(cds))
   cds <- cds[,colData(cds)$n.umi >= umi_cutoff]
   cds <- estimate_size_factors(cds)
@@ -248,7 +248,7 @@ load_mm_data <- function( mat_path,
   cds <- initialize_counts_metadata(cds)
   matrix_id <- get_unique_id(counts(cds))
   cds <- set_counts_identity(cds, mat_path, matrix_id)
- 
+
   return( cds )
 }
 
@@ -261,7 +261,6 @@ load_mm_data <- function( mat_path,
 #' @param umi_cutoff UMI per cell cutoff, default is 100.
 #'
 #' @return cds object
-#' @importFrom utils read.table
 #' @importFrom SingleCellExperiment counts
 #'
 #' @examples
@@ -281,7 +280,7 @@ load_mtx_data <- function( mat_path,
   assertthat::assert_that(assertthat::is.readable(gene_anno_path))
   assertthat::assert_that(assertthat::is.readable(cell_anno_path))
   assertthat::assert_that(is.numeric(umi_cutoff))
-  
+
   if( is_matrix_market_file( mat_path ) )
   {
     #
@@ -298,37 +297,38 @@ load_mtx_data <- function( mat_path,
         sep="\t" )
     return( cds )
   }
-  
+
   df <- utils::read.table(mat_path, col.names = c("gene.idx", "cell.idx", "count"),
       colClasses = c("integer", "integer", "integer"))
-  
+
   gene.annotations <- utils::read.table(gene_anno_path,
       col.names = c("id", "gene_short_name"),
       colClasses = c("character", "character"))
-  
+
   cell.annotations <- utils::read.table(cell_anno_path, col.names = c("cell"),
       colClasses = c("character"))
-  
+
   rownames(gene.annotations) <- gene.annotations$id
   rownames(cell.annotations) <- cell.annotations$cell
-  
+
   # add a dummy cell to ensure that all genes are included in the matrix
   # even if a gene isn't expressed in any cell
   df <- rbind(df, data.frame(gene.idx = c(1, nrow(gene.annotations)),
           cell.idx = rep(nrow(cell.annotations) + 1, 2),
           count = c(1, 1)))
-  
+
   mat <- Matrix::sparseMatrix(i = df$gene.idx, j = df$cell.idx, x = df$count)
-  
+
   if(ncol(mat) == 1) {
     mat <- mat[,0, drop=FALSE]
   } else {
+    if(ncol(mat) < 2) warning('bad loop: ncol(mat) < 2')
     mat <- mat[, 1:(ncol(mat)-1), drop=FALSE]
   }
-  
+
   rownames(mat) <- gene.annotations$id
   colnames(mat) <- cell.annotations$cell
-  
+
   cds <- new_cell_data_set(mat, cell_metadata = cell.annotations,
       gene_metadata = gene.annotations)
   colData(cds)$n.umi <- Matrix::colSums(exprs(cds))
@@ -349,7 +349,7 @@ update_annoy_index <- function(annoy) {
   }
   else
   if(!is.null(annoy[['nn_index']][['version']]) && annoy[['nn_index']][['version']] == 1) {
-    annoy_out <- SimpleList()
+    annoy_out <- S4Vectors::SimpleList()
     annoy_out[['nn_index']] <- list()
     annoy_out[['nn_index']][['method']] <- 'annoy'
     annoy_out[['nn_index']][['annoy_index']] <- annoy[['nn_index']][['annoy_index']]
@@ -365,7 +365,7 @@ update_annoy_index <- function(annoy) {
   }
   else
   if(!is.null(annoy[['nn_index']][['type']]) && annoy[['nn_index']][['type']] == 'annoyv1') {
-    annoy_out <- SimpleList()
+    annoy_out <- S4Vectors::SimpleList()
     annoy_out[['nn_index']] <- list()
     annoy_out[['nn_index']][['method']] <- 'annoy'
     annoy_out[['nn_index']][['annoy_index']] <- annoy[['nn_index']][['ann']]
@@ -381,7 +381,7 @@ update_annoy_index <- function(annoy) {
   }
   else
   if(is.null(annoy[['nn_index']][['type']])) {
-    annoy_out <- SimpleList()
+    annoy_out <- S4Vectors::SimpleList()
     annoy_out[['nn_index']] <- list()
     annoy_out[['nn_index']][['method']] <- 'annoy'
     annoy_out[['nn_index']][['annoy_index']] <- annoy[['nn_index']]
@@ -407,7 +407,7 @@ update_hnsw_index <- function(hnsw) {
   }
   else
   if(!is.null(hnsw[['nn_index']][['version']]) && hnsw[['nn_index']][['version']] == 1) {
-    hnsw_out <- SimpleList()
+    hnsw_out <- S4Vectors::SimpleList()
     annoy_out[['nn_index']] <- list()
     hnsw_out[['nn_index']][['method']] <- 'hnsw'
     hnsw_out[['nn_index']][['hnsw_index']] <- hnsw[['nn_index']]
@@ -462,7 +462,7 @@ save_annoy_index <- function(nn_index, file_name) {
   if(!is.null(nn_index[['version']])) {
     if(nn_index[['version']] == 1 || nn_index[['version']] == 2) {
       tryCatch( nn_index[['annoy_index']]$save(file_name),
-                error = function(e) {message(paste0('Unable to save annoy index: it may not exist in this cds: error message is ', e))})
+                error = function(e) {message('Unable to save annoy index: it may not exist in this cds: error message is ', e)})
     } else {
       stop('Unrecognized Monocle3 annoy index type')
     }
@@ -471,12 +471,12 @@ save_annoy_index <- function(nn_index, file_name) {
   if(!is.null(nn_index[['type']])) {
     if(nn_index[['type']] == 'annoyv1') {
       tryCatch( nn_index[['ann']]$save(file_name),
-                error = function(e) {message(paste0('Unable to save annoy index: it may not exist in this cds: error message is ', e))})
+                error = function(e) {message('Unable to save annoy index: it may not exist in this cds: error message is ', e)})
     }
     else {
       stop('Unrecognized uwot annoy index type')
     }
-  } 
+  }
   else {
     nn_index$save(file_name)
   }
@@ -534,7 +534,7 @@ save_umap_annoy_index <- function(nn_index, file_name) {
   if(!is.null(nn_index[['type']])) {
     if(nn_index[['type']] == 'annoyv1') {
       tryCatch( nn_index[['ann']]$save(file_name),
-                error = function(e) {message(paste0('Unable to save annoy index: it may not exist in this cds: error message is ', e))})
+                error = function(e) {message('Unable to save annoy index: it may not exist in this cds: error message is ', e)})
     }
     else {
       stop('Unrecognized umap annoy index type')
@@ -581,7 +581,7 @@ load_umap_annoy_index <- function(nn_index, file_name, metric, ndim) {
 
 
 save_hnsw_index <- function(nn_index, file_name) {
-  if(is.null(nn_index)) return
+  if(is.null(nn_index)) return()
 
   if(!is.null(nn_index[['version']])) {
     out_index <- nn_index[['hnsw_index']]
@@ -594,12 +594,11 @@ save_hnsw_index <- function(nn_index, file_name) {
 }
 
 
-#' @importFrom methods new
 load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
   if(metric == 'l2') {
     tryCatch(
       {
-        new_index <- new(RcppHNSW::HnswL2, ndim, file_name)
+        new_index <- methods::new(RcppHNSW::HnswL2, ndim, file_name)
       }, error = function(emsg)
       {
         stop('load_hnsw_index: bad status reading hnsw index file')
@@ -610,7 +609,7 @@ load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
   if(metric == 'euclidean') {
     tryCatch(
       {
-        new_index <- new(RcppHNSW::HnswL2, ndim, file_name)
+        new_index <- methods::new(RcppHNSW::HnswL2, ndim, file_name)
       }, error = function(emsg)
       {
         stop('load_hnsw_index: bad status reading hnsw index file')
@@ -622,7 +621,7 @@ load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
     if(metric == 'cosine') {
     tryCatch(
       {
-        new_index <- new(RcppHNSW::HnswCosine, ndim, file_name)
+        new_index <- methods::new(RcppHNSW::HnswCosine, ndim, file_name)
       }, error = function(emsg)
       {
         stop('load_hnsw_index: bad status reading hnsw index file')
@@ -633,7 +632,7 @@ load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
   if(metric == 'ip') {
     tryCatch(
       {
-        new_index <- new(RcppHNSW::HnswIp, ndim, file_name)
+        new_index <- methods::new(RcppHNSW::HnswIp, ndim, file_name)
       }, error = function(emsg)
       {
         stop('load_hnsw_index: bad status reading hnsw index file')
@@ -641,7 +640,7 @@ load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
     )
     unlink(file_name)
   } else
-    stop(paste('Unrecognized HNSW metric', metric))
+    stop('Unrecognized HNSW metric ', metric)
 
   if(!is.null(nn_index[['version']]))
     nn_index[['hnsw_index']] <- new_index
@@ -718,7 +717,6 @@ load_umap_nn_indexes <- function(umap_model, file_name, md5sum_umap_index) {
 #
 report_files_saved <- function(file_index) {
   appendLF <- TRUE
-  processes <- list()
   files <- file_index[['files']]
   for( i in seq_along(files[['cds_object']])) {
     cds_object <- files[['cds_object']][[i]]
@@ -796,7 +794,7 @@ report_files_saved <- function(file_index) {
 #' @param cds a cell_data_set with existing models.
 #' @param directory_path a string giving the name of the directory
 #'   in which to write the model files.
-#' @param comment a string with optional notes that is saved with 
+#' @param comment a string with optional notes that is saved with
 #'   the objects.
 #' @param verbose a boolean determining whether to print information
 #'   about the saved files.
@@ -811,7 +809,6 @@ report_files_saved <- function(file_index) {
 #'     save_transform_models(cds, 'tm')
 #'   }
 #'
-#' @importFrom utils packageVersion
 #' @export
 # Bioconductor forbids writing to user directories so examples
 # is not run.
@@ -829,10 +826,10 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
   file_index <- list( 'save_function' = 'save_transform_models',
                       'archive_date' = Sys.time(),
                       'r_version' = R.Version()$version.string,
-                      'uwot_version' = packageVersion('uwot'),
-                      'hnsw_version' = packageVersion('RcppHNSW'),
-                      'monocle_version' = packageVersion('monocle3'),
-                      'cds_version' = metadata(cds)$cds_version,
+                      'uwot_version' = utils::packageVersion('uwot'),
+                      'hnsw_version' = utils::packageVersion('RcppHNSW'),
+                      'monocle_version' = utils::packageVersion('monocle3'),
+                      'cds_version' = S4Vectors::metadata(cds)$cds_version,
                       'archive_version' = get_global_variable('transform_models_version'),
                       'directory' = directory_path,
                       'comment' = comment,
@@ -907,7 +904,7 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
         saveRDS(cds@reduce_dim_aux[[reduction_method]], file=file.path(directory_path, methods_reduce_dim[[reduction_method]][['rds_path']]))
       },
       error = function(cond) {
-                     message('Error writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['rds_path']]), '\': ', cond, appendLF=appendLF)
+                     message('problem writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['rds_path']]), '\': ', cond, appendLF=appendLF)
                      return(NULL)
       },
       finally = {
@@ -927,7 +924,7 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
           save_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']], file.path(directory_path, methods_reduce_dim[[reduction_method]][['annoy_index_path']]))
         },
         error = function(cond) {
-                       message('Error writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['annoy_index_path']]), '\': ', cond, appendLF=appendLF)
+                       message('problem writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['annoy_index_path']]), '\': ', cond, appendLF=appendLF)
                        return(NULL)
         },
         finally = {
@@ -949,7 +946,7 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
           save_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']], file.path(directory_path, methods_reduce_dim[[reduction_method]][['hnsw_index_path']]))
         },
         error = function(cond) {
-                       message('Error writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['hnsw_index_path']]), '\': ', cond, appendLF=appendLF)
+                       message('problem writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['hnsw_index_path']]), '\': ', cond, appendLF=appendLF)
                        return(NULL)
         },
         finally = {
@@ -970,7 +967,7 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
           md5sum <- save_umap_nn_indexes(cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']], file.path(directory_path, methods_reduce_dim[[reduction_method]][['umap_index_path']]))
         },
         error = function(cond) {
-                       message('Error writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['umap_index_path']]), '\': ', cond, appendLF=appendLF)
+                       message('problem writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['umap_index_path']]), '\': ', cond, appendLF=appendLF)
                        return(NULL)
         },
         finally = {
@@ -1038,7 +1035,7 @@ load_transform_models <- function(cds, directory_path) {
       readRDS(file_index_path)
     },
     error = function(cond) {
-              message('Error reading file \'', file_index_path, '\': ', cond, appendLF=appendLF);
+              message('problem reading file \'', file_index_path, '\': ', cond, appendLF=appendLF);
               return(NULL)
     }
   )
@@ -1084,11 +1081,11 @@ load_transform_models <- function(cds, directory_path) {
     if(cds_object == 'reduce_dim_aux') {
       if(file_format == 'rds') {
         cds@reduce_dim_aux[[reduction_method]] <- tryCatch(
-          { 
+          {
             readRDS(file_path)
           },
           error = function(cond) {
-            message('Error reading file \'', file_path, '\'', appendLF=appendLF)
+            message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
       } else
@@ -1102,7 +1099,7 @@ load_transform_models <- function(cds, directory_path) {
             load_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']], file_path, metric, ncolumn)
           },
           error = function(cond) {
-            message('Error reading file \'', file_path, '\'', appendLF=appendLF)
+            message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
       } else
@@ -1116,7 +1113,7 @@ load_transform_models <- function(cds, directory_path) {
             load_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']], file_path, metric, ncolumn)
           },
           error = function(cond) {
-            message('Error reading file \'', file_path, '\'', appendLF=appendLF)
+            message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
       } else
@@ -1126,13 +1123,13 @@ load_transform_models <- function(cds, directory_path) {
             load_umap_nn_indexes(cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']], file_path, md5sum)
           },
           error = function(cond) {
-            message('Error reading file \'', file_path, '\'', appendLF=appendLF)
+            message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
          })
       } else {
         stop('Unrecognized file format value \'', file_format, '\'')
       }
-      cds <- set_model_identity_path(cds, reduction_method, directory_path) 
+      cds <- set_model_identity_path(cds, reduction_method, directory_path)
     } else {
       stop('Unrecognized cds_object value \'', cds_object, '\'')
     }
@@ -1145,15 +1142,14 @@ load_transform_models <- function(cds, directory_path) {
 #
 # Check cds assays for HDF5Array objects.
 #
-#' @importFrom methods is
 #' @importFrom S4Vectors getListElement
 test_hdf5_assays <- function(cds) {
   assays <- assays(cds)
   for( idx in seq_along(assays)) {
     asyl <- getListElement(assays, idx)
-    hdf5_test<- unlist(DelayedArray::seedApply(asyl, is, "HDF5ArraySeed"))
+    hdf5_test <- unlist(DelayedArray::seedApply(asyl, methods::is, "HDF5ArraySeed"))
     if(any(unlist(hdf5_test))) return(TRUE)
-  } 
+  }
   FALSE
 }
 
@@ -1195,7 +1191,6 @@ test_hdf5_assays <- function(cds) {
 #'     save_monocle_objects(cds, 'mo')
 #'   }
 #'
-#' @importFrom utils packageVersion
 #' @export
 # Bioconductor forbids writing to user directories so examples
 # is not run.
@@ -1213,11 +1208,11 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
   file_index <- list( 'save_function' = 'save_monocle_objects',
                       'archive_date' = Sys.time(),
                       'r_version' = R.Version()$version.string,
-                      'uwot_version' = packageVersion('uwot'),
-                      'hnsw_version' = packageVersion('RcppHNSW'),
-                      'hdf5array_version' = packageVersion('HDF5Array'),
-                      'monocle_version' = packageVersion('monocle3'),
-                      'cds_version' = metadata(cds)$cds_version,
+                      'uwot_version' = utils::packageVersion('uwot'),
+                      'hnsw_version' = utils::packageVersion('RcppHNSW'),
+                      'hdf5array_version' = utils::packageVersion('HDF5Array'),
+                      'monocle_version' = utils::packageVersion('monocle3'),
+                      'cds_version' = S4Vectors::metadata(cds)$cds_version,
                       'archive_version' = get_global_variable('monocle_objects_version'),
                       'directory' = directory_path,
                       'comment' = comment,
@@ -1297,7 +1292,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
         saveRDS(cds, file.path(directory_path, rds_path))
       },
       error = function(cond) {
-                       message('Error writing file \'', file.path(directory_path, rds_path), '\': ', cond, appendLF=appendLF)
+                       message('problem writing file \'', file.path(directory_path, rds_path), '\': ', cond, appendLF=appendLF)
                        return(NULL)
       },
       finally = {
@@ -1317,7 +1312,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
         HDF5Array::saveHDF5SummarizedExperiment(cds, file.path(directory_path, hdf5_path), replace=TRUE)
       },
       error = function(cond) {
-                       message('Error writing file \'', file.path(directory_path, hdf5_path), '\': ', cond, appendLF=appendLF)
+                       message('problem writing file \'', file.path(directory_path, hdf5_path), '\': ', cond, appendLF=appendLF)
                        return(NULL)
       },
       finally = {
@@ -1345,7 +1340,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
           save_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']], file.path(directory_path, methods_reduce_dim[[reduction_method]][['annoy_index_path']]))
         },
         error = function(cond) {
-                       message('Error writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['annoy_index_path']]), '\': ', cond, appendLF=appendLF)
+                       message('problem writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['annoy_index_path']]), '\': ', cond, appendLF=appendLF)
                        return(NULL)
         },
         finally = {
@@ -1366,7 +1361,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
           save_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']], file.path(directory_path, methods_reduce_dim[[reduction_method]][['hnsw_index_path']]))
         },
         error = function(cond) {
-                       message('Error writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['hswn_index_path']]), '\': ', cond, appendLF=appendLF)
+                       message('problem writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['hswn_index_path']]), '\': ', cond, appendLF=appendLF)
                        return(NULL)
         },
         finally = {
@@ -1387,7 +1382,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
           md5sum <- save_umap_nn_indexes(cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']], file.path(directory_path, methods_reduce_dim[[reduction_method]][['umap_index_path']]))
         },
         error = function(cond) {
-                       message('Error writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['umap_index_path']]), '\': ', cond, appendLF=appendLF)
+                       message('problem writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['umap_index_path']]), '\': ', cond, appendLF=appendLF)
                        return(NULL)
         },
         finally = {
@@ -1454,11 +1449,11 @@ load_monocle_objects <- function(directory_path) {
       readRDS(file_index_path)
     },
     error = function(cond) {
-              message('Error reading file \'', file_index_path, '\': ', cond, appendLF=appendLF);
+              message('problem reading file \'', file_index_path, '\': ', cond, appendLF=appendLF);
               catch_error <<- TRUE
     },
     warning = function(cond) {
-              message('Error reading file \'', file_index_path, '\': ', cond, appendLF=appendLF);
+              message('problem reading file \'', file_index_path, '\': ', cond, appendLF=appendLF);
               catch_error <<- TRUE
     }
   )
@@ -1514,7 +1509,7 @@ load_monocle_objects <- function(directory_path) {
             readRDS(file_path)
           },
           error = function(cond) {
-            message('Error reading file \'', file_path, '\'', appendLF=appendLF)
+            message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
       } else
@@ -1524,7 +1519,7 @@ load_monocle_objects <- function(directory_path) {
             HDF5Array::loadHDF5SummarizedExperiment(file_path)
           },
           error = function(cond) {
-            message('Error reading file \'', file_path, '\'', appendLF=appendLF)
+            message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
       } else {
@@ -1542,7 +1537,7 @@ load_monocle_objects <- function(directory_path) {
             load_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']], file_path, metric, ncolumn)
           },
           error = function(cond) {
-            message('Error reading file \'', file_path, '\'', appendLF=appendLF)
+            message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
       } else
@@ -1556,7 +1551,7 @@ load_monocle_objects <- function(directory_path) {
             load_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']], file_path, metric, ncolumn)
           },
           error = function(cond) {
-            message('Error reading file \'', file_path, '\'', appendLF=appendLF)
+            message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
       } else
@@ -1566,7 +1561,7 @@ load_monocle_objects <- function(directory_path) {
             load_umap_nn_indexes(cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']], file_path, md5sum)
           },
           error = function(cond) {
-            message('Error reading file \'', file_path, '\'', appendLF=appendLF)
+            message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
          })
       } else {
@@ -1702,7 +1697,6 @@ load_monocle_objects <- function(directory_path) {
 #      check?
 #   o  can there be an inconsistency between the model and matrix identity
 #      version information?
-#' @importFrom SingleCellExperiment int_metadata
 
 load_monocle_rds <- function(file_path) {
   appendLF <- TRUE
@@ -1712,11 +1706,11 @@ load_monocle_rds <- function(file_path) {
                          readRDS(file_path)
                        },
                        error=function(cond) {
-                         message('Error reading file \'', file_path, '\': ', cond, appendLF=appendLF);
+                         message('problem reading file \'', file_path, '\': ', cond, appendLF=appendLF);
                          catch_error <<- TRUE
                        },
                        warning=function(cond) {
-                         message('Error reading file \'', file_path, '\': ', cond, appendLF=appendLF);
+                         message('problem reading file \'', file_path, '\': ', cond, appendLF=appendLF);
                          catch_error <<- TRUE
                        }
                      )
@@ -1726,7 +1720,7 @@ load_monocle_rds <- function(file_path) {
   }
 
   cds <- cds_tmp
-  if(!is.null(reducedDims(cds_tmp)[['PCA']])) {
+  if(!is.null(SingleCellExperiment::reducedDims(cds_tmp)[['PCA']])) {
     if(is.null(cds_tmp@reduce_dim_aux[['PCA']][['model']][['identity']])) {
       cds <- initialize_reduce_dim_model_identity(cds, 'PCA')
     }
@@ -1741,7 +1735,7 @@ load_monocle_rds <- function(file_path) {
     }
   }
 
-  if(!is.null(reducedDims(cds_tmp)[['LSI']])) {
+  if(!is.null(SingleCellExperiment::reducedDims(cds_tmp)[['LSI']])) {
     if(is.null(cds_tmp@reduce_dim_aux[['LSI']][['model']][['identity']])) {
       cds <- initialize_reduce_dim_model_identity(cds, 'LSI')
     }
@@ -1753,7 +1747,7 @@ load_monocle_rds <- function(file_path) {
     }
   }
 
-  if(!is.null(reducedDims(cds_tmp)[['Aligned']])) {
+  if(!is.null(SingleCellExperiment::reducedDims(cds_tmp)[['Aligned']])) {
     if(is.null(cds_tmp@reduce_dim_aux[['Aligned']][['model']][['identity']])) {
       cds <- initialize_reduce_dim_model_identity(cds, 'Aligned')
     }
@@ -1762,19 +1756,19 @@ load_monocle_rds <- function(file_path) {
     }
   }
 
-  if(!is.null(reducedDims(cds_tmp)[['tSNE']])) {
+  if(!is.null(SingleCellExperiment::reducedDims(cds_tmp)[['tSNE']])) {
     if(is.null(cds_tmp@reduce_dim_aux[['tSNE']][['model']][['identity']])) {
       cds <- initialize_reduce_dim_model_identity(cds, 'tSNE')
     }
   }
 
-  if(!is.null(reducedDims(cds_tmp)[['UMAP']])) {
+  if(!is.null(SingleCellExperiment::reducedDims(cds_tmp)[['UMAP']])) {
     if(is.null(cds_tmp@reduce_dim_aux[['UMAP']][['model']][['identity']])) {
       cds <- initialize_reduce_dim_model_identity(cds, 'UMAP')
     }
   }
 
-  if(is.null(int_metadata(cds_tmp)[['counts_metadata']])) {
+  if(is.null(SingleCellExperiment::int_metadata(cds_tmp)[['counts_metadata']])) {
     cds <- initialize_counts_metadata(cds)
   }
 

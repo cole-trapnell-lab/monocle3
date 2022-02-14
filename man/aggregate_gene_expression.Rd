@@ -62,10 +62,16 @@ Creates a matrix with aggregated expression values for arbitrary groups of
 genes
 }
 \examples{
-  \donttest{
-     expression_matrix <- readRDS(system.file('extdata', 'worm_l2/worm_l2_expression_matrix.rds', package='monocle3'))
-     cell_metadata <- readRDS(system.file('extdata', 'worm_l2/worm_l2_coldata.rds', package='monocle3'))
-     gene_metadata <- readRDS(system.file('extdata', 'worm_l2/worm_l2_rowdata.rds', package='monocle3'))
+  \dontrun{
+     expression_matrix <- readRDS(system.file('extdata',
+                                               'worm_l2/worm_l2_expression_matrix.rds',
+                                               package='monocle3'))
+     cell_metadata <- readRDS(system.file('extdata',
+                              'worm_l2/worm_l2_coldata.rds',
+                               package='monocle3'))
+     gene_metadata <- readRDS(system.file('extdata',
+                              'worm_l2/worm_l2_rowdata.rds',
+                              package='monocle3'))
 
      cds <- new_cell_data_set(expression_data=expression_matrix,
                               cell_metadata=cell_metadata,
@@ -118,7 +124,8 @@ genes
     pr_graph_test_res <- graph_test(neurons_cds, neighbor_graph="knn")
     pr_deg_ids <- row.names(subset(pr_graph_test_res, q_value < 0.05))
     gene_module_df <- find_gene_modules(neurons_cds[pr_deg_ids,], resolution=1e-2)
-    cell_group_df <- tibble::tibble(cell=row.names(colData(neurons_cds)), cell_group=partitions(cds)[colnames(neurons_cds)])
+    cell_group_df <- tibble::tibble(cell=row.names(colData(neurons_cds)),
+                                    cell_group=partitions(cds)[colnames(neurons_cds)])
     agg_mat <- aggregate_gene_expression(neurons_cds, gene_module_df, cell_group_df)
   }
 

@@ -18,7 +18,7 @@ choose_cells <- function(cds,
                          return_list = FALSE) {
   reduction_method <- match.arg(reduction_method)
   assertthat::assert_that(methods::is(cds, "cell_data_set"))
-  assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
+  assertthat::assert_that(!is.null(SingleCellExperiment::reducedDims(cds)[[reduction_method]]),
                           msg = paste0("No dimensionality reduction for ",
                                        reduction_method, " calculated. ",
                                        "Please run reduce_dimension with ",
@@ -31,7 +31,7 @@ choose_cells <- function(cds,
                                       "interactive mode."))
 
 
-  reduced_dims <- as.data.frame(reducedDims(cds)[[reduction_method]])
+  reduced_dims <- as.data.frame(SingleCellExperiment::reducedDims(cds)[[reduction_method]])
   names(reduced_dims)[1:2] <- c("V1", "V2")
 
   ui <- shiny::fluidPage(
@@ -162,7 +162,7 @@ choose_graph_segments <- function(cds,
   assertthat::assert_that(assertthat::are_equal("UMAP", reduction_method),
                           msg = paste("Currently only 'UMAP' is accepted as a",
                                       "reduction_method."))
-  assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
+  assertthat::assert_that(!is.null(SingleCellExperiment::reducedDims(cds)[[reduction_method]]),
                           msg = paste0("No dimensionality reduction for ",
                                        reduction_method, " calculated. ",
                                        "Please run reduce_dimension with ",
@@ -238,7 +238,7 @@ choose_graph_segments <- function(cds,
                                         target_prin_graph_dim_2="y"),
                        by = "target")
 
-    data_df <- data.frame(reducedDims(cds)[[reduction_method]])
+    data_df <- data.frame(SingleCellExperiment::reducedDims(cds)[[reduction_method]])
 
     colnames(data_df) <- c("data_dim_1", "data_dim_2")
     data_df$sample_name <- row.names(data_df)
@@ -385,7 +385,7 @@ get_principal_path <- function(cds, reduction_method,
     traverse_res <- traverse_graph(dp_mst, starting_cell, end_cell)
     path_cells <- names(traverse_res$shortest_path[[1]])
     if(length(path_cells) == 0) {
-      stop(paste0("Starting and ending nodes are not connected"))
+      stop("Starting and ending nodes are not connected")
     }
 
     subset_principal_nodes <- c(subset_principal_nodes, path_cells)
@@ -429,7 +429,7 @@ plot_principal_graph <- function(cds,
                                  alpha = 1,
                                  min_expr=0.1,
                                  rasterize=FALSE) {
-
+  x <- y <- chosen <- NULL # no visible binding
   gene_short_name <- NA
   sample_name <- NA
   #sample_state <- colData(cds)$State
@@ -468,8 +468,8 @@ plot_principal_graph <- function(cds,
   g <- g + geom_point(color=data_df$chosen_cells, size=I(cell_size),
                       na.rm = TRUE, alpha = I(alpha))
 
-  message(paste("cluster_cells() has not been called yet, can't color cells",
-                "by cluster"))
+  message("cluster_cells() has not been called yet, can't color cells ",
+                "by cluster")
 
   g <- g + geom_point(aes(x = x, y = y, color = chosen), data=princ_points) +
     scale_color_manual(values = c("Start" = "green", "End" = "blue",

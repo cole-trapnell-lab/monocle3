@@ -30,11 +30,11 @@ estimate_size_factors <- function(cds,
 {
   method <- match.arg(method)
   if(any(Matrix::colSums(SingleCellExperiment::counts(cds)) == 0)) {
-    warning(paste("Your CDS object contains cells with zero reads.",
-                  "This causes size factor calculation to fail. Please remove",
-                  "the zero read cells using",
-                  "cds <- cds[,Matrix::colSums(exprs(cds)) != 0] and then",
-                  "run cds <- estimate_size_factors(cds)"))
+    warning("Your CDS object contains cells with zero reads. ",
+                  "This causes size factor calculation to fail. Please remove ",
+                  "the zero read cells using ",
+                  "cds <- cds[,Matrix::colSums(exprs(cds)) != 0] and then ",
+                  "run cds <- estimate_size_factors(cds)")
     return(cds)
   }
   if (is_sparse_matrix(SingleCellExperiment::counts(cds))){
@@ -118,19 +118,19 @@ sparse_apply <- function(Sp_X, MARGIN, FUN, convert_to_dense, ...){
 
 }
 
-#' @keywords internal
+#' @noRd
 split_rows <- function (x, ncl) {
   lapply(parallel::splitIndices(nrow(x), ncl),
          function(i) x[i, , drop = FALSE])
 }
 
-#' @keywords internal
+#' @noRd
 split_cols <- function (x, ncl) {
   lapply(parallel::splitIndices(ncol(x), ncl),
          function(i) x[, i, drop = FALSE])
 }
 
-#' @keywords internal
+#' @noRd
 sparse_par_r_apply <- function (cl, x, FUN, convert_to_dense, ...) {
   par_res <- do.call(c, parallel::clusterApply(cl = cl,
                                                    x = split_rows(x,
@@ -143,7 +143,7 @@ sparse_par_r_apply <- function (cl, x, FUN, convert_to_dense, ...) {
   par_res
 }
 
-#' @keywords internal
+#' @noRd
 sparse_par_c_apply <- function (cl = NULL, x, FUN, convert_to_dense, ...) {
   par_res <- do.call(c, parallel::clusterApply(cl = cl,
                                                    x = split_cols(x,
@@ -175,6 +175,7 @@ sparse_par_c_apply <- function (cl = NULL, x, FUN, convert_to_dense, ...) {
 #' @param ... Additional parameters for FUN.
 #' @param cores The number of cores to use for evaluation.
 #'
+#' @importFrom Biobase multiassign
 #' @return The result of with(colData(cds) apply(counts(cds)), MARGIN, FUN, ...))
 mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1,
                         convert_to_dense=TRUE,
@@ -255,6 +256,7 @@ mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1,
   res
 }
 
+#' @importFrom Biobase multiassign
 smart_es_apply <- function(cds, MARGIN, FUN, convert_to_dense,
                            reduction_method="UMAP", ...) {
   parent <- environment(FUN)
@@ -371,7 +373,7 @@ sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
             function to control that algorithm's convergence tolerance. See
             `?prcomp_irlba` for help.")
   orig_x <- x
-  if (is(x, "DelayedMatrix"))
+  if (methods::is(x, "DelayedMatrix"))
     x = DelayedArray::DelayedArray(x)
 
   args <- list(A=orig_x, nv=n)
@@ -545,12 +547,12 @@ combine_cds <- function(cds_list,
 
   if (sample_col_name == "sample" &
       any(sapply(cds_list, function(cds) "sample" %in% names(colData(cds))))) {
-    warning(paste0("By default, the combine_cds function adds a column called ",
+    warning("By default, the combine_cds function adds a column called ",
                    "'sample' which indicates which initial cds a cell came ",
                    "from. One or more of your input cds objects contains a ",
                    "'sample' column, which will be overwritten. We recommend ",
                    "you rename this column or provide an alternative column ",
-                   "name using the 'sample_col_name' parameter."))
+                   "name using the 'sample_col_name' parameter.")
   }
   assertthat::assert_that(!any(sapply(cds_list, function(cds)
     sum(is.na(names(colData(cds)))) != 0)),
@@ -603,17 +605,17 @@ combine_cds <- function(cds_list,
   gene_list <- unique(gene_list)
   if(length(overlap_list) == 0) {
     if (keep_all_genes) {
-      warning(paste("No genes are shared amongst all the CDS objects."))
+      warning("No genes are shared amongst all the CDS objects.")
     } else {
-      stop(paste("No genes are shared amongst all the CDS objects. To generate",
-                 "a combined CDS with all genes, use keep_all_genes = TRUE"))
+      stop("No genes are shared amongst all the CDS objects. To generate ",
+                 "a combined CDS with all genes, use keep_all_genes = TRUE")
     }
   }
   pdata_cols <- unique(pdata_cols)
   fdata_cols <- unique(fdata_cols)
   if (sum(duplicated(all_cells)) != 0 & cell_names_unique) {
-    stop(paste("Cell names are not unique across CDSs - cell_names_unique",
-               "must be FALSE."))
+    stop("Cell names are not unique across CDSs - cell_names_unique ",
+               "must be FALSE.")
   }
   all_cells <- unique(all_cells)
   for(i in seq(1, length(cds_list), 1)) {
@@ -645,7 +647,7 @@ combine_cds <- function(cds_list,
     fd <- fd[intersect(row.names(fd), gene_list),, drop=FALSE]
     not_in <- fdata_cols[!fdata_cols %in% names(fd)]
     for(col in names(fd)) {
-      if(is(fd[,col], "factor")) {
+      if(methods::is(fd[,col], "factor")) {
         fd[,col] <- as.character(fd[,col])
       }
     }
@@ -689,10 +691,10 @@ combine_cds <- function(cds_list,
   confs <- sum(all_fd == "conf", na.rm=TRUE)
 
   if (confs > 0) {
-   warning(paste0("When combining rowData, conflicting values were found - ",
+   warning("When combining rowData, conflicting values were found - ",
                   "conflicts will be labelled 'conf' in the combined cds ",
                   "to prevent conflicts, either change conflicting values to ",
-                  "match, or rename columns from different cds' to be unique."))
+                  "match, or rename columns from different cds' to be unique.")
   }
   #all_fd <- do.call(cbind, fd_list)
   all_fd <- all_fd[,fdata_cols, drop=FALSE]
@@ -705,15 +707,15 @@ combine_cds <- function(cds_list,
   new_cds <- new_cell_data_set(all_exp, cell_metadata = all_pd, gene_metadata = all_fd)
 
   if(keep_reduced_dims) {
-    for(red_dim in names(reducedDims(cds_list[[1]]))) {
+    for(red_dim in names(SingleCellExperiment::reducedDims(cds_list[[1]]))) {
       reduced_dims_list <- list()
       for(j in seq(1, length(cds_list), 1)) {
-        reduced_dims_list[[j]] <- reducedDims(cds_list[[j]])[[red_dim]]
+        reduced_dims_list[[j]] <- SingleCellExperiment::reducedDims(cds_list[[j]])[[red_dim]]
       }
-      reducedDims(new_cds)[[red_dim]] <- do.call(rbind, reduced_dims_list, quote=FALSE)
+      SingleCellExperiment::reducedDims(new_cds)[[red_dim]] <- do.call(rbind, reduced_dims_list, quote=FALSE)
       # The following should not happen; the accessor appears to ensure the
       # correct row order.
-      if(!identical(rownames(reducedDims(new_cds)[[red_dim]]), rownames(all_pd))) {
+      if(!identical(rownames(SingleCellExperiment::reducedDims(new_cds)[[red_dim]]), rownames(all_pd))) {
         stop('Mis-ordered reduced matrix rows.')
       }
     }
@@ -731,11 +733,11 @@ combine_cds <- function(cds_list,
 #' @export
 #'
 clear_cds_slots <- function(cds) {
-  cds@reduce_dim_aux <- SimpleList()
-  cds@principal_graph_aux <- SimpleList()
-  cds@principal_graph <- SimpleList()
-  cds@clusters <- SimpleList()
-  reducedDims(cds) <- SimpleList()
+  cds@reduce_dim_aux <- S4Vectors::SimpleList()
+  cds@principal_graph_aux <- S4Vectors::SimpleList()
+  cds@principal_graph <- S4Vectors::SimpleList()
+  cds@clusters <- S4Vectors::SimpleList()
+  SingleCellExperiment::reducedDims(cds) <- S4Vectors::SimpleList()
   cds
 }
 
@@ -749,13 +751,13 @@ add_citation <- function(cds, citation_key) {
     clusters = c("clustering", "Levine, J. H. et. al. Data-driven phenotypic dissection of AML reveals progenitor-like cells that correlate with prognosis. Cell 162, 184-197 (2015). https://doi.org/10.1016/j.cell.2015.05.047"),
     leiden = c("leiden", "Traag, V.A., Waltman, L. & van Eck, N.J. From Louvain to Leiden: guaranteeing well-connected communities. Scientific Reportsvolume 9, Article number: 5233 (2019). https://doi.org/10.1038/s41598-019-41695-z" )
   )
-  if (is.null(metadata(cds)$citations) | citation_key == "Monocle") {
-    metadata(cds)$citations <- data.frame(method = c("Monocle", "Monocle", "Monocle"),
+  if (is.null(S4Vectors::metadata(cds)$citations) | citation_key == "Monocle") {
+    S4Vectors::metadata(cds)$citations <- data.frame(method = c("Monocle", "Monocle", "Monocle"),
                                           citations = c("Trapnell C. et. al. The dynamics and regulators of cell fate decisions are revealed by pseudotemporal ordering of single cells. Nat. Biotechnol. 32, 381-386 (2014). https://doi.org/10.1038/nbt.2859",
                                                         "Qiu, X. et. al. Reversed graph embedding resolves complex single-cell trajectories. Nat. Methods 14, 979-982 (2017). https://doi.org/10.1038/nmeth.4402",
                                                         "Cao, J. et. al. The single-cell transcriptional landscape of mammalian organogenesis. Nature 566, 496-502 (2019). https://doi.org/10.1038/s41586-019-0969-x"))
   }
-  metadata(cds)$citations <- rbind(metadata(cds)$citations,
+  S4Vectors::metadata(cds)$citations <- rbind(S4Vectors::metadata(cds)$citations,
                                    data.frame(method = citation_map[[citation_key]][1],
                                               citations = citation_map[[citation_key]][2]))
   cds
@@ -774,12 +776,12 @@ add_citation <- function(cds, citation_key) {
 #'   }
 #' }
 get_citations <- function(cds) {
-  message(paste("Your analysis used methods from the following recent work.",
-                "Please cite them wherever you are presenting your analyses."))
-  if(is.null(metadata(cds)$citations)) {
+  message("Your analysis used methods from the following recent work. ",
+                "Please cite them wherever you are presenting your analyses.")
+  if(is.null(S4Vectors::metadata(cds)$citations)) {
     cds <- add_citation(cds, "Monocle")
   }
-  metadata(cds)$citations
+  S4Vectors::metadata(cds)$citations
 }
 
 
@@ -814,11 +816,10 @@ get_time_stamp <- function() {
 
 
 # Manage parallel processing for matrix multiplication.
-#' @importFrom methods is
 matrix_multiply_multicore <- function(mat_a, mat_b, cores=1L) {
-  assertthat::assert_that(is.matrix(mat_a) || is_sparse_matrix(mat_a) || is(mat_a, 'DelayedMatrix'),
+  assertthat::assert_that(is.matrix(mat_a) || is_sparse_matrix(mat_a) || methods::is(mat_a, 'DelayedMatrix'),
     msg=paste0('mat_a must be either a matrix or a sparse matrix'))
-  assertthat::assert_that(is.matrix(mat_b) || is_sparse_matrix(mat_b) || is(mat_b, 'DelayedMatrix'),
+  assertthat::assert_that(is.matrix(mat_b) || is_sparse_matrix(mat_b) || methods::is(mat_b, 'DelayedMatrix'),
     msg=paste0('mat_b must be either a matrix or a sparse matrix'))
 
   if(cores > 1) {

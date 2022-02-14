@@ -11,6 +11,9 @@
 
 \item{value}{A data frame to set to colData table.}
 }
+\value{
+x.
+}
 \description{
 Method to set cds rowData table
 }

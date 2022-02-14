@@ -72,9 +72,15 @@ no correlation, and -1 means that neighboring cells will be
 }
 \examples{
   \donttest{
-     expression_matrix <- readRDS(system.file('extdata', 'worm_l2/worm_l2_expression_matrix.rds', package='monocle3'))
-     cell_metadata <- readRDS(system.file('extdata', 'worm_l2/worm_l2_coldata.rds', package='monocle3'))
-     gene_metadata <- readRDS(system.file('extdata', 'worm_l2/worm_l2_rowdata.rds', package='monocle3'))
+     expression_matrix <- readRDS(system.file('extdata',
+                                               'worm_l2/worm_l2_expression_matrix.rds',
+                                               package='monocle3'))
+     cell_metadata <- readRDS(system.file('extdata',
+                              'worm_l2/worm_l2_coldata.rds',
+                               package='monocle3'))
+     gene_metadata <- readRDS(system.file('extdata',
+                              'worm_l2/worm_l2_rowdata.rds',
+                              package='monocle3'))
 
      cds <- new_cell_data_set(expression_data=expression_matrix,
                               cell_metadata=cell_metadata,

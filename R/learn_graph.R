@@ -87,16 +87,25 @@
 #'
 #' @examples
 #'   \donttest{
-#'     cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
-#'     gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
-#'     expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
-#'    
+#'     cell_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_coldata.rds',
+#'                                          package='monocle3'))
+#'     gene_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_rowdata.rds',
+#'                                          package='monocle3'))
+#'     expression_matrix <- readRDS(system.file('extdata',
+#'                                              'worm_embryo/worm_embryo_expression_matrix.rds',
+#'                                              package='monocle3'))
+#'
 #'     cds <- new_cell_data_set(expression_data=expression_matrix,
 #'                              cell_metadata=cell_metadata,
 #'                              gene_metadata=gene_metadata)
 #'
-#'     cds <- preprocess_cds(cds, num_dim=50)
-#'     cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+#'     cds <- preprocess_cds(cds)
+#'     cds <- align_cds(cds, alignment_group =
+#'                      "batch", residual_model_formula_str = "~ bg.300.loading +
+#'                       bg.400.loading + bg.500.1.loading + bg.500.2.loading +
+#'                       bg.r17.loading + bg.b01.loading + bg.b02.loading")
 #'     cds <- reduce_dimension(cds)
 #'     cds <- cluster_cells(cds)
 #'     cds <- learn_graph(cds)
@@ -108,6 +117,7 @@ learn_graph <- function(cds,
                         close_loop = TRUE,
                         learn_graph_control = NULL,
                         verbose = FALSE) {
+
   reduction_method <- "UMAP"
   if (!is.null(learn_graph_control)) {
     assertthat::assert_that(methods::is(learn_graph_control, "list"))
@@ -174,7 +184,7 @@ learn_graph <- function(cds,
                      learn_graph_control$L1.gamma)
   L1.sigma <- ifelse(is.null(learn_graph_control$L1.sigma), 0.01,
                      learn_graph_control$L1.sigma)
-  
+
   assertthat::assert_that(methods::is(cds, "cell_data_set"))
   assertthat::assert_that(reduction_method %in% c('UMAP'), msg=paste0('unsupported or invalid reduction method \'', reduction_method, '\''))
   assertthat::assert_that(is.logical(use_partition))
@@ -195,7 +205,7 @@ learn_graph <- function(cds,
   assertthat::assert_that(is.numeric(L1.sigma))
   assertthat::assert_that(is.numeric(L1.sigma))
 
-  assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
+  assertthat::assert_that(!is.null(SingleCellExperiment::reducedDims(cds)[[reduction_method]]),
                           msg = paste("No dimensionality reduction for",
                                       reduction_method, "calculated.",
                                       "Please run reduce_dimension with",
@@ -241,7 +251,7 @@ learn_graph <- function(cds,
     multi_component_RGE(cds, scale = scale,
                         reduction_method = reduction_method,
                         partition_list = partition_list,
-                        irlba_pca_res = reducedDims(cds)[[reduction_method]],
+                        irlba_pca_res = SingleCellExperiment::reducedDims(cds)[[reduction_method]],
                         max_components = max_components,
                         ncenter = ncenter,
                         nn.k = nn.k,
@@ -274,7 +284,6 @@ learn_graph <- function(cds,
 }
 
 
-#' @importFrom future cluster
 #' @importFrom BiocGenerics density
 #' @noRd
 multi_component_RGE <- function(cds,
@@ -296,6 +305,7 @@ multi_component_RGE <- function(cds,
                                 prune_graph = TRUE,
                                 minimal_branch_len = minimal_branch_len,
                                 verbose = FALSE) {
+  cluster <- NULL # no visible binding
   X <- t(irlba_pca_res)
 
   dp_mst <- NULL
@@ -308,7 +318,7 @@ multi_component_RGE <- function(cds,
   for(cur_comp in sort(unique(partition_list))) {  #  for loop 1  start
 
     if(verbose) {
-      message(paste0('Processing partition component ', cur_comp))
+      message('Processing partition component ', cur_comp)
     }
 
     X_subset <- X[, partition_list == cur_comp]
@@ -332,7 +342,7 @@ multi_component_RGE <- function(cds,
       curr_ncenter <- min(ncol(X_subset) - 1, ncenter)
     }
     if (verbose)
-      message(paste("Using", curr_ncenter, "nodes for principal graph"))
+      message("Using ", curr_ncenter, " nodes for principal graph")
 
     kmean_res <- NULL
 
@@ -348,7 +358,7 @@ multi_component_RGE <- function(cds,
     })
 
     if (kmean_res$ifault != 0){
-      message(paste("Warning: kmeans returned ifault =", kmean_res$ifault))
+      message("kmeans returned ifault = ", kmean_res$ifault)
     }
     nearest_center <- find_nearest_vertex(t(kmean_res$centers), X_subset,
                                           process_targets_in_blocks=TRUE)
@@ -400,7 +410,7 @@ multi_component_RGE <- function(cds,
     stree_ori <- stree
     if(close_loop) {
       reduce_dims_old <-
-        t(reducedDims(cds)[[reduction_method]])[, partition_list == cur_comp]
+        t(SingleCellExperiment::reducedDims(cds)[[reduction_method]])[, partition_list == cur_comp]
       connect_tips_res <-
         connect_tips(cds,
                      pd = colData(cds)[partition_list == cur_comp, ],
@@ -430,10 +440,12 @@ multi_component_RGE <- function(cds,
     }
 
     if(is.null(merge_rge_res)) {
+      if(ncol(rge_res$Y) < 1) warning('bad loop: ncol(rge_res$Y) < 1')
       colnames(rge_res$Y) <- paste0('Y_', 1:ncol(rge_res$Y))
       merge_rge_res <- rge_res
       colnames(merge_rge_res$X) <- colnames(X_subset)
       row.names(merge_rge_res$R) <- colnames(X_subset)
+      if(ncol(merge_rge_res$Y) < 1) warning('bad loop: ncol(merge_rge_res$Y) < 1')
       colnames(merge_rge_res$R) <- paste0('Y_', 1:ncol(merge_rge_res$Y))
       merge_rge_res$R <- list(merge_rge_res$R)
       merge_rge_res$stree <- list(stree)
@@ -456,6 +468,7 @@ multi_component_RGE <- function(cds,
     }
 
     if(is.null(reducedDimK_coord)) {
+      if(ncol(rge_res$Y) < 1) warning('bad loop: ncol(rge_res$Y) < 1')
       curr_cell_names <- paste("Y_", 1:ncol(rge_res$Y), sep = "")
       pr_graph_cell_proj_closest_vertex <- matrix(apply(rge_res$R, 1,
                                                         which.max))
@@ -483,7 +496,7 @@ multi_component_RGE <- function(cds,
   row.names(pr_graph_cell_proj_closest_vertex) <- cell_name_vec
 
   ddrtree_res_W <- as.matrix(rge_res$W)
-  ddrtree_res_Z <- reducedDims(cds)[[reduction_method]]
+  ddrtree_res_Z <- SingleCellExperiment::reducedDims(cds)[[reduction_method]]
   ddrtree_res_Y <- reducedDimK_coord
 
   R <- Matrix::sparseMatrix(i = 1, j = 1, x = 0,
@@ -494,6 +507,7 @@ multi_component_RGE <- function(cds,
   curr_row_id <- 1
   curr_col_id <- 1
   R_row_names <- NULL
+  if(length(merge_rge_res$R) < 1) warning('bad loop: length(merge_rge_res$R) < 1')
   for(i in 1:length(merge_rge_res$R)) {
     current_R <- merge_rge_res$R[[i]]
 
@@ -518,6 +532,7 @@ multi_component_RGE <- function(cds,
   cds@principal_graph_aux[[
     reduction_method]]$pr_graph_cell_proj_closest_vertex <-
     as.data.frame(pr_graph_cell_proj_closest_vertex)[colnames(cds), , drop = FALSE]
+  if(ncol(ddrtree_res_Y) < 1) warning('bad loop: ncol(ddrtree_res_Y) < 1')
   colnames(ddrtree_res_Y) <- paste0("Y_", 1:ncol(ddrtree_res_Y), sep = "")
 
   return(list(cds = cds,
@@ -540,12 +555,13 @@ cal_ncenter <- function(num_cell_communities, ncells,
 #' @param block_size the number of input matrix rows to process per block
 #' @param process_targets_in_blocks whether to process the targets points in
 #'   blocks instead
-#' @keywords internal
+#' @noRd
 find_nearest_vertex <- function(data_matrix, target_points, block_size=50000,
                                 process_targets_in_blocks=FALSE){
   closest_vertex = c()
   if (process_targets_in_blocks == FALSE){
     num_blocks = ceiling(ncol(data_matrix) / block_size)
+    if(num_blocks < 1) warning('bad loop: num_blocks < 1')
     for (i in 1:num_blocks){
       if (i < num_blocks){
         block = data_matrix[,((((i-1) * block_size)+1):(i*block_size))]
@@ -561,6 +577,7 @@ find_nearest_vertex <- function(data_matrix, target_points, block_size=50000,
     num_blocks = ceiling(ncol(target_points) / block_size)
     dist_to_closest_vertex = rep(Inf, length(ncol(data_matrix)))
     closest_vertex = rep(NA, length(ncol(data_matrix)))
+    if(num_blocks < 1) warning('bad loop: num_blocks < 1')
     for (i in 1:num_blocks){
       if (i < num_blocks){
         block = target_points[,((((i-1) * block_size)+1):(i*block_size))]
@@ -570,6 +587,7 @@ find_nearest_vertex <- function(data_matrix, target_points, block_size=50000,
       distances_Z_to_Y <- proxy::dist(t(data_matrix), t(block))
       closest_vertex_for_block <- apply(distances_Z_to_Y, 1,
                                         function(z) { which.min(z) } )
+      if(nrow(distances_Z_to_Y) < 1) warning('bad loop: nrow(distances_Z_to_Y) < 1')
       new_block_distances <- distances_Z_to_Y[cbind(1:nrow(distances_Z_to_Y),
                                                     closest_vertex_for_block)]
       updated_nearest_idx <- which(new_block_distances < dist_to_closest_vertex)
@@ -593,11 +611,11 @@ prune_tree <- function(stree_ori, stree_loop_closure,
   stree_ori[stree_ori != 0] <- 1
   stree_ori <- igraph::graph_from_adjacency_matrix(stree_ori,
                                                    mode = 'undirected',
-                                                   weight = NULL)
+                                                   weighted = NULL)
   stree_loop_closure[stree_loop_closure != 0] <- 1
   stree_loop_closure <- igraph::graph_from_adjacency_matrix(stree_loop_closure,
                                                             mode = 'undirected',
-                                                            weight = NULL)
+                                                            weighted = NULL)
 
   # get closed loops:
   added_edges <- igraph::get.edgelist(stree_loop_closure - stree_ori)
@@ -704,8 +722,9 @@ prune_tree <- function(stree_ori, stree_loop_closure,
 
 project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE,
                         verbose, reduction_method, rge_res_Y){
+  target <- group <- distance_2_source <- rowname <- NULL # no visible binding
   dp_mst <- principal_graph(cds)[[reduction_method]]
-  Z <- t(reducedDims(cds)[[reduction_method]])
+  Z <- t(SingleCellExperiment::reducedDims(cds)[[reduction_method]])
   Y <- rge_res_Y
 
   cds <- findNearestPointOnMST(cds, reduction_method, rge_res_Y)
@@ -720,8 +739,10 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE,
     P <- Y[, closest_vertex]
   } else {
     P <- matrix(rep(0, length(Z)), nrow = nrow(Z)) #Y
+    if(length(Z[1:2, ]) < 1) warning('bad loop: length(Z[1:2, ]) < 1')
     nearest_edges <- matrix(rep(0, length(Z[1:2, ])), ncol = 2)
     row.names(nearest_edges) <-  colnames(cds)
+    if(length(closest_vertex) < 1) warning('bad loop: length(closest_vertex) < 1')
     for(i in 1:length(closest_vertex)) { # This loop is going to be slow
       neighbors <- names(igraph::neighborhood(dp_mst,
                                               nodes = closest_vertex_names[i],
@@ -799,7 +820,7 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE,
       cur_z <- Z[, subset_cds_col_names]
       cur_p <- P[, subset_cds_col_names]
 
-      if (ncol(cur_p) > 0 && nrow(cur_p) > 0){
+      if (ncol(cur_p) > 0 && nrow(cur_p) > 0) {
         cur_centroid_name <-
           igraph::V(dp_mst_list[[as.numeric(cur_partition)]])$name
 
@@ -807,6 +828,7 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE,
         data_df <- cbind(as.data.frame(t(cur_p)),
                          apply(cur_nearest_edges, 1, sort) %>% t())
         row.names(data_df) <- colnames(cur_p)
+        if(nrow(cur_p) < 1) warning('bad loop: nrow(cur_p) < 1')
         colnames(data_df) <- c(paste0("P_", 1:nrow(cur_p)), 'source', 'target')
 
         # sort each cell's distance to the source in each principal edge group
@@ -884,13 +906,14 @@ findNearestPointOnMST <- function(cds, reduction_method, rge_res_Y){
   closest_vertex_df <- NULL
   cur_start_index <- 0
 
+  if(length(dp_mst_list) < 1) warning('bad loop: length(dp_mst_list) < 1')
   for(i in 1:length(dp_mst_list)) {
     cur_dp_mst <- dp_mst_list[[i]]
 
     if(length(dp_mst_list) == 1) {
-      Z <- t(reducedDims(cds)[[reduction_method]])
+      Z <- t(SingleCellExperiment::reducedDims(cds)[[reduction_method]])
     } else {
-      Z <- t(reducedDims(cds)[[reduction_method]])[, cds@clusters[[
+      Z <- t(SingleCellExperiment::reducedDims(cds)[[reduction_method]])[, cds@clusters[[
         reduction_method]]$partitions == i]
     }
     Y <- rge_res_Y[, igraph::V(cur_dp_mst)$name]
@@ -989,6 +1012,7 @@ calc_principal_graph <- function(X, C0,
   C <- C0;
   K <- ncol(C)
   objs <- c()
+  if(maxiter < 1) warning('bad loop: maxiter < 1')
   for(iter in 1:maxiter) {
     #this part calculates the cost matrix Phi
     norm_sq <- repmat(t(colSums(C^2)), K, 1)
@@ -1015,7 +1039,7 @@ calc_principal_graph <- function(X, C0,
     if(verbose)
       message('iter = ', iter, ' obj = ', obj)
 
-    if(iter > 1){
+    if(iter > 1) {
       relative_diff = abs( objs[iter-1] - obj) / abs(objs[iter-1]);
       if(relative_diff < eps){
         if(verbose)
@@ -1113,9 +1137,13 @@ connect_tips <- function(cds,
                          geodesic_distance_ratio = 1/3,
                          medioids,
                          verbose = FALSE) {
+
+  random_seed <- 0L # no visible binding for louvain_clustering below
+
   reduction_method <- 'UMAP'
 
   if(is.null(row.names(stree)) & is.null(row.names(stree))) {
+    if(ncol(stree) < 1) warning('bad loop: ncol(stree) < 1')
     dimnames(stree) <- list(paste0('Y_', 1:ncol(stree)),
                             paste0('Y_', 1:ncol(stree)))
   }
@@ -1209,6 +1237,7 @@ connect_tips <- function(cds,
 
   # append new edges to close loops in the spanning tree returned from
   # SimplePPT
+  if(nrow(valid_connection) < 1) warning('bad loop: nrow(valid_connection) < 1')
   for(i in 1:nrow(valid_connection)) {
     # cluster id for the tip point; if kmean_res return valid_connection[i, ]
     # is itself; otherwise the id identified in the tmp file

@@ -37,9 +37,15 @@
 #'   \donttest{
 #'     library(dplyr)
 #'
-#'     cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
-#'     gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
-#'     expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
+#'     cell_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_coldata.rds',
+#'                                          package='monocle3'))
+#'     gene_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_rowdata.rds',
+#'                                          package='monocle3'))
+#'     expression_matrix <- readRDS(system.file('extdata',
+#'                                              'worm_embryo/worm_embryo_expression_matrix.rds',
+#'                                              package='monocle3'))
 #'    
 #'     cds <- new_cell_data_set(expression_data=expression_matrix,
 #'                              cell_metadata=cell_metadata,
@@ -65,8 +71,11 @@ top_markers <- function(cds,
                         reference_cells=NULL,
                         speedglm.maxiter=25,
                         cores=1,
-                        verbose=FALSE
-){
+                        verbose=FALSE) {
+
+  rowname <- cell_group <- marker_score <- cell_id <- mean_expression <- NULL # no visible binding
+  fraction_expressing <- specificity <- pseudo_R2 <- NULL # no visible binding
+  lrtest_p_value <- lrtest_q_value <- gene_short_name <- NULL # no visible binding
 
   # Yes, it's stupid we have cell ids both as a column and as the rownames.
   cell_group_df <- data.frame(row.names=row.names(colData(cds)),
@@ -282,6 +291,7 @@ JSdistVec <- function (p, q)
 }
 
 specificity_matrix <- function(agg_expr_matrix, cores=1){
+  if(ncol(agg_expr_matrix) < 1) warning('bad loop: ncol(agg_expr_matrix) < 1')
   specificity_mat <-
     pbmcapply::pbmclapply(row.names(agg_expr_matrix),
                           FUN = function(x) {
@@ -302,6 +312,7 @@ specificity_matrix <- function(agg_expr_matrix, cores=1){
 }
 
 enrichment_matrix <- function(agg_expr_matrix, cores=1){
+  if(ncol(agg_expr_matrix) < 1) warning('bad loop: ncol(agg_expr_matrix) < 1')
   specificity_mat = pbmcapply::pbmclapply(row.names(agg_expr_matrix),
                                           FUN = function(x)
                                           {
@@ -402,6 +413,7 @@ generate_garnett_marker_file <- function(marker_test_res,
                                          file = "./marker_file.txt",
                                          max_genes_per_group = 10,
                                          remove_duplicate_genes = FALSE) {
+  group_name <- marker_score <- NULL # no visible binding
   marker_test_res <- as.data.frame(marker_test_res)
   if(is.null(marker_test_res$group_name)) {
     marker_test_res$group_name <- paste("Cell type", marker_test_res$cell_group)
@@ -423,19 +435,19 @@ generate_garnett_marker_file <- function(marker_test_res,
   } else {
     if (length(dups) > 0) {
       if("gene_short_name" %in% colnames(good_markers)) {
-        message(paste("The following marker genes mark multiple cell groups.",
-                      "Prior to using Garnett, we recommend either excluding",
-                      "these genes using remove_duplicate_genes = TRUE, or",
-                      "modifying your marker file to make the cell types with",
-                      "the shared marker subtypes in a hierarchy.",
-                      paste(dups_gsn, collapse = ", ")))
+        message("The following marker genes mark multiple cell groups. ",
+                      "Prior to using Garnett, we recommend either excluding ",
+                      "these genes using remove_duplicate_genes = TRUE, or ",
+                      "modifying your marker file to make the cell types with ",
+                      "the shared marker subtypes in a hierarchy. ",
+                      paste(dups_gsn, collapse = ", "))
       } else {
-        message(paste("The following marker genes mark multiple cell groups.",
-                      "Prior to using Garnett, we recommend either excluding",
-                      "these genes using remove_duplicate_genes = TRUE, or",
-                      "modifying your marker file to make the cell types with",
-                      "the shared marker subtypes in a hierarchy.",
-                      paste(dups, collapse = ", ")))
+        message("The following marker genes mark multiple cell groups. ",
+                      "Prior to using Garnett, we recommend either excluding ",
+                      "these genes using remove_duplicate_genes = TRUE, or ",
+                      "modifying your marker file to make the cell types with ",
+                      "the shared marker subtypes in a hierarchy. ",
+                      paste(dups, collapse = ", "))
       }
     }
   }
@@ -444,20 +456,21 @@ generate_garnett_marker_file <- function(marker_test_res,
 
   for (group in group_list) {
     if (sum(good_markers$group_name == group) == 0) {
-      message(paste(group, "did not have any markers above the q-value",
-                    "threshold. It will be skipped."))
+      message(group, " did not have any markers above the q-value ",
+                     "threshold. It will be skipped.")
       next
     }
 
     good_name <- gsub("\\(|\\)|:|>|,|#", ".", group)
     if (good_name != group) {
-      warning(paste("Group name contained an illegal character for a Garnett ",
+      warning("Group name contained an illegal character for a Garnett ",
                     "marker file. ", group, " will be substituted for ",
-                    good_name, "."))
+                    good_name, ".")
     }
 
     sub <- good_markers[good_markers$group_name == group,]
     if (nrow(sub) > max_genes_per_group) {
+      if(max_genes_per_group < 1) warning('bad loop: max_genes_per_group < 1')
       sub <- sub[order(sub$marker_test_q_value),][1:max_genes_per_group,]
     }
     if ("gene_short_name" %in% colnames(sub)){
@@ -474,6 +487,6 @@ generate_garnett_marker_file <- function(marker_test_res,
   all <- paste(output, collapse = "\n")
 
   write(all, file=file)
-  message(paste("Garnett marker file written to", file))
+  message("Garnett marker file written to ", file)
 }
 

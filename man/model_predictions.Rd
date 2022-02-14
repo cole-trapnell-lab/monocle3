@@ -2,7 +2,7 @@
 % Please edit documentation in R/expr_models.R
 \name{model_predictions}
 \alias{model_predictions}
-\title{Predict output of fitted models and return as a matrix}
+\title{Predict values of new data using fit_models model.}
 \usage{
 model_predictions(model_tbl, new_data, type = "response")
 }
@@ -15,6 +15,9 @@ prediction.}
 
 \item{type}{String of type to pass to predict. Default is "response".}
 }
+\value{
+Prediction matrix.
+}
 \description{
-Predict output of fitted models and return as a matrix
+Predict new data values and return as a matrix
 }

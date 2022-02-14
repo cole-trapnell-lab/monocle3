@@ -62,9 +62,15 @@
 #'
 #' @examples
 #'   \donttest{ 
-#'     cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
-#'     gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
-#'     expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
+#'     cell_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_coldata.rds',
+#'                                          package='monocle3'))
+#'     gene_metadata <- readRDS(system.file('extdata',
+#'                              'worm_embryo/worm_embryo_rowdata.rds',
+#'                              package='monocle3'))
+#'     expression_matrix <- readRDS(system.file('extdata',
+#'                                  'worm_embryo/worm_embryo_expression_matrix.rds',
+#'                                  package='monocle3'))
 #'    
 #'     cds <- new_cell_data_set(expression_data=expression_matrix,
 #'                              cell_metadata=cell_metadata,
@@ -108,8 +114,8 @@ cluster_cells <- function(cds,
   assertthat::assert_that(assertthat::is.count(k))
 
   if (!is.null(resolution) & cluster_method == "louvain") {
-    message(paste("Resolution can only be used when cluster_method is",
-                  "'leiden'. Switching to leiden clustering."))
+    message("Resolution can only be used when cluster_method is ",
+                  "'leiden'. Switching to leiden clustering.")
     cluster_method <- "leiden"
   }
 
@@ -118,7 +124,7 @@ cluster_cells <- function(cds,
   }
   assertthat::assert_that(is.numeric(partition_qval))
   assertthat::assert_that(is.logical(verbose))
-  assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
+  assertthat::assert_that(!is.null(SingleCellExperiment::reducedDims(cds)[[reduction_method]]),
                           msg = paste("No dimensionality reduction for",
                                       reduction_method, "calculated.",
                                       "Please run reduce_dimension with",
@@ -138,7 +144,7 @@ cluster_cells <- function(cds,
                                verbose=verbose)
   nn_method <- nn_control[['method']]
 
-  # The nn index is made on the full reducedDims(cds)[[reduction_method]]
+  # The nn index is made on the full SingleCellExperiment::reducedDims(cds)[[reduction_method]]
   # matrix so use/store the nn index object in the cds. This saves nn index
   # build time if the index is used later in another function. In that case,
   # test for nn index consistency.
@@ -150,7 +156,7 @@ cluster_cells <- function(cds,
 # using the following code.
 #   if((nn_method == 'annoy' || nn_method == 'hnsw')) {
 #      if(!check_cds_nn_index_is_current(cds=cds, reduction_method=reduction_method, nn_control=nn_control, verbose=verbose)) {
-#        nn_index <- make_nn_index(subject_matrix=reducedDims(cds)[[reduction_method]],
+#        nn_index <- make_nn_index(subject_matrix=SingleCellExperiment::reducedDims(cds)[[reduction_method]],
 #                                  nn_control=nn_control,
 #                                  verbose=verbose)
 #        cds <- set_cds_nn_index(cds=cds,
@@ -174,7 +180,7 @@ cluster_cells <- function(cds,
   # leiden_clustering make a new index.
   nn_index <- NULL
 
-  reduced_dim_res <- reducedDims(cds)[[reduction_method]]
+  reduced_dim_res <- SingleCellExperiment::reducedDims(cds)[[reduction_method]]
 
   if(is.null(random_seed)) {
     random_seed <- sample.int(.Machine$integer.max, 1)
@@ -261,10 +267,10 @@ cluster_cells_make_graph <- function(data,
   } else
   if (k > nrow(data) - 2) {
     k <- nrow(data) - 2
-    warning(paste("The nearest neighbors includes the point itself, k must be smaller than\nthe",
-                  "total number of points - 1 (all other points) - 1",
-                  "(itself)!",
-                  "Total number of points is", nrow(data)))
+    warning("The nearest neighbors includes the point itself, k must be smaller than\nthe ",
+                  "total number of points - 1 (all other points) - 1 ",
+                  "(itself)! ",
+                  "Total number of points is", nrow(data))
   }
 
   if (verbose) {
@@ -362,6 +368,7 @@ louvain_clustering <- function(data,
     random_seed <- NULL
   }
 
+  if(louvain_iter < 1) warning("bad loop: louvain_iter is < 1")
   for (iter in 1:louvain_iter) {
     if(verbose) {
       cat("Running louvain iteration ", iter, "...\n")
@@ -489,6 +496,7 @@ leiden_clustering <- function(data,
   best_resolution_parameter <- 'No resolution'
   # These three vertex partition types have a resolution parameter
   # so scan parameter range, if given.
+  if(length(resolution_parameter) < 1) warning("bad loop: length(resolution_parameter) < 1")
   for(i in 1:length(resolution_parameter)) {
     cur_resolution_parameter <- resolution_parameter[i]
     cluster_result <- leidenbase::leiden_find_partition( graph_result[['g']],
@@ -537,7 +545,8 @@ leiden_clustering <- function(data,
     message('  Clustering statistics')
     selected <- vector( mode='character',
                         length = length( resolution_parameter ) )
-    for( irespar in 1:length( resolution_parameter ) )
+    if(length(resolution_parameter) < 1 ) warning("bad loop: length(resolution_parameter) < 1")
+    for(irespar in 1:length(resolution_parameter))
     {
       if( identical( table_results[['resolution_parameter']][irespar],
                      best_resolution_parameter ) )

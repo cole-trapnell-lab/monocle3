@@ -59,10 +59,15 @@
 #'
 #' @examples
 #'   \donttest{
-#'     cell_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_coldata.rds', package='monocle3'))
-#'     gene_metadata <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_rowdata.rds', package='monocle3'))
-#'     expression_matrix <- readRDS(system.file('extdata', 'worm_embryo/worm_embryo_expression_matrix.rds', package='monocle3'))
-#'    
+#'     cell_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_coldata.rds',
+#'                                          package='monocle3'))
+#'     gene_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_rowdata.rds',
+#'                                          package='monocle3'))
+#'     expression_matrix <- readRDS(system.file('extdata',
+#'                                              'worm_embryo/worm_embryo_expression_matrix.rds',
+#'                                              package='monocle3'))
 #'     cds <- new_cell_data_set(expression_data=expression_matrix,
 #'                              cell_metadata=cell_metadata,
 #'                              gene_metadata=gene_metadata)
@@ -71,7 +76,6 @@
 #'     cds <- reduce_dimension(cds)
 #'   }
 #'
-#' @importFrom methods is
 #' @export
 reduce_dimension <- function(cds,
                              max_components=2,
@@ -101,12 +105,13 @@ reduce_dimension <- function(cds,
                           msg = paste("build_nn_index must be either TRUE or FALSE"))
 
   if (is.null(preprocess_method)){
-    if ("Aligned" %in% names(reducedDims(cds))){
+    if ("Aligned" %in% names(SingleCellExperiment::reducedDims(cds))){
       preprocess_method = "Aligned"
-      message(paste("No preprocess_method specified, and aligned coordinates have been computed previously. Using preprocess_method = 'Aligned'"))
+      message("No preprocess_method specified, and aligned coordinates ",
+              "have been computed previously. Using preprocess_method = 'Aligned'")
     }else{
       preprocess_method = "PCA"
-      message(paste("No preprocess_method specified, using preprocess_method = 'PCA'"))
+      message("No preprocess_method specified, using preprocess_method = 'PCA'")
     }
   }else{
     assertthat::assert_that(
@@ -132,7 +137,7 @@ reduce_dimension <- function(cds,
 
   assertthat::assert_that(assertthat::is.count(max_components))
 
-  assertthat::assert_that(!is.null(reducedDims(cds)[[preprocess_method]]),
+  assertthat::assert_that(!is.null(SingleCellExperiment::reducedDims(cds)[[preprocess_method]]),
                           msg = paste("Data has not been preprocessed with",
                                       "chosen method:", preprocess_method,
                                       "Please run preprocess_cds with",
@@ -142,7 +147,7 @@ reduce_dimension <- function(cds,
     assertthat::assert_that(preprocess_method == "PCA",
                             msg = paste("preprocess_method must be 'PCA' when",
                                         "reduction_method = 'PCA'"))
-    assertthat::assert_that(!is.null(reducedDims(cds)[["PCA"]]),
+    assertthat::assert_that(!is.null(SingleCellExperiment::reducedDims(cds)[["PCA"]]),
                             msg = paste("When reduction_method = 'PCA', the",
                                         "cds must have been preprocessed for",
                                         "PCA. Please run preprocess_cds with",
@@ -155,7 +160,7 @@ reduce_dimension <- function(cds,
     assertthat::assert_that(preprocess_method == "LSI",
                             msg = paste("preprocess_method must be 'LSI' when",
                                         "reduction_method = 'LSI'"))
-    assertthat::assert_that(!is.null(reducedDims(cds)[["LSI"]]),
+    assertthat::assert_that(!is.null(SingleCellExperiment::reducedDims(cds)[["LSI"]]),
                             msg = paste("When reduction_method = 'LSI', the",
                                         "cds must have been preprocessed for",
                                         "LSI. Please run preprocess_cds with",
@@ -168,7 +173,7 @@ reduce_dimension <- function(cds,
     assertthat::assert_that(preprocess_method == "Aligned",
                             msg = paste("preprocess_method must be 'Aligned' when",
                                         "reduction_method = 'Aligned'"))
-    assertthat::assert_that(!is.null(reducedDims(cds)[["Aligned"]]),
+    assertthat::assert_that(!is.null(SingleCellExperiment::reducedDims(cds)[["Aligned"]]),
                             msg = paste("When reduction_method = 'Aligned', the",
                                         "cds must have been aligned.",
                                         "Please run align_cds before running",
@@ -180,17 +185,17 @@ reduce_dimension <- function(cds,
   set.seed(2016)
 
   if (reduction_method=="UMAP" && (umap.fast_sgd == TRUE || cores > 1)){
-    message(paste("Note: reduce_dimension will produce slightly different",
-                  "output each time you run it unless you set",
-                  "'umap.fast_sgd = FALSE' and 'cores = 1'"))
+    message("Note: reduce_dimension will produce slightly different ",
+                  "output each time you run it unless you set ",
+                  "'umap.fast_sgd = FALSE' and 'cores = 1'")
   }
 
-  preprocess_mat <- reducedDims(cds)[[preprocess_method]]
+  preprocess_mat <- SingleCellExperiment::reducedDims(cds)[[preprocess_method]]
 
   #
   # Notes:
   #   o  the functions save_transform_models/load_transform_models
-  #      expect that the reduce_dim_aux slot consists of a SimpleList
+  #      expect that the reduce_dim_aux slot consists of a S4Vectors::SimpleList
   #      that stores information about methods with the elements
   #        reduce_dim_aux[[method]][['model']] for the transform elements
   #        reduce_dim_aux[[method]][[nn_method]] for the annoy index
@@ -198,7 +203,7 @@ reduce_dimension <- function(cds,
   #
   if(reduction_method == "PCA") {
     if(build_nn_index && is.null(cds@reduce_dim_aux[[reduction_method]][['nn_index']])) {
-      nn_index <- make_nn_index(subject_matrix=reducedDims(cds)[[reduction_method]],
+      nn_index <- make_nn_index(subject_matrix=SingleCellExperiment::reducedDims(cds)[[reduction_method]],
                                 nn_control=nn_control,
                                 verbose=verbose)
       cds <- set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, verbose=verbose)
@@ -206,7 +211,7 @@ reduce_dimension <- function(cds,
     if (verbose) message("Returning preprocessed PCA matrix")
   } else if(reduction_method == "LSI") {
     if(build_nn_index && is.null(cds@reduce_dim_aux[[reduction_method]][['nn_index']])) {
-      nn_index <- make_nn_index(subject_matrix=reducedDims(cds)[[reduction_method]],
+      nn_index <- make_nn_index(subject_matrix=SingleCellExperiment::reducedDims(cds)[[reduction_method]],
                                 nn_control=nn_control,
                                 verbose=verbose)
       cds <- set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, verbose=verbose)
@@ -214,7 +219,7 @@ reduce_dimension <- function(cds,
     if (verbose) message("Returning preprocessed LSI matrix")
   } else if(reduction_method == "Aligned") {
     if(build_nn_index && is.null(cds@reduce_dim_aux[[reduction_method]][['nn_index']])) {
-      nn_index <- make_nn_index(subject_matrix=reducedDims(cds)[[reduction_method]],
+      nn_index <- make_nn_index(subject_matrix=SingleCellExperiment::reducedDims(cds)[[reduction_method]],
                                 nn_control=nn_control,
                                 verbose=verbose)
       cds <- set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, verbose=verbose)
@@ -229,13 +234,14 @@ reduce_dimension <- function(cds,
     tsne_res <- Rtsne::Rtsne(as.matrix(preprocess_mat), dims = max_components,
                              pca = FALSE, check_duplicates=FALSE, ...)
 
+    if(max_components < 1) warning('bad loop: max_components < 1')
     tsne_data <- tsne_res$Y[, 1:max_components]
     row.names(tsne_data) <- colnames(tsne_data)
 
-    reducedDims(cds)$tSNE <- tsne_data
+    SingleCellExperiment::reducedDims(cds)$tSNE <- tsne_data
 
 
-    matrix_id <- get_unique_id(reducedDims(cds)[['tSNE']])
+    matrix_id <- get_unique_id(SingleCellExperiment::reducedDims(cds)[['tSNE']])
     reduce_dim_matrix_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method)
 
     set_reduce_dim_matrix_identity(cds, 'tSNE',
@@ -255,7 +261,7 @@ reduce_dimension <- function(cds,
     # make nearest neighbor index in tSNE space
 
     if( build_nn_index ) {
-      nn_index <- make_nn_index(subject_matrix=reducedDims(cds)[[reduction_method]],
+      nn_index <- make_nn_index(subject_matrix=SingleCellExperiment::reducedDims(cds)[[reduction_method]],
                                 nn_control=nn_control,
                                 verbose=verbose)
       cds <- set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, verbose=verbose)
@@ -298,7 +304,7 @@ reduce_dimension <- function(cds,
     set.seed(2016)
     umap_res <- uwot::umap_transform(X=as.matrix(preprocess_mat), model=umap_model, n_threads=1)
     row.names(umap_res) <- colnames(cds)
-    reducedDims(cds)[['UMAP']] <- umap_res
+    SingleCellExperiment::reducedDims(cds)[['UMAP']] <- umap_res
 
     cds@reduce_dim_aux[['UMAP']][['model']][['umap_preprocess_method']] <- preprocess_method
     cds@reduce_dim_aux[['UMAP']][['model']][['max_components']] <- max_components
@@ -308,7 +314,7 @@ reduce_dimension <- function(cds,
     cds@reduce_dim_aux[['UMAP']][['model']][['umap_fast_sgd']] <- umap.fast_sgd
     cds@reduce_dim_aux[['UMAP']][['model']][['umap_model']] <- umap_model
 
-    matrix_id <- get_unique_id(reducedDims(cds)[['UMAP']])
+    matrix_id <- get_unique_id(SingleCellExperiment::reducedDims(cds)[['UMAP']])
     reduce_dim_matrix_identity <- get_reduce_dim_matrix_identity(cds, preprocess_method)
 
     cds <- set_reduce_dim_matrix_identity(cds, 'UMAP',
@@ -326,7 +332,7 @@ reduce_dimension <- function(cds,
                                          reduce_dim_model_identity[['model_id']])
 
     if( build_nn_index ) {
-      nn_index <- make_nn_index(subject_matrix=reducedDims(cds)[[reduction_method]],
+      nn_index <- make_nn_index(subject_matrix=SingleCellExperiment::reducedDims(cds)[[reduction_method]],
                                 nn_control=nn_control,
                                 verbose=verbose)
       cds <- set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, verbose=verbose)

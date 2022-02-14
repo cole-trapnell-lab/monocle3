@@ -79,10 +79,16 @@ A dataframe with genes and the modules to which they are assigned.
 Cluster genes into modules that are co-expressed across cells.
 }
 \examples{
-  \donttest{
-     expression_matrix <- readRDS(system.file('extdata', 'worm_l2/worm_l2_expression_matrix.rds', package='monocle3'))
-     cell_metadata <- readRDS(system.file('extdata', 'worm_l2/worm_l2_coldata.rds', package='monocle3'))
-     gene_metadata <- readRDS(system.file('extdata', 'worm_l2/worm_l2_rowdata.rds', package='monocle3'))
+  \dontrun{
+     expression_matrix <- readRDS(system.file('extdata',
+                                              'worm_l2/worm_l2_expression_matrix.rds',
+                                              package='monocle3'))
+     cell_metadata <- readRDS(system.file('extdata',
+                                          'worm_l2/worm_l2_coldata.rds',
+                                          package='monocle3'))
+     gene_metadata <- readRDS(system.file('extdata',
+                                          'worm_l2/worm_l2_rowdata.rds',
+                                          package='monocle3'))
 
      cds <- new_cell_data_set(expression_data=expression_matrix,
                               cell_metadata=cell_metadata,

@@ -30,7 +30,7 @@ the index.
   \donttest{
     cds <- load_a549()
     cds <- preprocess_cds(cds)
-    nn_index <- make_nn_index(reducedDims(cds)[['PCA']])
+    nn_index <- make_nn_index(SingleCellExperiment::reducedDims(cds)[['PCA']])
   }
 
 }

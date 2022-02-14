@@ -58,7 +58,7 @@ those in the query_matrix.
     cds <- load_a549()
     cds <- preprocess_cds(cds)
     cds <- make_cds_nn_index(cds, 'PCA')
-    nn_res <- search_cds_nn_index(reducedDims(cds)[['PCA']], cds, 'PCA', 10)
+    nn_res <- search_cds_nn_index(SingleCellExperiment::reducedDims(cds)[['PCA']], cds, 'PCA', 10)
   }
 
 }

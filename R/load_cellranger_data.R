@@ -125,8 +125,8 @@ load_cellranger_data <- function(pipestance_path=NULL, genome=NULL,
   # Duplicate row names not allowed
   feature.names$V1 = make.unique(feature.names$V1)
   if(dim(data)[1] != length(feature.names[,1])) {
-    stop(sprintf(paste("Mismatch dimension between gene file: \n\t %s\n and",
-                       "matrix file: \n\t %s\n"), features.loc, matrix.loc))
+    stop("Mismatch dimension between gene file: \n\t", features.loc, "\n and ",
+                       "matrix file: \n\t", matrix.loc)
   }
   if(v3d) {
     # We will only load GEX data for the relevant genome
@@ -139,9 +139,9 @@ load_cellranger_data <- function(pipestance_path=NULL, genome=NULL,
       if(any(gfilter)) {
         allowed = allowed & grepl(genome, feature.names$V1)
       } else {
-        message(paste("Data does not appear to be from a multi-genome sample,",
-                      "simply returning all gene feature data without",
-                      "filtering by genome."))
+        message("Data does not appear to be from a multi-genome sample, ",
+                "simply returning all gene feature data without ",
+                "filtering by genome.")
       }
 
     }
@@ -154,8 +154,8 @@ load_cellranger_data <- function(pipestance_path=NULL, genome=NULL,
 
   barcodes <- utils::read.delim(barcode.loc, stringsAsFactors=FALSE, header=FALSE)
   if (dim(data)[2] != length(barcodes[,1])) {
-    stop(sprintf(paste("Mismatch dimension between barcode file: \n\t %s\n",
-                       "and matrix file: \n\t %s\n"), barcode.loc,matrix.loc))
+    stop("Mismatch dimension between barcode file: \n\t", barcode.loc, "\n and ",
+                       "matrix file: \n\t", matrix.loc)
   }
   barcodes$V1 = make.unique(barcodes$V1)
   colnames(data) = barcodes[,1]

@@ -36,9 +36,9 @@ plot_cells(
 \arguments{
 \item{cds}{cell_data_set for the experiment}
 
-\item{x}{the column of reducedDims(cds) to plot on the horizontal axis}
+\item{x}{the column of SingleCellExperiment::reducedDims(cds) to plot on the horizontal axis}
 
-\item{y}{the column of reducedDims(cds) to plot on the vertical axis}
+\item{y}{the column of SingleCellExperiment::reducedDims(cds) to plot on the vertical axis}
 
 \item{reduction_method}{The lower dimensional space in which to plot cells.
 Must be one of "UMAP", "tSNE", "PCA" and "LSI".}

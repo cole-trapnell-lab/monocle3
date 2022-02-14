@@ -87,7 +87,9 @@ Load data from matrix market format files.
     pmat<-system.file("extdata", "matrix.mtx.gz", package = "monocle3")
     prow<-system.file("extdata", "features_c3h0.txt", package = "monocle3")
     pcol<-system.file("extdata", "barcodes_c2h0.txt", package = "monocle3")
-    cds <- load_mm_data( pmat, prow, pcol, feature_metadata_column_names = c('gene_short_name', 'gene_biotype'), sep='' )
+    cds <- load_mm_data( pmat, prow, pcol,
+                         feature_metadata_column_names =
+                         c('gene_short_name', 'gene_biotype'), sep='' )
 
     # In this example, the features_c3h0.txt file has three columns,
     # separated by spaces. The first column has official gene names, the
