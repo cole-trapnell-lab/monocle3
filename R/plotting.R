@@ -1647,7 +1647,7 @@ plot_genes_by_group <- function(cds,
     max_ind_vec <- max_ind_vec[!is.na(max_ind_vec)]
 
     if(major_axis == 1){
-      if(length(markers) < 1) stop("length(markers) < 1")
+      if(length(markers) < 1) warning("bad loop: length(markers) < 1")
       max_ind_vec <- c(max_ind_vec, setdiff(1:length(markers), max_ind_vec))
       ExpVal$Gene <- factor(ExpVal$Gene ,
                             levels = dimnames(res)[[2]][max_ind_vec])
