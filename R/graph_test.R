@@ -217,6 +217,7 @@ my.moran.test <- function (x, listw, wc, alternative = "greater",
   x <- na.action(x)
   na.act <- attr(x, "na.action")
   if (!is.null(na.act)) {
+    if(length(listw$neighbours) < 1) warning('bad loop: length(listw$neighbours) < 1')
     subset <- !(1:length(listw$neighbours) %in% na.act)
     listw <- subset(listw, subset, zero.policy = zero.policy)
   }

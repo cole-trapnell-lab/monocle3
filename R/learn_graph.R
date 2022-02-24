@@ -738,6 +738,7 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE,
   if(!is.function(Projection_Method)) {
     P <- Y[, closest_vertex]
   } else {
+    if(length(Z) < 1) warning('bad loop: length(Z) < 1')
     P <- matrix(rep(0, length(Z)), nrow = nrow(Z)) #Y
     if(length(Z[1:2, ]) < 1) warning('bad loop: length(Z[1:2, ]) < 1')
     nearest_edges <- matrix(rep(0, length(Z[1:2, ])), ncol = 2)

@@ -184,6 +184,7 @@ find_gene_modules <- function(cds,
                         ...)
 
   row.names(umap_res) <- row.names(preprocess_mat)
+  if(ncol(umap_res) < 1) warning('bad loop: ncol(umap_res) < 1')
   colnames(umap_res) <- paste0('dim_', 1:ncol(umap_res))
   reduced_dim_res <- umap_res
 

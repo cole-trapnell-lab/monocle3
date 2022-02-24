@@ -1,0 +1,84 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{whbiocvignette}[2013/02/24 Wolfgang Huber's class for Bioconductor vignettes]
+%
+%    -I would wish to know how to make this work-
+%\DeclareOption{pdftitle}{\PassOptionsToPackage{pdftitle}{hyperref}}
+%\DeclareOption{pdfauthor}{\PassOptionsToPackage{pdfauthor}{hyperref}}
+%\ExecuteOptions{pdftitle,pdfauthor}
+%\ProcessOptions
+%
+\RequirePackage[%
+ pdfpagelabels,%
+ plainpages=false,%
+ pdfborder={0 0 0},%
+ pdfstartview=FitH,%
+ bookmarks=true,%
+ bookmarksnumbered=true,%
+ bookmarksopen=true,%
+ linktoc=section,%
+ linkcolor=BlueViolet,%
+ citecolor=BlueViolet,%
+ urlcolor=BlueViolet,%
+ linkbordercolor={.7 .7 .7},
+ citebordercolor={.7 .7 .7},
+ urlbordercolor={.7 .7 .7} ,
+ raiselinks]{hyperref}
+
+\RequirePackage[usenames,dvipsnames]{xcolor}
+\RequirePackage[a4paper,left=1.9cm,top=1.9cm,bottom=2.5cm,right=1.9cm,ignoreheadfoot]{geometry}
+%\RequirePackage{graphicx}
+\RequirePackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\RequirePackage{cite}
+\pagestyle{empty}
+%
+\RequirePackage{sectsty}
+\sectionfont{\sffamily\bfseries\color{RoyalBlue}\sectionrule{0pt}{0pt}{-1ex}{1pt}}
+\subsectionfont{\sffamily\bfseries\color{RoyalBlue}}
+\subsubsectionfont{\sffamily\bfseries\color{RoyalBlue}}
+%
+\RequirePackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhead{}
+\fancyfoot{}
+\lfoot{}\cfoot{\thetitle}\rfoot{}
+\renewcommand{\headrule}{}
+%
+\RequirePackage{xstring}
+%
+\RequirePackage{Sweave}
+%
+\renewcommand{\floatpagefraction}{0.9}
+%  
+\newcommand{\Robject}[1]{\texttt{#1}}
+\newcommand{\Rpackage}[1]{\textit{#1}}
+\newcommand{\Rclass}[1]{\textit{#1}}
+\newcommand{\Rfunction}[1]{{\texttt{#1}}}
+%
+\newcommand{\comment}[1]{\textsl{\textcolor{Gray}{#1}}}
+\newcommand{\fixme}[1]{\textsl{\textcolor{Bittersweet}{Fixme: #1}}}
+%
+\newcommand{\myincfig}[4]{%
+  \begin{figure}[htbp]
+  \begin{center}
+  \includegraphics[width=#2]{#1}
+  \caption[#3]{\label{#1}\textbf{#3} #4}
+  \end{center}
+  \end{figure}
+}
+%
+\newenvironment{packeditemize}{
+\begin{itemize}
+  \setlength{\itemsep}{1pt}
+  \setlength{\parskip}{0pt}
+  \setlength{\parsep}{0pt}
+}{\end{itemize}}
+%
+\newenvironment{packedenumerate}{
+\begin{enumerate}
+  \setlength{\itemsep}{1pt}
+  \setlength{\parskip}{0pt}
+  \setlength{\parsep}{0pt}
+}{\end{enumerate}}
+%
+\endinput

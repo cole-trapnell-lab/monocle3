@@ -1,20 +1,24 @@
 Package: monocle3
 Title: Clustering, differential expression, and trajectory analysis for single-
     cell RNA-Seq
-Version: 1.2.6
-Authors@R: 
+Version: 1.2.7
+Authors@R: c(
     person(given = "Hannah",
            family = "Pliner",
-           role = c("aut", "cre"),
-           email = "hpliner@uw.edu")
+           role = c("aut"),
+           email = "hpliner@uw.edu"),
     person(given = "Xiaojie",
            family = "Qiu",
-           role = c("aut", "cre"),
-           email = "xqiu@uw.edu")
+           role = c("aut"),
+           email = "xqiu@uw.edu"),
     person(given = "Cole",
            family = "Trapnell",
-           role = c("aut", "cre"),
-           email = "coletrap@uw.edu")
+           role = c("aut"),
+           email = "coletrap@uw.edu"),
+    person(given = "Brent",
+           family = "Ewing",
+           role = c("cre"),
+           email = "bge@uw.edu"))
 Description: Monocle 3 performs clustering, differential expression and 
     trajectory analysis for single-cell expression experiments. It orders 
     individual cells according to progress through a biological process, 
@@ -66,7 +70,7 @@ Imports:
     HDF5Array,
     igraph (>= 1.2.4),
     irlba (>= 2.3.3),
-    leidenbase,
+    leidenbase (>= 0.1.8),
     limma (>= 3.38.3),
     lme4 (>= 1.1-27),
     lmtest (>= 0.9-36),
@@ -107,8 +111,6 @@ Imports:
     tictoc,
     tidyr (>= 0.8.3),
     viridis (>= 0.5.1)
-Remotes:
-    cole-trapnell-lab/leidenbase
 Suggests: 
     testthat (>= 2.1.0),
     pryr (>= 0.1.4),
