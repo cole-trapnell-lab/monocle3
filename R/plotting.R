@@ -234,8 +234,8 @@ plot_cells_3d <- function(cds,
                              z = ~data_dim_3, type = 'scatter3d',
                              size=I(cell_size), color=I("gray"),
                              mode="markers", alpha = I(alpha))
-        message(paste("cluster_cells() has not been called yet, can't color",
-                      "cells by cluster or partition"))
+        message("cluster_cells() has not been called yet, can't color ",
+                "cells by cluster or partition")
       } else{
         if(is.null(color_palette)) {
           N <- length(unique(data_df$cell_color))
@@ -303,6 +303,7 @@ plot_cells_3d <- function(cds,
                                         target_prin_graph_dim_3="prin_graph_dim_3"),
                        by = "target")
 
+    if(nrow(edge_df) < 1) warning('bad loop: nrow(edge_df) < 1')
     for (i in 1:nrow(edge_df)) {
       p <- p %>%
         plotly::add_trace(
@@ -441,10 +442,10 @@ plot_cells <- function(cds,
     if(color_cells_by == "pseudotime") {
       tryCatch({pseudotime(cds, reduction_method = reduction_method)},
                error = function(x) {
-                 stop(paste("No pseudotime for", reduction_method,
-                            "calculated. Please run order_cells with",
-                            "reduction_method =", reduction_method,
-                            "before attempting to color by pseudotime."))})
+                 stop("No pseudotime for ", reduction_method,
+                            " calculated. Please run order_cells with ",
+                            "reduction_method = ", reduction_method,
+                            " before attempting to color by pseudotime.")})
 
     }
   }
@@ -508,7 +509,7 @@ plot_cells <- function(cds,
                              data_df$sample_name]},
                error = function(e) {NULL})
   } else{
-    stop("Error: unrecognized way of grouping cells.")
+    stop("Unrecognized way of grouping cells.")
   }
 
   if (color_cells_by == "cluster"){
@@ -637,8 +638,8 @@ plot_cells <- function(cds,
 		  if (label_cell_groups && is.null(color_cells_by) == FALSE){
 			if (is.null(data_df$cell_color)){
 			  if (is.null(genes)){
-				message(paste(color_cells_by, "not found in colData(cds), cells will",
-							  "not be colored"))
+				message(color_cells_by, " not found in colData(cds), cells will ",
+							  "not be colored")
 			  }
 			  text_df = NULL
 			  label_cell_groups = FALSE
@@ -688,8 +689,8 @@ plot_cells <- function(cds,
 				#  process_label[as.character(data_df[, group_by])]
 				# text_df$label = process_label
 			  } else {
-				message(paste("Cells aren't colored in a way that allows them to",
-							  "be grouped."))
+				message("Cells aren't colored in a way that allows them to ",
+                        "be grouped.")
 				text_df = NULL
 				label_cell_groups = FALSE
 			  }
@@ -741,8 +742,8 @@ plot_cells <- function(cds,
         g <- g + geom_point(color=I("gray"), size=I(cell_size),
                             stroke = I(cell_stroke), na.rm = TRUE,
                             alpha = I(alpha))
-        message(paste("cluster_cells() has not been called yet, can't",
-                      "color cells by cluster"))
+        message("cluster_cells() has not been called yet, can't ",
+                      "color cells by cluster")
       } else{
         g <- g + geom_point(aes(color = cell_color), size=I(cell_size),
                             stroke = I(cell_stroke), na.rm = TRUE,
@@ -917,7 +918,7 @@ plot_genes_in_pseudotime <-function(cds_subset,
                                     horizontal_jitter=NULL){
   assertthat::assert_that(methods::is(cds_subset, "cell_data_set"))
   tryCatch({pseudotime(cds_subset)}, error = function(x) {
-    stop(paste("No pseudotime calculated. Must call order_cells first."))})
+    stop("No pseudotime calculated. Must call order_cells first.")})
   colData(cds_subset)$pseudotime <- pseudotime(cds_subset)
   if(!is.null(min_expr)) {
     assertthat::assert_that(assertthat::is.number(min_expr))
@@ -1112,6 +1113,7 @@ plot_pc_variance_explained <- function(cds) {
 
   prop_varex <- cds@reduce_dim_aux[['PCA']][['model']][['prop_var_expl']]
 
+  if(length(prop_varex) < 1) warning('bad loop: length(prop_varex) < 1')
   p <- qplot(1:length(prop_varex), prop_varex, alpha = I(0.5)) +
     monocle_theme_opts() +
     theme(legend.position="top", legend.key.height=grid::unit(0.35, "in")) +
@@ -1555,8 +1557,8 @@ plot_genes_by_group <- function(cds,
     dplyr::filter(rowname %in% markers | gene_short_name %in% markers) %>%
     dplyr::pull(rowname)
   if(length(gene_ids) < 1)
-    stop(paste('Please make sure markers are included in the gene_short_name",
-               "column of the rowData!'))
+    stop('Please make sure markers are included in the gene_short_name ",
+               "column of the rowData!')
 
   if(flip_percentage_mean == FALSE){
     major_axis <- 1
@@ -1585,8 +1587,8 @@ plot_genes_by_group <- function(cds,
   }
 
   if (length(unique(cell_group)) < 2) {
-    stop(paste("Only one type in group_cells_by. To use plot_genes_by_group,",
-               "please specify a group with more than one type. "))
+    stop("Only one type in group_cells_by. To use plot_genes_by_group, ",
+               "please specify a group with more than one type. ")
   }
 
   names(cell_group) = colnames(cds)
@@ -1637,6 +1639,7 @@ plot_genes_by_group <- function(cds,
 
     order_mat <- t(apply(res, major_axis, order))
     max_ind_vec <- c()
+    if(nrow(order_mat) < 1) warning('bad loop: nrow(order_mat) < 1')
     for(i in 1:nrow(order_mat)) {
       tmp <- max(which(!(order_mat[i, ] %in% max_ind_vec)))
       max_ind_vec <- c(max_ind_vec, order_mat[i, tmp])
@@ -1644,11 +1647,13 @@ plot_genes_by_group <- function(cds,
     max_ind_vec <- max_ind_vec[!is.na(max_ind_vec)]
 
     if(major_axis == 1){
+      if(length(markers) < 1) stop("length(markers) < 1")
       max_ind_vec <- c(max_ind_vec, setdiff(1:length(markers), max_ind_vec))
       ExpVal$Gene <- factor(ExpVal$Gene ,
                             levels = dimnames(res)[[2]][max_ind_vec])
     }
     else{
+      if(length(unique(exprs_mat$Group)) < 1) warning('bad loop: length(unique(exprs_mat$Group)) < 1')
       max_ind_vec <- c(max_ind_vec, setdiff(1:length(unique(exprs_mat$Group)),
                                             max_ind_vec))
       ExpVal$Group <- factor(ExpVal$Group,
