@@ -1518,12 +1518,12 @@ swap_nn_row_index_point <- function(nn_res, verbose=FALSE) {
   if(num_no_recall > 0) {
     frac_recall <- (nrow(idx)-num_no_recall) / nrow(idx)
     format_recall <- sprintf('%3.1f', frac_recall * 100.0)
-    message(paste0('the search result is expected to include the query row value (self)\n',
-                  'because the NN index includes the query objects; however, this search result\n',
-                  'is missing ', num_no_recall, ' self values (recall: ', format_recall, '%). Monocle3 has added the self\n',
-                  'values to the first column of the search result in order to allow further\n',
-                  'analysis -- but it is missing important nearest neighbors so you need to\n',
-                  'increase the sensitivity for making and/or searching the index.'))
+    message('The search result is expected to include the query row value (self)\n',
+            'because the NN index includes the query objects; however, this search result\n',
+            'is missing ', num_no_recall, ' self values (recall: ', format_recall, '%). Monocle3 has added the self\n',
+            'values to the first column of the search result in order to allow further\n',
+            'analysis -- but it is missing important nearest neighbors so you need to\n',
+            'increase the sensitivity for making and/or searching the index.')
   }
   nn_res_out <- list(nn.idx=idx, nn.dists=dst)
 

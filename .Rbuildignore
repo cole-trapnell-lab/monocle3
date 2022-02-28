@@ -39,6 +39,7 @@
 ^mutant.remodified2.cell_type_sub.txt
 ^mutant.remodified.cell_type_sub.txt
 ^my_cds_for_lsi.rds
+^notes.bad_loop_ranges.20220211.txt$
 ^nn_dists.rcppannoy.cosine.cores_5.tbl
 ^nn_dists.rcppannoy.cosine.tbl
 ^nn_dists.rcppannoy.euclidean.cores_5.tbl
