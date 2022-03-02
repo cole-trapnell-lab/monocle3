@@ -1037,7 +1037,7 @@ plot_genes_in_pseudotime <-function(cds_subset,
   model_tbl = fit_models(cds_subset, model_formula_str = trend_formula)
 
   model_expectation <- model_predictions(model_tbl,
-                                         new_data = colData(cds_subset))
+                                         new_data = as.data.frame(colData(cds_subset)))
 
   colnames(model_expectation) <- colnames(cds_subset)
   expectation <- plyr::ddply(cds_exprs, plyr::.(f_id, Cell),
