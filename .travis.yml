@@ -1,6 +1,8 @@
 # Notes:
 #   o  add Rscript -e 'devtools::install_version("locfit", version="1.5-9.4")' because the new 1.5-9.5 version
 #      requires >= R 4.1.0
+#   o  add Rscript -e 'devtools::install_github('r-spatial/sf') because the current sf version (1.0-6) does
+#      not build.
 #   o  add lines to before_install in order to install recent cmake version, which is required by the recent
 #      nloptr version. These lines are
 #        - sudo wget -qO - https://apt.kitware.com/keys/kitware-archive-latest.asc | sudo apt-key add -
@@ -31,6 +33,7 @@ r:
  - bioc-release
 before_script:
   - Rscript -e 'devtools::install_version("locfit", version="1.5-9.4")'
+  - Rscript -e 'devtools::install_github('r-spatial/sf')
   - export PKG_NAME=$(Rscript -e 'cat(paste0(devtools::as.package(".")$package))')
   - export PKG_TARBALL=$(Rscript -e 'pkg <- devtools::as.package("."); cat(paste0(pkg$package,"_",pkg$version,".tar.gz"))')
   - R CMD build --no-build-vignettes .
