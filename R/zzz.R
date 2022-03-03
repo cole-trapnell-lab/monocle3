@@ -46,7 +46,7 @@ get_global_variable <- function(variable_name=NULL) {
 # The ._._global_variable_env_._. environment stores global
 # objects. Use the set_global_variable and get_global_variable
 # functions to access them.
-._._global_variable_env_._. <- new.env()
+._._global_variable_env_._. <- new.env(parent=emptyenv())
 
 # Define some global variables.
 .onLoad <- function(libname, pkgname) {
