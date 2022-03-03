@@ -32,6 +32,7 @@ before_install:
 r:
  - bioc-release
 before_script:
+  - Rscript -e 'install.packages("leidenbase")'
   - Rscript -e 'install.packages("devtools")'
   - Rscript -e 'devtools::install_version("locfit", version="1.5-9.4")'
   - Rscript -e 'devtools::install_github("r-spatial/sf")'
