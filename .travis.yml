@@ -1,3 +1,13 @@
+# Notes:
+#   o  add Rscript -e 'devtools::install_version("locfit", version="1.5-9.4")' because the new 1.5-9.5 version
+#      requires >= R 4.1.0
+#   o  add lines to before_install in order to install recent cmake version, which is required by the recent
+#      nloptr version. These lines are
+#        - sudo wget -qO - https://apt.kitware.com/keys/kitware-archive-latest.asc | sudo apt-key add -
+#        - sudo apt-add-repository 'deb https://apt.kitware.com/ubuntu/ xenial main'
+#        - sudo apt-get update
+#        - sudo apt-get install -y cmake
+
 ---
 cache: packages
 sudo: required
@@ -20,9 +30,9 @@ before_install:
 r:
  - bioc-release
 before_script:
+  - Rscript -e 'devtools::install_version("locfit", version="1.5-9.4")'
   - export PKG_NAME=$(Rscript -e 'cat(paste0(devtools::as.package(".")$package))')
   - export PKG_TARBALL=$(Rscript -e 'pkg <- devtools::as.package("."); cat(paste0(pkg$package,"_",pkg$version,".tar.gz"))')
-  - Rscript -e 'devtools::install_version("locfit", version="1.5-9.4")'
   - R CMD build --no-build-vignettes .
   - R CMD INSTALL ${PKG_TARBALL}
   - rm ${PKG_TARBALL}
