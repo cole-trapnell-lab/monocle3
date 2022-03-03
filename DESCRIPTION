@@ -60,7 +60,6 @@ Imports:
     BiocParallel,
     DelayedArray (>= 0.8.0),
     DelayedMatrixStats (>= 1.4.0),
-    devtools (>= 2.4.0),
     digest (>= 0.6.28),
     dplyr (>= 0.8.0.1),
     future (>= 1.23.0),
