@@ -118,5 +118,7 @@ Suggests:
     rmarkdown,
     spelling,
     scran
+Remotes:
+    r-spatial/sf
 VignetteBuilder: knitr
 Language: en-US
