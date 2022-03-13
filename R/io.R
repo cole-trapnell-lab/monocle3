@@ -1059,6 +1059,9 @@ load_transform_models <- function(cds, directory_path) {
     reduction_method <- file_index[['files']][['reduction_method']][[ifile]]
     md5sum <- file_index[['files']][['file_md5sum']][[ifile]]
 
+    if(!file.exists(file_path))
+      stop('load_transform_models: missing file \'', file_path, '\'')
+
     #
     # For UWOT UMAP annoy index, the function load_umap_nn_indexes
     # checks md5sums internally so don't check here.
@@ -1480,6 +1483,9 @@ load_monocle_objects <- function(directory_path) {
     cds_object <- file_index[['files']][['cds_object']][[ifile]]
     reduction_method <- file_index[['files']][['reduction_method']][[ifile]]
     md5sum <- file_index[['files']][['file_md5sum']][[ifile]]
+
+    if(!file.exists(file_path)) 
+      stop('load_monocle_objects: missing file \'', file_path, '\'')
 
     #
     # The functions load_umap_nn_indexes and
