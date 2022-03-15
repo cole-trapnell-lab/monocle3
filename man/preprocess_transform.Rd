@@ -35,6 +35,29 @@ Applies a previously calculated preprocess
 transform model to a new count matrix. For more
 information read the help information for save_transform_models.
 }
+\section{Preprocessing notes}{
+
+\describe{
+\item{Filtering:}{apply the same filters to the query and
+reference data set. For example, use the
+same UMI cutoff value for both data sets.
+You can check the cutoff value by finding
+the range of UMI values before applying
+normalization using range(counts(cds)).}
+\item{Size factors:}{use the same method and round_exprs
+parameters to calculate the Size_Factor
+values for both data sets. See the
+estimate_size_factors() help for
+additional information.}
+\item{Troubleshooting:}{if the projection fails, try
+comparing histograms of various
+values of the reference and query
+data sets. For example, in order to
+examine the size factor values use
+hist(colData(cds)[['Size_Factor']], breaks=100).}
+}
+}
+
 \examples{
   \dontrun{
     cell_metadata <- readRDS(system.file('extdata',
