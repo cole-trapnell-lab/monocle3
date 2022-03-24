@@ -270,7 +270,7 @@ cluster_cells_make_graph <- function(data,
     warning("The nearest neighbors includes the point itself, k must be smaller than\nthe ",
                   "total number of points - 1 (all other points) - 1 ",
                   "(itself)! ",
-                  "Total number of points is", nrow(data))
+                  "Total number of points is ", nrow(data))
   }
 
   if (verbose) {
