@@ -581,11 +581,11 @@ plot_cells <- function(cds,
       cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds))
 
       if (!is.null(dim(genes)) && dim(genes) >= 2){
-        genes = as.data.frame(genes)
-        row.names(genes) = genes[,1]
-        genes = genes[row.names(cds_exprs),]
+        #genes = as.data.frame(genes)
+        #row.names(genes) = genes[,1]
+        #genes = genes[row.names(cds_exprs),]
 
-        agg_mat = as.matrix(aggregate_gene_expression(cds, genes, norm_method=norm_method, scale_agg_values=FALSE))
+        agg_mat = as.matrix(aggregate_gene_expression(cds, genes, norm_method=norm_method, gene_agg_fun="mean", scale_agg_values=FALSE))
         markers_exprs = agg_mat
         markers_exprs <- reshape2::melt(markers_exprs)
         colnames(markers_exprs)[1:2] <- c('feature_id','cell_id')
@@ -720,11 +720,20 @@ plot_cells <- function(cds,
       g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2)) +
         plotting_func(aes(data_dim_1, data_dim_2), size=I(cell_size),
                       stroke = I(cell_stroke), color = "grey80",
-                      data = na_sub, alpha = alpha) +
-        plotting_func(aes(color=log10(value+min_expr)),
-                      size=I(cell_size), stroke = I(cell_stroke),
-                      data = ya_sub[order(ya_sub$value),],
-					  alpha = alpha) +
+                      data = na_sub, alpha = alpha)
+      if (scale_to_range){
+        g <- g + plotting_func(aes(color=value),
+                               size=I(cell_size), stroke = I(cell_stroke),
+                               data = ya_sub[order(ya_sub$value),],
+                               alpha = alpha)
+      }else{
+        g <- g + plotting_func(aes(color=log10(value+min_expr)),
+                               size=I(cell_size), stroke = I(cell_stroke),
+                               data = ya_sub[order(ya_sub$value),],
+                               alpha = alpha)
+      }
+
+      g <- g +
         viridis::scale_color_viridis(option = "viridis",
                                      name = expression_legend_label,
                                      na.value = NA, end = 0.8,
@@ -733,6 +742,10 @@ plot_cells <- function(cds,
     }
   } else {
     g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2))
+
+    g <- g + geom_point(color=I("black"), size=1.5*cell_size,
+                        stroke = I(cell_stroke), na.rm = TRUE,
+                        alpha = I(alpha))
 
     # We don't want to force users to call order_cells before even being able
     # to look at the trajectory, so check whether it's null and if so, just
@@ -1033,11 +1046,12 @@ plot_genes_in_pseudotime <-function(cds_subset,
   cds_exprs$feature_label <- factor(cds_exprs$feature_label)
 
 
-  new_data <- data.frame(pseudotime = colData(cds_subset)$pseudotime)
+  new_data <- as.data.frame(colData(cds_subset))
+  new_data$Size_Factor = 1
   model_tbl = fit_models(cds_subset, model_formula_str = trend_formula)
 
   model_expectation <- model_predictions(model_tbl,
-                                         new_data = as.data.frame(colData(cds_subset)))
+                                         new_data = new_data)
 
   colnames(model_expectation) <- colnames(cds_subset)
   expectation <- plyr::ddply(cds_exprs, plyr::.(f_id, Cell),
@@ -1055,7 +1069,6 @@ plot_genes_in_pseudotime <-function(cds_subset,
                                       levels = panel_order)
   }
   q <- ggplot(aes(pseudotime, expression), data = cds_exprs)
-
 
   if (!is.null(color_cells_by)) {
     q <- q + geom_point(aes_string(color = color_cells_by),
@@ -1568,7 +1581,7 @@ plot_genes_by_group <- function(cds,
     minor_axis <- 1
   }
 
-  exprs_mat <- t(as.matrix(exprs(cds)[gene_ids, ]))
+  exprs_mat <- t(as.matrix(normalized_counts(cds)[gene_ids, ]))
   exprs_mat <- reshape2::melt(exprs_mat)
   colnames(exprs_mat) <- c('Cell', 'Gene', 'Expression')
   exprs_mat$Gene <- as.character(exprs_mat$Gene)

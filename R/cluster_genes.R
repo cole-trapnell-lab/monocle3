@@ -385,7 +385,7 @@ aggregate_gene_expression <- function(cds,
       if (length(dn <- dim(gene_expr_mat)) < 2L)
         return(NA)
       if (gene_agg_fun == "mean"){
-        res = Matrix::colMeans()
+        res = Matrix::colMeans(agg_mat[genes_in_group,])
       }else if (gene_agg_fun == "sum"){
         res = Matrix::colSums(agg_mat[genes_in_group,])
       }
