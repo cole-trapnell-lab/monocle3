@@ -91,7 +91,7 @@ cluster_cells <- function(cds,
                           partition_qval = 0.05,
                           weight = FALSE,
                           resolution = NULL,
-                          random_seed = NULL,
+                          random_seed = 42,
                           verbose = FALSE,
                           nn_control = list(),
                           ...) {
