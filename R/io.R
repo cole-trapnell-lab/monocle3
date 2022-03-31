@@ -1071,7 +1071,7 @@ load_transform_models <- function(cds, directory_path) {
          reduction_method == 'UMAP' &&
          file_format == 'umap_nn_index' &&
          nchar(md5sum) > 32)) {
-      if(md5sum_file != md5sum) {
+      if(is.na(md5sum_file) || (md5sum_file != md5sum)) {
         stop('md5sum mismatch for file \'', file_path, '\'')
       }
     }
@@ -1498,7 +1498,7 @@ load_monocle_objects <- function(directory_path) {
          nchar(md5sum) > 32) &&
        file_format != 'hdf5') {
       md5sum_file <- tools::md5sum(file_path)
-      if(md5sum_file != md5sum) {
+      if(is.na(md5sum_file) || (md5sum_file != md5sum)) {
         stop('md5sum mismatch for file \'', file_path, '\'')
       }
     }
