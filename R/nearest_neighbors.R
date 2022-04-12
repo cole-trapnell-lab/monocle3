@@ -500,9 +500,6 @@ new_annoy_index <- function(metric, ndim) {
                       stop('unsupported annoy metric ', metric)
                     )
   nn_index <- methods::new(nn_class, ndim)
-
-nn_index$setSeed(42) # bge annoy
-
   return(nn_index)
 }
 
