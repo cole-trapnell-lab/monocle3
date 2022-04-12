@@ -113,7 +113,7 @@ cluster_cells <- function(cds,
   assertthat::assert_that(assertthat::is.count(num_iter))
   assertthat::assert_that(assertthat::is.count(k))
   assertthat::assert_that(!is.null(colnames(cds)),
-                          msg=message('The CDS is missing cell names, which are required by cluster_cells.'))
+                          msg=message('cluster_cells: the cds is missing cell names, which are required by cluster_cells.'))
 
   if (!is.null(resolution) & cluster_method == "louvain") {
     message("Resolution can only be used when cluster_method is ",

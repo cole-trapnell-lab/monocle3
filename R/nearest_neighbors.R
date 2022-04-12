@@ -357,6 +357,7 @@ set_nn_control <- function(mode, nn_control=list(), nn_control_default=list(), n
   default_ef <- 150
   default_grain_size <- 1
   default_cores <- 1
+  default_annoy_random_seed <- 42
 
   assertthat::assert_that(methods::is(nn_control, "list"))
   assertthat::assert_that(methods::is(nn_control_default, "list"))
@@ -370,7 +371,8 @@ set_nn_control <- function(mode, nn_control=list(), nn_control_default=list(), n
                                   'ef',
                                   'grain_size',
                                   'cores',
-                                  'show_values')
+                                  'show_values',
+                                  'annoy_random_seed')
 
   assertthat::assert_that(all(names(nn_control) %in% allowed_control_parameters),
                           msg = "set_nn_control: unknown variable in nn_control")
@@ -393,6 +395,7 @@ set_nn_control <- function(mode, nn_control=list(), nn_control_default=list(), n
                             msg=paste0("set_nn_control: nearest neighbor metric for annoy must be one of 'euclidean', 'cosine', 'manhattan', or 'hamming'"))
     if(bitwAnd(mode, 1)) {
       nn_control_out[['n_trees']] <- select_nn_parameter_value('n_trees', nn_control, nn_control_default, default_n_trees)
+      nn_control_out[['annoy_random_seed']] <- select_nn_parameter_value('annoy_random_seed', nn_control, nn_control_default, default_annoy_random_seed)
       assertthat::assert_that(assertthat::is.count(nn_control_out[['n_trees']]))
     }
 
@@ -561,6 +564,8 @@ make_nn_index <- function(subject_matrix, nn_control=list(), verbose=FALSE) {
   if(nn_method == 'annoy') {
     monocle3_annoy_index_version <- get_global_variable('monocle3_annoy_index_version')
     annoy_index <- new_annoy_index(metric, num_col)
+    annoy_random_seed <- nn_control[['annoy_random_seed']]
+    annoy_index$setSeed(annoy_random_seed)
     n_trees <- nn_control[['n_trees']]
     if(num_row > 0 ) {
       for(i in 1:num_row)
@@ -568,7 +573,7 @@ make_nn_index <- function(subject_matrix, nn_control=list(), verbose=FALSE) {
       annoy_index$build(n_trees)
     }
     annoy_index_version <- packageVersion('RcppAnnoy')
-    nn_index <- list(method='annoy', annoy_index=annoy_index, version=monocle3_annoy_index_version, annoy_index_version=annoy_index_version, metric=metric, n_trees=n_trees, nrow=num_row, ncol=num_col, checksum_rownames=checksum_rownames)
+    nn_index <- list(method='annoy', annoy_index=annoy_index, version=monocle3_annoy_index_version, annoy_index_version=annoy_index_version, metric=metric, n_trees=n_trees, nrow=num_row, ncol=num_col, checksum_rownames=checksum_rownames, annoy_random_seed=annoy_random_seed)
   }
   else
   if(nn_method == 'hnsw') {
