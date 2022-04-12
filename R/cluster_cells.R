@@ -91,7 +91,7 @@ cluster_cells <- function(cds,
                           partition_qval = 0.05,
                           weight = FALSE,
                           resolution = NULL,
-                          random_seed = 42,
+                          random_seed = NULL,
                           verbose = FALSE,
                           nn_control = list(),
                           ...) {
@@ -112,6 +112,8 @@ cluster_cells <- function(cds,
   assertthat::assert_that(is.logical(weight))
   assertthat::assert_that(assertthat::is.count(num_iter))
   assertthat::assert_that(assertthat::is.count(k))
+  assertthat::assert_that(!is.null(colnames(cds)),
+                          msg=message('The CDS is missing cell names, which are required by cluster_cells.'))
 
   if (!is.null(resolution) & cluster_method == "louvain") {
     message("Resolution can only be used when cluster_method is ",

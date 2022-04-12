@@ -414,7 +414,7 @@ plot_cells <- function(cds,
                        alpha = 1,
                        min_expr=0.1,
                        rasterize=FALSE,
-                       scale_to_range=FALSE,
+                       scale_to_range=TRUE,
                        label_principal_points = FALSE) {
   feature_label <- min_val_for_feature <- max_val_for_feature <- NULL # no visible binding
   cell_group <- cell_color <- cells_in_cluster <- per <- NULL # no visible binding
