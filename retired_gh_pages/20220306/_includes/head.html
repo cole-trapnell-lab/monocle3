@@ -1,0 +1,42 @@
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+ 
+    <title>{% if page.title %}{{ page.title | escape }}{% else %}{{ site.title | escape }}{% endif %}</title>
+    <meta name="description" content="{{ page.excerpt | default: site.description | strip_html | normalize_whitespace | truncate: 160 | escape }}">
+ 
+<link rel="shortcut icon" type="image/png" href="{{site.baseurl}}/images/favicon.png"/> 
+   <link rel="stylesheet" href="{{ "/css/main.css" | relative_url }}">
+   <link rel="stylesheet" href="{{site.baseurl}}/node_modules/prismjs/themes/base16-atelierlakeside.light.css" />
+   <link rel="stylesheet" href="https://cdn.rawgit.com/afeld/bootstrap-toc/v0.4.1/dist/bootstrap-toc.min.css">
+ 
+   <link rel="canonical" href="{{ page.url | replace:'index.html','' | absolute_url }}">
+   
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-QW21JE7HZ7"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-QW21JE7HZ7');
+</script>
+
+     <!-- Begin of scripts to run the widget -->
+     <script src="{{site.baseurl}}/widget_scripts/htmlwidgets-1.2/htmlwidgets.js"></script>
+     <link href="{{site.baseurl}}/widget_scripts/rglwidgetClass-2/rgl.css" rel="stylesheet" />
+     <script src="{{site.baseurl}}/widget_scripts/rglwidgetClass-2/rglClass.src.js"></script>
+     <script src="{{site.baseurl}}/widget_scripts/CanvasMatrix4-2016/CanvasMatrix.src.js"></script>
+     <script src="{{site.baseurl}}/widget_scripts/rglWebGL-binding-0.99.16/rglWebGL.js"></script>
+     <script src="{{site.baseurl}}/widget_scripts/jquery-1.11.3/jquery.min.js"></script>
+     <link href="{{site.baseurl}}/widget_scripts/crosstalk-1.0.0/css/crosstalk.css" rel="stylesheet" /> 
+     <script src="{{site.baseurl}}/widget_scripts/crosstalk-1.0.0/js/crosstalk.min.js"></script> 
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+     <!-- End of scripts to run the widget -->
+ </head>
+
+
+
+

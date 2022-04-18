@@ -29,6 +29,8 @@ tags: [monocle, manual, vignette]
           </ul>
         </li>
         <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/differential">Differential expression analysis</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/projection">Projecting query data onto a reference</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/store_monocle_objects">Storing monocle objects</a></li>
         <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/cicero">Single-cell ATAC-seq data</a></li>
         <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/citations">Citations and acknowledgments</a></li>
       </ul>
@@ -186,7 +188,7 @@ plot_cells(cds, color_cells_by = "partition")
       
       <h3 id="learn-graph">Learn the trajectory graph</h3>
       <p>
-        Next, we will fit a <emph>principal graph</emph> within each parition using the <code>learn_graph()</code> function:
+        Next, we will fit a <emph>principal graph</emph> within each partition using the <code>learn_graph()</code> function:
       </p>
 {% highlight R %}
 cds <- learn_graph(cds)
@@ -301,7 +303,7 @@ plot_cells(cds,
       </div>
       <p>
         Note that some of the cells are gray. This means they have <emph>infinite</emph> pseudotime, because they were not reachable 
-        from the root nodes that were picked. In general, any cell on a parition that lacks a root node will be assigned an infinite 
+        from the root nodes that were picked. In general, any cell on a partition that lacks a root node will be assigned an infinite 
         pseudotime. In general, you should choose at least one root per partition.
       </p>
       
@@ -375,14 +377,12 @@ cds_3d <- order_cells(cds_3d, root_pr_nodes=get_earliest_principal_node(cds))
 cds_3d_plot_obj <- plot_cells_3d(cds_3d, color_cells_by="partition")
 {% endhighlight %}
       <p>
-      <strong>XXX PUT 3D PLOT BACK!!</strong>
-      
-      <!-- <iframe src="{{site.baseurl}}/images/manual_images/emb_3d_by_partition.html"
+      <!-- --> <iframe src="{{site.baseurl}}/images/manual_images/emb_3d_by_partition.html"
         height="600" width="100%"
         scrolling="no" seamless="seamless"
         frameBorder="0">
       </iframe>
-    -->
+    <!-- -->
   </p>
     <a href="{{ site.baseurl }}/docs/clustering" class="btn btn-info btn-sm btn-prev" role="button">Previous</a>
     <a href="{{ site.baseurl }}/docs/differential" class="btn btn-success btn-sm btn-next" role="button">Next</a>

@@ -1,0 +1,67 @@
+---
+permalink: /docs/store_monocle_objects/
+sidemenu: true
+description: "Store monocle objects."
+modified: 2019-09-13
+tags: [monocle, manual, vignette]
+---
+
+<div class= "container">
+  <div class= "row">
+    <div class= "col-sm-4">
+      <ul class="section-nav" id= "toc" data-spy= "affix" data-toggle= "toc">
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/introduction">Introduction</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/updates">Major updates in Monocle 3</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/installation">Installing Monocle 3</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/help">Getting help</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/starting">Getting started with Monocle 3</a></li> 
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/alignment">Pre-process your data</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/clustering">Clustering and classifying your cells</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/trajectories">Constructing single-cell trajectories</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/differential">Differential expression analysis</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/projection">Projecting query data onto a reference</a></li>
+        <li class="toc-entry toc-h2"><a class="active" href="{{ site.baseurl }}/docs/store_monocle_objects">Storing monocle objects</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/cicero">Single-cell ATAC-seq data</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/citations">Citations and acknowledgments</a></li>
+      </ul>
+    </div>
+    <!-- main content area start -->
+    <div class= "col-sm-8">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{{ site.baseurl }}/">Home</a></li>
+          <li class="breadcrumb-item"><a href="{{ site.baseurl }}/docs/introduction">Docs</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Project query data onto a reference.</li>
+        </ol>
+      </nav>
+
+<h2>Save monocle objects</h2>
+
+<p>
+The Monocle3 cell_data_set includes the UMAP models and nearest neighbor indexes, which are not R objects, so the <code>saveRDS()</code> and <code>readRDS()</code> functions do not manage them. The Monocle3 functions <code>save_monocle_objects</code> and <code>load_monocle_objects</code> save the complete cell_data_set in a specified directory.
+</p>
+
+<h3 id="save-monocle-objects">Save monocle objects</h3>
+
+<p>
+The <code>save_monocle_objects()</code> function saves all of the information in a cell_data_set to files that are stored in a directory with the name specified by the <code>directory_path</code> argument. The optional <code>comment</code> argument stores a memo string with the objects, which is reported when the cell_data_set is loaded with <code>load_monocle_objects()</code>.
+</p>
+
+{% highlight R %}
+save_monocle_objects(cds=cds, directory_path='my_cds_objects', comment='This is my example cds. Stored 2022-04-18.')
+{% endhighlight %}
+
+
+<h3 id="load-monocle-objects">Load monocle objects</h3>
+
+<p>
+The <code>load_monocle_objects()</code> function loads the complete data set into R from the files in the directory specified by the <code>directory_path</code> argument.
+</p>
+
+{% highlight R %}
+cds <- load_monocle_objects(directory_path='my_cds_objects')
+{% endhighlight %}
+
+
+<!-- main content area end -->
+</div></div></div>

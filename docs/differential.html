@@ -30,6 +30,8 @@ tags: [monocle, manual, vignette]
             <li class="toc-entry toc-h3"><a href="#branches">Analyzing branches in single-cell trajectories</a></li>
           </ul>
         </li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/projection">Projecting query data onto a reference</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/store_monocle_objects">Storing monocle objects</a></li>
         <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/cicero">Single-cell ATAC-seq data</a></li>
         <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/citations">Citations and acknowledgments</a></li>
       </ul>
@@ -450,6 +452,8 @@ compare_models(time_batch_models, time_models) %>% select(gene_short_name, q_val
       <h3 id="graph-auto">Graph-autocorrelation analysis for comparing clusters</h3>
       
       <p>In the L2 worm data, we identified a number of clusters that were very distinct as neurons: </p>
+
+<!--
 {% highlight R %}
 # reload and reprocess the data as described in the 'Clustering and classifying your cells' section
 expression_matrix <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_expression.rds"))
@@ -463,6 +467,7 @@ cds <- new_cell_data_set(expression_matrix,
 cds <- preprocess_cds(cds, num_dim = 100)
 cds <- reduce_dimension(cds)
 cds <- cluster_cells(cds, resolution=1e-5)
+
 colData(cds)$assigned_cell_type <- as.character(partitions(cds))
 colData(cds)$assigned_cell_type <- dplyr::recode(colData(cds)$assigned_cell_type,
                                                 "1"="Germline",
@@ -503,6 +508,36 @@ colData(cds)$assigned_cell_type <- dplyr::recode(colData(cds)$assigned_cell_type
                                                 "36"="Failed QC",
                                                 "37"="Ciliated sensory neurons",
                                                 "38"="Pharyngeal muscle")
+{% endhighlight %}
+-->
+
+{% highlight R %}
+# Reload and re-process the data as described in the 'Clustering and classifying your cells' section
+expression_matrix <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_expression.rds"))
+cell_metadata <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_colData.rds"))
+gene_annotation <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_rowData.rds"))
+
+# Make the CDS object
+cds <- new_cell_data_set(expression_matrix,
+                         cell_metadata = cell_metadata,
+                         gene_metadata = gene_annotation)
+cds <- preprocess_cds(cds, num_dim = 100)
+cds <- reduce_dimension(cds)
+cds <- cluster_cells(cds, resolution=1e-5)
+
+# In some clusters the majority of cells may have NA as the cell type so
+# use this function with caution.
+consensus <- function(x) {
+  uniqx <- unique(na.omit(x))
+  uniqx[which.max(tabulate(match(x, uniqx)))]
+}
+
+l_partition <- unique(partitions(cds))
+l_cell_type <- list()
+for(i_partition in l_partition) {
+  l_cell_type[as.character(i_partition)] <- consensus(colData(cds)[partitions(cds)==i_partition,][['cao_cell_type']])
+}
+colData(cds)[['assigned_cell_type']] <- as.character(l_cell_type[as.character(partitions(cds))])
 {% endhighlight %}
 
       <p>
@@ -655,7 +690,7 @@ plot_cells(cds, genes=c("hlh-4", "gcy-8", "dac-1", "oig-8"),
       <p>As before, we can collect the trajectory-variable genes into modules:</p>
       
 {% highlight R %}
-gene_module_df <- find_gene_modules(cds[pr_deg_ids,], resolution=c(0,10^seq(-6,-1)))
+gene_module_df <- find_gene_modules(cds[pr_deg_ids,], resolution=c(10^seq(-6,-1)))
 {% endhighlight %}
       
       <p>Here we plot the aggregate module scores within each group of cell types as annotated by Packer & Zhu <emph>et al</emph>:</p>

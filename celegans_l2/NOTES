@@ -1,0 +1,105 @@
+== Project cell types from Jonathan's annotations to the Cao data set.
+
+1. load reference data set (Jonathan's).
+
+devtools::load_all('/home/brent/git/monocle3')
+library(Matrix)
+
+mat_ref <- readMM('packer_cell_types/Cao_et_al_2017_data_2019_update.exprs.mm.gz')
+cell_ref <- read.csv('packer_cell_types/Cao_et_al_2017_data_2019_update.pData.tsv.gz', sep='\t')
+gene_ref <- read.csv('packer_cell_types/Cao_et_al_2017_data_2019_update.fData.tsv.gz', sep='\t')
+
+cds_ref <- new_cell_data_set(mat_ref, cell_ref, gene_ref)
+
+cs_ref <- colSums(assay(cds_ref))
+range(cs_ref)
+[1]   100 14317
+
+
+2. load query
+
+mat_qry <- readRDS('cao_cell_types/cao_l2_expression.rds')
+cell_qry <- readRDS('cao_cell_types/cao_l2_colData.rds')
+gene_qry <- readRDS('cao_cell_types/cao_l2_rowData.rds')
+
+cds_qry <- new_cell_data_set(mat_qry, cell_qry, gene_qry)
+
+cs_qry <- colSums(assay(cds_qry))
+range(cs_qry)
+[1]   100 14491
+
+
+3. adjust cdses to common genes
+
+genes_ref <- row.names(cds_ref)
+genes_qry <- row.names(cds_qry)
+genes_both <- intersect(genes_ref, genes_qry)
+
+cds_ref <- cds_ref[genes_both,]
+cds_qry <- cds_qry[genes_both,]
+
+4. process reference
+
+cds_ref <- estimate_size_factors(cds_ref)
+
+cds_ref <- preprocess_cds(cds_ref, num_dim=100)
+cds_ref <- reduce_dimension(cds_ref, build_nn_index=TRUE)
+save_transform_models(cds_ref, 'cao_worm_l2_packer_cell_types_models')
+
+
+5. process query
+
+cds_qry <- estimate_size_factors(cds_qry)
+
+cds_qry <- load_transform_models(cds_qry, 'cao_worm_l2_packer_cell_types_models')
+cds_qry <- preprocess_transform(cds_qry)
+cds_qry <- reduce_dimension_transform(cds_qry)
+
+
+6. transfer labels
+
+cds_qry_lxfr <- transfer_cell_labels(cds_qry, reduction_method='UMAP', ref_coldata=colData(cds_ref), ref_column_name='cell.type', query_column_name='packer_cell_type')
+
+cds_qry_fxfr <- fix_missing_cell_labels(cds_qry_lxfr, reduction_method='UMAP', from_column_name='packer_cell_type', to_column_name='packer_cell_type_final')
+
+cds_worm_l2_packer_cell_types <- cds_qry_fxfr
+save_monocle_objects(cds_worm_l2_packer_cell_types, 'cao_celegans_l2_packer_cell_types_objects')
+
+colData(cds)[['cell_name']] <- rownames(colData(cds))
+write.table(as.data.frame(colData(cds)[c('cell_name', 'cao_cell_type','packer_cell_type_final')]),file='cao_worm_l2.map_packer_cell_type.tsv', sep='\t')
+
+
+
+
+== Identify cell clusters in UMAP plot.
+
+R
+devtools::load_all()
+library(dplyr)
+
+expression_matrix <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_expression.rds"))
+cell_metadata <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_colData.rds"))
+gene_annotation <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_rowData.rds"))
+
+cds <- new_cell_data_set(expression_matrix,
+                         cell_metadata = cell_metadata,
+                         gene_metadata = gene_annotation)
+
+map <- read.csv('cao_worm_l2.map_packer_cell_type.tsv',sep='\t')
+rn1 <- rownames(colData(cds))
+rn2 <- rownames(map)
+identical(rn1,rn2)
+
+colData(cds)[['packer_cell_type']] <- map[['packer_cell_type_final']]
+
+
+cds <- preprocess_cds(cds, num_dim = 100)
+cds <- align_cds(cds, num_dim = 100, alignment_group = "plate")
+cds <- reduce_dimension(cds)
+cds <- cluster_cells(cds, resolution=1e-5)
+
+table(colData(cds)[clusters(cds)==1,'packer_cell_type'])
+...
+
+
+
