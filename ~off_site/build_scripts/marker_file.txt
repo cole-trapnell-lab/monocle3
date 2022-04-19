@@ -1,0 +1,51 @@
+> Cell type Ciliated sensory neurons
+expressed: che-3, scd-2, F58B4.3, R102.2, F27C1.11
+
+> Cell type Seam cells
+expressed: col-65, col-107, col-167, ram-2, Y47D7A.13
+
+> Cell type Unclassified neurons
+expressed: col-180, gar-2, unc-77, F11E6.3, madd-4
+
+> Cell type Body wall muscle
+expressed: csq-1, ttn-1, unc-54, cpna-2, F41C3.5
+
+> Cell type Coelomocytes
+expressed: cup-4, inos-1, Y73F4A.1, ZC116.3, aman-1
+
+> Cell type Vulval precursors
+expressed: des-2, mec-1, mec-7, mec-12, mec-17
+
+> Cell type Distal tip cells
+expressed: dgn-1, nid-1, K03B8.6, T02E1.8, ekl-6
+
+> Cell type Sex myoblasts
+expressed: egl-15, C04E12.2
+
+> Cell type Intestinal/rectal muscle
+expressed: egl-20, lbp-2, ttr-10, T23B12.8, Y59C2A.1
+
+> Cell type Am/PH sheath cells
+expressed: far-8, F35B12.9, fig-1, ZK822.4, T02B11.3
+
+> Cell type Oxygen sensory neurons
+expressed: flp-17, gcy-37, F34D10.6, T01D3.1, Y57G11B.97
+
+> Cell type Germline
+expressed: gld-1, pgl-1, ppw-2, prg-2, cbd-1
+
+> Cell type Socket cells
+expressed: R07B1.8, C06A8.3, D2024.4, F35A5.5, cutl-16
+
+> Cell type Pharyngeal gland
+expressed: lys-8, F15A4.6, dod-6, C49G7.3, phat-4
+
+> Cell type Pharyngeal muscle
+expressed: pqn-29, F31D4.5, R07E3.2, R13H4.8, T20B6.3
+
+> Cell type Somatic gonad precursors
+expressed: C06B8.7
+
+> Cell type Canal associated neurons
+expressed: acbp-6, Y66D12A.14, ZC412.4, C32E8.6, C41A3.1
+

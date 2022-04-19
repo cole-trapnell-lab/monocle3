@@ -1,0 +1,777 @@
+---
+permalink: /docs/differential/
+sidemenu: true
+description: "Differential expression analysis."
+modified: 2019-09-13
+tags: [monocle, manual, vignette]
+---
+
+<div class= "container">
+  <div class= "row">
+    <div class= "col-sm-4">
+      <ul class="section-nav" id= "toc" data-spy= "affix" data-toggle= "toc">
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/introduction">Introduction</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/updates">Major updates in Monocle 3</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/installation">Installing Monocle 3</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/help">Getting help</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/starting">Getting started with Monocle 3</a></li>
+<!--        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/alignment">Pre-process your data</a></li>  -->
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/clustering">Clustering and classifying your cells</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/trajectories">Constructing single-cell trajectories</a></li>
+        <li class="toc-entry toc-h2"><a class="active" href="{{ site.baseurl }}/docs/differential">Differential expression analysis</a>
+          <ul>
+            <li class="toc-entry toc-h3"><a href="#regression-analysis">Regression analysis</a></li>
+            <li class="toc-entry toc-h3"><a href="#control-batch">Controlling for batch effects and other factors</a></li>
+            <li class="toc-entry toc-h3"><a href="#evaluate-models">Evaluating models of gene expression</a></li>
+            <li class="toc-entry toc-h3"><a href="#choose-dist">Choosing a distribution for modeling gene expression</a></li>
+            <li class="toc-entry toc-h3"><a href="#graph-auto">Graph-autocorrelation analysis for comparing clusters</a></li>
+            <li class="toc-entry toc-h3"><a href="#gene-modules">Finding modules of co-regulated genes</a></li>
+            <li class="toc-entry toc-h3"><a href="#pseudo-dep">Finding genes that change as a function of pseudotime</a></li>
+            <li class="toc-entry toc-h3"><a href="#branches">Analyzing branches in single-cell trajectories</a></li>
+          </ul>
+        </li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/cicero">Single-cell ATAC-seq data</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/citations">Citations and acknowledgments</a></li>
+      </ul>
+    </div>
+    <!-- main content area -->
+    <div class= "col-sm-8">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{{ site.baseurl }}/">Home</a></li>
+          <li class="breadcrumb-item"><a href="{{ site.baseurl }}/docs/introduction">Docs</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Differential expression</li>
+        </ol>
+      </nav>
+      
+      <h2>Differential expression analysis </h2>
+      <p>
+        Differential gene expression analysis is a common task in RNA-Seq experiments.  Monocle can help you find genes that are 
+        differentially expressed between groups of cells and assesses the statistical signficance of those changes. Monocle 3 
+        includes a powerful system for finding genes that vary across cells of different types, were collected at different 
+        developmental time points, or that have been perturbed in different ways.
+      </p>
+      <p>There are two approaches for differential analysis in Monocle:</p>
+      <ul>
+        <li><strong>Regression analysis</strong>: using <code>fit_models()</code>, you can evaluate whether each gene depends on 
+          variables such as time, treatments, etc.
+        </li>
+        <li><strong>Graph-autocorrelation analysis</strong>: using <code>graph_test()</code>, you can find genes that vary over a 
+          trajectory or between clusters.
+        </li>
+      </ul>
+      
+      <p>
+        Monocle also comes with specialized functions for finding co-regulated modules of differentially expressed genes. Monocle also 
+        allows you to interactively interrogate specific clusters or regions of a trajectory (e.g. branch points) for genes that vary 
+        within them.
+      </p>
+      
+      <p>Let's examine these tools in turn.</p>
+      
+      <h3 id="regression-analysis">Regression analysis </h3>
+      <p>
+        In this section, we'll explore how to use Monocle to find genes that are differentially expressed according to several 
+        different criteria. Performing differential expression analysis on all genes in a cell_data_set object can take anywhere from 
+        minutes to hours, depending on how complex the analysis is. To keep the vignette simple and fast, we'll be working with 
+        small sets of genes. Rest assured, however, that Monocle can analyze several thousands of genes even in large experiments, 
+        making it useful for discovering dynamically regulated genes during the biological process you're studying. 
+      </p>
+      
+      <p>
+        Let's begin with a small set of genes that we know are important in ciliated neurons to demonstrate Monocle's capabilities:
+      </p>
+      
+{% highlight R %}
+ciliated_genes <- c("che-1",
+                    "hlh-17",
+                    "nhr-6",
+                    "dmd-6",
+                    "ceh-36",
+                    "ham-1")
+cds_subset <- cds[rowData(cds)$gene_short_name %in% ciliated_genes,]
+{% endhighlight %}
+      
+      <p>
+        The differential analysis tools in Monocle are extremely flexible. Monocle works by fitting a <emph>regression model</emph> 
+        to each gene. You can specify this model to account for various factors in your experiment (time, treatment, and so on). 
+        For example, In the embryo data, the cells were collected at different time points. We can test whether any of the genes 
+        above change over time in their expression by first fitting a <emph>generalized linear model</emph> to each one: 
+      </p>
+      
+      \begin{equation}
+      log(y_i) = \beta_0 + \beta_t x_t
+      \end{equation}
+      
+      <p>
+        where $y_i$ is a random variable corresponding to the expression values of gene $i$, $x_t$ is the time each cell was 
+        collected (in minutes), and the $\beta_t$ capture the effect of time on expression, and $\beta_0$ is an intercept term. We 
+        can identify genes that vary over time by fitting this model to each one, and then testing whether its $\beta_t$ is 
+        significantly different from zero. To do so, we first call the <code>fit_models()</code> function:
+      </p>
+      
+{% highlight R %}
+gene_fits <- fit_models(cds_subset, model_formula_str = "~embryo.time")
+{% endhighlight %}
+      
+      <p>
+        <code>gene_fits</code> is a <a href="https://tibble.tidyverse.org/">tibble</a> that contains a row for each gene. The 
+        <code>model</code> column contains generalized linear model objects, each of which aims to explain the expression of a gene 
+        across the cells using the equation above. The parameter <code>model_formula_str</code> should be a string specifying 
+        the model formula. The model formulae you use in your tests can include any term that exists as a column in the 
+        <code>colData</code> table, including those columns that are added by Monocle in other analysis steps. For example, if you 
+        use <code><a href = "{{ site.baseurl }}/docs/clustering/#group-cells">cluster_cells</a></code>, you can test for genes 
+        that differ between clusters and partitions by using <code>~cluster</code> or <code>~partition</code> (respectively) as 
+        your model formula. You can also include multiple variables, for example  <code>~embryo.time + batch</code>, which can be 
+        very helpful for subtracting unwanted effects.
+      </p>
+      
+      <p> 
+        Now let's see which of these genes have time-dependent expression. First, we extract a table of coefficients from each 
+        model using the <code>coefficient_table()</code> function:
+      </p>
+{% highlight R %}
+fit_coefs <- coefficient_table(gene_fits)
+{% endhighlight %}
+      
+      <p><code>fit_coefs</code> looks like this: </p>
+      
+      <div style="width:750px; height:250px; overflow: auto">
+        <table class= "table">
+          <thead>
+            <tr>
+              <th>id</th>
+              <th>gene_short_name</th>
+              <th>num_cells_expressed</th>
+              <th>status</th>
+              <th>term</th>
+              <th>estimate</th>
+              <th>std_err</th>
+              <th>test_val</th>
+              <th>p_value</th>
+              <th>normalized_effect</th>
+              <th>model_component</th>
+              <th>q_value</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for term in site.data.de_tests.emb_terms %}
+            <tr>
+              <td>{{ term.id }}</td>
+              <td>{{ term.gene_short_name }}</td>
+              <td>{{ term.num_cells_expressed }}</td>
+              <td>{{ term.status }}</td>
+              <td>{{ term.term }}</td>
+              <td>{{ term.estimate }}</td>
+              <td>{{ term.std_err }}</td>
+              <td>{{ term.test_val }}</td>
+              <td>{{ term.p_value }}</td>
+              <td>{{ term.normalized_effect }}</td>
+              <td>{{ term.model_component }}</td>
+              <td>{{ term.q_value }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      
+      <p>
+        Note that the table includes one row for each <emph>term</emph> of each gene's model. We generally don't care about the 
+        intercept term $\beta_0$, so we can easily just extract the time terms:
+      </p>
+      
+{% highlight R %}
+emb_time_terms <- fit_coefs %>% filter(term == "embryo.time")
+{% endhighlight %}
+      
+      <p>
+        Now, let's pull out the genes that have a significant time component. <code>coefficient_table()</code> tests 
+        whether each coefficient differs significantly from zero under the 
+        <a href="https://en.wikipedia.org/wiki/Wald_test">Wald test</a>. By default, <code>coefficient_table()</code> adjusts these 
+        p-values for <code<>multiple hypothesis testing</code> using the method of 
+        <a href="https://en.wikipedia.org/wiki/False_discovery_rate">Benjamini and Hochberg</a>. These adjusted values can be found 
+        in the <code>q_value</code> column. We can filter the results and control the false discovery rate as follows:
+      </p>
+      
+{% highlight R %}
+emb_time_terms %>% filter (q_value < 0.05) %>%
+         select(gene_short_name, term, q_value, estimate)
+{% endhighlight %}
+      
+      <div style="width:750px; overflow: auto">
+        <table class= "table">
+          <thead>
+            <tr>
+              <th>gene_short_name</th>
+              <th>term</th>
+              <th>q_value</th>
+              <th>estimate</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for term in site.data.de_tests.emb_time_sig_terms %}
+            <tr>
+              <td>{{ term.gene_short_name }}</td>
+              <td>{{ term.term }}</td>
+              <td>{{ term.q_value }}</td>
+              <td>{{ term.estimate }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      
+      <p>We can see that five of the six genes significantly vary as a function of time. </p>
+      
+      <p> 
+        Monocle also provides some easy ways to plot the expression of a small set of genes grouped by the factors you use during 
+        differential analysis.  This helps you visualize the differences revealed by the tests above.  One type of plot is a 
+        "violin" plot. 
+      </p>
+      
+{% highlight R %}
+plot_genes_violin(cds_subset, group_cells_by="embryo.time.bin", ncol=2) +
+      theme(axis.text.x=element_text(angle=45, hjust=1))
+{% endhighlight %}
+      
+      <div class= "text-center">
+        <img src= "{{site.baseurl}}/images/manual_images/embryo_ciliated_markers_violin.png" width= 500>
+      </div>
+      
+      <h3 id="control-batch">Controlling for batch effects and other factors</h3>
+      
+      <!-- TODO: Add violin plots in this section -->
+      
+{% highlight R %}
+gene_fits <- fit_models(cds_subset, model_formula_str = "~embryo.time + batch")
+fit_coefs <- coefficient_table(gene_fits)
+fit_coefs %>% filter(term != "(Intercept)") %>%
+      select(gene_short_name, term, q_value, estimate)
+{% endhighlight %}
+      
+      <div style="height: 250px; width:750px; overflow: auto">
+        <table class= "table">
+          <thead>
+            <tr>
+              <th>gene_short_name</th>
+              <th>term</th>
+              <th>q_value</th>
+              <th>estimate</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for term in site.data.de_tests.emb_plus_batch_terms %}
+            <tr>
+              <td>{{ term.gene_short_name }}</td>
+              <td>{{ term.term }}</td>
+              <td>{{ term.q_value }}</td>
+              <td>{{ term.estimate }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      
+      <h3 id="evaluate-models">Evaluating models of gene expression</h3>
+      
+      <p>
+        How good are these models at "explaining" gene expression? We can evaluate the fits of each model using the 
+        <code>evaluate_fits()</code> function:
+      </p>
+      
+{% highlight R %}
+evaluate_fits(gene_fits)
+{% endhighlight %}
+      
+      <div style="width:750px; overflow: auto">
+        <table class= "table">
+          <thead>
+            <tr>
+              <th>id</th>
+              <th>gene_short_name</th>
+              <th>num_cells_expressed</th>
+              <th>status</th>
+              <th>null_deviance</th>
+              <th>df.null</th>
+              <th>logLik</th>
+              <th>AIC</th>
+              <th>BIC</th>
+              <th>deviance</th>
+              <th>df_residual</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for gene in site.data.de_tests.emb_time_evals %}
+            <tr>
+              <td>{{ gene.id }}</td>
+              <td>{{ gene.gene_short_name }}</td>
+              <td>{{ gene.num_cells_expressed }}</td>
+              <td>{{ gene.status }}</td>
+              <td>{{ gene.null_deviance }}</td>
+              <td>{{ gene.df_null }}</td>
+              <td>{{ gene.logLik }}</td>
+              <td>{{ gene.AIC }}</td>
+              <td>{{ gene.BIC }}</td>
+              <td>{{ gene.deviance }}</td>
+              <td>{{ gene.df_residual }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      
+      <p>
+        Should we include the batch term in our model of gene expression or not? Monocle provides a function 
+        <code>compare_models()</code> that can help you decide. Compare models takes two models and returns the result of a 
+        <a href="https://en.wikipedia.org/wiki/Likelihood-ratio_test">likelihood ratio test</a> between them. Any time you add 
+        terms to a model, it will improve the fit. But we should always to use the simplest model we can to explain our data. The 
+        likelihood ratio test helps us decide whether the improvement in fit is large enough to justify the complexity our extra 
+        terms introduce. You run <code>compare_models()</code> like this:
+      </p>
+      
+{% highlight R %}
+time_batch_models <- fit_models(cds_subset,
+                                model_formula_str = "~embryo.time + batch",
+                                expression_family="negbinomial")
+time_models <- fit_models(cds_subset,
+                          model_formula_str = "~embryo.time",
+                          expression_family="negbinomial")
+compare_models(time_batch_models, time_models) %>% select(gene_short_name, q_value)
+{% endhighlight %}
+      
+      <p>
+        The first of the two models is called the <em>full</em> model. This model is essentially a way of predicting the expression 
+        value of each gene in a given cell knowing both what time it was collected and which batch of cells it came from. The second 
+        model, called the <em>reduced</em> model, does the same thing, but it only knows about the time each cell was collected.  
+        Because the full model has more information about each cell, it will do a better job of predicting the expression of the 
+        gene in each cell. The question Monocle must answer for each gene is <em>how much better</em> the full model's prediction 
+        is than the reduced model's. The greater the improvement that comes from knowing the <em>batch</em> of each cell, the more 
+        significant the result of the likelihood ratio test.
+      </p>
+      
+      <p>
+        As we can see, all of the genes' likelihood ratio tests are significant, indicating that there are substantial batch effects 
+        in the data. We are therefore justified in adding the <code>batch</code> term to our model.
+      </p>
+      
+      <div style="height: 250px; width:750px; overflow: auto">
+        <table class= "table">
+          <thead>
+            <tr>
+              <th>gene_short_name</th>
+              <th>p_value</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for gene in site.data.de_tests.emb_model_lr_test %}
+            <tr>
+              <td>{{ gene.gene_short_name }}</td>
+              <td>{{ gene.q_value }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      
+      <h3 id="choose-dist">Choosing a distribution for modeling gene expression</h3>
+      <p>
+        Monocle uses <a href="https://en.wikipedia.org/wiki/Generalized_linear_model">generalized linear models</a> to capture how 
+        a gene's expression depends on each variable in the experiment. These models require you to specify a distribution that 
+        describes gene expression values. Most studies that use this approach to analyze their gene expression data use the 
+        <a href="https://en.wikipedia.org/wiki/Negative_binomial_distribution">negative binomial distribution</a>, which is often 
+        appropriate for sequencing read or UMI count data. The negative binomial is at the core of many packages for RNA-seq analysis, 
+        such as <a href="https://bioconductor.org/packages/release/bioc/html/DESeq2.html">DESeq2</a>.
+      </p>
+      
+      <p>
+        Monocle's <code>fit_models()</code> supports the negative binomial distribution and several others listed in the table below. 
+        The default is the <a href="https://en.wikipedia.org/wiki/Poisson_regression">"quasipoisson"</a>, which is very similar to 
+        the negative binomial. Quasipoisson is a a bit less accurate than the negative binomial but much faster to fit, making it 
+        well suited to datasets with thousands of cells.
+      </p>
+      <p>
+        There are several allowed values for <code>expression_family</code>:
+      </p>
+      <p>
+        <table class= "table">
+          <thead>
+            <tr>
+              <th>expression_family</th>
+              <th>Distribution</th>
+              <th>Accuracy</th>
+              <th>Speed</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>quasipoisson</code></td>
+              <td><a href="https://en.wikipedia.org/wiki/Poisson_regression">Quasi-poisson</a></td>
+              <td>++</td>
+              <td>++</td>
+              <td>Default for <code>fit_models()</code>. Recommended for  most users.</td>
+            </tr>
+            <tr>
+              <td><code>negbinomial</code></td>
+              <td><a href="https://en.wikipedia.org/wiki/Negative_binomial_distribution">Negative binomial</a></td>
+              <td>+++</td>
+              <td>+</td>
+              <td>Recommended for users with small datasets (fewer than 1,000 cells).</td>
+            </tr>
+            <tr>
+              <td><code>poisson</code></td>
+              <td><a href="https://en.wikipedia.org/wiki/Poisson_regression">Poisson</a></td>
+              <td>-</td>
+              <td>+++</td>
+              <td>Not recommended. For debugging and testing only.</td>
+            </tr>
+            <tr>
+              <td><code>binomial</code></td>
+              <td><a href="https://en.wikipedia.org/wiki/Logistic_regression">Binomial</a></td>
+              <td>++</td>
+              <td>++</td>
+              <td>Recommended for single-cell ATAC-seq</td>
+            </tr>
+          </tbody>
+        </table>
+      </p>
+      
+      <p>
+        <div class= "panel panel-warning">
+          <div class= "panel-heading">
+            <h3 class= "panel-title" data-toc-skip>Likelihood based analysis and quasipoisson</h3>
+          </div>
+          <div class= "panel-body">
+            The quasi-poisson distribution doesn't have a real likelihood function, so some of Monocle's methods won't work with it. Several of the columns in results tables from <code>evaluate_fits()</code> and <code>compare_models()</code> will be <code>NA</code>.
+          </div>
+        </div>
+      </p>
+      
+      <h3 id="graph-auto">Graph-autocorrelation analysis for comparing clusters</h3>
+      
+      <p>In the L2 worm data, we identified a number of clusters that were very distinct as neurons: </p>
+{% highlight R %}
+# reload and reprocess the data as described in the 'Clustering and classifying your cells' section
+expression_matrix <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_expression.rds"))
+cell_metadata <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_colData.rds"))
+gene_annotation <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_rowData.rds"))
+
+# Make the CDS object
+cds <- new_cell_data_set(expression_matrix,
+                         cell_metadata = cell_metadata,
+                         gene_metadata = gene_annotation)
+cds <- preprocess_cds(cds, num_dim = 100)
+cds <- reduce_dimension(cds)
+cds <- cluster_cells(cds, resolution=1e-5)
+colData(cds)$assigned_cell_type <- as.character(partitions(cds))
+colData(cds)$assigned_cell_type <- dplyr::recode(colData(cds)$assigned_cell_type,
+                                                "1"="Germline",
+                                                "2"="Body wall muscle",
+                                                "3"="Unclassified neurons",
+                                                "4"="Vulval precursors",
+                                                "5"="Failed QC",
+                                                "6"="Seam cells",
+                                                "7"="Pharyngeal epithelia",
+                                                "8"="Coelomocytes",
+                                                "9"="Am/PH sheath cells",
+                                                "10"="Failed QC",
+                                                "11"="Touch receptor neurons",
+                                                "12"="Intestinal/rectal muscle",
+                                                "13"="Pharyngeal neurons",
+                                                "14"="NA",
+                                                "15"="flp-1(+) interneurons",
+                                                "16"="Canal associated neurons",
+                                                "17"="Ciliated sensory neurons",
+                                                "18"="Other interneurons",
+                                                "19"="Pharyngeal gland",
+                                                "20"="Failed QC",
+                                                "21"="Ciliated sensory neurons",
+                                                "22"="Oxygen sensory neurons",
+                                                "23"="Ciliated sensory neurons",
+                                                "24"="Ciliated sensory neurons",
+                                                "25"="Ciliated sensory neurons",
+                                                "26"="Ciliated sensory neurons",
+                                                "27"="Oxygen sensory neurons",
+                                                "28"="Ciliated sensory neurons",
+                                                "29"="Unclassified neurons",
+                                                "30"="Socket cells",
+                                                "31"="Failed QC",
+                                                "32"="Pharyngeal gland",
+                                                "33"="Ciliated sensory neurons",
+                                                "34"="Ciliated sensory neurons",
+                                                "35"="Ciliated sensory neurons",
+                                                "36"="Failed QC",
+                                                "37"="Ciliated sensory neurons",
+                                                "38"="Pharyngeal muscle")
+{% endhighlight %}
+
+      <p>
+        Subset just the neurons:
+      </p>
+{% highlight R %}
+neurons_cds <- cds[,grepl("neurons", colData(cds)$assigned_cell_type, ignore.case=TRUE)]
+plot_cells(neurons_cds, color_cells_by="partition")
+{% endhighlight %}
+      
+      <div class= "text-center">
+        <img src= "{{site.baseurl}}/images/manual_images/L2_umap_neurons.png" width= 760>
+      </div>
+      
+      <p>
+        There are many subtypes of neurons, so perhaps the different neuron clusters correspond to different subtypes. To 
+        investigate which genes are expressed differentially across the clusters, we could use the regression analysis tools 
+        discussed above. However, Monocle provides an alternative way of finding genes that vary between groups of cells in UMAP 
+        or t-SNE space. The function <code>graph_test()</code> uses a statistic from spatial autocorrelation analysis called 
+        <a href="https://en.wikipedia.org/wiki/Moran%27s_I">Moran's I</a>, which Cao & Spielmann <emph>et al</emph> showed to 
+        be effective in finding genes that vary in single-cell RNA-seq datasets.
+      </p>
+      
+      <p>You can run <code>graph_test()</code> like this:</p>
+      
+{% highlight R %}
+pr_graph_test_res <- graph_test(neurons_cds, neighbor_graph="knn", cores=8)
+pr_deg_ids <- row.names(subset(pr_graph_test_res, q_value < 0.05))
+{% endhighlight %}
+      
+      <p>
+        The data frame <code>pr_graph_test_res</code> has the Moran's I test results for each gene in the <code>cell_data_set</code>. 
+        If you'd like to rank the genes by effect size, sort this table by the <code>morans_I</code>column, which ranges from -1 to +1. 
+        A value of 0 indicates no effect, while +1 indicates perfect positive autocorrelation and suggests that nearby cells have 
+        very similar values of a gene's expression. Significant values much less than zero are generally rare.
+      </p>
+      
+      <p>
+        Positive values indicate a gene is expressed in a focal region of the UMAP space (e.g. specific to one or more clusters). 
+        But how do we associate genes with clusters? The next section explains how to collect genes into modules that have similar 
+        patterns of expression and associate them with clusters.
+      </p>
+      
+      <h3 id="gene-modules">Finding modules of co-regulated genes</h3>
+      
+      <p>Once you have a set of genes that vary in some interesting way across the clusters, Monocle provides a means of grouping them 
+        into modules. You can call <code>find_gene_modules()</code>, which essentially runs UMAP on the genes (as opposed to the cells) 
+        and then groups them into modules using Louvain community analysis:
+      </p>
+      
+{% highlight R %}
+gene_module_df <- find_gene_modules(neurons_cds[pr_deg_ids,], resolution=1e-2)
+{% endhighlight %}
+      
+      <p>
+        The data frame <code>gene_module_df</code> contains a row for each gene and identifies the module it belongs to. To see which 
+        modules are expressed in which clusters or partitions you can use two different approaches for visualization. The first is just 
+        to make a simple table that shows the aggregate expression of all genes in each module across all the clusters. Monocle 
+        provides a simple utility function called <code>aggregate_gene_expression</code> for this purpose:
+      </p>
+{% highlight R %}
+cell_group_df <- tibble::tibble(cell=row.names(colData(neurons_cds)), 
+                                cell_group=partitions(cds)[colnames(neurons_cds)])
+agg_mat <- aggregate_gene_expression(neurons_cds, gene_module_df, cell_group_df)
+row.names(agg_mat) <- stringr::str_c("Module ", row.names(agg_mat))
+colnames(agg_mat) <- stringr::str_c("Partition ", colnames(agg_mat))
+
+pheatmap::pheatmap(agg_mat, cluster_rows=TRUE, cluster_cols=TRUE,
+                   scale="column", clustering_method="ward.D2",
+                   fontsize=6)
+{% endhighlight %}
+      
+      <div class= "text-center">
+        <img src= "{{site.baseurl}}/images/manual_images/L2_neuron_module_heatmap.png" width= 760>
+      </div>
+      
+      <p>
+        Some modules are highly specific to certain partitions of cells, while others are shared across multiple partitions. Note that 
+        <code>aggregate_gene_expression</code> can work with arbitrary groupings of cells and genes. You're not limited to looking at 
+        modules from <code>find_gene_modules()</code>, <code>clusters()</code>, and <code>partitions()</code>.
+      </p>
+      
+      <p>
+        The second way of looking at modules and their expression is to pass <code>gene_module_df</code> directly to 
+        <code>plot_cells()</code>. If there are many modules, it can be hard to see where each one is expressed, so we'll just look 
+        at a subset of them:
+      </p> 
+      
+{% highlight R %}
+plot_cells(neurons_cds, 
+           genes=gene_module_df %>% filter(module %in% c(8, 28, 33, 37)),
+           group_cells_by="partition",
+           color_cells_by="partition",
+           show_trajectory_graph=FALSE)
+{% endhighlight %}
+      
+      <div class= "text-center">
+        <img src= "{{site.baseurl}}/images/manual_images/L2_umap_neurons_selected_modules.png" width= 760>
+      </div>
+      
+      <h3 id="pseudo-dep">Finding genes that change as a function of pseudotime </h3>
+      <p>
+        Identifying the genes that change as cells progress along a trajectory is a core objective of this type of analysis. 
+        Knowing the order in which genes go on and off can inform new models of development. For example, 
+        <a href="http://dx.doi.org/10.1016/j.cell.2018.12.003">Sharon and Chawla et al</a> recently analyzed pseudotime-dependent 
+        genes to arrive at a whole new model of how islets form in the pancreas.
+      </p>
+      <p>Let's return to the embryo data:</p>
+      
+{% highlight R %}
+plot_cells(cds,
+           color_cells_by = "cell.type",
+           label_groups_by_cluster=FALSE,
+           label_leaves=FALSE,
+           label_branch_points=FALSE)
+{% endhighlight %}
+      
+      <div class= "text-center">
+        <img src= "{{site.baseurl}}/images/manual_images/embryo_pr_graph_packer_cell_type.png" width= 760>
+      </div>
+      
+      <p>
+        How do we find the genes that are differentially expressed on the different paths through the trajectory? How do we find the 
+        ones that are restricted to the beginning of the trajectory? Or excluded from it?
+      </p>
+      
+      <p>
+        Once again, we turn to <code>graph_test()</code>, this time passing it <code>neighbor_graph="principal_graph"</code>, 
+        which tells it to test whether cells at similar positions on the trajectory have correlated expression:
+      </p>
+      
+{% highlight R %}
+ciliated_cds_pr_test_res <- graph_test(cds, neighbor_graph="principal_graph", cores=4)
+pr_deg_ids <- row.names(subset(ciliated_cds_pr_test_res, q_value < 0.05))
+{% endhighlight %}
+      
+      <p>Here are a couple of interesting genes that score as highly significant according to <code>graph_test()</code>:</p>
+      
+{% highlight R %}
+plot_cells(cds, genes=c("hlh-4", "gcy-8", "dac-1", "oig-8"),
+           show_trajectory_graph=FALSE,
+           label_cell_groups=FALSE,
+           label_leaves=FALSE)
+{% endhighlight %}
+      
+      <div class= "text-center">
+        <img src= "{{site.baseurl}}/images/manual_images/embryo_umap_selected_markers.png" width= 760>
+      </div>
+      
+      <p>As before, we can collect the trajectory-variable genes into modules:</p>
+      
+{% highlight R %}
+gene_module_df <- find_gene_modules(cds[pr_deg_ids,], resolution=c(10^seq(-6,-1)))
+{% endhighlight %}
+      
+      <p>Here we plot the aggregate module scores within each group of cell types as annotated by Packer & Zhu <emph>et al</emph>:</p>
+      
+{% highlight R %}
+cell_group_df <- tibble::tibble(cell=row.names(colData(cds)), 
+                                cell_group=colData(cds)$cell.type)
+agg_mat <- aggregate_gene_expression(cds, gene_module_df, cell_group_df)
+row.names(agg_mat) <- stringr::str_c("Module ", row.names(agg_mat))
+pheatmap::pheatmap(agg_mat,
+                   scale="column", clustering_method="ward.D2")
+{% endhighlight %}
+      
+      <div class= "text-center">
+        <img src= "{{site.baseurl}}/images/manual_images/emb_pseudotime_module_heatmap.png" width= 760>
+      </div>
+      
+      <p>
+        We can also pass <code>gene_module_df</code> to <code>plot_cells()</code> as we did when we compared clusters in the L2 
+        data above.
+      </p>
+{% highlight R %}
+plot_cells(cds,
+           genes=gene_module_df %>% filter(module %in% c(27, 10, 7, 30)),
+           label_cell_groups=FALSE,
+           show_trajectory_graph=FALSE)
+{% endhighlight %}
+      
+      <div class= "text-center">
+        <img src= "{{site.baseurl}}/images/manual_images/embryo_umap_selected_pseudotime_modules.png" width= 760>
+      </div>
+      
+      <p>
+        Monocle offers another plotting function that can sometimes give a clearer view of a gene's dynamics along a single path. You can select a path with <code>choose_cells()</code> or by subsetting the cell data set by cluster, cell type, or other annotation that's restricted to the path.
+        Let's pick one such path, the AFD cells:
+      </p>
+{% highlight R %}
+AFD_genes <- c("gcy-8", "dac-1", "oig-8")
+AFD_lineage_cds <- cds[rowData(cds)$gene_short_name %in% AFD_genes,
+                       colData(cds)$cell.type %in% c("AFD")]
+{% endhighlight %}
+
+      <p>
+        The function <code>plot_genes_in_pseudotime()</code> takes a small set of genes and shows you their dynamics as a function of 
+        pseudotime:
+      </p>
+{% highlight R %}
+plot_genes_in_pseudotime(AFD_lineage_cds,
+                         color_cells_by="embryo.time.bin",
+                         min_expr=0.5)
+{% endhighlight %}
+      
+      <div class= "text-center">
+        <img src= "{{site.baseurl}}/images/manual_images/embryo_AFD_dynamic_genes.png" width= 760>
+      </div>
+      
+      <p>You can see that <emph>dac-1</emph> is activated before the other two genes.</p>
+      
+      <h3 id="branches">Analyzing branches in single-cell trajectories </h3>
+      
+      <p>
+        Analyzing the genes that are regulated around trajectory branch points often provides insights into the genetic circuits 
+        that control cell fate decisions. Monocle can help you drill into a branch point that corresponds to a fate decision in 
+        your system. Doing so is as simple as selecting the cells (and branch point) of interest with <code>choose_cells()</code>:
+      </p>
+{% highlight R %}
+cds_subset <- choose_cells(cds)
+{% endhighlight %}
+      
+      
+      <div class= "text-center">
+        <img src= "{{site.baseurl}}/images/manual_images/choose_branch_recording.gif" width= 760>
+      </div>
+      
+      <p> 
+        And then calling <code>graph_test()</code> on the subset. This will identify genes with interesting patterns of 
+        expression that fall only within the region of the trajectory you selected, giving you a more refined and relevant 
+        set of genes.
+      </p>
+{% highlight R %}
+subset_pr_test_res <- graph_test(cds_subset, neighbor_graph="principal_graph", cores=4)
+pr_deg_ids <- row.names(subset(subset_pr_test_res, q_value < 0.05))
+{% endhighlight %}
+      
+      <p>
+        Grouping these genes into modules can reveal fate specific genes or those that are activate immediate prior to or following 
+        the branch point:
+      </p>
+      
+{% highlight R %}
+gene_module_df <- find_gene_modules(cds_subset[pr_deg_ids,], resolution=0.001)
+{% endhighlight %}
+      
+      <p>
+        We will organize the modules by their similarity (using <code>hclust</code>) over the trajectory so it's a little easier to 
+        see which ones come on before others:
+      </p>
+      
+{% highlight R %}
+agg_mat <- aggregate_gene_expression(cds_subset, gene_module_df)
+module_dendro <- hclust(dist(agg_mat))
+gene_module_df$module <- factor(gene_module_df$module, 
+                                levels = row.names(agg_mat)[module_dendro$order])
+
+plot_cells(cds_subset,
+           genes=gene_module_df,
+           label_cell_groups=FALSE,
+           show_trajectory_graph=FALSE)
+{% endhighlight %}
+      
+      <div class= "text-center">
+        <img src= "{{site.baseurl}}/images/manual_images/embryo_umap_AFD_modules.png" width= 760>
+      </div>
+
+      <a href="{{ site.baseurl }}/docs/trajectories" class="btn btn-info btn-sm btn-prev" role="button">Previous</a>
+      <a href="{{ site.baseurl }}/docs/cicero" class="btn btn-success btn-sm btn-next" role="button">Next</a>
+    </div>
+  </div>
+</div>

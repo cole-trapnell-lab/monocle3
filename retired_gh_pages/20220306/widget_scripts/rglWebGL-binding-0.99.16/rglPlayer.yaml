@@ -1,6 +1,0 @@
-dependencies:
-  -  name: rglwidgetClass
-     version: 2.0
-     src: htmlwidgets/lib/rglClass
-     script: rglClass.src.js
-     stylesheet: rgl.css

@@ -1,0 +1,29 @@
+Steps for deploying the website
+
+1. install homebrew:
+/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+
+2. install ruby with homebrew
+brew install ruby
+
+3. install jekyll
+sudo gem install jekyll
+
+4. install node.js
+from package installer available at:
+https://nodejs.org/en/
+
+5. install bundler
+sudo gem install bundler
+
+6. install packages used by site
+bundle install
+
+7. Build the site:
+bundle exec jekyll build --incremental --watch
+
+8. Serve the site (in a second terminal window)
+bundle exec jekyll serve --watch
+
+9. Load the site in chrome:
+http://127.0.0.1:4000/
