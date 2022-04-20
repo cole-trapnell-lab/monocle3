@@ -15,7 +15,7 @@ images_new_dir <- file.path(monocle3_git_gh_dir, 'images.new')
 manual_images_dir <- file.path(images_new_dir, 'manual_images')
 
 # CSV file tables are stored here.
-data_new_dir <- file.path(monocle3_git_gh_dir, '_data_new')
+data_new_dir <- file.path(monocle3_git_gh_dir, '_data,new')
 data_de_dir <- file.path(data_new_dir, 'de_tests')
 
 

@@ -35,14 +35,14 @@
 # not made using ggplot2.
 
 source('globals.R', local=TRUE, echo=TRUE)
-devtools::load_all(git_gh_dir, quiet=TRUE)
+devtools::load_all(monocle3_git_dir, quiet=TRUE)
 
 library(dplyr)
 
 # We will load it as we did with the L2 data:
-expression_matrix <- readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_expression.rds"))
-cell_metadata <- readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_colData.rds"))
-gene_annotation <- readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_rowData.rds"))
+expression_matrix <- readRDS(url("https://staff.washington.edu/hpliner/data/packer_embryo_expression.rds"))
+cell_metadata <- readRDS(url("https://staff.washington.edu/hpliner/data/packer_embryo_colData.rds"))
+gene_annotation <- readRDS(url("https://staff.washington.edu/hpliner/data/packer_embryo_rowData.rds"))
 
 cds <- new_cell_data_set(expression_matrix, cell_metadata = cell_metadata, gene_metadata = gene_annotation)
 

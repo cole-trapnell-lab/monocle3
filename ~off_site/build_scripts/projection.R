@@ -43,17 +43,17 @@ library(Matrix)
 
 
 # We begin by loading the reference and query data sets into Monocle3.
-matrix_ref <- readMM(gzcon(url("http://staff.washington.edu/bge/monocle3/projection/data/cao.mouse_embryo.sample.mtx.gz")))
-cell_ann_ref <- read.csv(gzcon(url("http://staff.washington.edu/bge/monocle3/projection/data/cao.mouse_embryo.sample.coldata.txt.gz"), text=TRUE), sep='\t')
-gene_ann_ref <- read.csv(gzcon(url("http://staff.washington.edu/bge/monocle3/projection/data/cao.mouse_embryo.sample.rowdata.txt.gz"), text=TRUE), sep='\t')
+matrix_ref <- readMM(gzcon(url("https://staff.washington.edu/bge/monocle3/projection/data/cao.mouse_embryo.sample.mtx.gz")))
+cell_ann_ref <- read.csv(gzcon(url("https://staff.washington.edu/bge/monocle3/projection/data/cao.mouse_embryo.sample.coldata.txt.gz"), text=TRUE), sep='\t')
+gene_ann_ref <- read.csv(gzcon(url("https://staff.washington.edu/bge/monocle3/projection/data/cao.mouse_embryo.sample.rowdata.txt.gz"), text=TRUE), sep='\t')
 
 cds_ref <- new_cell_data_set(matrix_ref,
                              cell_metadata = cell_ann_ref,
                              gene_metadata = gene_ann_ref)
 
-matrix_qry <- readMM(gzcon(url("http://staff.washington.edu/bge/monocle3/projection/data/srivatsan.mouse_embryo_scispace.sample.mtx.gz")))
-cell_ann_qry <- read.csv(gzcon(url("http://staff.washington.edu/bge/monocle3/projection/data/srivatsan.mouse_embryo_scispace.sample.coldata.txt.gz"), text=TRUE), sep='\t')
-gene_ann_qry <- read.csv(gzcon(url("http://staff.washington.edu/bge/monocle3/projection/data/srivatsan.mouse_embryo_scispace.sample.rowdata.txt.gz"), text=TRUE), sep='\t')
+matrix_qry <- readMM(gzcon(url("https://staff.washington.edu/bge/monocle3/projection/data/srivatsan.mouse_embryo_scispace.sample.mtx.gz")))
+cell_ann_qry <- read.csv(gzcon(url("https://staff.washington.edu/bge/monocle3/projection/data/srivatsan.mouse_embryo_scispace.sample.coldata.txt.gz"), text=TRUE), sep='\t')
+gene_ann_qry <- read.csv(gzcon(url("https://staff.washington.edu/bge/monocle3/projection/data/srivatsan.mouse_embryo_scispace.sample.rowdata.txt.gz"), text=TRUE), sep='\t')
 
 cds_qry <- new_cell_data_set(matrix_qry,
                              cell_metadata = cell_ann_qry,
@@ -83,7 +83,6 @@ save_transform_models(cds_ref, 'cds_ref_test_models')
 cds_qry <- load_transform_models(cds_qry, 'cds_ref_test_models')
 cds_qry <- preprocess_transform(cds_qry)
 cds_qry <- reduce_dimension_transform(cds_qry)
-
 
 # First we plot the reference and query cells in UMAP space.
 plot_file_name <- 'L2_projection_reference.png'

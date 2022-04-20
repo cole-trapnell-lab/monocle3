@@ -1,0 +1,70 @@
+These are UMAP clusters of the Cao Celegans L2 stage data with the Packer annotations.
+The number is the cluster and the following lines are the Packer annotations and cell counts. Lower count cells are ignored.
+The Sulston cell type descriptions are included where necessary.
+
+
+1
+Sex_myoblast 268
+
+
+2
+Somatic_gonad_precursor 267
+
+
+3
+Vulval_precursor_bin_2_early_L3 242
+
+
+4
+Sex_myoblast 214
+
+
+5
+Vulval_precursor_bin_1_late_L2 193
+
+
+6
+Somatic_gonad_precursor 208
+
+
+7
+Sex_myoblast 185
+
+
+8
+Sex_myoblast 156
+
+
+9
+FLP_PVD 149
+
+ FLP Ciliated neuron
+ PVD Neuron
+
+
+10
+Vulval_precursor_bin_2_early_L3 67
+Vulval_precursor_bin_1_late_L2 61
+
+
+11
+Somatic_gonad_precursor 88
+Sex_myoblast 43
+
+
+12
+Distal_tip_cell 127
+
+
+13
+Somatic_gonad_precursor 116
+
+
+14
+Sex_myoblast 112
+
+
+15
+Vulval_precursor_bin_1_late_L2 39
+Vulval_precursor_bin_2_early_L3 21
+

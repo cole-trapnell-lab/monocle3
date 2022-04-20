@@ -5,6 +5,9 @@
 # variables 'manual_images_dir' and 'data_de_dir', as
 # defined in globals.R.
 #
+# Call this script from R using the command
+#   source('differential.R', local=TRUE, echo=TRUE)
+#
 # There is information about using ggsave in the blog
 # page at
 #
@@ -43,14 +46,12 @@ library(dplyr)
 # Number of significant digits in real values in tables.
 nsigdigits <- 3
 
-foo <- function() { # begin bge
-
 # This is copied from trajectories because the differential page appears
 # to assume that the embryo data are loaded.
 #
-expression_matrix <- readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_expression.rds"))
-cell_metadata <- readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_colData.rds"))
-gene_annotation <- readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_rowData.rds"))
+expression_matrix <- readRDS(url("https://staff.washington.edu/hpliner/data/packer_embryo_expression.rds"))
+cell_metadata <- readRDS(url("https://staff.washington.edu/hpliner/data/packer_embryo_colData.rds"))
+gene_annotation <- readRDS(url("https://staff.washington.edu/hpliner/data/packer_embryo_rowData.rds"))
 
 cds <- new_cell_data_set(expression_matrix, cell_metadata = cell_metadata, gene_metadata = gene_annotation)
 
@@ -121,14 +122,12 @@ out_emb_model_lr_test <- rapply(out_emb_model_lr_test, f=formatC, classes="numer
 csv_file_name <- 'emb_model_lr_test.csv'
 write.csv(out_emb_model_lr_test, file.path(data_de_dir, csv_file_name), row.names=TRUE)
 
-} # end bge
-
 
 # In the L2 worm data, we identified a number of clusters that were very distinct as neurons:
 # reload and reprocess the data as described in the 'Clustering and classifying your cells' section
-expression_matrix <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_expression.rds"))
-cell_metadata <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_colData.rds"))
-gene_annotation <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_rowData.rds"))
+expression_matrix <- readRDS(url("https://staff.washington.edu/hpliner/data/cao_l2_expression.rds"))
+cell_metadata <- readRDS(url("https://staff.washington.edu/hpliner/data/cao_l2_colData.rds"))
+gene_annotation <- readRDS(url("https://staff.washington.edu/hpliner/data/cao_l2_rowData.rds"))
 
 # Make the CDS object
 cds <- new_cell_data_set(expression_matrix,
@@ -138,20 +137,41 @@ cds <- preprocess_cds(cds, num_dim = 100)
 cds <- reduce_dimension(cds)
 cds <- cluster_cells(cds, resolution=1e-5)
 
-# colData(cds)$assigned_cell_type <- as.character(partitions(cds))
-# colData(cds)$assigned_cell_type <- dplyr::recode(colData(cds)$assigned_cell_type, "1"="Germline", "2"="Body wall muscle", "3"="Unclassified neurons", "4"="Vulval precursors", "5"="Failed QC", "6"="Seam cells", "7"="Pharyngeal epithelia", "8"="Coelomocytes", "9"="Am/PH sheath cells", "10"="Failed QC", "11"="Touch receptor neurons", "12"="Intestinal/rectal muscle", "13"="Pharyngeal neurons", "14"="NA", "15"="flp-1(+) interneurons", "16"="Canal associated neurons", "17"="Ciliated sensory neurons", "18"="Other interneurons", "19"="Pharyngeal gland", "20"="Failed QC", "21"="Ciliated sensory neurons", "22"="Oxygen sensory neurons", "23"="Ciliated sensory neurons", "24"="Ciliated sensory neurons", "25"="Ciliated sensory neurons", "26"="Ciliated sensory neurons", "27"="Oxygen sensory neurons", "28"="Ciliated sensory neurons", "29"="Unclassified neurons", "30"="Socket cells", "31"="Failed QC", "32"="Pharyngeal gland", "33"="Ciliated sensory neurons", "34"="Ciliated sensory neurons", "35"="Ciliated sensory neurons", "36"="Failed QC", "37"="Ciliated sensory neurons", "38"="Pharyngeal muscle")
-
-consensus <- function(x) {
-  uniqx <- unique(na.omit(x))
-  uniqx[which.max(tabulate(match(x, uniqx)))]
-}
-
-l_cell_type <- list()
-lpartition <- unique(partitions(cds))
-for(ipartition in lpartition) {
-  l_cell_type[as.character(ipartition)] <- consensus(colData(cds)[partitions(cds)==ipartition,][['cao_cell_type']])
-}
-colData(cds)[['assigned_cell_type']] <- as.character(l_cell_type[as.character(partitions(cds))])
+colData(cds)$assigned_cell_type <- as.character(partitions(cds))
+colData(cds)$assigned_cell_type <- dplyr::recode(colData(cds)$assigned_cell_type,
+                                                 "1"="Body wall muscle",
+                                                 "2"="Germline",
+                                                 "3"="Motor neurons",
+                                                 "4"="Seam cells",
+                                                 "5"="Sex myoblasts",
+                                                 "6"="Socket cells",
+                                                 "7"="Marginal_cell",
+                                                 "8"="Coelomocyte",
+                                                 "9"="Am/PH sheath cells",
+                                                 "10"="Ciliated neurons",
+                                                 "11"="Intestinal/rectal muscle",
+                                                 "12"="Excretory gland",
+                                                 "13"="Chemosensory neurons",
+                                                 "14"="Interneurons",
+                                                 "15"="Unclassified eurons",
+                                                 "16"="Ciliated neurons",
+                                                 "17"="Pharyngeal gland cells",
+                                                 "18"="Unclassified neurons",
+                                                 "19"="Chemosensory neurons",
+                                                 "20"="Ciliated neurons",
+                                                 "21"="Ciliated neurons",
+                                                 "22"="Inner labial neuron",
+                                                 "23"="Ciliated neurons",
+                                                 "24"="Ciliated neurons",
+                                                 "25"="Ciliated neurons",
+                                                 "26"="Hypodermal cells",
+                                                 "27"="Mesodermal cells",
+                                                 "28"="Motor neurons",
+                                                 "29"="Pharyngeal gland cells",
+                                                 "30"="Ciliated neurons",
+                                                 "31"="Excretory cells",
+                                                 "32"="Amphid neuron",
+                                                 "33"="Pharyngeal muscle")
 
 # Subset just the neurons:
 neurons_cds <- cds[,grepl("neurons", colData(cds)$assigned_cell_type, ignore.case=TRUE)]
@@ -187,9 +207,9 @@ ggplot_cells_png(plot_cmd, manual_images_dir=manual_images_dir, plot_file_name=p
 # Let's return to the embryo data:
 
 # We will load it as we did with the L2 data:
-expression_matrix <- readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_expression.rds"))
-cell_metadata <- readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_colData.rds"))
-gene_annotation <- readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_rowData.rds"))
+expression_matrix <- readRDS(url("https://staff.washington.edu/hpliner/data/packer_embryo_expression.rds"))
+cell_metadata <- readRDS(url("https://staff.washington.edu/hpliner/data/packer_embryo_colData.rds"))
+gene_annotation <- readRDS(url("https://staff.washington.edu/hpliner/data/packer_embryo_rowData.rds"))
 
 cds <- new_cell_data_set(expression_matrix, cell_metadata = cell_metadata, gene_metadata = gene_annotation)
 

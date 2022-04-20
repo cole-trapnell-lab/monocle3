@@ -1,0 +1,264 @@
+These are UMAP partitions of the Cao Celegans L2 stage data with the Packer annotations.
+The number is the partition and the following lines are the Packer annotations and cell counts. Lower count cells are ignored.
+The Sulston cell type descriptions are included where necessary.
+
+
+1
+BWM_middle_and_posterior 6151
+BWM_anterior 3796
+
+
+2 
+Germline 5793
+
+
+3
+AS_DA_DB_VA_VB_VC 959
+DD_VD 411
+
+ AS Ventral cord motor neuron
+ DA Ventral cord motor neuron
+ DB Ventral cord motor neuron
+ VA Ventral cord motor neuron
+ DD Ventral cord motor neuron
+ VD Ventral cord motor neuron
+
+
+4
+Seam_cell_bin_2_late_L2 1074
+Seam_cell_bin_3_around_L2_molt 903
+
+5
+Sex_myoblast 1018
+Somatic_gonad_precursor 695
+
+#  AMso Amphid socket
+#  PHso Phasmid socket
+#  hyp  hypodermal syncytium
+
+6
+AMso_PHso 514
+hyp_4_to_7_bin_3_around_L2_molt 514
+hyp_4_to_7_bin_2_late_L2 484
+
+ AMso Amphid socket
+ PHso Phasmid socket
+
+7
+Marginal_cell_bin_1_mid_to_late_L2 444
+ALM_PLM_AVM_PVM 352
+
+ ALM Touch receptor
+ PLM Touch receptor
+ AVM Touch receptor
+ PVM Touch receptor
+
+
+8
+Coelomocyte 1369
+
+#  AMsh Amphid sheath
+#  PHsh Phasmid sheath
+
+
+9
+AMsh 293
+PHsh 117
+
+ AMsh Amphid sheath
+ PHsh Phasmid sheath
+
+#  FLP Ciliated neuron
+#  PVD Neuron
+
+
+10
+FLP_PVD 164
+
+ FLP Ciliated neuron
+ PVD Neuron
+
+#  ALM Touch receptor
+#  PLM Touch receptor
+#  AVM Touch receptor
+#  PVM Touch receptor
+
+
+11
+mu_int_mu_anal 224
+mu_sph 111
+
+ mu_anal Anal muscle
+ mu_int  Intestinal muscle
+ mu_sph  Sphincter muscle
+
+
+12
+Excretory_gland 279
+
+
+13
+ASH_PHA_PHB 99
+ADF 60
+
+ ASH Amphid neurons - probably chemosensory
+ PHA Phasmid neurons - probably chemosensory
+ PHB Phasmid neurons - probably chemosensory
+ ADF Amphid neurons - probably chemosensory
+
+
+14
+AVK 242
+
+ AVK Ventral cord interneuron
+
+
+15
+CAN 238
+
+ CAN Excretory canal neuron process
+
+
+16
+FLP_PVD 238
+
+ FLP Ciliated neuron
+ PVD Neuron
+
+
+17
+g1A 171
+g1P 57
+
+ g1A Pharyngeal gland cells
+ g1P Pharyngeal gland cells
+
+
+18
+AQR_PQR_URX 79
+BAG 67
+
+ AQR Neuron
+ PQR Neuron
+ URX Ring interneuron
+ BAG Ciliated neuron
+
+
+19
+ADL 108
+
+ ADL Amphid neuron - probably chemosensory
+
+
+20
+ASG 87
+
+ ASG Ciliated amphid neuron
+
+
+21
+ASJ 79
+
+ ASJ Ciliated amphid neuron
+
+
+22
+IL2 75
+
+ IL2 Inner labeal neuron
+
+
+23
+ASEL 37
+ASER 36
+
+ ASEL Ciliated amphid neuron
+ ASER Ciliated amphid neuron
+
+#  ASK Ciliated amphid neuron
+
+
+24
+ASK 73
+
+ ASK Ciliated amphid neuron
+
+#  AWA Ciliated amphid wing cell neurons
+
+
+25
+AWA 57
+
+ AWA Ciliated amphid wing cell neurons
+
+#  XXX Embryonic head hypodermal cell
+
+
+26
+XXX
+
+ XXX Embryonic head hypodermal cell
+
+#  hmc Head mesodermal cell,
+
+
+27
+hmc 38
+
+ hmc Head mesodermal cell,
+
+#  AS Ciliated amphid neuron
+#  DA Ventral cord motor neuron
+#  DB Ventral cord motor neuron
+#  VA Ventral cord motor neuron
+#  VB Ventral cord motor neuron
+#  VC Ventral cord motor neuron
+
+
+28
+AS_DA_DB_VA_VB_VC 45
+
+ AS Ciliated amphid neuron
+ DA Ventral cord motor neuron
+ DB Ventral cord motor neuron
+ VA Ventral cord motor neuron
+ VB Ventral cord motor neuron
+ VC Ventral cord motor neuron
+
+#  g2 Pharyngeal gland cells
+
+
+29
+g2 41
+
+ g2 Pharyngeal gland cells
+
+#  ASI Ciliated amphid neuron
+
+
+30
+ASI 38
+
+ ASI Ciliated amphid neuron
+
+#  ASEL Ciliated amphid neuron
+
+
+31
+Excretory cells 30
+
+#  ASER Ciliated amphid neuron
+
+
+32
+AFD 29
+
+ Amphid neuron
+
+
+33
+pm6_and_possibly_pm7 30
+
+ Pharyngeal muscle
+
+

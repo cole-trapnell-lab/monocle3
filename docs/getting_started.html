@@ -147,7 +147,7 @@ library(dplyr)
 
       Monocle holds single-cell expression data in objects of the
       <code>cell_data_set</code> class. The class is derived from the Bioconductor
-      <code><a href="http://bioconductor.org/packages/release/bioc/html/SingleCellExperiment.html">SingleCellExperiment</a></code> class,
+      <code><a href="https://bioconductor.org/packages/release/bioc/html/SingleCellExperiment.html">SingleCellExperiment</a></code> class,
       which provides a common interface familiar to those who have analyzed other
       single-cell experiments with Bioconductor. The class requires three input files:
       <p>
@@ -202,9 +202,9 @@ library(dplyr)
       <p>
 {% highlight R %}
 # Load the data
-expression_matrix <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_expression.rds"))
-cell_metadata <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_colData.rds"))
-gene_annotation <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_rowData.rds"))
+expression_matrix <- readRDS(url("https://staff.washington.edu/hpliner/data/cao_l2_expression.rds"))
+cell_metadata <- readRDS(url("https://staff.washington.edu/hpliner/data/cao_l2_colData.rds"))
+gene_annotation <- readRDS(url("https://staff.washington.edu/hpliner/data/cao_l2_rowData.rds"))
 
 # Make the CDS object
 cds <- new_cell_data_set(expression_matrix,

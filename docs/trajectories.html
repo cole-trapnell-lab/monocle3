@@ -80,15 +80,15 @@ tags: [monocle, manual, vignette]
       <p>
         The workflow for reconstructing trajectories is very similar to the workflow for clustering, but it has a few additional 
         steps. To illustrate the workflow, we will use another <emph>C. elegans</emph> data set, this one from 
-        <a href="http://dx.doi.org/10.1101/565549">Packer & Zhu et al</a>. Their study includes a time series analysis of whole 
+        <a href="https://dx.doi.org/10.1101/565549">Packer & Zhu et al</a>. Their study includes a time series analysis of whole 
         developing embyros. We will examine a small subset of the data which includes most of the neurons. We will load it as we 
         did with the L2 data:
       </p>
       
 {% highlight R %}
-expression_matrix <- readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_expression.rds"))
-cell_metadata <- readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_colData.rds"))
-gene_annotation <- readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_rowData.rds"))
+expression_matrix <- readRDS(url("https://staff.washington.edu/hpliner/data/packer_embryo_expression.rds"))
+cell_metadata <- readRDS(url("https://staff.washington.edu/hpliner/data/packer_embryo_colData.rds"))
+gene_annotation <- readRDS(url("https://staff.washington.edu/hpliner/data/packer_embryo_rowData.rds"))
 
 cds <- new_cell_data_set(expression_matrix,
                          cell_metadata = cell_metadata,

@@ -42,9 +42,9 @@ devtools::load_all(monocle3_git_dir, quiet=TRUE)
 library(dplyr)
 
 # You can load the data into Monocle 3 like this: 
-expression_matrix <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_expression.rds"))
-cell_metadata <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_colData.rds"))
-gene_annotation <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_rowData.rds"))
+expression_matrix <- readRDS(url("https://staff.washington.edu/hpliner/data/cao_l2_expression.rds"))
+cell_metadata <- readRDS(url("https://staff.washington.edu/hpliner/data/cao_l2_colData.rds"))
+gene_annotation <- readRDS(url("https://staff.washington.edu/hpliner/data/cao_l2_rowData.rds"))
 
 cds <- new_cell_data_set(expression_matrix,
                          cell_metadata = cell_metadata,
@@ -143,17 +143,55 @@ plot_file_name <- 'L2_plot_top3_partition_marker.png'
 plot_cmd <- plot_genes_by_group(cds, top_specific_marker_ids, group_cells_by="partition", ordering_type="cluster_row_col", max.size=3)
 ggplot_cells_png(plot_cmd, manual_images_dir=manual_images_dir, plot_file_name=plot_file_name)
 
-consensus <- function(x) {
-  uniqx <- unique(na.omit(x))
-  uniqx[which.max(tabulate(match(x, uniqx)))]
-}
 
-lpartition <- unique(partitions(cds))
-l_cell_type <- list()
-for(ipartition in lpartition) {
-  l_cell_type[as.character(ipartition)] <- consensus(colData(cds)[partitions(cds)==ipartition,][['cao_cell_type']])
-}
-colData(cds)[['assigned_cell_type']] <- as.character(l_cell_type[as.character(partitions(cds))])
+# consensus <- function(x) {
+#   uniqx <- unique(na.omit(x))
+#   uniqx[which.max(tabulate(match(x, uniqx)))]
+# }
+# 
+# lpartition <- unique(partitions(cds))
+# l_cell_type <- list()
+# for(ipartition in lpartition) {
+#   l_cell_type[as.character(ipartition)] <- consensus(colData(cds)[partitions(cds)==ipartition,][['cao_cell_type']])
+# }
+# colData(cds)[['assigned_cell_type']] <- as.character(l_cell_type[as.character(partitions(cds))])
+
+colData(cds)$assigned_cell_type <- as.character(partitions(cds))
+
+colData(cds)$assigned_cell_type <- dplyr::recode(colData(cds)$assigned_cell_type,
+                                                 "1"="Body wall muscle",
+                                                 "2"="Germline",
+                                                 "3"="Motor neurons",
+                                                 "4"="Seam cells",
+                                                 "5"="Sex myoblasts",
+                                                 "6"="Socket cells",
+                                                 "7"="Marginal_cell",
+                                                 "8"="Coelomocyte",
+                                                 "9"="Am/PH sheath cells",
+                                                 "10"="Ciliated neurons",
+                                                 "11"="Intestinal/rectal muscle",
+                                                 "12"="Excretory gland",
+                                                 "13"="Chemosensory neurons",
+                                                 "14"="Interneurons",
+                                                 "15"="Unclassified eurons",
+                                                 "16"="Ciliated neurons",
+                                                 "17"="Pharyngeal gland cells",
+                                                 "18"="Unclassified neurons",
+                                                 "19"="Chemosensory neurons",
+                                                 "20"="Ciliated neurons",
+                                                 "21"="Ciliated neurons",
+                                                 "22"="Inner labial neuron",
+                                                 "23"="Ciliated neurons",
+                                                 "24"="Ciliated neurons",
+                                                 "25"="Ciliated neurons",
+                                                 "26"="Hypodermal cells",
+                                                 "27"="Mesodermal cells",
+                                                 "28"="Motor neurons",
+                                                 "29"="Pharyngeal gland cells",
+                                                 "30"="Ciliated neurons",
+                                                 "31"="Excretory cells",
+                                                 "32"="Amphid neuron",
+                                                 "33"="Pharyngeal muscle")
 
 # Let's see how the new annotations look:
 plot_file_name <- 'L2_plot_cells_by_initial_annotation.png'
@@ -194,19 +232,37 @@ ggplot_cells_png(plot_cmd, manual_images_dir=manual_images_dir, plot_file_name=p
 #plot_cmd
 #dev.off()
 
-consensus <- function(x) {
-  uniqx <- unique(na.omit(x))
-  uniqx[which.max(tabulate(match(x, uniqx)))]
-}
+# consensus <- function(x) {
+#   uniqx <- unique(na.omit(x))
+#   uniqx[which.max(tabulate(match(x, uniqx)))]
+# }
 
-l_cell_type <- list()
-colData(cds_subset)[['cluster']] <- as.character(clusters(cds_subset))
-lcluster <- unique(colData(cds_subset)[['cluster']])
-for(icluster in lcluster) {
-  l_cell_type[as.character(icluster)] <- consensus(colData(cds_subset)[colData(cds_subset)[['cluster']]==icluster,][['cao_cell_type']])
-}
-colData(cds_subset)[['assigned_cell_type']] <- as.character(clusters(cds_subset)[colnames(cds_subset)])
-colData(cds_subset)[['assigned_cell_type']] <- as.character(l_cell_type[as.character(colData(cds_subset)[['cluster']])])
+# l_cell_type <- list()
+# colData(cds_subset)[['cluster']] <- as.character(clusters(cds_subset))
+# lcluster <- unique(colData(cds_subset)[['cluster']])
+# for(icluster in lcluster) {
+#   l_cell_type[as.character(icluster)] <- consensus(colData(cds_subset)[colData(cds_subset)[['cluster']]==icluster,][['cao_cell_type']])
+# }
+# colData(cds_subset)[['assigned_cell_type']] <- as.character(clusters(cds_subset)[colnames(cds_subset)])
+# colData(cds_subset)[['assigned_cell_type']] <- as.character(l_cell_type[as.character(colData(cds_subset)[['cluster']])])
+
+colData(cds_subset)$assigned_cell_type <- as.character(clusters(cds_subset)[colnames(cds_subset)])
+colData(cds_subset)$assigned_cell_type <- dplyr::recode(colData(cds_subset)$assigned_cell_type,
+                                                        "1"="Sex myoblasts",
+                                                        "2"="Somatic gonad precursors",
+                                                        "3"="Vulval precursors",
+                                                        "4"="Sex myoblasts",
+                                                        "5"="Vulval precursors",
+                                                        "6"="Somatic gonad precursors",
+                                                        "7"="Sex myoblasts",
+                                                        "8"="Sex myoblasts",
+                                                        "9"="Ciliated neurons",
+                                                        "10"="Vulval precursors",
+                                                        "11"="Somatic gonad precursor",
+                                                        "12"="Distal tip cells",
+                                                        "13"="Somatic gonad precursor",
+                                                        "14"="Sex myoblasts",
+                                                        "15"="Vulval precursors")
 
 # Now we can transfer the annotations from the cds_subset object back to the full dataset. We'll also filter out low-quality cells at this stage 
 colData(cds)[colnames(cds_subset),]$assigned_cell_type <- colData(cds_subset)$assigned_cell_type
