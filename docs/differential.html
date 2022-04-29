@@ -456,9 +456,9 @@ compare_models(time_batch_models, time_models) %>% select(gene_short_name, q_val
 
 {% highlight R %}
 # reload and reprocess the data as described in the 'Clustering and classifying your cells' section
-expression_matrix <- readRDS(url("https://staff.washington.edu/hpliner/data/cao_l2_expression.rds"))
-cell_metadata <- readRDS(url("https://staff.washington.edu/hpliner/data/cao_l2_colData.rds"))
-gene_annotation <- readRDS(url("https://staff.washington.edu/hpliner/data/cao_l2_rowData.rds"))
+expression_matrix <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/cao_l2_expression.rds"))
+cell_metadata <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/cao_l2_colData.rds"))
+gene_annotation <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/cao_l2_rowData.rds"))
 
 # Make the CDS object
 cds <- new_cell_data_set(expression_matrix,
@@ -508,9 +508,9 @@ colData(cds)$assigned_cell_type <- dplyr::recode(colData(cds)$assigned_cell_type
 
 {% highlight R %}
 # Reload and re-process the data as described in the 'Clustering and classifying your cells' section
-expression_matrix <- readRDS(url("https://staff.washington.edu/hpliner/data/cao_l2_expression.rds"))
-cell_metadata <- readRDS(url("https://staff.washington.edu/hpliner/data/cao_l2_colData.rds"))
-gene_annotation <- readRDS(url("https://staff.washington.edu/hpliner/data/cao_l2_rowData.rds"))
+expression_matrix <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/cao_l2_expression.rds"))
+cell_metadata <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/cao_l2_colData.rds"))
+gene_annotation <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/cao_l2_rowData.rds"))
 
 # Make the CDS object
 cds <- new_cell_data_set(expression_matrix,

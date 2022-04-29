@@ -86,9 +86,9 @@ tags: [monocle, manual, vignette]
       </p>
       
 {% highlight R %}
-expression_matrix <- readRDS(url("https://staff.washington.edu/hpliner/data/packer_embryo_expression.rds"))
-cell_metadata <- readRDS(url("https://staff.washington.edu/hpliner/data/packer_embryo_colData.rds"))
-gene_annotation <- readRDS(url("https://staff.washington.edu/hpliner/data/packer_embryo_rowData.rds"))
+expression_matrix <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/packer_embryo_expression.rds"))
+cell_metadata <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/packer_embryo_colData.rds"))
+gene_annotation <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/packer_embryo_rowData.rds"))
 
 cds <- new_cell_data_set(expression_matrix,
                          cell_metadata = cell_metadata,

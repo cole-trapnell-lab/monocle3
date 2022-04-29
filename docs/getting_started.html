@@ -202,9 +202,10 @@ library(dplyr)
       <p>
 {% highlight R %}
 # Load the data
-expression_matrix <- readRDS(url("https://staff.washington.edu/hpliner/data/cao_l2_expression.rds"))
-cell_metadata <- readRDS(url("https://staff.washington.edu/hpliner/data/cao_l2_colData.rds"))
-gene_annotation <- readRDS(url("https://staff.washington.edu/hpliner/data/cao_l2_rowData.rds"))
+expression_matrix <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/cao_l2_expression.rds"))
+cell_metadata <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/cao_l2_colData.rds"))
+gene_annotation <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/cao_l2_rowData.rds"))
+
 
 # Make the CDS object
 cds <- new_cell_data_set(expression_matrix,
