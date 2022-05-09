@@ -628,7 +628,7 @@ compare_models <- function(model_tbl_full, model_tbl_reduced){
   )
 
   joined_fits <- joined_fits %>%
-    dplyr::select_if(names(.) %in% c("gene_id", "gene_short_name",
+    dplyr::selectif(names(.) %in% c("gene_id", "gene_short_name",
                                      "num_cells_expressed", "p_value"))
   joined_fits$q_value <- stats::p.adjust(joined_fits$p_value)
   # joined_fits = joined_fits %>%
@@ -794,6 +794,7 @@ model_predictions <- function(model_tbl, new_data, type="response") {
 # Gene dispersion
 #
 # This function is adapted from DESeq (Anders and Huber).
+# Note: the sSeq package offers refinements.
 parametric_dispersion_fit <- function( disp_table, verbose = FALSE, initial_coefs=c(1e-6, 1) )
 {
   coefs <- initial_coefs
@@ -835,8 +836,7 @@ parametric_dispersion_fit <- function( disp_table, verbose = FALSE, initial_coef
 }
 
 
-disp_calc_helper_NB <- function(cds, expressionFamily, min_cells_detected){
-
+disp_calc_helper_NB <- function(cds, expression_family, min_cells_detected){
 
   rounded <- round(exprs(cds))
   nzGenes <- Matrix::rowSums(rounded > 0.1) #cds@lowerDetectionLimit)
@@ -847,15 +847,10 @@ disp_calc_helper_NB <- function(cds, expressionFamily, min_cells_detected){
   # options(DelayedArray.block.size=100e6)
   # We should make this clear in the documentation, and possibly
   # emit a message to users on calling this (and possibly other) functions.
-
   #Progress Bar here
-  x <- DelayedArray::DelayedArray(t(t(rounded[nzGenes,]) / size_factors(cds[nzGenes,])))
-
+  x <- DelayedArray::DelayedArray(Matrix::t(Matrix::t(rounded[nzGenes,]) / size_factors(cds[nzGenes,])))
   xim <- mean(1/ size_factors(cds[nzGenes,]))
-
-
-    f_expression_mean <- as(DelayedMatrixStats::rowMeans2(x), "sparseVector")
-
+  f_expression_mean <- as(DelayedMatrixStats::rowMeans2(x), "sparseVector")
 
   # For NB: Var(Y)=mu*(1+mu/k)
   f_expression_var <- DelayedMatrixStats::rowVars(x)
@@ -870,29 +865,30 @@ disp_calc_helper_NB <- function(cds, expressionFamily, min_cells_detected){
   res[res$mu == 0]$disp = NA
   res$disp[res$disp < 0] <- 0
 
-  res <- cbind(gene_id=row.names(exprs::fData(cds[nzGenes,])), res)
+  res <- cbind(gene_id=row.names(fData(cds[nzGenes,])), res)
   res
 }
 
 
-# Helper function to estimate dispersions
+#' Estimate feature dispersions.
+#' @param cds a cell_data_set that contains all cells user wants evaluated
+#' @param min_cells_detected Only include genes detected above lowerDetectionLimit in at least this many cells in the dispersion calculation
+#' @param remove_outliers a boolean it determines whether or not outliers from the data should be removed
+#' @param verbose Whether to show detailed running information.
 #' @importFrom dplyr %>%
-# @param cds a CellDataSet that contains all cells user wants evaluated
-# @param min_cells_detected Only include genes detected above lowerDetectionLimit in at least this many cells in the dispersion calculation
-# @param removeOutliers a boolean it determines whether or not outliers from the data should be removed
-# @param verbose Whether to show detailed running information.
-estimate_gene_dispersions <- function(cds, min_cells_detected, removeOutliers, verbose = FALSE)
+#' @export
+estimate_gene_dispersions <- function(cds, min_cells_detected, remove_outliers, verbose = FALSE)
 {
   mu <- NA
 
   progress_opts <- options()$dplyr.show_progress
   options(dplyr.show_progress = T)
 
-  cds_pdata <- dplyr::group_by_(dplyr::select_(tibble::rownames_to_column(as.data.frame(exprs::pData(cds))), "rowname"))
-  disp_table <- as.data.frame(disp_calc_helper_NB(cds, cds@expressionFamily, min_cells_detected))
+  cds_pdata <- dplyr::group_by(dplyr::select(tibble::rownames_to_column(as.data.frame(pData(cds))), "rowname"))
+  disp_table <- as.data.frame(disp_calc_helper_NB(cds, cds@expression_family, min_cells_detected))
   #disp_table <- data.frame(rowname = row.names(type_res), CellType = type_res)
 
-  #message("fitting disersion curves")
+  #message("fitting dispersion curves")
   #print (disp_table)
   if(!is.list(disp_table))
     stop("Parametric dispersion fitting failed, please set a different lowerDetectionLimit")
@@ -902,7 +898,7 @@ estimate_gene_dispersions <- function(cds, min_cells_detected, removeOutliers, v
   fit <- res[[1]]
   coefs <- res[[2]]
   #removeOutliers = TRUE
-  if (removeOutliers){
+  if (remove_outliers){
     CD <- stats::cooks.distance(fit)
     #cooksCutoff <- qf(.99, 2, ncol(cds) - 2)
     cooksCutoff <- 4/nrow(disp_table)
@@ -924,7 +920,24 @@ estimate_gene_dispersions <- function(cds, min_cells_detected, removeOutliers, v
 }
 
 
-dispersion_table <- function (disp_results)
+#' Retrieve a table of values specifying the mean-variance relationship
+#' from the estimate_gene_dispersion() result.
+#'
+#' Calling estimate_gene_dispersions computes a smooth function describing
+#' how variance in each gene's expression across cells varies according
+#' to the mean. This function only works for cell_data_set objects
+#' containing count-based expression data, either transcripts or reads.
+#'
+#' @param disp_results A list returned by estimate_gene_dispersions.
+#' @param sort_on The column on which to sort the rows. The default is
+#'   to not sort the rows.
+#' @param decreasing If the rows are sorted, sort them in decreasing
+#'   order when decreasing is TRUE and in increasing order if FALSE.
+#' @return A data frame containing the empirical mean expression,
+#' empirical dispersion, and the value estimated by the dispersion model.
+#'
+#' @export
+dispersion_table <- function (disp_results, sort_on=NULL, decreasing=TRUE)
 {
   if (is.null(disp_results)) {
     warning("Warning: estimate_gene_dispersions works, and is needed, only when you're using a cell_data_set with a negbinomial or negbinomial.size expression family")
@@ -934,6 +947,10 @@ dispersion_table <- function (disp_results)
                         mean_expression = disp_results$disp_table$mu,
                         dispersion_fit = disp_results$disp_func(disp_results$disp_table$mu),
                         dispersion_empirical = disp_results$disp_table$disp)
+  if(!is.null(sort_on)) {
+    disp_df <- disp_df[order(disp_df[[sort_on]], decreasing=decreasing),]
+  }
+
   return(disp_df)
 }
 
