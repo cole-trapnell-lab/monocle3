@@ -29,7 +29,7 @@ plot_cells(
   alpha = 1,
   min_expr = 0.1,
   rasterize = FALSE,
-  scale_to_range = FALSE,
+  scale_to_range = TRUE,
   label_principal_points = FALSE
 )
 }
