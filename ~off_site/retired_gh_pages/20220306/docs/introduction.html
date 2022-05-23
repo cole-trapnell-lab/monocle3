@@ -1,0 +1,94 @@
+---
+permalink: /docs/introduction/
+sidemenu: true
+description: "Introduction."
+modified: 2019-09-13
+tags: [monocle, manual, vignette]
+---
+
+<div class= "container">
+  <div class= "row">
+    <div class= "col-sm-4">
+      <!--  <nav id= "toc" data-spy= "affix" data-toggle= "toc"></nav>-->
+      <ul class="section-nav" id= "toc" data-spy= "affix" data-toggle= "toc">
+        <li class="toc-entry toc-h2"><a class="active" href="{{ site.baseurl }}/docs/introduction">Introduction</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/updates">Major updates in Monocle 3</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/installation">Installing Monocle 3</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/help">Getting help</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/starting">Getting started with Monocle 3</a></li>
+        <!--        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/alignment">Pre-process your data</a></li>  -->
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/clustering">Clustering and classifying your cells</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/trajectories">Constructing single-cell trajectories</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/differential">Differential expression analysis</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/cicero">Single-cell ATAC-seq data</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/citations">Citations and acknowledgments</a></li>
+      </ul>
+    </div>
+    <!-- main content area -->
+    <div class= "col-sm-8">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{{ site.baseurl }}/">Home</a></li>
+          <li class="breadcrumb-item"><a href="{{ site.baseurl }}/docs/introduction">Docs</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Introduction</li>
+        </ol>
+      </nav>
+      
+      <h2>Introduction</h2>
+      
+      <p>Single-cell transcriptome sequencing (sc-RNA-seq) experiments allow us to
+        discover new cell types and help us understand how they arise in development.
+        The <strong>Monocle 3</strong> package provides a toolkit for analyzing
+        single-cell gene expression experiments.
+      </p>
+      
+      <p>Monocle 3 can help you perform three main types of analysis:
+        <ul>
+          <li><strong>Clustering, classifying, and counting cells.</strong> Single-cell
+            RNA-Seq experiments allow you to discover new (and possibly rare) subtypes of
+            cells. Monocle 3 helps you identify them.
+          </li>
+          <li><strong>Constructing single-cell trajectories.</strong> In development,
+            disease, and throughout life, cells transition from one state to another.
+            Monocle 3 helps you discover these transitions.
+          </li>
+          <li><strong>Differential expression analysis.</strong> Characterizing new cell
+            types and states begins with comparisons to other, better understood cells.
+            Monocle 3 includes a sophisticated, but easy-to-use system for differential
+            expression.
+          </li>
+        </ul>
+      </p>
+      
+      <div class= "panel panel-warning">
+        <div class= "panel-heading">
+          <h3 class= "panel-title" data-toc-skip>Under construction</h3>
+        </div>
+        <div class= "panel-body">
+          <p>Monocle 3 is currently in the
+            <a href="https://en.wikipedia.org/wiki/Software_release_life_cycle#Beta">beta phase</a>
+            of its development. This means there are likely bugs and performance issues
+            that will need to be addressed. We are working hard towards a stable release,
+            but please be patient while Monocle 3 is under construction.
+          </p>
+          
+          <p>The documentation on this page is also still under construction. Not all
+            features currently implemented have been completely documented.
+          </p>
+        </div>
+      </div>
+      
+      <p>For more information on the algorithms at the core of
+        <strong>Monocle</strong>, or to learn more about how to use single-cell
+        RNA-Seq to study complex biological processes, explore
+        <a href= "{{ site.baseurl }}/papers/">our publications</a>.
+      </p>
+      
+      <p>Before we look at Monocle 3's functions for each of these common analysis
+        tasks, let's see how to install Monocle.
+      </p>
+      <a href="#" class="btn btn-info btn-sm btn-prev" role="button" disabled>Previous</a>
+      <a href="{{ site.baseurl }}/docs/updates" class="btn btn-success btn-sm btn-next" role="button">Next</a>
+    </div>
+  </div>
+</div>

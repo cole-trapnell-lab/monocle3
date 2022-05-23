@@ -29,6 +29,8 @@ tags: [monocle, manual, vignette]
         </li>
         <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/trajectories">Constructing single-cell trajectories</a></li>
         <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/differential">Differential expression analysis</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/projection">Projecting query data onto a reference</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/store_monocle_objects">Storing monocle objects</a></li>
         <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/cicero">Single-cell ATAC-seq data</a></li>
         <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/citations">Citations and acknowledgments</a></li>
       </ul>
@@ -66,7 +68,7 @@ tags: [monocle, manual, vignette]
         produce the first single-cell RNA-seq analysis of a whole animal, so there are
         many cell types represented in the data. You can learn more about the dataset
         and see how the authors performed the original analysis at the UW Genome Sciences
-        <a href="http://atlas.gs.washington.edu/worm-rna/">RNA Atlas of the Worm</a>
+        <a href="https://atlas.gs.washington.edu/worm-rna/">RNA Atlas of the Worm</a>
         site.
       </p> 
       <p>
@@ -76,9 +78,9 @@ tags: [monocle, manual, vignette]
 library(monocle3)
 library(dplyr) # imported for some downstream data manipulation
 
-expression_matrix <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_expression.rds"))
-cell_metadata <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_colData.rds"))
-gene_annotation <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_rowData.rds"))
+expression_matrix <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/cao_l2_expression.rds"))
+cell_metadata <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/cao_l2_colData.rds"))
+gene_annotation <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/cao_l2_rowData.rds"))
 
 cds <- new_cell_data_set(expression_matrix,
                          cell_metadata = cell_metadata,
@@ -247,8 +249,8 @@ plot_cells(cds, color_cells_by="plate", label_cell_groups=FALSE)
 
       
 {% highlight R %}
-cds = align_cds(cds, num_dim = 100, alignment_group = "plate")
-cds = reduce_dimension(cds)
+cds <- align_cds(cds, num_dim = 100, alignment_group = "plate")
+cds <- reduce_dimension(cds)
 plot_cells(cds, color_cells_by="plate", label_cell_groups=FALSE)
 {% endhighlight %}
       
@@ -266,7 +268,7 @@ plot_cells(cds, color_cells_by="plate", label_cell_groups=FALSE)
       </p>
       
 {% highlight R %}
-cds = cluster_cells(cds, resolution=1e-5)
+cds <- cluster_cells(cds, resolution=1e-5)
 plot_cells(cds)
 {% endhighlight %}
       
@@ -423,47 +425,63 @@ colData(cds)$assigned_cell_type <- as.character(partitions(cds))
         remap each cluster to a different cell type:
       </p>
 {% highlight R %}
-colData(cds)$assigned_cell_type = dplyr::recode(colData(cds)$assigned_cell_type,
-                                                "1"="Germline",
-                                                "2"="Body wall muscle",
-                                                "3"="Unclassified neurons",
-                                                "4"="Vulval precursors",
-                                                "5"="Failed QC",
-                                                "6"="Seam cells",
-                                                "7"="Pharyngeal epithelia",
-                                                "8"="Coelomocytes",
-                                                "9"="Am/PH sheath cells",
-                                                "10"="Failed QC",
-                                                "11"="Touch receptor neurons",
-                                                "12"="Intestinal/rectal muscle",
-                                                "13"="Pharyngeal neurons",
-                                                "14"="NA",
-                                                "15"="flp-1(+) interneurons",
-                                                "16"="Canal associated neurons",
-                                                "17"="Ciliated sensory neurons",
-                                                "18"="Other interneurons",
-                                                "19"="Pharyngeal gland",
-                                                "20"="Failed QC",
-                                                "21"="Ciliated sensory neurons",
-                                                "22"="Oxygen sensory neurons",
-                                                "23"="Ciliated sensory neurons",
-                                                "24"="Ciliated sensory neurons",
-                                                "25"="Ciliated sensory neurons",
-                                                "26"="Ciliated sensory neurons",
-                                                "27"="Oxygen sensory neurons",
-                                                "28"="Ciliated sensory neurons",
-                                                "29"="Unclassified neurons",
-                                                "30"="Socket cells",
-                                                "31"="Failed QC",
-                                                "32"="Pharyngeal gland",
-                                                "33"="Ciliated sensory neurons",
-                                                "34"="Ciliated sensory neurons",
-                                                "35"="Ciliated sensory neurons",
-                                                "36"="Failed QC",
-                                                "37"="Ciliated sensory neurons",
-                                                "38"="Pharyngeal muscle")
+colData(cds)$assigned_cell_type <- dplyr::recode(colData(cds)$assigned_cell_type,
+                                                 "1"="Body wall muscle",
+                                                 "2"="Germline",
+                                                 "3"="Motor neurons",
+                                                 "4"="Seam cells",
+                                                 "5"="Sex myoblasts",
+                                                 "6"="Socket cells",
+                                                 "7"="Marginal_cell",
+                                                 "8"="Coelomocyte",
+                                                 "9"="Am/PH sheath cells",
+                                                 "10"="Ciliated neurons",
+                                                 "11"="Intestinal/rectal muscle",
+                                                 "12"="Excretory gland",
+                                                 "13"="Chemosensory neurons",
+                                                 "14"="Interneurons",
+                                                 "15"="Unclassified eurons",
+                                                 "16"="Ciliated neurons",
+                                                 "17"="Pharyngeal gland cells",
+                                                 "18"="Unclassified neurons",
+                                                 "19"="Chemosensory neurons",
+                                                 "20"="Ciliated neurons",
+                                                 "21"="Ciliated neurons",
+                                                 "22"="Inner labial neuron",
+                                                 "23"="Ciliated neurons",
+                                                 "24"="Ciliated neurons",
+                                                 "25"="Ciliated neurons",
+                                                 "26"="Hypodermal cells",
+                                                 "27"="Mesodermal cells",
+                                                 "28"="Motor neurons",
+                                                 "29"="Pharyngeal gland cells",
+                                                 "30"="Ciliated neurons",
+                                                 "31"="Excretory cells",
+                                                 "32"="Amphid neuron",
+                                                 "33"="Pharyngeal muscle")
+
 {% endhighlight %}
-      
+
+<!--
+      <p>Now, we replace each partition value with the most frequent non-NA cell type annotation.</p>
+
+{% highlight R %}
+# In some clusters the majority of cells may have NA as the cell type so
+# use this function with caution.
+consensus <- function(x) {
+  uniqx <- unique(na.omit(x))
+  uniqx[which.max(tabulate(match(x, uniqx)))]
+}
+
+l_partition <- unique(partitions(cds))
+l_cell_type <- list()
+for(i_partition in l_partition) {
+  l_cell_type[as.character(i_partition)] <- consensus(colData(cds)[partitions(cds)==i_partition,][['cao_cell_type']])
+}
+colData(cds)[['assigned_cell_type']] <- as.character(l_cell_type[as.character(partitions(cds))])
+{% endhighlight %}
+
+-->
       <p>Let's see how the new annotations look:</p>
 {% highlight R %}
 plot_cells(cds, group_cells_by="partition", color_cells_by="assigned_cell_type")
@@ -535,30 +553,56 @@ plot_cells(cds_subset, genes=gene_module_df,
       </p>
 
 {% highlight R %}
-cds_subset = cluster_cells(cds_subset, resolution=1e-2)
+cds_subset <- cluster_cells(cds_subset, resolution=1e-2)
 plot_cells(cds_subset, color_cells_by="cluster")
 {% endhighlight %}
       
       <div class= "text-center">
         <img src= "{{site.baseurl}}/images/manual_images/L2_sex_partition_color_by_cluster.png" width= 760>
       </div>
-      
+     
       <p>Based on how the patterns line up, we'll make the following assignments:</p>
 {% highlight R %}
 colData(cds_subset)$assigned_cell_type <- as.character(clusters(cds_subset)[colnames(cds_subset)])
 colData(cds_subset)$assigned_cell_type <- dplyr::recode(colData(cds_subset)$assigned_cell_type,
-                                                        "1"="Somatic gonad precursors",
+                                                        "1"="Sex myoblasts",
                                                         "2"="Somatic gonad precursors",
                                                         "3"="Vulval precursors",
                                                         "4"="Sex myoblasts",
-                                                        "5"="Sex myoblasts",
-                                                        "6"="Vulval precursors",
-                                                        "7"="Failed QC",
-                                                        "8"="Vulval precursors",
-                                                        "10"="Unclassified neurons",
-                                                        "11"="Distal tip cells")
+                                                        "5"="Vulval precursors",
+                                                        "6"="Somatic gonad precursors",
+                                                        "7"="Sex myoblasts",
+                                                        "8"="Sex myoblasts",
+                                                        "9"="Ciliated neurons",
+                                                        "10"="Vulval precursors",
+                                                        "11"="Somatic gonad precursor",
+                                                        "12"="Distal tip cells",
+                                                        "13"="Somatic gonad precursor",
+                                                        "14"="Sex myoblasts",
+                                                        "15"="Vulval precursors")
+
 plot_cells(cds_subset, group_cells_by="cluster", color_cells_by="assigned_cell_type")
 {% endhighlight %}
+
+<!-- 
+      <p>We assign the most frequent non-NA cell type annotation to each cluster.</p>
+{% highlight R %}
+# In some clusters the majority of cells may have NA as the cell type so
+# use this function with caution.
+consensus <- function(x) {
+  uniqx <- unique(na.omit(x))
+  uniqx[which.max(tabulate(match(x, uniqx)))]
+}
+
+l_cluster <- unique(clusters(cds))
+l_cell_type <- list()
+for(i_cluster in l_cluster) {
+  l_cell_type[as.character(i_cluster)] <- consensus(colData(cds)[clusters(cds)==i_cluster,][['cao_cell_type']])
+}
+colData(cds)[['assigned_cell_type']] <- as.character(l_cell_type[as.character(clusters(cds))])
+{% endhighlight %}
+
+-->
       
       <p>
         Now we can transfer the annotations from the <code>cds_subset</code> object back to the full dataset. We'll also filter 

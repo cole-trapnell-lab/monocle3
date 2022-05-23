@@ -26,6 +26,8 @@ tags: [monocle, manual, vignette]
         <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/clustering">Clustering and classifying your cells</a></li>
         <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/trajectories">Constructing single-cell trajectories</a></li>
         <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/differential">Differential expression analysis</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/projection">Projecting query data onto a reference</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/store_monocle_objects">Storing monocle objects</a></li>
         <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/cicero">Single-cell ATAC-seq data</a></li>
         <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/citations">Citations and acknowledgments</a></li>
       </ul>
@@ -43,24 +45,25 @@ tags: [monocle, manual, vignette]
 
       <h3 id="required-software"> Required software </h3>
 
-      <p>Monocle 3 runs in the <a href= "http://www.r-project.org/">R statistical
-        computing environment</a>. You will need R version 3.6.1 or higher,
-        <a href="http://bioconductor.org/">Bioconductor</a> version 3.10, and
-        monocle3 0.2.3 or higher to have access to the latest features.
+      <p>Monocle 3 runs in the <a href= "https://www.r-project.org/">R statistical
+        computing environment</a>. You will need R version 4.1.0 or higher,
+        <a href="https://bioconductor.org/">Bioconductor</a> version 3.14, and
+        monocle3 1.2.7 or higher to have access to the latest features.
       </p>
 
       <p>To install Bioconductor, open R and run:</p>
 {% highlight R %}
 if (!requireNamespace("BiocManager", quietly = TRUE))
 install.packages("BiocManager")
-BiocManager::install(version = "3.10")
+BiocManager::install(version = "3.14")
 {% endhighlight %}
 
       <p>Next, install a few Bioconductor dependencies that aren't automatically installed:</p>
 {% highlight R %}
 BiocManager::install(c('BiocGenerics', 'DelayedArray', 'DelayedMatrixStats',
-                       'limma', 'S4Vectors', 'SingleCellExperiment',
-                       'SummarizedExperiment', 'batchelor', 'Matrix.utils'))
+                       'limma', 'lme4', 'S4Vectors', 'SingleCellExperiment',
+                       'SummarizedExperiment', 'batchelor', 'Matrix.utils',
+                       'HDF5Array', 'terra', 'ggrastr'
 {% endhighlight %}
 
       <p>Now, install monocle3 through the cole-trapnell-lab GitHub, execute:</p>

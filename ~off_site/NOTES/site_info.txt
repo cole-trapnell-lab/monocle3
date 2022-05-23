@@ -1,0 +1,45 @@
+== github pages and jekyll'
+uRL: https://docs.github.com/en/pages/setting-up-a-github-pages-site-with-jekyll/about-github-pages-and-jekyll
+
+== jekyll Liquid use in Monocle3 documentation
+
+** index.html
+href="{{ site.baseurl }}
+
+** clustering.html
+href="{{ site.baseurl }}
+{% highlight R %}
+{% endhighlight %}
+
+** trajectories.html
+href="{{ site.baseurl }}
+{% highlight R %}
+{% endhighlight %}
+
+** differential.html
+href="{{ site.baseurl }}
+{% highlight R %}
+{% endhighlight %}
+{% for term in site.data.de_tests.emb_terms %}
+{{ term.<variable> }}
+{% endfor %}
+
+== Where are files used directly by server?
+
+gh-pages/_site
+
+
+== Where are the files/directories used by Jekyll to
+   build the site?
+
+gh-pages/index.html
+gh-pages/_config.yml
+gh-pages/css
+gh-pages/docs
+gh-pages/Gemfile
+gh-pages/images
+gh-pages/_data
+
+Note: Jekyll copies all files/directories to the site except
+      those whose names begin with the following
+      characters: ., _ , # or ~ in the source directory.

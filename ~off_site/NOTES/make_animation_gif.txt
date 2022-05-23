@@ -1,0 +1,9 @@
+== Make a GIF animation. This is cut from docs/clustering.html
+
+  I made choose_cells_recording by:
+    1) Using quicktime to screen record my interaction with the choose_cells shiny app
+    2) saving the MOV file to the manual_image directory.
+    3) Converting it to a GIF using instructions found here: https://gist.github.com/dergachev/4627207
+    ffmpeg -i in.mov -s 600x400 -pix_fmt rgb24 -r 10 -f gif - | gifsicle --optimize=3 --delay=3 > out.gif
+
+

@@ -1,6 +1,6 @@
 "","gene_short_name","term","q_value","estimate"
-"1","ham-1","embryo.time",2.76e-77,-0.0044819
-"2","dmd-6","embryo.time",1.482e-201,0.0069775
-"3","nhr-6","embryo.time",1.9e-21,0.0053983
-"4","ceh-36","embryo.time",7.71e-17,0.0022045
-"5","che-1","embryo.time",0.00024,-0.0020443
+"1","ham-1","embryo.time","4.59e-73","-0.00388"
+"2","dmd-6","embryo.time","2.03e-255","0.0075"
+"3","hlh-17","embryo.time","0.00247","0.00334"
+"4","nhr-6","embryo.time","8.41e-28","0.00579"
+"5","ceh-36","embryo.time","1.45e-34","0.00279"

@@ -1,0 +1,136 @@
+---
+permalink: /docs/citations/
+sidemenu: true
+description: "Citations and acknowledgments."
+modified: 2019-09-13
+tags: [monocle, manual, vignette]
+---
+
+<div class= "container">
+  <div class= "row">
+    <div class= "col-sm-4">
+      <ul class="section-nav" id= "toc" data-spy= "affix" data-toggle= "toc">
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/introduction">Introduction</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/updates">Major updates in Monocle 3</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/installation">Installing Monocle 3</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/help">Getting help</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/starting">Getting started with Monocle 3</a></li>
+<!--        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/alignment">Pre-process your data</a></li>  -->
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/clustering">Clustering and classifying your cells</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/trajectories">Constructing single-cell trajectories</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/differential">Differential expression analysis</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/cicero">Single-cell ATAC-seq data</a></li>
+        <li class="toc-entry toc-h2"><a class="active" href="{{ site.baseurl }}/docs/citations">Citations and acknowledgments</a>
+          <ul>
+            <li class="toc-entry toc-h3"><a href="#citations">Cite your analysis using get_citations</a></li>
+            <li class="toc-entry toc-h3"><a href="#acknowledgements">Acknowledgements</a></li>
+            <li class="toc-entry toc-h3"><a href="#references">References</a></li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+    <!-- main content area -->
+    <div class= "col-sm-8">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{{ site.baseurl }}/">Home</a></li>
+          <li class="breadcrumb-item"><a href="{{ site.baseurl }}/docs/introduction">Docs</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Citations and acknowledgments</li>
+        </ol>
+      </nav>
+      
+      <h2>Citations and Acknowledgements</h2>
+      
+      <h3 id="citations">Cite your analysis using <code>get_citations</code></h3>
+      <p>
+        Monocle 3 utilizes methods published by other groups. Please be sure to cite those original 
+        methods papers when you use them in your analyses. To make this easier, we provide a function
+        <code>get_citations</code> that will print a data frame with the methods and citations that you 
+        used in constructing your CDS object. As you use new methods, they will be added to your citation 
+        metadata.
+      </p>
+      
+{% highlight R %}
+get_citations(cds)
+
+# Your analysis used methods from the following recent work. Please cite them wherever you are presenting your analyses.
+#    method       citations
+# 1 Monocle       Trapnell C. et. al. The dynamics and regulators of cell fate decisions are revealed by pseudotemporal ordering of single cells. Nat. Biotechnol. 32, 381–386 (2014). https://doi.org/10.1038/nbt.2859
+# 2 Monocle       Qiu, X. et. al. Reversed graph embedding resolves complex single-cell trajectories. Nat. Methods 14, 979–982 (2017). https://doi.org/10.1038/nmeth.4402
+# 3 Monocle       Cao, J. et. al. The single-cell transcriptional landscape of mammalian organogenesis. Nature 566, 496–502 (2019). https://doi.org/10.1038/s41586-019-0969-x
+# 4    UMAP       McInnes, L., Healy, J. & Melville, J. UMAP: Uniform Manifold Approximation and Projection for dimension reduction. Preprint at https://arxiv.org/abs/1802.03426 (2018).
+{% endhighlight %}
+      
+      <h3 id="acknowledgments">Acknowledgements </h3>
+      
+      <p>
+        Monocle was originally built by Cole Trapnell and Davide Cacchiarelli, with substantial design input from John Rinn and 
+        Tarjei Mikkelsen. We are grateful to Sharif Bordbar, Chris Zhu, Amy Wagers and the Broad RNAi platform for technical 
+        assistance, and Magali Soumillon for helpful discussions. Cole Trapnell was supported by a Damon Runyon Postdoctoral 
+        Fellowship. Davide Cacchiarelli was supported by a Human Frontier Science Program Fellowship. Cacchiarelli and Mikkelsen 
+        were also supported by the Harvard Stem Cell Institute. John Rinn was the Alvin and Esta Star Associate Professor. This work 
+        was supported by NIH grants 1DP2OD00667, P01GM099117, and P50HG006193-01. This work was also supported in part by the Single 
+        Cell Genomics initiative, a collaboration between the Broad Institute and Fluidigm Inc.
+      </p>
+      
+      <p>
+        Monocle versions 2 and 3 were developed by Cole Trapnell's lab. Significant portions were written by Xiaojie Qiu and Hannah 
+        Pliner. The work was supported by NIH grant 1DP2HD088158, the W. M. Keck Foundation, as well as an Alfred P. Sloan 
+        Foundation Research Fellowship. Hannah Pliner is supported by the 
+        <a href="https://brotmanbaty.org/">Brotman Baty Institute</a>.
+      </p>
+      
+
+      <h2>References </h2>
+
+      <ol>
+        <li>Cole Trapnell*, Davide Cacchiarelli*, Jonna Grimsby, Prapti Pokharel, Shuqiang Li, Michael Morse, Niall J. Lennon, Kenneth J. Livak, Tarjei S. Mikkelsen, and John L. Rinn.<br/>
+        <a href = "http://www.nature.com/nbt/journal/v32/n4/abs/nbt.2859.html">
+        The dynamics and regulators of cell fate decisions are revealed by pseudotemporal ordering of single cells</a>.<br/> Nature Biotechnology, 2014.<br/><br/> </li>
+      
+        <li>Junyue Cao*, Jonathan S. Packer*, Vijay Ramani, Darren A. Cusanovich, Chau Huynh, Riza Daza, Xiaojie Qiu, Choli Lee, Scott N. Furlan, Frank J. Steemers, Andrew Adey, Robert H. Waterston, Cole Trapnell**, Jay Shendure** .<br/>
+        <a href = "http://http//science.sciencemag.org/content/357/6352/661">
+        Comprehensive single-cell transcriptional profiling of a multicellular organism</a>.<br/>Science, 2017.<br/><br/>  </li>
+      
+        <li>Jacob H. Levine, Erin F. Simonds, Sean C. Bendall, Kara L. Davis, El-ad D. Amir, Michelle Tadmor, Oren Litvin, Harris Fienberg, Astraea Jager, Eli Zunder, Rachel Finck, Amanda L. Gedman, Ina Radtke, James R. Downing, Dana Pe’er** and Garry P. Nolan**.<br/>
+          <a href = "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4508757/">
+            Data-driven phenotypic dissection of AML reveals progenitor-like cells that correlate with prognosis</a>.<br/>Cell, 2015.<br/><br/>  </li>
+      
+        <li>F. Alexander Wolf,, Fiona K. Hamey, Mireya Plass, Jordi Solana, Joakim S. Dahlin, Berthold Göttgens, Nikolaus Rajewsky, Lukas Simon and Fabian J. Theis<br/>
+            <a href = "https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1663-x">
+                PAGA: graph abstraction reconciles clustering with trajectory inference through a topology preserving map of single cells</a>.<br/>Genome biology, 2018.<br/><br/>  </li>
+          
+        <li>Traag, V.A., Waltman, L. & van Eck, N.J.<br/>
+          <a href = "https://doi.org/10.1038/s41598-019-41695-z">
+            From Louvain to Leiden: guaranteeing well-connected communities</a>.<br/>Scientific Reports, 2019.<br/><br/></li>
+      
+        <li>Laleh Haghverdi, Aaron T L Lun, Michael D Morgan & John C Marioni<br/>
+            <a href = "https://www.nature.com/articles/nbt.4091">
+              Batch effects in single-cell RNA-sequencing data are corrected by matching mutual nearest neighbors</a>.<br/>Nature Biotechnology, 2018.<br/><br/>  </li>
+         
+        <li>Junyue Cao*, Malte Spielmann*, Xiaojie Qiu, Xingfan Huang, Daniel M. Ibrahim, Andrew J. Hill, Fan Zhang, Stefan Mundlos, Lena Christiansen, Frank J. Steemers, Cole Trapnell**, and Jay Shendure** <br/>
+          <a href = "http://dx.doi.org/10.1038/s41586-019-0969-x">
+                The single-cell transcriptional landscape of mammalian organogenesis</a>.<br/>Nature, 2019.<br/><br/>  </li>
+        <li>Jonathan S. Packer*, Qin Zhu*, Chau Huynh, Priya Sivaramakrishnan, Elicia Preston, Hannah Dueck, Derek Stefanik, Kai Tan, Cole Trapnell, Junhyong Kim**, Robert H. Waterston**, John I. Murray** <br/>
+          <a href = "http://dx.doi.org/10.1126/science.aax1971">
+            A lineage-resolved molecular atlas of C. elegans embryogenesis at single cell resolution</a>.<br/>Science, 2019.<br/><br/>  </li>
+      
+        <li>Nadav Sharon*, Raghav Chawla*, Jonas Mueller, Jordan Vanderhooft, Luke James Whitehorn, Benjamin Rosenthal, Mads Gurtler, Ralph R. Estanboulieh, Dmitry Shvartsman, David K. Gifford, Cole Trapnell** and Doug Melton**<br/>
+              <a href = "http://dx.doi.org/10.1016/j.cell.2018.12.003">
+                A peninsular structure coordinates asynchronous differentiation with morphogenesis to generate pancreatic islets</a>.<br/>Cell, 2019.<br/><br/>  </li>
+      
+        <li>Xiaojie Qiu, Qi Mao, Ying Tang, Li Wang, Raghav Chawla, Hannah Pliner, and Cole Trapnell<br/>
+          <a href = "http://dx.doi.org/doi:10.1038/nmeth.4402">
+            Reversed graph embedding resolves complex single-cell developmental trajectories</a>.<br/>Nature methods, 2017<br/><br/>  </li>
+      
+         <li>X Qiu, A Hill, J Packer, D Lin, YA Ma, and C Trapnell.<br/>
+              <a href = "http://dx.doi.org/10.1038/nmeth.4150">
+                Single-cell mrna quantification and differential analysis with census</a>.<br/>Nature methods, 2017<br/><br/>  </li>
+      
+      </ol>
+      <a href="{{ site.baseurl }}/docs/cicero" class="btn btn-info btn-sm btn-prev" role="button">Previous</a>
+      <a href="#" class="btn btn-success btn-sm btn-next" role="button" disabled>Next</a>
+
+    </div>
+  </div>
+</div>
