@@ -11,6 +11,8 @@ align_cds(
   alignment_k = 20,
   residual_model_formula_str = NULL,
   verbose = FALSE,
+  build_nn_index = FALSE,
+  nn_control = list(),
   ...
 )
 }
@@ -37,6 +39,13 @@ alignment_group. Default is NULL.}
 \item{verbose}{Whether to emit verbose output during dimensionality
 reduction}
 
+\item{build_nn_index}{logical When this argument is set to TRUE,
+align_cds builds the nearest neighbor index from the
+aligned reduced matrix for later use. Default is FALSE.}
+
+\item{nn_control}{An optional list of parameters used to make the nearest
+neighbor index. See the set_nn_control help for detailed information.}
+
 \item{...}{additional arguments to pass to limma::lmFit if
 residual_model_formula is not NULL}
 }
@@ -59,4 +68,27 @@ aligned using Batchelor, a "mutual nearest neighbor" algorithm described in:
 Haghverdi L, Lun ATL, Morgan MD, Marioni JC (2018). "Batch effects in
 single-cell RNA-sequencing data are corrected by matching mutual nearest
 neighbors." Nat. Biotechnol., 36(5), 421-427. doi: 10.1038/nbt.4091
+}
+\examples{
+  \donttest{
+    cell_metadata <- readRDS(system.file('extdata',
+                                         'worm_embryo/worm_embryo_coldata.rds',
+                                         package='monocle3'))
+    gene_metadata <- readRDS(system.file('extdata',
+                                         'worm_embryo/worm_embryo_rowdata.rds',
+                                         package='monocle3'))
+    expression_matrix <- readRDS(system.file('extdata',
+                                             'worm_embryo/worm_embryo_expression_matrix.rds',
+                                             package='monocle3'))
+   
+    cds <- new_cell_data_set(expression_data=expression_matrix,
+                             cell_metadata=cell_metadata,
+                             gene_metadata=gene_metadata)
+
+    cds <- preprocess_cds(cds)
+    cds <- align_cds(cds, alignment_group =
+                     "batch", residual_model_formula_str = "~ bg.300.loading +
+                      bg.400.loading + bg.500.1.loading + bg.500.2.loading +
+                      bg.r17.loading + bg.b01.loading + bg.b02.loading")
+  }
 }

@@ -9,6 +9,9 @@
 \arguments{
 \item{x}{A cell_data_set object.}
 }
+\value{
+Count matrix.
+}
 \description{
 Method to access cds count matrix
 }

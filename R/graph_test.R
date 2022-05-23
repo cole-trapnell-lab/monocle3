@@ -35,9 +35,77 @@
 #'   differential expression.
 #' @param verbose Whether to show spatial test (Moran's I) errors and warnings.
 #'   Only valid for cores = 1.
+#' @param nn_control An optional list of parameters used to make the nearest
+#'  neighbor index. See the set_nn_control help for detailed information.
 #' @return a data frame containing the p values and q-values from the Moran's I
 #'   test on the parallel arrays of models.
 #' @seealso \code{\link[spdep]{moran.test}} \code{\link[spdep]{geary.test}}
+#'
+#' @examples
+#'   \donttest{
+#'      expression_matrix <- readRDS(system.file('extdata',
+#'                                                'worm_l2/worm_l2_expression_matrix.rds',
+#'                                                package='monocle3'))
+#'      cell_metadata <- readRDS(system.file('extdata',
+#'                               'worm_l2/worm_l2_coldata.rds',
+#'                                package='monocle3'))
+#'      gene_metadata <- readRDS(system.file('extdata',
+#'                               'worm_l2/worm_l2_rowdata.rds',
+#'                               package='monocle3'))
+#'
+#'      cds <- new_cell_data_set(expression_data=expression_matrix,
+#'                               cell_metadata=cell_metadata,
+#'                               gene_metadata=gene_metadata)
+#'
+#'     cds <- preprocess_cds(cds, num_dim = 100)
+#'     cds <- reduce_dimension(cds)
+#'     cds <- cluster_cells(cds, resolution=1e-5)
+#'     colData(cds)$assigned_cell_type <- as.character(partitions(cds))
+#'     colData(cds)$assigned_cell_type <- dplyr::recode(colData(cds)$assigned_cell_type,
+#'                                                     "1"="Germline",
+#'                                                     "2"="Body wall muscle",
+#'                                                     "3"="Unclassified neurons",
+#'                                                     "4"="Vulval precursors",
+#'                                                     "5"="Failed QC",
+#'                                                     "6"="Seam cells",
+#'                                                     "7"="Pharyngeal epithelia",
+#'                                                     "8"="Coelomocytes",
+#'                                                     "9"="Am/PH sheath cells",
+#'                                                     "10"="Failed QC",
+#'                                                     "11"="Touch receptor neurons",
+#'                                                     "12"="Intestinal/rectal muscle",
+#'                                                     "13"="Pharyngeal neurons",
+#'                                                     "14"="NA",
+#'                                                     "15"="flp-1(+) interneurons",
+#'                                                     "16"="Canal associated neurons",
+#'                                                     "17"="Ciliated sensory neurons",
+#'                                                     "18"="Other interneurons",
+#'                                                     "19"="Pharyngeal gland",
+#'                                                     "20"="Failed QC",
+#'                                                     "21"="Ciliated sensory neurons",
+#'                                                     "22"="Oxygen sensory neurons",
+#'                                                     "23"="Ciliated sensory neurons",
+#'                                                     "24"="Ciliated sensory neurons",
+#'                                                     "25"="Ciliated sensory neurons",
+#'                                                     "26"="Ciliated sensory neurons",
+#'                                                     "27"="Oxygen sensory neurons",
+#'                                                     "28"="Ciliated sensory neurons",
+#'                                                     "29"="Unclassified neurons",
+#'                                                     "30"="Socket cells",
+#'                                                     "31"="Failed QC",
+#'                                                     "32"="Pharyngeal gland",
+#'                                                     "33"="Ciliated sensory neurons",
+#'                                                     "34"="Ciliated sensory neurons",
+#'                                                     "35"="Ciliated sensory neurons",
+#'                                                     "36"="Failed QC",
+#'                                                     "37"="Ciliated sensory neurons",
+#'                                                     "38"="Pharyngeal muscle")
+#'     neurons_cds <- cds[,grepl("neurons", colData(cds)$assigned_cell_type, ignore.case=TRUE)]
+#'     pr_graph_test_res <- graph_test(cds, neighbor_graph="knn")
+#'   }
+#'
+#' @importFrom terra gdal
+#'
 #' @export
 graph_test <- function(cds,
                        neighbor_graph = c("knn", "principal_graph"),
@@ -47,13 +115,42 @@ graph_test <- function(cds,
                        alternative = 'greater',
                        expression_family="quasipoisson",
                        cores=1,
-                       verbose=FALSE) {
+                       verbose=FALSE,
+                       nn_control=list()) {
+  status <- NULL # no visible binding
   neighbor_graph <- match.arg(neighbor_graph)
-  lw <- calculateLW(cds,
+  reduction_method <- match.arg(reduction_method)
+  assertthat::assert_that(!is.null(SingleCellExperiment::reducedDims(cds)[[reduction_method]]),
+    msg = paste("No dimensionality reduction for",
+                reduction_method, "calculated.",
+                "Please run reduce_dimension with",
+                "reduction_method =", reduction_method,
+                "before running graph_test."))
+  if(neighbor_graph == 'principal_graph') {
+    assertthat::assert_that(!is.null(cds@principal_graph_aux[[reduction_method]]$dp_mst) &&
+                            !is.null(cds@principal_graph_aux[[reduction_method]]$pr_graph_cell_proj_closest_vertex),
+      msg=paste0('No principal graph values for ',
+                 reduction_method,
+                 ' found.',
+                 ' Please run learn_graph with',
+                 ' reduction_method = ',
+                 reduction_method,
+                 ' before running graph_test.'))
+  }
+  nn_control_default <- get_global_variable('nn_control_annoy_euclidean')
+  nn_control <- set_nn_control(mode=3,
+                               nn_control=nn_control,
+                               nn_control_default=nn_control_default,
+                               nn_index=NULL,
+                               k=k,
+                               verbose=verbose)
+
+  lw <- calculateLW(cds=cds,
                     k = k,
-                    verbose = verbose,
                     neighbor_graph = neighbor_graph,
-                    reduction_method = reduction_method)
+                    reduction_method = reduction_method,
+                    verbose = verbose,
+                    nn_control = nn_control)
 
   if(verbose) {
     message("Performing Moran's I test: ...")
@@ -94,10 +191,6 @@ graph_test <- function(cds,
   expression_family = expression_family, mc.cores=cores,
   ignore.interactive = TRUE)
 
-  if(verbose) {
-    message("returning results: ...")
-  }
-
   test_res <- do.call(rbind.data.frame, test_res)
   row.names(test_res) <- row.names(cds)
   test_res <- merge(test_res, rowData(cds), by="row.names")
@@ -124,6 +217,7 @@ my.moran.test <- function (x, listw, wc, alternative = "greater",
   x <- na.action(x)
   na.act <- attr(x, "na.action")
   if (!is.null(na.act)) {
+    if(length(listw$neighbours) < 1) warning('bad loop: length(listw$neighbours) < 1')
     subset <- !(1:length(listw$neighbours) %in% na.act)
     listw <- subset(listw, subset, zero.policy = zero.policy)
   }
@@ -144,14 +238,14 @@ my.moran.test <- function (x, listw, wc, alternative = "greater",
     tmp <- K * (wc$S1 * (wc$nn - wc$n) - 2 * wc$n * wc$S2 +
                   6 * S02)
     if (tmp > VI)
-      warning(paste0("Kurtosis overflow,\ndistribution of variable does ",
-                     "not meet test assumptions"))
+      warning("Kurtosis overflow,\ndistribution of variable does ",
+                     "not meet test assumptions")
     VI <- (VI - tmp)/(wc$n1 * wc$n2 * wc$n3 * S02)
     if (!drop.EI2)
       VI <- (VI - EI^2)
     if (VI < 0)
-      warning(paste0("Negative variance,\ndistribution of variable does ",
-                     "not meet test assumptions"))
+      warning("Negative variance,\ndistribution of variable does ",
+                     "not meet test assumptions")
   }
   else {
     VI <- (wc$nn * wc$S1 - wc$n * wc$S2 + 3 * S02)/(S02 *
@@ -159,8 +253,8 @@ my.moran.test <- function (x, listw, wc, alternative = "greater",
     if (!drop.EI2)
       VI <- (VI - EI^2)
     if (VI < 0)
-      warning(paste0("Negative variance,\ndistribution of variable does ",
-                     "not meet test assumptions"))
+      warning("Negative variance,\ndistribution of variable does ",
+                     "not meet test assumptions")
   }
   ZI <- (I - EI)/sqrt(VI)
   statistic <- ZI
@@ -193,9 +287,9 @@ my.geary.test <- function (x, listw, wc, randomisation = TRUE,
   alternative <- match.arg(alternative, c("less", "greater",
                                           "two.sided"))
   if (!inherits(listw, "listw"))
-    stop(paste(deparse(substitute(listw)), "is not a listw object"))
+    stop(deparse(substitute(listw)), " is not a listw object")
   if (!is.numeric(x))
-    stop(paste(deparse(substitute(x)), "is not a numeric vector"))
+    stop(deparse(substitute(x)), " is not a numeric vector")
   if (any(is.na(x)))
     stop("NA in X")
   n <- length(listw$neighbours)
@@ -264,26 +358,50 @@ my.geary.test <- function (x, listw, wc, randomisation = TRUE,
 #' @param  k The maximum number of nearest neighbors to compute
 #' @param verbose A logic flag that determines whether or not to print
 #' execution details
-#' @keywords internal
-#'
+#' @noRd
 calculateLW <- function(cds,
                         k,
                         neighbor_graph,
                         reduction_method,
-                        verbose = FALSE
-) {
+                        verbose = FALSE,
+                        nn_control = list()) {
   if(verbose) {
     message("retrieve the matrices for Moran's I test...")
   }
   knn_res <- NULL
   principal_g <- NULL
 
-  cell_coords <- reducedDims(cds)[[reduction_method]]
+  cell_coords <- SingleCellExperiment::reducedDims(cds)[[reduction_method]]
+  if(nrow(cell_coords) == 0) {
+    stop('calculateLW: the reduced dims matrix has too few rows')
+  }
+
+  nn_method <- nn_control[['method']]
+
+  if(nn_method == 'annoy' || nn_method == 'hnsw') {
+    # Always make a nearest neighbor index in case the matrix is altered
+    # after the index is made.
+    nn_index <- make_nn_index(subject_matrix=cell_coords, nn_control=nn_control, verbose=verbose)
+  }
+
   if (neighbor_graph == "knn") {
-    knn_res <- RANN::nn2(cell_coords, cell_coords,
-                         min(k + 1, nrow(cell_coords)),
-                         searchtype = "standard")[[1]]
-  } else if(neighbor_graph == "principal_graph") {
+    if(nn_method == 'nn2') {
+      knn_res <- RANN::nn2(cell_coords, cell_coords,
+                           min(k + 1, nrow(cell_coords)),
+                           searchtype = "standard")[[1]]
+    }
+    else {
+      knn_res <- search_nn_index(query_matrix=cell_coords,
+                                 nn_index=nn_index,
+                                 k=min(k + 1, nrow(cell_coords)),
+                                 nn_control=nn_control,
+                                 verbose=verbose)
+      if(nn_method == 'annoy' || nn_method == 'hnsw')
+        knn_res <- swap_nn_row_index_point(nn_res=knn_res, verbose=verbose)
+      knn_res <- knn_res[[1]]
+    }
+  }
+  else if(neighbor_graph == "principal_graph") {
     pr_graph_node_coords <- cds@principal_graph_aux[[reduction_method]]$dp_mst
     principal_g <-
       igraph::get.adjacency(
@@ -294,23 +412,38 @@ calculateLW <- function(cds,
   exprs_mat <- exprs(cds)
   if(neighbor_graph == "knn") {
     if(is.null(knn_res)) {
-      knn_res <- RANN::nn2(cell_coords, cell_coords,
-                           min(k + 1, nrow(cell_coords)),
-                           searchtype = "standard")[[1]]
+      if(nn_method == 'nn2') {
+        knn_res <- RANN::nn2(cell_coords, cell_coords,
+                             min(k + 1, nrow(cell_coords)),
+                             searchtype = "standard")[[1]]
+      }
+      else {
+        knn_res <- search_nn_index(query_matrix=cell_coords,
+                                   nn_index=nn_index,
+                                   k=min(k + 1, nrow(cell_coords)),
+                                   nn_control=nn_control,
+                                   verbose=verbose)
+        if(nn_method == 'annoy' || nn_method == 'hnsw')
+          knn_res <- swap_nn_row_index_point(nn_res=knn_res, verbose=verbose)
+        knn_res <- knn_res[[1]]
+      }
     }
-    links <- jaccard_coeff(knn_res[, -1], F)
+    links <- jaccard_coeff(knn_res[, -1], FALSE)
     links <- links[links[, 1] > 0, ]
     relations <- as.data.frame(links)
     colnames(relations) <- c("from", "to", "weight")
-    knn_res_graph <- igraph::graph.data.frame(relations, directed = T)
+    knn_res_graph <- igraph::graph.data.frame(relations, directed = TRUE)
 
-      knn_list <- lapply(1:nrow(knn_res), function(x) knn_res[x, -1])
-      region_id_names <- colnames(cds)
+    if(nrow(knn_res) < 1) warning('bad loop: nrow(knn_res) < 1')
+    knn_list <- lapply(1:nrow(knn_res), function(x) knn_res[x, -1])
+    region_id_names <- colnames(cds)
 
-      id_map <- 1:ncol(cds)
-      names(id_map) <- id_map
+    if(ncol(cds) < 1) warning('bad loop: ncol(cds) < 1')
+    id_map <- 1:ncol(cds)
+    names(id_map) <- id_map
 
-      points_selected <- 1:nrow(knn_res)
+    if(nrow(knn_res) < 1) warning('bad loop: nrow(knn_res) < 1')
+    points_selected <- 1:nrow(knn_res)
 
     knn_list <- lapply(points_selected,
                        function(x) id_map[as.character(knn_res[x, -1])])
@@ -321,8 +454,8 @@ calculateLW <- function(cds,
       cds@principal_graph_aux[[
         reduction_method]]$pr_graph_cell_proj_closest_vertex
     if(is.null(cell2pp_map)) {
-      stop(paste("Error: projection matrix for each cell to principal",
-                 "points doesn't exist, you may need to rerun learn_graph"))
+      stop("projection matrix for each cell to principal ",
+           "points doesn't exist, you may need to rerun learn_graph")
     }
 
     # This cds object might be a subset of the one on which ordering was
@@ -337,12 +470,25 @@ calculateLW <- function(cds,
     }
     # an alternative approach to make the kNN graph based on the principal
     # graph
-    knn_res <- RANN::nn2(cell_coords, cell_coords,
-                         min(k + 1, nrow(cell_coords)),
-                         searchtype = "standard")[[1]]
+    if(nn_method == 'nn2') {
+      knn_res <- RANN::nn2(cell_coords, cell_coords,
+                           min(k + 1, nrow(cell_coords)),
+                           searchtype = "standard")[[1]]
+    }
+    else {
+      knn_res <- search_nn_index(query_matrix=cell_coords,
+                                 nn_index=nn_index,
+                                 k=min(k + 1, nrow(cell_coords)),
+                                 nn_control=nn_control,
+                                 verbose=verbose)
+      if(nn_method == 'annoy' || nn_method == 'hnsw')
+        knn_res <- swap_nn_row_index_point(nn_res=knn_res, verbose=verbose)
+      knn_res <- knn_res[[1]]
+    }
+
     # convert the matrix of knn graph from the cell IDs into a matrix of
     # principal points IDs
-    # kNN_res_pp_map <- matrix(cell2pp_map[knn_res], ncol = k + 1, byrow = F)
+    # kNN_res_pp_map <- matrix(cell2pp_map[knn_res], ncol = k + 1, byrow = FALSE)
 
     # kNN can be built within group of cells corresponding to each principal
     # points
@@ -359,11 +505,11 @@ calculateLW <- function(cds,
                                          as.numeric(levels(uniq_member))],
                          membership_matrix)
 
-    links <- jaccard_coeff(knn_res[, -1], F)
+    links <- jaccard_coeff(knn_res[, -1], FALSE)
     links <- links[links[, 1] > 0, ]
     relations <- as.data.frame(links)
     colnames(relations) <- c("from", "to", "weight")
-    knn_res_graph <- igraph::graph.data.frame(relations, directed = T)
+    knn_res_graph <- igraph::graph.data.frame(relations, directed = TRUE)
 
     # remove edges across cells belong to two disconnected principal points
     tmp_a <- igraph::get.adjacency(knn_res_graph)
@@ -375,6 +521,7 @@ calculateLW <- function(cds,
 
     tmp <- NULL
 
+    if(num_blocks < 1) warning("bad loop: num_blocks < 1")
     for (j in 1:num_blocks){
       if (j < num_blocks){
         block_a <- tmp_a[((((j-1) * block_size)+1):(j*block_size)), ]
@@ -389,7 +536,7 @@ calculateLW <- function(cds,
       if(is.null(tmp)) {
         tmp <- cur_tmp
       } else {
-        tmp <- Matrix::rBind(tmp, cur_tmp)
+        tmp <- rbind(tmp, cur_tmp)
       }
     }
 
@@ -400,6 +547,7 @@ calculateLW <- function(cds,
 
       region_id_names <- colnames(cds)
 
+      if(ncol(cds) < 1) warning('bad loop: ncol(cds) < 1')
       id_map <- 1:ncol(cds)
       names(id_map) <- id_map
 
@@ -411,8 +559,9 @@ calculateLW <- function(cds,
                                                res <- 0L
                                              res
                                            })
-  } else {
-    stop("Error: unrecognized neighbor_graph option")
+  }
+  else {
+    stop("unrecognized neighbor_graph option")
   }
   # create the lw list for moran.test
   names(knn_list) <- id_map[names(knn_list)]

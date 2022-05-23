@@ -56,10 +56,12 @@ cells by, and produces a ggplot2 object that plots the level of expression
 for each group of cells.
 }
 \examples{
-cds <- load_a549()
-cds_subset <- cds[row.names(subset(rowData(cds),
-                 gene_short_name \%in\% c("ACTA1", "ID1", "CCNB2"))),]
-plot_genes_violin(cds_subset, group_cells_by="culture_plate", ncol=2,
-                  min_expr=0.1)
+  \donttest{
+    cds <- load_a549()
+    cds_subset <- cds[row.names(subset(rowData(cds),
+                     gene_short_name \%in\% c("ACTA1", "ID1", "CCNB2"))),]
+    plot_genes_violin(cds_subset, group_cells_by="culture_plate", ncol=2,
+                      min_expr=0.1)
+  }
 
 }

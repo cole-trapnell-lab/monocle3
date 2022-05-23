@@ -8,7 +8,6 @@ setOldClass(c("igraph"), prototype=structure(list(), class="igraph"))
 #' This class is initialized from a matrix of expression values along with cell
 #' and feature metadata.
 #'
-#' @field preprocess_aux SimpleList, auxiliary information from preprocessing.
 #' @field reduce_dim_aux SimpleList, auxiliary information from reduced
 #'   dimension.
 #' @field principal_graph_aux SimpleList, auxiliary information from principal
@@ -21,15 +20,14 @@ setOldClass(c("igraph"), prototype=structure(list(), class="igraph"))
 #' @rdname cell_data_set
 #' @aliases cell_data_set-class
 #' @exportClass cell_data_set
+#' @importFrom Biobase package.version
 #' @importFrom SingleCellExperiment SingleCellExperiment colData rowData
 #' @importFrom SingleCellExperiment reducedDim<- reducedDim reducedDims<-
 #' @importFrom SingleCellExperiment reducedDims
 #' @importFrom SummarizedExperiment Assays colData<- rowData<- assays assays<-
-#' @importFrom S4Vectors metadata metadata<- SimpleList
 setClass("cell_data_set",
           contains = c("SingleCellExperiment"),
-          slots = c(preprocess_aux = "SimpleList",
-                    reduce_dim_aux = "SimpleList",
+          slots = c(reduce_dim_aux = "SimpleList",
                     principal_graph_aux="SimpleList",
                     principal_graph = "SimpleList",
                     clusters = "SimpleList")
@@ -46,32 +44,44 @@ setClass("cell_data_set",
 #'   (e.g. genes), where
 #'   \code{row.names(gene_metadata) = row.names(expression_data)}.
 #' @return a new cell_data_set object
-#' @export
+#' @importFrom S4Vectors elementMetadata
+#' @importFrom SummarizedExperiment rowRanges
+#'
 #' @examples
-#' small_a549_colData_df <- readRDS(system.file("extdata",
-#'                                              "small_a549_dex_pdata.rda",
-#'                                              package = "monocle3"))
-#' small_a549_rowData_df <- readRDS(system.file("extdata",
-#'                                              "small_a549_dex_fdata.rda",
-#'                                              package = "monocle3"))
-#' small_a549_exprs <- readRDS(system.file("extdata",
-#'                                         "small_a549_dex_exprs.rda",
-#'                                         package = "monocle3"))
-#' small_a549_exprs <- small_a549_exprs[,row.names(small_a549_colData_df)]
+#'   small_a549_colData_df <- readRDS(system.file("extdata",
+#'                                                "small_a549_dex_pdata.rda",
+#'                                                package = "monocle3"))
+#'   small_a549_rowData_df <- readRDS(system.file("extdata",
+#'                                                "small_a549_dex_fdata.rda",
+#'                                                package = "monocle3"))
+#'   small_a549_exprs <- readRDS(system.file("extdata",
+#'                                           "small_a549_dex_exprs.rda",
+#'                                           package = "monocle3"))
+#'   small_a549_exprs <- small_a549_exprs[,row.names(small_a549_colData_df)]
 #'
-#' cds <- new_cell_data_set(expression_data = small_a549_exprs,
-#'                          cell_metadata = small_a549_colData_df,
-#'                          gene_metadata = small_a549_rowData_df)
+#'   cds <- new_cell_data_set(expression_data = small_a549_exprs,
+#'                            cell_metadata = small_a549_colData_df,
+#'                            gene_metadata = small_a549_rowData_df)
 #'
+#' @export
 new_cell_data_set <- function(expression_data,
                               cell_metadata = NULL,
                               gene_metadata = NULL) {
 
-  assertthat::assert_that(class(expression_data) == "matrix" ||
-                            is_sparse_matrix(expression_data),
+
+#  assertthat::assert_that(methods::is(expression_data, 'matrix) ||
+#                          is_sparse_matrix(expression_data),
+#                          msg = paste("Argument expression_data must be a",
+#                                      "matrix - either sparse from the",
+#                                      "Matrix package or dense"))
+
+
+  assertthat::assert_that(methods::is(expression_data, 'matrix') ||
+                          is_sparse_matrix(expression_data),
                           msg = paste("Argument expression_data must be a",
                                       "matrix - either sparse from the",
                                       "Matrix package or dense"))
+
   if (!is.null(cell_metadata)) {
     assertthat::assert_that(nrow(cell_metadata) == ncol(expression_data),
                             msg = paste("cell_metadata must be NULL or have",
@@ -100,8 +110,8 @@ new_cell_data_set <- function(expression_data,
   }
 
   if(!('gene_short_name' %in% colnames(gene_metadata))) {
-    warning(paste("Warning: gene_metadata must contain a column verbatim",
-                  "named 'gene_short_name' for certain functions."))
+    warning("gene_metadata must contain a column verbatim ",
+            "named 'gene_short_name' for certain functions.")
   }
 
   sce <- SingleCellExperiment(list(counts=methods::as(expression_data, "dgCMatrix")),
@@ -112,16 +122,16 @@ new_cell_data_set <- function(expression_data,
              assays = SummarizedExperiment::Assays(
                list(counts=methods::as(expression_data, "dgCMatrix"))),
              colData = colData(sce),
-             int_elementMetadata =int_elementMetadata(sce),
-             int_colData = int_colData(sce),
-             int_metadata = int_metadata(sce),
-             metadata = metadata(sce),
+             int_elementMetadata = SingleCellExperiment::int_elementMetadata(sce),
+             int_colData = SingleCellExperiment::int_colData(sce),
+             int_metadata = SingleCellExperiment::int_metadata(sce),
+             metadata = S4Vectors::metadata(sce),
              NAMES = NULL,
              elementMetadata = elementMetadata(sce)[,0],
              rowRanges = rowRanges(sce))
 
-  metadata(cds)$cds_version <- Biobase::package.version("monocle3")
-  clusters <- stats::setNames(SimpleList(), character(0))
+  S4Vectors::metadata(cds)$cds_version <- Biobase::package.version("monocle3")
+  clusters <- stats::setNames(S4Vectors::SimpleList(), character(0))
   cds <- estimate_size_factors(cds)
   cds
 }

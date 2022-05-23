@@ -13,8 +13,9 @@ cluster_cells(
   partition_qval = 0.05,
   weight = FALSE,
   resolution = NULL,
-  random_seed = NULL,
-  verbose = F,
+  random_seed = 42,
+  verbose = FALSE,
+  nn_control = list(),
   ...
 )
 }
@@ -56,6 +57,11 @@ larger than 1.}
 \item{verbose}{A logic flag to determine whether or not we should print the
 run details.}
 
+\item{nn_control}{An optional list of parameters used to make the nearest
+neighbor index. See the set_nn_control help for detailed information.
+The default metric is cosine for reduction_methods PCA, LSI, and Aligned,
+and is euclidean for reduction_methods tSNE and UMAP.}
+
 \item{...}{Additional arguments passed to the leidenbase package.}
 }
 \value{
@@ -74,6 +80,28 @@ which represent superclusters of the Louvain/Leiden communities that are found
 using a kNN pruning method. Cluster assignments can be accessed using the
 \code{\link{clusters}} function and partition assignments can be
 accessed using the \code{\link{partitions}} function.
+}
+\examples{
+  \donttest{ 
+    cell_metadata <- readRDS(system.file('extdata',
+                                         'worm_embryo/worm_embryo_coldata.rds',
+                                         package='monocle3'))
+    gene_metadata <- readRDS(system.file('extdata',
+                             'worm_embryo/worm_embryo_rowdata.rds',
+                             package='monocle3'))
+    expression_matrix <- readRDS(system.file('extdata',
+                                 'worm_embryo/worm_embryo_expression_matrix.rds',
+                                 package='monocle3'))
+   
+    cds <- new_cell_data_set(expression_data=expression_matrix,
+                             cell_metadata=cell_metadata,
+                             gene_metadata=gene_metadata)
+
+    cds <- preprocess_cds(cds)
+    cds <- reduce_dimension(cds)
+    cds <- cluster_cells(cds)
+  }
+
 }
 \references{
 Rodriguez, A., & Laio, A. (2014). Clustering by fast search and

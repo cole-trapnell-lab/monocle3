@@ -68,8 +68,11 @@ shows the percentage (or number) of cells that express a gene in each
 sub-group in the cell_data_set.
 }
 \examples{
-cds <- load_a549()
-cds_subset <- cds[row.names(subset(rowData(cds),
-                                  gene_short_name \%in\% c("NDRG4", "HBG2"))),]
-plot_percent_cells_positive(cds_subset, group_cells_by="culture_plate")
+  \donttest{
+    cds <- load_a549()
+    cds_subset <- cds[row.names(subset(rowData(cds),
+                                      gene_short_name \%in\% c("NDRG4", "HBG2"))),]
+    plot_percent_cells_positive(cds_subset, group_cells_by="culture_plate")
+  }
+
 }

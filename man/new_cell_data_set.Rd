@@ -24,19 +24,19 @@ a new cell_data_set object
 Create a new cell_data_set object.
 }
 \examples{
-small_a549_colData_df <- readRDS(system.file("extdata",
-                                             "small_a549_dex_pdata.rda",
-                                             package = "monocle3"))
-small_a549_rowData_df <- readRDS(system.file("extdata",
-                                             "small_a549_dex_fdata.rda",
-                                             package = "monocle3"))
-small_a549_exprs <- readRDS(system.file("extdata",
-                                        "small_a549_dex_exprs.rda",
-                                        package = "monocle3"))
-small_a549_exprs <- small_a549_exprs[,row.names(small_a549_colData_df)]
+  small_a549_colData_df <- readRDS(system.file("extdata",
+                                               "small_a549_dex_pdata.rda",
+                                               package = "monocle3"))
+  small_a549_rowData_df <- readRDS(system.file("extdata",
+                                               "small_a549_dex_fdata.rda",
+                                               package = "monocle3"))
+  small_a549_exprs <- readRDS(system.file("extdata",
+                                          "small_a549_dex_exprs.rda",
+                                          package = "monocle3"))
+  small_a549_exprs <- small_a549_exprs[,row.names(small_a549_colData_df)]
 
-cds <- new_cell_data_set(expression_data = small_a549_exprs,
-                         cell_metadata = small_a549_colData_df,
-                         gene_metadata = small_a549_rowData_df)
+  cds <- new_cell_data_set(expression_data = small_a549_exprs,
+                           cell_metadata = small_a549_colData_df,
+                           gene_metadata = small_a549_rowData_df)
 
 }

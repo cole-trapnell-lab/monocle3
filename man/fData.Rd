@@ -9,6 +9,16 @@ fData(x)
 \arguments{
 \item{x}{A cell_data_set object.}
 }
+\value{
+rowData table.
+}
 \description{
 Generic to access cds rowData table
+}
+\examples{
+  \donttest{
+    cds <- load_a549()
+    fData(cds)
+  }
+
 }

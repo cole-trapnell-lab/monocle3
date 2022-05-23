@@ -8,7 +8,8 @@ combine_cds(
   cds_list,
   keep_all_genes = TRUE,
   cell_names_unique = FALSE,
-  sample_col_name = "sample"
+  sample_col_name = "sample",
+  keep_reduced_dims = FALSE
 )
 }
 \arguments{
@@ -21,11 +22,17 @@ the genes in common among all of the CDSs will be kept. Default is TRUE.}
 
 \item{cell_names_unique}{Logical indicating whether all of the cell IDs
 across all of the CDSs are unique. If FALSE, the CDS name is appended to
-each cell ID to prevent collisions. Default is FALSE.}
+each cell ID to prevent collisions. These cell IDs are used as count matrix
+column names and colData(cds) row names. Cell names stored in other
+cds locations are not modified so you will need to modify them manually
+for consistency. Default is FALSE.}
 
 \item{sample_col_name}{A string to be the column name for the colData column
 that indicates which original cds the cell derives from. Default is
 "sample".}
+
+\item{keep_reduced_dims}{Logical indicating whether to keep the reduced
+dimension matrices. Default is FALSE.}
 }
 \value{
 A combined cell_data_set object.

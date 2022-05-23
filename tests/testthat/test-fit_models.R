@@ -1,5 +1,15 @@
 context("fit_models")
 
+
+skip_not_travis <- function ()
+{
+  if (identical(Sys.getenv("TRAVIS"), "true")) {
+    return(invisible(TRUE))
+  }
+  skip("Not on Travis")
+}
+
+
 cds <- load_a549()
 #cds <- estimate_size_factors(cds)
 test_that("fit_models() returns an error when Size_Factors are missing",{
@@ -39,7 +49,7 @@ test_that("fit_models() returns correct output for negative binomial regression"
                                  expression_family = 'negbinomial')
   expect_equal(pos_ctrl_gene_fit$status[[1]], "OK")
   pos_ctrl_coefs = coefficient_table(pos_ctrl_gene_fit)
-  expect_equal(pos_ctrl_coefs$estimate, c(-0.1772648, 0.2727622),
+  expect_equal(pos_ctrl_coefs$estimate, c(-0.1772648, 0.2727622, 0.675),
                tolerance=1e-1)
   expect_equal(c(pos_ctrl_coefs$normalized_effect[[1]],
                  pos_ctrl_coefs$normalized_effect[[2]]), c(0, 0.353),
@@ -50,16 +60,16 @@ test_that("fit_models() returns correct output for negative binomial regression"
   expect_null(fitted_vals)
 
   fitted_vals = stats::predict(pos_ctrl_gene_fit$model[[1]],
-                               newdata=colData(test_cds))
+                               newdata=cbind(colData(test_cds) %>% as.data.frame, Size_Factor=1))
   expect_equal(sum(is.na(fitted_vals)), 0)
-  expect_equal(unname(fitted_vals[1]), 0.09561581)
+  expect_equal(unname(fitted_vals[1]), -0.243, tolerance=1e-3)
 
   neg_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "CCNE2",]
   neg_ctrl_gene_fit = fit_models(neg_ctrl_gene, model_formula_str = "~log_dose",
                                  expression_family = 'negbinomial')
   expect_equal(neg_ctrl_gene_fit$status[[1]], "OK")
   neg_ctrl_coefs = coefficient_table(neg_ctrl_gene_fit)
-  expect_equal(neg_ctrl_coefs$estimate, c(-4.0731884,  0.2413678),
+  expect_equal(neg_ctrl_coefs$estimate, c(-3.857,  0.139, 0.502),
                tolerance=1e-1)
   expect_equal(c(neg_ctrl_coefs$normalized_effect[[1]],
                  neg_ctrl_coefs$normalized_effect[[2]]), c(0, 0.197),
@@ -75,13 +85,13 @@ test_that("fit_models() returns correct output for Poisson regression",{
 
   pos_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "ANGPTL4",]
   pos_ctrl_gene_fit = fit_models(pos_ctrl_gene, model_formula_str = "~log_dose",
-                                 expression_family = "poisson")
+                                 expression_family = "poisson", verbose=TRUE)
   expect_equal(pos_ctrl_gene_fit$status[[1]], "OK")
   pos_ctrl_coefs = coefficient_table(pos_ctrl_gene_fit)
-  expect_equal(pos_ctrl_coefs$estimate, c(-0.1661872, 0.2560421),
+  expect_equal(pos_ctrl_coefs$estimate, c(-0.397, 0.2560421),
                tolerance=1e-1)
   expect_equal(c(pos_ctrl_coefs$normalized_effect[[1]],
-                 pos_ctrl_coefs$normalized_effect[[2]]), c(0, 0.353),
+                 pos_ctrl_coefs$normalized_effect[[2]]), c(0, 0.477),
                tolerance=1e-1)
   expect_lt(pos_ctrl_coefs$p_value[2], 0.05)
 
@@ -89,9 +99,9 @@ test_that("fit_models() returns correct output for Poisson regression",{
   expect_null(fitted_vals)
 
   fitted_vals = stats::predict(pos_ctrl_gene_fit$model[[1]],
-                               newdata=colData(test_cds))
+                               newdata=cbind(colData(test_cds) %>% as.data.frame, Size_Factor=1))
   expect_equal(sum(is.na(fitted_vals)), 0)
-  expect_equal(unname(fitted_vals[1]), 0.08996605, tolerance=1e-1)
+  expect_equal(unname(fitted_vals[1]), -0.563, tolerance=1e-1)
 
   neg_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "CCNE2",]
   neg_ctrl_gene_fit = fit_models(neg_ctrl_gene, model_formula_str = "~log_dose",
@@ -116,19 +126,19 @@ test_that("fit_models() returns correct output for quasipoisson regression",{
                                  expression_family = "quasipoisson")
   expect_equal(pos_ctrl_gene_fit$status[[1]], "OK")
   pos_ctrl_coefs = coefficient_table(pos_ctrl_gene_fit)
-  expect_equal(pos_ctrl_coefs$estimate, c(-0.1661872, 0.2560421),
+  expect_equal(pos_ctrl_coefs$estimate, c(-0.397, 0.2560421),
                tolerance=1e-1)
   expect_equal(c(pos_ctrl_coefs$normalized_effect[[1]],
-                 pos_ctrl_coefs$normalized_effect[[2]]), c(0, 0.353), tolerance=1e-1)
+                 pos_ctrl_coefs$normalized_effect[[2]]), c(0, 0.477), tolerance=1e-1)
   expect_lt(pos_ctrl_coefs$p_value[2], 0.05)
 
   fitted_vals = suppressWarnings(stats::predict(pos_ctrl_gene_fit$model[[1]]))
   expect_null(fitted_vals)
 
   fitted_vals = stats::predict(pos_ctrl_gene_fit$model[[1]],
-                               newdata=colData(test_cds))
+                               newdata=cbind(colData(test_cds) %>% as.data.frame, Size_Factor=1))
   expect_equal(sum(is.na(fitted_vals)), 0)
-  expect_equal(unname(fitted_vals[1]), 0.08996605, tolerance=1e-1)
+  expect_equal(unname(fitted_vals[1]), -0.563, tolerance=1e-1)
 
   neg_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "CCNE2",]
   neg_ctrl_gene_fit = fit_models(neg_ctrl_gene, model_formula_str = "~log_dose",
@@ -173,19 +183,19 @@ test_that("fit_models() returns correct output for zero-inflated Poisson regress
   expect_equal(pos_ctrl_gene_fit$status[[1]], "OK")
   pos_ctrl_coefs = coefficient_table(pos_ctrl_gene_fit)
   expect_equal(pos_ctrl_coefs$estimate,
-               c(0.44972255,  0.22109280, -0.26023259,  0.04879729),
+               c(-0.0486,  0.22109280, -1.1799,  0.04879729),
                tolerance=1e-1)
   expect_equal(unname(pos_ctrl_coefs$normalized_effect),
-               c(0.00000000, 0.08186624, NA, NA), tolerance=1e-1)
+               c(0.00000000, 0.21, NA, NA), tolerance=1e-1)
   expect_lt(pos_ctrl_coefs$p_value[2], 0.05)
 
   fitted_vals = stats::predict(pos_ctrl_gene_fit$model[[1]])
   expect_null(fitted_vals)
 
   fitted_vals = stats::predict(pos_ctrl_gene_fit$model[[1]],
-                               newdata=colData(test_cds))
+                               newdata=cbind(colData(test_cds) %>% as.data.frame, Size_Factor=1))
   expect_equal(sum(is.na(fitted_vals)), 0)
-  expect_equal(unname(fitted_vals[1]), 1.090315, tolerance=1e-1)
+  expect_equal(unname(fitted_vals[1]), 0.595, tolerance=1e-1)
 
   neg_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "CCNE2",]
   neg_ctrl_gene_fit = fit_models(neg_ctrl_gene,
@@ -194,13 +204,13 @@ test_that("fit_models() returns correct output for zero-inflated Poisson regress
   expect_equal(neg_ctrl_gene_fit$status[[1]], "OK")
   neg_ctrl_coefs = coefficient_table(neg_ctrl_gene_fit)
   expect_equal(neg_ctrl_coefs$estimate,
-               c(-0.09332179, 0.24146532,  3.61660409,  0.29317205),
+               c(-1.158, 0.24146532,  2.580,  0.134),
                tolerance=1e-1)
   expect_equal(unname(neg_ctrl_coefs$normalized_effect),
                c(0.0000000, 0.1382822, NA, NA), tolerance=1e-1)
   expect_gt(neg_ctrl_coefs$p_value[2], 0.05)
   require("pryr")
-  expect_lt(object_size(neg_ctrl_gene_fit$model[[1]]), 20000)
+  expect_lt(object_size(neg_ctrl_gene_fit$model[[1]]), 20100)
 })
 
 test_that("fit_models() returns correct output for zero-inflated negative binomial regression",{
@@ -213,19 +223,19 @@ test_that("fit_models() returns correct output for zero-inflated negative binomi
   expect_equal(pos_ctrl_gene_fit$status[[1]], "OK")
   pos_ctrl_coefs = coefficient_table(pos_ctrl_gene_fit)
   expect_equal(pos_ctrl_coefs$estimate,
-               c(0.06830067, 0.26434083, 0.20449738, -1.42580412, 0.09301560),
+               c(-0.255, 0.26434083, -0.146, -11.113, -1.005),
                tolerance=1e-1)
   expect_equal(unname(pos_ctrl_coefs$normalized_effect),
-               c(0.000000000, 0.1685858, 0.1325289, NA, NA), tolerance=1e-1)
+               c(0.000000000, 0.1685858, -0.119, NA, NA), tolerance=1e-1)
   expect_lt(pos_ctrl_coefs$p_value[2], 0.05)
 
   fitted_vals = stats::predict(pos_ctrl_gene_fit$model[[1]])
   expect_null(fitted_vals)
 
   fitted_vals = stats::predict(pos_ctrl_gene_fit$model[[1]],
-                               newdata=colData(test_cds))
+                               newdata=cbind(colData(test_cds) %>% as.data.frame, Size_Factor=1))
   expect_equal(sum(is.na(fitted_vals)), 0)
-  expect_equal(unname(fitted_vals[1]), 1.112072, tolerance=1e-1)
+  expect_equal(unname(fitted_vals[1]), 0.642, tolerance=1e-1)
 
   neg_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "CCNE2",]
   neg_ctrl_gene_fit = fit_models(neg_ctrl_gene,
@@ -234,13 +244,13 @@ test_that("fit_models() returns correct output for zero-inflated negative binomi
   expect_equal(neg_ctrl_gene_fit$status[[1]], "OK")
   neg_ctrl_coefs = coefficient_table(neg_ctrl_gene_fit)
   expect_equal(neg_ctrl_coefs$estimate,
-               c(-0.09336894, 0.24145643, 9.47768779, 3.61656471, 0.29316920),
+               c(-3.94, 0.24145643, -3.47, -4.81, -15.42),
                tolerance=1e-1)
   expect_equal(unname(neg_ctrl_coefs$normalized_effect),
-               c(0.0000000,  0.1684627, 1.0532056, NA, NA), tolerance=1e-1)
+               c(0.0000000,  0.1684627, -1.46, NA, NA), tolerance=1e-1)
   expect_gt(neg_ctrl_coefs$p_value[2], 0.05)
   require("pryr")
-  expect_lt(object_size(neg_ctrl_gene_fit$model[[1]]), 20000)
+  expect_lt(object_size(neg_ctrl_gene_fit$model[[1]]), 20600)
 })
 
 
@@ -292,8 +302,14 @@ test_that("fit_models() flags non-convergence for zero-inflated negative binomia
   expect_equal(pos_ctrl_gene_fit$status[[1]], "FAIL")
 })
 
-test_that("fit_models() can handle cluster in model formulae",{
+test_that("fit_models() works with multiple cores",{
+  expect_equal(1,1)
+})
 
+#### NOT TRAVIS ####
+
+test_that("fit_models() can handle cluster in model formulae",{
+  skip_on_travis()
   test_cds = cds
   test_cds = preprocess_cds(test_cds)
   test_cds = reduce_dimension(test_cds)
@@ -305,13 +321,26 @@ test_that("fit_models() can handle cluster in model formulae",{
                                  expression_family = "quasipoisson")
   expect_equal(pos_ctrl_gene_fit$status[[1]], "OK")
   pos_ctrl_coefs = coefficient_table(pos_ctrl_gene_fit)
-  expect_equal(pos_ctrl_coefs$estimate[2], -0.9550378, tolerance=1e-1)
+  expect_equal(pos_ctrl_coefs$estimate[2], -0.0962, tolerance=1e-3)
 })
 
 
+#### TRAVIS ####
 
-test_that("fit_models() works with multiple cores",{
-  expect_equal(1,1)
+test_that("fit_models() can handle cluster in model formulae",{
+  skip_not_travis()
+  test_cds = cds
+  test_cds = preprocess_cds(test_cds)
+  test_cds = reduce_dimension(test_cds)
+  set.seed(100)
+  test_cds = cluster_cells(test_cds, resolution = .01)
+
+  pos_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "ANGPTL4",]
+  pos_ctrl_gene_fit = fit_models(pos_ctrl_gene, model_formula_str = "~cluster",
+                                 expression_family = "quasipoisson")
+  expect_equal(pos_ctrl_gene_fit$status[[1]], "OK")
+  pos_ctrl_coefs = coefficient_table(pos_ctrl_gene_fit)
+  expect_equal(pos_ctrl_coefs$estimate[2], -0.925, tolerance=1e-2)
 })
 
 
