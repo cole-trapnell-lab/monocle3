@@ -156,6 +156,9 @@ fit_model_helper <- function(x,
                              disp_func = NULL,
                              clean_model = TRUE,
                              verbose = FALSE,
+                             save_significant_models,
+                             q_value_threshold,
+                             num_genes_tested,
                              ...) {
   model_formula_str <- paste("f_expression", model_formula_str,
                              sep = "")
@@ -225,11 +228,26 @@ fit_model_helper <- function(x,
     ))
     FM_summary = summary(FM_fit)
     if (clean_model){
-      FM_fit = clean_model_object(FM_fit)
-      if (class(FM_fit)[1] == "glmerMod"){
-        FM_summary = clean_glmerMod_summary_object(FM_summary)
+      if (save_significant_models){  # evaluate if significant results or not
+        terms = extract_coefficient_helper(FM_fit, FM_summary)
+        terms = terms %>%
+          dplyr::mutate(q_value = stats::p.adjust(p_value, n=num_genes_tested))
+        if(any(terms$q_value<q_value_threshold)){ 
+          #skip cleaning
+          } else {
+            FM_fit = clean_model_object(FM_fit)
+            if (class(FM_fit)[1] == "glmerMod"){
+              FM_summary = clean_glmerMod_summary_object(FM_summary)
+            }
+          } 
+        }
+      else {  # clean everything
+          FM_fit = clean_model_object(FM_fit)
+          if (class(FM_fit)[1] == "glmerMod"){
+            FM_summary = clean_glmerMod_summary_object(FM_summary)
+          }
+        }
       }
-    }
     df = list(model=FM_fit, model_summary=FM_summary)
     df
   }, error = function(e) {
@@ -257,6 +275,8 @@ fit_model_helper <- function(x,
 #' @param clean_model Logical indicating whether to clean the model. Default is
 #'   TRUE.
 #' @param verbose Logical indicating whether to emit progress messages.
+#' @param save_significant_models Logical indicating whether to save full models based on adjusted p-values for terms in model.
+#' @param q_value_threshold Specifies threshold for significance to save full models. Requires save_significant_models = TRUE.
 #' @param ... Additional arguments passed to model fitting functions.
 #'
 #' @return a tibble where the rows are genes and columns are
@@ -303,6 +323,8 @@ fit_models <- function(cds,
                        cores = 1,
                        clean_model = TRUE,
                        verbose = FALSE,
+                       save_significant_models = FALSE,
+                       q_value_threshold = 1,
                        ...) {
   model <- status <- NULL # no visible binding
   model_form <- stats::as.formula(model_formula_str)
@@ -316,6 +338,7 @@ fit_models <- function(cds,
     coldata_df$pseudotime = pseudotime(cds, reduction_method)
     coldata_df$Size_Factor = size_factors(cds)
   }, error = function(e) {} )
+  num_genes_tested <- nrow(colData(cds))
 
   # Test model formula validity.
   # Notes:
@@ -375,6 +398,9 @@ fit_models <- function(cds,
         disp_func = disp_func,
         clean_model = clean_model,
         verbose = verbose,
+        num_genes_tested = num_genes_tested,
+        save_significant_models = save_significant_models,
+        q_value_threshold = q_value_threshold,
         ...
       )
     fits
@@ -390,6 +416,9 @@ fit_models <- function(cds,
       disp_func = disp_func,
       clean_model = clean_model,
       verbose = verbose,
+      num_genes_tested = num_genes_tested,
+      save_significant_models = save_significant_models,
+      q_value_threshold = q_value_threshold,
       ...
     )
     fits
@@ -543,6 +572,7 @@ extract_coefficient_helper = function(model, model_summary,
 #'
 #' @param model_tbl A tibble of model objects, generally the output of
 #'   \code{\link{fit_models}}.
+#' @param q_value_threshold Cut-off above which models will be cleaned.
 #'
 #' @return A table of coefficient data for each gene.
 #'
@@ -576,7 +606,8 @@ extract_coefficient_helper = function(model, model_summary,
 #'
 #' @importFrom dplyr %>%
 #' @export
-coefficient_table <- function(model_tbl) {
+coefficient_table <- function(model_tbl, 
+                              q_value_threshold = 1) {
   model <- model_summary <- terms <- term <- model_component <- p_value <- NULL # no visible binding
   M_f = model_tbl %>%
     dplyr::mutate(terms = purrr::map2(.f = purrr::possibly(
@@ -585,6 +616,9 @@ coefficient_table <- function(model_tbl) {
     tidyr::unnest(terms)
   M_f = M_f %>% dplyr::group_by(model_component, term) %>%
     dplyr::mutate(q_value = stats::p.adjust(p_value)) %>% dplyr::ungroup()
+  M_f = M_f %>% 
+    dplyr::mutate(model = ifelse(q_value<q_value_threshold, model, purrr::map(.x=model, .f=clean_model_object)),
+                  model_summary = ifelse(q_value<q_value_threshold & purrr::map(.x=model,.f=class)=="glmerMod", model_summary, purrr::map(.x=model_summary, .f=clean_glmerMod_summary_object))) 
   return(M_f)
 }
 
