@@ -146,6 +146,9 @@ clean_model_object = function(model) {
 #' @param disp_func test
 #' @param verbose Whether to show VGAM errors and warnings. Only valid for
 #'   cores = 1.
+#' @param save_significant_models Logical indicating whether to save full models based on adjusted p-values for terms in model.
+#' @param q_value_threshold Specifies threshold for significance to save full models. Requires save_significant_models = TRUE.
+#' @param num_genes_tested Total number of genes tested calculated from cds
 #' @param ... test
 #' @name fit_model_helper
 #' @importFrom lme4 glmer
