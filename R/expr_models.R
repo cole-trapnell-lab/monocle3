@@ -166,7 +166,7 @@ fit_model_helper <- function(x,
   # FIXME: should we be using this here?
   # x <- x + pseudocount
   if (expression_family %in% c("negbinomial", "poisson", "zinegbinomial",
-                               "zipoisson", "quasipoisson", "mixed-negbinomial")) {
+                               "zipoisson", "quasipoisson", "mixed-negbinomial", "mixed-binomial")) {
     #x <- x / Size_Factor
     #f_expression <- round(x)
     f_expression <- x
@@ -224,6 +224,12 @@ fit_model_helper <- function(x,
                                                                         nAGQ=0,
                                                                         control=lme4::glmerControl(optimizer = "nloptwrap"),
                                                                         offset = log(Size_Factor),
+                                                                        ...),
+                                   "mixed-binomial" = lme4::glmer(model_formula,
+                                                                  family="binomial",
+                                                                        nAGQ=0,
+                                                                        control=lme4::glmerControl(optimizer = "nloptwrap"),
+                                                                        offset = log(Size_Factor),
                                                                         ...)
     ))
     FM_summary = summary(FM_fit)
@@ -267,7 +273,7 @@ fit_model_helper <- function(x,
 #'   the genes.
 #' @param expression_family Specifies the family function used for expression
 #'   responses. Can be one of "quasipoisson", "negbinomial", "poisson",
-#'   "binomial", "gaussian", "zipoisson", "zinegbinomial", or "mixed-negbinomial".
+#'   "binomial", "gaussian", "zipoisson", "zinegbinomial", "mixed-negbinomial", or "mixed-binomial".
 #'   Default is "quasipoisson".
 #' @param reduction_method Which method to use with clusters() and
 #'   partitions(). Default is "UMAP".
@@ -536,11 +542,20 @@ extract_coefficient_helper = function(model, model_summary,
                            'std_err',
                            'test_val',
                            'p_value')
-    log_eff_over_int = log2((exp(coef_mat[, 1] + # inverse-link function for neg-binomial is exp, done manually bc no inv-link function in merMod
-                                   coef_mat[1, 1]) +
-                               pseudo_count) /
-                              rep(exp(coef_mat[1, 1]) +
-                                    pseudo_count, times = nrow(coef_mat)))
+    if (grepl("Negative Binomial", model_summary$family)){
+      log_eff_over_int = log2((exp(coef_mat[, 1] + # inverse-link function for neg-binomial is exp, done manually bc no inv-link function in merMod
+                                     coef_mat[1, 1]) +
+                                 pseudo_count) /
+                                rep(exp(coef_mat[1, 1]) +
+                                      pseudo_count, times = nrow(coef_mat)))
+      } else if(model_summary$family == "binomial"){
+      log_eff_over_int = log2(((exp(coef_mat[, 1] + 
+                                      coef_mat[1, 1]))/(1+exp(coef_mat[, 1] + 
+                                                                coef_mat[1, 1])) +
+                                 pseudo_count) /
+                                rep(exp(coef_mat[1, 1]) +
+                                      pseudo_count, times = nrow(coef_mat)))
+      } 
     log_eff_over_int[1] = 0
     coef_mat = tibble::as_tibble(coef_mat, rownames = "term")
     coef_mat$normalized_effect = log_eff_over_int
