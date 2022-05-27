@@ -828,7 +828,7 @@ model_predictions <- function(model_tbl, new_data, type="response") {
                           msg = paste0('model_predictions: parameter new_data is not a data.frame.'))
   predict_helper <- function(model, new_data){
     tryCatch({
-      stats::predict(model, newdata=new_data, type=type)
+      stats::predict(model, newdata=new_data, type=type, re.form=~0)
     }, error = function(e){
       retval = rep_len(NA, nrow(new_data))
       names(retval) = row.names(new_data)
