@@ -1,3 +1,22 @@
+# Monocle3 1.2.9
+
+### Changes
+
+* Project data set onto a reference data set.
+* Annotation label transfer using projection.
+* Negative binomial mixed models in fit_models.
+* Use annoy nearest neighbor functions.
+* Save and load Monocle objects and dimensional reduction models.
+* Store matrix identifiers for versioning.
+* Documentation improvements.
+* Cell_data_set internal rearrangements and additions.
+* Set cluster_cells random_seed parameter default to 42.
+* Added ability to change aggregation function to aggregate_gene_expression(), and moved scaling to be compatible with multiple aggregation policies
+
+### Bug fixes
+
+* Fixed some plotting issues.
+
 # monocle3 1.0.0
 
 ### Changes
