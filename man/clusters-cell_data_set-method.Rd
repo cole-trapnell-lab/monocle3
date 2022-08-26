@@ -11,6 +11,9 @@
 
 \item{reduction_method}{Reduced dimension to extract clusters for.}
 }
+\value{
+Clusters.
+}
 \description{
 Method to extract clusters from CDS object
 }

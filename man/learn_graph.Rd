@@ -76,13 +76,61 @@ cells corresponding to the tip principal points. Default is FALSE.}
 pruning to remove small insignificant branches. Default is TRUE.}
 \item{scale:}{}
 \item{ncenter:}{}
-\item{rann.k:}{Maximum number of nearest neighbors to compute in the
-reversed graph embedding. Set rann.k=NULL
-to let learn_graph estimate rann.k. Default is 25.}
+\item{nn.k:}{Maximum number of nearest neighbors to compute in the
+reversed graph embedding. Set k=NULL
+to let learn_graph estimate k. Default is 25.}
+\item{rann.k:}{nn.k replaces rann.k but rann.k is available for
+compatibility with existing code.}
 \item{maxiter:}{}
 \item{eps:}{}
 \item{L1.gamma:}{}
 \item{L1.sigma:}{}
+\item{nn.method:}{The method to use for finding nearest neighbors.
+nn.method can be one of 'nn2', 'annoy', or 'hnsw'.}
+\item{nn.metric:}{The distance metric for the annoy or hnsw nearest
+neighbor index build. See help(set_nn_control) for more information.}
+\item{nn.n_trees:}{The number of trees used to build the annoy nearest
+neighbor index. See help(set_nn_control) for more information.}
+\item{nn.search_k:}{The number of nodes to search in an annoy index
+search. See help(set_nn_control) for more information.}
+\item{nn.M:}{Related to internal dimensionality of HNSW index. See
+help(set_nn_control) for more information.}
+\item{nn.ef_construction:}{Controls the HNSW index build speed/accuracy
+tradeoff.}
+\item{nn.ef:}{Controls the HNSW index search speed/accuracy tradeoff.
+See help(set_nn_control) for more information.}
+\item{nn.grain_size:}{Used by annoy and HNSW to set the minimum amount
+of work to do per thread. See help(set_nn_control) for more
+information.}
+\item{nn.cores:}{Used by annoy and HNSW to control the number of
+threads used. See help(set_nn_control) for more information.}
 }
 }
 
+\examples{
+  \donttest{
+    cell_metadata <- readRDS(system.file('extdata',
+                                         'worm_embryo/worm_embryo_coldata.rds',
+                                         package='monocle3'))
+    gene_metadata <- readRDS(system.file('extdata',
+                                         'worm_embryo/worm_embryo_rowdata.rds',
+                                         package='monocle3'))
+    expression_matrix <- readRDS(system.file('extdata',
+                                             'worm_embryo/worm_embryo_expression_matrix.rds',
+                                             package='monocle3'))
+
+    cds <- new_cell_data_set(expression_data=expression_matrix,
+                             cell_metadata=cell_metadata,
+                             gene_metadata=gene_metadata)
+
+    cds <- preprocess_cds(cds)
+    cds <- align_cds(cds, alignment_group =
+                     "batch", residual_model_formula_str = "~ bg.300.loading +
+                      bg.400.loading + bg.500.1.loading + bg.500.2.loading +
+                      bg.r17.loading + bg.b01.loading + bg.b02.loading")
+    cds <- reduce_dimension(cds)
+    cds <- cluster_cells(cds)
+    cds <- learn_graph(cds)
+  }
+
+}

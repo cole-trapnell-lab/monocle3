@@ -2,8 +2,10 @@
 % Please edit documentation in R/plotting.R
 \name{plot_pc_variance_explained}
 \alias{plot_pc_variance_explained}
-\title{Plots the percentage of variance explained by the each component based on
-PCA from the normalized expression data determined using preprocess_cds.}
+\title{Plots the fraction of variance explained by the each component based on
+PCA from the normalized expression data determined using preprocess_cds.
+This is the fraction of the component variance relative to the variance
+of the components retained in the PCA; not the total variance.}
 \usage{
 plot_pc_variance_explained(cds)
 }
@@ -14,11 +16,16 @@ plot_pc_variance_explained(cds)
 ggplot object.
 }
 \description{
-Plots the percentage of variance explained by the each component based on
+Plots the fraction of variance explained by the each component based on
 PCA from the normalized expression data determined using preprocess_cds.
+This is the fraction of the component variance relative to the variance
+of the components retained in the PCA; not the total variance.
 }
 \examples{
-cds <- load_a549()
-cds <- preprocess_cds(cds)
-plot_pc_variance_explained(cds)
+  \donttest{
+    cds <- load_a549()
+    cds <- preprocess_cds(cds)
+    plot_pc_variance_explained(cds)
+  }
+
 }

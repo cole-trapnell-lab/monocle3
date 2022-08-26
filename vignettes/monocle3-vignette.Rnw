@@ -1,0 +1,60 @@
+% \VignetteIndexEntry{Monocle3: Cell counting, differential expression, and trajectory analysis for single-cell RNA-Seq experiments}
+% \VignetteEngine{knitr::knitr}
+% \VignetteDepends{}
+% \VignettePackage{monocle3}
+
+\documentclass[10pt,oneside]{article}
+
+\newcommand{\thetitle}{Monocle3: Cell counting, differential expression, and trajectory analysis for single-cell RNA-Seq experiments}
+
+%\usepackage[pdftitle={\thetitle},pdfauthor={Wolfgang Huber}]{whbiocvignette}
+\usepackage{whbiocvignette}
+% \usepackage{times}
+%\usepackage{hyperref}
+%\usepackage{verbatim}
+%\usepackage{graphicx}
+%\usepackage{fancybox}
+%\usepackage{color}
+
+\title{\textsf{\textbf{\thetitle}}}
+\author{Cole Trapnell\\[1em]University of Washington,\\ Seattle, Washington, USA\\
+\texttt{coletrap@uw.edu} \and
+Davide Cacchiarelli\\[1em]Harvard University,\\ Cambridge, Massachussetts, USA\\
+\texttt{davide@broadinstitute.org}\and
+Xiaojie Qiu\\[1em]University of Washington,\\ Seattle, Washington, USA\\
+\texttt{xqiu@uw.edu}
+}
+\begin{document}
+
+<<include=FALSE>>=
+library(knitr)
+opts_chunk$set(
+#concordance=TRUE
+)
+@
+
+
+
+
+<<package_loads, include=FALSE, eval=TRUE>>=
+library(Biobase)
+library(knitr)
+library(reshape2)
+library(ggplot2)
+
+knitr::opts_chunk$set(autodep=TRUE, cache=FALSE, warning=FALSE, dev='png', dpi=600)
+set.seed(0)
+@ %def
+
+\maketitle
+
+\begin{abstract}
+Single cell gene expression studies enable profiling of transcriptional regulation during complex biological processes and within highly hetergeneous cell populations. These studies allow discovery of genes that identify certain subtypes of cells, or that mark a particular intermediate states during a biological process. In many single cell studies, individual cells are executing through a gene expression program in an unsynchronized manner. In effect, each cell is a snapshot of the transcriptional program under study. The package \Rpackage{monocle3} provides tools for analyzing single-cell expression experiments. Monocle3 introduced the strategy of ordering single cells in \emph{pseudotime}, placing them along a trajectory corresponding to a biological process such as cell differentiation. Monocle3 learns this trajectory directly from the data, in either a fully unsupervised or a semi-supervised manner. It also performs differential gene expression and clustering to identify important genes and cell states. It is designed for RNA-Seq studies, but can be used with other assays. For more information on the algorithm at the core of \Rpackage{monocle3}, or to learn more about how to use single cell RNA-Seq to study a complex biological process, see the original work by Trapnell and Cacchiarelli \emph{et al} and more recent updates by Qiu et al.
+\end{abstract}
+
+For information on Monocle3's features and how to utilize them, go to https://cole-trapnell-lab.github.io/monocle3/ and go to the "Documentation" tab displayed at the top of the page.
+
+<<gene_pairwise_kinetic_plot, eval = TRUE, fig.width = 4, fig.height = 4, fig.align="center">>=
+plot(1:10)
+@ %def
+\end{document}

@@ -15,8 +15,10 @@ reduce_dimension(
   umap.n_neighbors = 15L,
   umap.fast_sgd = FALSE,
   umap.nn_method = "annoy",
-  cores = 1,
   verbose = FALSE,
+  cores = 1,
+  build_nn_index = FALSE,
+  nn_control = list(),
   ...
 )
 }
@@ -51,9 +53,20 @@ TRUE. See uwot package's \code{\link[umap]{umap}} for details.}
 used by UMAP. Default is "annoy". See uwot package's
 \code{\link[umap]{umap}} for details.}
 
-\item{cores}{Number of compute cores to use.}
-
 \item{verbose}{Logical, whether to emit verbose output.}
+
+\item{cores}{Number of cores to use for computing the UMAP.}
+
+\item{build_nn_index}{logical When this argument is set to TRUE,
+preprocess_cds builds the nearest neighbor index from the
+reduced dimension matrix for later use. Default is FALSE.}
+
+\item{nn_control}{An optional list of parameters used to make the nearest
+neighbor index. See the set_nn_control help for detailed information.
+The default metric is cosine for reduction_methods PCA, LSI, and Aligned,
+and is euclidean for reduction_methods tSNE and UMAP. Note: distances in
+tSNE space reflect spatial differences poorly so using nearest neighbors
+with it may be meaningless.}
 
 \item{...}{additional arguments to pass to the dimensionality reduction
 function.}
@@ -77,6 +90,26 @@ provides two different algorithms for dimensionality reduction via
 process after \code{preprocess_cds}.
 
 UMAP is implemented from the package uwot.
+}
+\examples{
+  \donttest{
+    cell_metadata <- readRDS(system.file('extdata',
+                                         'worm_embryo/worm_embryo_coldata.rds',
+                                         package='monocle3'))
+    gene_metadata <- readRDS(system.file('extdata',
+                                         'worm_embryo/worm_embryo_rowdata.rds',
+                                         package='monocle3'))
+    expression_matrix <- readRDS(system.file('extdata',
+                                             'worm_embryo/worm_embryo_expression_matrix.rds',
+                                             package='monocle3'))
+    cds <- new_cell_data_set(expression_data=expression_matrix,
+                             cell_metadata=cell_metadata,
+                             gene_metadata=gene_metadata)
+
+    cds <- preprocess_cds(cds)
+    cds <- reduce_dimension(cds)
+  }
+
 }
 \references{
 UMAP: McInnes, L, Healy, J, UMAP: Uniform Manifold Approximation

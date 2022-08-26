@@ -29,16 +29,16 @@ plot_cells(
   alpha = 1,
   min_expr = 0.1,
   rasterize = FALSE,
-  scale_to_range = FALSE,
+  scale_to_range = TRUE,
   label_principal_points = FALSE
 )
 }
 \arguments{
 \item{cds}{cell_data_set for the experiment}
 
-\item{x}{the column of reducedDims(cds) to plot on the horizontal axis}
+\item{x}{the column of SingleCellExperiment::reducedDims(cds) to plot on the horizontal axis}
 
-\item{y}{the column of reducedDims(cds) to plot on the vertical axis}
+\item{y}{the column of SingleCellExperiment::reducedDims(cds) to plot on the vertical axis}
 
 \item{reduction_method}{The lower dimensional space in which to plot cells.
 Must be one of "UMAP", "tSNE", "PCA" and "LSI".}
@@ -119,10 +119,11 @@ a ggplot2 plot object
 Plots the cells along with their trajectories.
 }
 \examples{
-\dontrun{
-lung <- load_A549()
-plot_cells(lung)
-plot_cells(lung, color_cells_by="log_dose")
-plot_cells(lung, markers="GDF15")
-}
+  \dontrun{
+    lung <- load_A549()
+    plot_cells(lung)
+    plot_cells(lung, color_cells_by="log_dose")
+    plot_cells(lung, markers="GDF15")
+  }
+
 }

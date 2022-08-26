@@ -25,6 +25,34 @@
 #' @param verbose Whether to show running information for order_cells
 #'
 #' @return an updated cell_data_set object.
+#'
+#' @examples
+#'   \donttest{
+#'     cell_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_coldata.rds',
+#'                                          package='monocle3'))
+#'     gene_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_rowdata.rds',
+#'                                          package='monocle3'))
+#'     expression_matrix <- readRDS(system.file('extdata',
+#'                                              'worm_embryo/worm_embryo_expression_matrix.rds',
+#'                                              package='monocle3'))
+#'
+#'     cds <- new_cell_data_set(expression_data=expression_matrix,
+#'                              cell_metadata=cell_metadata,
+#'                              gene_metadata=gene_metadata)
+#'
+#'     cds <- preprocess_cds(cds)
+#'     cds <- align_cds(cds, alignment_group =
+#'                      "batch", residual_model_formula_str = "~ bg.300.loading +
+#'                       bg.400.loading + bg.500.1.loading + bg.500.2.loading +
+#'                       bg.r17.loading + bg.b01.loading + bg.b02.loading")
+#'     cds <- reduce_dimension(cds)
+#'     cds <- cluster_cells(cds)
+#'     cds <- learn_graph(cds)
+#'     cds <- order_cells(cds, root_pr_nodes='Y_21')
+#'   }
+#'
 #' @export
 order_cells <- function(cds,
                         reduction_method = "UMAP",
@@ -36,7 +64,7 @@ order_cells <- function(cds,
   assertthat::assert_that(assertthat::are_equal("UMAP", reduction_method),
                           msg = paste("Currently only 'UMAP' is accepted as a",
                                       "reduction_method."))
-  assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
+  assertthat::assert_that(!is.null(SingleCellExperiment::reducedDims(cds)[[reduction_method]]),
                           msg = paste0("No dimensionality reduction for ",
                                       reduction_method, " calculated. ",
                                       "Please run reduce_dimension with ",
@@ -114,9 +142,9 @@ order_cells <- function(cds,
 
 extract_general_graph_ordering <- function(cds,
                                            root_pr_nodes,
-                                           verbose=T,
+                                           verbose=TRUE,
                                            reduction_method) {
-  Z <- t(reducedDims(cds)[[reduction_method]])
+  Z <- t(SingleCellExperiment::reducedDims(cds)[[reduction_method]])
   Y <- cds@principal_graph_aux[[reduction_method]]$dp_mst
   pr_graph <- principal_graph(cds)[[reduction_method]]
 
@@ -131,7 +159,7 @@ extract_general_graph_ordering <- function(cds,
   # 1. identify nearest cells to the selected principal node
   # 2. build a cell-wise graph for each Louvain group
   # 3. run the distance function to assign pseudotime for each cell
-  closest_vertex <- find_nearest_vertex(Y[, root_pr_nodes, drop = F], Z)
+  closest_vertex <- find_nearest_vertex(Y[, root_pr_nodes, drop = FALSE], Z)
   closest_vertex_id <- colnames(cds)[closest_vertex]
 
   cell_wise_graph <-
@@ -159,10 +187,13 @@ extract_general_graph_ordering <- function(cds,
 # Select the roots of the principal graph
 select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
                                     reduction_method) {
+  prin_graph_dim_1 <- prin_graph_dim_2 <- V1 <- V2 <- NULL # no visible binding
+  source_prin_graph_dim_1 <- target_prin_graph_dim_1 <- NULL # no visible binding
+  source_prin_graph_dim_2 <- target_prin_graph_dim_2 <- NULL # no visible binding
   reduced_dim_coords <- t(cds@principal_graph_aux[[reduction_method]]$dp_mst)
 
   ica_space_df <- as.data.frame(reduced_dim_coords)
-  reduced_dims <- as.data.frame(reducedDims(cds)[[reduction_method]])
+  reduced_dims <- as.data.frame(SingleCellExperiment::reducedDims(cds)[[reduction_method]])
 
   #
   # The line (below in this file) that looks like
@@ -214,15 +245,15 @@ select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
   if (use_3d){
     edge_df <- dp_mst %>%
       igraph::as_data_frame() %>%
-      dplyr::select_(source = "from", target = "to") %>%
+      dplyr::select(source = "from", target = "to") %>%
       dplyr::left_join(ica_space_df %>%
-                         dplyr::select_(source="sample_name",
+                         dplyr::select(source="sample_name",
                                     source_prin_graph_dim_1="prin_graph_dim_1",
                                     source_prin_graph_dim_2="prin_graph_dim_2",
                                     source_prin_graph_dim_3="prin_graph_dim_3"),
                        by = "source") %>%
       dplyr::left_join(ica_space_df %>%
-                         dplyr::select_(target="sample_name",
+                         dplyr::select(target="sample_name",
                                     target_prin_graph_dim_1="prin_graph_dim_1",
                                     target_prin_graph_dim_2="prin_graph_dim_2",
                                     target_prin_graph_dim_3="prin_graph_dim_3"),
@@ -230,14 +261,14 @@ select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
   }else{
     edge_df <- dp_mst %>%
       igraph::as_data_frame() %>%
-      dplyr::select_(source = "from", target = "to") %>%
+      dplyr::select(source = "from", target = "to") %>%
       dplyr::left_join(ica_space_df %>%
-                         dplyr::select_(source="sample_name",
+                         dplyr::select(source="sample_name",
                                     source_prin_graph_dim_1="prin_graph_dim_1",
                                     source_prin_graph_dim_2="prin_graph_dim_2"),
                        by = "source") %>%
       dplyr::left_join(ica_space_df %>%
-                         dplyr::select_(target="sample_name",
+                         dplyr::select(target="sample_name",
                                     target_prin_graph_dim_1="prin_graph_dim_1",
                                     target_prin_graph_dim_2="prin_graph_dim_2"),
                        by = "target")

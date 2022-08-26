@@ -9,6 +9,7 @@
 #'   Default is FALSE.
 #'
 #' @return A subset CDS object. If return_list = FALSE, a list of cell names.
+#'
 #' @export
 #'
 choose_cells <- function(cds,
@@ -17,7 +18,7 @@ choose_cells <- function(cds,
                          return_list = FALSE) {
   reduction_method <- match.arg(reduction_method)
   assertthat::assert_that(methods::is(cds, "cell_data_set"))
-  assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
+  assertthat::assert_that(!is.null(SingleCellExperiment::reducedDims(cds)[[reduction_method]]),
                           msg = paste0("No dimensionality reduction for ",
                                        reduction_method, " calculated. ",
                                        "Please run reduce_dimension with ",
@@ -30,7 +31,7 @@ choose_cells <- function(cds,
                                       "interactive mode."))
 
 
-  reduced_dims <- as.data.frame(reducedDims(cds)[[reduction_method]])
+  reduced_dims <- as.data.frame(SingleCellExperiment::reducedDims(cds)[[reduction_method]])
   names(reduced_dims)[1:2] <- c("V1", "V2")
 
   ui <- shiny::fluidPage(
@@ -146,6 +147,8 @@ choose_cells <- function(cds,
 #'
 #' @return A subset CDS object. If return_list = FALSE, a list of cell and
 #'   graph node names.
+#'
+#' @importFrom plyr "."
 #' @export
 #'
 choose_graph_segments <- function(cds,
@@ -159,7 +162,7 @@ choose_graph_segments <- function(cds,
   assertthat::assert_that(assertthat::are_equal("UMAP", reduction_method),
                           msg = paste("Currently only 'UMAP' is accepted as a",
                                       "reduction_method."))
-  assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
+  assertthat::assert_that(!is.null(SingleCellExperiment::reducedDims(cds)[[reduction_method]]),
                           msg = paste0("No dimensionality reduction for ",
                                        reduction_method, " calculated. ",
                                        "Please run reduce_dimension with ",
@@ -217,25 +220,25 @@ choose_graph_segments <- function(cds,
 
     princ_points <- t(cds@principal_graph_aux[[reduction_method]]$dp_mst) %>%
       as.data.frame() %>%
-      dplyr::select_(x = 1, y = 2) %>%
+      dplyr::select(x = 1, y = 2) %>%
       dplyr::mutate(sample_name = rownames(.), sample_state = rownames(.))
     row.names(princ_points) <- princ_points$sample_name
 
     edge_df <- dp_mst %>%
       igraph::as_data_frame() %>%
-      dplyr::select_(source = "from", target = "to") %>%
+      dplyr::select(source = "from", target = "to") %>%
       dplyr::left_join(princ_points %>%
-                         dplyr::select_(source="sample_name",
+                         dplyr::select(source="sample_name",
                                         source_prin_graph_dim_1="x",
                                         source_prin_graph_dim_2="y"),
                        by = "source") %>%
       dplyr::left_join(princ_points %>%
-                         dplyr::select_(target="sample_name",
+                         dplyr::select(target="sample_name",
                                         target_prin_graph_dim_1="x",
                                         target_prin_graph_dim_2="y"),
                        by = "target")
 
-    data_df <- data.frame(reducedDims(cds)[[reduction_method]])
+    data_df <- data.frame(SingleCellExperiment::reducedDims(cds)[[reduction_method]])
 
     colnames(data_df) <- c("data_dim_1", "data_dim_2")
     data_df$sample_name <- row.names(data_df)
@@ -382,7 +385,7 @@ get_principal_path <- function(cds, reduction_method,
     traverse_res <- traverse_graph(dp_mst, starting_cell, end_cell)
     path_cells <- names(traverse_res$shortest_path[[1]])
     if(length(path_cells) == 0) {
-      stop(paste0("Starting and ending nodes are not connected"))
+      stop("Starting and ending nodes are not connected")
     }
 
     subset_principal_nodes <- c(subset_principal_nodes, path_cells)
@@ -407,6 +410,8 @@ traverse_graph <- function(g, starting_cell, end_cells){
 }
 
 
+#' @importFrom plyr "."
+#' @noRd
 plot_principal_graph <- function(cds,
                                  data_df,
                                  princ_points,
@@ -424,7 +429,7 @@ plot_principal_graph <- function(cds,
                                  alpha = 1,
                                  min_expr=0.1,
                                  rasterize=FALSE) {
-
+  x <- y <- chosen <- NULL # no visible binding
   gene_short_name <- NA
   sample_name <- NA
   #sample_state <- colData(cds)$State
@@ -437,22 +442,22 @@ plot_principal_graph <- function(cds,
 
   ica_space_df <- t(cds@principal_graph_aux[[reduction_method]]$dp_mst) %>%
     as.data.frame() %>%
-    dplyr::select_(prin_graph_dim_1 = 1, prin_graph_dim_2 = 2) %>%
+    dplyr::select(prin_graph_dim_1 = 1, prin_graph_dim_2 = 2) %>%
     dplyr::mutate(sample_name = rownames(.), sample_state = rownames(.))
 
   dp_mst <- cds@principal_graph[[reduction_method]]
 
   edge_df <- dp_mst %>%
     igraph::as_data_frame() %>%
-    dplyr::select_(source = "from", target = "to") %>%
+    dplyr::select(source = "from", target = "to") %>%
     dplyr::left_join(ica_space_df %>%
-                       dplyr::select_(
+                       dplyr::select(
                          source="sample_name",
                          source_prin_graph_dim_1="prin_graph_dim_1",
                          source_prin_graph_dim_2="prin_graph_dim_2"),
                      by = "source") %>%
     dplyr::left_join(ica_space_df %>%
-                       dplyr::select_(
+                       dplyr::select(
                          target="sample_name",
                          target_prin_graph_dim_1="prin_graph_dim_1",
                          target_prin_graph_dim_2="prin_graph_dim_2"),
@@ -463,8 +468,8 @@ plot_principal_graph <- function(cds,
   g <- g + geom_point(color=data_df$chosen_cells, size=I(cell_size),
                       na.rm = TRUE, alpha = I(alpha))
 
-  message(paste("cluster_cells() has not been called yet, can't color cells",
-                "by cluster"))
+  message("cluster_cells() has not been called yet, can't color cells ",
+                "by cluster")
 
   g <- g + geom_point(aes(x = x, y = y, color = chosen), data=princ_points) +
     scale_color_manual(values = c("Start" = "green", "End" = "blue",

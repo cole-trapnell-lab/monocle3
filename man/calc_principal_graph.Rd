@@ -12,7 +12,7 @@ calc_principal_graph(
   eps = 1e-05,
   L1.gamma = 0.5,
   L1.sigma = 0.01,
-  verbose = T
+  verbose = TRUE
 )
 }
 \arguments{

@@ -1,0 +1,61 @@
+== load worm L2 data and select neuronal cells
+
+expression_matrix <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_expression.rds"))
+cell_metadata <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_colData.rds"))
+gene_annotation <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_rowData.rds"))
+
+cds <- new_cell_data_set(expression_matrix,
+                         cell_metadata = cell_metadata,
+                         gene_metadata = gene_annotation)
+
+cds <- cds[,colData(cds)$cao_cell_type %in% c("Unclassified neurons", "Touch receptor neurons", "Pharyngeal neurons", "flp-1(+) interneurons", "Canal associated neurons", "Ciliated sensory neurons", "Other interneurons", "Oxygen sensory neurons")]
+
+library(Matrix)
+writeMM(counts(cds),file='worm_l2_expression_matrix.mtx')
+write.table(rownames(cds), file='worm_l2_rownames.txt',row.names=FALSE,col.names=FALSE)
+write.table(colnames(cds), file='worm_l2_colnames.txt',row.names=FALSE,col.names=FALSE)
+
+
+== Seurat variable feature selection
+
+dat <- ReadMtx('worm_l2_expression_matrix.mtx', cells='worm_l2_colnames.txt', features='worm_l2_rownames.txt', cell.column=1, feature.column=1)
+
+wl2 <- CreateSeuratObject(counts = dat, project = "worm_l2", min.cells = 3, min.features = 100)
+
+wl2 <- NormalizeData(wl2)
+wl2 <- FindVariableFeatures(wl2, selection.method = "vst", nfeatures = 10000)
+
+var_fea <- VariableFeatures(wl2)
+
+write.table(var_fea, file='/home/brent/git/monocle3/worm_l2_variable_features.txt', row.names=FALSE, col.names=FALSE)
+
+
+== subset cds on most variable features
+
+var_fea <- read.table('worm_l2_variable_features.txt')
+cds <- cds[rownames(cds) %in% var_fea[[1]][1:5000],]
+
+saveRDS(counts(cds), file='worm_l2_expression_matrix.rds')
+saveRDS(colData(cds), file='worm_l2_coldata.rds')
+saveRDS(rowData(cds), file='worm_l2_rowdata.rds')
+
+
+== load sub-setted worm L2 data
+
+expression_matrix <- readRDS(system.file('extdata', 'worm_l2/worm_l2_expression_matrix.rds', package='monocle3'))
+cell_metadata <- readRDS(system.file('extdata', 'worm_l2/worm_l2_coldata.rds', package='monocle3'))
+gene_metadata <- readRDS(system.file('extdata', 'worm_l2/worm_l2_rowdata.rds', package='monocle3'))
+
+cds <- new_cell_data_set(expression_data=expression_matrix,
+                         cell_metadata=cell_metadata,
+                         gene_metadata=gene_metadata)
+
+
+#'      expression_matrix <- readRDS(system.file('extdata', 'worm_l2/worm_l2_expression_matrix.rds', package='monocle3'))
+#'      cell_metadata <- readRDS(system.file('extdata', 'worm_l2/worm_l2_coldata.rds', package='monocle3'))
+#'      gene_metadata <- readRDS(system.file('extdata', 'worm_l2/worm_l2_rowdata.rds', package='monocle3'))
+#'
+#'      cds <- new_cell_data_set(expression_data=expression_matrix,
+#'                               cell_metadata=cell_metadata,
+#'                               gene_metadata=gene_metadata)
+#'

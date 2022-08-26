@@ -11,6 +11,9 @@
 
 \item{reduction_method}{Reduced dimension to partitions clusters for.}
 }
+\value{
+Partitions.
+}
 \description{
 Method to extract partitions from CDS object
 }

@@ -23,8 +23,8 @@ the genes.}
 
 \item{expression_family}{Specifies the family function used for expression
 responses. Can be one of "quasipoisson", "negbinomial", "poisson",
-"binomial", "gaussian", "zipoisson", or "zinegbinomial". Default is
-"quasipoisson".}
+"binomial", "gaussian", "zipoisson", "zinegbinomial", or "mixed-negbinomial".
+Default is "quasipoisson".}
 
 \item{reduction_method}{Which method to use with clusters() and
 partitions(). Default is "UMAP".}
@@ -54,4 +54,32 @@ a tibble where the rows are genes and columns are
 This function fits a generalized linear model for each gene in a
 cell_data_set. Formulae can be provided to account for additional covariates
 (e.g. day collected, genotype of cells, media conditions, etc).
+}
+\examples{
+  \donttest{
+    cell_metadata <- readRDS(system.file('extdata',
+                                         'worm_embryo/worm_embryo_coldata.rds',
+                                         package='monocle3'))
+    gene_metadata <- readRDS(system.file('extdata',
+                                         'worm_embryo/worm_embryo_rowdata.rds',
+                                         package='monocle3'))
+    expression_matrix <- readRDS(system.file('extdata',
+                                             'worm_embryo/worm_embryo_expression_matrix.rds',
+                                             package='monocle3'))
+   
+    cds <- new_cell_data_set(expression_data=expression_matrix,
+                             cell_metadata=cell_metadata,
+                             gene_metadata=gene_metadata)
+
+    cds <- preprocess_cds(cds, num_dim=50)
+    cds <- align_cds(cds, alignment_group = "batch",
+                     residual_model_formula_str = "~ bg.300.loading + bg.400.loading +
+                     bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading +
+                     bg.b02.loading")
+    cds <- reduce_dimension(cds)
+    ciliated_genes <- c("che-1", "hlh-17", "nhr-6", "dmd-6", "ceh-36", "ham-1")
+    cds_subset <- cds[rowData(cds)$gene_short_name \%in\% ciliated_genes,]
+    gene_fits <- fit_models(cds_subset, model_formula_str = "~embryo.time")
+  }
+
 }

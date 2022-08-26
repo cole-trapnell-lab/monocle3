@@ -38,6 +38,10 @@
 #'   larger than 1.
 #' @param verbose A logic flag to determine whether or not we should print the
 #'   run details.
+#' @param nn_control An optional list of parameters used to make the nearest
+#'  neighbor index. See the set_nn_control help for detailed information.
+#'  The default metric is cosine for reduction_methods PCA, LSI, and Aligned,
+#'  and is euclidean for reduction_methods tSNE and UMAP.
 #' @param ... Additional arguments passed to the leidenbase package.
 #'
 #' @return an updated cell_data_set object, with cluster and partition
@@ -55,9 +59,30 @@
 #' @references Jacob H. Levine and et. al. Data-Driven Phenotypic Dissection of
 #'   AML Reveals Progenitor-like Cells that Correlate with Prognosis.
 #'   Cell, 2015.
+#'
+#' @examples
+#'   \donttest{ 
+#'     cell_metadata <- readRDS(system.file('extdata',
+#'                                          'worm_embryo/worm_embryo_coldata.rds',
+#'                                          package='monocle3'))
+#'     gene_metadata <- readRDS(system.file('extdata',
+#'                              'worm_embryo/worm_embryo_rowdata.rds',
+#'                              package='monocle3'))
+#'     expression_matrix <- readRDS(system.file('extdata',
+#'                                  'worm_embryo/worm_embryo_expression_matrix.rds',
+#'                                  package='monocle3'))
+#'    
+#'     cds <- new_cell_data_set(expression_data=expression_matrix,
+#'                              cell_metadata=cell_metadata,
+#'                              gene_metadata=gene_metadata)
+#'
+#'     cds <- preprocess_cds(cds)
+#'     cds <- reduce_dimension(cds)
+#'     cds <- cluster_cells(cds)
+#'   }
+#'
 #' @useDynLib monocle3, .registration = TRUE
 #' @export
-
 cluster_cells <- function(cds,
                           reduction_method = c("UMAP", "tSNE", "PCA", "LSI", "Aligned"),
                           k = 20,
@@ -66,22 +91,33 @@ cluster_cells <- function(cds,
                           partition_qval = 0.05,
                           weight = FALSE,
                           resolution = NULL,
-                          random_seed = NULL,
-                          verbose = F,
+                          random_seed = 42,
+                          verbose = FALSE,
+                          nn_control = list(),
                           ...) {
-
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "reduction_method must be one of 'UMAP', 'tSNE', 'PCA', 'LSI', 'Aligned'")
   reduction_method <- match.arg(reduction_method)
+
+  assertthat::assert_that(
+    tryCatch(expr = ifelse(match.arg(cluster_method) == "",TRUE, TRUE),
+             error = function(e) FALSE),
+    msg = "cluster_method must be one of 'leiden', 'louvain'")
   cluster_method <- match.arg(cluster_method)
 
   assertthat::assert_that(methods::is(cds, "cell_data_set"))
   assertthat::assert_that(is.character(reduction_method))
-  assertthat::assert_that(assertthat::is.count(k))
   assertthat::assert_that(is.logical(weight))
   assertthat::assert_that(assertthat::is.count(num_iter))
+  assertthat::assert_that(assertthat::is.count(k))
+  assertthat::assert_that(!is.null(colnames(cds)),
+                          msg=message('cluster_cells: the cds is missing cell names, which are required by cluster_cells.'))
 
   if (!is.null(resolution) & cluster_method == "louvain") {
-    message(paste("Resolution can only be used when cluster_method is",
-                  "'leiden'. Switching to leiden clustering."))
+    message("Resolution can only be used when cluster_method is ",
+                  "'leiden'. Switching to leiden clustering.")
     cluster_method <- "leiden"
   }
 
@@ -90,14 +126,63 @@ cluster_cells <- function(cds,
   }
   assertthat::assert_that(is.numeric(partition_qval))
   assertthat::assert_that(is.logical(verbose))
-  assertthat::assert_that(!is.null(reducedDims(cds)[[reduction_method]]),
+  assertthat::assert_that(!is.null(SingleCellExperiment::reducedDims(cds)[[reduction_method]]),
                           msg = paste("No dimensionality reduction for",
                                       reduction_method, "calculated.",
                                       "Please run reduce_dimension with",
                                       "reduction_method =", reduction_method,
                                       "before running cluster_cells"))
 
-  reduced_dim_res <- reducedDims(cds)[[reduction_method]]
+  if(reduction_method == 'tSNE' || reduction_method == 'UMAP')
+    nn_control_default <- get_global_variable('nn_control_annoy_euclidean')
+  else
+    nn_control_default <- get_global_variable('nn_control_annoy_cosine')
+
+  nn_control <- set_nn_control(mode=3,
+                               nn_control=nn_control,
+                               nn_control_default=nn_control_default,
+                               nn_index=NULL,
+                               k=k,
+                               verbose=verbose)
+  nn_method <- nn_control[['method']]
+
+  # The nn index is made on the full SingleCellExperiment::reducedDims(cds)[[reduction_method]]
+  # matrix so use/store the nn index object in the cds. This saves nn index
+  # build time if the index is used later in another function. In that case,
+  # test for nn index consistency.
+  # Later note: the cds may be subsetted in which case the index will be
+  #             invalid and I don't know how to check for a subsetted
+  #             or otherwise modified cds so I comment out the following
+  #             code that tries to use an existing index.
+# Check for consistency between matrix and index before
+# using the following code.
+#   if((nn_method == 'annoy' || nn_method == 'hnsw')) {
+#      if(!check_cds_nn_index_is_current(cds=cds, reduction_method=reduction_method, nn_control=nn_control, verbose=verbose)) {
+#        nn_index <- make_nn_index(subject_matrix=SingleCellExperiment::reducedDims(cds)[[reduction_method]],
+#                                  nn_control=nn_control,
+#                                  verbose=verbose)
+#        cds <- set_cds_nn_index(cds=cds,
+#                                reduction_method=reduction_method,
+#                                nn_index=nn_index,
+#                                verbose=verbose)
+#      }
+#      else {
+#        nn_index <- get_cds_nn_index(cds=cds,
+#                                     reduction_method=reduction_method,
+#                                     nn_method=nn_method,
+#                                     verbose=verbose)
+#      }
+#   }
+#   else
+#   if(nn_method == 'nn2') {
+#     nn_index <- NULL
+#   }
+
+  # Set nn_index to NULL so that louvain_clustering and
+  # leiden_clustering make a new index.
+  nn_index <- NULL
+
+  reduced_dim_res <- SingleCellExperiment::reducedDims(cds)[[reduction_method]]
 
   if(is.null(random_seed)) {
     random_seed <- sample.int(.Machine$integer.max, 1)
@@ -106,13 +191,16 @@ cluster_cells <- function(cds,
     message("Running ", cluster_method, " clustering algorithm ...")
 
   if(cluster_method=='louvain') {
-    cluster_result <- louvain_clustering(data = reduced_dim_res,
-                                         pd = colData(cds),
-                                         k = k,
-                                         weight = weight,
-                                         num_iter = num_iter,
-                                         random_seed = random_seed,
-                                         verbose = verbose, ...)
+    cluster_result <- louvain_clustering(data=reduced_dim_res,
+                                         pd=colData(cds),
+                                         weight=weight,
+                                         nn_index=nn_index,
+                                         k=k,
+                                         nn_control=nn_control,
+                                         louvain_iter=num_iter,
+                                         random_seed=random_seed,
+                                         verbose=verbose)
+
     if (length(unique(cluster_result$optim_res$membership)) > 1) {
       cluster_graph_res <- compute_partitions(cluster_result$g,
                                               cluster_result$optim_res,
@@ -128,16 +216,20 @@ cluster_cells <- function(cds,
     cds@clusters[[reduction_method]] <- list(cluster_result = cluster_result,
                                              partitions = partitions,
                                              clusters = clusters)
-  } else if(cluster_method=='leiden'){
+  }
+  else if(cluster_method=='leiden'){
     cds <- add_citation(cds, "leiden")
-    cluster_result <- leiden_clustering(data = reduced_dim_res,
-                                        pd = colData(cds),
-                                        k = k,
-                                        weight = weight,
-                                        num_iter = num_iter,
-                                        resolution_parameter = resolution,
-                                        random_seed = random_seed,
-                                        verbose = verbose, ...)
+    cluster_result <- leiden_clustering(data=reduced_dim_res,
+                                        pd=colData(cds),
+                                        weight=weight,
+                                        nn_index=nn_index,
+                                        k=k,
+                                        nn_control=nn_control,
+                                        num_iter=num_iter,
+                                        resolution_parameter=resolution,
+                                        random_seed=random_seed,
+                                        verbose=verbose, ...)
+
     if(length(unique(cluster_result$optim_res$membership)) > 1) {
       cluster_graph_res <- compute_partitions(cluster_result$g,
                                               cluster_result$optim_res,
@@ -160,30 +252,29 @@ cluster_cells <- function(cds,
 }
 
 
-louvain_clustering <- function(data,
-                               pd,
-                               k = 20,
-                               weight = F,
-                               louvain_iter = 1,
-                               random_seed = 0L,
-                               verbose = F, ...) {
-  extra_arguments <- list(...)
-  cell_names <- row.names(pd)
-  if(!identical(cell_names, row.names(pd)))
-    stop("Phenotype and row name from the data doesn't match")
-
+cluster_cells_make_graph <- function(data,
+                                     weight,
+                                     cell_names,
+                                     nn_index=NULL,
+                                     k=k,
+                                     nn_control=list(),
+                                     verbose) {
   if (is.data.frame(data))
     data <- as.matrix(data)
   if (!is.matrix(data))
-    stop("Wrong input data, should be a data frame of matrix!")
+    stop("Wrong input data, should be a data frame or matrix!")
+
   if (k < 1) {
     stop("k must be a positive integer!")
-  } else if (k > nrow(data) - 2) {
+  } else
+  if (k > nrow(data) - 2) {
     k <- nrow(data) - 2
-    warning(paste("RANN counts the point itself, k must be smaller than\nthe",
-                  "total number of points - 1 (all other points) - 1",
-                  "(itself)!"))
+    warning("The nearest neighbors includes the point itself, k must be smaller than\nthe ",
+                  "total number of points - 1 (all other points) - 1 ",
+                  "(itself)! ",
+                  "Total number of points is ", nrow(data))
   }
+
   if (verbose) {
     message("Run kNN based graph clustering starts:", "\n",
             "  -Input data of ", nrow(data), " rows and ", ncol(data),
@@ -191,27 +282,84 @@ louvain_clustering <- function(data,
     message("  Finding nearest neighbors...")
   }
 
-  t1 <- system.time(tmp <- RANN::nn2(data, data, k +
-                                       1, searchtype = "standard"))
-  neighborMatrix <- tmp[[1]][, -1]
-  distMatrix <- tmp[[2]][, -1]
-  if (verbose)
-    message("DONE. Run time: ", t1[3], "s\n", " Compute jaccard coefficient between nearest-neighbor sets ..." )
+  nn_method <- nn_control[['method']]
+  if(nn_method == 'nn2') {
+    t1 <- system.time(tmp <- RANN::nn2(data, data, k+1, searchtype = "standard"))
+  }
+  else {
+    if(is.null(nn_index)) {
+      nn_index <- make_nn_index(subject_matrix=data, nn_control=nn_control, verbose=verbose)
+    }
+    tmp <- search_nn_index(query_matrix=data,
+                           nn_index=nn_index,
+                           k=k+1,
+                           nn_control=nn_control,
+                           verbose=verbose)
+    if(nn_method == 'annoy' || nn_method == 'hnsw') {
+      tmp <- swap_nn_row_index_point(nn_res=tmp, verbose=verbose)
+    }
+  }
 
-  t2 <- system.time(links <- jaccard_coeff(neighborMatrix,
-                                           weight))
+  neighborMatrix <- tmp[['nn.idx']][, -1]
+  distMatrix <- tmp[['nn.dists']][, -1]
+
+  if (verbose) {
+    if(nn_method == 'nn2') {
+      message("DONE. Run time: ", t1[3], "s\n")
+    }
+    message("Compute jaccard coefficient between nearest-neighbor sets ..." )
+  }
+
+  t2 <- system.time(links <- jaccard_coeff(neighborMatrix, weight))
+
   if (verbose)
     message("DONE. Run time:", t2[3], "s\n", " Build undirected graph from the weighted links ...")
 
-  links <- links[links[, 1] > 0, ]
+  links <- links[links[, 1] > 0,]
   relations <- as.data.frame(links)
   colnames(relations) <- c("from", "to", "weight")
 
   relations$from <- cell_names[relations$from]
   relations$to <- cell_names[relations$to]
+
   t3 <- system.time(g <- igraph::graph.data.frame(relations, directed = FALSE))
+
   if (verbose)
-    message("DONE ~", t3[3], "s\n Run louvain clustering on the graph ...\n")
+    message("DONE ~", t3[3], "s\n")
+
+  return(list(g=g, distMatrix=distMatrix, relations=relations))
+}
+
+
+# Notes:
+#   o  louvain_clustering does not update the nearest neighbor index
+#      stored in the cds because it does not return a cds.
+louvain_clustering <- function(data,
+                               pd,
+                               weight=FALSE,
+                               nn_index=NULL,
+                               k=20,
+                               nn_control=list(),
+                               louvain_iter=1,
+                               random_seed=0L,
+                               verbose=FALSE) {
+  assertthat::assert_that(assertthat::is.count(k))
+
+  cell_names <- row.names(pd)
+
+  if(!identical(cell_names, row.names(pd)))
+    stop("Phenotype and row name from the data doesn't match")
+
+  graph_result <- cluster_cells_make_graph(data=data,
+                                           weight=weight,
+                                           cell_names=cell_names,
+                                           nn_index,
+                                           k=k, 
+                                           nn_control=nn_control,
+                                           verbose=verbose)
+
+  if(verbose)
+    message("  Run louvain clustering ...")
 
   t_start <- Sys.time()
   Qp <- -1
@@ -222,12 +370,13 @@ louvain_clustering <- function(data,
     random_seed <- NULL
   }
 
+  if(louvain_iter < 1) warning("bad loop: louvain_iter is < 1")
   for (iter in 1:louvain_iter) {
     if(verbose) {
       cat("Running louvain iteration ", iter, "...\n")
     }
 
-    Q <- igraph::cluster_louvain(g)
+    Q <- igraph::cluster_louvain(graph_result[['g']])
 
     if (is.null(optim_res)) {
       Qp <- max(Q$modularity)
@@ -252,7 +401,7 @@ louvain_clustering <- function(data,
         length(unique(igraph::membership(optim_res))), "\n")
   }
 
-  if(igraph::vcount(g) < 3000) {
+  if(igraph::vcount(graph_result[['g']]) < 3000) {
     coord <- NULL
     edge_links <- NULL
   } else {
@@ -260,20 +409,29 @@ louvain_clustering <- function(data,
     edge_links <- NULL
   }
 
-  igraph::V(g)$names <- as.character(igraph::V(g))
-  return(list(g = g, relations = relations, distMatrix = distMatrix,
-              coord = coord, edge_links = edge_links, optim_res = optim_res))
+  igraph::V(graph_result[['g']])$names <- as.character(igraph::V(graph_result[['g']]))
+  return(list(g=graph_result[['g']],
+              relations=graph_result[['relations']],
+              distMatrix=graph_result[['distMatrix']],
+              coord = coord,
+              edge_links=edge_links,
+              optim_res=optim_res))
 }
 
 
+# Notes:
+#   o  leiden_clustering does not update the nearest neighbor index
+#      stored in the cds because it does not return a cds.
 leiden_clustering <- function(data,
                               pd,
-                              k = 20,
-                              weight = NULL,
-                              num_iter = 2,
-                              resolution_parameter = 0.0001,
-                              random_seed = NULL,
-                              verbose = FALSE, ...) {
+                              weight=NULL,
+                              nn_index=NULL,
+                              k=20,
+                              nn_control=list(),
+                              num_iter=2,
+                              resolution_parameter=0.0001,
+                              random_seed=NULL,
+                              verbose=FALSE, ...) {
   extra_arguments <- list(...)
   if( 'partition_type' %in% names( extra_arguments ) )
     partition_type <- extra_arguments[['partition_type']]
@@ -293,6 +451,8 @@ leiden_clustering <- function(data,
     node_sizes <- NULL
 
   # Check input parameters.
+  assertthat::assert_that(assertthat::is.count(k))
+
   # The following vertex partitions have no resolution parameter.
   if( partition_type %in% c('ModularityVertexPartition','SignificanceVertexPartition','SurpriseVertexPartition') )
   {
@@ -309,49 +469,14 @@ leiden_clustering <- function(data,
   cell_names <- row.names(pd)
   if(!identical(cell_names, row.names(pd)))
     stop("Phenotype and row name from the data don't match")
-  if (is.data.frame(data))
-    data <- as.matrix(data)
-  if (!is.matrix(data))
-    stop("Wrong input data, should be a data frame of matrix!")
-  if (k < 1) {
-    stop("k must be a positive integer!")
-  } else if (k > nrow(data) - 2) {
-    k <- nrow(data) - 2
-    warning(paste("RANN counts the point itself, k must be smaller than\nthe",
-                  "total number of points - 1 (all other points) - 1",
-                  "(itself)!"))
-  }
 
-  # Start processing.
-  if (verbose) {
-    message("Run kNN based graph clustering starts:", "\n",
-            "  -Input data of ", nrow(data), " rows and ", ncol(data),
-            " columns", "\n", "  -k is set to ", k)
-    message("  Finding nearest neighbors...")
-  }
-  t1 <- system.time(tmp <- RANN::nn2(data, data, k + 1, searchtype = "standard"))
-  neighborMatrix <- tmp[[1]][, -1]
-  distMatrix <- tmp[[2]][, -1]
-  if (verbose)
-    message("    DONE. Run time: ", t1[3], "s")
-
-  if(verbose)
-    message("  Compute jaccard coefficient between nearest-neighbor sets ...")
-  t2 <- system.time(links <- jaccard_coeff(neighborMatrix,
-                                           weight))
-  if (verbose)
-    message("    DONE. Run time: ", t2[3], "s")
-
-  if(verbose)
-    message("  Build undirected graph from the weighted links ...")
-  links <- links[links[, 1] > 0, ]
-  relations <- as.data.frame(links)
-  colnames(relations) <- c("from", "to", "weight")
-  relations$from <- cell_names[relations$from]
-  relations$to <- cell_names[relations$to]
-  t3 <- system.time(g <- igraph::graph.data.frame(relations, directed = FALSE))
-  if (verbose)
-    message("    DONE. Run time: ", t3[3], "s")
+  graph_result <- cluster_cells_make_graph(data=data,
+                                           weight=weight, 
+                                           cell_names=cell_names,
+                                           nn_index,
+                                           k=k,
+                                           nn_control=nn_control,
+                                           verbose=verbose)
 
   if(verbose)
     message("  Run leiden clustering ...")
@@ -373,9 +498,10 @@ leiden_clustering <- function(data,
   best_resolution_parameter <- 'No resolution'
   # These three vertex partition types have a resolution parameter
   # so scan parameter range, if given.
+  if(length(resolution_parameter) < 1) warning("bad loop: length(resolution_parameter) < 1")
   for(i in 1:length(resolution_parameter)) {
     cur_resolution_parameter <- resolution_parameter[i]
-    cluster_result <- leidenbase::leiden_find_partition( g,
+    cluster_result <- leidenbase::leiden_find_partition( graph_result[['g']],
                                                          partition_type = partition_type,
                                                          initial_membership = initial_membership,
                                                          edge_weights = edge_weights,
@@ -421,7 +547,8 @@ leiden_clustering <- function(data,
     message('  Clustering statistics')
     selected <- vector( mode='character',
                         length = length( resolution_parameter ) )
-    for( irespar in 1:length( resolution_parameter ) )
+    if(length(resolution_parameter) < 1 ) warning("bad loop: length(resolution_parameter) < 1")
+    for(irespar in 1:length(resolution_parameter))
     {
       if( identical( table_results[['resolution_parameter']][irespar],
                      best_resolution_parameter ) )
@@ -446,7 +573,7 @@ leiden_clustering <- function(data,
             max(best_result[['membership']]))
   }
 
-  if(igraph::vcount(g) < 3000) {
+  if(igraph::vcount(graph_result[['g']]) < 3000) {
     coord <- NULL
     edge_links <- NULL
   } else {
@@ -454,13 +581,17 @@ leiden_clustering <- function(data,
     edge_links <- NULL
   }
 
-  igraph::V(g)$names <- as.character(igraph::V(g))
+  igraph::V(graph_result[['g']])$names <- as.character(igraph::V(graph_result[['g']]))
   out_result <- list(membership = best_result[['membership']],
                      modularity = best_result[['modularity']] )
   names(out_result$membership) = cell_names
 
-  return(list(g = g, relations = relations, distMatrix = distMatrix,
-              coord = coord, edge_links = edge_links, optim_res = out_result))
+  return(list(g=graph_result[['g']],
+              relations=graph_result[['relations']],
+              distMatrix=graph_result[['distMatrix']],
+              coord=coord,
+              edge_links=edge_links,
+              optim_res=out_result))
 }
 
 
@@ -494,8 +625,9 @@ compute_partitions <- function(g,
   sig_links[cluster_mat > qval_thresh] = 0
   diag(sig_links) <- 0
 
-  cluster_g <- igraph::graph_from_adjacency_matrix(sig_links, weighted = T,
+  cluster_g <- igraph::graph_from_adjacency_matrix(sig_links, weighted = TRUE,
                                                    mode = 'undirected')
 
   list(cluster_g = cluster_g, num_links = num_links, cluster_mat = cluster_mat)
 }
+

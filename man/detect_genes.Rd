@@ -23,6 +23,6 @@ num_genes_expressed in the rowData and colData tables respectively.
 }
 \examples{
 \dontrun{
-cds <- detect_genes(cds, min_expr=0.1)
+   cds <- detect_genes(cds, min_expr=0.1)
 }
 }

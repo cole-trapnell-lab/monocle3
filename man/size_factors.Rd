@@ -16,7 +16,9 @@ An updated cell_data_set object
 A wrapper around \code{colData(cds)$Size_Factor}
 }
 \examples{
-\dontrun{
-size_factors(cds)
-}
+  \donttest{
+    cds <- load_a549()
+    size_factors(cds)
+  }
+
 }

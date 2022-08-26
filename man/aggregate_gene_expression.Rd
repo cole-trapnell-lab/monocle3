@@ -14,7 +14,9 @@ aggregate_gene_expression(
   scale_agg_values = TRUE,
   max_agg_value = 3,
   min_agg_value = -3,
-  exclude.na = TRUE
+  exclude.na = TRUE,
+  gene_agg_fun = "sum",
+  cell_agg_fun = "mean"
 )
 }
 \arguments{
@@ -45,6 +47,11 @@ resulting Z scores can take. Lower values are capped at this threshold.}
 
 \item{exclude.na}{Logical indicating whether or not to exclude NA values
 from the aggregated matrix.}
+
+\item{gene_agg_fun}{Function used for gene aggregation. This
+can be either sum or mean. Default is sum.}
+
+\item{cell_agg_fun}{Function used for cell aggregation. Default is mean.}
 }
 \value{
 A matrix of dimension NxM, where N is the number of gene groups and
@@ -53,4 +60,73 @@ M is the number of cell groups.
 \description{
 Creates a matrix with aggregated expression values for arbitrary groups of
 genes
+}
+\examples{
+  \dontrun{
+     expression_matrix <- readRDS(system.file('extdata',
+                                               'worm_l2/worm_l2_expression_matrix.rds',
+                                               package='monocle3'))
+     cell_metadata <- readRDS(system.file('extdata',
+                              'worm_l2/worm_l2_coldata.rds',
+                               package='monocle3'))
+     gene_metadata <- readRDS(system.file('extdata',
+                              'worm_l2/worm_l2_rowdata.rds',
+                              package='monocle3'))
+
+     cds <- new_cell_data_set(expression_data=expression_matrix,
+                              cell_metadata=cell_metadata,
+                              gene_metadata=gene_metadata)
+
+    cds <- preprocess_cds(cds, num_dim = 100)
+    cds <- reduce_dimension(cds)
+    cds <- cluster_cells(cds, resolution=1e-5)
+    colData(cds)$assigned_cell_type <- as.character(partitions(cds))
+    colData(cds)$assigned_cell_type <- dplyr::recode(colData(cds)$assigned_cell_type,
+                                                    "1"="Germline",
+                                                    "2"="Body wall muscle",
+                                                    "3"="Unclassified neurons",
+                                                    "4"="Vulval precursors",
+                                                    "5"="Failed QC",
+                                                    "6"="Seam cells",
+                                                    "7"="Pharyngeal epithelia",
+                                                    "8"="Coelomocytes",
+                                                    "9"="Am/PH sheath cells",
+                                                    "10"="Failed QC",
+                                                    "11"="Touch receptor neurons",
+                                                    "12"="Intestinal/rectal muscle",
+                                                    "13"="Pharyngeal neurons",
+                                                    "14"="NA",
+                                                    "15"="flp-1(+) interneurons",
+                                                    "16"="Canal associated neurons",
+                                                    "17"="Ciliated sensory neurons",
+                                                    "18"="Other interneurons",
+                                                    "19"="Pharyngeal gland",
+                                                    "20"="Failed QC",
+                                                    "21"="Ciliated sensory neurons",
+                                                    "22"="Oxygen sensory neurons",
+                                                    "23"="Ciliated sensory neurons",
+                                                    "24"="Ciliated sensory neurons",
+                                                    "25"="Ciliated sensory neurons",
+                                                    "26"="Ciliated sensory neurons",
+                                                    "27"="Oxygen sensory neurons",
+                                                    "28"="Ciliated sensory neurons",
+                                                    "29"="Unclassified neurons",
+                                                    "30"="Socket cells",
+                                                    "31"="Failed QC",
+                                                    "32"="Pharyngeal gland",
+                                                    "33"="Ciliated sensory neurons",
+                                                    "34"="Ciliated sensory neurons",
+                                                    "35"="Ciliated sensory neurons",
+                                                    "36"="Failed QC",
+                                                    "37"="Ciliated sensory neurons",
+                                                    "38"="Pharyngeal muscle")
+    neurons_cds <- cds[,grepl("neurons", colData(cds)$assigned_cell_type, ignore.case=TRUE)]
+    pr_graph_test_res <- graph_test(neurons_cds, neighbor_graph="knn")
+    pr_deg_ids <- row.names(subset(pr_graph_test_res, q_value < 0.05))
+    gene_module_df <- find_gene_modules(neurons_cds[pr_deg_ids,], resolution=1e-2)
+    cell_group_df <- tibble::tibble(cell=row.names(colData(neurons_cds)),
+                                    cell_group=partitions(cds)[colnames(neurons_cds)])
+    agg_mat <- aggregate_gene_expression(neurons_cds, gene_module_df, cell_group_df)
+  }
+
 }

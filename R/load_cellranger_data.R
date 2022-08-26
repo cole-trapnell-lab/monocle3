@@ -31,42 +31,43 @@ get_genome_in_matrix_path <- function(matrix_path, genome=NULL) {
 #' or CRISPR features), only the Gene Expression data is returned.
 #'
 #' @details
-#' *  the \emph{pipestance_path} argument takes the name of a Cell Ranger
+#' *  the pipestance_path argument takes the name of a Cell Ranger
 #'     output directory, in which it looks for the required data files,
-#'     for example, \emph{pipestance_path=10x_data}
-#' *  for Cell Ranger version 2 data, \emph{load_cellranger_data} expects to
-#'    find the required files \emph{barcodes.tsv}, \emph{genes.tsv}, and
-#'    \emph{matrix.mtx}
-#'    in the directories as
-#'      -  \emph{10x_data/outs/filtered_gene_bc_matrices/<genome>/barcodes.tsv}
-#'      -  \emph{10x_data/outs/filtered_gene_bc_matrices/<genome>/genes.tsv}
-#'      -  \emph{10x_data/outs/filtered_gene_bc_matrices/<genome>/matrix.mtx}
+#'     for example, pipestance_path=10x_data
+#' *  for Cell Ranger version 2 data, load_cellranger_data expects to
+#'    find the required files barcodes.tsv, genes.tsv, and
+#'    matrix.mtx in the directories as
+#'      -  10x_data/outs/filtered_gene_bc_matrices/<genome>/barcodes.tsv
+#'      -  10x_data/outs/filtered_gene_bc_matrices/<genome>/genes.tsv
+#'      -  10x_data/outs/filtered_gene_bc_matrices/<genome>/matrix.mtx
 #'
-#'    where <genome> is the name of a genome. \emph{load_cellranger_data}
-#'    expects to find either a single \emph{genome} directory in
-#'     \emph{10x_data/outs/filtered_gene_bc_matrices} or a \emph{genome}
-#'    directory with the name given with the \emph{genome} argument.
-#' *  for Cell Ranger version 3 data, \emph{load_cellranger_data} expects to
-#'    find the required files \emph{barcodes.tsv.gz}, \emph{features.tsv.gz},
-#'    and \emph{matrix.mtx.gz} in the directories as
-#'      -  \emph{10x_data/outs/filtered_feature_bc_matrix/barcodes.tsv.gz}
-#'      -  \emph{10x_data/outs/filtered_feature_bc_matrix/features.tsv.gz}
-#'      -  \emph{10x_data/outs/filtered_feature_bc_matrix/matrix.mtx.gz}
+#'    where <genome> is the name of a genome. load_cellranger_data
+#'    expects to find either a single genome directory in
+#'     10x_data/outs/filtered_gene_bc_matrices or a genome
+#'    directory with the name given with the genome argument.
+#' *  for Cell Ranger version 3 data, load_cellranger_data expects to
+#'    find the required files barcodes.tsv.gz, features.tsv.gz,
+#'    and matrix.mtx.gz in the directories as
+#'      -  10x_data/outs/filtered_feature_bc_matrix/barcodes.tsv.gz
+#'      -  10x_data/outs/filtered_feature_bc_matrix/features.tsv.gz
+#'      -  10x_data/outs/filtered_feature_bc_matrix/matrix.mtx.gz
 #'
 #' * if any of the files is not in the expected directory,
-#'   \emph{load_cellranger_data} will terminate with an error
+#'   load_cellranger_data will terminate with an error
 #'
 #' @param pipestance_path Path to the output directory produced by Cell Ranger
 #' @param genome The desired genome (e.g., 'hg19' or 'mm10')
 #' @param barcode_filtered Load only the cell-containing barcodes
 #' @param umi_cutoff Numeric, desired cutoff to include a cell. Default is 100.
 #' @return a new cell_data_set object
-#' @export
+#'
 #' @examples
-#' \dontrun{
-#' # Load from a Cell Ranger output directory
-#' gene_bc_matrix <- load_cellranger_data("/home/user/cellranger_output")
-#' }
+#'   \donttest{
+#'     cell_ranger_data <- system.file("extdata", "cell_ranger_3", package = "monocle3")
+#'     gene_bc_matrix <- load_cellranger_data(cell_ranger_data)
+#'   }
+#'
+#' @export
 load_cellranger_data <- function(pipestance_path=NULL, genome=NULL,
                                  barcode_filtered=TRUE, umi_cutoff = 100) {
   # check for correct directory structure
@@ -124,8 +125,8 @@ load_cellranger_data <- function(pipestance_path=NULL, genome=NULL,
   # Duplicate row names not allowed
   feature.names$V1 = make.unique(feature.names$V1)
   if(dim(data)[1] != length(feature.names[,1])) {
-    stop(sprintf(paste("Mismatch dimension between gene file: \n\t %s\n and",
-                       "matrix file: \n\t %s\n"), features.loc, matrix.loc))
+    stop("Mismatch dimension between gene file: \n\t", features.loc, "\n and ",
+                       "matrix file: \n\t", matrix.loc)
   }
   if(v3d) {
     # We will only load GEX data for the relevant genome
@@ -138,9 +139,9 @@ load_cellranger_data <- function(pipestance_path=NULL, genome=NULL,
       if(any(gfilter)) {
         allowed = allowed & grepl(genome, feature.names$V1)
       } else {
-        message(paste("Data does not appear to be from a multi-genome sample,",
-                      "simply returning all gene feature data without",
-                      "filtering by genome."))
+        message("Data does not appear to be from a multi-genome sample, ",
+                "simply returning all gene feature data without ",
+                "filtering by genome.")
       }
 
     }
@@ -153,8 +154,8 @@ load_cellranger_data <- function(pipestance_path=NULL, genome=NULL,
 
   barcodes <- utils::read.delim(barcode.loc, stringsAsFactors=FALSE, header=FALSE)
   if (dim(data)[2] != length(barcodes[,1])) {
-    stop(sprintf(paste("Mismatch dimension between barcode file: \n\t %s\n",
-                       "and matrix file: \n\t %s\n"), barcode.loc,matrix.loc))
+    stop("Mismatch dimension between barcode file: \n\t", barcode.loc, "\n and ",
+                       "matrix file: \n\t", matrix.loc)
   }
   barcodes$V1 = make.unique(barcodes$V1)
   colnames(data) = barcodes[,1]
