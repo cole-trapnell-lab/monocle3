@@ -373,8 +373,9 @@ sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
             function to control that algorithm's convergence tolerance. See
             `?prcomp_irlba` for help.")
   orig_x <- x
-  if (methods::is(x, "DelayedMatrix"))
+  if (!methods::is(x, "DelayedMatrix")) {
     x = DelayedArray::DelayedArray(x)
+  }
 
   args <- list(A=orig_x, nv=n)
   if (is.logical(center))
