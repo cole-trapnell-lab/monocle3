@@ -340,7 +340,7 @@ test_that("fit_models() can handle cluster in model formulae",{
                                  expression_family = "quasipoisson")
   expect_equal(pos_ctrl_gene_fit$status[[1]], "OK")
   pos_ctrl_coefs = coefficient_table(pos_ctrl_gene_fit)
-  expect_equal(pos_ctrl_coefs$estimate[2], -0.925, tolerance=1e-2)
+  expect_equal(pos_ctrl_coefs$estimate[2], -0.703, tolerance=1e-2)
 })
 
 
