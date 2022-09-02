@@ -648,7 +648,7 @@ prune_tree <- function(stree_ori, stree_loop_closure,
 
   mst_traversal <- igraph::graph.dfs(stree_ori,
                                      root = root_cell,
-                                     neimode = "all",
+                                     mode = "all",
                                      unreachable=FALSE,
                                      father=TRUE)
   mst_traversal$father <- as.numeric(mst_traversal$father)
