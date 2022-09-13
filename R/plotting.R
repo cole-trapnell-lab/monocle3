@@ -1626,12 +1626,12 @@ plot_genes_by_group <- function(cds,
   row.names(res) <- group_id
 
   if(major_axis == 1){
-    ExpVal = ExpVal %>% dplyr::group_by(Gene) %>% mutate(max_value = max(mean),
-                                                         is_max = max_value == mean) %>% ungroup()
+    ExpVal = ExpVal %>% dplyr::group_by(Gene) %>% dplyr::mutate(max_value = max(mean),
+                                                         is_max = max_value == mean) %>% dplyr::ungroup()
   }
   else{
-    ExpVal = ExpVal %>% dplyr::group_by(Gene) %>% mutate(max_value = max(percentage),
-                                                         is_max = max_value == percentage) %>% ungroup()
+    ExpVal = ExpVal %>% dplyr::group_by(Gene) %>% dplyr::mutate(max_value = max(percentage),
+                                                         is_max = max_value == percentage) %>% dplyr::ungroup()
   }
 
   ExpVal = ExpVal %>% dplyr::mutate(group_color_class = ifelse(is_max, Group, NA_character_))
@@ -1662,13 +1662,13 @@ plot_genes_by_group <- function(cds,
                            levels = row.names(res)[ph$tree_row$order])
 
   } else if(ordering_type == 'maximal_on_diag'){
-    group_ordering_df = ExpVal %>% filter(is_max) %>% dplyr::group_by(Group) %>% dplyr::summarize(num_genes = n())
-    ExpVal = dplyr::left_join(ExpVal, group_ordering_df, by=c("Group")) %>% arrange(desc(num_genes), desc(max_value))
+    group_ordering_df = ExpVal %>% dplyr::filter(is_max) %>% dplyr::group_by(Group) %>% dplyr::summarize(num_genes = n())
+    ExpVal = dplyr::left_join(ExpVal, group_ordering_df, by=c("Group")) %>% dplyr::arrange(dplyr::desc(num_genes), dplyr::desc(max_value))
 
     ExpVal$Group <- factor(ExpVal$Group,
-                           levels = ExpVal %>% select(Group) %>% distinct() %>% pull(Group))
+                           levels = ExpVal %>% dplyr::select(Group) %>% dplyr::distinct() %>% dplyr::pull(Group))
 
-    gene_ordering = ExpVal %>% filter(is_max) %>% dplyr::group_by(Gene) %>% slice_head(n=1) %>% arrange(Group, desc(max_value)) %>% pull(Gene)
+    gene_ordering = ExpVal %>% dplyr::filter(is_max) %>% dplyr::group_by(Gene) %>% dplyr::slice_head(n=1) %>% dplyr::arrange(Group, dplyr::desc(max_value)) %>% dplyr::pull(Gene)
     ExpVal$Gene <- factor(ExpVal$Gene,
                           levels = gene_ordering)
 
