@@ -554,7 +554,7 @@ make_nn_index <- function(subject_matrix, nn_control=list(), verbose=FALSE) {
   num_row <- nrow(subject_matrix)
   num_col <- ncol(subject_matrix)
   if(!is.null(rownames(subject_matrix)))
-    checksum_rownames <- digest::digest(rownames(subject_matrix))
+    checksum_rownames <- digest::digest(sort(rownames(subject_matrix)))
   else
     checksum_rownames <- NA_character_
 
