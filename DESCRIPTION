@@ -108,7 +108,6 @@ Imports:
     uwot (>= 0.1.8),
     terra (>= 1.4-17),
     tibble (>= 2.1.1),
-    tictoc,
     tidyr (>= 0.8.3),
     viridis (>= 0.5.1)
 Suggests: 

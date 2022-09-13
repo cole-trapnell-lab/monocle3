@@ -72,6 +72,8 @@ get_global_variable <- function(variable_name=NULL) {
   set_global_variable('transform_models_version', 1)
   set_global_variable('monocle3_annoy_index_version', 2)
   set_global_variable('monocle3_hnsw_index_version', 1)
+  set_global_variable('monocle3_timer_t0', 0)
+  set_global_variable('monocle3_timer_msg', "")
 
   # Default nn_control list for functions that do not need
   # an index, which is all but the label transfer functions.

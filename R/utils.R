@@ -902,3 +902,26 @@ tasks_per_block <- function(ntask=NULL, nblock=NULL) {
   return(tasks_block)
 }
 
+
+#
+# Initialize Monocle3 timer.
+#
+tick <- function(msg="") {
+  set_global_variable('monocle3_timer_t0', Sys.time())
+  set_global_variable('monocle3_timer_msg', msg)
+}
+
+#
+# Return time elapsed since call to tick.
+#
+tock <- function() {
+  t1 <- Sys.time()
+  t0 <- get_global_variable('monocle3_timer_t0')
+  msg <- get_global_variable('monocle3_timer_msg')
+  if(length(msg) > 0) {
+    message(sprintf('%s %.2f seconds.',msg, t1 - t0))
+  }
+  else {
+    return(t1 - t0)
+  }
+}
