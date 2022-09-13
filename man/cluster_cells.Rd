@@ -82,7 +82,7 @@ using a kNN pruning method. Cluster assignments can be accessed using the
 accessed using the \code{\link{partitions}} function.
 }
 \examples{
-  \donttest{ 
+  \donttest{
     cell_metadata <- readRDS(system.file('extdata',
                                          'worm_embryo/worm_embryo_coldata.rds',
                                          package='monocle3'))
@@ -92,7 +92,7 @@ accessed using the \code{\link{partitions}} function.
     expression_matrix <- readRDS(system.file('extdata',
                                  'worm_embryo/worm_embryo_expression_matrix.rds',
                                  package='monocle3'))
-   
+
     cds <- new_cell_data_set(expression_data=expression_matrix,
                              cell_metadata=cell_metadata,
                              gene_metadata=gene_metadata)

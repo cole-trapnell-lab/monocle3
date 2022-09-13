@@ -1510,6 +1510,7 @@ plot_percent_cells_positive <- function(cds_subset,
 #'   heatmap. Values larger than this are set to the max.
 #' @param scale_min The minimum value (in standard deviations) to show in the
 #'   heatmap. Values smaller than this are set to the min.
+#' @param color_by_group Color cells by the group to which they belong.
 #'
 #' @return a ggplot2 plot object
 #' @import ggplot2

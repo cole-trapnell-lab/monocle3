@@ -18,7 +18,8 @@ plot_genes_by_group(
   flip_percentage_mean = FALSE,
   pseudocount = 1,
   scale_max = 3,
-  scale_min = -3
+  scale_min = -3,
+  color_by_group = FALSE
 )
 }
 \arguments{
@@ -65,6 +66,8 @@ heatmap. Values larger than this are set to the max.}
 
 \item{scale_min}{The minimum value (in standard deviations) to show in the
 heatmap. Values smaller than this are set to the min.}
+
+\item{color_by_group}{Color cells by the group to which they belong.}
 }
 \value{
 a ggplot2 plot object
