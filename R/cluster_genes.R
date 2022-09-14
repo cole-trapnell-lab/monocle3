@@ -404,7 +404,7 @@ aggregate_gene_expression <- function(cds,
     cell_group_df <- as.data.frame(cell_group_df)
     cell_group_df <- cell_group_df[cell_group_df[,1] %in% row.names(pData(cds)),,
                                   drop=FALSE]
-    agg_mat <- agg_mat[,cell_group_df[,1],drop=F]
+    agg_mat <- agg_mat[,cell_group_df[,1],drop=FALSE]
     agg_mat <- my.aggregate.Matrix(Matrix::t(agg_mat),
                                   as.factor(cell_group_df[,2]),
                                   fun=cell_agg_fun)

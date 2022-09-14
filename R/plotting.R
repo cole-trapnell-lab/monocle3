@@ -389,6 +389,7 @@ plot_cells_3d <- function(cds,
 #'     plot_cells(lung, markers="GDF15")
 #'   }
 #'
+#' @importFrom dplyr n
 #' @export
 plot_cells <- function(cds,
                        x=1,
