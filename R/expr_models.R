@@ -132,8 +132,7 @@ clean_model_object = function(model) {
   } else if (class(model)[1] == "glmerMod") {
     model = clean_glmerMod_model_object(model)
   } else {
-    model = NA
-    #stop("Unrecognized model class")
+    stop("Unrecognized model class")
   }
 }
 
