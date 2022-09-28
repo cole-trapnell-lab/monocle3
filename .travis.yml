@@ -15,7 +15,7 @@ cache: packages
 sudo: required
 warnings_are_errors: true
 os: linux
-dist: jammy
+dist: focal
 language: r
 before_install:
  - sudo apt-get install -y libnlopt-dev
