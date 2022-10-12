@@ -1,5 +1,15 @@
 context("test-order_cells")
 
+#
+# Note: the Travis test near line 147 locks up the test when there is no
+#       window system because the test tries to open a (shiny) window.
+#       The test is
+#         expect_error(order_cells(cds), paste("When not in interactive mode, either",
+#                      "root_pr_nodes or root_cells must be",
+#                      "provided."))
+#
+
+
 skip_not_travis <- function ()
 {
   if (identical(Sys.getenv("TRAVIS"), "true")) {
@@ -145,6 +155,7 @@ test_that("order_cells error messages work", {
   expect_error(order_cells(cds, root_cells = c("G07_B02_RT_587"), root_pr_nodes = c("Y_1")), "Please specify either root_pr_nodes or root_cells, not both.")
   expect_error(order_cells(cds, root_cells = c("hannah")), "All provided root_cells must be present in the cell data set.")
   expect_error(order_cells(cds, root_pr_nodes = c("hannah")), "All provided root_pr_nodes must be present in the principal graph.")
+# Note: the following test locks up the testthat run on a Docker container because it tries to open a Window.
   expect_error(order_cells(cds), paste("When not in interactive mode, either",
                                        "root_pr_nodes or root_cells must be",
                                        "provided."))
