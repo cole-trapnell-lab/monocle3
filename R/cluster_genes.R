@@ -221,7 +221,11 @@ find_gene_modules <- function(cds,
   return(gene_module_df)
 }
 
-#' A function to aggregate columns within a matrix.
+
+
+
+
+#' Aggregate columns within a sparse matrix.
 #' @noRd
 my.aggregate.Matrix = function (x, groupings = NULL, form = NULL, fun = "sum", ...)
 {
@@ -233,7 +237,7 @@ my.aggregate.Matrix = function (x, groupings = NULL, form = NULL, fun = "sum", .
   if (is.null(form))
     form <- stats::as.formula("~0+.")
   form <- stats::as.formula(form)
-  mapping <- Matrix.utils::dMcast(groupings2, form)
+  mapping <- my.dMcast(groupings2, form)
   colnames(mapping) <- substring(colnames(mapping), 2)
   result <- Matrix::t(mapping) %*% x
   if (fun == "mean")
@@ -242,6 +246,106 @@ my.aggregate.Matrix = function (x, groupings = NULL, form = NULL, fun = "sum", .
                                                              groupings2$A))
   return(result)
 }
+
+
+# my.dMcast comes largely from the Matrix.utils::dMcast() function, which has
+# been archived on CRAN because it appears to be unmaintained and it throws
+# regression test errors.
+#' Reshape data frame to a sparse matrix.
+#' @noRd
+my.dMcast <- function(data,formula,fun.aggregate='sum',value.var=NULL,as.factors=FALSE,factor.nas=TRUE,drop.unused.levels=TRUE)
+{
+  # values is a factor that multiplies the value called result, near the end of the function.
+  # The multiplication method appears to be substantially more than a arithmetic multiplication.
+  # The documentation for value.var says
+  # @param value.var name of column that stores values to be aggregated numerics.
+  values<-1
+  if(!is.null(value.var))
+    values<-data[,value.var]
+
+  # all of the variables in the formula that relate to the data
+  # terms returns a 'terms.object'
+  # the terms.object help includes
+  # Description: An object of class ‘terms’ holds information about
+  #   a model. Usually the model was specified in terms of a ‘formula’
+  #   and that formula was used to determine the terms object.
+  # Value: The object itself is simply the formula supplied to the call
+  # of ‘terms.formula’. The object has a number of attributes and they
+  # are used to construct the model frame: factors, term.labels,
+  # variables, intercept, order, response, offset, specials,
+  # dataClasses, and predvars.
+  alltms<-terms(formula,data=data)
+
+  # get the name of the response variable that was givin in the
+  # formula
+  response<-rownames(attr(alltms,'factors'))[attr(alltms,'response')]
+
+  # get the names of the explanatory variables
+  tm<-attr(alltms,"term.labels")
+
+  interactionsIndex<-grep(':',tm)
+  interactions<-tm[interactionsIndex]
+  simple<-setdiff(tm,interactions)
+  i2<-strsplit(interactions,':')
+  newterms<-unlist(lapply(i2,function (x) paste("paste(",paste(x,collapse=','),",","sep='_'",")")))
+  newterms<-c(simple,newterms)
+  newformula<-as.formula(paste('~0+',paste(newterms,collapse='+')))
+
+  # get a character vector of all (variable) names in the
+  # original formula
+  allvars<-all.vars(alltms)
+
+  # reshape the input data frame into a 'long' form that
+  # has columns for the variables given in the original
+  # formula
+  data<-data[,c(allvars),drop=FALSE]
+  if(as.factors)
+    data<-data.frame(lapply(data,as.factor))
+  characters<-unlist(lapply(data,is.character))
+  data[,characters]<-lapply(data[,characters,drop=FALSE],as.factor)
+
+  # make boolean vector describing whether or not the column is a factor (is this a correct description?)
+  factors<-unlist(lapply(data,is.factor))
+
+  # Prevents errors with 1 or fewer distinct levels
+  data[,factors]<-lapply(data[,factors,drop=FALSE],function (x)
+  {
+    if(factor.nas)
+      if(any(is.na(x)))
+      {
+        levels(x)<-c(levels(x),'NA')
+        x[is.na(x)]<-'NA'
+      }
+    if(drop.unused.levels)
+        if(nlevels(x)!=length(na.omit(unique(x))))
+          x<-factor(as.character(x))
+    y<-contrasts(x,contrasts=FALSE,sparse=TRUE)
+    attr(x,'contrasts')<-y
+    return(x)
+  })
+
+  #Allows NAs to pass
+  attr(data,'na.action')<-na.pass
+  result<-Matrix::sparse.model.matrix(newformula,data,drop.unused.levels = FALSE,row.names=FALSE)
+  brokenNames<-grep('paste(',colnames(result),fixed = TRUE)
+  colnames(result)[brokenNames]<-lapply(colnames(result)[brokenNames],function (x) {
+    x<-gsub('paste(',replacement='',x=x,fixed = TRUE)
+    x<-gsub(pattern=', ',replacement='_',x=x,fixed=TRUE)
+    x<-gsub(pattern='_sep = \"_\")',replacement='',x=x,fixed=TRUE)
+    return(x)
+  })
+
+  # Make a dgCMatrix from the model matrix and response variables.
+  result<-result*values
+  if(isTRUE(response>0))
+  {
+    responses=all.vars(terms(as.formula(paste(response,'~0'))))
+    # aggregate the matrix
+    result<-my.aggregate.Matrix(result,data[,responses,drop=FALSE],fun=fun.aggregate)
+  }
+  return(result)
+}
+
 
 #' Creates a matrix with aggregated expression values for arbitrary groups of
 #' genes
