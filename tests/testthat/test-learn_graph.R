@@ -91,8 +91,8 @@ test_that("learn_graph stays the same", {
   skip_not_travis()
   cds <- learn_graph(cds)
   expect_is(principal_graph(cds)[["UMAP"]], "igraph")
-  expect_equal(length(principal_graph(cds)[["UMAP"]]), 27)
-  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "5")
+  expect_equal(length(principal_graph(cds)[["UMAP"]]), 33)
+  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "24")
 
   # Force partition
   temp <- rep(c(1,2), length.out=length(partitions(cds)))
@@ -100,23 +100,23 @@ test_that("learn_graph stays the same", {
   cds@clusters[["UMAP"]]$partitions <- temp
   cds <- learn_graph(cds, use_partition = FALSE)
   expect_is(principal_graph(cds)[["UMAP"]], "igraph")
-  expect_equal(length(principal_graph(cds)[["UMAP"]]), 27)
-  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "5")
+  expect_equal(length(principal_graph(cds)[["UMAP"]]), 33)
+  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "24")
 
   cds <- learn_graph(cds)
   expect_is(principal_graph(cds)[["UMAP"]], "igraph")
-  expect_equal(length(principal_graph(cds)[["UMAP"]]), 63)
-  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "14")
+  expect_equal(length(principal_graph(cds)[["UMAP"]]), 74)
+  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "36")
 
   cds <- learn_graph(cds, close_loop = TRUE)
   expect_is(principal_graph(cds)[["UMAP"]], "igraph")
-  expect_equal(length(principal_graph(cds)[["UMAP"]]), 63)
-  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "14")
+  expect_equal(length(principal_graph(cds)[["UMAP"]]), 74)
+  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "36")
 
   cds <- learn_graph(cds, learn_graph_control = list(prune_graph = FALSE))
   expect_is(principal_graph(cds)[["UMAP"]], "igraph")
   expect_equal(length(principal_graph(cds)[["UMAP"]]), 144)
-  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "7")
+  expect_equal(as.character(principal_graph(cds)[["UMAP"]][[1]]$Y_1[[1]]), "8")
 })
 
 

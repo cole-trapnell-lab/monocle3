@@ -31,6 +31,8 @@ jobs:
     #   o use a Docker container that has the Monocle3 dependencies installed.
     #     see 'github.com:cole-trapnell-lab/monocle3/src/docker/NOTES' and
     #         'github.com:cole-trapnell-lab/Docker//monocle3_depend/NOTES'.
+    #   o Github Actions has a limited variety of Linux runners. See
+    #       URL: https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
     runs-on: ubuntu-latest
 
     container:
