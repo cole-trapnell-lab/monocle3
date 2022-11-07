@@ -35,6 +35,26 @@ jobs:
     #       URL: https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
     runs-on: ubuntu-latest
 
+    # One can add fine-grain-control over GITHUB_TOKEN permissions but
+    # I have not found authoratative descriptions of the permissions
+    # targets. www pages have some information
+    #   URL: https://github.blog/changelog/2021-04-20-github-actions-control-permissions-for-github_token/
+    #   URL: https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#permissions
+    # permissions:
+    #   actions: read|write|none
+    #   checks: read|write|none
+    #   contents: read|write|none
+    #   deployments: read|write|none
+    #   id-token: read|write|none
+    #   issues: read|write|none
+    #   discussions: read|write|none
+    #   packages: read|write|none
+    #   pages: read|write|none
+    #   pull-requests: read|write|none
+    #   repository-projects: read|write|none
+    #   security-events: read|write|none
+    #   statuses: read|write|none
+
     container:
       # Note:
       #   in order for the GITHUB_TOKEN to work as a credential one must
