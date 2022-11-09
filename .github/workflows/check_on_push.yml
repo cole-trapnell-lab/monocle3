@@ -77,7 +77,8 @@ jobs:
 
       # The following Docker image was pushed to the Github container registry,
       # which is found at the Github Packages tab.
-      image: ghcr.io/cole-trapnell-lab/monocle3_depend.v1.3.0_20221103:v1
+      # image: ghcr.io/cole-trapnell-lab/monocle3_depend.v1.3.0_20221103:v1 # old and replaced
+      image: ghcr.io/cole-trapnell-lab/monocle3_depend:v1.3.0_1
 
       #
       #
@@ -112,6 +113,10 @@ jobs:
       # Get current repository contents.
       - uses: actions/checkout@v3
       # Run tests.
+      # Notes:
+      #   o  the RCMD check command appears to not output the regression tests
+      #      output unless an error occurs, in which case, the output of all
+      #       regressions tests is output.
       - name: Run R CMD build and R CMD check
         run: |
           R CMD build .
