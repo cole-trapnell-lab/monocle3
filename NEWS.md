@@ -1,3 +1,13 @@
+# Monocle3 1.3.0
+
+### Changes
+
+* Work around conflict between SingleCellExperiment and tictoc packages.
+* Fix missing DelayedArray conversion in sparse_prcomp_irlba().
+* Relax test for rowname consistency in transfer_cell_labels().
+* Update URLs in load_worm_*() functions.
+* Minor bug fixes.
+
 # Monocle3 1.2.9
 
 ### Changes

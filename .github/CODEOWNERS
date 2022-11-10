@@ -1,0 +1,3 @@
+/.github/CODEOWNERS @ctrapnell @hpliner @brgew
+/.github/workflows/* @ctrapnell @hpliner @brgew
+/src/docker/* @ctrapnell @hpliner @brgew

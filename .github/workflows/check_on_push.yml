@@ -1,0 +1,125 @@
+#
+# Check Monocle3 repository on push event.
+# 
+# There is information on Docker container security at
+#   URL: https://docs.docker.com/engine/security/
+#   URL: https://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html
+#   Note: I don't see how one can specify the 'user' for the
+#         Actions runs so I don't see the value of creating
+#         a non-root user when the container is built.
+# There is information on Github Actions security at
+#   URL: https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions
+#   URL: https://blog.gitguardian.com/github-actions-security-cheat-sheet/
+# This Github Actions page notes:
+#   o  Using CODEOWNERS to monitor changes: specifically changes to.github/workflows/*
+#   o  Preventing GitHub Actions from creating or approving pull requests
+# Security notes:
+#   o  secure the docker container against meddling
+#   o  secure the monocle3 repository against meddling
+#
+name: Monocle3 check on push
+run-name: Check branch ${{ github.ref_name }} on push by ${{ github.actor }}
+
+on: [push]
+
+jobs:
+  monocle3_check_on_push:
+
+    # Notes: ubuntu.
+    #   o use Ubuntu - there are messages on line about needing to use Ubuntu
+    #                  for use with Github Actions.
+    #   o use a Docker container that has the Monocle3 dependencies installed.
+    #     see 'github.com:cole-trapnell-lab/monocle3/src/docker/NOTES' and
+    #         'github.com:cole-trapnell-lab/Docker//monocle3_depend/NOTES'.
+    #   o Github Actions has a limited variety of Linux runners. See
+    #       URL: https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
+    runs-on: ubuntu-latest
+
+    # One can add fine-grain-control over GITHUB_TOKEN permissions but
+    # I have not found authoratative descriptions of the permissions
+    # targets. www pages have some information
+    #   URL: https://github.blog/changelog/2021-04-20-github-actions-control-permissions-for-github_token/
+    #   URL: https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#permissions
+    # permissions:
+    #   actions: read|write|none
+    #   checks: read|write|none
+    #   contents: read|write|none
+    #   deployments: read|write|none
+    #   id-token: read|write|none
+    #   issues: read|write|none
+    #   discussions: read|write|none
+    #   packages: read|write|none
+    #   pages: read|write|none
+    #   pull-requests: read|write|none
+    #   repository-projects: read|write|none
+    #   security-events: read|write|none
+    #   statuses: read|write|none
+
+    container:
+      # Note:
+      #   in order for the GITHUB_TOKEN to work as a credential one must
+      #   allow the Monocle3 repository to access the container 'package'.
+      #   Navigate to the Packages tab -> <repository> tab -> Package settings ->
+      #   Manage Actions access: click on Add Repository; give repository name
+      #
+      # The following Docker image was pushed initially to the Docker container
+      # but we use now the Github container registry. The following image and
+      # credential lines are here for documentation, if require in the future.
+      # image: docker.io/brgew/monocle3_depend:v1.3.0
+      #
+      # The following three (commented out) lines give credentials for a docker
+      # image stored at the Docker container registry.
+      # credentials:
+      #   username: brgew
+      #   password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN_READ }}
+      #
+
+
+      # The following Docker image was pushed to the Github container registry,
+      # which is found at the Github Packages tab.
+      # image: ghcr.io/cole-trapnell-lab/monocle3_depend.v1.3.0_20221103:v1 # old and replaced
+      image: ghcr.io/cole-trapnell-lab/monocle3_depend:v1.3.0_1
+
+      #
+      #
+      # The following three uncommented lines give credentials for a Github
+      # container registry. There is information about github.ACTOR at
+      #   URL: https://docs.github.com/en/actions/learn-github-actions/contexts
+      # where there is the statement
+      # github.actor	string	The username of the user that triggered the
+      #                         initial workflow run. If the workflow run is
+      #                         a re-run, this value may differ from
+      #                         github.triggering_actor. Any workflow re-runs
+      #                         will use the privileges of github.actor, even
+      #                         if the actor initiating the re-run
+      #                         (github.triggering_actor) has different
+      #                         privileges.
+      credentials:
+        username: ${{ github.ACTOR }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    # TRAVIS: the testthat scripts check for the TRAVIS environment variable
+    # in order to choose the correct set of target values and to avoid
+    # running interactive code. For convenience, I keep the name TRAVIS after
+    # switching to  Actions CI.
+    # _R_CHECK_TESTS_NLINES_: instruct the devtools::test scripts to output all
+    # error lines rather than the last 13. See
+    # https://yihui.org/en/2017/12/last-13-lines-of-output/
+    env:
+      TRAVIS: true
+      _R_CHECK_TESTS_NLINES_: 0
+
+    steps:
+      # Get current repository contents.
+      - uses: actions/checkout@v3
+      # Run tests.
+      # Notes:
+      #   o  the RCMD check command appears to not output the regression tests
+      #      output unless an error occurs, in which case, the output of all
+      #       regressions tests is output.
+      - name: Run R CMD build and R CMD check
+        run: |
+          R CMD build .
+          R CMD check monocle3*tar.gz
+        shell: bash
+

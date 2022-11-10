@@ -245,9 +245,13 @@ transfer_cell_labels <- function(cds_query,
 
   checksum_matrix_rownames <- cds_nn_index[['checksum_rownames']]
   if(!is.na(checksum_matrix_rownames)) {
-    checksum_coldata_rownames <- digest::digest(rownames(ref_coldata))
+    checksum_coldata_rownames <- digest::digest(sort(rownames(ref_coldata)))
     if(checksum_matrix_rownames != checksum_coldata_rownames) {
-      stop('transfer_cell_labels: matrix and colData rownames do not match')
+      # In earlier versions (<2022-08-29), I did not sort the rownames. Preserve compatibility.
+      checksum_coldata_rownames <- digest::digest(rownames(ref_coldata))
+      if(checksum_matrix_rownames != checksum_coldata_rownames) {
+        stop('transfer_cell_labels: matrix and colData rownames do not match')
+      }
     }
   }
   else

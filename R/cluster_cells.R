@@ -61,7 +61,7 @@
 #'   Cell, 2015.
 #'
 #' @examples
-#'   \donttest{ 
+#'   \donttest{
 #'     cell_metadata <- readRDS(system.file('extdata',
 #'                                          'worm_embryo/worm_embryo_coldata.rds',
 #'                                          package='monocle3'))
@@ -71,7 +71,7 @@
 #'     expression_matrix <- readRDS(system.file('extdata',
 #'                                  'worm_embryo/worm_embryo_expression_matrix.rds',
 #'                                  package='monocle3'))
-#'    
+#'
 #'     cds <- new_cell_data_set(expression_data=expression_matrix,
 #'                              cell_metadata=cell_metadata,
 #'                              gene_metadata=gene_metadata)
@@ -354,7 +354,7 @@ louvain_clustering <- function(data,
                                            weight=weight,
                                            cell_names=cell_names,
                                            nn_index,
-                                           k=k, 
+                                           k=k,
                                            nn_control=nn_control,
                                            verbose=verbose)
 
@@ -471,7 +471,7 @@ leiden_clustering <- function(data,
     stop("Phenotype and row name from the data don't match")
 
   graph_result <- cluster_cells_make_graph(data=data,
-                                           weight=weight, 
+                                           weight=weight,
                                            cell_names=cell_names,
                                            nn_index,
                                            k=k,
@@ -622,6 +622,7 @@ compute_partitions <- function(g,
                         ncol=length(louvain_modules))
 
   sig_links <- as.matrix(num_links)
+  row.names(sig_links) = colnames(sig_links) = louvain_modules
   sig_links[cluster_mat > qval_thresh] = 0
   diag(sig_links) <- 0
 

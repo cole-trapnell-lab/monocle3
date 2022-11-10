@@ -389,6 +389,7 @@ plot_cells_3d <- function(cds,
 #'     plot_cells(lung, markers="GDF15")
 #'   }
 #'
+#' @importFrom dplyr n
 #' @export
 plot_cells <- function(cds,
                        x=1,
@@ -1510,6 +1511,7 @@ plot_percent_cells_positive <- function(cds_subset,
 #'   heatmap. Values larger than this are set to the max.
 #' @param scale_min The minimum value (in standard deviations) to show in the
 #'   heatmap. Values smaller than this are set to the min.
+#' @param color_by_group Color cells by the group to which they belong.
 #'
 #' @return a ggplot2 plot object
 #' @import ggplot2
@@ -1530,7 +1532,8 @@ plot_genes_by_group <- function(cds,
                                 flip_percentage_mean = FALSE,
                                 pseudocount = 1,
                                 scale_max = 3,
-                                scale_min = -3) {
+                                scale_min = -3,
+                                color_by_group=FALSE) {
   rowname <- gene_short_name <- Group <- Gene <- Expression <- percentage <- NULL # no visible binding
   assertthat::assert_that(methods::is(cds, "cell_data_set"))
 
@@ -1623,6 +1626,17 @@ plot_genes_by_group <- function(cds,
   res <- res[, -1]
   row.names(res) <- group_id
 
+  if(major_axis == 1){
+    ExpVal = ExpVal %>% dplyr::group_by(Gene) %>% dplyr::mutate(max_value = max(mean),
+                                                         is_max = max_value == mean) %>% dplyr::ungroup()
+  }
+  else{
+    ExpVal = ExpVal %>% dplyr::group_by(Gene) %>% dplyr::mutate(max_value = max(percentage),
+                                                         is_max = max_value == percentage) %>% dplyr::ungroup()
+  }
+
+  ExpVal = ExpVal %>% dplyr::mutate(group_color_class = ifelse(is_max, Group, NA_character_))
+
   if(ordering_type == 'cluster_row_col') {
     row_dist <- stats::as.dist((1 - stats::cor(t(res)))/2)
     row_dist[is.na(row_dist)] <- 1
@@ -1649,43 +1663,44 @@ plot_genes_by_group <- function(cds,
                            levels = row.names(res)[ph$tree_row$order])
 
   } else if(ordering_type == 'maximal_on_diag'){
+    group_ordering_df = ExpVal %>% dplyr::filter(is_max) %>% dplyr::group_by(Group) %>% dplyr::summarize(num_genes = n())
+    ExpVal = dplyr::left_join(ExpVal, group_ordering_df, by=c("Group")) %>% dplyr::arrange(dplyr::desc(num_genes), dplyr::desc(max_value))
 
-    order_mat <- t(apply(res, major_axis, order))
-    max_ind_vec <- c()
-    if(nrow(order_mat) < 1) warning('bad loop: nrow(order_mat) < 1')
-    for(i in 1:nrow(order_mat)) {
-      tmp <- max(which(!(order_mat[i, ] %in% max_ind_vec)))
-      max_ind_vec <- c(max_ind_vec, order_mat[i, tmp])
-    }
-    max_ind_vec <- max_ind_vec[!is.na(max_ind_vec)]
+    ExpVal$Group <- factor(ExpVal$Group,
+                           levels = ExpVal %>% dplyr::select(Group) %>% dplyr::distinct() %>% dplyr::pull(Group))
 
-    if(major_axis == 1){
-      if(length(markers) < 1) warning("bad loop: length(markers) < 1")
-      max_ind_vec <- c(max_ind_vec, setdiff(1:length(markers), max_ind_vec))
-      ExpVal$Gene <- factor(ExpVal$Gene ,
-                            levels = dimnames(res)[[2]][max_ind_vec])
-    }
-    else{
-      if(length(unique(exprs_mat$Group)) < 1) warning('bad loop: length(unique(exprs_mat$Group)) < 1')
-      max_ind_vec <- c(max_ind_vec, setdiff(1:length(unique(exprs_mat$Group)),
-                                            max_ind_vec))
-      ExpVal$Group <- factor(ExpVal$Group,
-                             levels = dimnames(res)[[1]][max_ind_vec])
-    }
+    gene_ordering = ExpVal %>% dplyr::filter(is_max) %>% dplyr::group_by(Gene) %>% dplyr::slice_head(n=1) %>% dplyr::arrange(Group, dplyr::desc(max_value)) %>% dplyr::pull(Gene)
+    ExpVal$Gene <- factor(ExpVal$Gene,
+                          levels = gene_ordering)
+
   } else if(ordering_type == 'none'){
     ExpVal$Gene <- factor(ExpVal$Gene, levels = markers)
   }
 
   if(flip_percentage_mean){
-    g <- ggplot(ExpVal, aes(y = Gene,  x = Group)) +
-      geom_point(aes(colour = percentage,  size = mean)) +
-      viridis::scale_color_viridis(name = 'percentage') +
-      scale_size(name = 'log(mean + 0.1)', range = c(0, max.size))
+    if (color_by_group){
+      g <- ggplot(ExpVal, aes(y = Gene,  x = Group)) +
+        geom_point(aes(colour = group_color_class,  size = mean)) +
+        #viridis::scale_color_viridis(name = 'percentage') +
+        scale_size(name = 'log(mean + 0.1)', range = c(0, max.size))
+    }else{
+      g <- ggplot(ExpVal, aes(y = Gene,  x = Group)) +
+        geom_point(aes(colour = percentage,  size = mean)) +
+        viridis::scale_color_viridis(name = 'percentage') +
+        scale_size(name = 'log(mean + 0.1)', range = c(0, max.size))
+    }
   } else {
-    g <- ggplot(ExpVal, aes(y = Gene,  x = Group)) +
-      geom_point(aes(colour = mean,  size = percentage)) +
-      viridis::scale_color_viridis(name = 'log(mean + 0.1)') +
-      scale_size(name = 'percentage', range = c(0, max.size))
+    if (color_by_group){
+      g <- ggplot(ExpVal, aes(y = Gene,  x = Group)) +
+        geom_point(aes(colour = group_color_class,  size = percentage)) +
+        #viridis::scale_color_viridis(name = 'log(mean + 0.1)') +
+        scale_size(name = 'percentage', range = c(0, max.size))
+    }else{
+      g <- ggplot(ExpVal, aes(y = Gene,  x = Group)) +
+        geom_point(aes(colour = mean,  size = percentage)) +
+        viridis::scale_color_viridis(name = 'log(mean + 0.1)') +
+        scale_size(name = 'percentage', range = c(0, max.size))
+    }
   }
 
   if (group_cells_by == "cluster"){

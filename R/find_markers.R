@@ -62,6 +62,7 @@
 #'     top_specific_marker_ids <- unique(top_specific_markers %>% pull(gene_id))
 #'   }
 #'
+#' @importFrom dplyr n
 #' @export
 top_markers <- function(cds,
                         group_cells_by="cluster",
