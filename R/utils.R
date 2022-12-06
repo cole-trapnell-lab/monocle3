@@ -450,8 +450,9 @@ detect_genes <- function(cds, min_expr=0){
   assertthat::assert_that(methods::is(cds, "cell_data_set"))
     assertthat::assert_that(is.numeric(min_expr))
 
-  rowData(cds)$num_cells_expressed <- Matrix::rowSums(SingleCellExperiment::counts(cds) > min_expr)
-  colData(cds)$num_genes_expressed <- Matrix::colSums(SingleCellExperiment::counts(cds) > min_expr)
+  mat_bin <- counts(cds) > min_expr
+  rowData(cds)$num_cells_expressed <- Matrix::rowSums(mat_bin > min_expr)
+  colData(cds)$num_genes_expressed <- Matrix::colSums(mat_bin > min_expr)
 
   cds
 }
