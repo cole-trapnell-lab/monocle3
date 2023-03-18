@@ -70,7 +70,6 @@ load_worm_l2 <- function(){
   cds
 }
 
-
 #' Test if a file has a Matrix Market header.
 #' @param matpath Path to test file.
 #' @return TRUE if matpath file has Matrix Market header.
@@ -181,7 +180,20 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
 #' sep = "", the separator is white space, that is, one or more spaces,
 #' tabs, newlines, or carriage returns. The default is the tab
 #' character for tab-separated-value files.
-#'
+#' @param assay_control A list of values that define how matrices
+#' are stored in the cell_data_set assays slot. Typically, matrices are
+#' stored in memory as objects using storage_class$counts="CsparseMatrix"
+#' and storage_mode$counts="mem". In this case, all other assay_control
+#' values are set to NA. This is the default. There is a set of
+#' assay_control values for each matrix stored in the list-like assays
+#' slot. In Monocle3, we store one matrix called "counts" in the slot.
+#' A very large matrix can be stored in a file and accessed by Monocle3
+#' as if it were in memory. For this, Monocle3 uses the BPCells R
+#' package. In this case, the assay_control values can be set to
+#' storage_class$counts="BPCells", storage_mode$counts="dir", and
+#' storage_path$counts=".". All other assay_control values are set to
+#' NA. Other assay_control elements are used to control other storage
+#' modes and classes.
 #' @return cds object
 #'
 #' @section Comments:
@@ -211,11 +223,14 @@ load_mm_data <- function( mat_path,
     cell_metadata_column_names = NULL,
     umi_cutoff = 100,
     quote="\"'",
-    sep="\t") {
+    sep="\t",
+    assay_control=list()) {
   assertthat::assert_that(assertthat::is.readable(mat_path), msg='unable to read matrix file')
   assertthat::assert_that(assertthat::is.readable(feature_anno_path), msg='unable to read feature annotation file')
   assertthat::assert_that(assertthat::is.readable(cell_anno_path), msg='unable to read cell annotation file')
   assertthat::assert_that(is.numeric(umi_cutoff))
+
+  assay_control <- set_assay_control(assay_control, assay_control_default=get_global_variable('assay_control'))
 
   feature_annotations <- load_annotations_data( feature_anno_path, feature_metadata_column_names, header, sep, quote=quote, annotation_type='features' )
   cell_annotations <- load_annotations_data( cell_anno_path, cell_metadata_column_names, header, sep, quote=quote, annotation_type='cells' )
@@ -223,7 +238,9 @@ load_mm_data <- function( mat_path,
   assertthat::assert_that( ! any( duplicated( feature_annotations$names ) ), msg='duplicate feature names in feature annotation file' )
   assertthat::assert_that( ! any( duplicated( cell_annotations$names ) ), msg='duplicate cell names in cell annotation file' )
 
-  mat <- Matrix::readMM( mat_path )
+  # Read MatrixMarket file and convert to dgCMatrix format.
+  mat <- Matrix::readMM(mat_path)
+  mat <- as(mat, 'CsparseMatrix')
 
   assertthat::assert_that( length( feature_annotations$names ) == nrow( mat ),
       msg=paste0( 'feature name count (',
@@ -241,11 +258,45 @@ load_mm_data <- function( mat_path,
   rownames( mat ) <- feature_annotations$names
   colnames( mat ) <- cell_annotations$names
 
+  if(assay_control$storage_class == 'BPCells')
+  {
+    storage_mode <- assay_control$storage_mode
+    storage_group <- assay_control$storage_group
+    storage_type <- assay_control$storage_type
+    storage_path <- assay_control$storage_path
+    storage_compress <- assay_control$storage_compress
+    storage_buffer_size <- assay_control$storage_buffer_size
+    storage_chunk_size <- assay_control$storage_buffer_size
+    storage_overwrite <- assay_control$storage_overwrite
+
+    if(storage_mode == 'mem') {
+      mat <- BPCells::write_matrix_memory(mat=BPCells::convert_matrix_type(mat, type=storage_type), compress=storage_compress)
+    } else
+    if(storage_mode == 'dir') {
+      if(is.null(storage_path)) {
+        storage_path <- tempdir()
+      }
+      mat <- BPCells::write_matrix_dir(mat=BPCells::convert_matrix_type(mat, type=storage_type), dir=storage_path, compress=storage_compress, buffer_size=storage_buffer_size, overwrite=storage_overwrite)
+    } else
+    if(storage_mode == '10xhdf5') {
+      if(is.null(storage_path)) {
+        storage_path <- tempfile(pattern='monocle3', fileext='h5')
+      }
+      mat <- BPCells::write_matrix_hdf5(mat=BPCells::convert_matrix_type(mat, type=storage_type), path=storage_path, group=storage_group, compress=storage_compress, buffer_size=storage_buffer_size, chunk_size=storage_chunk_size, overwrite=storage_overwrite)
+    }
+  }
+
   cds <- new_cell_data_set( mat,
       cell_metadata = cell_annotations$metadata,
       gene_metadata = feature_annotations$metadata )
 
-  colData(cds)$n.umi <- Matrix::colSums(exprs(cds))
+  if(is(exprs(cds), 'CsparseMatrix')) {
+    colData(cds)$n.umi <- Matrix::colSums(exprs(cds))
+  } else
+  if(is(exprs(cds), 'IterableMatrix')) {
+    colData(cds)$n.umi <- BPCells::colSums(exprs(cds))
+  }
+
   cds <- cds[,colData(cds)$n.umi >= umi_cutoff]
   cds <- estimate_size_factors(cds)
 
@@ -253,7 +304,7 @@ load_mm_data <- function( mat_path,
   matrix_id <- get_unique_id(counts(cds))
   cds <- set_counts_identity(cds, mat_path, matrix_id)
 
-  return( cds )
+  return(cds)
 }
 
 

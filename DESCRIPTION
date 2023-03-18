@@ -46,7 +46,7 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: false
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.1
+RoxygenNote: 7.2.3
 LinkingTo: 
     Rcpp
 Depends:
@@ -58,6 +58,7 @@ Imports:
     batchelor,
     BiocGenerics (>= 0.28.0),
     BiocParallel,
+	BPCells,
     DelayedArray (>= 0.8.0),
     DelayedMatrixStats (>= 1.4.0),
     digest (>= 0.6.28),
@@ -116,6 +117,8 @@ Suggests:
     rmarkdown,
     spelling,
     scran
+Remotes:
+	git::https://github.com/bnprks/BPCells
 VignetteBuilder: knitr
 Language: en-US
 NeedsCompilation: yes

@@ -136,9 +136,18 @@ preprocess_cds <- function(cds,
 
     if (verbose) message("Remove noise by PCA ...")
 
-    irlba_res <- sparse_prcomp_irlba(Matrix::t(FM),
-                                     n = min(num_dim,min(dim(FM)) - 1),
-                                     center = scaling, scale. = scaling)
+    if(! is(FM, 'IterableMatrix'))
+    {
+      irlba_res <- sparse_prcomp_irlba(Matrix::t(FM),
+                                       n = min(num_dim,min(dim(FM)) - 1),
+                                       center = scaling, scale. = scaling)
+    }
+    else
+    {
+      irlba_res <- BPCells_prcomp_irlba(Matrix::t(FM),
+                                        n = min(num_dim,min(dim(FM)) - 1),
+                                        center = scaling, scale. = scaling)
+    }
     preproc_res <- irlba_res$x
     row.names(preproc_res) <- colnames(cds)
     SingleCellExperiment::reducedDims(cds)[[method]] <- as.matrix(preproc_res)
@@ -265,7 +274,13 @@ normalize_expr_data <- function(cds,
     else
       pseudo_count <- 0
   }
-
+  if (is(FM, 'IterableMatrix')) {
+    if(norm_method != 'log' || pseudo_count != 1) {
+      stop('For BPCells count matrix, the normalization method must be \'log\' with a pseudo count of 1.')
+    }
+    FM <- BPCells::t(BPCells::t(FM)/size_factors(cds))
+    FM <- log1p(FM) / log(2)
+  } else
   if (norm_method == "log") {
     # If we are using log, normalize by size factor before log-transforming
 

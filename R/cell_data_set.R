@@ -77,7 +77,8 @@ new_cell_data_set <- function(expression_data,
 
 
   assertthat::assert_that(methods::is(expression_data, 'matrix') ||
-                          is_sparse_matrix(expression_data),
+                          is_sparse_matrix(expression_data) ||
+                          is(expression_data, 'IterableMatrix'),
                           msg = paste("Argument expression_data must be a",
                                       "matrix - either sparse from the",
                                       "Matrix package or dense"))
@@ -114,13 +115,22 @@ new_cell_data_set <- function(expression_data,
             "named 'gene_short_name' for certain functions.")
   }
 
-  sce <- SingleCellExperiment(list(counts=methods::as(expression_data, "dgCMatrix")),
+  #
+  # We allow for objects derived from BPCells IterableMatrix classes and
+  # matrices that we can convert to CsparseMatrix.
+  #
+  if(is(expression_data, 'IterableMatrix'))
+    expression_data_class <- class(expression_data)
+  else
+    expression_data_class <- 'CsparseMatrix'
+
+  sce <- SingleCellExperiment(list(counts=methods::as(expression_data, expression_data_class)),
                               rowData = gene_metadata,
                               colData = cell_metadata)
 
   cds <- methods::new("cell_data_set",
              assays = SummarizedExperiment::Assays(
-               list(counts=methods::as(expression_data, "dgCMatrix"))),
+               list(counts=methods::as(expression_data, expression_data_class))),
              colData = colData(sce),
              int_elementMetadata = SingleCellExperiment::int_elementMetadata(sce),
              int_colData = SingleCellExperiment::int_colData(sce),

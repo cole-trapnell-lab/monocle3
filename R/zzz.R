@@ -83,6 +83,9 @@ get_global_variable <- function(variable_name=NULL) {
   # which are the label transfer functions.
   set_global_variable('nn_control_annoy_cosine', list(method='annoy', metric='cosine', n_trees=50, M=48, ef_construction=200, ef=150, grain_size=1, cores=1))
 
+  # Default assay_control list.
+  set_global_variable('assay_control', list(storage_class='CsparseMatrix', storage_mode='mem', storage_type='uint32_t', storage_compress=TRUE, storage_path=NULL, storage_group='/', storage_buffer_size=8192L, storage_chunk_size=1024L, storage_overwrite=FALSE))
+
   # Watching preprocess_cds() it appears that R uses OMP_NUM_THREADS
   # threads if OMP_NUM_THREADS > 1 and OPENBLAS_NUM_THREADS is NA.
   # After setting, RhpcBLASctl::blas_set_num_threads(1L) and then

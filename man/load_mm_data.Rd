@@ -13,7 +13,8 @@ load_mm_data(
   cell_metadata_column_names = NULL,
   umi_cutoff = 100,
   quote = "\\"'",
-  sep = "\\t"
+  sep = "\\t",
+  BPCells = FALSE
 )
 }
 \arguments{
@@ -68,6 +69,12 @@ is "\"'".}
 sep = "", the separator is white space, that is, one or more spaces,
 tabs, newlines, or carriage returns. The default is the tab
 character for tab-separated-value files.}
+
+\item{BPCells}{A logical value specifying whether to store the
+count matrix as an out-of-core BPCells object. If the count
+matrix is saved as an out-of-core BPCells object, the
+save_monocle_objects function must be used to save the CDS.
+The default is FALSE.}
 }
 \value{
 cds object
