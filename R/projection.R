@@ -81,7 +81,6 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
     msg = "reduction_method must be 'PCA' or 'LSI'")
 
   reduction_method <- match.arg(reduction_method)
-
   assertthat::assert_that(!is.null(size_factors(cds)),
              msg = paste("You must call estimate_size_factors before calling",
                          "preprocess_cds."))
@@ -105,8 +104,9 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
     rotation_matrix <- cds@reduce_dim_aux[[reduction_method]][['model']]$svd_v
     vcenter <- cds@reduce_dim_aux[[reduction_method]][['model']]$svd_center
     vscale <- cds@reduce_dim_aux[[reduction_method]][['model']]$svd_scale
-  
-    FM <- normalize_expr_data(cds, norm_method=norm_method, pseudo_count=pseudo_count)
+ 
+    FM <- SingleCellExperiment::counts(cds) 
+    FM <- normalize_expr_data(FM=FM, size_factors=size_factors(cds), norm_method=norm_method, pseudo_count=pseudo_count)
     if (nrow(FM) == 0) {
       stop("all rows have standard deviation zero")
     }
@@ -164,7 +164,8 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
     row_sums <- cds@reduce_dim_aux[[reduction_method]][['model']][['row_sums']]
     num_cols <- cds@reduce_dim_aux[[reduction_method]][['model']][['num_cols']]
 
-    FM <- normalize_expr_data(cds, norm_method=norm_method, pseudo_count=pseudo_count)
+    FM <- SingleCellExperiment::counts(cds) 
+    FM <- normalize_expr_data(FM=FM, size_factors=size_factors(cds), norm_method=norm_method, pseudo_count=pseudo_count)
     if (nrow(FM) == 0) {
       stop("all rows have standard deviation zero")
     }

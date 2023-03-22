@@ -182,16 +182,16 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
 #' character for tab-separated-value files.
 #' @param assay_control A list of values that define how matrices
 #' are stored in the cell_data_set assays slot. Typically, matrices are
-#' stored in memory as objects using storage_class$counts="CsparseMatrix"
-#' and storage_mode$counts="mem". In this case, all other assay_control
+#' stored in memory as objects using matrix_class$counts="CsparseMatrix"
+#' and matrix_mode$counts="mem". In this case, all other assay_control
 #' values are set to NA. This is the default. There is a set of
 #' assay_control values for each matrix stored in the list-like assays
 #' slot. In Monocle3, we store one matrix called "counts" in the slot.
 #' A very large matrix can be stored in a file and accessed by Monocle3
 #' as if it were in memory. For this, Monocle3 uses the BPCells R
 #' package. In this case, the assay_control values can be set to
-#' storage_class$counts="BPCells", storage_mode$counts="dir", and
-#' storage_path$counts=".". All other assay_control values are set to
+#' matrix_class$counts="BPCells", matrix_mode$counts="dir", and
+#' matrix_path$counts=".". All other assay_control values are set to
 #' NA. Other assay_control elements are used to control other storage
 #' modes and classes.
 #' @return cds object
@@ -230,7 +230,7 @@ load_mm_data <- function( mat_path,
   assertthat::assert_that(assertthat::is.readable(cell_anno_path), msg='unable to read cell annotation file')
   assertthat::assert_that(is.numeric(umi_cutoff))
 
-  assay_control <- set_assay_control(assay_control, assay_control_default=get_global_variable('assay_control'))
+  assay_control <- set_assay_control(assay_control)
 
   feature_annotations <- load_annotations_data( feature_anno_path, feature_metadata_column_names, header, sep, quote=quote, annotation_type='features' )
   cell_annotations <- load_annotations_data( cell_anno_path, cell_metadata_column_names, header, sep, quote=quote, annotation_type='cells' )
@@ -258,31 +258,27 @@ load_mm_data <- function( mat_path,
   rownames( mat ) <- feature_annotations$names
   colnames( mat ) <- cell_annotations$names
 
-  if(assay_control$storage_class == 'BPCells')
+  if(assay_control[['matrix_class']] == 'BPCells')
   {
-    storage_mode <- assay_control$storage_mode
-    storage_group <- assay_control$storage_group
-    storage_type <- assay_control$storage_type
-    storage_path <- assay_control$storage_path
-    storage_compress <- assay_control$storage_compress
-    storage_buffer_size <- assay_control$storage_buffer_size
-    storage_chunk_size <- assay_control$storage_buffer_size
-    storage_overwrite <- assay_control$storage_overwrite
+    matrix_mode <- assay_control[['matrix_mode']]
+    matrix_group <- assay_control[['matrix_group']]
+    matrix_type <- assay_control[['matrix_type']]
+    matrix_path <- assay_control[['matrix_path']]
+    matrix_compress <- assay_control[['matrix_compress']]
+    matrix_buffer_size <- assay_control[['matrix_buffer_size']]
+    matrix_chunk_size <- assay_control[['matrix_buffer_size']]
+    matrix_overwrite <- assay_control[['matrix_overwrite']]
 
-    if(storage_mode == 'mem') {
-      mat <- BPCells::write_matrix_memory(mat=BPCells::convert_matrix_type(mat, type=storage_type), compress=storage_compress)
-    } else
-    if(storage_mode == 'dir') {
-      if(is.null(storage_path)) {
-        storage_path <- tempdir()
-      }
-      mat <- BPCells::write_matrix_dir(mat=BPCells::convert_matrix_type(mat, type=storage_type), dir=storage_path, compress=storage_compress, buffer_size=storage_buffer_size, overwrite=storage_overwrite)
-    } else
-    if(storage_mode == '10xhdf5') {
-      if(is.null(storage_path)) {
-        storage_path <- tempfile(pattern='monocle3', fileext='h5')
-      }
-      mat <- BPCells::write_matrix_hdf5(mat=BPCells::convert_matrix_type(mat, type=storage_type), path=storage_path, group=storage_group, compress=storage_compress, buffer_size=storage_buffer_size, chunk_size=storage_chunk_size, overwrite=storage_overwrite)
+    if(matrix_mode == 'mem') {
+      mat <- BPCells::write_matrix_memory(mat=BPCells::convert_matrix_type(mat, type=matrix_type), compress=matrix_compress)
+    }
+    else
+    if(matrix_mode == 'dir') {
+      mat <- BPCells::write_matrix_dir(mat=BPCells::convert_matrix_type(mat, type=matrix_type), dir=matrix_path, compress=matrix_compress, buffer_size=matrix_buffer_size, overwrite=matrix_overwrite)
+    }
+    else
+    if(matrix_mode == '10xhdf5') {
+      mat <- BPCells::write_matrix_hdf5(mat=BPCells::convert_matrix_type(mat, type=matrix_type), path=matrix_path, group=matrix_group, compress=matrix_compress, buffer_size=matrix_buffer_size, chunk_size=matrix_chunk_size, overwrite=matrix_overwrite)
     }
   }
 
@@ -292,7 +288,8 @@ load_mm_data <- function( mat_path,
 
   if(is(exprs(cds), 'CsparseMatrix')) {
     colData(cds)$n.umi <- Matrix::colSums(exprs(cds))
-  } else
+  }
+  else
   if(is(exprs(cds), 'IterableMatrix')) {
     colData(cds)$n.umi <- BPCells::colSums(exprs(cds))
   }
@@ -376,7 +373,8 @@ load_mtx_data <- function( mat_path,
 
   if(ncol(mat) == 1) {
     mat <- mat[,0, drop=FALSE]
-  } else {
+  }
+  else {
     if(ncol(mat) < 2) warning('bad loop: ncol(mat) < 2')
     mat <- mat[, 1:(ncol(mat)-1), drop=FALSE]
   }
@@ -518,7 +516,8 @@ save_annoy_index <- function(nn_index, file_name) {
     if(nn_index[['version']] == 1 || nn_index[['version']] == 2) {
       tryCatch( nn_index[['annoy_index']]$save(file_name),
                 error = function(e) {message('Unable to save annoy index: it may not exist in this cds: error message is ', e)})
-    } else {
+    }
+    else {
       stop('Unrecognized Monocle3 annoy index type')
     }
   }
@@ -660,7 +659,8 @@ load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
       }
     )
     unlink(file_name)
-  } else
+  }
+  else
   if(metric == 'euclidean') {
     tryCatch(
       {
@@ -672,7 +672,8 @@ load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
     )
     attr(new_index, "distance") <- "euclidean"
     unlink(file_name)
-  } else
+  }
+  else
     if(metric == 'cosine') {
     tryCatch(
       {
@@ -683,7 +684,8 @@ load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
       }
     )
     unlink(file_name)
-  } else
+  }
+  else
   if(metric == 'ip') {
     tryCatch(
       {
@@ -694,7 +696,8 @@ load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
       }
     )
     unlink(file_name)
-  } else
+  }
+  else
     stop('Unrecognized HNSW metric ', metric)
 
   if(!is.null(nn_index[['version']]))
@@ -718,7 +721,8 @@ save_umap_nn_indexes <- function(umap_model, file_name) {
   if(n_metrics == 1) {
     save_umap_annoy_index(umap_model[['nn_index']], file_name)
     md5sum_umap_index <- tools::md5sum(file_name)
-  } else {
+  }
+  else {
     warning('save_umap_nn_indexes is untested with more than one umap metric')
     md5sum_vec <- character()
     for(i in seq(1, n_metrics, 1)) {
@@ -746,7 +750,8 @@ load_umap_nn_indexes <- function(umap_model, file_name, md5sum_umap_index) {
     annoy_metric <- if(metric == 'correlation') 'cosine' else metric
     annoy_ndim <- umap_model[['metric']][[1]][['ndim']]
     umap_model[['nn_index']] <- load_umap_annoy_index(umap_model[['nn_index']], file_name, annoy_metric, annoy_ndim)
-  } else {
+  }
+  else {
     warning('load_umap_nn_indexes is untested with more than one umap metric')
     if(!is.null(md5sum_umap_index)) {
       md5sum_vec <- unlist(strsplit(md5sum_umap_index, '_', fixed=TRUE))
@@ -779,35 +784,44 @@ report_files_saved <- function(file_index) {
     if(cds_object == 'cds') {
       process <- 'cell_data_set'
       reduction_method <- 'full_cds'
-    } else
+    }
+    else
     if(cds_object == 'reduce_dim_aux') {
       if(reduction_method == 'Aligned') {
         process <- 'align_cds'
-      } else
+      }
+      else
       if(reduction_method == 'PCA' || reduction_method == 'LSI') {
         process <- 'preprocess_cds'
-      } else
+      }
+      else
       if(reduction_method == 'tSNE' || reduction_method == 'UMAP') {
         process <- 'reduce_dimension'
-      } else {
+      }
+      else {
         stop('Unrecognized preprocess reduction_method \'', reduction_method, '\'')
       }
-    } else {
+    }
+    else {
       stop('Unrecognized cds_object value \'', files[['cds_object']][[i]], '\'')
     }
     file_format <- files[['file_format']][[i]]
     if(file_format == 'rds') {
       file_type <- 'RDS'
-    } else
+    }
+    else
     if(file_format == 'hdf5') {
       file_type <- 'RDS_HDF5'
-    } else
+    }
+    else
     if(file_format == 'annoy_index' || file_format == 'hnsw_index') {
       file_type <- 'NN_index'
-    } else
+    }
+    else
     if(file_format == 'umap_annoy_index') {
       file_type <- 'UMAP_NN_index'
-    } else {
+    }
+    else {
       stop('Unrecognized file_format value \'', file_format, '\'')
     }
 
@@ -1146,7 +1160,8 @@ load_transform_models <- function(cds, directory_path) {
             message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
-      } else
+      }
+      else
       if(file_format == 'annoy_index') {
         cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']] <- update_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']])
 
@@ -1160,7 +1175,8 @@ load_transform_models <- function(cds, directory_path) {
             message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
-      } else
+      }
+      else
       if(file_format == 'hnsw_index') {
         cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']] <- update_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']])
 
@@ -1174,7 +1190,8 @@ load_transform_models <- function(cds, directory_path) {
             message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
-      } else
+      }
+      else
       if(reduction_method == 'UMAP' && file_format == 'umap_annoy_index') {
         cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']] <- tryCatch(
           {
@@ -1184,11 +1201,13 @@ load_transform_models <- function(cds, directory_path) {
             message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
          })
-      } else {
+      }
+      else {
         stop('Unrecognized file format value \'', file_format, '\'')
       }
       cds <- set_model_identity_path(cds, reduction_method, directory_path)
-    } else {
+    }
+    else {
       stop('Unrecognized cds_object value \'', cds_object, '\'')
     }
   }
@@ -1364,7 +1383,8 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
                                                   file_md5sum = md5sum,
                                                   stringsAsFactors = FALSE))
       })
-  } else {
+  }
+  else {
     tryCatch(
       {
         HDF5Array::saveHDF5SummarizedExperiment(cds, file.path(directory_path, hdf5_path), replace=TRUE)
@@ -1573,7 +1593,8 @@ load_monocle_objects <- function(directory_path) {
             message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
-      } else
+      }
+      else
       if(file_format == 'hdf5') {
         cds <- tryCatch(
           {
@@ -1583,10 +1604,12 @@ load_monocle_objects <- function(directory_path) {
             message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
-      } else {
+      }
+      else {
         stop('Unrecognized cds format value \'', file_format, '\'')
       }
-    } else
+    }
+    else
     if(cds_object == 'reduce_dim_aux') {
       if(file_format == 'annoy_index') {
         cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']] <- update_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']])
@@ -1601,7 +1624,8 @@ load_monocle_objects <- function(directory_path) {
             message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
-      } else
+      }
+      else
       if(file_format == 'hnsw_index') {
         cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']] <- update_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']])
 
@@ -1615,7 +1639,8 @@ load_monocle_objects <- function(directory_path) {
             message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
-      } else
+      }
+      else
       if(reduction_method == 'UMAP' && file_format == 'umap_annoy_index') {
         cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']] <- tryCatch(
           {
@@ -1625,11 +1650,13 @@ load_monocle_objects <- function(directory_path) {
             message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
          })
-      } else {
+      }
+      else {
         stop('Unrecognized file format value \'', file_format, '\'')
       }
       cds <- set_model_identity_path(cds, reduction_method, directory_path)
-    } else {
+    }
+    else {
       stop('Unrecognized cds_object value \'', cds_object, '\'')
     }
   }

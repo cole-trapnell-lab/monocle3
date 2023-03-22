@@ -68,8 +68,9 @@ preprocess_cds <- function(cds,
                            scaling = TRUE,
                            verbose = FALSE,
                            build_nn_index = FALSE,
-                           nn_control = list()) {
-
+                           nn_control = list(),
+                           pca_control = list()) {
+message('preprocess_cds: bge: start')
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(method) == "",TRUE, TRUE),
              error = function(e) FALSE),
@@ -97,6 +98,8 @@ preprocess_cds <- function(cds,
                           msg = paste("One or more cells has a size factor of",
                                       "NA."))
 
+  pca_control <- set_pca_control(pca_control)
+
   if(build_nn_index) {
     nn_control <- set_nn_control(mode=1,
                                  nn_control=nn_control,
@@ -108,7 +111,18 @@ preprocess_cds <- function(cds,
 
   #ensure results from RNG sensitive algorithms are the same on all calls
   set.seed(2016)
-  FM <- normalize_expr_data(cds, norm_method, pseudo_count)
+
+  #
+  # Note: make_pca_matrix commits BPCells queued
+  #       operations to make FM but does not commit
+  #       operations in counts(cds). Commit additional
+  #       FM queued operations before submitting to
+  #       the SVD function.
+  #
+message('preprocess_cds: bge: here 1')
+  FM <- make_pca_matrix(SingleCellExperiment::counts(cds), pca_control)
+message('preprocess_cds: bge: here 2')
+  FM <- normalize_expr_data(FM=FM, size_factors=size_factors(cds), norm_method=norm_method, pseudo_count=pseudo_count)
 
   if (nrow(FM) == 0) {
     stop("all rows have standard deviation zero")
@@ -117,9 +131,6 @@ preprocess_cds <- function(cds,
   if (!is.null(use_genes)) {
     FM <- FM[use_genes, ]
   }
-
-  fm_rowsums = Matrix::rowSums(FM)
-  FM <- FM[is.finite(fm_rowsums) & fm_rowsums != 0, ]
 
   #
   # Notes:
@@ -136,18 +147,28 @@ preprocess_cds <- function(cds,
 
     if (verbose) message("Remove noise by PCA ...")
 
-    if(! is(FM, 'IterableMatrix'))
-    {
+    if(is(FM, 'CsparseMatrix') || is(FM, 'dgeMatrix')) {
+      fm_rowsums = Matrix::rowSums(FM)
+      FM <- FM[is.finite(fm_rowsums) & fm_rowsums != 0, ]
       irlba_res <- sparse_prcomp_irlba(Matrix::t(FM),
                                        n = min(num_dim,min(dim(FM)) - 1),
                                        center = scaling, scale. = scaling)
     }
     else
-    {
-      irlba_res <- BPCells_prcomp_irlba(Matrix::t(FM),
+    if(is(FM, 'IterableMatrix')) {
+      fm_rowsums = BPCells::rowSums(FM)
+      FM <- FM[is.finite(fm_rowsums) & fm_rowsums != 0, ]
+message('preprocess_cds: bge: here 2')
+      irlba_res <- bpcells_prcomp_irlba(BPCells::t(FM),
                                         n = min(num_dim,min(dim(FM)) - 1),
-                                        center = scaling, scale. = scaling)
+                                        center = scaling, scale. = scaling,
+                                        pca_control=pca_control)
     }
+    else {
+browser()
+      stop('Unrecognized expression matrix class')
+    }
+
     preproc_res <- irlba_res$x
     row.names(preproc_res) <- colnames(cds)
     SingleCellExperiment::reducedDims(cds)[[method]] <- as.matrix(preproc_res)
@@ -191,9 +212,14 @@ preprocess_cds <- function(cds,
     else
       cds <- clear_cds_nn_index(cds=cds, reduction_method=method, nn_method='all')
 
-  } else if(method == "LSI") {
+  }
+  else
+  if(method == "LSI") {
     cds <- initialize_reduce_dim_metadata(cds, 'LSI')
     cds <- initialize_reduce_dim_model_identity(cds, 'LSI')
+
+    fm_rowsums = Matrix::rowSums(FM)
+    FM <- FM[is.finite(fm_rowsums) & fm_rowsums != 0, ]
 
 #    preproc_res <- tfidf(FM)
     tfidf_res <- tfidf(FM)
@@ -259,12 +285,15 @@ preprocess_cds <- function(cds,
 
 # Helper function to normalize the expression data prior to dimensionality
 # reduction
-normalize_expr_data <- function(cds,
+normalize_expr_data <- function(FM, size_factors=NULL,
                                 norm_method = c("log", "size_only", "none"),
                                 pseudo_count = NULL) {
+
+  assertthat::assert_that(!is.null(size_factors))
+  assertthat::assert_that(length(size_factors) == ncol(FM))
+
   norm_method <- match.arg(norm_method)
 
-  FM <- SingleCellExperiment::counts(cds)
 
   # If we're going to be using log, and the user hasn't given us a
   # pseudocount set it to 1 by default.
@@ -274,31 +303,36 @@ normalize_expr_data <- function(cds,
     else
       pseudo_count <- 0
   }
+
   if (is(FM, 'IterableMatrix')) {
     if(norm_method != 'log' || pseudo_count != 1) {
-      stop('For BPCells count matrix, the normalization method must be \'log\' with a pseudo count of 1.')
+      stop('BPCells count matrix requires norm_method = \'log\' and pseudo_count = 1.')
     }
-    FM <- BPCells::t(BPCells::t(FM)/size_factors(cds))
+    FM <- BPCells::t(BPCells::t(FM)/size_factors)
     FM <- log1p(FM) / log(2)
-  } else
+  }
+  else
   if (norm_method == "log") {
     # If we are using log, normalize by size factor before log-transforming
 
-    FM <- Matrix::t(Matrix::t(FM)/size_factors(cds))
+    FM <- Matrix::t(Matrix::t(FM)/size_factors)
 
-    if (pseudo_count != 1 || is_sparse_matrix(SingleCellExperiment::counts(cds)) == FALSE){
+    if (pseudo_count != 1 || is_sparse_matrix(FM) == FALSE){
       FM <- FM + pseudo_count
       FM <- log2(FM)
-    } else {
+    }
+    else {
       FM@x = log2(FM@x + 1)
     }
 
-  } else if (norm_method == "size_only") {
-    FM <- Matrix::t(Matrix::t(FM)/size_factors(cds))
+  }
+  else if (norm_method == "size_only") {
+    FM <- Matrix::t(Matrix::t(FM)/size_factors)
     FM <- FM + pseudo_count
   }
   return (FM)
 }
+
 
 # Andrew's tfidf
 tfidf <- function(count_matrix, frequencies=TRUE, log_scale_tf=TRUE,

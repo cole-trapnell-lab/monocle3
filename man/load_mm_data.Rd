@@ -14,7 +14,7 @@ load_mm_data(
   umi_cutoff = 100,
   quote = "\\"'",
   sep = "\\t",
-  BPCells = FALSE
+  assay_control = list()
 )
 }
 \arguments{
@@ -70,11 +70,20 @@ sep = "", the separator is white space, that is, one or more spaces,
 tabs, newlines, or carriage returns. The default is the tab
 character for tab-separated-value files.}
 
-\item{BPCells}{A logical value specifying whether to store the
-count matrix as an out-of-core BPCells object. If the count
-matrix is saved as an out-of-core BPCells object, the
-save_monocle_objects function must be used to save the CDS.
-The default is FALSE.}
+\item{assay_control}{A list of values that define how matrices
+are stored in the cell_data_set assays slot. Typically, matrices are
+stored in memory as objects using matrix_class$counts="CsparseMatrix"
+and matrix_mode$counts="mem". In this case, all other assay_control
+values are set to NA. This is the default. There is a set of
+assay_control values for each matrix stored in the list-like assays
+slot. In Monocle3, we store one matrix called "counts" in the slot.
+A very large matrix can be stored in a file and accessed by Monocle3
+as if it were in memory. For this, Monocle3 uses the BPCells R
+package. In this case, the assay_control values can be set to
+matrix_class$counts="BPCells", matrix_mode$counts="dir", and
+matrix_path$counts=".". All other assay_control values are set to
+NA. Other assay_control elements are used to control other storage
+modes and classes.}
 }
 \value{
 cds object
