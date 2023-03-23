@@ -74,6 +74,7 @@ get_global_variable <- function(variable_name=NULL) {
   set_global_variable('monocle3_hnsw_index_version', 1)
   set_global_variable('monocle3_timer_t0', 0)
   set_global_variable('monocle3_timer_msg', "")
+  set_global_variable('monocle_gc_matrix_path', list())
 
   # Default nn_control list for functions that do not need
   # an index, which is all but the label transfer functions.
@@ -118,4 +119,18 @@ get_global_variable <- function(variable_name=NULL) {
   # for travis
   Sys.setenv('TESTTHAT_MAX_FAILS' = Inf)
 }
+
+#
+# Try to clean up any temporary matrix files and directories on exiting.
+#
+._._gc_matrix_object_remove_._. <- function(env) {
+  matrix_path_list <- get_global_variable('monocle_gc_matrix_path')
+  for(matrix_path in matrix_path_list) {
+    if(file.exists(matrix_path) || dir.exists(matrix_path)) {
+      unlink(matrix_path, recursive=TRUE)
+    }
+  }
+}
+
+reg.finalizer(._._global_variable_env_._., ._._gc_matrix_object_remove_._., onexit=TRUE)
 

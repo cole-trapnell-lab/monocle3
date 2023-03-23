@@ -275,10 +275,12 @@ load_mm_data <- function( mat_path,
     else
     if(matrix_mode == 'dir') {
       mat <- BPCells::write_matrix_dir(mat=BPCells::convert_matrix_type(mat, type=matrix_type), dir=matrix_path, compress=matrix_compress, buffer_size=matrix_buffer_size, overwrite=matrix_overwrite)
+      push_matrix_path(matrix_path, 'bpcells_dir')
     }
     else
     if(matrix_mode == '10xhdf5') {
       mat <- BPCells::write_matrix_hdf5(mat=BPCells::convert_matrix_type(mat, type=matrix_type), path=matrix_path, group=matrix_group, compress=matrix_compress, buffer_size=matrix_buffer_size, chunk_size=matrix_chunk_size, overwrite=matrix_overwrite)
+      push_matrix_path(matrix_path, 'bpcells_10xhdf5')
     }
   }
 
@@ -1298,16 +1300,21 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
                                            object_spec = character(0),
                                            file_format = character(0),
                                            file_path = character(0),
+                                           file_bpcells_matrix = character(0),
                                            file_md5sum = character(0),
                                            stringsAsFactors = FALSE))
 
   # Save assays as HDF5Array objects?
   hdf5_assay_flag <- hdf5_assays || test_hdf5_assays(cds)
 
+  # Save assays as BPCells Matrix_dir or BPCells 10xHDF5 file?
+  bpcells_matrix_dir_flag <- test_bpcells_matrix_dir_assays(cds=cds)
+
   # Path of cds object file.
   rds_path <- 'cds_object.rds'
   hdf5_path <- 'hdf5_object'
-
+  bpcells_matrix_dir <- 'bpcells_matrix_dir'
+  
   # Gather reduce_dimension reduction_method names for which indexes exist.
   methods_reduce_dim <- list()
   for(reduction_method in names(cds@reduce_dim_aux)) {
@@ -1340,6 +1347,12 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
   dir.create(path = directory_path, showWarnings=FALSE, recursive=TRUE, mode='0700')
 
   # Remove files, if they exist.
+
+  # BPCells MatrixDir directory.
+  if(file.exists(file.path(directory_path, bpcells_matrix_dir)))
+    unlink(file.path(directory_path, bpcells_matrix_dir), recursive=TRUE)
+
+  # Reduction method related files.
   for(reduction_method in names(methods_reduce_dim)) {
     if(file.exists(file.path(directory_path, rds_path)))
       file.remove(file.path(directory_path, rds_path))
@@ -1380,6 +1393,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
                                                   object_spec = object_name_to_string(cds),
                                                   file_format = 'rds',
                                                   file_path = rds_path,
+                                                  file_bpcells_matrix = if(bpcells_matrix_dir_flag) bpcells_matrix_dir else '',
                                                   file_md5sum = md5sum,
                                                   stringsAsFactors = FALSE))
       })
@@ -1476,6 +1490,12 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
     }
   }
 
+  # Save BCells MatrixDir, if required.
+  if(bpcells_matrix_dir_flag) {
+    matrix_path <- file.path(directory_path, bpcells_matrix_dir)
+    BPCells::write_matrix_dir(mat=counts(cds), dir=matrix_path, compress=TRUE, buffer_size=8192L, overwrite=FALSE)
+  }
+
   # Save file_index.rds.
   saveRDS(file_index, file=file.path(directory_path, 'file_index.rds'))
 
@@ -1556,8 +1576,11 @@ load_monocle_objects <- function(directory_path) {
     file_path <- file.path(directory_path, file_index[['files']][['file_path']][[ifile]])
     file_format <- file_index[['files']][['file_format']][[ifile]]
     cds_object <- file_index[['files']][['cds_object']][[ifile]]
+    bpcells_matrix <- file_index[['files']][['file_bpcells_matrix']][[ifile]]
     reduction_method <- file_index[['files']][['reduction_method']][[ifile]]
     md5sum <- file_index[['files']][['file_md5sum']][[ifile]]
+
+    message('load_monocle_objects: ifile: ', ifile, '  cds_object: ', cds_object) 
 
     if(!file.exists(file_path)) 
       stop('load_monocle_objects: missing file \'', file_path, '\'')

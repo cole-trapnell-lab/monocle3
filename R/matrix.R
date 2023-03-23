@@ -2,6 +2,14 @@
 # BPCells
 ################################################################################
 
+
+test_bpcells_matrix_dir_assays <- function(cds) {
+  if(is(counts(cds), 'IterableMatrix'))
+    return(TRUE)
+  return(FALSE)
+}
+
+
 select_assay_parameter_value <- function(parameter, assay_control, assay_control_default, default_value) {
   if(!is.null(assay_control[[parameter]])) {
     return(assay_control[[parameter]])
@@ -248,14 +256,27 @@ set_assay_control <- function(assay_control=list()) {
   #
   if(assay_control_out[['matrix_class']] == 'BPCells' && is.null(assay_control_out[['matrix_path']])) {
     if(assay_control_out[['matrix_mode']] == 'dir') {
-      assay_control_out[['matrix_path']] <- tempfile(pattern='monocle.', tmpdir='.', fileext='.bpc')[[1]]
+      assay_control_out[['matrix_path']] <- tempfile(pattern='monocle.bpcells.', tmpdir='.', fileext='.tmp')[[1]]
     }
     else
     if(assay_control_out[['matrix_mode']] == '10xhdf5') {
-      assay_control_out[['matrix_path']] <- tempfile(pattern='monocle.', tmpdir='.', fileext='.h5')[[1]]
+      assay_control_out[['matrix_path']] <- tempfile(pattern='monocle.bpcells.', tmpdir='.', fileext='.tmp')[[1]]
     }
   }
 
   return(assay_control_out)
 }
+
+
+push_matrix_path <- function(mat, matrix_type) {
+  message('**** push_matrix_path: ', mat, ' -- ', matrix_type)
+  x <- get_global_variable('monocle_gc_matrix_path')
+  message('monocle_gc_matrix_path: start:\n', paste0(x, collapse='\n'))
+  x <- append(x, mat)
+  set_global_variable('monocle_gc_matrix_path', x)
+
+  x <- get_global_variable('monocle_gc_matrix_path')
+  message('monocle_gc_matrix_path: end:\n', paste0(x, collapse='\n'))
+}
+
 

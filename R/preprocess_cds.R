@@ -120,7 +120,9 @@ message('preprocess_cds: bge: start')
   #       the SVD function.
   #
 message('preprocess_cds: bge: here 1')
-  FM <- make_pca_matrix(SingleCellExperiment::counts(cds), pca_control)
+  pca_matrix_list <- make_pca_matrix(SingleCellExperiment::counts(cds), pca_control)
+  FM <- pca_matrix_list[['mat']]
+  matrix_path <-  pca_matrix_list[['matrix_path']]
 message('preprocess_cds: bge: here 2')
   FM <- normalize_expr_data(FM=FM, size_factors=size_factors(cds), norm_method=norm_method, pseudo_count=pseudo_count)
 
@@ -165,7 +167,6 @@ message('preprocess_cds: bge: here 2')
                                         pca_control=pca_control)
     }
     else {
-browser()
       stop('Unrecognized expression matrix class')
     }
 
@@ -188,6 +189,11 @@ browser()
     # Note that prop_var_expl is the fraction of variance explained by the retained
     # PCs, not the fraction of total variance.
     cds@reduce_dim_aux[['PCA']][['model']][['prop_var_expl']] <- irlba_res$sdev^2 / sum(irlba_res$sdev^2)
+
+    if(!is.null(matrix_path)) {
+      unlink(matrix_path, recursive=TRUE)
+      rm(FM)
+    }
 
     matrix_id <- get_unique_id(SingleCellExperiment::reducedDims(cds)[['PCA']])
     counts_identity <- get_counts_identity(cds)

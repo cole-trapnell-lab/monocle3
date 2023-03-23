@@ -138,7 +138,7 @@ set_pca_control <- function(pca_control=list()) {
   #
   if(pca_control_out[['matrix_class']] == 'BPCells' && is.null(pca_control_out[['matrix_path']])) {
     if(pca_control_out[['matrix_mode']] == 'dir') {
-      pca_control_out[['matrix_path']] <- tempfile(pattern='monocle.', tmpdir='.', fileext='.bpc')[[1]]
+      pca_control_out[['matrix_path']] <- tempfile(pattern='monocle.bpcells.', tmpdir='.', fileext='.tmp')[[1]]
     }
   }
 
@@ -388,10 +388,11 @@ message('BPCells irlba bge here 2')
   else
   if(pca_control[['matrix_mode']] == 'dir') {
 message('BPCells irlba bge here 3')
-    dir <- pca_control[['matrix_path']]
+    matrix_path <- paste0(pca_control[['matrix_path']], '.2')
     buffer_size <- pca_control[['matrix_buffer_size']]
 message('BPCells irlba bge here 4')
-    x_commit <- BPCells::write_matrix_dir(mat=x, dir=dir, compress=FALSE, buffer_size=buffer_size, overwrite=TRUE)
+    x_commit <- BPCells::write_matrix_dir(mat=x, dir=matrix_path, compress=FALSE, buffer_size=buffer_size, overwrite=FALSE)
+    push_matrix_path(matrix_path, 'bpcells_dir')
 message('BPCells irlba bge here 5')
   }
 
@@ -408,6 +409,12 @@ message('BPCells irlba bge here 7')
 
 message('start time: ', Sys.time());  s <- do.call(irlba::irlba, args=args); message('end time: ', Sys.time())
 #  s <- do.call(irlba::irlba, args=args)
+
+  if(pca_control[['matrix_mode']] == 'dir') {
+    unlink(matrix_path, recursive=TRUE)
+    rm(x_commit)
+  }
+
 message('BPCells irlba bge here 8')
   message('singular values')
   message(paste(s$d, collapse=' '))
@@ -437,6 +444,7 @@ message('BPCells irlba bge here 12')
 make_pca_matrix <- function(FM, pca_control=list()) {
 message('make_pca_matrix: start')
   matrix_class <- pca_control[['matrix_class']]
+  matrix_path <- NULL
   if(matrix_class == 'CsparseMatrix') {
     if(!is_sparse_matrix(FM)) {
       FM <- as(FM, 'dgCMatrix')
@@ -454,19 +462,18 @@ message('make_pca_matrix: start')
     else
     if(matrix_mode == 'dir') {
       matrix_path <- pca_control[['matrix_path']]
+      assertthat::assert_that(!is.null(matrix_path))
       matrix_buffer_size <- pca_control[['matrix_buffer_size']]
-      if(is.null(matrix_path)) {
-        matrix_path <- tempdir()
-      }
       if(!is(FM, 'IterableMatrix') && !is(FM, 'CsparseMatrix')) {
         FM <- as(FM, 'CsparseMatrix')
       }
       FM <- BPCells::write_matrix_dir(mat=BPCells::convert_matrix_type(FM, type=matrix_type), dir=matrix_path, compress=FALSE, buffer_size=matrix_buffer_size, overwrite=FALSE)
+      push_matrix_path(matrix_path, 'bpcells_dir')
     }
   }
 message('make_pca_matrix: end')
 
-  return(FM)
+  return(list(mat=FM, matrix_path=matrix_path))
 }
 
 
