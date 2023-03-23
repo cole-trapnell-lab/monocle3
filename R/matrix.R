@@ -39,13 +39,6 @@ select_assay_parameter_value <- function(parameter, assay_control, assay_control
 #       matrix_compress: TRUE, FALSE default: FALSE
 #       matrix_buffer_size: <integer> default: 8192L
 #       matrix_overwrite: TRUE, FALSE default: FALSE
-#     matrix_mode: '10xhdf5'
-#       matrix_path: <path to directory or file> default: 'NULL' -> temporary file in pwd
-#       matrix_group: default '/'
-#       matrix_compress: TRUE, FALSE default: FALSE
-#       matrix_buffer_size: <integer> default: 8192L
-#       matrix_chunk_size: <integer> default: 1024L
-#       matrix_overwrite: TRUE, FALSE default: FALSE
 set_assay_control <- function(assay_control=list()) {
 
   assertthat::assert_that(methods::is(assay_control, "list"))
@@ -130,7 +123,7 @@ set_assay_control <- function(assay_control=list()) {
   else
   if(assay_control_out[['matrix_class']] == 'BPCells') {
     assay_control_out[['matrix_mode']] <- select_assay_parameter_value('matrix_mode', assay_control, assay_control_default, default_matrix_mode)
-    if(!(assay_control_out[['matrix_mode']] %in% c('mem', 'dir', '10xhdf5'))) {
+    if(!(assay_control_out[['matrix_mode']] %in% c('mem', 'dir'))) {
       error_string <- list(error_string, paste0('  ',
                            assay_control_out[['matrix_mode']],
                            ' is not a valid matrix_mode for matrix_class "BPCells".'))
@@ -198,57 +191,6 @@ set_assay_control <- function(assay_control=list()) {
         stop(error_string)
       }
     }
-    else
-      if(assay_control_out[['matrix_mode']] == '10xhdf5') {
-      assay_control_out[['matrix_path']] <- select_assay_parameter_value('matrix_path', assay_control, assay_control_default, default_matrix_path)
-      if(!is.null(assay_control_out[['matrix_path']]) &&
-         !is.character(assay_control_out[['matrix_path']])) {
-        error_string <- list(error_string, paste0('  ',
-                             assay_control_out[['matrix_path']],
-                             ' is not a valid matrix_path.'))
-
-      }
-
-      assay_control_out[['matrix_group']] <- select_assay_parameter_value('matrix_group', assay_control, assay_control_default, default_matrix_group)
-      if(!is.character(assay_control_out[['matrix_group']])) {
-        error_string <- list(error_string, paste0('  ',
-                             assay_control_out[['matrix_group']],
-                             ' is not a valid matrix_path.'))
-
-      }
-
-      assay_control_out[['matrix_compress']] <- select_assay_parameter_value('matrix_compress', assay_control, assay_control_default, default_matrix_compress)
-      if(!is.logical(assay_control_out[['matrix_compress']])) {
-        error_string <- list(error_string, paste0('  ',
-                             assay_control_out[['matrix_compress']],
-                             ' is not TRUE or FALSE.'))
-      }
-
-      assay_control_out[['matrix_buffer_size']] <- select_assay_parameter_value('matrix_buffer_size', assay_control, assay_control_default, default_matrix_buffer_size)
-      if(!is.integer(assay_control_out[['matrix_buffer_size']])) {
-        error_string <- list(error_string, paste0('  ',
-                             assay_control_out[['matrix_buffer_size']],
-                             ' is not an integer.'))
-      }
-
-      assay_control_out[['matrix_chunk_size']] <- select_assay_parameter_value('matrix_chunk_size', assay_control, assay_control_default, default_matrix_chunk_size)
-      if(!is.integer(assay_control_out[['matrix_chunk_size']])) {
-        error_string <- list(error_string, paste0('  ',
-                             assay_control_out[['matrix_chunk_size']],
-                             ' is not an integer.'))
-      }
-
-      assay_control_out[['matrix_overwrite']] <- select_assay_parameter_value('matrix_overwrite', assay_control, assay_control_default, default_matrix_overwrite)
-      if(!is.logical(assay_control_out[['matrix_overwrite']])) {
-        error_string <- list(error_string, paste0('  ',
-                             assay_control_out[['matrix_overwrite']],
-                             ' is not TRUE or FALSE.'))
-      }
-
-      if(length(error_string) > 0){
-        stop(error_string)
-      }
-    }
   }
 
   #
@@ -256,10 +198,6 @@ set_assay_control <- function(assay_control=list()) {
   #
   if(assay_control_out[['matrix_class']] == 'BPCells' && is.null(assay_control_out[['matrix_path']])) {
     if(assay_control_out[['matrix_mode']] == 'dir') {
-      assay_control_out[['matrix_path']] <- tempfile(pattern='monocle.bpcells.', tmpdir='.', fileext='.tmp')[[1]]
-    }
-    else
-    if(assay_control_out[['matrix_mode']] == '10xhdf5') {
       assay_control_out[['matrix_path']] <- tempfile(pattern='monocle.bpcells.', tmpdir='.', fileext='.tmp')[[1]]
     }
   }

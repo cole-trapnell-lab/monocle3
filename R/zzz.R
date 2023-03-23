@@ -87,7 +87,6 @@ get_global_variable <- function(variable_name=NULL) {
   # Default assay_control list.
   set_global_variable('assay_control_csparsematrix', list(matrix_assay='counts', matrix_class='CsparseMatrix', matrix_mode='mem', matrix_type='double', matrix_compress=FALSE, matrix_path=NULL, matrix_group='/', matrix_buffer_size=8192L, matrix_chunk_size=1024L, matrix_overwrite=FALSE))
   set_global_variable('assay_control_bpcells', list(matrix_assay='counts', matrix_class='BPCells', matrix_mode='dir', matrix_type='uint32_t', matrix_compress=TRUE, matrix_path=NULL, matrix_group='/', matrix_buffer_size=8192L, matrix_chunk_size=1024L, matrix_overwrite=FALSE))
-  set_global_variable('assay_control_10xhdf5', list(matrix_assay='counts', matrix_class='BPCells', matrix_mode='10xhdf5', matrix_type='uint32_t', matrix_compress=TRUE, matrix_path=NULL, matrix_group='/', matrix_buffer_size=8192L, matrix_chunk_size=1024L, matrix_overwrite=FALSE))
 
   # Default pca_control list.
   set_global_variable('pca_control_csparsematrix', list(matrix_class='CsparseMatrix', matrix_mode='mem', matrix_type='double', matrix_path=NULL, matrix_buffer_size=8192L))

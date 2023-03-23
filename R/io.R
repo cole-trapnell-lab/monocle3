@@ -277,11 +277,6 @@ load_mm_data <- function( mat_path,
       mat <- BPCells::write_matrix_dir(mat=BPCells::convert_matrix_type(mat, type=matrix_type), dir=matrix_path, compress=matrix_compress, buffer_size=matrix_buffer_size, overwrite=matrix_overwrite)
       push_matrix_path(matrix_path, 'bpcells_dir')
     }
-    else
-    if(matrix_mode == '10xhdf5') {
-      mat <- BPCells::write_matrix_hdf5(mat=BPCells::convert_matrix_type(mat, type=matrix_type), path=matrix_path, group=matrix_group, compress=matrix_compress, buffer_size=matrix_buffer_size, chunk_size=matrix_chunk_size, overwrite=matrix_overwrite)
-      push_matrix_path(matrix_path, 'bpcells_10xhdf5')
-    }
   }
 
   cds <- new_cell_data_set( mat,
@@ -774,6 +769,12 @@ load_umap_nn_indexes <- function(umap_model, file_name, md5sum_umap_index) {
 }
 
 
+load_bpcells_matrix_dir <- function(file_name, md5sum) {
+  matrixDir <- BPCells::open_matrix_dir(dir=file_name, buffer_size=8192L)
+  return(matrixDir)
+}
+
+
 #
 # Report files saved.
 #
@@ -804,6 +805,11 @@ report_files_saved <- function(file_index) {
         stop('Unrecognized preprocess reduction_method \'', reduction_method, '\'')
       }
     }
+    else
+    if(cds_object == 'bpcells_matrix_dir') {
+      process <- 'BPCells MatrixDir'
+      reduction_method <- 'full_counts_matrix'
+    }
     else {
       stop('Unrecognized cds_object value \'', files[['cds_object']][[i]], '\'')
     }
@@ -822,6 +828,10 @@ report_files_saved <- function(file_index) {
     else
     if(file_format == 'umap_annoy_index') {
       file_type <- 'UMAP_NN_index'
+    }
+    else
+    if(file_format == 'BPCells:MatrixDir') {
+      file_type <- 'BPCells:MatrixDir'
     }
     else {
       stop('Unrecognized file_format value \'', file_format, '\'')
@@ -1290,6 +1300,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
                       'uwot_version' = utils::packageVersion('uwot'),
                       'hnsw_version' = utils::packageVersion('RcppHNSW'),
                       'hdf5array_version' = utils::packageVersion('HDF5Array'),
+                      'bpcells_version' = utils::packageVersion('BPCells'),
                       'monocle_version' = utils::packageVersion('monocle3'),
                       'cds_version' = S4Vectors::metadata(cds)$cds_version,
                       'archive_version' = get_global_variable('monocle_objects_version'),
@@ -1300,7 +1311,6 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
                                            object_spec = character(0),
                                            file_format = character(0),
                                            file_path = character(0),
-                                           file_bpcells_matrix = character(0),
                                            file_md5sum = character(0),
                                            stringsAsFactors = FALSE))
 
@@ -1393,9 +1403,23 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
                                                   object_spec = object_name_to_string(cds),
                                                   file_format = 'rds',
                                                   file_path = rds_path,
-                                                  file_bpcells_matrix = if(bpcells_matrix_dir_flag) bpcells_matrix_dir else '',
                                                   file_md5sum = md5sum,
                                                   stringsAsFactors = FALSE))
+        # Save BCells MatrixDir, if required.
+        if(bpcells_matrix_dir_flag) {
+          bpcells_matrix_path <- file.path(directory_path, bpcells_matrix_dir)
+          mat <- counts(cds)
+          BPCells::write_matrix_dir(mat=mat, dir=bpcells_matrix_path, compress=TRUE, buffer_size=8192L, overwrite=FALSE)
+
+          file_index[['files']] <- rbind(file_index[['files']],
+                                         data.frame(cds_object = 'bpcells_matrix_dir',
+                                                    reduction_method = NA,
+                                                    object_spec = object_name_to_string(mat),
+                                                    file_format = 'BPCells:MatrixDir',
+                                                    file_path = bpcells_matrix_dir,
+                                                    file_md5sum = NA,
+                                                    stringsAsFactors = FALSE))
+        }
       })
   }
   else {
@@ -1490,12 +1514,6 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
     }
   }
 
-  # Save BCells MatrixDir, if required.
-  if(bpcells_matrix_dir_flag) {
-    matrix_path <- file.path(directory_path, bpcells_matrix_dir)
-    BPCells::write_matrix_dir(mat=counts(cds), dir=matrix_path, compress=TRUE, buffer_size=8192L, overwrite=FALSE)
-  }
-
   # Save file_index.rds.
   saveRDS(file_index, file=file.path(directory_path, 'file_index.rds'))
 
@@ -1576,7 +1594,6 @@ load_monocle_objects <- function(directory_path) {
     file_path <- file.path(directory_path, file_index[['files']][['file_path']][[ifile]])
     file_format <- file_index[['files']][['file_format']][[ifile]]
     cds_object <- file_index[['files']][['cds_object']][[ifile]]
-    bpcells_matrix <- file_index[['files']][['file_bpcells_matrix']][[ifile]]
     reduction_method <- file_index[['files']][['reduction_method']][[ifile]]
     md5sum <- file_index[['files']][['file_md5sum']][[ifile]]
 
@@ -1594,7 +1611,8 @@ load_monocle_objects <- function(directory_path) {
          reduction_method == 'UMAP' &&
          file_format == 'umap_nn_index' &&
          nchar(md5sum) > 32) &&
-       file_format != 'hdf5') {
+       file_format != 'hdf5' &&
+       cds_object != 'bpcells_matrix_dir') {
       md5sum_file <- tools::md5sum(file_path)
       if(is.na(md5sum_file) || (md5sum_file != md5sum)) {
         stop('md5sum mismatch for file \'', file_path, '\'')
@@ -1678,6 +1696,17 @@ load_monocle_objects <- function(directory_path) {
         stop('Unrecognized file format value \'', file_format, '\'')
       }
       cds <- set_model_identity_path(cds, reduction_method, directory_path)
+    }
+    else
+    if(cds_object == 'bpcells_matrix_dir') {
+      counts(cds) <- tryCatch(
+        {
+          load_bpcells_matrix_dir(file_path, md5sum)
+        },
+        error = function(cond) {
+          message('problem reading file \'', file_path, '\'', appendLF=appendLF)
+          return(NULL)
+        })
     }
     else {
       stop('Unrecognized cds_object value \'', cds_object, '\'')
