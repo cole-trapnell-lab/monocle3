@@ -581,3 +581,20 @@ setReplaceMethod("fData", "cell_data_set", function(x, value) {
   methods::validObject(x)
   return(x)
 })
+
+
+if (!isGeneric("saveRDS")) {setGeneric("saveRDS", function (object, file="", ascii=FALSE, version=NULL, compress=TRUE, refhook=NULL) standardGeneric("saveRDS"))}
+
+#' @export
+setMethod("saveRDS", signature(object="cell_data_set"),
+    function(object, file="", ascii = FALSE, version = NULL, compress=TRUE, refhook = NULL) {
+        if(is(counts(object), 'IterableMatrix')) {
+          message('Warning: saveRDS(cds, ...) does not save the BPCells out-of-core CDS\
+counts matrix. We suggest that you use the "save_monocle_objects()"\
+function to save this CDS although we are running base::saveRDS() as\
+you requested anyway.')
+        }
+        base::saveRDS(object, file=file, ascii = ascii, version = version, compress=compress, refhook = refhook)
+    }
+)
+

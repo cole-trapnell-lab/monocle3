@@ -182,18 +182,12 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
 #' character for tab-separated-value files.
 #' @param assay_control A list of values that define how matrices
 #' are stored in the cell_data_set assays slot. Typically, matrices are
-#' stored in memory as objects using matrix_class$counts="CsparseMatrix"
-#' and matrix_mode$counts="mem". In this case, all other assay_control
-#' values are set to NA. This is the default. There is a set of
-#' assay_control values for each matrix stored in the list-like assays
-#' slot. In Monocle3, we store one matrix called "counts" in the slot.
-#' A very large matrix can be stored in a file and accessed by Monocle3
-#' as if it were in memory. For this, Monocle3 uses the BPCells R
-#' package. In this case, the assay_control values can be set to
-#' matrix_class$counts="BPCells", matrix_mode$counts="dir", and
-#' matrix_path$counts=".". All other assay_control values are set to
-#' NA. Other assay_control elements are used to control other storage
-#' modes and classes.
+#' stored in memory as objects using matrix_class="CsparseMatrix"
+#' and matrix_mode="mem". In this case, all other assay_control
+#' values are ignored. This is the default. A very large matrix can be
+#' stored in a file and accessed by Monocle3 as if it were in memory.
+#' For this, Monocle3 uses the BPCells R package. Here the assay_control
+#' values can be set to matrix_class="BPCells" and matrix_mode="dir".
 #' @return cds object
 #'
 #' @section Comments:
@@ -982,7 +976,7 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
   for(reduction_method in names(methods_reduce_dim)) {
     tryCatch(
       {
-        saveRDS(cds@reduce_dim_aux[[reduction_method]], file=file.path(directory_path, methods_reduce_dim[[reduction_method]][['rds_path']]))
+        base::saveRDS(cds@reduce_dim_aux[[reduction_method]], file=file.path(directory_path, methods_reduce_dim[[reduction_method]][['rds_path']]))
       },
       error = function(cond) {
                      message('problem writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['rds_path']]), '\': ', cond, appendLF=appendLF)
@@ -1065,7 +1059,7 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
   }
 
   # Save file_index.rds.
-  saveRDS(file_index, file=file.path(directory_path, 'file_index.rds'))
+  base::saveRDS(file_index, file=file.path(directory_path, 'file_index.rds'))
 
   if(verbose) {
     report_files_saved(file_index)
@@ -1389,7 +1383,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
   if(!hdf5_assay_flag) {
     tryCatch(
       {
-        saveRDS(cds, file.path(directory_path, rds_path))
+        base::saveRDS(cds, file.path(directory_path, rds_path))
       },
       error = function(cond) {
                        message('problem writing file \'', file.path(directory_path, rds_path), '\': ', cond, appendLF=appendLF)
@@ -1515,7 +1509,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
   }
 
   # Save file_index.rds.
-  saveRDS(file_index, file=file.path(directory_path, 'file_index.rds'))
+  base::saveRDS(file_index, file=file.path(directory_path, 'file_index.rds'))
 
   if(verbose) {
     report_files_saved(file_index)

@@ -37,27 +37,32 @@ set_pca_control <- function(pca_control=list()) {
                                   'matrix_mode',
                                   'matrix_type',
                                   'matrix_path',
-                                  'matrix_buffer_size')
+                                  'matrix_buffer_size',
+                                  'show_values')
 
   allowed_matrix_class <- c('CsparseMatrix', 'BPCells')
 
-  if(length(pca_control) > 0) {
-    assertthat::assert_that(all(names(pca_control) %in% allowed_control_parameters),
-                            msg = "set_pca_control: unknown variable in pca_control")
-    if(!is.null(pca_control[['matrix_class']]) && !(pca_control[['matrix_class']] %in% allowed_matrix_class)) {
-        stop('  matrix_class must be one of ', paste0('"', allowed_matrix_class, '"', sep=' '))
-    }
-    if(pca_control[['matrix_class']] == 'CsparseMatrix') {
-      pca_control_default <- get_global_variable('pca_control_csparsematrix')
-    }
-    else
-    if(pca_control[['matrix_class']] == 'BPCells') {
-      pca_control_default <- get_global_variable('pca_control_bpcells')
-    }
+
+  assertthat::assert_that(methods::is(pca_control, "list"))
+
+  if(is.null(pca_control[['matrix_class']])) {
+    pca_control[['matrix_class']] <- 'CsparseMatrix'
   }
-  else {
+  else
+  if(!(pca_control[['matrix_class']] %in% allowed_matrix_class)) {
+    stop('  matrix_class value must be "CsparseMatrix" or "BPCells"')
+  }
+
+  if(pca_control[['matrix_class']] == 'CsparseMatrix') {
     pca_control_default <- get_global_variable('pca_control_csparsematrix')
   }
+  else
+  if(pca_control[['matrix_class']] == 'BPCells') {
+    pca_control_default <- get_global_variable('pca_control_bpcells')
+  }
+
+  assertthat::assert_that(all(names(pca_control) %in% allowed_control_parameters),
+                          msg = "set_pca_control: unknown variable in pca_control")
 
   assertthat::assert_that(all(names(pca_control_default) %in% allowed_control_parameters),
                           msg = "set_pca_control: unknown variable in pca_control_default")
@@ -142,7 +147,51 @@ set_pca_control <- function(pca_control=list()) {
     }
   }
 
+  #
+  # Display pca_control list if pca_control[['show_values']] <- TRUE.
+  #
+  if(!is.null(pca_control[['show_values']]) && pca_control[['show_values']] == TRUE)
+  {
+    report_pca_control('  pca_control: ', pca_control=pca_control_out)
+    stop_no_noise()
+  }
+
   return(pca_control_out)
+}
+
+
+# Report pca_control list values.
+report_pca_control <- function(label=NULL, pca_control) {
+  indent <- ''
+  if(!is.null(label)) {
+    indent <- '  '
+  }
+
+  message(ifelse(!is.null(label), label, ''))
+
+  message(indent, '  matrix_class: ', ifelse(!is.null(pca_control[['matrix_class']]), pca_control[['matrix_class']], as.character(NA)))
+
+  if(pca_control[['matrix_class']] == 'CsparseMatrix') {
+    message(indent, '  matrix_mode: ', ifelse(!is.null(pca_control[['matrix_mode']]), pca_control[['matrix_mode']], as.character(NA)))
+  }
+  else
+  if(pca_control[['matrix_class']] == 'BPCells') {
+    if(pca_control[['matrix_mode']] == 'mem') {
+      message(indent, '  matrix_type: ', ifelse(!is.null(pca_control[['matrix_type']]), pca_control[['matrix_type']], as.character(NA)))
+    }
+    else
+    if(pca_control[['matrix_mode']] == 'dir') {
+      message(indent, '  matrix_type: ', ifelse(!is.null(pca_control[['matrix_type']]), pca_control[['matrix_type']], as.character(NA)))
+      message(indent, '  matrix_path: ', ifelse(!is.null(pca_control[['matrix_path']]), pca_control[['matrix_path']], as.character(NA)))
+      message(indent, '  matrix_buffer_size: ', ifelse(!is.null(pca_control[['matrix_buffer_size']]), pca_control[['matrix_buffer_size']], as.character(NA)))
+    }
+    else {
+      stop('report_nn_control: unsupported pca class/mode/...\'', pca_control[['method']], '\'')
+    }
+  }
+  else {
+    stop('report_nn_control: unsupported pca class/mode/...\'', pca_control[['method']], '\'')
+  }
 }
 
 

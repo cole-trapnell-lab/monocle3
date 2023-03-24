@@ -52,33 +52,36 @@ set_assay_control <- function(assay_control=list()) {
                                   'matrix_group',
                                   'matrix_buffer_size',
                                   'matrix_chunk_size',
-                                  'matrix_overwrite')
+                                  'matrix_overwrite',
+                                  'show_values')
 
   allowed_matrix_class <- c('CsparseMatrix', 'BPCells')
 
-  if(length(assay_control) > 0) {
-    if(!is.null(assay_control[['matrix_assay']]) && assay_control[['matrix_assay']] != 'counts') {
-      stop('  matrix_assay value must be "counts"')
-    }
-    if(!is.null(assay_control[['matrix_class']]) && !(assay_control[['matrix_class']] %in% allowed_matrix_class)) {
-        stop('  matrix_class must be one of ', paste0('"', allowed_matrix_class, '"', sep=' '))
-    }
-    if(assay_control[['matrix_class']] == 'CsparseMatrix') {
-      assay_control_default <- get_global_variable('assay_control_csparsematrix')
-    }
-    else
-    if(assay_control[['matrix_class']] == 'BPCells') {
-      assay_control_default <- get_global_variable('assay_control_bpcells')
-    }
-  }
-  else {
-    assay_control_default <- get_global_variable('assay_control_csparsematrix')
+  assertthat::assert_that(methods::is(assay_control, "list"))
+
+  if(!is.null(assay_control[['matrix_assay']]) && assay_control[['matrix_assay']] != 'counts') {
+    stop('  matrix_assay value must be "counts"')
   }
 
-  assertthat::assert_that(methods::is(assay_control_default, "list"))
+  if(is.null(assay_control[['matrix_class']])) {
+    assay_control[['matrix_class']] <- 'CsparseMatrix'
+  }
+  else
+  if(!(assay_control[['matrix_class']] %in% allowed_matrix_class)) {
+    stop('  matrix_class value must be "CsparseMatrix" or "BPCells"')
+  }
+
+  if(assay_control[['matrix_class']] == 'CsparseMatrix') {
+    assay_control_default <- get_global_variable('assay_control_csparsematrix')
+  }
+  else
+  if(assay_control[['matrix_class']] == 'BPCells') {
+    assay_control_default <- get_global_variable('assay_control_bpcells')
+  }
 
   assertthat::assert_that(all(names(assay_control) %in% allowed_control_parameters),
                           msg = "set_assay_control: unknown variable in assay_control")
+
   assertthat::assert_that(all(names(assay_control_default) %in% allowed_control_parameters),
                           msg = "set_assay_control: unknown variable in assay_control_default")
 
@@ -202,7 +205,54 @@ set_assay_control <- function(assay_control=list()) {
     }
   }
 
+  #
+  # Display assay_control list if assay_control[['show_values']] <- TRUE.
+  #
+  if(!is.null(assay_control[['show_values']]) && assay_control[['show_values']] == TRUE)
+  {
+    report_assay_control('  assay_control: ', assay_control=assay_control_out)
+    stop_no_noise()
+  }
+
   return(assay_control_out)
+}
+
+
+# Report assay_control list values.
+report_assay_control <- function(label=NULL, assay_control) {
+  indent <- ''
+  if(!is.null(label)) {
+    indent <- '  '
+  }
+
+  message(ifelse(!is.null(label), label, ''))
+
+  message(indent, '  matrix_class: ', ifelse(!is.null(assay_control[['matrix_class']]), assay_control[['matrix_class']], as.character(NA)))
+
+  if(assay_control[['matrix_class']] == 'CsparseMatrix') {
+    message(indent, '  matrix_mode: ', ifelse(!is.null(assay_control[['matrix_mode']]), assay_control[['matrix_mode']], as.character(NA)))
+  }
+  else
+  if(assay_control[['matrix_class']] == 'BPCells') {
+    if(assay_control[['matrix_mode']] == 'mem') {
+      message(indent, '  matrix_type: ', ifelse(!is.null(assay_control[['matrix_type']]), assay_control[['matrix_type']], as.character(NA)))
+      message(indent, '  matrix_compress: ', ifelse(!is.null(assay_control[['matrix_compress']]), assay_control[['matrix_compress']], as.character(NA)))
+    }
+    else
+    if(assay_control[['matrix_mode']] == 'dir') {
+      message(indent, '  matrix_type: ', ifelse(!is.null(assay_control[['matrix_type']]), assay_control[['matrix_type']], as.character(NA)))
+      message(indent, '  matrix_path: ', ifelse(!is.null(assay_control[['matrix_path']]), assay_control[['matrix_path']], as.character(NA)))
+      message(indent, '  matrix_compress: ', ifelse(!is.null(assay_control[['matrix_compress']]), assay_control[['matrix_compress']], as.character(NA)))
+      message(indent, '  matrix_buffer_size: ', ifelse(!is.null(assay_control[['matrix_buffer_size']]), assay_control[['matrix_buffer_size']], as.character(NA)))
+      message(indent, '  matrix_overwrite: ', ifelse(!is.null(assay_control[['matrix_overwrite']]), assay_control[['matrix_overwrite']], as.character(NA)))
+    }
+    else {
+      stop('report_nn_control: unsupported pca class/mode/...\'', assay_control[['method']], '\'')
+    }
+  }
+  else {
+    stop('report_nn_control: unsupported pca class/mode/...\'', assay_control[['method']], '\'')
+  }
 }
 
 
