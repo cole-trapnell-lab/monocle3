@@ -4,7 +4,15 @@
 \alias{sparse_prcomp_irlba}
 \title{Principal Components Analysis}
 \usage{
-sparse_prcomp_irlba(x, n = 3, retx = TRUE, center = TRUE, scale. = FALSE, ...)
+sparse_prcomp_irlba(
+  x,
+  n = 3,
+  retx = TRUE,
+  center = TRUE,
+  scale. = FALSE,
+  verbose = FALSE,
+  ...
+)
 }
 \arguments{
 \item{x}{a numeric or complex matrix (or data frame) which provides the data

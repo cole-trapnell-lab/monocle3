@@ -2,7 +2,7 @@
 # pca_control elements
 #   matrix_class  'CsparseMatrix' or 'BPCells'  default: 'CsparseMatrix'
 #   matrix_mode   'mem' or 'dir'  default: 'mem'
-#   matrix_type   'uint32_t', 'float' or 'double'
+#   matrix_type   'float' or 'double'
 #   matrix_path   default: NULL
 #   matrix_buffer_size: <integer> default: 8192L
 
@@ -11,9 +11,9 @@
 #     matrix_mode: default: 'mem'
 #   matrix_class: 'BPCells'
 #     matrix_mode: 'mem'  default: 'dir'
-#       matrix_type: 'uint32_t', 'float', 'double'
+#       matrix_type: 'float', 'double'
 #     matrix_mode: 'dir'
-#       matrix_type: 'uint32_t', 'float', 'double' default: 'uint32_t'
+#       matrix_type: 'float', 'double' default: 'double'
 #       matrix_path: <path to directory or file> default: 'NULL' -> temporary directory in pwd
 #       matrix_buffer_size: <integer> default: 8192L
 
@@ -29,6 +29,45 @@ select_pca_parameter_value <- function(parameter, pca_control, pca_control_defau
 }
 
 
+#' Verify and set the pca_control parameter list.
+#'
+#' @description Verifies and sets the list of parameter values
+#'   that is used when storing matrices that are used for PCA
+#'   and LSI. To see the default values,
+#'   call "set_pca_control(pca_control=list(show_values=TRUE))".
+#'   "show_values=TRUE" can be used in functions with the
+#'   pca_control list parameter in which case the function will
+#'   show the pca_control values to be used and then stop.
+#' @param pca_control Input control list.
+#' @return pca_control Output control list.
+#'
+#' @section pca_control parameters:
+#' \describe{
+#'   \item{matrix_class}{Specifies the matrix class to use for
+#'      matrix storage. The acceptable values are "CsparseMatrix"
+#'      and "BPCells".}
+#'   \item{matrix_type}{Specifies whether to store the matrix
+#'      single precision "floats" (matrix_type="float") or
+#'      double precision "doubles" (matrix_type="double").
+#'      "matrix_type" is used only for BPCells class matrices.}
+#'   \item{matrix_mode}{Specifies whether to store the BPCells
+#'      class matrix in memory (matrix_mode="mem") or on
+#'      disk (matrix_mode="dir"). "matrix_mode" is used only
+#'      for BPCells class matrices.}
+#'   \item{matrix_path}{Specifies the disk directory where the
+#'      BPCells on-disk matrix data are stored. The default is a
+#'      directory, with a randomized name, in the directory
+#'      where R is running. "matrix_path" is used only for
+#'      BPCells class matrices with matrix_mode="dir".}
+#'   \item{matrix_compress}{Specifies whether to use bit-packing
+#'      compression to store BPCells matrix values. This
+#'      reduces somewhat storage requirements but increases
+#'      run time. "matrix_compress" is used only for BPCells
+#'      class matrices.}
+#'   \item{matrix_buffer_size}{Specifies how many items of
+#'      data to buffer in memory before flushing to disk. This
+#'      is used for matrix_class="BPCells" with matrix_mode="dir".}
+#' @export
 set_pca_control <- function(pca_control=list()) {
 
   assertthat::assert_that(methods::is(pca_control, "list"))
@@ -101,7 +140,7 @@ set_pca_control <- function(pca_control=list()) {
     }
     if(pca_control_out[['matrix_mode']] == 'mem') {
       pca_control_out[['matrix_type']] <- select_pca_parameter_value('matrix_type', pca_control, pca_control_default, default_matrix_type)
-      if(!(pca_control_out[['matrix_type']] %in% c('uint32_t', 'float', 'double'))) {
+      if(!(pca_control_out[['matrix_type']] %in% c('float', 'double'))) {
         error_string <- list(error_string, paste0('  ',
                              pca_control_out[['matrix_type']],
                              ' is not a valid matrix_type for matrix_class "BPCells".'))
@@ -113,7 +152,7 @@ set_pca_control <- function(pca_control=list()) {
     else
     if(pca_control_out[['matrix_mode']] == 'dir') {
       pca_control_out[['matrix_type']] <- select_pca_parameter_value('matrix_type', pca_control, pca_control_default, default_matrix_type)
-      if(!(pca_control_out[['matrix_type']] %in% c('uint32_t', 'float', 'double'))) {
+      if(!(pca_control_out[['matrix_type']] %in% c('float', 'double'))) {
         error_string <- list(error_string, paste0('  ',
                              pca_control_out[['matrix_type']],
                              ' is not a valid matrix_type for matrix_class "BPCells".'))
@@ -268,9 +307,12 @@ report_pca_control <- function(label=NULL, pca_control) {
 #'
 #' @seealso \code{\link{prcomp}}
 sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
-                                scale. = FALSE, ...)
+                                scale. = FALSE, verbose = FALSE, ...)
 {
-message('sparse_prcomp_irlba: start bge')
+  if(verbose) {
+    message('pca: sparse_prcomp_irlba: matrix class: ', class(x))
+  }
+
   a <- names(as.list(match.call()))
   ans <- list(scale=scale.)
   if ("tol" %in% a)
@@ -321,10 +363,20 @@ message('sparse_prcomp_irlba: start bge')
   }
   if (!missing(...)) args <- c(args, list(...))
 
-#  s <- do.call(irlba::irlba, args=args)
-  message('start irlba: ', Sys.time()); s <- do.call(irlba::irlba, args=args); message('end irlba: ', Sys.time())
-  message('singular values')
-  message(paste(s$d, collapse=' '))
+
+  if(verbose) {
+    message('start irlba: ', Sys.time())
+  }
+  s <- do.call(irlba::irlba, args=args)
+  if(verbose) {
+    message('end irlba: ', Sys.time())
+  }
+
+  if(verbose) {
+    message('singular values (head)')
+    message(paste(head(s$d), collapse=' '))
+  }
+
   ans$sdev <- s$d / sqrt(max(1, nrow(x) - 1))
   ans$rotation <- s$v
   colnames(ans$rotation) <- paste("PC", seq(1, ncol(ans$rotation)), sep="")
@@ -335,8 +387,11 @@ message('sparse_prcomp_irlba: start bge')
     ans <- c(ans, list(x = sweep(s$u, 2, s$d, FUN=`*`)))
     colnames(ans$x) <- paste("PC", seq(1, ncol(ans$rotation)), sep="")
   }
-  message("umat: ", paste(dim(s$u), collapse=" "))
-  message("vtmat: ", paste(dim(s$v), collapse=" "))
+
+  if(verbose) {
+    message("umat: ", paste(dim(s$u), collapse=" "))
+    message("vtmat: ", paste(dim(s$v), collapse=" "))
+  }
 
   class(ans) <- c("irlba_prcomp", "prcomp")
   ans
@@ -416,11 +471,18 @@ message('sparse_prcomp_irlba: start bge')
 #'
 #' @seealso \code{\link{prcomp}}
 bpcells_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
-                                 scale. = FALSE, pca_control=list(), ...)
+                                 scale. = FALSE, pca_control=list(),
+                                 verbose = FALSE, ...)
 {
+  if(verbose) {
+    message('pca: bpcells_prcomp_irlba: "x" matrix class: ', class(bpcells_find_base_matrix(x)))
+    message('pca: bpcells_prcomp_irlba: "x" matrix info')
+    message(bpcells_base_matrix_info(x))
+  }
+
+
   assertthat::assert_that(pca_control[['matrix_class']] == 'BPCells')
 
-message('BPCells irlba now')
   a <- names(as.list(match.call()))
   ans <- list(scale=scale.)
   if ("tol" %in% a)
@@ -429,60 +491,59 @@ message('BPCells irlba now')
             function to control that algorithm's convergence tolerance. See
             `?prcomp_irlba` for help.")
 
-message('BPCells irlba bge here 1')
   if(pca_control[['matrix_mode']] == 'mem') {
-message('BPCells irlba bge here 2')
     x_commit <- BPCells::write_matrix_memory(x, compress=FALSE)
   }
   else
   if(pca_control[['matrix_mode']] == 'dir') {
-message('BPCells irlba bge here 3')
     matrix_path <- paste0(pca_control[['matrix_path']], '.2')
     buffer_size <- pca_control[['matrix_buffer_size']]
-message('BPCells irlba bge here 4')
     x_commit <- BPCells::write_matrix_dir(mat=x, dir=matrix_path, compress=FALSE, buffer_size=buffer_size, overwrite=FALSE)
     push_matrix_path(matrix_path, 'bpcells_dir')
-message('BPCells irlba bge here 5')
   }
 
-message('BPCells irlba bge here 6')
   stats <- BPCells::matrix_stats(matrix = x_commit, row_stats = 'none', col_stats = 'variance')
   center <- stats[['col_stats']]['mean',]
   scale <- sqrt(stats[['col_stats']]['variance',])
 
   # BPCells:::linear_operator() is meant to reduce irlba run time.
-message('BPCells irlba bge here 7')
   args <- list(A = BPCells:::linear_operator(x_commit), nv = n, center = center, scale = scale)
 
   if (!missing(...)) args <- c(args, list(...))
 
-message('start time: ', Sys.time());  s <- do.call(irlba::irlba, args=args); message('end time: ', Sys.time())
-#  s <- do.call(irlba::irlba, args=args)
+  if(verbose) {
+    message('start time: ', Sys.time())
+  }
+  s <- do.call(irlba::irlba, args=args)
+  if(verbose) {
+    message('end time: ', Sys.time())
+  }
 
   if(pca_control[['matrix_mode']] == 'dir') {
     unlink(matrix_path, recursive=TRUE)
     rm(x_commit)
   }
 
-message('BPCells irlba bge here 8')
-  message('singular values')
-  message(paste(s$d, collapse=' '))
+  if(verbose) {
+    message('singular values (head)')
+    message(paste(head(s$d), collapse=' '))
+  }
+
   ans$sdev <- s$d / sqrt(max(1, nrow(x) - 1))
   ans$rotation <- s$v
-message('BPCells irlba bge here 9')
   colnames(ans$rotation) <- paste("PC", seq(1, ncol(ans$rotation)), sep="")
   ans$center <- args$center
   ans$svd_scale <- args$scale
-message('BPCells irlba bge here 10')
   if (retx)
   {
-message('BPCells irlba bge here 11')
     ans <- c(ans, list(x = sweep(s$u, 2, s$d, FUN=`*`)))
     colnames(ans$x) <- paste("PC", seq(1, ncol(ans$rotation)), sep="")
   }
-message('BPCells irlba bge here 12')
-  message("umat: ", paste(dim(s$u), collapse=" "))
-  message("vtmat: ", paste(dim(s$v), collapse=" "))
+
+  if(verbose) {
+    message("umat: ", paste(dim(s$u), collapse=" "))
+    message("vtmat: ", paste(dim(s$v), collapse=" "))
+  }
 
   class(ans) <- c("irlba_prcomp", "prcomp")
 
@@ -491,7 +552,6 @@ message('BPCells irlba bge here 12')
 
 
 make_pca_matrix <- function(FM, pca_control=list()) {
-message('make_pca_matrix: start')
   matrix_class <- pca_control[['matrix_class']]
   matrix_path <- NULL
   if(matrix_class == 'CsparseMatrix') {
@@ -520,7 +580,6 @@ message('make_pca_matrix: start')
       push_matrix_path(matrix_path, 'bpcells_dir')
     }
   }
-message('make_pca_matrix: end')
 
   return(list(mat=FM, matrix_path=matrix_path))
 }

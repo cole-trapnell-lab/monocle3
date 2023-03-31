@@ -2,6 +2,83 @@
 # BPCells
 ################################################################################
 
+# Notes:
+#   o  the SummarizedExperiment Assay slot information states
+#        o  the developer needs to be careful to implement endomorphisms with copy-on-modify semantics
+#        o  an Assays concrete subclass needs to implement lossless back and forth coercion from/to
+#           SimpleList
+# 
+# Questions:
+#   o  are MatrixDir directories relocatable? The directory is not relocatable while the R MatrixDir
+#      object exists. The saved directory that persists after the R session ends can be relocated before
+#      being 'reloaded' with the open_matrix_dir() function.
+#   o  do BPCells matrices 'respect' copy-on-modify semantics?
+#   o  how does one deal with copy-on-semantics and BPCells queued (delayed) operations?
+# 
+# Ben Parks notes:
+# 
+#   o  on copy-on-modify semantics
+#       First, for the copy-on-modify semantics -- I think BPCells is fine in this respect. As a
+#        general rule, BPCells does not keep open file handles sitting around, and files are
+#        re-opened each time a data-reading operation is taking place then closed at the end of
+#        the operation. Additionally, the only way to modify the contents of an existing matrix
+#        on disk or in memory is to write a new matrix while explicitly asking to overwrite the
+#        old one. The end result is that the on-disk data will (intentionally) persist across R
+#        sessions, and multiple R objects can happily read from the same data source without
+#        worrying that one of them will accidentally modify data on disk. Since BPCells objects
+#        are basically plain R objects with one field listing a file path, modifications to the
+#        BPCells objects automatically support copy-on-modify semantics. The only way to break
+#        that is by intentionally changing the contents of the underlying files on disk, which
+#        BPCells will never do unless explicitly asked to overwrite data.
+# 
+#        The only note I'd give is BPCells doesn't support the [<- operator, which would
+#        otherwise be the most problematic. Row and column names can be modified, but the
+#        modifications take place only in R and only go to disk when explicitly writing the
+#        matrix again.
+# 
+#   o on getting BPCells matrix path/type
+# 
+#        As for getting the directory path from queued operations, your tactic should mostly
+#        work with the exception of sparse matrix multiplies or rbind/cbind operations.
+#        There's currently an unexported method called matrix_inputs which does basically the
+#        same thing -- it unwraps a single layer of queued operations returning a list of inputs
+#        (usually but not always length 1). I might make a helper function that can perform this
+#        recursively to get a list of the raw matrix inputs across arbitrarily many operations.
+#        For now, I'd recommend trying to directly call the unexported method
+#        BPCells:::matrix_inputs within your bpcells_find_base_matrix function, and we can swap
+#        that for a more robust and exported method down the line.
+# 
+# BPCells methods (not all)
+#      length(mat)
+#      length(mat[,1])
+#      length(mat[1,])
+#      names(mat)
+#      names(mat[,1])
+#      names(mat[1,])
+#      dim(mat)
+#      rownames(mat)
+#      colnames(mat)
+#      dimnames(mat)
+#      storage_order(mat)
+#      rowSums(mat)
+#      colSums(mat)
+#      rowMeans(mat)
+#      colMeans(mat)
+#      selection_index()
+#      rbind2()
+#      cbind2()
+#      transpose_storage_order(mat)
+#      write_matrix_memory()
+#      write_matrix_dir()
+#      open_matrix_dir()
+#      write_matrix_hdf5()
+#      open_matrix_hdf5()
+#      open_matrix_10x_hdf5()
+#      write_matrix_10x_hdf5()
+#      open_matrix_anndata_hdf5()
+#      convert_matrix_type()
+#      matrix_stats()
+
 
 test_bpcells_matrix_dir_assays <- function(cds) {
   if(is(counts(cds), 'IterableMatrix'))
@@ -22,13 +99,9 @@ select_assay_parameter_value <- function(parameter, assay_control, assay_control
 }
 
 
-#' Check and set the assay_control list values.
-#' @param assay_control Input control list.
-#' @return assay_control Output control list.
 # Usage
 #   matrix_assay: default: 'counts'
 #   matrix_class: default: 'CsparseMatrix'
-#     matrix_mode: default: 'mem'
 #   matrix_class: 'BPCells'
 #     matrix_mode: 'mem'  default: 'dir'
 #       matrix_type: 'uint32_t', 'float', 'double'
@@ -38,7 +111,53 @@ select_assay_parameter_value <- function(parameter, assay_control, assay_control
 #       matrix_path: <path to directory or file> default: 'NULL' -> temporary directory in pwd
 #       matrix_compress: TRUE, FALSE default: FALSE
 #       matrix_buffer_size: <integer> default: 8192L
-#       matrix_overwrite: TRUE, FALSE default: FALSE
+#
+
+#' Verify and set the assay_control parameter list.
+#'
+#' @description Verifies and sets the list of parameter values
+#'   that is used to make the counts matrix that is stored in the
+#'   cell_data_set. To see the default values,
+#'   call "set_assay_control(assay_control=list(show_values=TRUE))".
+#'   "show_values=TRUE" can be used in functions that have the
+#'   assay_control list parameter, in which case the function will
+#'   show the assay_control values to be used and then stop.
+#' @param assay_control Input control list.
+#' @return assay_control Output control list.
+#'
+#' @section assay_control parameters:
+#' \describe{
+#'   \item{matrix_class}{Specifies the matrix class to use for
+#'      matrix storage. The acceptable values are "CsparseMatrix"
+#'      and "BPCells".}
+#'   \item{matrix_type}{Specifies whether to store the matrix
+#'      values as unsigned 32-bit integers
+#'      (matrix_type="uint32_t"), single precision "floats"
+#'      (matrix_type="float"), or double precision "doubles"
+#'      (matrix_type="double"). Unsigned 32-bit integers are
+#'      suitable for storing non-negative values such as counts.
+#'      "matrix_type" is used only for BPCells class matrices.}
+#'   \item{matrix_mode}{Specifies whether to store the BPCells
+#'      class matrix in memory (matrix_mode="mem") or on
+#'      disk (matrix_mode="dir"). "matrix_mode" is used only
+#'      for BPCells class matrices.}
+#'   \item{matrix_path}{Specifies the disk directory where the
+#'      BPCells on-disk matrix data are to be stored. The
+#'      default is a directory, with a randomized name, in
+#'      the directory where R is running. "matrix_path" is
+#'      used only for BPCells class matrices with
+#'      matrix_mode="dir".}
+#'   \item{matrix_compress}{Specifies whether to use bit-packing
+#'      compression to store BPCells matrix values. This is
+#'      most effective for values stored as matrix_type="uint32_t"
+#'      but has some benefit for values stored as matrix_type="float"
+#'      and matrix_type="double". Compression reduces storage
+#'      requirements but increases run time. "matrix_compress" is
+#'      used only for BPCells class matrices.}
+#'   \item{matrix_buffer_size}{Specifies how many items of
+#'      data to buffer in memory before flushing to disk. This
+#'      is used for matrix_class="BPCells" with matrix_mode="dir".}
+#' @export
 set_assay_control <- function(assay_control=list()) {
 
   assertthat::assert_that(methods::is(assay_control, "list"))
@@ -49,10 +168,7 @@ set_assay_control <- function(assay_control=list()) {
                                   'matrix_type',
                                   'matrix_compress',
                                   'matrix_path',
-                                  'matrix_group',
                                   'matrix_buffer_size',
-                                  'matrix_chunk_size',
-                                  'matrix_overwrite',
                                   'show_values')
 
   allowed_matrix_class <- c('CsparseMatrix', 'BPCells')
@@ -94,10 +210,7 @@ set_assay_control <- function(assay_control=list()) {
   default_matrix_type <- 'uint32_t'
   default_matrix_compress <- TRUE
   default_matrix_path <- NULL
-  default_matrix_group <- '/'
   default_matrix_buffer_size <- 8192L
-  default_matrix_chunk_size <- 1024L
-  default_matrix_overwrite <- FALSE
 
 
   error_string = list()
@@ -183,13 +296,6 @@ set_assay_control <- function(assay_control=list()) {
                              ' is not an integer.'))
       }
 
-      assay_control_out[['matrix_overwrite']] <- select_assay_parameter_value('matrix_overwrite', assay_control, assay_control_default, default_matrix_overwrite)
-      if(!is.logical(assay_control_out[['matrix_overwrite']])) {
-        error_string <- list(error_string, paste0('  ',
-                             assay_control_out[['matrix_overwrite']],
-                             ' is not TRUE or FALSE.'))
-      }
-
       if(length(error_string) > 0) {
         stop(error_string)
       }
@@ -244,27 +350,54 @@ report_assay_control <- function(label=NULL, assay_control) {
       message(indent, '  matrix_path: ', ifelse(!is.null(assay_control[['matrix_path']]), assay_control[['matrix_path']], as.character(NA)))
       message(indent, '  matrix_compress: ', ifelse(!is.null(assay_control[['matrix_compress']]), assay_control[['matrix_compress']], as.character(NA)))
       message(indent, '  matrix_buffer_size: ', ifelse(!is.null(assay_control[['matrix_buffer_size']]), assay_control[['matrix_buffer_size']], as.character(NA)))
-      message(indent, '  matrix_overwrite: ', ifelse(!is.null(assay_control[['matrix_overwrite']]), assay_control[['matrix_overwrite']], as.character(NA)))
     }
     else {
-      stop('report_nn_control: unsupported pca class/mode/...\'', assay_control[['method']], '\'')
+      stop('report_assay_control: unsupported assay class/mode/...\'', assay_control[['method']], '\'')
     }
   }
   else {
-    stop('report_nn_control: unsupported pca class/mode/...\'', assay_control[['method']], '\'')
+    stop('report_assay_control: unsupported assay class/mode/...\'', assay_control[['method']], '\'')
   }
 }
 
 
 push_matrix_path <- function(mat, matrix_type) {
-  message('**** push_matrix_path: ', mat, ' -- ', matrix_type)
   x <- get_global_variable('monocle_gc_matrix_path')
-  message('monocle_gc_matrix_path: start:\n', paste0(x, collapse='\n'))
   x <- append(x, mat)
   set_global_variable('monocle_gc_matrix_path', x)
-
-  x <- get_global_variable('monocle_gc_matrix_path')
-  message('monocle_gc_matrix_path: end:\n', paste0(x, collapse='\n'))
 }
 
+
+#
+# Return the 'base' BPCells matrix.
+# Notes:
+#   o uses
+#      o get base matrix class
+#      o get base matrix slots and their information, e.g., @type and @dir..
+#
+bpcells_find_base_matrix <- function(mat) {
+  if(length(BPCells:::matrix_inputs(mat)) > 0) {
+    return(bpcells_find_base_matrix(BPCells:::matrix_inputs(mat)[[1]]))
+  }
+  return(mat)
+}
+
+
+bpcells_base_matrix_info <- function(mat, indent='') {
+  if(!is(mat, 'IterableMatrix'))
+    return(0)
+  bmat <- bpcells_find_base_matrix(mat)
+  slot_names <- slotNames(bmat)
+  message(paste0(indent, 'class: ', indent, class(bmat)))
+  if('type' %in% slot_names)
+    message(paste0(indent, 'type: ', bmat@type))
+  if('dir' %in% slot_names)
+    message(paste0(indent, 'dir: ', bmat@dir))
+  if('compressed' %in% slot_names)
+    message(paste0(indent, 'compressed: ', bmat@compressed))
+  if('buffer_size' %in% slot_names)
+    message(paste0(indent, 'buffer_size: ', bmat@buffer_size))
+  if('version' %in% slot_names)
+    message(paste0(indent, 'version: ', bmat@version))
+}
 

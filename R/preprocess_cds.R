@@ -38,7 +38,20 @@
 #'   reduced dimension matrix for later use. Default is FALSE.
 #' @param nn_control An optional list of parameters used to make the nearest
 #'  neighbor index. See the set_nn_control help for detailed information.
-#'
+#' @param pca_control An optional list of parameters that control the
+#'  storage of intermediate matrices that are required for cds preprocessing.
+#'  By default, matrices are stored in memory as dgCMatrix class objects,
+#'  which can be set explicitly using the matrix_class="CsparseMatrix" list
+#'  value. A very large matrix can be stored in a file and accessed by
+#'  Monocle3 as if it were in memory. For this, Monocle3 uses the BPCells
+#'  R package. Here the pca_control list values are set to
+#'  matrix_class="BPCells" and matrix_mode="dir". Then the count matrix is
+#'  stored in a directory, on-disk, that's created by Monocle3 in the
+#'  directory where you run Monocle3. This directory has a name with the
+#'  form "monocle.bpcells.*.tmp" where the asterisk is a random string
+#'  that makes the name unique. Do not remove this directory while Monocle3
+#'  is running! For additional information about the pca_control list, see
+#'  the set_pca_control help.
 #' @return an updated cell_data_set object
 #'
 #' @examples
@@ -56,6 +69,24 @@
 #'                              cell_metadata=cell_metadata,
 #'                              gene_metadata=gene_metadata)
 #'     cds <- preprocess_cds(cds)
+#'
+#'     # For typical count matrices with a small to large number of cells,
+#'     # we suggest that you use the default pca_control list by not
+#'     # not setting the pca_control parameter. In this case, the
+#'     # intermediate matrices are stored in memory as sparse matrices
+#'     # in the dgCMatrix format, as they have in the past. It is also
+#'     # possible to set the pca_control list explicitly to use this
+#'     # in-memory dgCMatrix format by setting the pca_control parameter
+#'     # list to
+#'     #
+#'       preprocess_cds(..., pca_control=list(matrix_class='CsparseMatrix'))
+#'     #
+#'     # For larger count matrices, we suggest that you try storing the
+#'     # intermediate matrices as on-disk BPCells class objects by setting
+#'     # the pca_control parameter list as follows
+#'     #
+#'       preprocess_cds(..., pca_control=list(matrix_class='BPCells', matrix_mode='dir'))
+#'     #
 #'   }
 #'
 #' @export
@@ -70,7 +101,7 @@ preprocess_cds <- function(cds,
                            build_nn_index = FALSE,
                            nn_control = list(),
                            pca_control = list()) {
-message('preprocess_cds: bge: start')
+
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(method) == "",TRUE, TRUE),
              error = function(e) FALSE),
@@ -119,11 +150,9 @@ message('preprocess_cds: bge: start')
   #       FM queued operations before submitting to
   #       the SVD function.
   #
-message('preprocess_cds: bge: here 1')
   pca_matrix_list <- make_pca_matrix(SingleCellExperiment::counts(cds), pca_control)
   FM <- pca_matrix_list[['mat']]
   matrix_path <-  pca_matrix_list[['matrix_path']]
-message('preprocess_cds: bge: here 2')
   FM <- normalize_expr_data(FM=FM, size_factors=size_factors(cds), norm_method=norm_method, pseudo_count=pseudo_count)
 
   if (nrow(FM) == 0) {
@@ -150,21 +179,33 @@ message('preprocess_cds: bge: here 2')
     if (verbose) message("Remove noise by PCA ...")
 
     if(is(FM, 'CsparseMatrix') || is(FM, 'dgeMatrix')) {
+
+      if(verbose) {
+        message('preprocess_cds: FM matrix type: ', class(FM))
+      }
+
       fm_rowsums = Matrix::rowSums(FM)
       FM <- FM[is.finite(fm_rowsums) & fm_rowsums != 0, ]
       irlba_res <- sparse_prcomp_irlba(Matrix::t(FM),
                                        n = min(num_dim,min(dim(FM)) - 1),
-                                       center = scaling, scale. = scaling)
+                                       center = scaling, scale. = scaling,
+                                       verbose = verbose)
     }
     else
     if(is(FM, 'IterableMatrix')) {
+
+      if(verbose) {
+        message('preprocess_cds: FM matrix info:')
+        message(bpcells_base_matrix_info(FM, '  '), appendLF=FALSE)
+      }
+
       fm_rowsums = BPCells::rowSums(FM)
       FM <- FM[is.finite(fm_rowsums) & fm_rowsums != 0, ]
-message('preprocess_cds: bge: here 2')
       irlba_res <- bpcells_prcomp_irlba(BPCells::t(FM),
                                         n = min(num_dim,min(dim(FM)) - 1),
                                         center = scaling, scale. = scaling,
-                                        pca_control=pca_control)
+                                        pca_control=pca_control,
+                                       verbose = verbose)
     }
     else {
       stop('Unrecognized expression matrix class')

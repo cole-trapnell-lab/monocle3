@@ -70,14 +70,26 @@ sep = "", the separator is white space, that is, one or more spaces,
 tabs, newlines, or carriage returns. The default is the tab
 character for tab-separated-value files.}
 
-\item{assay_control}{A list of values that define how matrices
-are stored in the cell_data_set assays slot. Typically, matrices are
-stored in memory as objects using matrix_class="CsparseMatrix"
-and matrix_mode="mem". In this case, all other assay_control
-values are ignored. This is the default. A very large matrix can be
-stored in a file and accessed by Monocle3 as if it were in memory.
-For this, Monocle3 uses the BPCells R package. Here the assay_control
-values can be set to matrix_class="BPCells" and matrix_mode="dir".}
+\item{assay_control}{An optional list of values that control how
+matrices are stored in the cell_data_set assays slot. Typically,
+matrices are stored in memory as dgCMatrix class objects using
+matrix_class="CsparseMatrix". This is the default. A very large
+matrix can be stored in a file and accessed by Monocle3 as if it
+were in memory. For this, Monocle3 uses the BPCells R package.
+Here the assay_control list values are set to
+matrix_class="BPCells" and matrix_mode="dir". Then the count
+matrix is stored in a directory, on-disk, that's created by
+Monocle3 in the directory where you run Monocle3. This directory
+has a name with the form "monocle.bpcells.*.tmp" where the
+asterisk is a string of random characters that makes the name
+unique. Do not remove this directory while Monocle3 is running!
+If you choose to store the count matrix as an on-disk BPCells
+object, you must use the "save_monocle_objects" and
+"load_monocle_objects" functions to save and restore the
+cell_data_set. For additional information about the assay_control
+list, see the examples below and the set_assay_control help. See
+also the preprocess_cds and pca_control help for information about
+reducing memory usage by the preprocess_cds function.}
 }
 \value{
 cds object
@@ -104,6 +116,33 @@ Load data from matrix market format files.
     # In this example, the features_c3h0.txt file has three columns,
     # separated by spaces. The first column has official gene names, the
     # second has short gene names, and the third has gene biotypes.
+    #
+    # For typical count matrices with a small to medium number of cells,
+    # we suggest that you use the default assay_control list by not
+    # not setting the assay_control parameter. In this case, the
+    # count matrix is stored in memory as a sparse matrix in the
+    # dgCMatrix format, as it has in the past. It is also possible to
+    # set the assay_control list explicitly to use this in-memory
+    # dgCMatrix format by setting the assay_control parameter to
+    #
+      load_mm_data(..., assay_control=list(matrix_class='CsparseMatrix'))
+    #
+    # For larger count matrices, we suggest that you try storing the
+    # count matrix as a BPCells class object, either in memory or on
+    # disk. To store the count matrix as a BPCells object in memory,
+    # set the assay_control parameter list as follows
+    #
+      load_mm_data(..., assay_control=list(matrix_class='BPCells', matrix_mode='mem'))
+    #
+    # In this case, the count matrix is stored in memory as compressed,
+    # non-negative integers, which reduces substantially the memory usage.
+    #
+    # For even larger matrices, we suggest that you try storing the
+    # count matrix as a BPCells object on disk by setting the
+    # assay_control parameter list as follows
+    #
+      load_mm_data(..., assay_control=list(matrix_class='BPCells', matrix_mode='dir'))
+    #
   }
 
 }

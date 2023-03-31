@@ -11,6 +11,7 @@ bpcells_prcomp_irlba(
   center = TRUE,
   scale. = FALSE,
   pca_control = list(),
+  verbose = FALSE,
   ...
 )
 }

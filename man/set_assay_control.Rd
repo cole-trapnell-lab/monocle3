@@ -2,7 +2,7 @@
 % Please edit documentation in R/matrix.R
 \name{set_assay_control}
 \alias{set_assay_control}
-\title{Check and set the assay_control list values.}
+\title{Verify and set the assay_control parameter list.}
 \usage{
 set_assay_control(assay_control = list())
 }
@@ -13,5 +13,46 @@ set_assay_control(assay_control = list())
 assay_control Output control list.
 }
 \description{
-Check and set the assay_control list values.
+Verifies and sets the list of parameter values
+that is used to make the counts matrix that is stored in the
+cell_data_set. To see the default values,
+call "set_assay_control(assay_control=list(show_values=TRUE))".
+"show_values=TRUE" can be used in functions that have the
+assay_control list parameter, in which case the function will
+show the assay_control values to be used and then stop.
 }
+\section{assay_control parameters}{
+
+\describe{
+\item{matrix_class}{Specifies the matrix class to use for
+matrix storage. The acceptable values are "CsparseMatrix"
+and "BPCells".}
+\item{matrix_type}{Specifies whether to store the matrix
+values as unsigned 32-bit integers
+(matrix_type="uint32_t"), single precision "floats"
+(matrix_type="float"), or double precision "doubles"
+(matrix_type="double"). Unsigned 32-bit integers are
+suitable for storing non-negative values such as counts.
+"matrix_type" is used only for BPCells class matrices.}
+\item{matrix_mode}{Specifies whether to store the BPCells
+class matrix in memory (matrix_mode="mem") or on
+disk (matrix_mode="dir"). "matrix_mode" is used only
+for BPCells class matrices.}
+\item{matrix_path}{Specifies the disk directory where the
+BPCells on-disk matrix data are to be stored. The
+default is a directory, with a randomized name, in
+the directory where R is running. "matrix_path" is
+used only for BPCells class matrices with
+matrix_mode="dir".}
+\item{matrix_compress}{Specifies whether to use bit-packing
+compression to store BPCells matrix values. This is
+most effective for values stored as matrix_type="uint32_t"
+but has some benefit for values stored as matrix_type="float"
+and matrix_type="double". Compression reduces storage
+requirements but increases run time. "matrix_compress" is
+used only for BPCells class matrices.}
+\item{matrix_buffer_size}{Specifies how many items of
+data to buffer in memory before flushing to disk. This
+is used for matrix_class="BPCells" with matrix_mode="dir".}
+}
+
