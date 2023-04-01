@@ -50,7 +50,11 @@
 #'  directory where you run Monocle3. This directory has a name with the
 #'  form "monocle.bpcells.*.tmp" where the asterisk is a random string
 #'  that makes the name unique. Do not remove this directory while Monocle3
-#'  is running! For additional information about the pca_control list, see
+#'  is running! Monocle3 tries to remove the BPCells matrix directory
+#'  when the preprocess_cds function finishes running; however, sometimes
+#'  a matrix directory may persist after preprocess_cds finishes. In this
+#'  case, the user must remove the directory after the session ends.
+#'  For additional information about the pca_control list, see
 #'  the set_pca_control help.
 #' @return an updated cell_data_set object
 #'
@@ -152,7 +156,7 @@ preprocess_cds <- function(cds,
   #
   pca_matrix_list <- make_pca_matrix(SingleCellExperiment::counts(cds), pca_control)
   FM <- pca_matrix_list[['mat']]
-  matrix_path <-  pca_matrix_list[['matrix_path']]
+  matrix_path <- pca_matrix_list[['matrix_path']]
   FM <- normalize_expr_data(FM=FM, size_factors=size_factors(cds), norm_method=norm_method, pseudo_count=pseudo_count)
 
   if (nrow(FM) == 0) {

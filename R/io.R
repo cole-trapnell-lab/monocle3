@@ -180,7 +180,9 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
 #' sep = "", the separator is white space, that is, one or more spaces,
 #' tabs, newlines, or carriage returns. The default is the tab
 #' character for tab-separated-value files.
-#' @param assay_control An optional list of values that control how
+#' @param verbose a logical value that determines whether or not the
+#' function writes diagnostic information.
+#' @param assay_control an optional list of values that control how
 #' matrices are stored in the cell_data_set assays slot. Typically,
 #' matrices are stored in memory as dgCMatrix class objects using
 #' matrix_class="CsparseMatrix". This is the default. A very large
@@ -196,9 +198,13 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
 #' If you choose to store the count matrix as an on-disk BPCells
 #' object, you must use the "save_monocle_objects" and
 #' "load_monocle_objects" functions to save and restore the
-#' cell_data_set. For additional information about the assay_control
-#' list, see the examples below and the set_assay_control help. See
-#' also the preprocess_cds and pca_control help for information about
+#' cell_data_set. Monocle3 tries to remove the BPCells matrix
+#' directory when R session ends; however, sometimes a matrix
+#' directory may persist after the session ends. In this case, the
+#' user must remove the directory after the session ends. For
+#' additional information about the assay_control list, see the
+#' examples below and the set_assay_control help. See also the
+#' preprocess_cds and pca_control help for information about
 #' reducing memory usage by the preprocess_cds function.
 #' @return cds object
 #'
@@ -257,6 +263,7 @@ load_mm_data <- function( mat_path,
     umi_cutoff = 100,
     quote="\"'",
     sep="\t",
+    verbose=FALSE,
     assay_control=list()) {
   assertthat::assert_that(assertthat::is.readable(mat_path), msg='unable to read matrix file')
   assertthat::assert_that(assertthat::is.readable(feature_anno_path), msg='unable to read feature annotation file')
@@ -329,6 +336,18 @@ load_mm_data <- function( mat_path,
   cds <- initialize_counts_metadata(cds)
   matrix_id <- get_unique_id(counts(cds))
   cds <- set_counts_identity(cds, mat_path, matrix_id)
+
+  if(verbose) {
+    if(is(counts(cds), 'CsparseMatrix')) {
+      message('load_mm_data: counts matrix class: ', class(counts(cds)))
+    }
+    else
+    if(is(counts(cds), 'IterableMatrix')) {
+      message('load_mm_data: counts matrix class: BPCells')
+      message('load_mm_data: counts matrix info:')
+      message(bpcells_base_matrix_info(counts(cds), '  '), appendLF=FALSE)
+    }
+  }
 
   return(cds)
 }

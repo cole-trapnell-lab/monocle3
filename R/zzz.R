@@ -89,8 +89,8 @@ get_global_variable <- function(variable_name=NULL) {
   set_global_variable('assay_control_bpcells', list(matrix_class='BPCells', matrix_mode='dir', matrix_type='uint32_t', matrix_compress=TRUE, matrix_path=NULL, matrix_buffer_size=8192L))
 
   # Default pca_control list.
-  set_global_variable('pca_control_csparsematrix', list(matrix_class='CsparseMatrix', matrix_mode='mem', matrix_type='double', matrix_path=NULL, matrix_buffer_size=8192L))
-  set_global_variable('pca_control_bpcells', list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_path=NULL, matrix_buffer_size=8192L))
+  set_global_variable('pca_control_csparsematrix', list(matrix_class='CsparseMatrix', matrix_mode='mem', matrix_type='double', matrix_compress=FALSE, matrix_path=NULL, matrix_buffer_size=8192L))
+  set_global_variable('pca_control_bpcells', list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=FALSE, matrix_path=NULL, matrix_buffer_size=8192L))
 
   # Watching preprocess_cds() it appears that R uses OMP_NUM_THREADS
   # threads if OMP_NUM_THREADS > 1 and OPENBLAS_NUM_THREADS is NA.

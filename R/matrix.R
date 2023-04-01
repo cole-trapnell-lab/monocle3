@@ -316,7 +316,7 @@ set_assay_control <- function(assay_control=list()) {
   #
   if(!is.null(assay_control[['show_values']]) && assay_control[['show_values']] == TRUE)
   {
-    report_assay_control('  assay_control: ', assay_control=assay_control_out)
+    report_assay_control(assay_control=assay_control_out, '  assay_control: ')
     stop_no_noise()
   }
 
@@ -325,7 +325,7 @@ set_assay_control <- function(assay_control=list()) {
 
 
 # Report assay_control list values.
-report_assay_control <- function(label=NULL, assay_control) {
+report_assay_control <- function(assay_control, label=NULL) {
   indent <- ''
   if(!is.null(label)) {
     indent <- '  '

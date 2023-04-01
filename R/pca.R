@@ -4,6 +4,7 @@
 #   matrix_mode   'mem' or 'dir'  default: 'mem'
 #   matrix_type   'float' or 'double'
 #   matrix_path   default: NULL
+#   matrix_compress default: FALSE
 #   matrix_buffer_size: <integer> default: 8192L
 
 # Usage
@@ -12,8 +13,10 @@
 #   matrix_class: 'BPCells'
 #     matrix_mode: 'mem'  default: 'dir'
 #       matrix_type: 'float', 'double'
+#       matrix_compress: TRUE, FALSE
 #     matrix_mode: 'dir'
 #       matrix_type: 'float', 'double' default: 'double'
+#       matrix_compress: TRUE, FALSE
 #       matrix_path: <path to directory or file> default: 'NULL' -> temporary directory in pwd
 #       matrix_buffer_size: <integer> default: 8192L
 
@@ -77,6 +80,7 @@ set_pca_control <- function(pca_control=list()) {
                                   'matrix_type',
                                   'matrix_path',
                                   'matrix_buffer_size',
+                                  'matrix_compress',
                                   'show_values')
 
   allowed_matrix_class <- c('CsparseMatrix', 'BPCells')
@@ -114,6 +118,7 @@ set_pca_control <- function(pca_control=list()) {
   default_matrix_type <- 'double'
   default_matrix_path <- NULL
   default_matrix_buffer_size <- 8192L
+  default_matrix_compress <- FALSE
 
   error_string = list()
 
@@ -145,6 +150,12 @@ set_pca_control <- function(pca_control=list()) {
                              pca_control_out[['matrix_type']],
                              ' is not a valid matrix_type for matrix_class "BPCells".'))
       }
+      pca_control_out[['matrix_compress']] <- select_pca_parameter_value('matrix_compress', pca_control, pca_control_default, default_matrix_compress)
+      if(!(is.logical(pca_control_out[['matrix_compress']]))) {
+        error_string <- list(error_string, paste0('  ',
+                             pca_control_out[['matrix_compress']],
+                             ' is not a valid matrix_compress for matrix_class "BPCells".'))
+      }
       if(length(error_string) > 0) {
         stop(error_string)
       }
@@ -171,6 +182,12 @@ set_pca_control <- function(pca_control=list()) {
                              pca_control_out[['matrix_buffer_size']],
                              ' is not an integer.'))
       }
+      pca_control_out[['matrix_compress']] <- select_pca_parameter_value('matrix_compress', pca_control, pca_control_default, default_matrix_compress)
+      if(!is.logical(pca_control_out[['matrix_compress']])) {
+        error_string <- list(error_string, paste0('  ',
+                             pca_control_out[['matrix_compress']],
+                             ' is not a valid matrix_compress for matrix_class "BPCells".'))
+      }
       if(length(error_string) > 0) {
         stop(error_string)
       }
@@ -191,7 +208,7 @@ set_pca_control <- function(pca_control=list()) {
   #
   if(!is.null(pca_control[['show_values']]) && pca_control[['show_values']] == TRUE)
   {
-    report_pca_control('  pca_control: ', pca_control=pca_control_out)
+    report_pca_control(pca_control=pca_control_out, ('  pca_control: '))
     stop_no_noise()
   }
 
@@ -200,7 +217,7 @@ set_pca_control <- function(pca_control=list()) {
 
 
 # Report pca_control list values.
-report_pca_control <- function(label=NULL, pca_control) {
+report_pca_control <- function(pca_control, label=NULL) {
   indent <- ''
   if(!is.null(label)) {
     indent <- '  '
@@ -477,7 +494,7 @@ bpcells_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
   if(verbose) {
     message('pca: bpcells_prcomp_irlba: "x" matrix class: ', class(bpcells_find_base_matrix(x)))
     message('pca: bpcells_prcomp_irlba: "x" matrix info')
-    message(bpcells_base_matrix_info(x))
+    message(bpcells_base_matrix_info(x), appendLF=FALSE)
   }
 
 
@@ -565,8 +582,9 @@ make_pca_matrix <- function(FM, pca_control=list()) {
     # we want to not add subsequent operations to the mat queue.
     matrix_mode <- pca_control[['matrix_mode']]
     matrix_type <- pca_control[['matrix_type']]
+    matrix_compress <- pca_control[['matrix_compress']]
     if(matrix_mode == 'mem') {
-      FM <- BPCells::write_matrix_memory(mat=BPCells::convert_matrix_type(FM, type=matrix_type), compress=FALSE)
+      FM <- BPCells::write_matrix_memory(mat=BPCells::convert_matrix_type(FM, type=matrix_type), compress=matrix_compress)
     } 
     else
     if(matrix_mode == 'dir') {
@@ -576,7 +594,7 @@ make_pca_matrix <- function(FM, pca_control=list()) {
       if(!is(FM, 'IterableMatrix') && !is(FM, 'CsparseMatrix')) {
         FM <- as(FM, 'CsparseMatrix')
       }
-      FM <- BPCells::write_matrix_dir(mat=BPCells::convert_matrix_type(FM, type=matrix_type), dir=matrix_path, compress=FALSE, buffer_size=matrix_buffer_size, overwrite=FALSE)
+      FM <- BPCells::write_matrix_dir(mat=BPCells::convert_matrix_type(FM, type=matrix_type), dir=matrix_path, compress=matrix_compress, buffer_size=matrix_buffer_size, overwrite=TRUE)
       push_matrix_path(matrix_path, 'bpcells_dir')
     }
   }
