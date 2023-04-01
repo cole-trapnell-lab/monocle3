@@ -206,6 +206,30 @@ cds <- preprocess_cds(cds, verbose=TRUE, pca_control=list(matrix_class='BPCells'
 OK
 
 
+3. save_monocle_objects and load_monocle_objects
+
+# Test loading and preprocessing using default control_lists.
+rm(cds1, cds2)
+cds1 <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', verbose=TRUE)
+cds1 <- preprocess_cds(cds1, verbose=TRUE)
+save_monocle_objects(cds1, directory_path='test.save_monocle_objects.1')
+str(cds1)
+rm(cds1)
+cds2 <- load_monocle_objects(directory_path='test.save_monocle_objects.1')
+str(cds2)
+OK
+
+# Test loading and preprocessing using BPCells dir objects.
+rm(cds1, cds2)
+cds1 <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', verbose=TRUE, assay_control=list(matrix_class='BPCells', matrix_mode='dir'))
+cds1 <- preprocess_cds(cds1, verbose=TRUE, pca_control=list(matrix_class='BPCells', matrix_mode='dir'))
+save_monocle_objects(cds1, directory_path='test.save_monocle_objects.1')
+str(cds1)
+rm(cds1)
+cds2 <- load_monocle_objects(directory_path='test.save_monocle_objects.1')
+str(cds2)
+OK
+
 ========================================
 
 # Additional tests
