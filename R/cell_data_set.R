@@ -117,12 +117,12 @@ new_cell_data_set <- function(expression_data,
 
   #
   # We allow for objects derived from BPCells IterableMatrix classes and
-  # matrices that we can convert to CsparseMatrix.
+  # matrices that we can convert to dgCMatrix.
   #
   if(is(expression_data, 'IterableMatrix'))
     expression_data_class <- class(expression_data)
   else
-    expression_data_class <- 'CsparseMatrix'
+    expression_data_class <- 'dgCMatrix'
 
   sce <- SingleCellExperiment(list(counts=methods::as(expression_data, expression_data_class)),
                               rowData = gene_metadata,

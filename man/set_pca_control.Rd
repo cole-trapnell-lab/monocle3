@@ -25,7 +25,7 @@ show the pca_control values to be used and then stop.
 
 \describe{
 \item{matrix_class}{Specifies the matrix class to use for
-matrix storage. The acceptable values are "CsparseMatrix"
+matrix storage. The acceptable values are "dgCMatrix"
 and "BPCells".}
 \item{matrix_type}{Specifies whether to store the matrix
 single precision "floats" (matrix_type="float") or
@@ -35,11 +35,16 @@ double precision "doubles" (matrix_type="double").
 class matrix in memory (matrix_mode="mem") or on
 disk (matrix_mode="dir"). "matrix_mode" is used only
 for BPCells class matrices.}
-\item{matrix_path}{Specifies the disk directory where the
-BPCells on-disk matrix data are stored. The default is a
-directory, with a randomized name, in the directory
-where R is running. "matrix_path" is used only for
-BPCells class matrices with matrix_mode="dir".}
+\item{matrix_path}{Specifies the directory where the
+BPCells on-disk matrix data are stored in a
+sub-directory with a randomized name. The default is
+in the directory where R is running. "matrix_path" is
+used only for BPCells class matrices with
+matrix_mode="dir". For example, if matrix_path is set
+to "/tmp" Monocle3 will create a directory with a
+name that has the form "monocle.bpcells.*.tmp" in
+"/tmp". The asterisk represents a random string that
+makes the names unique.}
 \item{matrix_compress}{Specifies whether to use bit-packing
 compression to store BPCells matrix values. This
 reduces somewhat storage requirements but increases

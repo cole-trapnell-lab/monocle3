@@ -1,6 +1,6 @@
 #
 # pca_control elements
-#   matrix_class  'CsparseMatrix' or 'BPCells'  default: 'CsparseMatrix'
+#   matrix_class  'dgCMatrix' or 'BPCells'  default: 'dgCMatrix'
 #   matrix_mode   'mem' or 'dir'  default: 'mem'
 #   matrix_type   'float' or 'double'
 #   matrix_path   default: NULL
@@ -8,7 +8,7 @@
 #   matrix_buffer_size: <integer> default: 8192L
 
 # Usage
-#   matrix_class: default: 'CsparseMatrix'
+#   matrix_class: default: 'dgCMatrix'
 #     matrix_mode: default: 'mem'
 #   matrix_class: 'BPCells'
 #     matrix_mode: 'mem'  default: 'dir'
@@ -47,7 +47,7 @@ select_pca_parameter_value <- function(parameter, pca_control, pca_control_defau
 #' @section pca_control parameters:
 #' \describe{
 #'   \item{matrix_class}{Specifies the matrix class to use for
-#'      matrix storage. The acceptable values are "CsparseMatrix"
+#'      matrix storage. The acceptable values are "dgCMatrix"
 #'      and "BPCells".}
 #'   \item{matrix_type}{Specifies whether to store the matrix
 #'      single precision "floats" (matrix_type="float") or
@@ -57,11 +57,16 @@ select_pca_parameter_value <- function(parameter, pca_control, pca_control_defau
 #'      class matrix in memory (matrix_mode="mem") or on
 #'      disk (matrix_mode="dir"). "matrix_mode" is used only
 #'      for BPCells class matrices.}
-#'   \item{matrix_path}{Specifies the disk directory where the
-#'      BPCells on-disk matrix data are stored. The default is a
-#'      directory, with a randomized name, in the directory
-#'      where R is running. "matrix_path" is used only for
-#'      BPCells class matrices with matrix_mode="dir".}
+#'   \item{matrix_path}{Specifies the directory where the
+#'      BPCells on-disk matrix data are stored in a
+#'      sub-directory with a randomized name. The default is
+#'      in the directory where R is running. "matrix_path" is
+#'      used only for BPCells class matrices with 
+#'      matrix_mode="dir". For example, if matrix_path is set
+#'      to "/tmp" Monocle3 will create a directory with a 
+#'      name that has the form "monocle.bpcells.*.tmp" in
+#'      "/tmp". The asterisk represents a random string that
+#'      makes the names unique.}
 #'   \item{matrix_compress}{Specifies whether to use bit-packing
 #'      compression to store BPCells matrix values. This
 #'      reduces somewhat storage requirements but increases
@@ -83,20 +88,20 @@ set_pca_control <- function(pca_control=list()) {
                                   'matrix_compress',
                                   'show_values')
 
-  allowed_matrix_class <- c('CsparseMatrix', 'BPCells')
+  allowed_matrix_class <- c('dgCMatrix', 'BPCells')
 
 
   assertthat::assert_that(methods::is(pca_control, "list"))
 
   if(is.null(pca_control[['matrix_class']])) {
-    pca_control[['matrix_class']] <- 'CsparseMatrix'
+    pca_control[['matrix_class']] <- 'dgCMatrix'
   }
   else
   if(!(pca_control[['matrix_class']] %in% allowed_matrix_class)) {
-    stop('  matrix_class value must be "CsparseMatrix" or "BPCells"')
+    stop('  matrix_class value must be "dgCMatrix" or "BPCells"')
   }
 
-  if(pca_control[['matrix_class']] == 'CsparseMatrix') {
+  if(pca_control[['matrix_class']] == 'dgCMatrix') {
     pca_control_default <- get_global_variable('pca_control_csparsematrix')
   }
   else
@@ -113,7 +118,7 @@ set_pca_control <- function(pca_control=list()) {
   #
   # Last resort fall-back parameter values.
   #
-  default_matrix_class <- 'CsparseMatrix'
+  default_matrix_class <- 'dgCMatrix'
   default_matrix_mode <- 'mem'
   default_matrix_type <- 'double'
   default_matrix_path <- NULL
@@ -125,12 +130,12 @@ set_pca_control <- function(pca_control=list()) {
   pca_control_out = list()
   pca_control_out[['matrix_class']] <- select_pca_parameter_value('matrix_class', pca_control, pca_control_default, default_matrix_class)
 
-  if(pca_control_out[['matrix_class']] == 'CsparseMatrix') {
+  if(pca_control_out[['matrix_class']] == 'dgCMatrix') {
     pca_control_out[['matrix_mode']] <- select_pca_parameter_value('matrix_mode', pca_control, pca_control_default, default_matrix_mode)
     if(!(pca_control_out[['matrix_mode']] %in% c('mem'))) {
       error_string <- list(error_string, paste0('  ',
                            pca_control_out[['matrix_mode']],
-                           ' is not valid for matrix_class CsparseMatrix.'))
+                           ' is not valid for matrix_class dgCMatrix.'))
       stop(error_string)
     }
   }
@@ -197,9 +202,10 @@ set_pca_control <- function(pca_control=list()) {
   #
   # Set BPCells out-of-core directory name, if necessary.
   #
-  if(pca_control_out[['matrix_class']] == 'BPCells' && is.null(pca_control_out[['matrix_path']])) {
+  if(pca_control_out[['matrix_class']] == 'BPCells') {
     if(pca_control_out[['matrix_mode']] == 'dir') {
-      pca_control_out[['matrix_path']] <- tempfile(pattern='monocle.bpcells.', tmpdir='.', fileext='.tmp')[[1]]
+      tmp_dir <- if(is.null(pca_control_out[['matrix_path']])) '.' else pca_control_out[['matrix_path']]
+      pca_control_out[['matrix_path']] <- tempfile(pattern=paste0('monocle.bpcells.', format(Sys.Date(), format='%Y%m%d'), '.'), tmpdir=tmp_dir, fileext='.tmp')[[1]]
     }
   }
 
@@ -227,7 +233,7 @@ report_pca_control <- function(pca_control, label=NULL) {
 
   message(indent, '  matrix_class: ', ifelse(!is.null(pca_control[['matrix_class']]), pca_control[['matrix_class']], as.character(NA)))
 
-  if(pca_control[['matrix_class']] == 'CsparseMatrix') {
+  if(pca_control[['matrix_class']] == 'dgCMatrix') {
     message(indent, '  matrix_mode: ', ifelse(!is.null(pca_control[['matrix_mode']]), pca_control[['matrix_mode']], as.character(NA)))
   }
   else
@@ -571,7 +577,7 @@ bpcells_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
 make_pca_matrix <- function(FM, pca_control=list()) {
   matrix_class <- pca_control[['matrix_class']]
   matrix_path <- NULL
-  if(matrix_class == 'CsparseMatrix') {
+  if(matrix_class == 'dgCMatrix') {
     if(!is_sparse_matrix(FM)) {
       FM <- as(FM, 'dgCMatrix')
     }
@@ -591,10 +597,10 @@ make_pca_matrix <- function(FM, pca_control=list()) {
       matrix_path <- pca_control[['matrix_path']]
       assertthat::assert_that(!is.null(matrix_path))
       matrix_buffer_size <- pca_control[['matrix_buffer_size']]
-      if(!is(FM, 'IterableMatrix') && !is(FM, 'CsparseMatrix')) {
-        FM <- as(FM, 'CsparseMatrix')
+      if(!is(FM, 'IterableMatrix') && !is(FM, 'dgCMatrix')) {
+        FM <- as(FM, 'dgCMatrix')
       }
-      FM <- BPCells::write_matrix_dir(mat=BPCells::convert_matrix_type(FM, type=matrix_type), dir=matrix_path, compress=matrix_compress, buffer_size=matrix_buffer_size, overwrite=TRUE)
+      FM <- BPCells::write_matrix_dir(mat=BPCells::convert_matrix_type(FM, type=matrix_type), dir=matrix_path, compress=matrix_compress, buffer_size=matrix_buffer_size, overwrite=FALSE)
       push_matrix_path(matrix_path, 'bpcells_dir')
     }
   }

@@ -367,6 +367,7 @@ normalized_counts <- function(cds,
   if (norm_method == "binary"){
     norm_mat = norm_mat > 0
     if (is_sparse_matrix(norm_mat)){
+#      norm_mat = methods::as(norm_mat, "dgCMatrix")
       norm_mat = methods::as(norm_mat, "CsparseMatrix")
     }
   }

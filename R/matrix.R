@@ -101,7 +101,7 @@ select_assay_parameter_value <- function(parameter, assay_control, assay_control
 
 # Usage
 #   matrix_assay: default: 'counts'
-#   matrix_class: default: 'CsparseMatrix'
+#   matrix_class: default: 'dgCMatrix'
 #   matrix_class: 'BPCells'
 #     matrix_mode: 'mem'  default: 'dir'
 #       matrix_type: 'uint32_t', 'float', 'double'
@@ -128,7 +128,7 @@ select_assay_parameter_value <- function(parameter, assay_control, assay_control
 #' @section assay_control parameters:
 #' \describe{
 #'   \item{matrix_class}{Specifies the matrix class to use for
-#'      matrix storage. The acceptable values are "CsparseMatrix"
+#'      matrix storage. The acceptable values are "dgCMatrix"
 #'      and "BPCells".}
 #'   \item{matrix_type}{Specifies whether to store the matrix
 #'      values as unsigned 32-bit integers
@@ -141,12 +141,16 @@ select_assay_parameter_value <- function(parameter, assay_control, assay_control
 #'      class matrix in memory (matrix_mode="mem") or on
 #'      disk (matrix_mode="dir"). "matrix_mode" is used only
 #'      for BPCells class matrices.}
-#'   \item{matrix_path}{Specifies the disk directory where the
-#'      BPCells on-disk matrix data are to be stored. The
-#'      default is a directory, with a randomized name, in
-#'      the directory where R is running. "matrix_path" is
+#'   \item{matrix_path}{Specifies the directory where the
+#'      BPCells on-disk matrix data are stored in a
+#'      sub-directory with a randomized name. The default is
+#'      in the directory where R is running. "matrix_path" is
 #'      used only for BPCells class matrices with
-#'      matrix_mode="dir".}
+#'      matrix_mode="dir". For example, if matrix_path is set
+#'      to "/tmp" Monocle3 will create a directory with a
+#'      name that has the form "monocle.bpcells.*.tmp" in
+#'      "/tmp". The asterisk represents a random string that
+#'      makes the names unique.}
 #'   \item{matrix_compress}{Specifies whether to use bit-packing
 #'      compression to store BPCells matrix values. This is
 #'      most effective for values stored as matrix_type="uint32_t"
@@ -171,7 +175,7 @@ set_assay_control <- function(assay_control=list()) {
                                   'matrix_buffer_size',
                                   'show_values')
 
-  allowed_matrix_class <- c('CsparseMatrix', 'BPCells')
+  allowed_matrix_class <- c('dgCMatrix', 'BPCells')
 
   assertthat::assert_that(methods::is(assay_control, "list"))
 
@@ -180,14 +184,14 @@ set_assay_control <- function(assay_control=list()) {
   }
 
   if(is.null(assay_control[['matrix_class']])) {
-    assay_control[['matrix_class']] <- 'CsparseMatrix'
+    assay_control[['matrix_class']] <- 'dgCMatrix'
   }
   else
   if(!(assay_control[['matrix_class']] %in% allowed_matrix_class)) {
-    stop('  matrix_class value must be "CsparseMatrix" or "BPCells"')
+    stop('  matrix_class value must be "dgCMatrix" or "BPCells"')
   }
 
-  if(assay_control[['matrix_class']] == 'CsparseMatrix') {
+  if(assay_control[['matrix_class']] == 'dgCMatrix') {
     assay_control_default <- get_global_variable('assay_control_csparsematrix')
   }
   else
@@ -205,7 +209,7 @@ set_assay_control <- function(assay_control=list()) {
   # Last resort fall-back parameter values.
   #
   default_matrix_assay <- 'counts'
-  default_matrix_class <- 'CsparseMatrix'
+  default_matrix_class <- 'dgCMatrix'
   default_matrix_mode <- 'mem'
   default_matrix_type <- 'uint32_t'
   default_matrix_compress <- TRUE
@@ -227,12 +231,12 @@ set_assay_control <- function(assay_control=list()) {
 
   assay_control_out[['matrix_class']] <- select_assay_parameter_value('matrix_class', assay_control, assay_control_default, default_matrix_class)
 
-  if(assay_control_out[['matrix_class']] == 'CsparseMatrix') {
+  if(assay_control_out[['matrix_class']] == 'dgCMatrix') {
     assay_control_out[['matrix_mode']] <- select_assay_parameter_value('matrix_mode', assay_control, assay_control_default, default_matrix_mode)
     if(!(assay_control_out[['matrix_mode']] %in% c('mem'))) {
       error_string <- list(error_string, paste0('  ',
                            assay_control_out[['matrix_mode']],
-                           ' is not valid for matrix_class CsparseMatrix.'))
+                           ' is not valid for matrix_class dgCMatrix.'))
       stop(error_string)
     }
   }
@@ -305,9 +309,10 @@ set_assay_control <- function(assay_control=list()) {
   #
   # Set BPCells out-of-core file/directory name, if necessary.
   #
-  if(assay_control_out[['matrix_class']] == 'BPCells' && is.null(assay_control_out[['matrix_path']])) {
+  if(assay_control_out[['matrix_class']] == 'BPCells') {
     if(assay_control_out[['matrix_mode']] == 'dir') {
-      assay_control_out[['matrix_path']] <- tempfile(pattern='monocle.bpcells.', tmpdir='.', fileext='.tmp')[[1]]
+      tmp_dir <- if(is.null(assay_control_out[['matrix_path']])) '.' else assay_control_out[['matrix_path']]
+      assay_control_out[['matrix_path']] <- tempfile(pattern=paste0('monocle.bpcells.', format(Sys.Date(), format='%Y%m%d'), '.'), tmpdir=tmp_dir, fileext='.tmp')[[1]]
     }
   }
 
@@ -335,7 +340,7 @@ report_assay_control <- function(assay_control, label=NULL) {
 
   message(indent, '  matrix_class: ', ifelse(!is.null(assay_control[['matrix_class']]), assay_control[['matrix_class']], as.character(NA)))
 
-  if(assay_control[['matrix_class']] == 'CsparseMatrix') {
+  if(assay_control[['matrix_class']] == 'dgCMatrix') {
     message(indent, '  matrix_mode: ', ifelse(!is.null(assay_control[['matrix_mode']]), assay_control[['matrix_mode']], as.character(NA)))
   }
   else

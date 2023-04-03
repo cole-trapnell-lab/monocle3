@@ -184,27 +184,26 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
 #' function writes diagnostic information.
 #' @param assay_control an optional list of values that control how
 #' matrices are stored in the cell_data_set assays slot. Typically,
-#' matrices are stored in memory as dgCMatrix class objects using
-#' matrix_class="CsparseMatrix". This is the default. A very large
-#' matrix can be stored in a file and accessed by Monocle3 as if it
-#' were in memory. For this, Monocle3 uses the BPCells R package.
-#' Here the assay_control list values are set to
-#' matrix_class="BPCells" and matrix_mode="dir". Then the count
-#' matrix is stored in a directory, on-disk, that's created by
-#' Monocle3 in the directory where you run Monocle3. This directory
-#' has a name with the form "monocle.bpcells.*.tmp" where the
-#' asterisk is a string of random characters that makes the name
-#' unique. Do not remove this directory while Monocle3 is running!
-#' If you choose to store the count matrix as an on-disk BPCells
-#' object, you must use the "save_monocle_objects" and
-#' "load_monocle_objects" functions to save and restore the
-#' cell_data_set. Monocle3 tries to remove the BPCells matrix
-#' directory when R session ends; however, sometimes a matrix
-#' directory may persist after the session ends. In this case, the
-#' user must remove the directory after the session ends. For
-#' additional information about the assay_control list, see the
-#' examples below and the set_assay_control help. See also the
-#' preprocess_cds and pca_control help for information about
+#' matrices are stored in memory as dgCMatrix class (compressed sparse
+#' matrix) objects using matrix_class="dgCMatrix". This is the
+#' default. A very large matrix can be stored in a file and accessed
+#' by Monocle3 as if it were in memory. For this, Monocle3 uses the
+#' BPCells R package. Here the assay_control list values are set to
+#' matrix_class="BPCells" and matrix_mode="dir". Then the count matrix
+#' is stored in a directory, on-disk, that's created by Monocle3 in
+#' the directory where you run Monocle3. This directory has a name
+#' with the form "monocle.bpcells.*.tmp" where the asterisk is a
+#' string of random characters that makes the name unique. Do not
+#' remove this directory while Monocle3 is running! If you choose to
+#' store the count matrix as an on-disk BPCells object, you must use
+#' the #' "save_monocle_objects" and "load_monocle_objects" functions
+#' to save and restore the cell_data_set. Monocle3 tries to remove
+#' the BPCells matrix directory when your R session ends; however,
+#' sometimes a matrix directory may persist after the session ends.
+#' In this case,#' the user must remove the directory after the
+#' session ends. For additional information about the assay_control
+#' list, see the examples below and the set_assay_control help. See
+#' also the preprocess_cds and pca_control help for information about
 #' reducing memory usage by the preprocess_cds function.
 #' @return cds object
 #'
@@ -232,7 +231,7 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
 #'     # set the assay_control list explicitly to use this in-memory
 #'     # dgCMatrix format by setting the assay_control parameter to
 #'     #
-#'       load_mm_data(..., assay_control=list(matrix_class='CsparseMatrix'))
+#'       load_mm_data(..., assay_control=list(matrix_class='dgCMatrix'))
 #'     #
 #'     # For larger count matrices, we suggest that you try storing the
 #'     # count matrix as a BPCells class object, either in memory or on
@@ -244,9 +243,9 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
 #'     # In this case, the count matrix is stored in memory as compressed,
 #'     # non-negative integers, which reduces substantially the memory usage.
 #'     #
-#'     # For even larger matrices, we suggest that you try storing the
-#'     # count matrix as a BPCells object on disk by setting the
-#'     # assay_control parameter list as follows
+#'     # For larger matrices, we suggest that you try storing the count
+#'     # matrix as a BPCells object on disk by setting the assay_control
+#'     # parameter list as follows
 #'     #
 #'       load_mm_data(..., assay_control=list(matrix_class='BPCells', matrix_mode='dir'))
 #'     #
@@ -280,6 +279,7 @@ load_mm_data <- function( mat_path,
 
   # Read MatrixMarket file and convert to dgCMatrix format.
   mat <- Matrix::readMM(mat_path)
+#  mat <- as(mat, 'dgCMatrix')
   mat <- as(mat, 'CsparseMatrix')
 
   assertthat::assert_that( length( feature_annotations$names ) == nrow( mat ),
@@ -322,7 +322,7 @@ load_mm_data <- function( mat_path,
       cell_metadata = cell_annotations$metadata,
       gene_metadata = feature_annotations$metadata )
 
-  if(is(exprs(cds), 'CsparseMatrix')) {
+  if(is(exprs(cds), 'dgCMatrix')) {
     colData(cds)$n.umi <- Matrix::colSums(exprs(cds))
   }
   else
@@ -338,7 +338,7 @@ load_mm_data <- function( mat_path,
   cds <- set_counts_identity(cds, mat_path, matrix_id)
 
   if(verbose) {
-    if(is(counts(cds), 'CsparseMatrix')) {
+    if(is(counts(cds), 'dgCMatrix')) {
       message('load_mm_data: counts matrix class: ', class(counts(cds)))
     }
     else
@@ -1460,7 +1460,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
         if(bpcells_matrix_dir_flag) {
           bpcells_matrix_path <- file.path(directory_path, bpcells_matrix_dir)
           mat <- counts(cds)
-          BPCells::write_matrix_dir(mat=mat, dir=bpcells_matrix_path, compress=TRUE, buffer_size=8192L, overwrite=TRUE)
+          BPCells::write_matrix_dir(mat=mat, dir=bpcells_matrix_path, compress=TRUE, buffer_size=8192L, overwrite=FALSE)
 
           file_index[['files']] <- rbind(file_index[['files']],
                                          data.frame(cds_object = 'bpcells_matrix_dir',
