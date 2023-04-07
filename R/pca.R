@@ -3,13 +3,12 @@
 #   matrix_class  'dgCMatrix' or 'BPCells'  default: 'dgCMatrix'
 #   matrix_mode   'mem' or 'dir'  default: 'mem'
 #   matrix_type   'float' or 'double'
-#   matrix_path   default: NULL
+#   matrix_path   default: '.'
 #   matrix_compress default: FALSE
 #   matrix_buffer_size: <integer> default: 8192L
 
 # Usage
 #   matrix_class: default: 'dgCMatrix'
-#     matrix_mode: default: 'mem'
 #   matrix_class: 'BPCells'
 #     matrix_mode: 'mem'  default: 'dir'
 #       matrix_type: 'float', 'double'
@@ -17,7 +16,7 @@
 #     matrix_mode: 'dir'
 #       matrix_type: 'float', 'double' default: 'double'
 #       matrix_compress: TRUE, FALSE
-#       matrix_path: <path to directory or file> default: 'NULL' -> temporary directory in pwd
+#       matrix_path: <path to directory or file> default: '.' -> temporary directory in pwd
 #       matrix_buffer_size: <integer> default: 8192L
 
 select_pca_parameter_value <- function(parameter, pca_control, pca_control_default, default_value) {
@@ -75,132 +74,52 @@ select_pca_parameter_value <- function(parameter, pca_control, pca_control_defau
 #'   \item{matrix_buffer_size}{Specifies how many items of
 #'      data to buffer in memory before flushing to disk. This
 #'      is used for matrix_class="BPCells" with matrix_mode="dir".}
+#'   \item{Note: the default values are the same as those specified for
+#'      the assay matrix except when assay_control[['matrix_type']] is
+#'      'uint32_t' in which case it is set to 'double' or when
+#'      assay_control[['matrix_compress']] is TRUE in which case
+#'      it is set to FALSE.}
 #' @export
 set_pca_control <- function(pca_control=list()) {
 
-  assertthat::assert_that(methods::is(pca_control, "list"))
+  check_matrix_control(matrix_control=pca_control, control_source='pca', check_conditional=FALSE)
 
-  allowed_control_parameters <- c('matrix_class',
-                                  'matrix_mode',
-                                  'matrix_type',
-                                  'matrix_path',
-                                  'matrix_buffer_size',
-                                  'matrix_compress',
-                                  'show_values')
-
-  allowed_matrix_class <- c('dgCMatrix', 'BPCells')
-
-
-  assertthat::assert_that(methods::is(pca_control, "list"))
-
-  if(is.null(pca_control[['matrix_class']])) {
-    pca_control[['matrix_class']] <- 'dgCMatrix'
-  }
-  else
-  if(!(pca_control[['matrix_class']] %in% allowed_matrix_class)) {
-    stop('  matrix_class value must be "dgCMatrix" or "BPCells"')
-  }
-
-  if(pca_control[['matrix_class']] == 'dgCMatrix') {
-    pca_control_default <- get_global_variable('pca_control_csparsematrix')
-  }
-  else
-  if(pca_control[['matrix_class']] == 'BPCells') {
-    pca_control_default <- get_global_variable('pca_control_bpcells')
-  }
-
-  assertthat::assert_that(all(names(pca_control) %in% allowed_control_parameters),
-                          msg = "set_pca_control: unknown variable in pca_control")
-
-  assertthat::assert_that(all(names(pca_control_default) %in% allowed_control_parameters),
-                          msg = "set_pca_control: unknown variable in pca_control_default")
+  pca_control_default <- set_pca_control_default()
+  
+  check_matrix_control(matrix_control=pca_control_default, control_source='pca', check_conditional=FALSE)
 
   #
   # Last resort fall-back parameter values.
   #
   default_matrix_class <- 'dgCMatrix'
-  default_matrix_mode <- 'mem'
+  default_matrix_mode <- 'dir'
   default_matrix_type <- 'double'
-  default_matrix_path <- NULL
+  default_matrix_path <- '.'
   default_matrix_buffer_size <- 8192L
   default_matrix_compress <- FALSE
-
-  error_string = list()
 
   pca_control_out = list()
   pca_control_out[['matrix_class']] <- select_pca_parameter_value('matrix_class', pca_control, pca_control_default, default_matrix_class)
 
-  if(pca_control_out[['matrix_class']] == 'dgCMatrix') {
+  if(pca_control_out[['matrix_class']] == 'BPCells') {
     pca_control_out[['matrix_mode']] <- select_pca_parameter_value('matrix_mode', pca_control, pca_control_default, default_matrix_mode)
-    if(!(pca_control_out[['matrix_mode']] %in% c('mem'))) {
-      error_string <- list(error_string, paste0('  ',
-                           pca_control_out[['matrix_mode']],
-                           ' is not valid for matrix_class dgCMatrix.'))
-      stop(error_string)
-    }
-  }
-  else
-  if(pca_control[['matrix_class']] == 'BPCells') {
-    pca_control_out[['matrix_mode']] <- select_pca_parameter_value('matrix_mode', pca_control, pca_control_default, default_matrix_mode)
-    if(!(pca_control_out[['matrix_mode']] %in% c('mem', 'dir'))) {
-      error_string <- list(error_string, paste0('  ',
-                           pca_control_out[['matrix_mode']],
-                           ' is not a valid matrix_mode for matrix_class "BPCells".'))
-      stop(error_string)
-    }
     if(pca_control_out[['matrix_mode']] == 'mem') {
       pca_control_out[['matrix_type']] <- select_pca_parameter_value('matrix_type', pca_control, pca_control_default, default_matrix_type)
-      if(!(pca_control_out[['matrix_type']] %in% c('float', 'double'))) {
-        error_string <- list(error_string, paste0('  ',
-                             pca_control_out[['matrix_type']],
-                             ' is not a valid matrix_type for matrix_class "BPCells".'))
-      }
       pca_control_out[['matrix_compress']] <- select_pca_parameter_value('matrix_compress', pca_control, pca_control_default, default_matrix_compress)
-      if(!(is.logical(pca_control_out[['matrix_compress']]))) {
-        error_string <- list(error_string, paste0('  ',
-                             pca_control_out[['matrix_compress']],
-                             ' is not a valid matrix_compress for matrix_class "BPCells".'))
-      }
-      if(length(error_string) > 0) {
-        stop(error_string)
-      }
     }
     else
     if(pca_control_out[['matrix_mode']] == 'dir') {
       pca_control_out[['matrix_type']] <- select_pca_parameter_value('matrix_type', pca_control, pca_control_default, default_matrix_type)
-      if(!(pca_control_out[['matrix_type']] %in% c('float', 'double'))) {
-        error_string <- list(error_string, paste0('  ',
-                             pca_control_out[['matrix_type']],
-                             ' is not a valid matrix_type for matrix_class "BPCells".'))
-      }
       pca_control_out[['matrix_path']] <- select_pca_parameter_value('matrix_path', pca_control, pca_control_default, default_matrix_path)
-      if(!is.null(pca_control_out[['matrix_path']]) &&
-         !is.character(pca_control_out[['matrix_path']])) {
-        error_string <- list(error_string, paste0('  ',
-                             pca_control_out[['matrix_path']],
-                             ' is not a valid matrix_path.'))
-
-      }
       pca_control_out[['matrix_buffer_size']] <- select_pca_parameter_value('matrix_buffer_size', pca_control, pca_control_default, default_matrix_buffer_size)
-      if(!is.integer(pca_control_out[['matrix_buffer_size']])) {
-        error_string <- list(error_string, paste0('  ',
-                             pca_control_out[['matrix_buffer_size']],
-                             ' is not an integer.'))
-      }
       pca_control_out[['matrix_compress']] <- select_pca_parameter_value('matrix_compress', pca_control, pca_control_default, default_matrix_compress)
-      if(!is.logical(pca_control_out[['matrix_compress']])) {
-        error_string <- list(error_string, paste0('  ',
-                             pca_control_out[['matrix_compress']],
-                             ' is not a valid matrix_compress for matrix_class "BPCells".'))
-      }
-      if(length(error_string) > 0) {
-        stop(error_string)
-      }
     }
   }
 
+  check_matrix_control(matrix_control=pca_control_out, control_source='pca', check_conditional=TRUE)
+
   #
-  # Set BPCells out-of-core directory name, if necessary.
+  # Set BPCells out-of-core directory name.
   #
   if(pca_control_out[['matrix_class']] == 'BPCells') {
     if(pca_control_out[['matrix_mode']] == 'dir') {
@@ -254,6 +173,47 @@ report_pca_control <- function(pca_control, label=NULL) {
   else {
     stop('report_nn_control: unsupported pca class/mode/...\'', pca_control[['method']], '\'')
   }
+}
+
+
+# Notes:
+#   o  I expect that the assay_control list in the global variable
+#      pca_control_counts_matrix has all required assay_control
+#      and pca_control values.
+#   o  modification to any of set_assay_control, set_pca_control,
+#      or set_pca_control_default may necessitate modifications
+#      to all of them.
+#   o  when assay_control[['matrix_type']] is 'uint32_t', set
+#      the pca_control_default[['matrix_type']] to 'double'
+#      because pca_control[['matrix_type']] == 'uint32_t' is
+#      invalid.
+set_pca_control_default <- function() {
+
+  pca_control_default <- get_global_variable('pca_control_counts_matrix')
+
+  if(!is.null(pca_control_default[['matrix_type']]) && pca_control_default[['matrix_type']] == 'uint32_t') {
+    pca_control_default[['matrix_type']] <- 'double'
+  }
+
+  if(!is.null(pca_control_default[['matrix_compress']]) && pca_control_default[['matrix_compress']] == TRUE) {
+    pca_control_default[['matrix_compress']] <- FALSE
+  }
+
+  check_matrix_control(matrix_control=pca_control_default, control_source='pca', check_conditional=TRUE)
+
+  if(pca_control_default[['matrix_class']] == 'BPCells' &&
+     pca_control_default[['matrix_mode']] == 'dir') {
+    # Remove the final directory names, which is appended by set_assay_control, and
+    # will be re-appended by set_pca_control.
+    pca_control_default[['matrix_path']] <- dirname(pca_control_default[['matrix_path']])
+    if(length(pca_control_default[['matrix_path']]) == 0) {
+      pca_control_default[['matrix_path']] <- '.'
+    }
+  }
+
+  check_matrix_control(matrix_control=pca_control_default, control_source='pca', check_conditional=TRUE)
+
+  return(pca_control_default)
 }
 
 
@@ -500,7 +460,7 @@ bpcells_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
   if(verbose) {
     message('pca: bpcells_prcomp_irlba: "x" matrix class: ', class(bpcells_find_base_matrix(x)))
     message('pca: bpcells_prcomp_irlba: "x" matrix info')
-    message(bpcells_base_matrix_info(x), appendLF=FALSE)
+    message(bpcells_base_matrix_info(mat=x, indent='  '), appendLF=FALSE)
   }
 
 
@@ -578,7 +538,7 @@ make_pca_matrix <- function(FM, pca_control=list()) {
   matrix_class <- pca_control[['matrix_class']]
   matrix_path <- NULL
   if(matrix_class == 'dgCMatrix') {
-    if(!is_sparse_matrix(FM)) {
+    if(!is(FM, 'dgCMatrix')) {
       FM <- as(FM, 'dgCMatrix')
     }
   }

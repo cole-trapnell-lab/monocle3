@@ -53,5 +53,10 @@ class matrices.}
 \item{matrix_buffer_size}{Specifies how many items of
 data to buffer in memory before flushing to disk. This
 is used for matrix_class="BPCells" with matrix_mode="dir".}
+\item{Note: the default values are the same as those specified for
+the assay matrix except when assay_control[\link{'matrix_type'}] is
+'uint32_t' in which case it is set to 'double' or when
+assay_control[\link{'matrix_compress'}] is TRUE in which case
+it is set to FALSE.}
 }
 

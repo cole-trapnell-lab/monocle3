@@ -85,12 +85,22 @@ get_global_variable <- function(variable_name=NULL) {
   set_global_variable('nn_control_annoy_cosine', list(method='annoy', metric='cosine', n_trees=50, M=48, ef_construction=200, ef=150, grain_size=1, cores=1))
 
   # Default assay_control list.
-  set_global_variable('assay_control_csparsematrix', list(matrix_class='dgCMatrix', matrix_mode='mem', matrix_type='double', matrix_compress=FALSE, matrix_path=NULL, matrix_buffer_size=8192L))
-  set_global_variable('assay_control_bpcells', list(matrix_class='BPCells', matrix_mode='dir', matrix_type='uint32_t', matrix_compress=TRUE, matrix_path=NULL, matrix_buffer_size=8192L))
+  set_global_variable('assay_control_csparsematrix', list(matrix_class='dgCMatrix', matrix_mode='mem', matrix_type='double', matrix_compress=FALSE, matrix_path='.', matrix_buffer_size=8192L))
+  set_global_variable('assay_control_bpcells', list(matrix_class='BPCells', matrix_mode='dir', matrix_type='uint32_t', matrix_compress=TRUE, matrix_path='.', matrix_buffer_size=8192L))
 
   # Default pca_control list.
-  set_global_variable('pca_control_csparsematrix', list(matrix_class='dgCMatrix', matrix_mode='mem', matrix_type='double', matrix_compress=FALSE, matrix_path=NULL, matrix_buffer_size=8192L))
-  set_global_variable('pca_control_bpcells', list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=FALSE, matrix_path=NULL, matrix_buffer_size=8192L))
+  # Notes:
+  #   o  pca_control_counts_matrix stores the counts matrix
+  #      assay_control list used in load_mm_data, potentially
+  #      specified by the user. The intention is to use the
+  #      same matrix storage settings as the defaults for the
+  #      PCA matrices; that is, use the pca_control_counts_matrix
+  #      list as the default pca_control matrix in
+  #      preprocess_cds().
+  # set_global_variable('pca_control_csparsematrix', list(matrix_class='dgCMatrix', matrix_mode='mem', matrix_type='double', matrix_compress=FALSE, matrix_path='.', matrix_buffer_size=8192L))
+  # set_global_variable('pca_control_bpcells', list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=FALSE, matrix_path='.', matrix_buffer_size=8192L))
+  set_global_variable('pca_control_counts_matrix', list(matrix_class='dgCMatrix', matrix_mode='mem', matrix_type='double', matrix_compress=FALSE, matrix_path='.', matrix_buffer_size=8192L))
+
 
   # Watching preprocess_cds() it appears that R uses OMP_NUM_THREADS
   # threads if OMP_NUM_THREADS > 1 and OPENBLAS_NUM_THREADS is NA.

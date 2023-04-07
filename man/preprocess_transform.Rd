@@ -8,7 +8,8 @@ preprocess_transform(
   cds,
   reduction_method = c("PCA", "LSI"),
   block_size = NULL,
-  cores = 1
+  cores = 1,
+  pca_control = list()
 )
 }
 \arguments{

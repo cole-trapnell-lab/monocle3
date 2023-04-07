@@ -271,6 +271,10 @@ load_mm_data <- function( mat_path,
 
   assay_control <- set_assay_control(assay_control)
 
+  # Set the pca_control_counts_matrix global variable
+  # to be used as the default pca_control list.
+  set_global_variable('pca_control_counts_matrix', assay_control)
+
   feature_annotations <- load_annotations_data( feature_anno_path, feature_metadata_column_names, header, sep, quote=quote, annotation_type='features' )
   cell_annotations <- load_annotations_data( cell_anno_path, cell_metadata_column_names, header, sep, quote=quote, annotation_type='cells' )
 
@@ -279,7 +283,6 @@ load_mm_data <- function( mat_path,
 
   # Read MatrixMarket file and convert to dgCMatrix format.
   mat <- Matrix::readMM(mat_path)
-#  mat <- as(mat, 'dgCMatrix')
   mat <- as(mat, 'CsparseMatrix')
 
   assertthat::assert_that( length( feature_annotations$names ) == nrow( mat ),

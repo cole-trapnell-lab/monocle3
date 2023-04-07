@@ -104,6 +104,126 @@ select_assay_parameter_value <- function(parameter, assay_control, assay_control
 #   matrix_class: default: 'dgCMatrix'
 #   matrix_class: 'BPCells'
 #     matrix_mode: 'mem'  default: 'dir'
+#       matrix_type: 'uint32_t', 'float', 'double'  NOTE: 'uint32_t' is valid for assay matrix only
+#       matrix_compress: TRUE, FALSE default: FALSE
+#     matrix_mode: 'dir'
+#       matrix_type: 'uint32_t', 'float', 'double' default: 'uint32_t'
+#       matrix_path: <path to directory or file> default: 'NULL' -> temporary directory in pwd
+#       matrix_compress: TRUE, FALSE default: FALSE
+#       matrix_buffer_size: <integer> default: 8192L
+check_matrix_control <- function(matrix_control, control_source=c('assay', 'pca'), check_conditional=FALSE) {
+  assertthat::assert_that(is.list(matrix_control))
+  assertthat::assert_that(is.logical(check_conditional))
+
+  control_source <- match.arg(control_source)
+
+  allowed_control_parameters <- c('matrix_assay',
+                                  'matrix_class',
+                                  'matrix_mode',
+                                  'matrix_type',
+                                  'matrix_compress',
+                                  'matrix_path',
+                                  'matrix_buffer_size',
+                                  'show_values')
+
+  allowed_matrix_class <- c('dgCMatrix', 'BPCells')
+  allowed_matrix_type_assay <- c('uint32_t', 'float', 'double')
+  allowed_matrix_type_pca <- c('float', 'double')
+  allowed_matrix_mode <- c('mem', 'dir') 
+
+  control_name <- if(control_source == 'assay') 'assay_control' else 'pca_control'
+
+  error_string <- ''
+
+  if(!all(names(matrix_control) %in% allowed_control_parameters)) {
+    error_string <- paste0('invalid ', control_name, ' control parameter')
+  }
+
+  if(check_conditional == FALSE) {
+    if(!(is.null(matrix_control[['matrix_class']])) &&
+       !(matrix_control[['matrix_class']] %in% allowed_matrix_class)) {
+      error_string <- paste0('\ninvalid matrix_class "', matrix_control[['matrix_class']], '"')
+    }
+
+    if(!(is.null(matrix_control[['matrix_mode']])) &&
+       !(matrix_control[['matrix_mode']] %in% allowed_matrix_mode)) {
+      error_string <- paste0('\ninvalid matrix_mode "', matrix_control[['matrix_mode']], '"')
+    }
+
+    allowed_values <- if(control_source == 'assay') allowed_matrix_type_assay else allowed_matrix_type_pca
+    if(!(is.null(matrix_control[['matrix_type']])) &&
+       !(matrix_control[['matrix_type']] %in% allowed_values)) {
+      error_string <- paste0('\ninvalid ', control_name, ' matrix_type "', matrix_control[['matrix_type']], '"')
+    }
+
+    if(!(is.null(matrix_control[['matrix_compress']])) &&
+       !(is.logical(matrix_control[['matrix_compress']]))) {
+      error_string <- paste0('\nmatrix_compress value must be a logical type')
+    }
+
+    if(!(is.null(matrix_control[['matrix_path']])) &&
+       !(is.character(matrix_control[['matrix_path']]))) {
+      error_string <- paste0('\nmatrix_path value must be a character type')
+    }
+
+    if(!(is.null(matrix_control[['matrix_buffer_size']])) &&
+       !(is.integer(matrix_control[['matrix_buffer_size']]))) {
+      error_string <- paste0('\nmatrix_buffer_size value must be an integer type')
+    }
+
+  }
+  else {
+    # Check matrix_class value.
+    if(is.null(matrix_control[['matrix_class']])) {
+      error_string <- '\nmatrix_class not set'
+    }
+    else
+    if(!(matrix_control[['matrix_class']] %in% allowed_matrix_class)) {
+      error_string <- paste0('\ninvalid matrix_class "', matrix_control[['matrix_class']], '\n')
+    }
+  
+    if(matrix_control[['matrix_class']] == 'BPCells') {
+      # Check matrix_type value.
+      allowed_values <- if(control_source == 'assay') allowed_matrix_type_assay else allowed_matrix_type_pca
+      if(!(matrix_control[['matrix_type']] %in% allowed_values)) {
+        error_string <- paste0('\nbad ', control_name, ' matrix_type "', matrix_control[['matrix_type']], '"\n')
+      }
+  
+      # Check matrix_compress value.
+      if(!is.logical(matrix_control[['matrix_compress']])) {
+        error_string <- '\nmatrix_compress must be as logical type'
+      }
+  
+      # Check matrix_mode value.
+      if(!(matrix_control[['matrix_mode']] %in% allowed_matrix_mode)) {
+        error_string <- paste0('\ninvalid matrix_mode "', matrix_control[['matrix_mode']], '"')
+      }
+  
+      if(matrix_control[['matrix_mode']] == 'dir') {
+        # Check matrix_path value.
+        if(!(is.character(matrix_control[['matrix_path']]))) {
+          error_string <- paste0('\nbad matrix_path "', matrix_control[['matrix_path']], '"')
+        }
+  
+        # Check matrix_buffer_size.
+        if(!(is.integer(matrix_control[['matrix_buffer_size']]))) {
+          error_string <- paste0('\nmatrix_buffer_size must be an integer')
+        }
+      }
+    }
+  }
+
+  if(error_string != '') {
+    stop(stringr::str_trim(error_string))
+  }
+}
+
+
+# Usage
+#   matrix_assay: default: 'counts'
+#   matrix_class: default: 'dgCMatrix'
+#   matrix_class: 'BPCells'
+#     matrix_mode: 'mem'  default: 'dir'
 #       matrix_type: 'uint32_t', 'float', 'double'
 #       matrix_compress: TRUE, FALSE default: FALSE
 #     matrix_mode: 'dir'
@@ -112,6 +232,11 @@ select_assay_parameter_value <- function(parameter, assay_control, assay_control
 #       matrix_compress: TRUE, FALSE default: FALSE
 #       matrix_buffer_size: <integer> default: 8192L
 #
+
+# Notes:
+#   o  modification to any of set_assay_control, set_pca_control,
+#      or set_pca_control_default may necessitate modifications
+#      to all of them.
 
 #' Verify and set the assay_control parameter list.
 #'
@@ -164,34 +289,10 @@ select_assay_parameter_value <- function(parameter, assay_control, assay_control
 #' @export
 set_assay_control <- function(assay_control=list()) {
 
-  assertthat::assert_that(methods::is(assay_control, "list"))
+  check_matrix_control(matrix_control=assay_control, control_source='assay', check_conditional=FALSE)
 
-  allowed_control_parameters <- c('matrix_assay',
-                                  'matrix_class',
-                                  'matrix_mode',
-                                  'matrix_type',
-                                  'matrix_compress',
-                                  'matrix_path',
-                                  'matrix_buffer_size',
-                                  'show_values')
-
-  allowed_matrix_class <- c('dgCMatrix', 'BPCells')
-
-  assertthat::assert_that(methods::is(assay_control, "list"))
-
-  if(!is.null(assay_control[['matrix_assay']]) && assay_control[['matrix_assay']] != 'counts') {
-    stop('  matrix_assay value must be "counts"')
-  }
-
-  if(is.null(assay_control[['matrix_class']])) {
-    assay_control[['matrix_class']] <- 'dgCMatrix'
-  }
-  else
-  if(!(assay_control[['matrix_class']] %in% allowed_matrix_class)) {
-    stop('  matrix_class value must be "dgCMatrix" or "BPCells"')
-  }
-
-  if(assay_control[['matrix_class']] == 'dgCMatrix') {
+  if(is.null(assay_control[['matrix_class']]) ||
+     assay_control[['matrix_class']] == 'dgCMatrix') {
     assay_control_default <- get_global_variable('assay_control_csparsematrix')
   }
   else
@@ -199,11 +300,7 @@ set_assay_control <- function(assay_control=list()) {
     assay_control_default <- get_global_variable('assay_control_bpcells')
   }
 
-  assertthat::assert_that(all(names(assay_control) %in% allowed_control_parameters),
-                          msg = "set_assay_control: unknown variable in assay_control")
-
-  assertthat::assert_that(all(names(assay_control_default) %in% allowed_control_parameters),
-                          msg = "set_assay_control: unknown variable in assay_control_default")
+  check_matrix_control(matrix_control=assay_control_default, control_source='assay', check_conditional=FALSE)
 
   #
   # Last resort fall-back parameter values.
@@ -213,101 +310,38 @@ set_assay_control <- function(assay_control=list()) {
   default_matrix_mode <- 'mem'
   default_matrix_type <- 'uint32_t'
   default_matrix_compress <- TRUE
-  default_matrix_path <- NULL
+  default_matrix_path <- '.'
   default_matrix_buffer_size <- 8192L
-
-
-  error_string = list()
 
   assay_control_out = list()
 
   assay_control_out[['matrix_assay']] <- select_assay_parameter_value('matrix_assay', assay_control, assay_control_default, default_matrix_assay)
   if(!(assay_control_out[['matrix_assay']] %in% c('counts'))) {
-    error_string <- list(error_string, paste0('  ',
-                         assay_control_out[['matrix_assay']],
-                         ' is not a valid matrix_assay.'))
-    stop(error_string)
+    stop(paste0(assay_control_out[['matrix_assay']], ' is not a valid matrix_assay.'))
   }
 
   assay_control_out[['matrix_class']] <- select_assay_parameter_value('matrix_class', assay_control, assay_control_default, default_matrix_class)
 
-  if(assay_control_out[['matrix_class']] == 'dgCMatrix') {
-    assay_control_out[['matrix_mode']] <- select_assay_parameter_value('matrix_mode', assay_control, assay_control_default, default_matrix_mode)
-    if(!(assay_control_out[['matrix_mode']] %in% c('mem'))) {
-      error_string <- list(error_string, paste0('  ',
-                           assay_control_out[['matrix_mode']],
-                           ' is not valid for matrix_class dgCMatrix.'))
-      stop(error_string)
-    }
-  }
-  else
   if(assay_control_out[['matrix_class']] == 'BPCells') {
-    assay_control_out[['matrix_mode']] <- select_assay_parameter_value('matrix_mode', assay_control, assay_control_default, default_matrix_mode)
-    if(!(assay_control_out[['matrix_mode']] %in% c('mem', 'dir'))) {
-      error_string <- list(error_string, paste0('  ',
-                           assay_control_out[['matrix_mode']],
-                           ' is not a valid matrix_mode for matrix_class "BPCells".'))
-      stop(error_string)
-    }
+     assay_control_out[['matrix_mode']] <- select_assay_parameter_value('matrix_mode', assay_control, assay_control_default, default_matrix_mode)
 
     if(assay_control_out[['matrix_mode']] == 'mem') {
-      assay_control_out[['matrix_type']] <- select_assay_parameter_value('matrix_type', assay_control, assay_control_default, default_matrix_type)
-      if(!(assay_control_out[['matrix_type']] %in% c('uint32_t', 'float', 'double'))) {
-        error_string <- list(error_string, paste0('  ',
-                             assay_control_out[['matrix_type']],
-                             ' is not a valid matrix_type for matrix_class "BPCells".'))
-      }
-
-      assay_control_out[['matrix_compress']] <- select_assay_parameter_value('matrix_compress', assay_control, assay_control_default, default_matrix_compress)
-      if(!is.logical(assay_control_out[['matrix_compress']])) {
-        error_string <- list(error_string, paste0('  ',
-                             assay_control_out[['matrix_compress']],
-                             ' is not TRUE or FALSE.'))
-      }
-      if(length(error_string) > 0) {
-        stop(error_string)
-      }
+       assay_control_out[['matrix_type']] <- select_assay_parameter_value('matrix_type', assay_control, assay_control_default, default_matrix_type)
+       assay_control_out[['matrix_compress']] <- select_assay_parameter_value('matrix_compress', assay_control, assay_control_default, default_matrix_compress)
     }
     else
     if(assay_control_out[['matrix_mode']] == 'dir') {
-      assay_control_out[['matrix_type']] <- select_assay_parameter_value('matrix_type', assay_control, assay_control_default, default_matrix_type)
-      if(!(assay_control_out[['matrix_type']] %in% c('uint32_t', 'float', 'double'))) {
-        error_string <- list(error_string, paste0('  ',
-                             assay_control_out[['matrix_type']],
-                             ' is not a valid matrix_type for matrix_class "BPCells".'))
-      }
-
-      assay_control_out[['matrix_path']] <- select_assay_parameter_value('matrix_path', assay_control, assay_control_default, default_matrix_path)
-      if(!is.null(assay_control_out[['matrix_path']]) &&
-         !is.character(assay_control_out[['matrix_path']])) {
-        error_string <- list(error_string, paste0('  ',
-                             assay_control_out[['matrix_path']],
-                             ' is not a valid matrix_path.'))
-
-      }
-
-      assay_control_out[['matrix_compress']] <- select_assay_parameter_value('matrix_compress', assay_control, assay_control_default, default_matrix_compress)
-      if(!is.logical(assay_control_out[['matrix_compress']])) {
-        error_string <- list(error_string, paste0('  ',
-                             assay_control_out[['matrix_compress']],
-                             ' is not TRUE or FALSE.'))
-      }
-
-      assay_control_out[['matrix_buffer_size']] <- select_assay_parameter_value('matrix_buffer_size', assay_control, assay_control_default, default_matrix_buffer_size)
-      if(!is.integer(assay_control_out[['matrix_buffer_size']])) {
-        error_string <- list(error_string, paste0('  ',
-                             assay_control_out[['matrix_buffer_size']],
-                             ' is not an integer.'))
-      }
-
-      if(length(error_string) > 0) {
-        stop(error_string)
-      }
+       assay_control_out[['matrix_type']] <- select_assay_parameter_value('matrix_type', assay_control, assay_control_default, default_matrix_type)
+       assay_control_out[['matrix_path']] <- select_assay_parameter_value('matrix_path', assay_control, assay_control_default, default_matrix_path)
+       assay_control_out[['matrix_compress']] <- select_assay_parameter_value('matrix_compress', assay_control, assay_control_default, default_matrix_compress)
+       assay_control_out[['matrix_buffer_size']] <- select_assay_parameter_value('matrix_buffer_size', assay_control, assay_control_default, default_matrix_buffer_size)
     }
   }
 
+  check_matrix_control(matrix_control=assay_control_out, control_source='assay', check_conditional=TRUE)
+
   #
-  # Set BPCells out-of-core file/directory name, if necessary.
+  # Set BPCells out-of-core file/directory name.
   #
   if(assay_control_out[['matrix_class']] == 'BPCells') {
     if(assay_control_out[['matrix_mode']] == 'dir') {

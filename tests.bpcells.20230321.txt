@@ -34,66 +34,66 @@ Tests:
 
 1. load_mm_data
 
-# Test loading into CsparseMatrix
+# Test loading into dgCMatrix
 rm(cds)
-cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', assay_control=list(matrix_class='CsparseMatrix'), verbose=TRUE)
-OK
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', assay_control=list(matrix_class='dgCMatrix'), verbose=TRUE)
+OK*
 
 # Test loading into BPCells mem storage as uint32_t.
 rm(cds)
 cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', assay_control=list(matrix_class='BPCells', matrix_mode='mem', matrix_type='uint32_t'), verbose=TRUE)
-OK
+OK*
 
 # Test loading into BPCells mem storage as float.
 rm(cds)
 cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', assay_control=list(matrix_class='BPCells', matrix_mode='mem', matrix_type='float'), verbose=TRUE)
-OK
+OK*
 
 # Test loading into BPCells mem storage as double.
 rm(cds)
 cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', assay_control=list(matrix_class='BPCells', matrix_mode='mem', matrix_type='double'), verbose=TRUE)
-OK
+OK*
 
 # Test loading into BPCells mem storage as double with compression enabled.
 rm(cds)
 cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', assay_control=list(matrix_class='BPCells', matrix_mode='mem', matrix_type='double', matrix_compress=TRUE), verbose=TRUE)
-OK
+OK*
 
-# Test loading into BPCells mem storage as double with compression disabled..
+# Test loading into BPCells mem storage as double with compression disabled.
 rm(cds)
 cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', assay_control=list(matrix_class='BPCells', matrix_mode='mem', matrix_type='double', matrix_compress=FALSE), verbose=TRUE)
-OK
+OK*
 
 
 # Test loading into BPCells dir storage as uint32_t.
 rm(cds)
 cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', assay_control=list(matrix_class='BPCells', matrix_mode='dir', matrix_type='uint32_t'), verbose=TRUE)
-OK
+OK*
 
 # Test loading into BPCells dir storage as float.
 rm(cds)
 cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', assay_control=list(matrix_class='BPCells', matrix_mode='dir', matrix_type='float'), verbose=TRUE)
-OK
+OK*
 
 # Test loading into BPCells dir storage as double.
 rm(cds)
 cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', assay_control=list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double'), verbose=TRUE)
-OK
+OK*
 
 # Test loading into BPCells dir storage as double and compression enabled.
 rm(cds)
 cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', assay_control=list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=TRUE), verbose=TRUE)
-OK
+OK*
 
 # Test loading into BPCells dir storage as double and compression disabled.
 rm(cds)
 cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', assay_control=list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=FALSE), verbose=TRUE)
-OK
+OK*
 
 # Test loading into BPCells dir storage as double with explicit matrix_path.
 rm(cds)
 cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', assay_control=list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_path='monocle.bpcells.foo_dir.tmp'), verbose=TRUE)
-OK
+OK*
 
 # Test loading into BPCells dir storage as double with explicit matrix_buffer_size.
 rm(cds)
@@ -107,103 +107,145 @@ OK
 rm(cds)
 cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', verbose=TRUE)
 cds <- preprocess_cds(cds, verbose=TRUE)
-OK
+OK*
 
-# Test loading and preprocessing using explicit CsparseMatrix for loading and preprocessing.
+# Test loading and preprocessing using explicit dgCMatrix for loading and preprocessing with default.
 rm(cds)
-cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', verbose=TRUE, assay_control=list(matrix_class='CsparseMatrix'))
-cds <- preprocess_cds(cds, verbose=TRUE, pca_control=list(matrix_class='CsparseMatrix'))
-OK
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', verbose=TRUE, assay_control=list(matrix_class='dgCMatrix'))
+cds <- preprocess_cds(cds, verbose=TRUE)
+OK*
 
-# Test loading BPCells mem compressed uint32_t and preprocessing with default (CsparseMatrix) matrix.
+# Test loading and preprocessing using BPCells for loading and preprocessing with default.
 rm(cds)
 cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', verbose=TRUE, assay_control=list(matrix_class='BPCells'))
 cds <- preprocess_cds(cds, verbose=TRUE)
-OK
+OK*
 
-# Test loading BPCells mem compressed uint32_t and preprocessing with explicit CsparseMatrix matrix.
+# Test loading and preprocessing using BPCells matrix_mode='mem' for loading and preprocessing with default.
+rm(cds)
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', verbose=TRUE, assay_control=list(matrix_class='BPCells', matrix_mode='mem'))
+cds <- preprocess_cds(cds, verbose=TRUE)
+OK*
+
+# Test loading and preprocessing using BPCells matrix_mode='dir' for loading and preprocessing with default.
+rm(cds)
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', verbose=TRUE, assay_control=list(matrix_class='BPCells', matrix_mode='dir'))
+cds <- preprocess_cds(cds, verbose=TRUE)
+OK*
+
+# Test loading and preprocessing using BPCells matrix_mode='dir' and matrix_type='float' for loading and preprocessing with default.
+rm(cds)
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', verbose=TRUE, assay_control=list(matrix_class='BPCells', matrix_mode='dir', matrix_type='float'))
+cds <- preprocess_cds(cds, verbose=TRUE)
+OK*
+
+# Test loading and preprocessing using BPCells matrix_mode='dir' and matrix_type='float' and matrix_buffer_size=16384L for loading and preprocessing with default.
+rm(cds)
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', verbose=TRUE, assay_control=list(matrix_class='BPCells', matrix_mode='dir', matrix_type='float', matrix_buffer_size=16384L))
+cds <- preprocess_cds(cds, verbose=TRUE)
+OK*
+
+# Test loading default assay_control and preprocessing using default BPCells.
+rm(cds)
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', verbose=TRUE)
+cds <- preprocess_cds(cds, verbose=TRUE, pca_control=list(matrix_class='BPCells'))
+OK*
+
+# Test loading and preprocessing using explicit dgCMatrix for loading and preprocessing.
+rm(cds)
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', verbose=TRUE, assay_control=list(matrix_class='dgCMatrix'))
+cds <- preprocess_cds(cds, verbose=TRUE, pca_control=list(matrix_class='dgCMatrix'))
+OK*
+
+# Test loading default assay_control and preprocessing using BPCells with MatrixDir.
+rm(cds)
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', verbose=TRUE)
+cds <- preprocess_cds(cds, verbose=TRUE, pca_control=list(matrix_class='BPCells', matrix_mode='dir'))
+OK*
+
+# Test loading BPCells mem compressed uint32_t and preprocessing with explicit dgCMatrix matrix.
 rm(cds)
 cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', verbose=TRUE, assay_control=list(matrix_class='BPCells'))
-cds <- preprocess_cds(cds, verbose=TRUE, pca_control=list(matrix_class='CsparseMatrix'))
-OK
+cds <- preprocess_cds(cds, verbose=TRUE, pca_control=list(matrix_class='dgCMatrix'))
+OK*
 
 # Test loading BPCells mem compressed uint32_t and preprocessing with explicit BPCells matrix.
 rm(cds)
 cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', verbose=TRUE, assay_control=list(matrix_class='BPCells'))
 cds <- preprocess_cds(cds, verbose=TRUE, pca_control=list(matrix_class='BPCells'))
-OK
+OK*
 
 # Test loading BPCells mem compressed uint32_t and preprocessing with explicit BPCells matrix with matrix_mode='mem'..
 rm(cds)
 cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', verbose=TRUE, assay_control=list(matrix_class='BPCells'))
 cds <- preprocess_cds(cds, verbose=TRUE, pca_control=list(matrix_class='BPCells', matrix_mode='mem'))
-OK
+OK*
 
 # Test loading BPCells mem compressed uint32_t and preprocessing with explicit BPCells matrix with matrix_mode='mem' and matrix_type='float'.
 rm(cds)
 cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', verbose=TRUE, assay_control=list(matrix_class='BPCells'))
 cds <- preprocess_cds(cds, verbose=TRUE, pca_control=list(matrix_class='BPCells', matrix_mode='mem', matrix_type='float'))
-OK
+OK*
 
 # Test loading BPCells mem compressed uint32_t and preprocessing with explicit BPCells matrix with matrix_mode='mem' and matrix_type='double'.
 rm(cds)
 cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', verbose=TRUE, assay_control=list(matrix_class='BPCells'))
 cds <- preprocess_cds(cds, verbose=TRUE, pca_control=list(matrix_class='BPCells', matrix_mode='mem', matrix_type='double'))
-OK
+OK*
 
 # Test loading BPCells mem compressed uint32_t and preprocessing with explicit BPCells matrix with matrix_mode='mem' and matrix_type='double' and matrix_compress=FALSE.
 rm(cds)
 cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', verbose=TRUE, assay_control=list(matrix_class='BPCells'))
 cds <- preprocess_cds(cds, verbose=TRUE, pca_control=list(matrix_class='BPCells', matrix_mode='mem', matrix_type='double', matrix_compress=FALSE))
-OK
+OK*
 
 # Test loading BPCells mem compressed uint32_t and preprocessing with explicit BPCells matrix with matrix_mode='mem' and matrix_type='double' and matrix_compress=TRUE.
 rm(cds)
 cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', verbose=TRUE, assay_control=list(matrix_class='BPCells'))
 cds <- preprocess_cds(cds, verbose=TRUE, pca_control=list(matrix_class='BPCells', matrix_mode='mem', matrix_type='double', matrix_compress=TRUE))
-OK
+OK*
 
 # Test loading BPCells mem compressed uint32_t and preprocessing with explicit BPCells matrix with matrix_mode='dir'.
 rm(cds)
 cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', verbose=TRUE, assay_control=list(matrix_class='BPCells'))
 cds <- preprocess_cds(cds, verbose=TRUE, pca_control=list(matrix_class='BPCells', matrix_mode='dir'))
-OK
+OK*
 
 # Test loading BPCells mem compressed uint32_t and preprocessing with explicit BPCells matrix with matrix_mode='dir' and matrix_type='float'..
 rm(cds)
 cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', verbose=TRUE, assay_control=list(matrix_class='BPCells'))
 cds <- preprocess_cds(cds, verbose=TRUE, pca_control=list(matrix_class='BPCells', matrix_mode='dir', matrix_type='float'))
-OK
+OK*
 
 # Test loading BPCells mem compressed uint32_t and preprocessing with explicit BPCells matrix with matrix_mode='dir' and matrix_type='double'..
 rm(cds)
 cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', verbose=TRUE, assay_control=list(matrix_class='BPCells'))
 cds <- preprocess_cds(cds, verbose=TRUE, pca_control=list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double'))
-OK
+OK*
 
 # Test loading BPCells mem compressed uint32_t and preprocessing with explicit BPCells matrix with matrix_mode='dir' and matrix_type='double' and matrix_path='monocle.bpcells.pca.tmp'.
 rm(cds)
 cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', verbose=TRUE, assay_control=list(matrix_class='BPCells'))
 cds <- preprocess_cds(cds, verbose=TRUE, pca_control=list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_path='monocle.bpcells.pca.tmp'))
-OK
+OK*
 
 # Test loading BPCells mem compressed uint32_t and preprocessing with explicit BPCells matrix with matrix_mode='dir' and matrix_type='double' and matrix_buffer_size=16384L..
 rm(cds)
 cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', verbose=TRUE, assay_control=list(matrix_class='BPCells'))
 cds <- preprocess_cds(cds, verbose=TRUE, pca_control=list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_buffer_size=16384L))
-OK
+OK*
 
 # Test loading BPCells mem compressed uint32_t and preprocessing with explicit BPCells matrix with matrix_mode='dir' and matrix_type='double' and matrix_compress=FALSE.
 rm(cds)
 cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', verbose=TRUE, assay_control=list(matrix_class='BPCells'))
 cds <- preprocess_cds(cds, verbose=TRUE, pca_control=list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=FALSE))
-OK
+OK*
 
 # Test loading BPCells mem compressed uint32_t and preprocessing with explicit BPCells matrix with matrix_mode='dir' and matrix_type='double' and matrix_compress=TRUE.
 rm(cds)
 cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', verbose=TRUE, assay_control=list(matrix_class='BPCells'))
 cds <- preprocess_cds(cds, verbose=TRUE, pca_control=list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=TRUE))
-OK
+OK*
 
 
 3. save_monocle_objects and load_monocle_objects

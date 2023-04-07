@@ -1,3 +1,82 @@
+sparse_apply_transform <- function(FM, rotation_matrix, vcenter=vcenter, vscale=vscale, block_size=NULL, cores=1, verbose) {
+  if(!is.null(block_size)) {
+    block_size0 <- DelayedArray::getAutoBlockSize()
+    DelayedArray::setAutoBlockSize(block_size)
+  }
+
+  # Thank you Maddy.
+  intersect_genes <- intersect(rownames(rotation_matrix), rownames(FM))
+  intersect_indices <- match(intersect_genes, rownames(rotation_matrix))
+
+  if(any(is.na(intersect_indices))) {
+    stop('gene sets differ: genes in the subject matrix are not in the reference matrix')
+  }
+
+  if((length(intersect_indices)/length(rownames(FM))) < 0.5) {
+    warning('fewer than half the genes in the subject matrix are also in the reference matrix: are the matrices prepared using the same gene set?')
+  } 
+
+  # [intersect_genes,] orders FM rows by intersect_genes
+  FM <- FM[intersect_genes,]
+  
+  xt <- Matrix::t(FM)
+  xtda <- DelayedArray::DelayedArray(xt)
+
+  vcenter <- vcenter[intersect_indices]
+  vscale <- vscale[intersect_indices]
+
+  xtdasc <- t(xtda) - vcenter
+  xtdasc <- t(xtdasc / vscale)
+
+  irlba_res <- list()
+#  irlba_res$x <- xtdasc %*% rotation_matrix[intersect_indices,]
+  irlba_res$x <- matrix_multiply_multicore(mat_a=xtdasc,
+                                         mat_b=rotation_matrix[intersect_indices,],
+                                         cores)
+  irlba_res$x <- as.matrix(irlba_res$x)
+  class(irlba_res) <- c('irlba_prcomp', 'prcomp')
+
+  return(irlba_res)
+}
+
+
+bpcells_apply_transform <- function(FM, rotation_matrix, vcenter=vcenter, vscale=vscale, pca_control=list(), verbose) {
+  # Thank you Maddy.
+  intersect_genes <- intersect(rownames(rotation_matrix), rownames(FM))
+  intersect_indices <- match(intersect_genes, rownames(rotation_matrix))
+
+  if(any(is.na(intersect_indices))) {
+    stop('gene sets differ: genes in the subject matrix are not in the reference matrix')
+  }
+
+  if((length(intersect_indices)/length(rownames(FM))) < 0.5) {
+    warning('fewer than half the genes in the subject matrix are also in the reference matrix: are the matrices prepared using the same gene set?')
+  }
+
+  # [intersect_genes,] orders FM rows by intersect_genes
+  # This almost certainly requires rewriting the matrix.
+  FM <- FM[intersect_genes,]
+ 
+  xt <- BPCells::t(FM)
+
+  vcenter <- vcenter[intersect_indices]
+  vscale <- vscale[intersect_indices]
+
+  xtsc <- t(xt) - vcenter
+  xtsc <- t(xtsc / vscale)
+
+  # make intermediate matrix.
+
+  irlba_res <- list()
+  irlba_res$x <- xtsc %*% rotation_matrix[intersect_indices,]
+
+  irlba_res$x <- as.matrix(irlba_res$x)
+  class(irlba_res) <- c('irlba_prcomp', 'prcomp')
+
+  return(irlba_res)
+}
+
+
 #' @title Apply a preprocess transform model to a cell_data_set.
 #'
 #' @description Applies a previously calculated preprocess
@@ -69,7 +148,7 @@
 #' @export
 # Bioconductor forbids writing to user directories so examples
 # is not run.
-preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_size=NULL, cores=1) {
+preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_size=NULL, cores=1, pca_control=list()) {
   #
   # Need to add processing for LSI. TF-IDF transform etc.
   #
@@ -91,10 +170,7 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
                           msg=paste0("Reduction method '", reduction_method, "' is not in the model",
                                     " object."))
 
-  if(!is.null(block_size)) {
-    block_size0 <- DelayedArray::getAutoBlockSize()
-    DelayedArray::setAutoBlockSize(block_size)
-  }
+  pca_control <- set_pca_control(pca_control)
 
   set.seed(2016)
 
@@ -104,56 +180,51 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
     rotation_matrix <- cds@reduce_dim_aux[[reduction_method]][['model']]$svd_v
     vcenter <- cds@reduce_dim_aux[[reduction_method]][['model']]$svd_center
     vscale <- cds@reduce_dim_aux[[reduction_method]][['model']]$svd_scale
- 
-    FM <- SingleCellExperiment::counts(cds) 
-    FM <- normalize_expr_data(FM=FM, size_factors=size_factors(cds), norm_method=norm_method, pseudo_count=pseudo_count)
+
+    pca_matrix_list <- make_pca_matrix(FM=SingleCellExperiment::counts(cds), pca_control=pca_control)
+    FM <- pca_matrix_list[['mat']]
+    matrix_path <- pca_matrix_list[['matrix_path']]
+
+    FM <- normalize_expr_data(FM=FM, size_factors=size_factors(cds), norm_method=norm_method, pseudo_count=pseudo_count) # OK
     if (nrow(FM) == 0) {
       stop("all rows have standard deviation zero")
     }
-  
+
     # Don't select matrix rows by use_genes because intersect() does
     # it implicitly through the rotation matrix.
-  
-    fm_rowsums = Matrix::rowSums(FM)
-    FM <- FM[is.finite(fm_rowsums) & fm_rowsums != 0, ]
-    
-    # Thank you Maddy.
-    intersect_genes <- intersect(rownames(rotation_matrix), rownames(FM))
-    intersect_indices <- match(intersect_genes, rownames(rotation_matrix))
 
-    if(any(is.na(intersect_indices))) {
-      stop('gene sets differ: genes in the subject matrix are not in the reference matrix')
+    if(is(counts(cds), 'dgCMatrix')) {
+      fm_rowsums = Matrix::rowSums(FM)
+      FM <- FM[is.finite(fm_rowsums) & fm_rowsums != 0, ]
+
+      irlba_res <- sparse_apply_transform(FM=FM, rotation_matrix=rotation_matrix, vcenter=vcenter, vscale=vscale, block_size=block_size, cores=cores, verbose=verbose)
+    }
+    else
+    if(is(counts(cds), 'IterableMatrix')) {
+      fm_rowsums = BPCells::rowSums(FM)
+      FM <- FM[is.finite(fm_rowsums) & fm_rowsums != 0, ]
+
+      irlba_res <- bpcells_apply_transform(FM=FM, rotation_matrix=rotation_matrix, vcenter=vcenter, vscale=vscale, pca_control=pca_control, verbose=verbose)
+
+      # Remove BPCells MatrixDir, if it is defined.
+      if(!is.null(matrix_path)) {
+        unlink(matrix_path, recursive=TRUE)
+        rm(FM)
+      }
+    }
+    else {
+      stop('unrecognized counts matrix class: ', class(counts(cds)))
     }
 
-    if((length(intersect_indices)/length(rownames(FM))) < 0.5) {
-      warning('fewer than half the genes in the subject matrix are also in the reference matrix: are the matrices prepared using the same gene set?')
-    } 
-
-    # [intersect_genes,] orders FM rows by intersect_genes
-    FM <- FM[intersect_genes,]
-    
-    xt <- Matrix::t(FM)
-    xtda <- DelayedArray::DelayedArray(xt)
-  
-    vcenter <- vcenter[intersect_indices]
-    vscale <- vscale[intersect_indices]
-  
-    xtdasc <- t(xtda) - vcenter
-    xtdasc <- t(xtdasc / vscale)
-  
-    irlba_res <- list()
-  #  irlba_res$x <- xtdasc %*% rotation_matrix[intersect_indices,]
-    irlba_res$x <- matrix_multiply_multicore(mat_a=xtdasc,
-                                           mat_b=rotation_matrix[intersect_indices,],
-                                           cores)
-    irlba_res$x <- as.matrix(irlba_res$x)
-    class(irlba_res) <- c('irlba_prcomp', 'prcomp')
-  
     # 'reference' gene names are in the cds@preproc
     SingleCellExperiment::reducedDims(cds)[[reduction_method]] <- irlba_res$x
-
   }
   else if(reduction_method == 'LSI') {
+    if(!is.null(block_size)) {
+      block_size0 <- DelayedArray::getAutoBlockSize()
+      DelayedArray::setAutoBlockSize(block_size)
+    }
+
     norm_method <- cds@reduce_dim_aux[[reduction_method]][['model']][['norm_method']]
     pseudo_count <- cds@reduce_dim_aux[[reduction_method]][['model']][['pseudo_count']]
     rotation_matrix <- cds@reduce_dim_aux[[reduction_method]][['model']][['svd_v']]

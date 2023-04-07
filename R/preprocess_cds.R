@@ -154,7 +154,7 @@ preprocess_cds <- function(cds,
   #       FM queued operations before submitting to
   #       the SVD function.
   #
-  pca_matrix_list <- make_pca_matrix(SingleCellExperiment::counts(cds), pca_control)
+  pca_matrix_list <- make_pca_matrix(FM=SingleCellExperiment::counts(cds), pca_control)
   FM <- pca_matrix_list[['mat']]
   matrix_path <- pca_matrix_list[['matrix_path']]
   FM <- normalize_expr_data(FM=FM, size_factors=size_factors(cds), norm_method=norm_method, pseudo_count=pseudo_count)
@@ -209,7 +209,7 @@ preprocess_cds <- function(cds,
                                         n = min(num_dim,min(dim(FM)) - 1),
                                         center = scaling, scale. = scaling,
                                         pca_control=pca_control,
-                                       verbose = verbose)
+                                        verbose = verbose)
     }
     else {
       stop('Unrecognized expression matrix class')
