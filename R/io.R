@@ -271,10 +271,6 @@ load_mm_data <- function( mat_path,
 
   assay_control <- set_assay_control(assay_control)
 
-  # Set the pca_control_counts_matrix global variable
-  # to be used as the default pca_control list.
-  set_global_variable('pca_control_counts_matrix', assay_control)
-
   feature_annotations <- load_annotations_data( feature_anno_path, feature_metadata_column_names, header, sep, quote=quote, annotation_type='features' )
   cell_annotations <- load_annotations_data( cell_anno_path, cell_metadata_column_names, header, sep, quote=quote, annotation_type='cells' )
 
@@ -283,7 +279,6 @@ load_mm_data <- function( mat_path,
 
   # Read MatrixMarket file and convert to dgCMatrix format.
   mat <- Matrix::readMM(mat_path)
-  mat <- as(mat, 'CsparseMatrix')
 
   assertthat::assert_that( length( feature_annotations$names ) == nrow( mat ),
       msg=paste0( 'feature name count (',
@@ -301,31 +296,13 @@ load_mm_data <- function( mat_path,
   rownames( mat ) <- feature_annotations$names
   colnames( mat ) <- cell_annotations$names
 
-  if(assay_control[['matrix_class']] == 'BPCells')
-  {
-    matrix_mode <- assay_control[['matrix_mode']]
-    matrix_group <- assay_control[['matrix_group']]
-    matrix_type <- assay_control[['matrix_type']]
-    matrix_path <- assay_control[['matrix_path']]
-    matrix_compress <- assay_control[['matrix_compress']]
-    matrix_buffer_size <- assay_control[['matrix_buffer_size']]
-    matrix_chunk_size <- assay_control[['matrix_buffer_size']]
-
-    if(matrix_mode == 'mem') {
-      mat <- BPCells::write_matrix_memory(mat=BPCells::convert_matrix_type(mat, type=matrix_type), compress=matrix_compress)
-    }
-    else
-    if(matrix_mode == 'dir') {
-      mat <- BPCells::write_matrix_dir(mat=BPCells::convert_matrix_type(mat, type=matrix_type), dir=matrix_path, compress=matrix_compress, buffer_size=matrix_buffer_size, overwrite=FALSE)
-      push_matrix_path(matrix_path, 'bpcells_dir')
-    }
-  }
-
-  cds <- new_cell_data_set( mat,
+  cds <- new_cell_data_set(mat,
       cell_metadata = cell_annotations$metadata,
-      gene_metadata = feature_annotations$metadata )
+      gene_metadata = feature_annotations$metadata,
+      assay_control = assay_control,
+      verbose = verbose)
 
-  if(is(exprs(cds), 'dgCMatrix')) {
+  if(is(exprs(cds), 'CsparseMatrix')) {
     colData(cds)$n.umi <- Matrix::colSums(exprs(cds))
   }
   else
@@ -341,7 +318,7 @@ load_mm_data <- function( mat_path,
   cds <- set_counts_identity(cds, mat_path, matrix_id)
 
   if(verbose) {
-    if(is(counts(cds), 'dgCMatrix')) {
+    if(is(counts(cds), 'CsparseMatrix')) {
       message('load_mm_data: counts matrix class: ', class(counts(cds)))
     }
     else

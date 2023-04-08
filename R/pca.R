@@ -41,6 +41,10 @@ select_pca_parameter_value <- function(parameter, pca_control, pca_control_defau
 #'   pca_control list parameter in which case the function will
 #'   show the pca_control values to be used and then stop.
 #' @param pca_control Input control list.
+#' @param pca_control_default Ignored at this time.
+#' @param assay_control The assay_control list used to store the
+#'   counts matrix. This is stored in
+#'   metadata(assays(cds)[['counts']][['assay_control']].
 #' @return pca_control Output control list.
 #'
 #' @section pca_control parameters:
@@ -80,11 +84,13 @@ select_pca_parameter_value <- function(parameter, pca_control, pca_control_defau
 #'      assay_control[['matrix_compress']] is TRUE in which case
 #'      it is set to FALSE.}
 #' @export
-set_pca_control <- function(pca_control=list()) {
+set_pca_control <- function(pca_control=list(), pca_control_default=list(), assay_control=list()) {
 
   check_matrix_control(matrix_control=pca_control, control_source='pca', check_conditional=FALSE)
 
-  pca_control_default <- set_pca_control_default()
+  # Set pca_control_default using the assay_control list stored
+  # in the cds.
+  pca_control_default <- set_pca_control_default(assay_control)
   
   check_matrix_control(matrix_control=pca_control_default, control_source='pca', check_conditional=FALSE)
 
@@ -177,9 +183,11 @@ report_pca_control <- function(pca_control, label=NULL) {
 
 
 # Notes:
-#   o  I expect that the assay_control list in the global variable
-#      pca_control_counts_matrix has all required assay_control
-#      and pca_control values.
+#   o  use the assay_control list stored in
+#      metadata(assays(cds))[['counts']][['assay_control']]
+#   o  I expect that the assay_control list in the
+#      metadata(assays(cds)[['counts']][['assay_control']])
+#      has all required assay_control and pca_control values.
 #   o  modification to any of set_assay_control, set_pca_control,
 #      or set_pca_control_default may necessitate modifications
 #      to all of them.
@@ -187,9 +195,9 @@ report_pca_control <- function(pca_control, label=NULL) {
 #      the pca_control_default[['matrix_type']] to 'double'
 #      because pca_control[['matrix_type']] == 'uint32_t' is
 #      invalid.
-set_pca_control_default <- function() {
+set_pca_control_default <- function(assay_control) {
 
-  pca_control_default <- get_global_variable('pca_control_counts_matrix')
+  pca_control_default <- assay_control
 
   if(!is.null(pca_control_default[['matrix_type']]) && pca_control_default[['matrix_type']] == 'uint32_t') {
     pca_control_default[['matrix_type']] <- 'double'

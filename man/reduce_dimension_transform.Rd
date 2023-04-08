@@ -7,7 +7,8 @@
 reduce_dimension_transform(
   cds,
   preprocess_method = NULL,
-  reduction_method = c("UMAP")
+  reduction_method = c("UMAP"),
+  verbose = FALSE
 )
 }
 \arguments{

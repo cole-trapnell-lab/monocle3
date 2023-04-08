@@ -4,10 +4,20 @@
 \alias{set_pca_control}
 \title{Verify and set the pca_control parameter list.}
 \usage{
-set_pca_control(pca_control = list())
+set_pca_control(
+  pca_control = list(),
+  pca_control_default = list(),
+  assay_control = list()
+)
 }
 \arguments{
 \item{pca_control}{Input control list.}
+
+\item{pca_control_default}{Ignored at this time.}
+
+\item{assay_control}{The assay_control list used to store the
+counts matrix. This is stored in
+metadata(assays(cds)[\link{'counts'}][\link{'assay_control'}].}
 }
 \value{
 pca_control Output control list.

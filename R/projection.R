@@ -1,4 +1,8 @@
-sparse_apply_transform <- function(FM, rotation_matrix, vcenter=vcenter, vscale=vscale, block_size=NULL, cores=1, verbose) {
+sparse_apply_transform <- function(FM, rotation_matrix, vcenter=vcenter, vscale=vscale, block_size=NULL, cores=1, verbose=FALSE) {
+  if(verbose) {
+    message('sparse_apply_transform: start')
+  }
+
   if(!is.null(block_size)) {
     block_size0 <- DelayedArray::getAutoBlockSize()
     DelayedArray::setAutoBlockSize(block_size)
@@ -36,11 +40,19 @@ sparse_apply_transform <- function(FM, rotation_matrix, vcenter=vcenter, vscale=
   irlba_res$x <- as.matrix(irlba_res$x)
   class(irlba_res) <- c('irlba_prcomp', 'prcomp')
 
+  if(verbose) {
+    message('sparse_apply_transform: finish')
+  }
+
   return(irlba_res)
 }
 
 
-bpcells_apply_transform <- function(FM, rotation_matrix, vcenter=vcenter, vscale=vscale, pca_control=list(), verbose) {
+bpcells_apply_transform <- function(FM, rotation_matrix, vcenter=vcenter, vscale=vscale, pca_control=list(), verbose=FALSE) {
+  if(verbose) {
+    message('bpcells_apply_transform: start')
+  }
+
   # Thank you Maddy.
   intersect_genes <- intersect(rownames(rotation_matrix), rownames(FM))
   intersect_indices <- match(intersect_genes, rownames(rotation_matrix))
@@ -62,8 +74,8 @@ bpcells_apply_transform <- function(FM, rotation_matrix, vcenter=vcenter, vscale
   vcenter <- vcenter[intersect_indices]
   vscale <- vscale[intersect_indices]
 
-  xtsc <- t(xt) - vcenter
-  xtsc <- t(xtsc / vscale)
+  xtsc <- BPCells::t(xt) - vcenter
+  xtsc <- BPCells::t(xtsc / vscale)
 
   # make intermediate matrix.
 
@@ -72,6 +84,10 @@ bpcells_apply_transform <- function(FM, rotation_matrix, vcenter=vcenter, vscale
 
   irlba_res$x <- as.matrix(irlba_res$x)
   class(irlba_res) <- c('irlba_prcomp', 'prcomp')
+
+  if(verbose) {
+    message('bpcells_apply_transform: finish')
+  }
 
   return(irlba_res)
 }
@@ -148,7 +164,7 @@ bpcells_apply_transform <- function(FM, rotation_matrix, vcenter=vcenter, vscale
 #' @export
 # Bioconductor forbids writing to user directories so examples
 # is not run.
-preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_size=NULL, cores=1, pca_control=list()) {
+preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_size=NULL, cores=1, pca_control=list(), verbose=FALSE) {
   #
   # Need to add processing for LSI. TF-IDF transform etc.
   #
@@ -170,7 +186,7 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
                           msg=paste0("Reduction method '", reduction_method, "' is not in the model",
                                     " object."))
 
-  pca_control <- set_pca_control(pca_control)
+  pca_control <- set_pca_control(pca_control=pca_control, assay_control=metadata(assays(cds))[['counts']][['assay_control']])
 
   set.seed(2016)
 
@@ -478,7 +494,7 @@ align_transform <- function(cds, reduction_method=c('Aligned')) {
 #'
 # Bioconductor forbids writing to user directories so examples
 # is not run.
-reduce_dimension_transform <- function(cds, preprocess_method=NULL, reduction_method=c('UMAP')) {
+reduce_dimension_transform <- function(cds, preprocess_method=NULL, reduction_method=c('UMAP'), verbose=FALSE) {
   assertthat::assert_that(methods::is(cds, 'cell_data_set'),
                           msg=paste('cds parameter is not a cell_data_set'))
   assertthat::assert_that(

@@ -133,7 +133,7 @@ preprocess_cds <- function(cds,
                           msg = paste("One or more cells has a size factor of",
                                       "NA."))
 
-  pca_control <- set_pca_control(pca_control)
+  pca_control <- set_pca_control(pca_control=pca_control, assay_control=metadata(assays(cds))[['counts']][['assay_control']])
 
   if(build_nn_index) {
     nn_control <- set_nn_control(mode=1,

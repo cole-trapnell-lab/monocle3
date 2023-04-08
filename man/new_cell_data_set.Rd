@@ -4,7 +4,13 @@
 \alias{new_cell_data_set}
 \title{Create a new cell_data_set object.}
 \usage{
-new_cell_data_set(expression_data, cell_metadata = NULL, gene_metadata = NULL)
+new_cell_data_set(
+  expression_data,
+  cell_metadata = NULL,
+  gene_metadata = NULL,
+  assay_control = list(),
+  verbose = FALSE
+)
 }
 \arguments{
 \item{expression_data}{expression data matrix for an experiment, can be a
@@ -16,6 +22,33 @@ where \code{row.names(cell_metadata) = colnames(expression_data)}.}
 \item{gene_metadata}{data frame containing attributes of features
 (e.g. genes), where
 \code{row.names(gene_metadata) = row.names(expression_data)}.}
+
+\item{assay_control}{an optional list of values that control how
+matrices are stored in the cell_data_set assays slot. Typically,
+matrices are stored in memory as dgCMatrix class (compressed sparse
+matrix) objects using matrix_class="dgCMatrix". This is the
+default. A very large matrix can be stored in a file and accessed
+by Monocle3 as if it were in memory. For this, Monocle3 uses the
+BPCells R package. Here the assay_control list values are set to
+matrix_class="BPCells" and matrix_mode="dir". Then the count matrix
+is stored in a directory, on-disk, that's created by Monocle3 in
+the directory where you run Monocle3. This directory has a name
+with the form "monocle.bpcells.*.tmp" where the asterisk is a
+string of random characters that makes the name unique. Do not
+remove this directory while Monocle3 is running! If you choose to
+store the count matrix as an on-disk BPCells object, you must use
+the #' "save_monocle_objects" and "load_monocle_objects" functions
+to save and restore the cell_data_set. Monocle3 tries to remove
+the BPCells matrix directory when your R session ends; however,
+sometimes a matrix directory may persist after the session ends.
+In this case,#' the user must remove the directory after the
+session ends. For additional information about the assay_control
+list, see the examples below and the set_assay_control help. See
+also the preprocess_cds and pca_control help for information about
+reducing memory usage by the preprocess_cds function.}
+
+\item{verbose}{a logical value that determines whether or not the
+function writes diagnostic information.}
 }
 \value{
 a new cell_data_set object

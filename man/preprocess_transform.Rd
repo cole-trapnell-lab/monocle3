@@ -9,7 +9,8 @@ preprocess_transform(
   reduction_method = c("PCA", "LSI"),
   block_size = NULL,
   cores = 1,
-  pca_control = list()
+  pca_control = list(),
+  verbose = FALSE
 )
 }
 \arguments{
