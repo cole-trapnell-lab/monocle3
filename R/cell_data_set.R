@@ -143,14 +143,9 @@ new_cell_data_set <- function(expression_data,
 
   assay_control <- set_assay_control(assay_control)
 
-  if(is_sparse_matrix(expression_data)) {
-    if(!(is(expression_data, 'CsparseMatrix') ||
-         is(expression_data, 'dgCMatrix'))) {
-      expression_data <- methods::as(expression_data, 'CsparseMatrix')
-    }
-  }
-  else {
-    stop('expression_data must be a Matrix class sparse matrix')
+  if(!(is(expression_data, 'CsparseMatrix') ||
+       is(expression_data, 'dgCMatrix'))) {
+    expression_data <- methods::as(expression_data, 'CsparseMatrix')
   }
 
   if(assay_control[['matrix_class']] == 'BPCells')

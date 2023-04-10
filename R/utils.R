@@ -1,6 +1,6 @@
 # Test whether a matrix is one of our supported sparse matrices
 is_sparse_matrix <- function(x){
-  class(x) %in% c("dgCMatrix", "dgTMatrix", "lgCMatrix", "CsparseMatrix")
+  any(class(x) %in% c("dgCMatrix", "dgTMatrix", "lgCMatrix", "CsparseMatrix"))
 }
 
 #' Function to calculate size factors for single-cell RNA-seq data
