@@ -233,10 +233,8 @@ message('\n==== preprocess_cds: set_matrix_class ====')
     # PCs, not the fraction of total variance.
     cds@reduce_dim_aux[['PCA']][['model']][['prop_var_expl']] <- irlba_res$sdev^2 / sum(irlba_res$sdev^2)
 
-    fm_info <- get_matrix_info(FM)
-    if(fm_info[['matrix_class']] == 'BPCells' &&
-       fm_info[['matrix_mode']] == 'dir') {
-      unlink(fm_info[['matrix_path']], recursive=TRUE)
+    if(is(FM, 'IterableMatrix')) {
+      rm_bpcells_dirs(FM)
       rm(FM)
     }
 

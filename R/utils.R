@@ -673,8 +673,13 @@ combine_cds <- function(cds_list,
   new_cds <- new_cell_data_set(all_exp, cell_metadata = all_pd, gene_metadata = all_fd)   # bge_exp
 
   # Clean up BPCells directories, if necessary.
-
-message('clean up BPCells directories')
+  if(bpcells_matrix_flag) {
+    num_exprs <- length(exprs_list)
+    for(i in seq(num_exprs)) {
+      rm_bpcells_dirs(exprs_list[[i]])
+      rm(exprs_list[[i]])
+    }
+  }
 
   # Add in preprocessing results.
   if(keep_reduced_dims) {

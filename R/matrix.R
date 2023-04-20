@@ -672,3 +672,17 @@ show_matrix_info(get_matrix_info(mat_out), indent='  ')
   return(mat_out)
 }
 
+
+rm_bpcells_dirs <- function(mats=c()) {
+  num_mat <- length(mats)
+  for(i in seq(num_mat)) {
+    mat <- mats[[i]]
+    mat_info <- get_matrix_info(mat)
+    if(mat_info[['matrix_class']] == 'BPCells' &&
+       mat_info[['matrix_mode']] == 'dir') {
+      unlink(mat_info[['matrix_path']], recursive=TRUE)
+      rm(mat)
+    }
+  }
+}
+

@@ -322,12 +322,8 @@ bpcells_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
     message('end time: ', Sys.time())
   }
 
-  x_commit_info <- get_matrix_info(x_commit)
-  if(x_commit_info[['matrix_class']] == 'BPCells' &&
-     x_commit_info[['matrix_mode']] == 'dir') {
-    unlink(x_commit_info[['matrix_path']], recursive=TRUE)
-    rm(x_commit)
-  }
+  rm_bpcells_dirs(x_commit)
+  rm(x_commit)
 
   if(verbose) {
     message('singular values (head)')
