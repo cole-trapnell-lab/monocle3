@@ -15,7 +15,7 @@ load_mm_data(
   quote = "\\"'",
   sep = "\\t",
   verbose = FALSE,
-  assay_control = list()
+  matrix_control = list()
 )
 }
 \arguments{
@@ -94,7 +94,7 @@ the BPCells matrix directory when your R session ends; however,
 sometimes a matrix directory may persist after the session ends.
 In this case,#' the user must remove the directory after the
 session ends. For additional information about the assay_control
-list, see the examples below and the set_assay_control help. See
+list, see the examples below and the set_matrix_control help. See
 also the preprocess_cds and pca_control help for information about
 reducing memory usage by the preprocess_cds function.}
 }

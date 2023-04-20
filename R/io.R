@@ -202,7 +202,7 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
 #' sometimes a matrix directory may persist after the session ends.
 #' In this case,#' the user must remove the directory after the
 #' session ends. For additional information about the assay_control
-#' list, see the examples below and the set_assay_control help. See
+#' list, see the examples below and the set_matrix_control help. See
 #' also the preprocess_cds and pca_control help for information about
 #' reducing memory usage by the preprocess_cds function.
 #' @return cds object
@@ -263,13 +263,20 @@ load_mm_data <- function( mat_path,
     quote="\"'",
     sep="\t",
     verbose=FALSE,
-    assay_control=list()) {
+    matrix_control=list()) {
   assertthat::assert_that(assertthat::is.readable(mat_path), msg='unable to read matrix file')
   assertthat::assert_that(assertthat::is.readable(feature_anno_path), msg='unable to read feature annotation file')
   assertthat::assert_that(assertthat::is.readable(cell_anno_path), msg='unable to read cell annotation file')
   assertthat::assert_that(is.numeric(umi_cutoff))
 
-  assay_control <- set_assay_control(assay_control)
+  check_matrix_control(matrix_control=matrix_control, control_type='any', check_conditional=FALSE)
+  matrix_control_default <- if(!is.null(matrix_control[['matrix_class']]) && matrix_control[['matrix_class']] == 'BPCells') {
+    matrix_control_default <- get_global_variable('assay_control_bpcells')
+  }
+  else {
+    matrix_control_default <- get_global_variable('assay_control_csparsematrix')
+  }
+  matrix_control <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='any')
 
   feature_annotations <- load_annotations_data( feature_anno_path, feature_metadata_column_names, header, sep, quote=quote, annotation_type='features' )
   cell_annotations <- load_annotations_data( cell_anno_path, cell_metadata_column_names, header, sep, quote=quote, annotation_type='cells' )
@@ -279,6 +286,11 @@ load_mm_data <- function( mat_path,
 
   # Read MatrixMarket file and convert to dgCMatrix format.
   mat <- Matrix::readMM(mat_path)
+  matrix_control_default <- get_global_variable('assay_control_csparsematrix')
+  matrix_control_res <- set_matrix_control(matrix_control=matrix_control,
+                                                            matrix_control_default=matrix_control_default,
+                                                            control_type='any')
+  mat <- set_matrix_class(mat=mat, matrix_control=matrix_control_res)
 
   assertthat::assert_that( length( feature_annotations$names ) == nrow( mat ),
       msg=paste0( 'feature name count (',
@@ -297,10 +309,9 @@ load_mm_data <- function( mat_path,
   colnames( mat ) <- cell_annotations$names
 
   cds <- new_cell_data_set(mat,
-      cell_metadata = cell_annotations$metadata,
-      gene_metadata = feature_annotations$metadata,
-      assay_control = assay_control,
-      verbose = verbose)
+                           cell_metadata = cell_annotations$metadata,
+                           gene_metadata = feature_annotations$metadata,
+                           verbose = verbose)
 
   if(is(exprs(cds), 'CsparseMatrix')) {
     colData(cds)$n.umi <- Matrix::colSums(exprs(cds))
@@ -318,15 +329,8 @@ load_mm_data <- function( mat_path,
   cds <- set_counts_identity(cds, mat_path, matrix_id)
 
   if(verbose) {
-    if(is(counts(cds), 'CsparseMatrix')) {
-      message('load_mm_data: counts matrix class: ', class(counts(cds)))
-    }
-    else
-    if(is(counts(cds), 'IterableMatrix')) {
-      message('load_mm_data: counts matrix class: BPCells')
-      message('load_mm_data: counts matrix info:')
-      message(bpcells_base_matrix_info(counts(cds), '  '), appendLF=FALSE)
-    }
+    message('load_mm_data: matrix_info: out:')
+    show_matrix_info(get_matrix_info(mat), '  ')
   }
 
   return(cds)
@@ -1349,7 +1353,12 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
   hdf5_assay_flag <- hdf5_assays || test_hdf5_assays(cds)
 
   # Save assays as BPCells Matrix_dir or BPCells 10xHDF5 file?
-  bpcells_matrix_dir_flag <- test_bpcells_matrix_dir_assays(cds=cds)
+  bpcells_matrix_dir_flag <- FALSE
+  matrix_info <- get_matrix_info(mat=counts(cds))
+  if(matrix_info[['matrix_class']] == 'BPCells' &&
+     matrix_info[['matrix_mode']] == 'dir') {
+    bpcells_matrix_dir_flag <- TRUE
+  }
 
   # Path of cds object file.
   rds_path <- 'cds_object.rds'
@@ -1627,8 +1636,6 @@ load_monocle_objects <- function(directory_path) {
     cds_object <- file_index[['files']][['cds_object']][[ifile]]
     reduction_method <- file_index[['files']][['reduction_method']][[ifile]]
     md5sum <- file_index[['files']][['file_md5sum']][[ifile]]
-
-    message('load_monocle_objects: ifile: ', ifile, '  cds_object: ', cds_object) 
 
     if(!file.exists(file_path)) 
       stop('load_monocle_objects: missing file \'', file_path, '\'')

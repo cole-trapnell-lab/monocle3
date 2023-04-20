@@ -65,7 +65,8 @@ bpcells_apply_transform <- function(FM, rotation_matrix, vcenter=vcenter, vscale
     warning('fewer than half the genes in the subject matrix are also in the reference matrix: are the matrices prepared using the same gene set?')
   }
 
-  # [intersect_genes,] orders FM rows by intersect_genes
+  # bge
+  # [intersect_genes,] orders FM rows by intersect_genes 
   # This almost certainly requires rewriting the matrix.
   FM <- FM[intersect_genes,]
  
@@ -164,7 +165,7 @@ bpcells_apply_transform <- function(FM, rotation_matrix, vcenter=vcenter, vscale
 #' @export
 # Bioconductor forbids writing to user directories so examples
 # is not run.
-preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_size=NULL, cores=1, pca_control=list(), verbose=FALSE) {
+preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_size=NULL, cores=1, matrix_control=list(), verbose=FALSE) {
   #
   # Need to add processing for LSI. TF-IDF transform etc.
   #
@@ -186,8 +187,6 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
                           msg=paste0("Reduction method '", reduction_method, "' is not in the model",
                                     " object."))
 
-  pca_control <- set_pca_control(pca_control=pca_control, assay_control=metadata(assays(cds))[['counts']][['assay_control']])
-
   set.seed(2016)
 
   if(reduction_method == 'PCA') {
@@ -197,10 +196,9 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
     vcenter <- cds@reduce_dim_aux[[reduction_method]][['model']]$svd_center
     vscale <- cds@reduce_dim_aux[[reduction_method]][['model']]$svd_scale
 
-    pca_matrix_list <- make_pca_matrix(FM=SingleCellExperiment::counts(cds), pca_control=pca_control)
-    FM <- pca_matrix_list[['mat']]
-    matrix_path <- pca_matrix_list[['matrix_path']]
-
+    mat_counts <- SingleCellExperiment::counts(cds)
+    matrix_control_res <- set_pca_matrix_control(mat=mat_counts, matrix_control=matrix_control)
+    FM <- set_matrix_class(mat=mat_counts, matrix_control=matrix_control_res)
     FM <- normalize_expr_data(FM=FM, size_factors=size_factors(cds), norm_method=norm_method, pseudo_count=pseudo_count) # OK
     if (nrow(FM) == 0) {
       stop("all rows have standard deviation zero")
@@ -223,8 +221,10 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
       irlba_res <- bpcells_apply_transform(FM=FM, rotation_matrix=rotation_matrix, vcenter=vcenter, vscale=vscale, pca_control=pca_control, verbose=verbose)
 
       # Remove BPCells MatrixDir, if it is defined.
-      if(!is.null(matrix_path)) {
-        unlink(matrix_path, recursive=TRUE)
+      fm_info <- get_matrix_info(FM)
+      if(fm_info[['matrix_class']] == 'BPCells' &&
+         fm_info[['matrix_mode']] == 'dir') {
+        unlink(fm_info[['matrix_path']], recursive=TRUE)
         rm(FM)
       }
     }

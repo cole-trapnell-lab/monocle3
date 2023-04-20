@@ -38,13 +38,13 @@
 #'   reduced dimension matrix for later use. Default is FALSE.
 #' @param nn_control An optional list of parameters used to make the nearest
 #'  neighbor index. See the set_nn_control help for detailed information.
-#' @param pca_control An optional list of parameters that control the
+#' @param matrix_control An optional list of parameters that control the
 #'  storage of intermediate matrices that are required for cds
 #'  preprocessing. By default, matrices are stored in memory as dgCMatrix
 #'  class (compressed sparse matrix) objects, which can be set explicitly
 #'  using the matrix_class="dgCMatrix" list value. A very large matrix can
 #'  be stored in a file and accessed by Monocle3 as if it were in memory.
-#'  For this, Monocle3 uses the BPCells R package. Here the pca_control
+#'  For this, Monocle3 uses the BPCells R package. Here the matrix_control
 #'  list values are set to matrix_class="BPCells" and matrix_mode="dir".
 #'  Then the count matrix is stored in a directory, on-disk, that's created
 #'  by Monocle3 in the directory where you run Monocle3. This directory has
@@ -54,8 +54,8 @@
 #'  directory when the preprocess_cds function finishes running; however,
 #'  sometimes a matrix directory may persist after preprocess_cds finishes.
 #'  In this case, the user must remove the directory after the session
-#'  ends. For additional information about the pca_control list, see the
-#'  set_pca_control help.
+#'  ends. For additional information about the matrix_control list, see the
+#'  set_matrix_control help.
 #' @return an updated cell_data_set object
 #'
 #' @examples
@@ -75,21 +75,21 @@
 #'     cds <- preprocess_cds(cds)
 #'
 #'     # For typical count matrices with a small to large number of cells,
-#'     # we suggest that you use the default pca_control list by not
-#'     # not setting the pca_control parameter. In this case, the
+#'     # we suggest that you use the default matrix_control list by not
+#'     # not setting the matrix_control parameter. In this case, the
 #'     # intermediate matrices are stored in memory as sparse matrices
 #'     # in the dgCMatrix format, as they have in the past. It is also
-#'     # possible to set the pca_control list explicitly to use this
-#'     # in-memory dgCMatrix format by setting the pca_control parameter
+#'     # possible to set the matrix_control list explicitly to use this
+#'     # in-memory dgCMatrix format by setting the matrix_control parameter
 #'     # list to
 #'     #
-#'       preprocess_cds(..., pca_control=list(matrix_class='dgCMatrix'))
+#'       preprocess_cds(..., matrix_control=list(matrix_class='dgCMatrix'))
 #'     #
 #'     # For larger count matrices, we suggest that you try storing the
 #'     # intermediate matrices as on-disk BPCells class objects by setting
-#'     # the pca_control parameter list as follows
+#'     # the matrix_control parameter list as follows
 #'     #
-#'       preprocess_cds(..., pca_control=list(matrix_class='BPCells', matrix_mode='dir'))
+#'       preprocess_cds(..., matrix_control=list(matrix_class='BPCells', matrix_mode='dir'))
 #'     #
 #'   }
 #'
@@ -104,7 +104,7 @@ preprocess_cds <- function(cds,
                            verbose = FALSE,
                            build_nn_index = FALSE,
                            nn_control = list(),
-                           pca_control = list()) {
+                           matrix_control = list()) {
 
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(method) == "",TRUE, TRUE),
@@ -133,8 +133,6 @@ preprocess_cds <- function(cds,
                           msg = paste("One or more cells has a size factor of",
                                       "NA."))
 
-  pca_control <- set_pca_control(pca_control=pca_control, assay_control=metadata(assays(cds))[['counts']][['assay_control']])
-
   if(build_nn_index) {
     nn_control <- set_nn_control(mode=1,
                                  nn_control=nn_control,
@@ -148,15 +146,15 @@ preprocess_cds <- function(cds,
   set.seed(2016)
 
   #
-  # Note: make_pca_matrix commits BPCells queued
-  #       operations to make FM but does not commit
-  #       operations in counts(cds). Commit additional
-  #       FM queued operations before submitting to
-  #       the SVD function.
-  #
-  pca_matrix_list <- make_pca_matrix(FM=SingleCellExperiment::counts(cds), pca_control)
-  FM <- pca_matrix_list[['mat']]
-  matrix_path <- pca_matrix_list[['matrix_path']]
+  # Notes:
+  #   o  set_matrix_class commits BPCells queued
+  #      operations to make FM but does not commit
+  #      operations in counts(cds). Commit additional
+  #      FM queued operations before submitting to
+  #      the SVD function.
+message('\n==== preprocess_cds: set_matrix_class ====')
+  matrix_control_res <- set_pca_matrix_control(mat=SingleCellExperiment::counts(cds), matrix_control=matrix_control)
+  FM <- set_matrix_class(mat=SingleCellExperiment::counts(cds), matrix_control=matrix_control_res)
   FM <- normalize_expr_data(FM=FM, size_factors=size_factors(cds), norm_method=norm_method, pseudo_count=pseudo_count)
 
   if (nrow(FM) == 0) {
@@ -185,7 +183,7 @@ preprocess_cds <- function(cds,
     if(is(FM, 'dgCMatrix') || is(FM, 'dgeMatrix')) {
 
       if(verbose) {
-        message('preprocess_cds: FM matrix type: ', class(FM))
+        message('preprocess_cds: FM matrix class: ', class(FM))
       }
 
       fm_rowsums = Matrix::rowSums(FM)
@@ -200,7 +198,7 @@ preprocess_cds <- function(cds,
 
       if(verbose) {
         message('preprocess_cds: FM matrix info:')
-        message(bpcells_base_matrix_info(FM, '  '), appendLF=FALSE)
+        message(show_matrix_info(get_matrix_info(FM), '  '), appendLF=FALSE)
       }
 
       fm_rowsums = BPCells::rowSums(FM)
@@ -208,7 +206,7 @@ preprocess_cds <- function(cds,
       irlba_res <- bpcells_prcomp_irlba(BPCells::t(FM),
                                         n = min(num_dim,min(dim(FM)) - 1),
                                         center = scaling, scale. = scaling,
-                                        pca_control=pca_control,
+                                        matrix_control=matrix_control,
                                         verbose = verbose)
     }
     else {
@@ -235,8 +233,10 @@ preprocess_cds <- function(cds,
     # PCs, not the fraction of total variance.
     cds@reduce_dim_aux[['PCA']][['model']][['prop_var_expl']] <- irlba_res$sdev^2 / sum(irlba_res$sdev^2)
 
-    if(!is.null(matrix_path)) {
-      unlink(matrix_path, recursive=TRUE)
+    fm_info <- get_matrix_info(FM)
+    if(fm_info[['matrix_class']] == 'BPCells' &&
+       fm_info[['matrix_mode']] == 'dir') {
+      unlink(fm_info[['matrix_path']], recursive=TRUE)
       rm(FM)
     }
 

@@ -80,27 +80,19 @@
 #      matrix_stats()
 
 
-test_bpcells_matrix_dir_assays <- function(cds) {
-  if(is(counts(cds), 'IterableMatrix'))
-    return(TRUE)
-  return(FALSE)
-}
-
-
-select_assay_parameter_value <- function(parameter, assay_control, assay_control_default, default_value) {
-  if(!is.null(assay_control[[parameter]])) {
-    return(assay_control[[parameter]])
+select_matrix_parameter_value <- function(parameter, matrix_control, matrix_control_default, default_value) {
+  if(!is.null(matrix_control[[parameter]])) {
+    return(matrix_control[[parameter]])
   }
   else
-  if(!is.null(assay_control_default[[parameter]])) {
-    return(assay_control_default[[parameter]])
+  if(!is.null(matrix_control_default[[parameter]])) {
+    return(matrix_control_default[[parameter]])
   }
   return(default_value)
 }
 
 
 # Usage
-#   matrix_assay: default: 'counts'
 #   matrix_class: default: 'dgCMatrix'
 #   matrix_class: 'BPCells'
 #     matrix_mode: 'mem'  default: 'dir'
@@ -111,14 +103,23 @@ select_assay_parameter_value <- function(parameter, assay_control, assay_control
 #       matrix_path: <path to directory or file> default: 'NULL' -> temporary directory in pwd
 #       matrix_compress: TRUE, FALSE default: FALSE
 #       matrix_buffer_size: <integer> default: 8192L
-check_matrix_control <- function(matrix_control, control_source=c('assay', 'pca'), check_conditional=FALSE) {
+check_matrix_control <- function(matrix_control=list(), control_type=c('any', 'pca'), check_conditional=FALSE) {
+  control_type <- match.arg(control_type)
   assertthat::assert_that(is.list(matrix_control))
   assertthat::assert_that(is.logical(check_conditional))
 
-  control_source <- match.arg(control_source)
-
-  allowed_control_parameters <- c('matrix_assay',
-                                  'matrix_class',
+  # If matrix_control list is zero length then return,
+  # otherwise, matrix_control[['matrix_class']] must
+  # be defined.
+  if(length(matrix_control) == 0) {
+    return()
+  }
+  else
+  if(is.null(matrix_control[['matrix_class']])) {
+    stop('matrix_control[[\'matrix_class\']] is not defined')
+  }
+  
+  allowed_control_parameters <- c('matrix_class',
                                   'matrix_mode',
                                   'matrix_type',
                                   'matrix_compress',
@@ -127,11 +128,11 @@ check_matrix_control <- function(matrix_control, control_source=c('assay', 'pca'
                                   'show_values')
 
   allowed_matrix_class <- c('dgCMatrix', 'BPCells')
-  allowed_matrix_type_assay <- c('uint32_t', 'float', 'double')
+  allowed_matrix_type_any <- c('uint32_t', 'float', 'double')
   allowed_matrix_type_pca <- c('float', 'double')
   allowed_matrix_mode <- c('mem', 'dir') 
 
-  control_name <- if(control_source == 'assay') 'assay_control' else 'pca_control'
+  control_name <- if(control_type == 'any') 'any_control' else 'pca_control'
 
   error_string <- ''
 
@@ -150,7 +151,7 @@ check_matrix_control <- function(matrix_control, control_source=c('assay', 'pca'
       error_string <- paste0('\ninvalid matrix_mode "', matrix_control[['matrix_mode']], '"')
     }
 
-    allowed_values <- if(control_source == 'assay') allowed_matrix_type_assay else allowed_matrix_type_pca
+    allowed_values <- if(control_type == 'any') allowed_matrix_type_any else allowed_matrix_type_pca
     if(!(is.null(matrix_control[['matrix_type']])) &&
        !(matrix_control[['matrix_type']] %in% allowed_values)) {
       error_string <- paste0('\ninvalid ', control_name, ' matrix_type "', matrix_control[['matrix_type']], '"')
@@ -184,7 +185,7 @@ check_matrix_control <- function(matrix_control, control_source=c('assay', 'pca'
   
     if(matrix_control[['matrix_class']] == 'BPCells') {
       # Check matrix_type value.
-      allowed_values <- if(control_source == 'assay') allowed_matrix_type_assay else allowed_matrix_type_pca
+      allowed_values <- if(control_type == 'any') allowed_matrix_type_any else allowed_matrix_type_pca
       if(!(matrix_control[['matrix_type']] %in% allowed_values)) {
         error_string <- paste0('\nbad ', control_name, ' matrix_type "', matrix_control[['matrix_type']], '"\n')
       }
@@ -220,7 +221,6 @@ check_matrix_control <- function(matrix_control, control_source=c('assay', 'pca'
 
 
 # Usage
-#   matrix_assay: default: 'counts'
 #   matrix_class: default: 'dgCMatrix'
 #   matrix_class: 'BPCells'
 #     matrix_mode: 'mem'  default: 'dir'
@@ -231,14 +231,12 @@ check_matrix_control <- function(matrix_control, control_source=c('assay', 'pca'
 #       matrix_path: <path to directory or file> default: 'NULL' -> temporary directory in pwd
 #       matrix_compress: TRUE, FALSE default: FALSE
 #       matrix_buffer_size: <integer> default: 8192L
-#
-
 # Notes:
 #   o  modification to any of set_assay_control, set_pca_control,
 #      or set_pca_control_default may necessitate modifications
 #      to all of them.
 
-#' Verify and set the assay_control parameter list.
+#' Verify and set the matrix_control parameter list.
 #'
 #' @description Verifies and sets the list of parameter values
 #'   that is used to make the counts matrix that is stored in the
@@ -287,123 +285,113 @@ check_matrix_control <- function(matrix_control, control_source=c('assay', 'pca'
 #'      data to buffer in memory before flushing to disk. This
 #'      is used for matrix_class="BPCells" with matrix_mode="dir".}
 #' @export
-set_assay_control <- function(assay_control=list()) {
+set_matrix_control <- function(matrix_control=list(), matrix_control_default=list(), control_type=c('any', 'pca')) {
+  control_type <- match.arg(control_type)
 
-  check_matrix_control(matrix_control=assay_control, control_source='assay', check_conditional=FALSE)
-
-  if(is.null(assay_control[['matrix_class']]) ||
-     assay_control[['matrix_class']] == 'dgCMatrix') {
-    assay_control_default <- get_global_variable('assay_control_csparsematrix')
-  }
-  else
-  if(assay_control[['matrix_class']] == 'BPCells') {
-    assay_control_default <- get_global_variable('assay_control_bpcells')
-  }
-
-  check_matrix_control(matrix_control=assay_control_default, control_source='assay', check_conditional=FALSE)
+  check_matrix_control(matrix_control=matrix_control, control_type=control_type, check_conditional=FALSE)
+  check_matrix_control(matrix_control=matrix_control_default, control_type=control_type, check_conditional=FALSE)
 
   #
   # Last resort fall-back parameter values.
   #
-  default_matrix_assay <- 'counts'
   default_matrix_class <- 'dgCMatrix'
-  default_matrix_mode <- 'mem'
-  default_matrix_type <- 'uint32_t'
-  default_matrix_compress <- TRUE
-  default_matrix_path <- '.'
-  default_matrix_buffer_size <- 8192L
+  default_matrix_mode <- NULL
+  default_matrix_type <- NULL
+  default_matrix_compress <- NULL
+  default_matrix_path <- NULL
+  default_matrix_buffer_size <- NULL
 
-  assay_control_out = list()
+  matrix_control_out = list()
 
-  assay_control_out[['matrix_assay']] <- select_assay_parameter_value('matrix_assay', assay_control, assay_control_default, default_matrix_assay)
-  if(!(assay_control_out[['matrix_assay']] %in% c('counts'))) {
-    stop(paste0(assay_control_out[['matrix_assay']], ' is not a valid matrix_assay.'))
-  }
+  matrix_control_out[['matrix_class']] <- select_matrix_parameter_value('matrix_class', matrix_control, matrix_control_default, default_matrix_class)
 
-  assay_control_out[['matrix_class']] <- select_assay_parameter_value('matrix_class', assay_control, assay_control_default, default_matrix_class)
+  if(matrix_control_out[['matrix_class']] == 'BPCells') {
+     matrix_control_out[['matrix_mode']] <- select_matrix_parameter_value('matrix_mode', matrix_control, matrix_control_default, default_matrix_mode)
 
-  if(assay_control_out[['matrix_class']] == 'BPCells') {
-     assay_control_out[['matrix_mode']] <- select_assay_parameter_value('matrix_mode', assay_control, assay_control_default, default_matrix_mode)
-
-    if(assay_control_out[['matrix_mode']] == 'mem') {
-       assay_control_out[['matrix_type']] <- select_assay_parameter_value('matrix_type', assay_control, assay_control_default, default_matrix_type)
-       assay_control_out[['matrix_compress']] <- select_assay_parameter_value('matrix_compress', assay_control, assay_control_default, default_matrix_compress)
+    if(matrix_control_out[['matrix_mode']] == 'mem') {
+       matrix_control_out[['matrix_type']] <- select_matrix_parameter_value('matrix_type', matrix_control, matrix_control_default, default_matrix_type)
+       matrix_control_out[['matrix_compress']] <- select_matrix_parameter_value('matrix_compress', matrix_control, matrix_control_default, default_matrix_compress)
     }
     else
-    if(assay_control_out[['matrix_mode']] == 'dir') {
-       assay_control_out[['matrix_type']] <- select_assay_parameter_value('matrix_type', assay_control, assay_control_default, default_matrix_type)
-       assay_control_out[['matrix_path']] <- select_assay_parameter_value('matrix_path', assay_control, assay_control_default, default_matrix_path)
-       assay_control_out[['matrix_compress']] <- select_assay_parameter_value('matrix_compress', assay_control, assay_control_default, default_matrix_compress)
-       assay_control_out[['matrix_buffer_size']] <- select_assay_parameter_value('matrix_buffer_size', assay_control, assay_control_default, default_matrix_buffer_size)
+    if(matrix_control_out[['matrix_mode']] == 'dir') {
+       matrix_control_out[['matrix_type']] <- select_matrix_parameter_value('matrix_type', matrix_control, matrix_control_default, default_matrix_type)
+       matrix_control_out[['matrix_path']] <- select_matrix_parameter_value('matrix_path', matrix_control, matrix_control_default, default_matrix_path)
+       matrix_control_out[['matrix_compress']] <- select_matrix_parameter_value('matrix_compress', matrix_control, matrix_control_default, default_matrix_compress)
+       matrix_control_out[['matrix_buffer_size']] <- select_matrix_parameter_value('matrix_buffer_size', matrix_control, matrix_control_default, default_matrix_buffer_size)
     }
   }
 
-  check_matrix_control(matrix_control=assay_control_out, control_source='assay', check_conditional=TRUE)
+  check_matrix_control(matrix_control=matrix_control_out, control_type=control_type, check_conditional=TRUE)
 
   #
   # Set BPCells out-of-core file/directory name.
   #
-  if(assay_control_out[['matrix_class']] == 'BPCells') {
-    if(assay_control_out[['matrix_mode']] == 'dir') {
-      tmp_dir <- if(is.null(assay_control_out[['matrix_path']])) '.' else assay_control_out[['matrix_path']]
-      assay_control_out[['matrix_path']] <- tempfile(pattern=paste0('monocle.bpcells.', format(Sys.Date(), format='%Y%m%d'), '.'), tmpdir=tmp_dir, fileext='.tmp')[[1]]
-    }
+  if(matrix_control_out[['matrix_class']] == 'BPCells' &&
+     matrix_control_out[['matrix_mode']] == 'dir' &&
+     is.null(matrix_control_out[['matrix_path']])) {
+        matrix_control_out[['matrix_path']] <- '.'
   }
 
   #
-  # Display assay_control list if assay_control[['show_values']] <- TRUE.
+  # Display matrix_control list if matrix_control[['show_values']] <- TRUE.
   #
-  if(!is.null(assay_control[['show_values']]) && assay_control[['show_values']] == TRUE)
+  if(!is.null(matrix_control[['show_values']]) && matrix_control[['show_values']] == TRUE)
   {
-    report_assay_control(assay_control=assay_control_out, '  assay_control: ')
+    show_matrix_control(matrix_control=matrix_control_out, '  matrix_control: ')
     stop_no_noise()
   }
 
-  return(assay_control_out)
+  return(matrix_control_out)
 }
 
 
-# Report assay_control list values.
-report_assay_control <- function(assay_control, label=NULL) {
+# Report matrix_control list values.
+show_matrix_control <- function(matrix_control, label=NULL) {
+  message('matrix_control:')
   indent <- ''
   if(!is.null(label)) {
     indent <- '  '
   }
+  message(indent, '  matrix_class: ', ifelse(!is.null(matrix_control[['matrix_class']]), matrix_control[['matrix_class']], as.character(NA)))
 
-  message(ifelse(!is.null(label), label, ''))
-
-  message(indent, '  matrix_class: ', ifelse(!is.null(assay_control[['matrix_class']]), assay_control[['matrix_class']], as.character(NA)))
-
-  if(assay_control[['matrix_class']] == 'dgCMatrix') {
-    message(indent, '  matrix_mode: ', ifelse(!is.null(assay_control[['matrix_mode']]), assay_control[['matrix_mode']], as.character(NA)))
+  if(matrix_control[['matrix_class']] == 'dgCMatrix') {
+    # nop
+    invisible(NULL)
   }
   else
-  if(assay_control[['matrix_class']] == 'BPCells') {
-    if(assay_control[['matrix_mode']] == 'mem') {
-      message(indent, '  matrix_type: ', ifelse(!is.null(assay_control[['matrix_type']]), assay_control[['matrix_type']], as.character(NA)))
-      message(indent, '  matrix_compress: ', ifelse(!is.null(assay_control[['matrix_compress']]), assay_control[['matrix_compress']], as.character(NA)))
+  if(matrix_control[['matrix_class']] == 'BPCells') {
+    if(matrix_control[['matrix_mode']] == 'mem') {
+      message(indent, '  matrix_mode: ', ifelse(!is.null(matrix_control[['matrix_mode']]), matrix_control[['matrix_mode']], as.character(NA)))
+      message(indent, '  matrix_type: ', ifelse(!is.null(matrix_control[['matrix_type']]), matrix_control[['matrix_type']], as.character(NA)))
+      message(indent, '  matrix_compress: ', ifelse(!is.null(matrix_control[['matrix_compress']]), matrix_control[['matrix_compress']], as.character(NA)))
     }
     else
-    if(assay_control[['matrix_mode']] == 'dir') {
-      message(indent, '  matrix_type: ', ifelse(!is.null(assay_control[['matrix_type']]), assay_control[['matrix_type']], as.character(NA)))
-      message(indent, '  matrix_path: ', ifelse(!is.null(assay_control[['matrix_path']]), assay_control[['matrix_path']], as.character(NA)))
-      message(indent, '  matrix_compress: ', ifelse(!is.null(assay_control[['matrix_compress']]), assay_control[['matrix_compress']], as.character(NA)))
-      message(indent, '  matrix_buffer_size: ', ifelse(!is.null(assay_control[['matrix_buffer_size']]), assay_control[['matrix_buffer_size']], as.character(NA)))
+    if(matrix_control[['matrix_mode']] == 'dir') {
+      message(indent, '  matrix_mode: ', ifelse(!is.null(matrix_control[['matrix_mode']]), matrix_control[['matrix_mode']], as.character(NA)))
+      message(indent, '  matrix_type: ', ifelse(!is.null(matrix_control[['matrix_type']]), matrix_control[['matrix_type']], as.character(NA)))
+      message(indent, '  matrix_path: ', ifelse(!is.null(matrix_control[['matrix_path']]), matrix_control[['matrix_path']], as.character(NA)))
+      message(indent, '  matrix_compress: ', ifelse(!is.null(matrix_control[['matrix_compress']]), matrix_control[['matrix_compress']], as.character(NA)))
+      message(indent, '  matrix_buffer_size: ', ifelse(!is.null(matrix_control[['matrix_buffer_size']]), matrix_control[['matrix_buffer_size']], as.character(NA)))
     }
     else {
-      stop('report_assay_control: unsupported assay class/mode/...\'', assay_control[['method']], '\'')
+      stop('show_matrix_control: unsupported matrix class/mode/...\'', matrix_control[['method']], '\'')
     }
   }
   else {
-    stop('report_assay_control: unsupported assay class/mode/...\'', assay_control[['method']], '\'')
+    stop('show_matrix_control: unsupported matrix class/mode/...\'', matrix_control[['method']], '\'')
   }
 }
 
 
-push_matrix_path <- function(mat, matrix_type) {
-  x <- get_global_variable('monocle_gc_matrix_path')
-  x <- append(x, mat)
-  set_global_variable('monocle_gc_matrix_path', x)
+push_matrix_path <- function(mat) {
+  matrix_info <- get_matrix_info(mat=mat)
+  if(matrix_info[['matrix_class']] == 'BPCells' &&
+     matrix_info[['matrix_mode']] == 'dir') {
+    matrix_path <- matrix_info[['matrix_path']]
+    x <- get_global_variable('monocle_gc_matrix_path')
+    x <- append(x, matrix_path)
+    set_global_variable('monocle_gc_matrix_path', x)
+  }
 }
 
 
@@ -422,21 +410,265 @@ bpcells_find_base_matrix <- function(mat) {
 }
 
 
-bpcells_base_matrix_info <- function(mat, indent='') {
-  if(!is(mat, 'IterableMatrix'))
-    return(0)
+#
+# Known matrix types:
+#   o  dense matrix: matrix
+#   o  sparse matrix: CsparseMatrix, dgCMatrix, ...
+#   o  BPCells matrix:
+#        o  matrix_mode: 'mem', 'dir'
+#        o  matrix_type: uint32_t, float, double
+#        o  matrix_compress: TRUE, FALSE
+#        o  matrix_path
+#        o  matrix_buffer_size
+#
+get_matrix_class <- function(mat) {
+message('get_matrix_class: start')
+message('str(mat): ')
+message(str(mat))
+
+  nmatch <- 0
+  matrix_info <- list()
+  if(is(mat, 'matrix')) {
+    matrix_info[['matrix_class']] <- 'r_dense_matrix'
+    nmatch <- nmatch + 1
+  }
+  if(any(class(mat) %in% c('dgCMatrix'))) {
+    matrix_info[['matrix_class']] <- 'dgCMatrix'
+    nmatch <- nmatch + 1
+  }
+  if(any(class(mat) %in% c('lgCMatrix'))) {
+    matrix_info[['matrix_class']] <- 'lgCMatrix'
+    nmatch <- nmatch + 1
+  }
+  if(is(mat, 'dgTMatrix')) {
+    matrix_info[['matrix_class']] <- 'dgTMatrix'
+    nmatch <- nmatch + 1
+  }
+  if(is(mat, 'IterableMatrix')) {
+    matrix_info[['matrix_class']] <- 'BPCells'
+    nmatch <- nmatch + 1
+  }
+
+  if(nmatch == 0) {
+    stop('get_matrix_class: unrecognized matrix class')
+  }
+  if(nmatch > 1) {
+    stop('get_matrix_class: ambiguous matrix class')
+  }
+message('get_matrix_class: end')
+  return(matrix_info)
+}
+
+
+get_matrix_info <- function(mat) {
+  matrix_info <- get_matrix_class(mat)
+
+  if(is.null(matrix_info[['matrix_class']])) {
+    message('bad matrix info -- dropping into browser')
+    browser()
+  }
+
+  if(matrix_info[['matrix_class']] != 'BPCells') {
+    return(matrix_info)
+  }
+
   bmat <- bpcells_find_base_matrix(mat)
-  slot_names <- slotNames(bmat)
-  message(paste0(indent, 'class: ', indent, class(bmat)))
-  if('type' %in% slot_names)
-    message(paste0(indent, 'type: ', bmat@type))
-  if('dir' %in% slot_names)
-    message(paste0(indent, 'dir: ', bmat@dir))
-  if('compressed' %in% slot_names)
-    message(paste0(indent, 'compressed: ', bmat@compressed))
-  if('buffer_size' %in% slot_names)
-    message(paste0(indent, 'buffer_size: ', bmat@buffer_size))
-  if('version' %in% slot_names)
-    message(paste0(indent, 'version: ', bmat@version))
+
+  # In-memory iterable matrix object classes.
+  #   UnpackedMatrixMem_uint32_t
+  #   UnpackedMatrixMem_float
+  #   UnpackedMatrixMem_double
+  #   PackedMatrixMem_uint32_t
+  #   PackedMatrixMem_float
+  #   PackedMatrixMem_double
+  #
+  # On-disk iterable matrix object classes and relevant slots.
+  #   MatrixDir: slots: dir, compressed, buffer_size, type
+  #     compressed: logical
+  #     type: character: 'uint32_t', 'float', 'double'
+  #     buffer_size: int
+  #     dir: character: path
+  if(!(class(bmat) %in% c('UnpackedMatrixMem_uint32_t', 'UnpackedMatrixMem_float',
+                          'UnpackedMatrixMem_double', 'PackedMatrixMem_uint32_t',
+                          'PackedMatrixMem_float', 'PackedMatrixMem_double',
+                          'MatrixDir'))) {
+    stop('get_matrix_info: unrecognized BPCells matrix class \"', class(mat), '\"')
+    return(NULL)
+  }
+
+  matrix_info[['matrix_class']] <- 'BPCells'
+
+  if(class(bmat) == 'UnpackedMatrixMem_uint32_t') {
+    matrix_info[['matrix_mode']] <- 'mem'
+    matrix_info[['matrix_type']] <- 'uint32_t'
+    matrix_info[['matrix_compress']] <- FALSE
+  }
+  else
+  if(class(bmat) == 'UnpackedMatrixMem_float') {
+    matrix_info[['matrix_mode']] <- 'mem'
+    matrix_info[['matrix_type']] <- 'float'
+    matrix_info[['matrix_compress']] <- FALSE
+  } 
+  else
+  if(class(bmat) == 'UnpackedMatrixMem_double') {
+    matrix_info[['matrix_mode']] <- 'mem'
+    matrix_info[['matrix_type']] <- 'double'
+    matrix_info[['matrix_compress']] <- FALSE
+  } 
+  else
+  if(class(bmat) == 'PackedMatrixMem_uint32_t') {
+    matrix_info[['matrix_mode']] <- 'mem'
+    matrix_info[['matrix_type']] <- 'uint32_t'
+    matrix_info[['matrix_compress']] <- TRUE
+  } 
+  else
+  if(class(bmat) == 'PackedMatrixMem_float') {
+    matrix_info[['matrix_mode']] <- 'mem'
+    matrix_info[['matrix_type']] <- 'float'
+    matrix_info[['matrix_compress']] <- TRUE
+  } 
+  else
+  if(class(bmat) == 'PackedMatrixMem_double') {
+    matrix_info[['matrix_mode']] <- 'mem'
+    matrix_info[['matrix_type']] <- 'double'
+    matrix_info[['matrix_compress']] <- TRUE
+  } 
+  else
+  if(class(bmat) == 'MatrixDir') {
+    matrix_info[['matrix_mode']] <- 'dir'
+    matrix_info[['matrix_type']] <- bmat@type
+    matrix_info[['matrix_compress']] <- bmat@compressed
+    matrix_info[['matrix_buffer_size']] <- bmat@buffer_size
+    matrix_info[['matrix_path']] <- bmat@dir
+  }
+
+  return(matrix_info)
+}
+
+
+show_matrix_info <- function(matrix_info, indent='') {
+  message('matrix_info:')
+  if(!is.null(matrix_info[['matrix_class']])) {
+    message(paste0(indent, 'class:       ', matrix_info[['matrix_class']]))
+  }
+  if(!is.null(matrix_info[['matrix_mode']])) { 
+    message(paste0(indent, 'mode:        ', matrix_info[['matrix_mode']]))
+  }
+  if(!is.null(matrix_info[['matrix_type']])) { 
+    message(paste0(indent, 'type:        ', matrix_info[['matrix_type']]))
+  }
+  if(!is.null(matrix_info[['matrix_compress']])) { 
+    message(paste0(indent, 'compress:    ', matrix_info[['matrix_compress']]))
+  }
+  if(!is.null(matrix_info[['matrix_buffer_size']])) { 
+    message(paste0(indent, 'buffer_size: ', matrix_info[['matrix_buffer_size']]))
+  }
+  if(!is.null(matrix_info[['matrix_path']])) { 
+    message(paste0(indent, 'path:        ', matrix_info[['matrix_path']]))
+  }
+}
+
+
+# set_matrix_class
+#  Notes:
+#    o  Cast an input matrix into a class given or inferred from the
+#       matrix_control, which must be complete in the sense that all
+#       values required for the class are given explicitly.
+#    o  Always make a new matrix, even if the matrix is a BPCells
+#       class and the parameters are the same because we may need to
+#       commit the queued operations.
+#   
+set_matrix_class <- function(mat, matrix_control=list()) {
+
+  # Check matrix_control list.
+  check_matrix_control(matrix_control=matrix_control, control_type='any', check_conditional=TRUE)
+
+  # Get input matrix info.
+  matrix_info <- get_matrix_info(mat)
+
+
+message('set_matrix_class: matrix_info: in:')
+show_matrix_info(matrix_info, indent='  ')
+message('')
+message('set_matrix_class: matrix_control in:')
+show_matrix_control(matrix_control)
+message('')
+
+  if(matrix_info[['matrix_class']] == 'dgTMatrix') {
+    mat <- as(mat, 'CsparseMatrix')
+    matrix_info[['matrix_class']] <- 'dgCMatrix'
+  }
+
+  mat_out <- mat
+  if(matrix_control[['matrix_class']] == 'dgCMatrix') {
+    if(matrix_info[['matrix_class']] != 'dgCMatrix') {
+      if(matrix_info[['matrix_class']] == 'BPCells') {
+        mat_out <- as(mat, 'dgCMatrix')
+      }
+      else {
+        mat_out <- as(mat, 'CsparseMatrix')
+      }
+    }
+  }
+  else
+  if(matrix_control[['matrix_class']] == 'BPCells') {
+    matrix_class_d <- matrix_control[['matrix_class']]
+    matrix_mode_d <- matrix_control[['matrix_mode']]
+    matrix_type_d <- matrix_control[['matrix_type']]
+    matrix_compress_d <- matrix_control[['matrix_compress']]
+    matrix_path_d <- matrix_control[['matrix_path']]
+    matrix_buffer_size_d <- matrix_control[['matrix_buffer_size']]
+    if(matrix_info[['matrix_class']] == 'dgCMatrix') {
+      if(matrix_mode_d == 'mem') {
+        mat_out <- BPCells::write_matrix_memory(mat=BPCells::convert_matrix_type(mat, type=matrix_type_d),
+                                                compress=matrix_compress_d)
+      }
+      else
+      if(matrix_mode_d == 'dir') {
+        mat_dir <- tempfile(pattern=paste0('monocle.bpcells.',
+                                           format(Sys.Date(), format='%Y%m%d'), '.'),
+                            tmpdir=matrix_path_d,
+                            fileext='.tmp')[[1]]
+        mat_out <- BPCells::write_matrix_dir(mat=BPCells::convert_matrix_type(mat, type=matrix_type_d),
+                                             dir=mat_dir,
+                                             compress=matrix_compress_d,
+                                             buffer_size=matrix_buffer_size_d,
+                                             overwrite=FALSE)
+        push_matrix_path(mat_out)
+      }
+      else {
+        stop('set_matrix_class: unrecognized matrix_info[[\'matrix_mode\']]')
+      }
+    }
+    else
+    if(matrix_info[['matrix_class']] == 'BPCells') {
+      if(matrix_mode_d == 'mem') {
+        mat_out <- BPCells::write_matrix_memory(mat=BPCells::convert_matrix_type(mat, type=matrix_type_d),
+                                                compress=matrix_compress_d)
+      }
+      else
+      if(matrix_mode_d == 'dir') {
+        mat_dir <- tempfile(pattern=paste0('monocle.bpcells.', 
+                                           format(Sys.Date(), 
+                                                  format='%Y%m%d'), '.'), 
+                            tmpdir=matrix_path_d,
+                            fileext='.tmp')[[1]]
+        mat_out <- BPCells::write_matrix_dir(mat=BPCells::convert_matrix_type(mat, type=matrix_type_d),
+                                             dir=mat_dir, 
+                                             compress=matrix_compress_d, 
+                                             buffer_size=matrix_buffer_size_d, 
+                                             overwrite=FALSE)
+        push_matrix_path(mat_out)
+      }
+    }
+  }
+  else {
+    stop('set_matrix_class: unrecognized matrix_info[[\'matrix_class\']]: ', matrix_info[['matrix_class']])
+  }
+
+message('set_matrix_class: matrix_info: out:')
+show_matrix_info(get_matrix_info(mat_out), indent='  ')
+
+  return(mat_out)
 }
 

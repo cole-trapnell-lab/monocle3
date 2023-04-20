@@ -1,5 +1,29 @@
 setOldClass(c("igraph"), prototype=structure(list(), class="igraph"))
 
+# @param assay_control an optional list of values that control how
+# matrices are stored in the cell_data_set assays slot. Typically,
+# matrices are stored in memory as dgCMatrix class (compressed sparse
+# matrix) objects using matrix_class="dgCMatrix". This is the
+# default. A very large matrix can be stored in a file and accessed
+# by Monocle3 as if it were in memory. For this, Monocle3 uses the
+# BPCells R package. Here the assay_control list values are set to
+# matrix_class="BPCells" and matrix_mode="dir". Then the count matrix
+# is stored in a directory, on-disk, that's created by Monocle3 in
+# the directory where you run Monocle3. This directory has a name
+# with the form "monocle.bpcells.*.tmp" where the asterisk is a
+# string of random characters that makes the name unique. Do not
+# remove this directory while Monocle3 is running! If you choose to
+# store the count matrix as an on-disk BPCells object, you must use
+# the "save_monocle_objects" and "load_monocle_objects" functions
+# to save and restore the cell_data_set. Monocle3 tries to remove
+# the BPCells matrix directory when your R session ends; however,
+# sometimes a matrix directory may persist after the session ends.
+# In this case, the user must remove the directory after the
+# session ends. For additional information about the assay_control
+# list, see the examples below and the set_matrix_control help. See
+# also the preprocess_cds and pca_control help for information about
+# reducing memory usage by the preprocess_cds function.
+
 #' The cell_data_set class
 #'
 #' The main class used by Monocle3 to hold single-cell expression data.
@@ -43,29 +67,6 @@ setClass("cell_data_set",
 #' @param gene_metadata data frame containing attributes of features
 #'   (e.g. genes), where
 #'   \code{row.names(gene_metadata) = row.names(expression_data)}.
-#' @param assay_control an optional list of values that control how
-#' matrices are stored in the cell_data_set assays slot. Typically,
-#' matrices are stored in memory as dgCMatrix class (compressed sparse
-#' matrix) objects using matrix_class="dgCMatrix". This is the
-#' default. A very large matrix can be stored in a file and accessed
-#' by Monocle3 as if it were in memory. For this, Monocle3 uses the
-#' BPCells R package. Here the assay_control list values are set to
-#' matrix_class="BPCells" and matrix_mode="dir". Then the count matrix
-#' is stored in a directory, on-disk, that's created by Monocle3 in
-#' the directory where you run Monocle3. This directory has a name
-#' with the form "monocle.bpcells.*.tmp" where the asterisk is a
-#' string of random characters that makes the name unique. Do not
-#' remove this directory while Monocle3 is running! If you choose to
-#' store the count matrix as an on-disk BPCells object, you must use
-#' the #' "save_monocle_objects" and "load_monocle_objects" functions
-#' to save and restore the cell_data_set. Monocle3 tries to remove
-#' the BPCells matrix directory when your R session ends; however,
-#' sometimes a matrix directory may persist after the session ends.
-#' In this case,#' the user must remove the directory after the
-#' session ends. For additional information about the assay_control
-#' list, see the examples below and the set_assay_control help. See
-#' also the preprocess_cds and pca_control help for information about
-#' reducing memory usage by the preprocess_cds function.
 #' @param verbose a logical value that determines whether or not the
 #' function writes diagnostic information.
 #' @return a new cell_data_set object
@@ -92,7 +93,6 @@ setClass("cell_data_set",
 new_cell_data_set <- function(expression_data,
                               cell_metadata = NULL,
                               gene_metadata = NULL,
-                              assay_control = list(),
                               verbose=FALSE) {
 
 #  assertthat::assert_that(methods::is(expression_data, 'matrix) ||
@@ -141,31 +141,18 @@ new_cell_data_set <- function(expression_data,
             "named 'gene_short_name' for certain functions.")
   }
 
-  assay_control <- set_assay_control(assay_control)
+  matrix_info <- get_matrix_info(expression_data)
 
-  if(!(is(expression_data, 'CsparseMatrix') ||
-       is(expression_data, 'dgCMatrix'))) {
-    expression_data <- methods::as(expression_data, 'CsparseMatrix')
+  # I believe that the matrix needs to be either a dgCMatrix
+  # class matrix or a BPCells class matrix. See get_matrix_class
+  # for recognized matrix classes.
+  if(!(matrix_info[['matrix_class']] %in% c('r_dense_matrix',
+    'dgCMatrix', 'dgTMatrix', 'BPCells'))) {
+    stop('new_cell_data_set: invalid expression_data matrix class')
   }
 
-  if(assay_control[['matrix_class']] == 'BPCells')
-  {
-    matrix_mode <- assay_control[['matrix_mode']]
-    matrix_group <- assay_control[['matrix_group']]
-    matrix_type <- assay_control[['matrix_type']]
-    matrix_path <- assay_control[['matrix_path']]
-    matrix_compress <- assay_control[['matrix_compress']]
-    matrix_buffer_size <- assay_control[['matrix_buffer_size']]
-    matrix_chunk_size <- assay_control[['matrix_buffer_size']]
-
-    if(matrix_mode == 'mem') {
-      expression_data <- BPCells::write_matrix_memory(mat=BPCells::convert_matrix_type(expression_data, type=matrix_type), compress=matrix_compress)
-    }
-    else
-    if(matrix_mode == 'dir') {
-      expression_data <- BPCells::write_matrix_dir(mat=BPCells::convert_matrix_type(expression_data, type=matrix_type), dir=matrix_path, compress=matrix_compress, buffer_size=matrix_buffer_size, overwrite=FALSE)
-      push_matrix_path(matrix_path, 'bpcells_dir')
-    }
+  if(!(matrix_info[['matrix_class']] %in% c('dgCMatrix', 'BPCells'))) {
+    expression_data <- methods::as(expression_data, 'CsparseMatrix')
   }
 
   sce <- SingleCellExperiment(list(counts=expression_data),
@@ -184,7 +171,6 @@ new_cell_data_set <- function(expression_data,
              elementMetadata = elementMetadata(sce)[,0],
              rowRanges = rowRanges(sce))
 
-  S4Vectors::metadata(assays(cds))[['counts']][['assay_control']] <- assay_control
   S4Vectors::metadata(cds)$cds_version <- Biobase::package.version("monocle3")
   clusters <- stats::setNames(S4Vectors::SimpleList(), character(0))
   cds <- estimate_size_factors(cds)
