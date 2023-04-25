@@ -339,6 +339,16 @@ test_marker_for_cell_group = function(gene_id, cell_group, cell_group_df, cds,
   #print(cell_group)
   #print (length(reference_cells))
   results <- tryCatch({
+    # My tests suggest that I cannot coerce a BPCells subset into a numeric vector:
+    # > cds <- readRDS('packer_embryo.load.rds')
+    # > library(BPCells)
+    # > bpcds <- cds
+    # > counts(bpcds) <- BPCells::write_matrix_memory(counts(cds))
+    # > f_e <- as.numeric(counts(bpcds)[1,])
+    # Error in as.numeric(counts(bpcds)[1, ]) : 
+    #   cannot coerce type 'S4' to vector of type 'double'
+    # I am not pursuing it now because it's a subset and may
+    # not exceed available memory.
     f_expression <-
       log(as.numeric(SingleCellExperiment::counts(cds)[gene_id,]) / size_factors(cds) + 0.1)
     #print(sum(SingleCellExperiment::counts(cds)[gene_id,] > 0))

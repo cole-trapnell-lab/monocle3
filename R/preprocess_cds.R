@@ -234,8 +234,7 @@ message('\n==== preprocess_cds: set_matrix_class ====')
     cds@reduce_dim_aux[['PCA']][['model']][['prop_var_expl']] <- irlba_res$sdev^2 / sum(irlba_res$sdev^2)
 
     if(is(FM, 'IterableMatrix')) {
-      rm_bpcells_dirs(FM)
-      rm(FM)
+      rm_bpcells_dir(FM)
     }
 
     matrix_id <- get_unique_id(SingleCellExperiment::reducedDims(cds)[['PCA']])

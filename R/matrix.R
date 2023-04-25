@@ -595,7 +595,7 @@ show_matrix_control(matrix_control)
 message('')
 
   if(matrix_info[['matrix_class']] == 'dgTMatrix') {
-    mat <- as(mat, 'CsparseMatrix')
+    mat <- as(mat, 'dgCMatrix')
     matrix_info[['matrix_class']] <- 'dgCMatrix'
   }
 
@@ -606,7 +606,7 @@ message('')
         mat_out <- as(mat, 'dgCMatrix')
       }
       else {
-        mat_out <- as(mat, 'CsparseMatrix')
+        mat_out <- as(mat, 'dgCMatrix')
       }
     }
   }
@@ -673,16 +673,12 @@ show_matrix_info(get_matrix_info(mat_out), indent='  ')
 }
 
 
-rm_bpcells_dirs <- function(mats=c()) {
-  num_mat <- length(mats)
-  for(i in seq(num_mat)) {
-    mat <- mats[[i]]
-    mat_info <- get_matrix_info(mat)
-    if(mat_info[['matrix_class']] == 'BPCells' &&
-       mat_info[['matrix_mode']] == 'dir') {
-      unlink(mat_info[['matrix_path']], recursive=TRUE)
-      rm(mat)
-    }
+rm_bpcells_dir <- function(mat) {
+  mat_info <- get_matrix_info(mat)
+  if(mat_info[['matrix_class']] == 'BPCells' &&
+     mat_info[['matrix_mode']] == 'dir') {
+    unlink(mat_info[['matrix_path']], recursive=TRUE)
+    rm(mat)
   }
 }
 

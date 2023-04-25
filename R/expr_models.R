@@ -173,13 +173,15 @@ fit_model_helper <- function(x,
     }
 
   }
-  else if (expression_family %in% c("binomial", "gaussian")) {
+  else
+  if (expression_family %in% c("binomial", "gaussian")) {
     f_expression <- x
   }
   else {
     # FIXME: maybe emit a warning or error here instead.
     f_expression <- log10(x)
   }
+
   f_expression = as.numeric(f_expression)
   model_formula = stats::as.formula(model_formula_str)
 

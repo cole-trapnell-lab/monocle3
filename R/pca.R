@@ -322,8 +322,7 @@ bpcells_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
     message('end time: ', Sys.time())
   }
 
-  rm_bpcells_dirs(x_commit)
-  rm(x_commit)
+  rm_bpcells_dir(x_commit)
 
   if(verbose) {
     message('singular values (head)')

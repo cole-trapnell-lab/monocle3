@@ -29,14 +29,27 @@ estimate_size_factors <- function(cds,
                                            'mean-geometric-mean-log-total'))
 {
   method <- match.arg(method)
-  if(any(Matrix::colSums(SingleCellExperiment::counts(cds)) == 0)) {
-    warning("Your CDS object contains cells with zero reads. ",
-                  "This causes size factor calculation to fail. Please remove ",
-                  "the zero read cells using ",
-                  "cds <- cds[,Matrix::colSums(exprs(cds)) != 0] and then ",
-                  "run cds <- estimate_size_factors(cds)")
-    return(cds)
+  if(is(SingleCellExperiment::counts(cds), 'IterableMatrix')) {
+    if(any(BPCells::colSums(SingleCellExperiment::counts(cds)) == 0)) {
+      warning("Your CDS object contains cells with zero reads. ",
+                    "This causes size factor calculation to fail. Please remove ",
+                    "the zero read cells using ",
+                    "cds <- cds[,Matrix::colSums(exprs(cds)) != 0] and then ",
+                    "run cds <- estimate_size_factors(cds)")
+      return(cds)
+    }
   }
+  else {
+    if(any(Matrix::colSums(SingleCellExperiment::counts(cds)) == 0)) {
+      warning("Your CDS object contains cells with zero reads. ",
+                    "This causes size factor calculation to fail. Please remove ",
+                    "the zero read cells using ",
+                    "cds <- cds[,Matrix::colSums(exprs(cds)) != 0] and then ",
+                    "run cds <- estimate_size_factors(cds)")
+      return(cds)
+    }
+  }
+
   if (is_sparse_matrix(SingleCellExperiment::counts(cds))){
     size_factors(cds) <- estimate_sf_sparse(SingleCellExperiment::counts(cds),
                                             round_exprs=round_exprs,
@@ -142,12 +155,16 @@ sparse_apply <- function(Sp_X, MARGIN, FUN, convert_to_dense, ...){
 
 }
 
+# 20230424 bge: my test suggests that I can subset a BPCells matrix using
+#               the subset operator with the form x[i, , drop = FALSE]
 #' @noRd
 split_rows <- function (x, ncl) {
   lapply(parallel::splitIndices(nrow(x), ncl),
          function(i) x[i, , drop = FALSE])
 }
 
+# 20230424 bge: my test suggests that I can subset a BPCells matrix using
+#               the subset operator with the form x[i, , drop = FALSE]
 #' @noRd
 split_cols <- function (x, ncl) {
   lapply(parallel::splitIndices(ncol(x), ncl),
@@ -157,11 +174,11 @@ split_cols <- function (x, ncl) {
 #' @noRd
 sparse_par_r_apply <- function (cl, x, FUN, convert_to_dense, ...) {
   par_res <- do.call(c, parallel::clusterApply(cl = cl,
-                                                   x = split_rows(x,
-                                                                  length(cl)),
-                                     fun = sparse_apply, MARGIN = 1L,
-                                     FUN = FUN,
-                                     convert_to_dense=convert_to_dense, ...),
+                                               x = split_rows(x,
+                                                              length(cl)),
+                                               fun = sparse_apply, MARGIN = 1L,
+                                               FUN = FUN,
+                                               convert_to_dense=convert_to_dense, ...),
                      quote = TRUE)
   names(par_res) <- row.names(x)
   par_res
@@ -170,11 +187,11 @@ sparse_par_r_apply <- function (cl, x, FUN, convert_to_dense, ...) {
 #' @noRd
 sparse_par_c_apply <- function (cl = NULL, x, FUN, convert_to_dense, ...) {
   par_res <- do.call(c, parallel::clusterApply(cl = cl,
-                                                   x = split_cols(x,
-                                                                  length(cl)),
-                                     fun = sparse_apply, MARGIN = 2L,
-                                     FUN = FUN,
-                                     convert_to_dense=convert_to_dense, ...),
+                                               x = split_cols(x,
+                                                              length(cl)),
+                                               fun = sparse_apply, MARGIN = 2L,
+                                               FUN = FUN,
+                                               convert_to_dense=convert_to_dense, ...),
                      quote = TRUE)
   names(par_res) <- colnames(x)
   par_res
@@ -269,12 +286,15 @@ mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1,
     }, required_packages)
   }
 
+  #
+  # 20230424 bge: These two following calls using counts(cds) appear to work based on my simple test.
+  #
   if (MARGIN == 1){
-    suppressWarnings(res <- sparse_par_r_apply(cl, SingleCellExperiment::counts(cds), FUN,
-                                               convert_to_dense, ...))
+    suppressWarnings(res <- sparse_par_r_apply(cl=cl, x=SingleCellExperiment::counts(cds), FUN=FUN,
+                                               convert_to_dense=convert_to_dense, ...))
   }else{
-    suppressWarnings(res <- sparse_par_c_apply(cl, SingleCellExperiment::counts(cds), FUN,
-                                               convert_to_dense, ...))
+    suppressWarnings(res <- sparse_par_c_apply(cl=cl, x=SingleCellExperiment::counts(cds), FUN=FUN,
+                                               convert_to_dense=convert_to_dense, ...))
   }
 
   res
@@ -361,18 +381,48 @@ detect_genes <- function(cds, min_expr=0){
 #' @export
 normalized_counts <- function(cds,
                               norm_method=c("log", "binary", "size_only"),
-                              pseudocount=1){
-  norm_method = match.arg(norm_method)
-  norm_mat = SingleCellExperiment::counts(cds)
+                              pseudocount=1) {
+  norm_method <- match.arg(norm_method)
+
+  mat_counts <- SingleCellExperiment::counts(cds)
+
   if (norm_method == "binary"){
-    norm_mat = norm_mat > 0
-    if (is_sparse_matrix(norm_mat)){
-#      norm_mat = methods::as(norm_mat, "dgCMatrix")
-      norm_mat = methods::as(norm_mat, "CsparseMatrix")
+    if(is(mat_counts, 'IterableMatrix')) {
+      # the mat_counts > 0 is not a method in BPCells.
+      stop('normalized_counts: norm_method \'binary\' is unimplemented at this time')
+    }
+    else {
+      # The '+ 0' coerces the matrix to type numeric. It's possible
+      # to use 'as.numeric(mat_counts > 0)' but the matrix
+      # attributes disappear...
+      norm_mat <- (mat_counts > 0) + 0
+      if (is_sparse_matrix(norm_mat)) {
+        norm_mat = methods::as(norm_mat, "dgCMatrix")
+      }
     }
   }
   else {
-    if (is_sparse_matrix(norm_mat)){
+    assertthat::assert_that(!is.null(size_factors(cds)))
+    if(is(mat_counts, 'IterableMatrix')) {
+      if(norm_method == 'log' && pseudocount != 1) {
+        stop('normalized_counts: pseudocount must be 1 for sparse expression matrices and norm_method log')
+      }
+      matrix_info <- get_matrix_info(mat_counts)
+      matrix_control_default <- get_global_variable('assay_control_bpcells')
+      # We may need to convert the matrix to type 'double' and turn off compression.
+      if(matrix_info[['matrix_class']] == 'BPCells' && matrix_info[['matrix_mode']] == 'dir') {
+        matrix_info[['matrix_path']] <- dirname(matrix_info[['matrix_path']])
+      }
+      matrix_control_res <- set_matrix_control(matrix_control=matrix_info, matrix_control_default=matrix_control_default, control_type='any')
+      norm_mat <- set_matrix_class(mat=mat_counts, matrix_control=matrix_control_res)
+      norm_mat <- BPCells::t(BPCells::t(norm_mat) / size_factors(cds))
+      if(norm_method == 'log' && pseudocount == 1) {
+        norm_mat <- log1p(norm_mat) / log(10)
+      }
+    }
+    else
+    if (is_sparse_matrix(mat_counts)){
+      norm_mat <- mat_counts
       norm_mat@x = norm_mat@x / rep.int(size_factors(cds), diff(norm_mat@p))
       if (norm_method == "log"){
         if (pseudocount == 1){
@@ -382,12 +432,14 @@ normalized_counts <- function(cds,
         }
       }
     }else{
-      norm_mat = Matrix::t(Matrix::t(norm_mat) / size_factors(cds))
+      norm_mat = Matrix::t(Matrix::t(mat_counts) / size_factors(cds))
       if (norm_method == "log"){
-          norm_mat@x <- log10(norm_mat + pseudocount)
+#          norm_mat@x <- log10(norm_mat + pseudocount)
+          norm_mat <- log10(norm_mat + pseudocount)
       }
     }
   }
+
   return(norm_mat)
 }
 
@@ -554,7 +606,7 @@ combine_cds <- function(cds_list,
       exp <- exprs(cds_list[[i]])
     }
 
-    exp <- exp[intersect(row.names(exp), gene_list),, drop=FALSE]    # bge_exp
+    exp <- exp[intersect(row.names(exp), gene_list),, drop=FALSE]
 
     # Make cell names distinct, if necessary, assign cell names to
     # pd, the sample names to a column in pd, and cell names to
@@ -567,7 +619,7 @@ combine_cds <- function(cds_list,
         row.names(pd) <- paste(row.names(pd), i, sep="_")
         pd[,sample_col_name] <- i
       }
-      colnames(exp) <- row.names(pd)    # bge_exp
+      colnames(exp) <- row.names(pd)
     } else {
       if(list_named) {
         pd[,sample_col_name] <- names(cds_list)[[i]]
@@ -620,13 +672,13 @@ combine_cds <- function(cds_list,
         exp <- BPCells::rbind2(exp, BPCells::set_matrix_class(mat=extra_rows, matrix_control=matrix_control_res))
       }
       else {
-        exp <- rbind(exp, extra_rows)    # bge rbind   bge_exp
+        exp <- rbind(exp, extra_rows)
       }
 #      exp <- exp
     }
 
     # Gather matrices and data frames into lists.
-    exprs_list[[i]] <- exp[gene_list, , drop=FALSE]   # bge_exp
+    exprs_list[[i]] <- exp[gene_list, , drop=FALSE]
     fd_list[[i]] <- fd[gene_list, , drop=FALSE]
     pd_list[[i]] <- pd
   }
@@ -667,17 +719,16 @@ combine_cds <- function(cds_list,
   }
 
   # Filter counts matrix by fd and pd names.
-  all_exp <- all_exp[row.names(all_fd), row.names(all_pd), drop=FALSE]   # bge_exp
+  all_exp <- all_exp[row.names(all_fd), row.names(all_pd), drop=FALSE]
 
   # Make a combined CDS from all_exp, all_pd, and all_fd.
-  new_cds <- new_cell_data_set(all_exp, cell_metadata = all_pd, gene_metadata = all_fd)   # bge_exp
+  new_cds <- new_cell_data_set(all_exp, cell_metadata = all_pd, gene_metadata = all_fd)
 
   # Clean up BPCells directories, if necessary.
   if(bpcells_matrix_flag) {
     num_exprs <- length(exprs_list)
     for(i in seq(num_exprs)) {
-      rm_bpcells_dirs(exprs_list[[i]])
-      rm(exprs_list[[i]])
+      rm_bpcells_dir(exprs_list[[i]])
     }
   }
 

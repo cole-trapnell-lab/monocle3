@@ -155,7 +155,20 @@ graph_test <- function(cds,
   if(verbose) {
     message("Performing Moran's I test: ...")
   }
-  exprs_mat <- SingleCellExperiment::counts(cds)[, attr(lw, "region.id"), drop=FALSE]
+  mat_counts <- SingleCellExperiment::counts(cds)
+  if(is(mat_counts, 'IterableMatrix')) {
+    matrix_info <- get_matrix_info(mat_counts)
+    matrix_control_default <- get_global_variable('assay_control_bpcells')
+    # We may need to convert the matrix to type 'double' and turn off compression.
+    if(matrix_info[['matrix_class']] == 'BPCells' && matrix_info[['matrix_mode']] == 'dir') {
+      matrix_info[['matrix_path']] <- dirname(matrix_info[['matrix_path']])
+    }
+    matrix_control_res <- set_matrix_control(matrix_control=matrix_info, matrix_control_default=matrix_control_default, control_type='any')
+    mat_counts <- set_matrix_class(mat=mat_counts, matrix_control=matrix_control_res)
+  }
+  else {
+    exprs_mat <- mat_counts[, attr(lw, "region.id"), drop=FALSE]
+  }
   sz <- size_factors(cds)[attr(lw, "region.id")]
 
   wc <- spdep::spweights.constants(lw, zero.policy = TRUE, adjust.n = TRUE)
@@ -190,6 +203,11 @@ graph_test <- function(cds,
   }, sz = sz, alternative = alternative, method = method,
   expression_family = expression_family, mc.cores=cores,
   ignore.interactive = TRUE)
+
+  if(is(mat_counts, 'IterableMatrix')) {
+    rm_bpcells_dir(mat_counts)
+  }
+
 
   test_res <- do.call(rbind.data.frame, test_res)
   row.names(test_res) <- row.names(cds)
@@ -409,6 +427,7 @@ calculateLW <- function(cds,
                                                  colnames(pr_graph_node_coords)]
   }
 
+  # exprs_mat appears to be unused so I do not modify for BPCells.
   exprs_mat <- exprs(cds)
   if(neighbor_graph == "knn") {
     if(is.null(knn_res)) {
