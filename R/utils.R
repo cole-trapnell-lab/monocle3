@@ -384,18 +384,18 @@ normalized_counts <- function(cds,
                               pseudocount=1) {
   norm_method <- match.arg(norm_method)
 
-  mat_counts <- SingleCellExperiment::counts(cds)
+  norm_mat <- SingleCellExperiment::counts(cds)
 
   if (norm_method == "binary"){
-    if(is(mat_counts, 'IterableMatrix')) {
-      # the mat_counts > 0 is not a method in BPCells.
+    if(is(norm_mat, 'IterableMatrix')) {
+      # the norm_mat > 0 is not a method in BPCells.
       stop('normalized_counts: norm_method \'binary\' is unimplemented at this time')
     }
     else {
       # The '+ 0' coerces the matrix to type numeric. It's possible
-      # to use 'as.numeric(mat_counts > 0)' but the matrix
+      # to use 'as.numeric(norm_mat > 0)' but the matrix
       # attributes disappear...
-      norm_mat <- (mat_counts > 0) + 0
+      norm_mat <- (norm_mat > 0) + 0
       if (is_sparse_matrix(norm_mat)) {
         norm_mat = methods::as(norm_mat, "dgCMatrix")
       }
@@ -403,26 +403,26 @@ normalized_counts <- function(cds,
   }
   else {
     assertthat::assert_that(!is.null(size_factors(cds)))
-    if(is(mat_counts, 'IterableMatrix')) {
+    if(is(norm_mat, 'IterableMatrix')) {
       if(norm_method == 'log' && pseudocount != 1) {
         stop('normalized_counts: pseudocount must be 1 for sparse expression matrices and norm_method log')
       }
-      matrix_info <- get_matrix_info(mat_counts)
+      matrix_info <- get_matrix_info(norm_mat)
       matrix_control_default <- get_global_variable('assay_control_bpcells')
       # We may need to convert the matrix to type 'double' and turn off compression.
       if(matrix_info[['matrix_class']] == 'BPCells' && matrix_info[['matrix_mode']] == 'dir') {
         matrix_info[['matrix_path']] <- dirname(matrix_info[['matrix_path']])
       }
       matrix_control_res <- set_matrix_control(matrix_control=matrix_info, matrix_control_default=matrix_control_default, control_type='any')
-      norm_mat <- set_matrix_class(mat=mat_counts, matrix_control=matrix_control_res)
+      norm_mat <- set_matrix_class(mat=norm_mat, matrix_control=matrix_control_res)
       norm_mat <- BPCells::t(BPCells::t(norm_mat) / size_factors(cds))
       if(norm_method == 'log' && pseudocount == 1) {
         norm_mat <- log1p(norm_mat) / log(10)
       }
     }
     else
-    if (is_sparse_matrix(mat_counts)){
-      norm_mat <- mat_counts
+    if (is_sparse_matrix(norm_mat)){
+      norm_mat <- norm_mat
       norm_mat@x = norm_mat@x / rep.int(size_factors(cds), diff(norm_mat@p))
       if (norm_method == "log"){
         if (pseudocount == 1){
@@ -432,7 +432,7 @@ normalized_counts <- function(cds,
         }
       }
     }else{
-      norm_mat = Matrix::t(Matrix::t(mat_counts) / size_factors(cds))
+      norm_mat = Matrix::t(Matrix::t(norm_mat) / size_factors(cds))
       if (norm_method == "log"){
 #          norm_mat@x <- log10(norm_mat + pseudocount)
           norm_mat <- log10(norm_mat + pseudocount)

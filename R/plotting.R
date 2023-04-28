@@ -148,7 +148,7 @@ plot_cells_3d <- function(cds,
       as.data.frame(subset(rowData(cds), gene_short_name %in% markers |
                              row.names(rowData(cds)) %in% markers))
     if (nrow(markers_rowData) >= 1) {
-      cds_exprs <- SingleCellExperiment::counts(cds)[row.names(markers_rowData), ,drop=FALSE]
+      cds_exprs <- SingleCellExperiment::counts(cds)[row.names(markers_rowData), ,drop=FALSE]    # plot_cells_3d() row selection needs help
       cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds))
 
       if ((is.null(dim(genes)) == FALSE) && dim(genes) >= 2){
@@ -171,7 +171,7 @@ plot_cells_3d <- function(cds,
       } else {
         cds_exprs@x <- round(10000*cds_exprs@x)/10000
         markers_exprs <- matrix(cds_exprs, nrow=nrow(markers_rowData))
-        colnames(markers_exprs) <- colnames(SingleCellExperiment::counts(cds))
+        colnames(markers_exprs) <- colnames(SingleCellExperiment::counts(cds))    # plot_cells_3d()   col_names  OK
         row.names(markers_exprs) <- row.names(markers_rowData)
         markers_exprs <- reshape2::melt(markers_exprs)
         colnames(markers_exprs)[1:2] <- c('feature_id','cell_id')
@@ -578,7 +578,7 @@ plot_cells <- function(cds,
       stop("None of the provided genes were found in the cds")
     }
     if (nrow(markers_rowData) >= 1) {
-      cds_exprs <- SingleCellExperiment::counts(cds)[row.names(markers_rowData), ,drop=FALSE]
+      cds_exprs <- SingleCellExperiment::counts(cds)[row.names(markers_rowData), ,drop=FALSE]   # plot_cells    row selection  needs help
       cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds))
 
       if (!is.null(dim(genes)) && dim(genes) >= 2){
@@ -600,7 +600,7 @@ plot_cells <- function(cds,
       } else {
         cds_exprs@x = round(10000*cds_exprs@x)/10000
         markers_exprs = matrix(cds_exprs, nrow=nrow(markers_rowData))
-        colnames(markers_exprs) = colnames(SingleCellExperiment::counts(cds))
+        colnames(markers_exprs) = colnames(SingleCellExperiment::counts(cds))     # plot_cells  col_names OK
         row.names(markers_exprs) = row.names(markers_rowData)
         markers_exprs <- reshape2::melt(markers_exprs)
         colnames(markers_exprs)[1:2] <- c('feature_id','cell_id')
@@ -1016,9 +1016,9 @@ plot_genes_in_pseudotime <-function(cds_subset,
   Cell <- NA
   cds_subset = cds_subset[,is.finite(colData(cds_subset)$pseudotime)]
 
-  cds_exprs <- SingleCellExperiment::counts(cds_subset)
-  cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds_subset))
-  cds_exprs <- reshape2::melt(round(as.matrix(cds_exprs)))
+  cds_exprs <- SingleCellExperiment::counts(cds_subset)                          #  plot_genes_in_pseudotime()
+  cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds_subset))          #  scale
+  cds_exprs <- reshape2::melt(round(as.matrix(cds_exprs)))                       #  convert to dense
 
   if (is.null(min_expr)) {
     min_expr <- 0
@@ -1227,15 +1227,15 @@ plot_genes_violin <- function (cds_subset,
                                       "pass only the subset of the CDS to be",
                                       "plotted."))
   if (pseudocount > 0) {
-    cds_exprs <- SingleCellExperiment::counts(cds_subset) + 1
+    cds_exprs <- SingleCellExperiment::counts(cds_subset) + 1  # plot_genes_violin()
   } else {
-    cds_exprs <- SingleCellExperiment::counts(cds_subset)
+    cds_exprs <- SingleCellExperiment::counts(cds_subset)      # plot_genes_violin()
   }
   if (normalize) {
-    cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds_subset))
-    cds_exprs <- reshape2::melt(as.matrix(cds_exprs))
+    cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds_subset))     #  scale
+    cds_exprs <- reshape2::melt(as.matrix(cds_exprs))                         #  convert to dense
   } else {
-    cds_exprs <- reshape2::melt(as.matrix(cds_exprs))
+    cds_exprs <- reshape2::melt(as.matrix(cds_exprs))                         #  convert to dense
   }
 
   colnames(cds_exprs) <- c("f_id", "Cell", "expression")
@@ -1370,7 +1370,7 @@ plot_percent_cells_positive <- function(cds_subset,
                                       "pass only the subset of the CDS to be",
                                       "plotted."))
 
-  marker_exprs <- SingleCellExperiment::counts(cds_subset)
+  marker_exprs <- SingleCellExperiment::counts(cds_subset)   # plot_percent_cells_positive()
 
   if (normalize) {
     marker_exprs <- Matrix::t(Matrix::t(marker_exprs)/size_factors(cds_subset))

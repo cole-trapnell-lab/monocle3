@@ -284,29 +284,51 @@ load_mm_data <- function( mat_path,
   assertthat::assert_that( ! any( duplicated( feature_annotations$names ) ), msg='duplicate feature names in feature annotation file' )
   assertthat::assert_that( ! any( duplicated( cell_annotations$names ) ), msg='duplicate cell names in cell annotation file' )
 
-  # Read MatrixMarket file and convert to dgCMatrix format.
-  mat <- Matrix::readMM(mat_path)
   matrix_control_default <- get_global_variable('assay_control_csparsematrix')
   matrix_control_res <- set_matrix_control(matrix_control=matrix_control,
-                                                            matrix_control_default=matrix_control_default,
-                                                            control_type='any')
-  mat <- set_matrix_class(mat=mat, matrix_control=matrix_control_res)
+                                           matrix_control_default=matrix_control_default,
+                                           control_type='any')
+  if(matrix_control_res[['matrix_class']] != 'BPCells') {
+    # Read MatrixMarket file and convert to dgCMatrix format.
+    mat <- Matrix::readMM(mat_path)
+    mat <- set_matrix_class(mat=mat, matrix_control=matrix_control_res)
+  
+    assertthat::assert_that( length( feature_annotations$names ) == nrow( mat ),
+        msg=paste0( 'feature name count (',
+            length( feature_annotations$names ),
+            ') != matrix row count (',
+            nrow( mat ),
+            ')' ) )
+    assertthat::assert_that( length( cell_annotations$names ) == ncol( mat ),
+        msg=paste0( 'cell name count (',
+            length( cell_annotations$names ),
+            ') != matrix column count (',
+            ncol( mat ),
+            ')' ) )
+  
+    rownames( mat ) <- feature_annotations$names
+    colnames( mat ) <- cell_annotations$names
+  }
+  else {
+    matrix_path_d <- matrix_control[['matrix_path']]
+    mat_dir <- tempfile(pattern=paste0('monocle.bpcells.',
+                                       format(Sys.Date(), format='%Y%m%d'), '.'),
+                         tmpdir=matrix_path_d,
+                         fileext='.tmp')[[1]]
 
-  assertthat::assert_that( length( feature_annotations$names ) == nrow( mat ),
-      msg=paste0( 'feature name count (',
-          length( feature_annotations$names ),
-          ') != matrix row count (',
-          nrow( mat ),
-          ')' ) )
-  assertthat::assert_that( length( cell_annotations$names ) == ncol( mat ),
-      msg=paste0( 'cell name count (',
-          length( cell_annotations$names ),
-          ') != matrix column count (',
-          ncol( mat ),
-          ')' ) )
+    mat <- BPCells::import_matrix_market(mtx_path=mat_path,
+                                         outdir=mat_dir,
+                                         row_names=feature_annotations$names,
+                                         col_names=cell_annotations$names,
+                                         row_major=FALSE,
+                                         tmpdir='.',
+                                         load_bytes=4194304L,
+                                         sort_bytes=1073741824L)
+    push_matrix_path(mat)
+  }
 
-  rownames( mat ) <- feature_annotations$names
-  colnames( mat ) <- cell_annotations$names
+message('load_mm_data: str(mat):')
+str(mat)
 
   cds <- new_cell_data_set(mat,
                            cell_metadata = cell_annotations$metadata,
