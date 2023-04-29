@@ -388,7 +388,8 @@ normalized_counts <- function(cds,
 
   if (norm_method == "binary"){
     if(is(norm_mat, 'IterableMatrix')) {
-      norm_mat <- BPCells::binarize(norm_mat, threhold=1)
+#      norm_mat <- BPCells::binarize(norm_mat, threhold=1)
+      stop('normalized_counts: binary normalization is unimplemented at this time...check back soon')
     }
     else {
       # The '+ 0' coerces the matrix to type numeric. It's possible
