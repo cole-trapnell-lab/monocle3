@@ -298,12 +298,16 @@ bpcells_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
             `?prcomp_irlba` for help.")
 
   message('\n==== bpcells_prcomp_irlba ====')
-  matrix_control <- get_matrix_info(x)
-  if(matrix_control[['matrix_class']] == 'BPCells' &&
-     matrix_control[['matrix_mode']] == 'dir') {
-    matrix_control[['matrix_path']] <- dirname(matrix_control[['matrix_path']])
-  }
-  x_commit <- set_matrix_class(mat=x, matrix_control=matrix_control)
+#  matrix_control <- get_matrix_info(x)
+#  if(matrix_control[['matrix_class']] == 'BPCells' &&
+#     matrix_control[['matrix_mode']] == 'dir') {
+#    matrix_control[['matrix_path']] <- dirname(matrix_control[['matrix_path']])
+#  }
+#  x_commit <- set_matrix_class(mat=x, matrix_control=matrix_control)
+
+  matrix_control_res <- set_pca_matrix_control(mat=SingleCellExperiment::counts(cds), matrix_control=matrix_control)
+
+  x_commit <- set_matrix_class(mat=x, matrix_control=matrix_control_res)
 
   stats <- BPCells::matrix_stats(matrix = x_commit, row_stats = 'none', col_stats = 'variance')
   center <- stats[['col_stats']]['mean',]

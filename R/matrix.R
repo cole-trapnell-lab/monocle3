@@ -491,13 +491,17 @@ get_matrix_info <- function(mat) {
   if(!(class(bmat) %in% c('UnpackedMatrixMem_uint32_t', 'UnpackedMatrixMem_float',
                           'UnpackedMatrixMem_double', 'PackedMatrixMem_uint32_t',
                           'PackedMatrixMem_float', 'PackedMatrixMem_double',
-                          'MatrixDir'))) {
+                          'MatrixDir', 'Iterable_dgCMatrix_wrapper'))) {
     stop('get_matrix_info: unrecognized BPCells matrix class \"', class(mat), '\"')
     return(NULL)
   }
 
   matrix_info[['matrix_class']] <- 'BPCells'
 
+  if(class(bmat) == 'Iterable_dgCMatrix_wrapper') {
+    matrix_info[['matrix_mode']] <- 'dgCMatrix'
+  }
+  else
   if(class(bmat) == 'UnpackedMatrixMem_uint32_t') {
     matrix_info[['matrix_mode']] <- 'mem'
     matrix_info[['matrix_type']] <- 'uint32_t'

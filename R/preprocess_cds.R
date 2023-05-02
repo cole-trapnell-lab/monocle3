@@ -152,9 +152,13 @@ preprocess_cds <- function(cds,
   #      operations in counts(cds). Commit additional
   #      FM queued operations before submitting to
   #      the SVD function.
-message('\n==== preprocess_cds: set_matrix_class ====')
-  matrix_control_res <- set_pca_matrix_control(mat=SingleCellExperiment::counts(cds), matrix_control=matrix_control)
-  FM <- set_matrix_class(mat=SingleCellExperiment::counts(cds), matrix_control=matrix_control_res)
+#message('\n==== preprocess_cds: set_matrix_class ====')
+#  matrix_control_res <- set_pca_matrix_control(mat=SingleCellExperiment::counts(cds), matrix_control=matrix_control)
+#  FM <- set_matrix_class(mat=SingleCellExperiment::counts(cds), matrix_control=matrix_control_res)
+
+message('\n==== preprocess_cds: make FM matrix ====')
+  FM <- SingleCellExperiment::counts(cds)
+
   FM <- normalize_expr_data(FM=FM, size_factors=size_factors(cds), norm_method=norm_method, pseudo_count=pseudo_count)
 
   if (nrow(FM) == 0) {
