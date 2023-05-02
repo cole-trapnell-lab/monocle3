@@ -388,7 +388,7 @@ normalized_counts <- function(cds,
 
   if (norm_method == "binary"){
     if(is(norm_mat, 'IterableMatrix')) {
-#      norm_mat <- BPCells::binarize(norm_mat, threhold=1)
+#      norm_mat <- BPCells::binarize(norm_mat, threhold=0, strict_inequality=TRUE)
       stop('normalized_counts: binary normalization is unimplemented at this time...check back soon')
     }
     else {
@@ -526,7 +526,7 @@ combine_cds <- function(cds_list,
   }
 
   check_matrix_control(matrix_control=matrix_control, control_type='any', check_conditional=FALSE)
-  matrix_control_default <- if(!is.null(matrix_control[['matrix_class']]) && matrix_control[['matrix_class']] == 'BPCells') {
+  if(!is.null(matrix_control[['matrix_class']]) && matrix_control[['matrix_class']] == 'BPCells') {
     matrix_control_default <- get_global_variable('assay_control_bpcells')
   }
   else {
