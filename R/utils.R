@@ -388,8 +388,8 @@ normalized_counts <- function(cds,
 
   if (norm_method == "binary"){
     if(is(norm_mat, 'IterableMatrix')) {
-#      norm_mat <- BPCells::binarize(norm_mat, threhold=0, strict_inequality=TRUE)
-      stop('normalized_counts: binary normalization is unimplemented at this time...check back soon')
+      norm_mat <- BPCells::binarize(norm_mat, threhold=0, strict_inequality=TRUE)
+#      stop('normalized_counts: binary normalization is unimplemented at this time...check back soon')
     }
     else {
       # The '+ 0' coerces the matrix to type numeric. It's possible
@@ -600,7 +600,11 @@ combine_cds <- function(cds_list,
     # Counts matrix rows of genes common to the CDSes examined
     # up to this pass through the loop.
     if(bpcells_matrix_flag) {
-      exp <- set_matrix_class(mat=exprs(cds_list[[i]]), matrix_control=matrix_control_res)
+      exp <- exprs(cds_list[[i]])
+      if(!is(exp, 'IterableMatrix')) {
+        exp <- as(exp, 'IterableMatrix')
+      }
+#      exp <- set_matrix_class(mat=exprs(cds_list[[i]]), matrix_control=matrix_control_res)
     }
     else {
       exp <- exprs(cds_list[[i]])
@@ -669,7 +673,7 @@ combine_cds <- function(cds_list,
 
       # Append additional rows.
       if(bpcells_matrix_flag) {
-        exp <- BPCells::rbind2(exp, BPCells::set_matrix_class(mat=extra_rows, matrix_control=matrix_control_res))
+        exp <- BPCells::rbind2(exp, as(extra_rows, 'IterableMatrix'))
       }
       else {
         exp <- rbind(exp, extra_rows)
@@ -725,12 +729,12 @@ combine_cds <- function(cds_list,
   new_cds <- new_cell_data_set(all_exp, cell_metadata = all_pd, gene_metadata = all_fd)
 
   # Clean up BPCells directories, if necessary.
-  if(bpcells_matrix_flag) {
-    num_exprs <- length(exprs_list)
-    for(i in seq(num_exprs)) {
-      rm_bpcells_dir(exprs_list[[i]])
-    }
-  }
+#   if(bpcells_matrix_flag) {
+#     num_exprs <- length(exprs_list)
+#     for(i in seq(num_exprs)) {
+#       rm_bpcells_dir(exprs_list[[i]])
+#     }
+#   }
 
   # Add in preprocessing results.
   if(keep_reduced_dims) {

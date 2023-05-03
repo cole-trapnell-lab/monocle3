@@ -304,9 +304,10 @@ bpcells_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
 #    matrix_control[['matrix_path']] <- dirname(matrix_control[['matrix_path']])
 #  }
 #  x_commit <- set_matrix_class(mat=x, matrix_control=matrix_control)
+#  matrix_control_res <- set_pca_matrix_control(mat=x, matrix_control=matrix_control)
+#  x_commit <- set_matrix_class(mat=x, matrix_control=matrix_control_res)
 
-  matrix_control_res <- set_pca_matrix_control(mat=SingleCellExperiment::counts(cds), matrix_control=matrix_control)
-
+  matrix_control_res <- set_pca_matrix_control(mat=x, matrix_control=matrix_control)
   x_commit <- set_matrix_class(mat=x, matrix_control=matrix_control_res)
 
   stats <- BPCells::matrix_stats(matrix = x_commit, row_stats = 'none', col_stats = 'variance')
