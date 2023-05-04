@@ -71,19 +71,12 @@ new_cell_data_set <- function(expression_data,
                               gene_metadata = NULL,
                               verbose=FALSE) {
 
-#  assertthat::assert_that(methods::is(expression_data, 'matrix) ||
-#                          is_sparse_matrix(expression_data),
-#                          msg = paste("Argument expression_data must be a",
-#                                      "matrix - either sparse from the",
-#                                      "Matrix package or dense"))
-
-
   assertthat::assert_that(methods::is(expression_data, 'matrix') ||
                           is_sparse_matrix(expression_data) ||
                           is(expression_data, 'IterableMatrix'),
                           msg = paste("Argument expression_data must be a",
                                       "matrix - either sparse from the",
-                                      "Matrix package, dense",
+                                      "Matrix package, dense,",
                                       "or a BPCells matrix"))
 
   if (!is.null(cell_metadata)) {

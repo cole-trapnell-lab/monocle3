@@ -39,7 +39,7 @@ set_pca_matrix_control <- function(mat, matrix_control=list()) {
     }
   }
 
-  check_matrix_control(matrix_control=matrix_control, control_type='pca', check_conditional=TRUE)
+  check_matrix_control(matrix_control=matrix_control_res, control_type='pca', check_conditional=TRUE)
 
   return(matrix_control_res)
 }
@@ -289,8 +289,6 @@ bpcells_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
     message(show_matrix_info(get_matrix_info(mat=x), indent='  '), appendLF=FALSE)
   }
 
-  message('bpcells_prcomp_irlba: matrix_control matrix_class: ', matrix_control[['matrix_class']])
-
   if(!is.null(matrix_control[['class']]) && matrix_control[['matrix_class']] != 'BPCells') {
     stop('bpcells_prcomp_irlba: matrix_control[[\'matrix_class\']] must be \'BPCells\'')
   }
@@ -303,7 +301,6 @@ bpcells_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
             function to control that algorithm's convergence tolerance. See
             `?prcomp_irlba` for help.")
 
-  message('\n==== bpcells_prcomp_irlba ====')
   x_commit <- set_matrix_class(mat=x, matrix_control=matrix_control)
 
   stats <- BPCells::matrix_stats(matrix = x_commit, row_stats = 'none', col_stats = 'variance')

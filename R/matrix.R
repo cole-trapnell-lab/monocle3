@@ -146,7 +146,6 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('any', 'm
       error_string <- paste0('\ninvalid matrix_class "', matrix_control[['matrix_class']], '"')
     }
 
-
     if(matrix_control[['matrix_class']] == 'BPCells') {
       allowed_values <- if(control_type == 'mm') allowed_matrix_mode_mm else allowed_matrix_mode_any
       if(!(is.null(matrix_control[['matrix_mode']])) &&
@@ -446,9 +445,6 @@ bpcells_find_base_matrix <- function(mat) {
 #        o  matrix_buffer_size
 #
 get_matrix_class <- function(mat) {
-message('get_matrix_class: start')
-message('str(mat): ')
-message(str(mat))
 
   nmatch <- 0
   matrix_info <- list()
@@ -479,7 +475,7 @@ message(str(mat))
   if(nmatch > 1) {
     stop('get_matrix_class: ambiguous matrix class')
   }
-message('get_matrix_class: end')
+
   return(matrix_info)
 }
 
@@ -585,14 +581,14 @@ show_matrix_info <- function(matrix_info, indent='') {
   if(!is.null(matrix_info[['matrix_type']])) { 
     message(paste0(indent, 'type:        ', matrix_info[['matrix_type']]))
   }
+  if(!is.null(matrix_info[['matrix_path']])) { 
+    message(paste0(indent, 'path:        ', matrix_info[['matrix_path']]))
+  }
   if(!is.null(matrix_info[['matrix_compress']])) { 
     message(paste0(indent, 'compress:    ', matrix_info[['matrix_compress']]))
   }
   if(!is.null(matrix_info[['matrix_buffer_size']])) { 
     message(paste0(indent, 'buffer_size: ', matrix_info[['matrix_buffer_size']]))
-  }
-  if(!is.null(matrix_info[['matrix_path']])) { 
-    message(paste0(indent, 'path:        ', matrix_info[['matrix_path']]))
   }
 }
 
@@ -615,12 +611,12 @@ set_matrix_class <- function(mat, matrix_control=list()) {
   matrix_info <- get_matrix_info(mat)
 
 
-message('set_matrix_class: matrix_info: in:')
-show_matrix_info(matrix_info, indent='  ')
-message('')
-message('set_matrix_class: matrix_control in:')
-show_matrix_control(matrix_control)
-message('')
+#message('set_matrix_class: matrix_info: in:')
+#show_matrix_info(matrix_info, indent='  ')
+#message('')
+#message('set_matrix_class: matrix_control in:')
+#show_matrix_control(matrix_control)
+#message('')
 
   if(matrix_info[['matrix_class']] == 'dgTMatrix') {
     mat <- as(mat, 'dgCMatrix')
@@ -694,8 +690,8 @@ message('')
     stop('set_matrix_class: unrecognized matrix_info[[\'matrix_class\']]: ', matrix_info[['matrix_class']])
   }
 
-message('set_matrix_class: matrix_info: out:')
-show_matrix_info(get_matrix_info(mat_out), indent='  ')
+#message('set_matrix_class: matrix_info: out:')
+#show_matrix_info(get_matrix_info(mat_out), indent='  ')
 
   return(mat_out)
 }

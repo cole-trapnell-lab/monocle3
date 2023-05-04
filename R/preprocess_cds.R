@@ -132,7 +132,6 @@ preprocess_cds <- function(cds,
   assertthat::assert_that(sum(is.na(size_factors(cds))) == 0,
                           msg = paste("One or more cells has a size factor of",
                                       "NA."))
-
   matrix_control_res <- set_pca_matrix_control(mat=SingleCellExperiment::counts(cds),
                                                matrix_control=matrix_control)
 
@@ -155,9 +154,7 @@ preprocess_cds <- function(cds,
   #      operations in counts(cds). Commit additional
   #      FM queued operations before submitting to
   #      the SVD function.
-message('\n==== preprocess_cds: make FM matrix ====')
   FM <- SingleCellExperiment::counts(cds)
-
   FM <- normalize_expr_data(FM=FM, size_factors=size_factors(cds), norm_method=norm_method, pseudo_count=pseudo_count)
 
   if (nrow(FM) == 0) {
@@ -183,7 +180,7 @@ message('\n==== preprocess_cds: make FM matrix ====')
 
     if (verbose) message("Remove noise by PCA ...")
 
-    if(is(FM, 'dgCMatrix') || is(FM, 'dgeMatrix')) {
+    if(matrix_control_res[['matrix_class']] == 'dgCMatrix') {
 
       if(verbose) {
         message('preprocess_cds: FM matrix class: ', class(FM))
@@ -197,7 +194,7 @@ message('\n==== preprocess_cds: make FM matrix ====')
                                        verbose = verbose)
     }
     else
-    if(is(FM, 'IterableMatrix')) {
+    if(matrix_control_res[['matrix_class']] == 'BPCells') {
 
       if(verbose) {
         message('preprocess_cds: FM matrix info:')
