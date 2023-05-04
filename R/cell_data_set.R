@@ -1,29 +1,5 @@
 setOldClass(c("igraph"), prototype=structure(list(), class="igraph"))
 
-# @param assay_control an optional list of values that control how
-# matrices are stored in the cell_data_set assays slot. Typically,
-# matrices are stored in memory as dgCMatrix class (compressed sparse
-# matrix) objects using matrix_class="dgCMatrix". This is the
-# default. A very large matrix can be stored in a file and accessed
-# by Monocle3 as if it were in memory. For this, Monocle3 uses the
-# BPCells R package. Here the assay_control list values are set to
-# matrix_class="BPCells" and matrix_mode="dir". Then the count matrix
-# is stored in a directory, on-disk, that's created by Monocle3 in
-# the directory where you run Monocle3. This directory has a name
-# with the form "monocle.bpcells.*.tmp" where the asterisk is a
-# string of random characters that makes the name unique. Do not
-# remove this directory while Monocle3 is running! If you choose to
-# store the count matrix as an on-disk BPCells object, you must use
-# the "save_monocle_objects" and "load_monocle_objects" functions
-# to save and restore the cell_data_set. Monocle3 tries to remove
-# the BPCells matrix directory when your R session ends; however,
-# sometimes a matrix directory may persist after the session ends.
-# In this case, the user must remove the directory after the
-# session ends. For additional information about the assay_control
-# list, see the examples below and the set_matrix_control help. See
-# also the preprocess_cds and pca_control help for information about
-# reducing memory usage by the preprocess_cds function.
-
 #' The cell_data_set class
 #'
 #' The main class used by Monocle3 to hold single-cell expression data.
@@ -107,7 +83,8 @@ new_cell_data_set <- function(expression_data,
                           is(expression_data, 'IterableMatrix'),
                           msg = paste("Argument expression_data must be a",
                                       "matrix - either sparse from the",
-                                      "Matrix package or dense"))
+                                      "Matrix package, dense",
+                                      "or a BPCells matrix"))
 
   if (!is.null(cell_metadata)) {
     assertthat::assert_that(nrow(cell_metadata) == ncol(expression_data),
@@ -147,7 +124,9 @@ new_cell_data_set <- function(expression_data,
   # class matrix or a BPCells class matrix. See get_matrix_class
   # for recognized matrix classes.
   if(!(matrix_info[['matrix_class']] %in% c('r_dense_matrix',
-    'dgCMatrix', 'dgTMatrix', 'BPCells'))) {
+                                            'dgCMatrix',
+                                            'dgTMatrix',
+                                            'BPCells'))) {
     stop('new_cell_data_set: invalid expression_data matrix class')
   }
 

@@ -103,7 +103,7 @@ select_matrix_parameter_value <- function(parameter, matrix_control, matrix_cont
 #       matrix_path: <path to directory or file> default: 'NULL' -> temporary directory in pwd
 #       matrix_compress: TRUE, FALSE default: FALSE
 #       matrix_buffer_size: <integer> default: 8192L
-check_matrix_control <- function(matrix_control=list(), control_type=c('any', 'pca'), check_conditional=FALSE) {
+check_matrix_control <- function(matrix_control=list(), control_type=c('any', 'mm', 'pca'), check_conditional=FALSE) {
   control_type <- match.arg(control_type)
   assertthat::assert_that(is.list(matrix_control))
   assertthat::assert_that(is.logical(check_conditional))
@@ -128,16 +128,16 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('any', 'p
                                   'show_values')
 
   allowed_matrix_class <- c('dgCMatrix', 'BPCells')
+  allowed_matrix_mode_any <- c('mem', 'dir')
+  allowed_matrix_mode_mm <- c('dir')
   allowed_matrix_type_any <- c('uint32_t', 'float', 'double')
+  allowed_matrix_type_mm <- c('uint32_t')
   allowed_matrix_type_pca <- c('float', 'double')
-  allowed_matrix_mode <- c('mem', 'dir') 
-
-  control_name <- if(control_type == 'any') 'any_control' else 'pca_control'
 
   error_string <- ''
 
   if(!all(names(matrix_control) %in% allowed_control_parameters)) {
-    error_string <- paste0('invalid ', control_name, ' control parameter')
+    error_string <- paste0('invalid control parameter')
   }
 
   if(check_conditional == FALSE) {
@@ -146,32 +146,42 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('any', 'p
       error_string <- paste0('\ninvalid matrix_class "', matrix_control[['matrix_class']], '"')
     }
 
-    if(!(is.null(matrix_control[['matrix_mode']])) &&
-       !(matrix_control[['matrix_mode']] %in% allowed_matrix_mode)) {
-      error_string <- paste0('\ninvalid matrix_mode "', matrix_control[['matrix_mode']], '"')
-    }
 
-    allowed_values <- if(control_type == 'any') allowed_matrix_type_any else allowed_matrix_type_pca
-    if(!(is.null(matrix_control[['matrix_type']])) &&
-       !(matrix_control[['matrix_type']] %in% allowed_values)) {
-      error_string <- paste0('\ninvalid ', control_name, ' matrix_type "', matrix_control[['matrix_type']], '"')
-    }
+    if(matrix_control[['matrix_class']] == 'BPCells') {
+      allowed_values <- if(control_type == 'mm') allowed_matrix_mode_mm else allowed_matrix_mode_any
+      if(!(is.null(matrix_control[['matrix_mode']])) &&
+         !(matrix_control[['matrix_mode']] %in% allowed_values)) {
+        error_string <- paste0('\ninvalid matrix_mode "', matrix_control[['matrix_mode']], '"')
+      }
+    
+      if(control_type == 'any')
+        allowed_values <- allowed_matrix_type_any
+      else
+      if(control_type == 'mm')
+        allowed_values <- allowed_matrix_type_mm
+      else
+      if(control_type == 'pca')
+        allowed_values <- allowed_matrix_type_pca
+      if(!(is.null(matrix_control[['matrix_type']])) &&
+         !(matrix_control[['matrix_type']] %in% allowed_values)) {
+        error_string <- paste0('\ninvalid matrix_type "', matrix_control[['matrix_type']], '"')
+      }
 
-    if(!(is.null(matrix_control[['matrix_compress']])) &&
-       !(is.logical(matrix_control[['matrix_compress']]))) {
-      error_string <- paste0('\nmatrix_compress value must be a logical type')
-    }
+      if(!(is.null(matrix_control[['matrix_compress']])) &&
+         !(is.logical(matrix_control[['matrix_compress']]))) {
+        error_string <- paste0('\nmatrix_compress value must be a logical type')
+      }
 
-    if(!(is.null(matrix_control[['matrix_path']])) &&
-       !(is.character(matrix_control[['matrix_path']]))) {
-      error_string <- paste0('\nmatrix_path value must be a character type')
-    }
+      if(!(is.null(matrix_control[['matrix_path']])) &&
+         !(is.character(matrix_control[['matrix_path']]))) {
+        error_string <- paste0('\nmatrix_path value must be a character type')
+      }
 
-    if(!(is.null(matrix_control[['matrix_buffer_size']])) &&
-       !(is.integer(matrix_control[['matrix_buffer_size']]))) {
-      error_string <- paste0('\nmatrix_buffer_size value must be an integer type')
+      if(!(is.null(matrix_control[['matrix_buffer_size']])) &&
+         !(is.integer(matrix_control[['matrix_buffer_size']]))) {
+        error_string <- paste0('\nmatrix_buffer_size value must be an integer type')
+      }
     }
-
   }
   else {
     # Check matrix_class value.
@@ -185,9 +195,16 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('any', 'p
   
     if(matrix_control[['matrix_class']] == 'BPCells') {
       # Check matrix_type value.
-      allowed_values <- if(control_type == 'any') allowed_matrix_type_any else allowed_matrix_type_pca
+      if(control_type == 'any')
+        allowed_values <- allowed_matrix_type_any
+      else
+      if(control_type == 'mm')
+        allowed_values <- allowed_matrix_type_mm
+      else
+      if(control_type == 'pca')
+        allowed_values <- allowed_matrix_type_pca
       if(!(matrix_control[['matrix_type']] %in% allowed_values)) {
-        error_string <- paste0('\nbad ', control_name, ' matrix_type "', matrix_control[['matrix_type']], '"\n')
+        error_string <- paste0('\nbad  matrix_type "', matrix_control[['matrix_type']], '"\n')
       }
   
       # Check matrix_compress value.
@@ -196,7 +213,8 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('any', 'p
       }
   
       # Check matrix_mode value.
-      if(!(matrix_control[['matrix_mode']] %in% allowed_matrix_mode)) {
+      allowed_values <- if(control_type == 'mm') allowed_matrix_mode_mm else allowed_matrix_mode_any
+      if(!(matrix_control[['matrix_mode']] %in% allowed_values)) {
         error_string <- paste0('\ninvalid matrix_mode "', matrix_control[['matrix_mode']], '"')
       }
   
@@ -239,16 +257,21 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('any', 'p
 #' Verify and set the matrix_control parameter list.
 #'
 #' @description Verifies and sets the list of parameter values
-#'   that is used to make the counts matrix that is stored in the
-#'   cell_data_set. To see the default values,
-#'   call "set_assay_control(assay_control=list(show_values=TRUE))".
+#'   that is used to make the count matrix that is stored in the
+#'   cell_data_set or certain other matrices thare are used
+#'   during the Monocle3 run. To see the
+#'   default values,
+#' call "set_matrix_control(matrix_control=list(matrix_class='BPCells', show_values=TRUE))".
 #'   "show_values=TRUE" can be used in functions that have the
-#'   assay_control list parameter, in which case the function will
-#'   show the assay_control values to be used and then stop.
-#' @param assay_control Input control list.
-#' @return assay_control Output control list.
+#'   matrix_control list parameter, in which case the function will
+#'   show the matrix_control values to be used and then stop.
+#' @param matrix_control Input control list.
+#' @param matrix_control_default Input default control list.
+#' @param control_type A string of either "any" or "pca". A control_type of "pca"
+#'   restricts certain list parameters.
+#' @return matrix_control Output control list.
 #'
-#' @section assay_control parameters:
+#' @section matrix_control parameters:
 #' \describe{
 #'   \item{matrix_class}{Specifies the matrix class to use for
 #'      matrix storage. The acceptable values are "dgCMatrix"
@@ -284,8 +307,9 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('any', 'p
 #'   \item{matrix_buffer_size}{Specifies how many items of
 #'      data to buffer in memory before flushing to disk. This
 #'      is used for matrix_class="BPCells" with matrix_mode="dir".}
+#' }
 #' @export
-set_matrix_control <- function(matrix_control=list(), matrix_control_default=list(), control_type=c('any', 'pca')) {
+set_matrix_control <- function(matrix_control=list(), matrix_control_default=list(), control_type=c('any', 'mm', 'pca')) {
   control_type <- match.arg(control_type)
 
   check_matrix_control(matrix_control=matrix_control, control_type=control_type, check_conditional=FALSE)

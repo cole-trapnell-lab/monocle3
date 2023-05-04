@@ -7,25 +7,32 @@
 set_matrix_control(
   matrix_control = list(),
   matrix_control_default = list(),
-  control_type = c("any", "pca")
+  control_type = c("any", "mm", "pca")
 )
 }
 \arguments{
-\item{assay_control}{Input control list.}
+\item{matrix_control}{Input control list.}
+
+\item{matrix_control_default}{Input default control list.}
+
+\item{control_type}{A string of either "any" or "pca". A control_type of "pca"
+restricts certain list parameters.}
 }
 \value{
-assay_control Output control list.
+matrix_control Output control list.
 }
 \description{
 Verifies and sets the list of parameter values
-that is used to make the counts matrix that is stored in the
-cell_data_set. To see the default values,
-call "set_assay_control(assay_control=list(show_values=TRUE))".
+that is used to make the count matrix that is stored in the
+cell_data_set or certain other matrices thare are used
+during the Monocle3 run. To see the
+default values,
+call "set_matrix_control(matrix_control=list(matrix_class='BPCells', show_values=TRUE))".
 "show_values=TRUE" can be used in functions that have the
-assay_control list parameter, in which case the function will
-show the assay_control values to be used and then stop.
+matrix_control list parameter, in which case the function will
+show the matrix_control values to be used and then stop.
 }
-\section{assay_control parameters}{
+\section{matrix_control parameters}{
 
 \describe{
 \item{matrix_class}{Specifies the matrix class to use for
@@ -62,5 +69,6 @@ used only for BPCells class matrices.}
 \item{matrix_buffer_size}{Specifies how many items of
 data to buffer in memory before flushing to disk. This
 is used for matrix_class="BPCells" with matrix_mode="dir".}
+}
 }
 

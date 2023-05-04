@@ -1,12 +1,15 @@
 set_pca_matrix_control <- function(mat, matrix_control=list()) {
+
+  check_matrix_control(matrix_control=matrix_control, control_type='pca', check_conditional=FALSE)
+
   matrix_info <- get_matrix_info(mat)
   if(!is.null(matrix_control[['matrix_class']])) {
     if(matrix_control[['matrix_class']] == 'dgCMatrix') {
-       matrix_control_default <- get_global_variable('pca_control_csparsematrix')
+       matrix_control_default <- get_global_variable('matrix_control_csparsematrix_pca')
     }
     else
     if(matrix_control[['matrix_class']] == 'BPCells') {
-      matrix_control_default <- get_global_variable('pca_control_bpcells')
+      matrix_control_default <- get_global_variable('matrix_control_bpcells_pca')
     }
     else {
       stop('unrecognized matrix_control[[\'matrix_class\']] value')
@@ -35,6 +38,9 @@ set_pca_matrix_control <- function(mat, matrix_control=list()) {
       matrix_control_res[['matrix_path']] <- dirname(matrix_control_res[['matrix_path']])
     }
   }
+
+  check_matrix_control(matrix_control=matrix_control, control_type='pca', check_conditional=TRUE)
+
   return(matrix_control_res)
 }
 
@@ -298,17 +304,7 @@ bpcells_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
             `?prcomp_irlba` for help.")
 
   message('\n==== bpcells_prcomp_irlba ====')
-#  matrix_control <- get_matrix_info(x)
-#  if(matrix_control[['matrix_class']] == 'BPCells' &&
-#     matrix_control[['matrix_mode']] == 'dir') {
-#    matrix_control[['matrix_path']] <- dirname(matrix_control[['matrix_path']])
-#  }
-#  x_commit <- set_matrix_class(mat=x, matrix_control=matrix_control)
-#  matrix_control_res <- set_pca_matrix_control(mat=x, matrix_control=matrix_control)
-#  x_commit <- set_matrix_class(mat=x, matrix_control=matrix_control_res)
-
-  matrix_control_res <- set_pca_matrix_control(mat=x, matrix_control=matrix_control)
-  x_commit <- set_matrix_class(mat=x, matrix_control=matrix_control_res)
+  x_commit <- set_matrix_class(mat=x, matrix_control=matrix_control)
 
   stats <- BPCells::matrix_stats(matrix = x_commit, row_stats = 'none', col_stats = 'variance')
   center <- stats[['col_stats']]['mean',]

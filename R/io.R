@@ -182,29 +182,31 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
 #' character for tab-separated-value files.
 #' @param verbose a logical value that determines whether or not the
 #' function writes diagnostic information.
-#' @param assay_control an optional list of values that control how
+#' @param matrix_control an optional list of values that control how
 #' matrices are stored in the cell_data_set assays slot. Typically,
 #' matrices are stored in memory as dgCMatrix class (compressed sparse
 #' matrix) objects using matrix_class="dgCMatrix". This is the
 #' default. A very large matrix can be stored in a file and accessed
 #' by Monocle3 as if it were in memory. For this, Monocle3 uses the
-#' BPCells R package. Here the assay_control list values are set to
+#' BPCells R package. Here the matrix_control list values are set to
 #' matrix_class="BPCells" and matrix_mode="dir". Then the count matrix
-#' is stored in a directory, on-disk, that's created by Monocle3 in
+#' is stored in a directory, on-disk, which is created by Monocle3 in
 #' the directory where you run Monocle3. This directory has a name
 #' with the form "monocle.bpcells.*.tmp" where the asterisk is a
 #' string of random characters that makes the name unique. Do not
 #' remove this directory while Monocle3 is running! If you choose to
 #' store the count matrix as an on-disk BPCells object, you must use
-#' the #' "save_monocle_objects" and "load_monocle_objects" functions
+#' the "save_monocle_objects" and "load_monocle_objects" functions
 #' to save and restore the cell_data_set. Monocle3 tries to remove
 #' the BPCells matrix directory when your R session ends; however,
 #' sometimes a matrix directory may persist after the session ends.
-#' In this case,#' the user must remove the directory after the
-#' session ends. For additional information about the assay_control
+#' In this case, the user must remove the directory after the
+#' session ends. For additional information about the matrix_control
 #' list, see the examples below and the set_matrix_control help. See
-#' also the preprocess_cds and pca_control help for information about
-#' reducing memory usage by the preprocess_cds function.
+#' also the preprocess_cds help for information about reducing memory
+#' usage by the preprocess_cds function. Note that for the
+#' load_mm_data function the BPCells matrix_mode is "dir",
+#' the matrix_type is "uint32_t", and the matrix_compress is TRUE.
 #' @return cds object
 #'
 #' @section Comments:
@@ -224,30 +226,20 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
 #'     # second has short gene names, and the third has gene biotypes.
 #'     #
 #'     # For typical count matrices with a small to medium number of cells,
-#'     # we suggest that you use the default assay_control list by not
-#'     # not setting the assay_control parameter. In this case, the
+#'     # we suggest that you use the default matrix_control list by not
+#'     # not setting the matrix_control parameter. In this case, the
 #'     # count matrix is stored in memory as a sparse matrix in the
 #'     # dgCMatrix format, as it has in the past. It is also possible to
-#'     # set the assay_control list explicitly to use this in-memory
-#'     # dgCMatrix format by setting the assay_control parameter to
+#'     # set the matrix_control list explicitly to use this in-memory
+#'     # dgCMatrix format by setting the matrix_control parameter to
 #'     #
-#'       load_mm_data(..., assay_control=list(matrix_class='dgCMatrix'))
+#'       load_mm_data(..., matrix_control=list(matrix_class='dgCMatrix'))
 #'     #
-#'     # For larger count matrices, we suggest that you try storing the
-#'     # count matrix as a BPCells class object, either in memory or on
-#'     # disk. To store the count matrix as a BPCells object in memory,
-#'     # set the assay_control parameter list as follows
-#'     #
-#'       load_mm_data(..., assay_control=list(matrix_class='BPCells', matrix_mode='mem'))
-#'     #
-#'     # In this case, the count matrix is stored in memory as compressed,
-#'     # non-negative integers, which reduces substantially the memory usage.
-#'     #
-#'     # For larger matrices, we suggest that you try storing the count
-#'     # matrix as a BPCells object on disk by setting the assay_control
+#'     # For large matrices, we suggest that you try storing the count
+#'     # matrix as a BPCells object on disk by setting the matrix_control
 #'     # parameter list as follows
 #'     #
-#'       load_mm_data(..., assay_control=list(matrix_class='BPCells', matrix_mode='dir'))
+#'       load_mm_data(..., matrix_control=list(matrix_class='BPCells'))
 #'     #
 #'   }
 #' 
@@ -269,14 +261,13 @@ load_mm_data <- function( mat_path,
   assertthat::assert_that(assertthat::is.readable(cell_anno_path), msg='unable to read cell annotation file')
   assertthat::assert_that(is.numeric(umi_cutoff))
 
-  check_matrix_control(matrix_control=matrix_control, control_type='any', check_conditional=FALSE)
-  matrix_control_default <- if(!is.null(matrix_control[['matrix_class']]) && matrix_control[['matrix_class']] == 'BPCells') {
-    matrix_control_default <- get_global_variable('assay_control_bpcells')
+  if(!is.null(matrix_control[['matrix_class']]) && matrix_control[['matrix_class']] == 'BPCells') {
+    matrix_control_default <- get_global_variable('matrix_control_bpcells_mm')
   }
   else {
-    matrix_control_default <- get_global_variable('assay_control_csparsematrix')
+    matrix_control_default <- get_global_variable('matrix_control_csparsematrix_mm')
   }
-  matrix_control <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='any')
+  matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='mm')
 
   feature_annotations <- load_annotations_data( feature_anno_path, feature_metadata_column_names, header, sep, quote=quote, annotation_type='features' )
   cell_annotations <- load_annotations_data( cell_anno_path, cell_metadata_column_names, header, sep, quote=quote, annotation_type='cells' )
@@ -284,10 +275,6 @@ load_mm_data <- function( mat_path,
   assertthat::assert_that( ! any( duplicated( feature_annotations$names ) ), msg='duplicate feature names in feature annotation file' )
   assertthat::assert_that( ! any( duplicated( cell_annotations$names ) ), msg='duplicate cell names in cell annotation file' )
 
-  matrix_control_default <- get_global_variable('assay_control_csparsematrix')
-  matrix_control_res <- set_matrix_control(matrix_control=matrix_control,
-                                           matrix_control_default=matrix_control_default,
-                                           control_type='any')
   if(matrix_control_res[['matrix_class']] != 'BPCells') {
     # Read MatrixMarket file and convert to dgCMatrix format.
     mat <- Matrix::readMM(mat_path)
@@ -310,14 +297,13 @@ load_mm_data <- function( mat_path,
     colnames( mat ) <- cell_annotations$names
   }
   else {
-    matrix_path_d <- matrix_control[['matrix_path']]
-    mat_dir <- tempfile(pattern=paste0('monocle.bpcells.',
-                                       format(Sys.Date(), format='%Y%m%d'), '.'),
-                         tmpdir=matrix_path_d,
-                         fileext='.tmp')[[1]]
+    outdir <- tempfile(pattern=paste0('monocle.bpcells.',
+                                      format(Sys.Date(), format='%Y%m%d'), '.'),
+                       tmpdir=matrix_control_res[['matrix_path']],
+                       fileext='.tmp')[[1]]
 
     mat <- BPCells::import_matrix_market(mtx_path=mat_path,
-                                         outdir=mat_dir,
+                                         outdir=outdir,
                                          row_names=feature_annotations$names,
                                          col_names=cell_annotations$names,
                                          row_major=FALSE,
@@ -326,9 +312,6 @@ load_mm_data <- function( mat_path,
                                          sort_bytes=1073741824L)
     push_matrix_path(mat)
   }
-
-message('load_mm_data: str(mat):')
-str(mat)
 
   cds <- new_cell_data_set(mat,
                            cell_metadata = cell_annotations$metadata,

@@ -39,14 +39,14 @@
 #' @param nn_control An optional list of parameters used to make the nearest
 #'  neighbor index. See the set_nn_control help for detailed information.
 #' @param matrix_control An optional list of parameters that control the
-#'  storage of intermediate matrices that are required for cds
+#'  storage of an intermediate matrix that is required for cds
 #'  preprocessing. By default, matrices are stored in memory as dgCMatrix
 #'  class (compressed sparse matrix) objects, which can be set explicitly
 #'  using the matrix_class="dgCMatrix" list value. A very large matrix can
 #'  be stored in a file and accessed by Monocle3 as if it were in memory.
 #'  For this, Monocle3 uses the BPCells R package. Here the matrix_control
 #'  list values are set to matrix_class="BPCells" and matrix_mode="dir".
-#'  Then the count matrix is stored in a directory, on-disk, that's created
+#'  Then the count matrix is stored in a directory, on-disk, which is created
 #'  by Monocle3 in the directory where you run Monocle3. This directory has
 #'  a name with the form "monocle.bpcells.*.tmp" where the asterisk is a
 #'  random string that makes the name unique. Do not remove this directory
@@ -133,6 +133,9 @@ preprocess_cds <- function(cds,
                           msg = paste("One or more cells has a size factor of",
                                       "NA."))
 
+  matrix_control_res <- set_pca_matrix_control(mat=SingleCellExperiment::counts(cds),
+                                               matrix_control=matrix_control)
+
   if(build_nn_index) {
     nn_control <- set_nn_control(mode=1,
                                  nn_control=nn_control,
@@ -152,10 +155,6 @@ preprocess_cds <- function(cds,
   #      operations in counts(cds). Commit additional
   #      FM queued operations before submitting to
   #      the SVD function.
-#message('\n==== preprocess_cds: set_matrix_class ====')
-#  matrix_control_res <- set_pca_matrix_control(mat=SingleCellExperiment::counts(cds), matrix_control=matrix_control)
-#  FM <- set_matrix_class(mat=SingleCellExperiment::counts(cds), matrix_control=matrix_control_res)
-
 message('\n==== preprocess_cds: make FM matrix ====')
   FM <- SingleCellExperiment::counts(cds)
 
@@ -210,7 +209,7 @@ message('\n==== preprocess_cds: make FM matrix ====')
       irlba_res <- bpcells_prcomp_irlba(BPCells::t(FM),
                                         n = min(num_dim,min(dim(FM)) - 1),
                                         center = scaling, scale. = scaling,
-                                        matrix_control=matrix_control,
+                                        matrix_control=matrix_control_res,
                                         verbose = verbose)
     }
     else {

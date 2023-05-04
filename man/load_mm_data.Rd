@@ -74,29 +74,31 @@ character for tab-separated-value files.}
 \item{verbose}{a logical value that determines whether or not the
 function writes diagnostic information.}
 
-\item{assay_control}{an optional list of values that control how
+\item{matrix_control}{an optional list of values that control how
 matrices are stored in the cell_data_set assays slot. Typically,
 matrices are stored in memory as dgCMatrix class (compressed sparse
 matrix) objects using matrix_class="dgCMatrix". This is the
 default. A very large matrix can be stored in a file and accessed
 by Monocle3 as if it were in memory. For this, Monocle3 uses the
-BPCells R package. Here the assay_control list values are set to
+BPCells R package. Here the matrix_control list values are set to
 matrix_class="BPCells" and matrix_mode="dir". Then the count matrix
-is stored in a directory, on-disk, that's created by Monocle3 in
+is stored in a directory, on-disk, which is created by Monocle3 in
 the directory where you run Monocle3. This directory has a name
 with the form "monocle.bpcells.*.tmp" where the asterisk is a
 string of random characters that makes the name unique. Do not
 remove this directory while Monocle3 is running! If you choose to
 store the count matrix as an on-disk BPCells object, you must use
-the #' "save_monocle_objects" and "load_monocle_objects" functions
+the "save_monocle_objects" and "load_monocle_objects" functions
 to save and restore the cell_data_set. Monocle3 tries to remove
 the BPCells matrix directory when your R session ends; however,
 sometimes a matrix directory may persist after the session ends.
-In this case,#' the user must remove the directory after the
-session ends. For additional information about the assay_control
+In this case, the user must remove the directory after the
+session ends. For additional information about the matrix_control
 list, see the examples below and the set_matrix_control help. See
-also the preprocess_cds and pca_control help for information about
-reducing memory usage by the preprocess_cds function.}
+also the preprocess_cds help for information about reducing memory
+usage by the preprocess_cds function. Note that for the
+load_mm_data function the BPCells matrix_mode is "dir",
+the matrix_type is "uint32_t", and the matrix_compress is TRUE.}
 }
 \value{
 cds object
@@ -125,30 +127,20 @@ Load data from matrix market format files.
     # second has short gene names, and the third has gene biotypes.
     #
     # For typical count matrices with a small to medium number of cells,
-    # we suggest that you use the default assay_control list by not
-    # not setting the assay_control parameter. In this case, the
+    # we suggest that you use the default matrix_control list by not
+    # not setting the matrix_control parameter. In this case, the
     # count matrix is stored in memory as a sparse matrix in the
     # dgCMatrix format, as it has in the past. It is also possible to
-    # set the assay_control list explicitly to use this in-memory
-    # dgCMatrix format by setting the assay_control parameter to
+    # set the matrix_control list explicitly to use this in-memory
+    # dgCMatrix format by setting the matrix_control parameter to
     #
-      load_mm_data(..., assay_control=list(matrix_class='dgCMatrix'))
+      load_mm_data(..., matrix_control=list(matrix_class='dgCMatrix'))
     #
-    # For larger count matrices, we suggest that you try storing the
-    # count matrix as a BPCells class object, either in memory or on
-    # disk. To store the count matrix as a BPCells object in memory,
-    # set the assay_control parameter list as follows
-    #
-      load_mm_data(..., assay_control=list(matrix_class='BPCells', matrix_mode='mem'))
-    #
-    # In this case, the count matrix is stored in memory as compressed,
-    # non-negative integers, which reduces substantially the memory usage.
-    #
-    # For larger matrices, we suggest that you try storing the count
-    # matrix as a BPCells object on disk by setting the assay_control
+    # For large matrices, we suggest that you try storing the count
+    # matrix as a BPCells object on disk by setting the matrix_control
     # parameter list as follows
     #
-      load_mm_data(..., assay_control=list(matrix_class='BPCells', matrix_mode='dir'))
+      load_mm_data(..., matrix_control=list(matrix_class='BPCells'))
     #
   }
 

@@ -407,14 +407,6 @@ normalized_counts <- function(cds,
       if(norm_method == 'log' && pseudocount != 1) {
         stop('normalized_counts: pseudocount must be 1 for sparse expression matrices and norm_method log')
       }
-      matrix_info <- get_matrix_info(norm_mat)
-      matrix_control_default <- get_global_variable('assay_control_bpcells')
-      # We may need to convert the matrix to type 'double' and turn off compression.
-      if(matrix_info[['matrix_class']] == 'BPCells' && matrix_info[['matrix_mode']] == 'dir') {
-        matrix_info[['matrix_path']] <- dirname(matrix_info[['matrix_path']])
-      }
-      matrix_control_res <- set_matrix_control(matrix_control=matrix_info, matrix_control_default=matrix_control_default, control_type='any')
-      norm_mat <- set_matrix_class(mat=norm_mat, matrix_control=matrix_control_res)
       norm_mat <- BPCells::t(BPCells::t(norm_mat) / size_factors(cds))
       if(norm_method == 'log' && pseudocount == 1) {
         norm_mat <- log1p(norm_mat) / log(10)
@@ -527,10 +519,10 @@ combine_cds <- function(cds_list,
 
   check_matrix_control(matrix_control=matrix_control, control_type='any', check_conditional=FALSE)
   if(!is.null(matrix_control[['matrix_class']]) && matrix_control[['matrix_class']] == 'BPCells') {
-    matrix_control_default <- get_global_variable('assay_control_bpcells')
+    matrix_control_default <- get_global_variable('matrix_control_bpcells_any')
   }
   else {
-    matrix_control_default <- get_global_variable('assay_control_csparsematrix')
+    matrix_control_default <- get_global_variable('matrix_control_csparsematrix_any')
   }
   matrix_control <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='any')
 
@@ -728,14 +720,6 @@ combine_cds <- function(cds_list,
   # Make a combined CDS from all_exp, all_pd, and all_fd.
   new_cds <- new_cell_data_set(all_exp, cell_metadata = all_pd, gene_metadata = all_fd)
 
-  # Clean up BPCells directories, if necessary.
-#   if(bpcells_matrix_flag) {
-#     num_exprs <- length(exprs_list)
-#     for(i in seq(num_exprs)) {
-#       rm_bpcells_dir(exprs_list[[i]])
-#     }
-#   }
-
   # Add in preprocessing results.
   if(keep_reduced_dims) {
     for(red_dim in names(SingleCellExperiment::reducedDims(cds_list[[1]]))) {
@@ -822,7 +806,12 @@ get_unique_id <- function(object=NULL) {
 
   if(!is.null(object)) {
     object_dim <- dim(object)
-    object_checksum <- digest::digest(object)
+    if(!is(object, 'IterableMatrix')) {
+      object_checksum <- digest::digest(object)
+    }
+    else {
+      object_checksum <- digest::digest(as(object, 'dgCMatrix'))
+    }
     if(!is.null(object_dim))
       object_id <- list(checksum=object_checksum, dim=object_dim)
     else

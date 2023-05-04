@@ -58,14 +58,14 @@ reduced dimension matrix for later use. Default is FALSE.}
 neighbor index. See the set_nn_control help for detailed information.}
 
 \item{matrix_control}{An optional list of parameters that control the
-storage of intermediate matrices that are required for cds
+storage of an intermediate matrix that is required for cds
 preprocessing. By default, matrices are stored in memory as dgCMatrix
 class (compressed sparse matrix) objects, which can be set explicitly
 using the matrix_class="dgCMatrix" list value. A very large matrix can
 be stored in a file and accessed by Monocle3 as if it were in memory.
 For this, Monocle3 uses the BPCells R package. Here the matrix_control
 list values are set to matrix_class="BPCells" and matrix_mode="dir".
-Then the count matrix is stored in a directory, on-disk, that's created
+Then the count matrix is stored in a directory, on-disk, which is created
 by Monocle3 in the directory where you run Monocle3. This directory has
 a name with the form "monocle.bpcells.*.tmp" where the asterisk is a
 random string that makes the name unique. Do not remove this directory
