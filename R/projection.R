@@ -69,7 +69,7 @@ bpcells_apply_transform <- function(FM, rotation_matrix, vcenter=vcenter, vscale
   # [intersect_genes,] orders FM rows by intersect_genes 
   # This almost certainly requires rewriting the matrix.
   FM <- FM[intersect_genes,]
- 
+
   xt <- BPCells::t(FM)
 
   vcenter <- vcenter[intersect_indices]
@@ -79,13 +79,11 @@ bpcells_apply_transform <- function(FM, rotation_matrix, vcenter=vcenter, vscale
   xtsc <- BPCells::t(xtsc / vscale)
 
   # make intermediate matrix.
-
   irlba_res <- list()
   irlba_res$x <- xtsc %*% rotation_matrix[intersect_indices,]
-
   irlba_res$x <- as.matrix(irlba_res$x)
   class(irlba_res) <- c('irlba_prcomp', 'prcomp')
-
+ 
   if(verbose) {
     message('bpcells_apply_transform: finish')
   }

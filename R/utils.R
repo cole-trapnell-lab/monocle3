@@ -533,7 +533,7 @@ combine_cds <- function(cds_list,
     bpcells_matrix_flag <- FALSE
     # Are any of the count matrices BPCells class?
     for(i in seq(1, length(cds_list), 1)) {
-      if(is(cds_list[[i]], 'IterableMatrix')) {
+      if(is(counts(cds_list[[i]]), 'IterableMatrix')) {
         bpcells_matrix_flag <- TRUE
         break
       }
@@ -591,17 +591,10 @@ combine_cds <- function(cds_list,
 
     # Counts matrix rows of genes common to the CDSes examined
     # up to this pass through the loop.
-    if(bpcells_matrix_flag) {
-      exp <- exprs(cds_list[[i]])
-      if(!is(exp, 'IterableMatrix')) {
-        exp <- as(exp, 'IterableMatrix')
-      }
-#      exp <- set_matrix_class(mat=exprs(cds_list[[i]]), matrix_control=matrix_control_res)
+    exp <- exprs(cds_list[[i]])
+    if(bpcells_matrix_flag && !is(exp, 'IterableMatrix')) {
+      exp <- as(exp, 'IterableMatrix')
     }
-    else {
-      exp <- exprs(cds_list[[i]])
-    }
-
     exp <- exp[intersect(row.names(exp), gene_list),, drop=FALSE]
 
     # Make cell names distinct, if necessary, assign cell names to
