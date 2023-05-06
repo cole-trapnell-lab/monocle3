@@ -103,7 +103,7 @@ select_matrix_parameter_value <- function(parameter, matrix_control, matrix_cont
 #       matrix_path: <path to directory or file> default: 'NULL' -> temporary directory in pwd
 #       matrix_compress: TRUE, FALSE default: FALSE
 #       matrix_buffer_size: <integer> default: 8192L
-check_matrix_control <- function(matrix_control=list(), control_type=c('any', 'mm', 'pca'), check_conditional=FALSE) {
+check_matrix_control <- function(matrix_control=list(), control_type=c('unrestricted', 'counts', 'mm', 'pca'), check_conditional=FALSE) {
   control_type <- match.arg(control_type)
   assertthat::assert_that(is.list(matrix_control))
   assertthat::assert_that(is.logical(check_conditional))
@@ -128,9 +128,14 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('any', 'm
                                   'show_values')
 
   allowed_matrix_class <- c('dgCMatrix', 'BPCells')
-  allowed_matrix_mode_any <- c('mem', 'dir')
+
+  allowed_matrix_mode_unrestricted <- c('mem', 'dir')
+  allowed_matrix_mode_counts <- c('dir')
   allowed_matrix_mode_mm <- c('dir')
-  allowed_matrix_type_any <- c('uint32_t', 'float', 'double')
+  allowed_matrix_mode_pca <- c('mem', 'dir')
+
+  allowed_matrix_type_unrestricted <- c('uint32_t', 'float', 'double')
+  allowed_matrix_type_counts <- c('uint32_t')
   allowed_matrix_type_mm <- c('uint32_t')
   allowed_matrix_type_pca <- c('float', 'double')
 
@@ -147,14 +152,26 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('any', 'm
     }
 
     if(matrix_control[['matrix_class']] == 'BPCells') {
-      allowed_values <- if(control_type == 'mm') allowed_matrix_mode_mm else allowed_matrix_mode_any
+      if(control_type == 'counts')
+        allowed_values <- allowed_matrix_mode_counts
+      else
+      if(control_type == 'mm')
+        allowed_values <- allowed_matrix_mode_mm
+      else
+      if(control_type == 'pca')
+        allowed_values <- allowed_matrix_mode_pca
+      else
+        allowed_values <- allowed_matrix_mode_unrestricted
       if(!(is.null(matrix_control[['matrix_mode']])) &&
          !(matrix_control[['matrix_mode']] %in% allowed_values)) {
         error_string <- paste0('\ninvalid matrix_mode "', matrix_control[['matrix_mode']], '"')
       }
     
-      if(control_type == 'any')
-        allowed_values <- allowed_matrix_type_any
+      if(control_type == 'unrestricted')
+        allowed_values <- allowed_matrix_type_unrestricted
+      else
+      if(control_type == 'counts')
+        allowed_values <- allowed_matrix_type_counts
       else
       if(control_type == 'mm')
         allowed_values <- allowed_matrix_type_mm
@@ -194,8 +211,11 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('any', 'm
   
     if(matrix_control[['matrix_class']] == 'BPCells') {
       # Check matrix_type value.
-      if(control_type == 'any')
-        allowed_values <- allowed_matrix_type_any
+      if(control_type == 'unrestricted')
+        allowed_values <- allowed_matrix_type_unrestricted
+      else
+      if(control_type == 'counts')
+        allowed_values <- allowed_matrix_type_counts
       else
       if(control_type == 'mm')
         allowed_values <- allowed_matrix_type_mm
@@ -212,7 +232,16 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('any', 'm
       }
   
       # Check matrix_mode value.
-      allowed_values <- if(control_type == 'mm') allowed_matrix_mode_mm else allowed_matrix_mode_any
+      if(control_type == 'counts')
+        allowed_values <- allowed_matrix_mode_counts
+      else
+      if(control_type == 'mm')
+        allowed_values <- allowed_matrix_mode_mm
+      else
+      if(control_type == 'pca')
+        allowed_values <- allowed_matrix_mode_pca
+      else
+        allowed_values <- allowed_matrix_mode_unrestricted
       if(!(matrix_control[['matrix_mode']] %in% allowed_values)) {
         error_string <- paste0('\ninvalid matrix_mode "', matrix_control[['matrix_mode']], '"')
       }
@@ -266,7 +295,7 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('any', 'm
 #'   show the matrix_control values to be used and then stop.
 #' @param matrix_control Input control list.
 #' @param matrix_control_default Input default control list.
-#' @param control_type A string of either "any" or "pca". A control_type of "pca"
+#' @param control_type A string of either "unrestricted" or "pca". A control_type of "pca"
 #'   restricts certain list parameters.
 #' @return matrix_control Output control list.
 #'
@@ -308,7 +337,7 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('any', 'm
 #'      is used for matrix_class="BPCells" with matrix_mode="dir".}
 #' }
 #' @export
-set_matrix_control <- function(matrix_control=list(), matrix_control_default=list(), control_type=c('any', 'mm', 'pca')) {
+set_matrix_control <- function(matrix_control=list(), matrix_control_default=list(), control_type=c('unrestricted', 'counts', 'mm', 'pca')) {
   control_type <- match.arg(control_type)
 
   check_matrix_control(matrix_control=matrix_control, control_type=control_type, check_conditional=FALSE)
@@ -605,7 +634,7 @@ show_matrix_info <- function(matrix_info, indent='') {
 set_matrix_class <- function(mat, matrix_control=list()) {
 
   # Check matrix_control list.
-  check_matrix_control(matrix_control=matrix_control, control_type='any', check_conditional=TRUE)
+  check_matrix_control(matrix_control=matrix_control, control_type='unrestricted', check_conditional=TRUE)
 
   # Get input matrix info.
   matrix_info <- get_matrix_info(mat)
@@ -619,7 +648,7 @@ set_matrix_class <- function(mat, matrix_control=list()) {
 #message('')
 
   if(matrix_info[['matrix_class']] == 'dgTMatrix') {
-    mat <- as(mat, 'dgCMatrix')
+    mat <- as(mat, 'CsparseMatrix')
     matrix_info[['matrix_class']] <- 'dgCMatrix'
   }
 
@@ -630,7 +659,7 @@ set_matrix_class <- function(mat, matrix_control=list()) {
         mat_out <- as(mat, 'dgCMatrix')
       }
       else {
-        mat_out <- as(mat, 'dgCMatrix')
+        mat_out <- as(mat, 'CsparseMatrix')
       }
     }
   }

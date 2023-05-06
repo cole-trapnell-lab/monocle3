@@ -286,6 +286,7 @@ bpcells_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
                                  verbose = FALSE, ...)
 {
   if(verbose) {
+    message('pca: bpcells_prcomp_irlba: matrix class: ', class(x))
     message(show_matrix_info(get_matrix_info(mat=x), indent='  '), appendLF=FALSE)
   }
 
@@ -306,6 +307,11 @@ bpcells_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
   stats <- BPCells::matrix_stats(matrix = x_commit, row_stats = 'none', col_stats = 'variance')
   center <- stats[['col_stats']]['mean',]
   scale <- sqrt(stats[['col_stats']]['variance',])
+
+  if(verbose) {
+    message('pca: bpcells_prcomp_irlba: x_commit:')
+    message(show_matrix_info(get_matrix_info(mat=x_commit), indent='  '), appendLF=FALSE)
+  }
 
   # BPCells:::linear_operator() is meant to reduce irlba run time.
   args <- list(A = BPCells:::linear_operator(x_commit), nv = n, center = center, scale = scale)

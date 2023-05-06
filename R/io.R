@@ -301,15 +301,16 @@ load_mm_data <- function( mat_path,
                                       format(Sys.Date(), format='%Y%m%d'), '.'),
                        tmpdir=matrix_control_res[['matrix_path']],
                        fileext='.tmp')[[1]]
-
+    tmpdir <- tempfile('monocle.import_mm.', '.', '.tmp')
     mat <- BPCells::import_matrix_market(mtx_path=mat_path,
                                          outdir=outdir,
                                          row_names=feature_annotations$names,
                                          col_names=cell_annotations$names,
                                          row_major=FALSE,
-                                         tmpdir='.',
+                                         tmpdir=tmpdir,
                                          load_bytes=4194304L,
                                          sort_bytes=1073741824L)
+    unlink(tmpdir, recursive=TRUE)
     push_matrix_path(mat)
   }
 

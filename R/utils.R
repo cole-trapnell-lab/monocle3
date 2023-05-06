@@ -517,16 +517,8 @@ combine_cds <- function(cds_list,
     list_named <- FALSE
   }
 
-  check_matrix_control(matrix_control=matrix_control, control_type='any', check_conditional=FALSE)
-  if(!is.null(matrix_control[['matrix_class']]) && matrix_control[['matrix_class']] == 'BPCells') {
-    matrix_control_default <- get_global_variable('matrix_control_bpcells_any')
-  }
-  else {
-    matrix_control_default <- get_global_variable('matrix_control_csparsematrix_any')
-  }
-  matrix_control <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='any')
-
-  if(matrix_control[['matrix_class']] == 'BPCells') {
+  if(!is.null(matrix_control[['matrix_class']]) &&
+     matrix_control[['matrix_class']] == 'BPCells') {
     bpcells_matrix_flag <- TRUE
   }
   else {
@@ -539,6 +531,16 @@ combine_cds <- function(cds_list,
       }
     }
   }
+
+  check_matrix_control(matrix_control=matrix_control, control_type='counts', check_conditional=FALSE)
+  if(bpcells_matrix_flag ||
+     (!is.null(matrix_control[['matrix_class']]) && matrix_control[['matrix_class']] == 'BPCells')) {
+    matrix_control_default <- get_global_variable('matrix_control_bpcells_counts')
+  }
+  else {
+    matrix_control_default <- get_global_variable('matrix_control_csparsematrix_counts')
+  }
+  matrix_control <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='unrestricted')
 
   exprs_list <- list()
   fd_list <- list()
@@ -658,7 +660,7 @@ combine_cds <- function(cds_list,
 
       # Append additional rows.
       if(bpcells_matrix_flag) {
-        exp <- BPCells::rbind2(exp, as(extra_rows, 'IterableMatrix'))
+        exp <- rbind2(exp, as(extra_rows, 'IterableMatrix'))
       }
       else {
         exp <- rbind(exp, extra_rows)
@@ -700,7 +702,7 @@ combine_cds <- function(cds_list,
     num_exprs <- length(exprs_list)
     all_exp <- exprs_list[[1]]
     for(i in seq(2, num_exprs, 1)) {
-      all_exp <- BPCells::cbind2(all_exp, exprs_list[[i]])
+      all_exp <- cbind2(all_exp, exprs_list[[i]])
     }
   }
   else {
@@ -709,6 +711,11 @@ combine_cds <- function(cds_list,
 
   # Filter counts matrix by fd and pd names.
   all_exp <- all_exp[row.names(all_fd), row.names(all_pd), drop=FALSE]
+
+  # Make a BPCells count matrix, if necessary.
+  if(bpcells_matrix_flag) {
+    all_exp <- set_matrix_class(mat=all_exp, matrix_control=matrix_control)
+  }
 
   # Make a combined CDS from all_exp, all_pd, and all_fd.
   new_cds <- new_cell_data_set(all_exp, cell_metadata = all_pd, gene_metadata = all_fd)
@@ -728,6 +735,12 @@ combine_cds <- function(cds_list,
       }
     }
   }
+
+  matrix_id <-  get_unique_id(counts(cds))
+ 
+  new_cds <- initialize_counts_metadata(new_cds) 
+  new_cds <- set_counts_identity(new_cds, 'combin_cds', matrix_id)
+
   new_cds
 }
 

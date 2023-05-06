@@ -124,7 +124,7 @@ new_cell_data_set <- function(expression_data,
   }
 
   if(!(matrix_info[['matrix_class']] %in% c('dgCMatrix', 'BPCells'))) {
-    expression_data <- methods::as(expression_data, 'dgCMatrix')
+    expression_data <- methods::as(expression_data, 'CsparseMatrix')
   }
 
   sce <- SingleCellExperiment(list(counts=expression_data),
