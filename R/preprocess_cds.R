@@ -135,8 +135,6 @@ preprocess_cds <- function(cds,
   matrix_control_res <- set_pca_matrix_control(mat=SingleCellExperiment::counts(cds),
                                                matrix_control=matrix_control)
 
-message('preprocess_cds: matrix_control_res: matrix_class: ', matrix_control_res[['matrix_class']])
-
   if(build_nn_index) {
     nn_control <- set_nn_control(mode=1,
                                  nn_control=nn_control,
