@@ -144,7 +144,7 @@ graph_test <- function(cds,
                                nn_index=NULL,
                                k=k,
                                verbose=verbose)
-
+counts(cds) <- as(counts(cds), 'dgCMatrix') # bge
   lw <- calculateLW(cds=cds,
                     k = k,
                     neighbor_graph = neighbor_graph,
@@ -412,6 +412,7 @@ calculateLW <- function(cds,
   }
 
   exprs_mat <- exprs(cds)
+
   if(neighbor_graph == "knn") {
     if(is.null(knn_res)) {
       if(nn_method == 'nn2') {

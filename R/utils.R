@@ -388,7 +388,7 @@ normalized_counts <- function(cds,
 
   if (norm_method == "binary"){
     if(is(norm_mat, 'IterableMatrix')) {
-      norm_mat <- BPCells::binarize(norm_mat, threhold=0, strict_inequality=TRUE)
+      norm_mat <- BPCells::binarize(norm_mat, threshold=0, strict_inequality=TRUE)
 #      stop('normalized_counts: binary normalization is unimplemented at this time...check back soon')
     }
     else {
