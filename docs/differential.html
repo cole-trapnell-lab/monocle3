@@ -506,21 +506,7 @@ colData(cds)$assigned_cell_type <- dplyr::recode(colData(cds)$assigned_cell_type
 {% endhighlight %}
 
 
-{% highlight R %}
-# Reload and re-process the data as described in the 'Clustering and classifying your cells' section
-expression_matrix <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/cao_l2_expression.rds"))
-cell_metadata <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/cao_l2_colData.rds"))
-gene_annotation <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/cao_l2_rowData.rds"))
-
-# Make the CDS object
-cds <- new_cell_data_set(expression_matrix,
-                         cell_metadata = cell_metadata,
-                         gene_metadata = gene_annotation)
-cds <- preprocess_cds(cds, num_dim = 100)
-cds <- reduce_dimension(cds)
-cds <- cluster_cells(cds, resolution=1e-5)
-
-<!--
+<!-- Parts of the following code can be used to construct the table seen above.
 # In some clusters the majority of cells may have NA as the cell type so
 # use this function with caution.
 consensus <- function(x) {
@@ -534,7 +520,6 @@ for(i_partition in l_partition) {
   l_cell_type[as.character(i_partition)] <- consensus(colData(cds)[partitions(cds)==i_partition,][['cao_cell_type']])
 }
 colData(cds)[['assigned_cell_type']] <- as.character(l_cell_type[as.character(partitions(cds))])
-{% endhighlight %}
 -->
 
       <p>
