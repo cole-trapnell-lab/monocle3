@@ -297,20 +297,26 @@ load_mm_data <- function( mat_path,
     colnames( mat ) <- cell_annotations$names
   }
   else {
+    toutdir <- tempfile(pattern=paste0('monocle.bpcells.',
+                                       format(Sys.Date(), format='%Y%m%d'), '.'),
+                        tmpdir=matrix_control_res[['matrix_path']],
+                        fileext='.tmp')[[1]]
+    tmpdir <- tempfile('monocle.import_mm.', '.', '.tmp')
+    tmat <- BPCells::import_matrix_market(mtx_path=mat_path,
+                                          outdir=toutdir,
+                                          row_names=feature_annotations$names,
+                                          col_names=cell_annotations$names,
+                                          row_major=FALSE,
+                                          tmpdir=tmpdir,
+                                          load_bytes=4194304L,
+                                          sort_bytes=1073741824L)
+    unlink(tmpdir, recursive=TRUE)
     outdir <- tempfile(pattern=paste0('monocle.bpcells.',
                                       format(Sys.Date(), format='%Y%m%d'), '.'),
                        tmpdir=matrix_control_res[['matrix_path']],
                        fileext='.tmp')[[1]]
-    tmpdir <- tempfile('monocle.import_mm.', '.', '.tmp')
-    mat <- BPCells::import_matrix_market(mtx_path=mat_path,
-                                         outdir=outdir,
-                                         row_names=feature_annotations$names,
-                                         col_names=cell_annotations$names,
-                                         row_major=FALSE,
-                                         tmpdir=tmpdir,
-                                         load_bytes=4194304L,
-                                         sort_bytes=1073741824L)
-    unlink(tmpdir, recursive=TRUE)
+    mat <- BPCells::write_matrix_dir(BPCells::convert_matrix_type(tmat, 'double'), outdir, compress=FALSE, buffer_size=8192L, overwrite=FALSE)
+    unlink(toutdir, recursive=TRUE)
     push_matrix_path(mat)
   }
 

@@ -567,7 +567,7 @@ plot_cells <- function(cds,
   markers_exprs <- NULL
   expression_legend_label <- NULL
   if (!is.null(genes)) {
-    if (!is.null(dim(genes)) && dim(genes) >= 2){
+    if (!is.null(dim(genes)) && dim(genes)[[2]] >= 2){
       markers = unlist(genes[,1], use.names=FALSE)
     } else {
       markers = genes
@@ -582,7 +582,7 @@ plot_cells <- function(cds,
       cds_exprs <- SingleCellExperiment::counts(cds)[row.names(markers_rowData), ,drop=FALSE]   # plot_cells    row selection  needs help
       cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds))
 
-      if (!is.null(dim(genes)) && dim(genes) >= 2){
+      if (!is.null(dim(genes)) && dim(genes)[[2]] >= 2){
         #genes = as.data.frame(genes)
         #row.names(genes) = genes[,1]
         #genes = genes[row.names(cds_exprs),]

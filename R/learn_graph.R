@@ -489,9 +489,24 @@ multi_component_RGE <- function(cds,
     cur_dp_mst <- igraph::graph.adjacency(stree, mode = "undirected",
                                           weighted = TRUE)
 
+    if(any(igraph::E(cur_dp_mst)$weight != 1)) {
+      message('Warning: multi_component_RGE: not all weights are 1')
+    }
+    # The graph.union function can return a graph object that has NAs in the weights vector,
+    # which causes problems with some downstream functions. It looks like the weight vector
+    # in cur_dp_mst has all values set to 1.
+    # See:
+    # from URL: https://igraph.discourse.group/t/issue-and-possible-bug-with-union-function-of-igraph/838/2
+    # E(ug)$weight <- rowSums(cbind(E(ug)$weight_1, E(ug)$weight_2), na.rm=T)
+    # see https://stackoverflow.com/questions/31417071/graph-union-summing-edge-weights-attributes-igraph-r
+    # see https://stackoverflow.com/questions/27762359/combine-two-graphs-and-add-edge-weights-in-r-igraph
+
     dp_mst <- igraph::graph.union(dp_mst, cur_dp_mst)
     reducedDimK_coord <- cbind(reducedDimK_coord, curr_reducedDimK_coord)
   }  #  for loop 1  end
+
+  # Set edge weights to 1.
+  igraph::E(dp_mst)$weight <- rep(1, igraph::ecount(dp_mst))
 
   row.names(pr_graph_cell_proj_closest_vertex) <- cell_name_vec
 

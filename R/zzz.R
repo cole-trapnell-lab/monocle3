@@ -1,4 +1,9 @@
 #
+# Set global options.
+#
+options("sp_evolution_status"=2)
+
+#
 # Set up a global-variable-like environment.
 #
 

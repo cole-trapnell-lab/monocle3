@@ -41,7 +41,7 @@
 #' @param verbose Logical, whether to emit verbose output.
 #' @param cores Number of cores to use for computing the UMAP.
 #' @param build_nn_index logical When this argument is set to TRUE,
-#'   preprocess_cds builds the nearest neighbor index from the
+#'   reduce_dimension builds the nearest neighbor index from the
 #'   reduced dimension matrix for later use. Default is FALSE.
 #' @param nn_control An optional list of parameters used to make the nearest
 #'  neighbor index. See the set_nn_control help for detailed information.
