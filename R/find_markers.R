@@ -339,7 +339,8 @@ test_marker_for_cell_group = function(gene_id, cell_group, cell_group_df, cds,
   #print(cell_group)
   #print (length(reference_cells))
   results <- tryCatch({
-    # My tests suggest that I cannot coerce a BPCells subset into a numeric vector:
+    # My tests suggest that I cannot coerce a BPCells subset into a numeric vector
+    # (which I probably want to not do for space reasons):
     # > cds <- readRDS('packer_embryo.load.rds')
     # > library(BPCells)
     # > bpcds <- cds
@@ -350,10 +351,17 @@ test_marker_for_cell_group = function(gene_id, cell_group, cell_group_df, cds,
     # I am not pursuing it now because it's a subset and may
     # not exceed available memory. bge
 
-#    f_expression <-
-#      log(as.numeric(SingleCellExperiment::counts(cds)[gene_id,]) / size_factors(cds) + 0.1)
-    f_expression <-
-      log(as.numeric(as(SingleCellExperiment::counts(cds), 'dgCMatrix')[gene_id,]) / size_factors(cds) + 0.1)
+    if(get_matrix_class(SingleCellExperiment::counts(cds))[['matrix_class']] != 'BPCells'){
+      f_expression <-
+        log(as.numeric(SingleCellExperiment::counts(cds)[gene_id,]) / size_factors(cds) + 0.1)
+    }
+    else {
+      # Note: BPCells row access is relatively slow. We may need to keep a count
+      #       matrix in row major order for this type of operation.
+      f_expression <-
+        log(as.numeric(as(SingleCellExperiment::counts(cds)[gene_id,], 'dgCMatrix')) / size_factors(cds) + 0.1)
+    }
+
     #print(sum(SingleCellExperiment::counts(cds)[gene_id,] > 0))
     is_member <-
       as.character(cell_group_df[colnames(cds),2]) == as.character(cell_group)
