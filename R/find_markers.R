@@ -349,10 +349,11 @@ test_marker_for_cell_group = function(gene_id, cell_group, cell_group_df, cds,
     #   cannot coerce type 'S4' to vector of type 'double'
     # I am not pursuing it now because it's a subset and may
     # not exceed available memory. bge
+
 #    f_expression <-
 #      log(as.numeric(SingleCellExperiment::counts(cds)[gene_id,]) / size_factors(cds) + 0.1)
     f_expression <-
-      log(as.numeric(as(SingleCellExperiment::counts(cds)[gene_id,], 'dgCMatrix')) / size_factors(cds) + 0.1)
+      log(as.numeric(as(SingleCellExperiment::counts(cds), 'dgCMatrix')[gene_id,]) / size_factors(cds) + 0.1)
     #print(sum(SingleCellExperiment::counts(cds)[gene_id,] > 0))
     is_member <-
       as.character(cell_group_df[colnames(cds),2]) == as.character(cell_group)
