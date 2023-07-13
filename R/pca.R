@@ -1,3 +1,10 @@
+svd_rebuild_matrix <- function(u, s, v, filename) {
+  # m = u * s * vt
+  mat <- u %*% diag(s, nrow=ncol(u), ncol=nrow(t(v))) %*% t(v)
+  write.table(as.numeric(mat), file=filename)
+}
+
+
 set_pca_matrix_control <- function(mat, matrix_control=list()) {
 
   check_matrix_control(matrix_control=matrix_control, control_type='pca', check_conditional=FALSE)
@@ -188,6 +195,9 @@ sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
     message(paste(head(s$d), collapse=' '))
   }
 
+  # Diagnostic test.
+  #svd_rebuild_matrix(s$u, s$d, s$v, 'dgcmatrix.vec')
+
   ans$sdev <- s$d / sqrt(max(1, nrow(x) - 1))
   ans$rotation <- s$v
   colnames(ans$rotation) <- paste("PC", seq(1, ncol(ans$rotation)), sep="")
@@ -327,6 +337,10 @@ bpcells_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
   }
 
   rm_bpcells_dir(x_commit)
+
+  # Diagnostic test.
+  #message('bpcells svd')
+  #svd_rebuild_matrix(s$u, s$d, s$v, 'bpcmatrix.vec')
 
   if(verbose) {
     message('singular values (head)')
