@@ -435,6 +435,35 @@ setReplaceMethod("principal_graph_aux", "cell_data_set", function(x, value) {
 })
 
 
+#' Generic to access cds row order BPCells count matrix.
+#' @param x A cell_data_set object.
+#' 
+#' @examples
+#'  \donttest{
+#'    cds <- load_a549()
+#'    exprs(cds)
+#'  }         
+#'          
+#' @return BPCells row order ount matrix.
+#'
+#' @export
+setGeneric("counts_row_order", function(x) standardGeneric("counts_row_order"))
+  
+#' Method to access cds row order BPCells count matrix
+#' @param x A cell_data_set object.
+#'
+#' @return BPCells row order count matrix.
+#' 
+#' @export
+setMethod("counts_row_order", "cell_data_set", function(x) {
+  if(is.null(assay(x, 'counts_row_order'))) {
+    stop('CDS has no BPCells row order counts matrix')
+  }
+  value <- assay(x, 'counts_row_order')
+  return(value)
+})                                 
+
+
 # Set of wrappers for easy transition from monocle.
 
 #' Generic to access cds count matrix
@@ -461,6 +490,7 @@ setMethod("exprs", "cell_data_set", function(x) {
   value <- assays(x)$counts
   return(value)
 })
+
 
 #' Generic to access cds colData table
 #' @param x A cell_data_set object.

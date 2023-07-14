@@ -170,8 +170,13 @@ plot_cells_3d <- function(cds,
         #markers_linear <- TRUE
       } else {
           cds_exprs <- round(cds_exprs, digits=4)
-#        markers_exprs <- matrix(cds_exprs, nrow=nrow(markers_rowData))  # bge
-        markers_exprs <- matrix(as(cds_exprs, 'dgCMatrix'), nrow=nrow(markers_rowData))
+        # bge
+        if(!is(cds_exprs, 'IterableMatrix')) {
+          markers_exprs <- matrix(cds_exprs, nrow=nrow(markers_rowData))
+        }
+        else {
+          markers_exprs <- matrix(as(cds_exprs, 'dgCMatrix'), nrow=nrow(markers_rowData))
+        }
         colnames(markers_exprs) <- colnames(SingleCellExperiment::counts(cds))    # plot_cells_3d()   col_names  OK
         row.names(markers_exprs) <- row.names(markers_rowData)
         markers_exprs <- reshape2::melt(markers_exprs)
@@ -599,9 +604,14 @@ plot_cells <- function(cds,
         norm_method = "size_only"
         expression_legend_label = "Expression score"
       } else {
-          cds_exprs = round(cds_exprs, digits=4)
-#        markers_exprs = matrix(cds_exprs, nrow=nrow(markers_rowData))   # bge
-        markers_exprs = matrix(as(cds_exprs, 'dgCMatrix'), nrow=nrow(markers_rowData))
+        cds_exprs = round(cds_exprs, digits=4)
+        # bge
+        if(!is(markers_exprs, 'IterableMatrix')) {
+          markers_exprs = matrix(cds_exprs, nrow=nrow(markers_rowData))   # bge
+        }
+        else {
+          markers_exprs = matrix(as(cds_exprs, 'dgCMatrix'), nrow=nrow(markers_rowData))
+        }
         colnames(markers_exprs) = colnames(SingleCellExperiment::counts(cds))     # plot_cells  col_names OK
         row.names(markers_exprs) = row.names(markers_rowData)
         markers_exprs <- reshape2::melt(markers_exprs)

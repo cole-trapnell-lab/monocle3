@@ -311,19 +311,36 @@ load_mm_data <- function( mat_path,
                                           load_bytes=4194304L,
                                           sort_bytes=1073741824L)
     unlink(tmpdir, recursive=TRUE)
-    outdir <- tempfile(pattern=paste0('monocle.bpcells.',
-                                      format(Sys.Date(), format='%Y%m%d'), '.'),
-                       tmpdir=matrix_control_res[['matrix_path']],
-                       fileext='.tmp')[[1]]
-    mat <- BPCells::write_matrix_dir(BPCells::convert_matrix_type(tmat, 'double'), outdir, compress=FALSE, buffer_size=8192L, overwrite=FALSE)
+    outdir_c <- tempfile(pattern=paste0('monocle.bpcells.',
+                                        format(Sys.Date(), format='%Y%m%d'), '.'),
+                         tmpdir=matrix_control_res[['matrix_path']],
+                         fileext='.tmp')[[1]]
+    outdir_r <- tempfile(pattern=paste0('monocle.bpcells.',
+                                        format(Sys.Date(), format='%Y%m%d'), '.'),
+                         tmpdir=matrix_control_res[['matrix_path']],
+                         fileext='_r.tmp')[[1]]
+    mat_c <- BPCells::write_matrix_dir(BPCells::convert_matrix_type(tmat, 'double'), outdir_c, compress=FALSE, buffer_size=8192L, overwrite=FALSE)
     unlink(toutdir, recursive=TRUE)
-    push_matrix_path(mat)
+    push_matrix_path(mat_c)
+
+    # Make a BPCells count matrix in row major order.
+    outdir_r <- tempfile(pattern=paste0('monocle.bpcells.',
+                                        format(Sys.Date(), format='%Y%m%d'), '.'),
+                         tmpdir=matrix_control_res[['matrix_path']],
+                         fileext='_r.tmp')[[1]]
+    tmpdir <- tempfile('monocle.transpose_bpc.', '.', '.tmp')
+
+    mat_r <- BPCells::transpose_storage_order(matrix=mat_c, outdir=outdir_r, tmpdir=tmpdir, load_bytes=4194304L, sort_bytes=1073741824L)
+    unlink(tmpdir, recursive=TRUE)
+    push_matrix_path(mat_r)
   }
 
-  cds <- new_cell_data_set(mat,
+  cds <- new_cell_data_set(mat_c,
                            cell_metadata = cell_annotations$metadata,
                            gene_metadata = feature_annotations$metadata,
                            verbose = verbose)
+
+  assay(cds, 'counts_row_order') <- mat_r
 
   if(is(exprs(cds), 'CsparseMatrix')) {
     colData(cds)$n.umi <- Matrix::colSums(exprs(cds))
