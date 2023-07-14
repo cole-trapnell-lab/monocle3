@@ -351,15 +351,13 @@ test_marker_for_cell_group = function(gene_id, cell_group, cell_group_df, cds,
     # I am not pursuing it now because it's a subset and may
     # not exceed available memory. bge
 
-    if(counts(cds) != 'IterableMatrix') {
+    if(!is(counts(cds), 'IterableMatrix')) {
       f_expression <-
         log(as.numeric(SingleCellExperiment::counts(cds)[gene_id,]) / size_factors(cds) + 0.1)
     }
     else {
-      # Note: BPCells row access is relatively slow. We may need to keep a count
-      #       matrix in row major order for this type of operation.
       f_expression <-
-        log(as.numeric(as(SingleCellExperiment::counts(cds)[gene_id,], 'dgCMatrix')) / size_factors(cds) + 0.1)
+        log(as.numeric(as(SingleCellExperiment::counts_row_order(cds)[gene_id,], 'dgCMatrix')) / size_factors(cds) + 0.1)
     }
 
     #print(sum(SingleCellExperiment::counts(cds)[gene_id,] > 0))
