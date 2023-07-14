@@ -351,7 +351,7 @@ test_marker_for_cell_group = function(gene_id, cell_group, cell_group_df, cds,
     # I am not pursuing it now because it's a subset and may
     # not exceed available memory. bge
 
-    if(get_matrix_class(SingleCellExperiment::counts(cds))[['matrix_class']] != 'BPCells'){
+    if(counts(cds) != 'IterableMatrix') {
       f_expression <-
         log(as.numeric(SingleCellExperiment::counts(cds)[gene_id,]) / size_factors(cds) + 0.1)
     }

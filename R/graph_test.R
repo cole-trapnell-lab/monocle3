@@ -170,6 +170,7 @@ graph_test <- function(cds,
                                     FUN = function(x, sz, alternative,
                                                    method, expression_family) {
     exprs_val <- exprs_mat[x, ]
+
     if(is(exprs_mat, 'IterableMatrix')) {
       exprs_val <- as.numeric(as(exprs_val, 'dgCMatrix'))
     }

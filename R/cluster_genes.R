@@ -326,9 +326,10 @@ my.dMcast <- function(data,formula,fun.aggregate='sum',value.var=NULL,as.factors
 
   #Allows NAs to pass
   attr(data,'na.action')<-na.pass
-  result<-Matrix::sparse.model.matrix(newformula,data,drop.unused.levels = FALSE,row.names=FALSE)
-  brokenNames<-grep('paste(',colnames(result),fixed = TRUE)
-  colnames(result)[brokenNames]<-lapply(colnames(result)[brokenNames],function (x) {
+  result <- Matrix::sparse.model.matrix(newformula,data,drop.unused.levels = FALSE,row.names=FALSE)
+  brokenNames <- grep('paste(',colnames(result),fixed = TRUE)
+
+  colnames(result)[brokenNames] <- lapply(colnames(result)[brokenNames],function (x) {
     x<-gsub('paste(',replacement='',x=x,fixed = TRUE)
     x<-gsub(pattern=', ',replacement='_',x=x,fixed=TRUE)
     x<-gsub(pattern='_sep = \"_\")',replacement='',x=x,fixed=TRUE)

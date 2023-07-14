@@ -143,6 +143,13 @@ new_cell_data_set <- function(expression_data,
              elementMetadata = elementMetadata(sce)[,0],
              rowRanges = rowRanges(sce))
 
+  # If the counts matrix is a BPCells matrix, then set
+  # the row major order BPCells counts matrix. This is
+  # called 'counts_row_order'.
+  if(is(counts(cds), 'IterableMatrix')) {
+    cds <- set_cds_row_order_matrix(cds)
+  }
+
   S4Vectors::metadata(cds)$cds_version <- Biobase::package.version("monocle3")
   clusters <- stats::setNames(S4Vectors::SimpleList(), character(0))
   cds <- estimate_size_factors(cds)

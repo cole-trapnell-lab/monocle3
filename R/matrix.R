@@ -735,3 +735,35 @@ rm_bpcells_dir <- function(mat) {
   }
 }
 
+
+#
+# Set row-major order counts matrix in cds with BPCells counts matrix.
+#
+set_cds_row_order_matrix <- function(cds) {
+
+  mat_c <- counts(cds)
+  if(!is(mat_c, 'IterableMatrix')) {
+    return(cds)
+  }
+
+  bmat <- bpcells_find_base_matrix(mat_c)
+  matrix_path <- dirname(bmat@dir)
+
+  # Make a BPCells count matrix in row major order.
+  outdir <- tempfile(pattern=paste0('monocle.bpcells.',
+                                    format(Sys.Date(), format='%Y%m%d'), '.'),
+                     tmpdir=matrix_path,
+                     fileext='_r.tmp')[[1]]
+  tmpdir <- tempfile('monocle.transpose_bpc.', '.', '.tmp')
+
+  # I see no option for choosing compressed matrix and transpose_storage_order appears to
+  # compress. This is not a big deal because only the indices are compressed.
+  mat_r <- BPCells::transpose_storage_order(matrix=mat_c, outdir=outdir, tmpdir=tmpdir, load_bytes=4194304L, sort_bytes=1073741824L)
+  unlink(tmpdir, recursive=TRUE)
+  push_matrix_path(mat_r)
+
+  assay(cds, 'counts_row_order') <- mat_r
+
+  return(cds)
+}
+

@@ -457,7 +457,12 @@ setGeneric("counts_row_order", function(x) standardGeneric("counts_row_order"))
 #' @export
 setMethod("counts_row_order", "cell_data_set", function(x) {
   if(is.null(assay(x, 'counts_row_order'))) {
-    stop('CDS has no BPCells row order counts matrix')
+    if(!is(counts(x), 'IterableMatrix')) {
+      stop('CDS counts matrix is not a BPCells matrix')
+    }
+    else {
+      stop('CDS has no BPCells row order counts matrix')
+    }
   }
   value <- assay(x, 'counts_row_order')
   return(value)
