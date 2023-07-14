@@ -277,24 +277,24 @@ load_mm_data <- function( mat_path,
 
   if(matrix_control_res[['matrix_class']] != 'BPCells') {
     # Read MatrixMarket file and convert to dgCMatrix format.
-    mat <- Matrix::readMM(mat_path)
-    mat <- set_matrix_class(mat=mat, matrix_control=matrix_control_res)
+    mat_c <- Matrix::readMM(mat_path)
+    mat_c <- set_matrix_class(mat=mat_c, matrix_control=matrix_control_res)
   
-    assertthat::assert_that( length( feature_annotations$names ) == nrow( mat ),
+    assertthat::assert_that( length( feature_annotations$names ) == nrow( mat_c ),
         msg=paste0( 'feature name count (',
             length( feature_annotations$names ),
             ') != matrix row count (',
-            nrow( mat ),
+            nrow( mat_c ),
             ')' ) )
-    assertthat::assert_that( length( cell_annotations$names ) == ncol( mat ),
+    assertthat::assert_that( length( cell_annotations$names ) == ncol( mat_c ),
         msg=paste0( 'cell name count (',
             length( cell_annotations$names ),
             ') != matrix column count (',
-            ncol( mat ),
+            ncol( mat_c ),
             ')' ) )
   
-    rownames( mat ) <- feature_annotations$names
-    colnames( mat ) <- cell_annotations$names
+    rownames( mat_c ) <- feature_annotations$names
+    colnames( mat_c ) <- cell_annotations$names
   }
   else {
     toutdir <- tempfile(pattern=paste0('monocle.bpcells.',
@@ -340,7 +340,9 @@ load_mm_data <- function( mat_path,
                            gene_metadata = feature_annotations$metadata,
                            verbose = verbose)
 
-  assay(cds, 'counts_row_order') <- mat_r
+  if(matrix_control_res[['matrix_class']] == 'BPCells') {
+    assay(cds, 'counts_row_order') <- mat_r
+  }
 
   if(is(exprs(cds), 'CsparseMatrix')) {
     colData(cds)$n.umi <- Matrix::colSums(exprs(cds))

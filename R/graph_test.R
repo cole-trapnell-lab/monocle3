@@ -144,7 +144,7 @@ graph_test <- function(cds,
                                nn_index=NULL,
                                k=k,
                                verbose=verbose)
-counts(cds) <- as(counts(cds), 'dgCMatrix') # bge
+
   lw <- calculateLW(cds=cds,
                     k = k,
                     neighbor_graph = neighbor_graph,
@@ -160,11 +160,19 @@ counts(cds) <- as(counts(cds), 'dgCMatrix') # bge
   exprs_mat <- exprs_mat[, attr(lw, "region.id"), drop=FALSE]
   sz <- size_factors(cds)[attr(lw, "region.id")]
 
+  # Use row major order BPCells count matrix.
+  if(is(exprs_mat, 'IterableMatrix')) {
+    exprs_mat <- counts_row_order(cds)
+  }
+
   wc <- spdep::spweights.constants(lw, zero.policy = TRUE, adjust.n = TRUE)
   test_res <- pbmcapply::pbmclapply(row.names(exprs_mat),
                                     FUN = function(x, sz, alternative,
                                                    method, expression_family) {
     exprs_val <- exprs_mat[x, ]
+    if(is(exprs_mat, 'IterableMatrix')) {
+      exprs_val <- as.numeric(as(exprs_val, 'dgCMatrix'))
+    }
 
     if (expression_family %in% c("uninormal", "binomialff")){
       exprs_val <- exprs_val
