@@ -357,7 +357,7 @@ test_marker_for_cell_group = function(gene_id, cell_group, cell_group_df, cds,
     }
     else {
       f_expression <-
-        log(as.numeric(as(SingleCellExperiment::counts_row_order(cds)[gene_id,], 'dgCMatrix')) / size_factors(cds) + 0.1)
+        log(as.numeric(as(counts_row_order(cds)[gene_id,], 'dgCMatrix')) / size_factors(cds) + 0.1)
     }
 
     #print(sum(SingleCellExperiment::counts(cds)[gene_id,] > 0))
