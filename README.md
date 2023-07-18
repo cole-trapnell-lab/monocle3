@@ -37,7 +37,7 @@ I used Homebrew to install an HDF5 library on MacOS. I seemed to need to install
 
 with the contents
 
-`
+```
 prefix=/opt/homebrew/Cellar/hdf5/1.12.2_2
 exec_prefix=${prefix}
 includedir=${prefix}/include
@@ -49,7 +49,7 @@ URL: xx
 Version: 1.12.2_2
 Cflags: -I${includedir}
 Libs: -L${libdir} -lhdf5
-`
+```
 
 You may need to update the version strings in your hdf5.pc file.
 
