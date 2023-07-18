@@ -55,7 +55,7 @@ You may need to update the version strings in your hdf5.pc file.
 
 ### Notes
 
-- I tested this version using BPCells counts matrices using the examples in the Monocle3 documentation although I did not try all of the plotting functions.
+- I tested this version using BPCells counts matrices on the examples in the Monocle3 documentation although I did not try all of the plotting functions.
 - There are likely to be more than a few problems that I did not find. Please let me know when you bump into them!
 
 
