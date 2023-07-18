@@ -11,20 +11,20 @@ http://cole-trapnell-lab.github.io/monocle3/
 
 This development branch version of Monocle3 adds the ability to store the count matrix on-disk using the BPCells package. By default, Monocle3 stores the counts matrix in memory as a sparse matrix, as in previous versions. In order to store the matrix on-disk, you must set the matrix_control list value 'matrix_class="BPCells"' in the affected commands. For example, to load a MatrixMarket file as an on-disk matrix, use the command
 
-`
+```
 cds <- load_mm_data(mat_path=<path_to_mtx_file>,
                     feature_anno_path=<path_to_feature_anno_file>,
                     cell_anno_path=<path_to_cell_anno_file>,
                     matrix_control=list(matrix_class='BPCells'))
-`
+```
 
 ### Install Monocle3 with BPCells
 
 You must install BPCells from Github before you can install the Monocle3 version, and BPCells requires an HDF5 object library for installation. After installing the HDF5 library, you can install BPCells using the command
 
-`
+```
 remotes::install_github("bnprks/BPCells")
-`
+```
 
 The [BPCells Github site](https://github.com/bnprks/BPCells)  has additional information.
 
