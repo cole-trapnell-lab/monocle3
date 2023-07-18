@@ -132,11 +132,11 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
   allowed_matrix_mode_unrestricted <- c('mem', 'dir')
   allowed_matrix_mode_counts <- c('dir')
   allowed_matrix_mode_mm <- c('dir')
-  allowed_matrix_mode_pca <- c('mem', 'dir')
+  allowed_matrix_mode_pca <- c('dir')
 
-  allowed_matrix_type_unrestricted <- c('uint32_t', 'float', 'double')
-  allowed_matrix_type_counts <- c('uint32_t')
-  allowed_matrix_type_mm <- c('uint32_t')
+  allowed_matrix_type_unrestricted <- c('float', 'double')
+  allowed_matrix_type_counts <- c('float', 'double')
+  allowed_matrix_type_mm <- c('float', 'double')
   allowed_matrix_type_pca <- c('float', 'double')
 
   error_string <- ''
@@ -208,7 +208,11 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
     if(!(matrix_control[['matrix_class']] %in% allowed_matrix_class)) {
       error_string <- paste0('\ninvalid matrix_class "', matrix_control[['matrix_class']], '\n')
     }
-  
+
+#message('check_matrix_control: check_conditional: true')
+#message('check_matrix_control: matrix class: ', matrix_control[['matrix_class']])
+
+
     if(matrix_control[['matrix_class']] == 'BPCells') {
       # Check matrix_type value.
       if(control_type == 'unrestricted')
@@ -261,7 +265,7 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
   }
 
   if(error_string != '') {
-    stop(stringr::str_trim(error_string))
+    stop(paste0(stringr::str_trim(error_string), '\n'))
   }
 }
 
@@ -632,7 +636,6 @@ show_matrix_info <- function(matrix_info, indent='') {
 #       commit the queued operations.
 #   
 set_matrix_class <- function(mat, matrix_control=list()) {
-
   # Check matrix_control list.
   check_matrix_control(matrix_control=matrix_control, control_type='unrestricted', check_conditional=TRUE)
 

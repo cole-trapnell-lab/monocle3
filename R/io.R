@@ -1,5 +1,9 @@
 #' Build a small cell_data_set.
 #'
+#' @param matrix_control A list used to control how the counts matrix is stored
+#'    in the CDS. By default, Monocle3 stores the counts matrix in memory as a
+#'    sparse matrix. Setting 'matrix_control=list(matrix_class="BPCells")',
+#'    stores the matrix on disk as a sparse matrix.
 #' @return cds object
 #' @examples
 #'   \donttest{
@@ -7,7 +11,16 @@
 #'   }
 #'
 #' @export
-load_a549 <- function(){
+load_a549 <- function(matrix_control=list()){
+
+  if(!is.null(matrix_control[['matrix_class']]) && matrix_control[['matrix_class']] == 'BPCells') {
+    matrix_control_default <- get_global_variable('matrix_control_bpcells_counts')
+  }
+  else {
+    matrix_control_default <- get_global_variable('matrix_control_csparsematrix_counts')
+  }
+  matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='counts')
+
   small_a549_colData_df <- readRDS(system.file("extdata",
           "small_a549_dex_pdata.rda",
           package = "monocle3"))
@@ -19,22 +32,39 @@ load_a549 <- function(){
           package = "monocle3"))
   small_a549_exprs <- small_a549_exprs[,row.names(small_a549_colData_df)]
 
-  cds <- new_cell_data_set(expression_data = small_a549_exprs,
-      cell_metadata = small_a549_colData_df,
-      gene_metadata = small_a549_rowData_df)
+  expression_matrix <- set_matrix_class(small_a549_exprs, matrix_control=matrix_control_res)
+
+  cds <- new_cell_data_set(expression_data = expression_matrix,
+                           cell_metadata = small_a549_colData_df,
+                           gene_metadata = small_a549_rowData_df)
   cds
 }
 
 
 #' Build a cell_data_set from C. elegans embryo data.
+#' @param matrix_control A list used to control how the counts matrix is stored
+#'    in the CDS. By default, Monocle3 stores the counts matrix in memory as a
+#'    sparse matrix. Setting 'matrix_control=list(matrix_class="BPCells")',
+#'    stores the matrix on disk as a sparse matrix.
 #' @return cds object
 #' @importFrom SingleCellExperiment counts
 #' @export
-load_worm_embryo <- function(){
+load_worm_embryo <- function(matrix_control=list()) {
+
+  if(!is.null(matrix_control[['matrix_class']]) && matrix_control[['matrix_class']] == 'BPCells') {
+    matrix_control_default <- get_global_variable('matrix_control_bpcells_counts')
+  }
+  else {
+    matrix_control_default <- get_global_variable('matrix_control_csparsematrix_counts')
+  }
+  matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='counts')
+
   expression_matrix <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/packer_embryo_expression.rds"))
   cell_metadata <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/packer_embryo_colData.rds"))
   gene_annotation <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/packer_embryo_rowData.rds"))
   gene_annotation$use_for_ordering <- NULL
+
+  expression_matrix <- set_matrix_class(expression_matrix, matrix_control=matrix_control_res)
 
   cds <- new_cell_data_set(expression_matrix,
       cell_metadata = cell_metadata,
@@ -50,13 +80,28 @@ load_worm_embryo <- function(){
 
 
 #' Build a cell_data_set from C. elegans L2 data.
+#' @param matrix_control A list used to control how the counts matrix is stored
+#'    in the CDS. By default, Monocle3 stores the counts matrix in memory as a
+#'    sparse matrix. Setting 'matrix_control=list(matrix_class="BPCells")',
+#'    stores the matrix on disk as a sparse matrix.
 #' @return cds object
 #' @importFrom SingleCellExperiment counts
 #' @export
-load_worm_l2 <- function(){
+load_worm_l2 <- function(matrix_control=list()) {
+
+  if(!is.null(matrix_control[['matrix_class']]) && matrix_control[['matrix_class']] == 'BPCells') {
+    matrix_control_default <- get_global_variable('matrix_control_bpcells_counts')
+  }
+  else {
+    matrix_control_default <- get_global_variable('matrix_control_csparsematrix_counts')
+  }
+  matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='counts')
+
   expression_matrix <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/cao_l2_expression.rds"))
   cell_metadata <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/cao_l2_colData.rds"))
   gene_annotation <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/cao_l2_rowData.rds"))
+
+  expression_matrix <- set_matrix_class(expression_matrix, matrix_control=matrix_control_res)
 
   cds <- new_cell_data_set(expression_matrix,
       cell_metadata = cell_metadata,
@@ -206,7 +251,7 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
 #' also the preprocess_cds help for information about reducing memory
 #' usage by the preprocess_cds function. Note that for the
 #' load_mm_data function the BPCells matrix_mode is "dir",
-#' the matrix_type is "uint32_t", and the matrix_compress is TRUE.
+#' the matrix_type is "double", and the matrix_compress is FALSE.
 #' @return cds object
 #'
 #' @section Comments:
@@ -360,6 +405,10 @@ load_mm_data <- function( mat_path,
 #' @param gene_anno_path Path to gene annotation file.
 #' @param cell_anno_path Path to cell annotation file.
 #' @param umi_cutoff UMI per cell cutoff, default is 100.
+#' @param matrix_control A list used to control how the counts matrix is stored
+#'    in the CDS. By default, Monocle3 stores the counts matrix in memory as a
+#'    sparse matrix. Setting 'matrix_control=list(matrix_class="BPCells")',
+#'    stores the matrix on disk as a sparse matrix.
 #'
 #' @return cds object
 #' @importFrom SingleCellExperiment counts
@@ -376,7 +425,9 @@ load_mm_data <- function( mat_path,
 load_mtx_data <- function( mat_path,
     gene_anno_path,
     cell_anno_path,
-    umi_cutoff = 100) {
+    umi_cutoff = 100,
+    matrix_control=list()) {
+
   assertthat::assert_that(assertthat::is.readable(mat_path))
   assertthat::assert_that(assertthat::is.readable(gene_anno_path))
   assertthat::assert_that(assertthat::is.readable(cell_anno_path))
@@ -395,9 +446,19 @@ load_mtx_data <- function( mat_path,
         cell_anno_path,
         feature_metadata_column_names=c('gene_short_name'),
         umi_cutoff=umi_cutoff,
-        sep="\t" )
+        sep="\t",
+        verbose=FALSE,
+        matrix_control=matrix_control)
     return( cds )
   }
+
+  if(!is.null(matrix_control[['matrix_class']]) && matrix_control[['matrix_class']] == 'BPCells') {
+    matrix_control_default <- get_global_variable('matrix_control_bpcells_counts')
+  }
+  else {
+    matrix_control_default <- get_global_variable('matrix_control_csparsematrix_counts')
+  }
+  matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='counts')
 
   df <- utils::read.table(mat_path, col.names = c("gene.idx", "cell.idx", "count"),
       colClasses = c("integer", "integer", "integer"))
@@ -427,6 +488,8 @@ load_mtx_data <- function( mat_path,
     if(ncol(mat) < 2) warning('bad loop: ncol(mat) < 2')
     mat <- mat[, 1:(ncol(mat)-1), drop=FALSE]
   }
+
+  mat <- set_matrix_class(mat, matrix_control=matrix_control_res)
 
   rownames(mat) <- gene.annotations$id
   colnames(mat) <- cell.annotations$cell
@@ -821,8 +884,9 @@ load_umap_nn_indexes <- function(umap_model, file_name, md5sum_umap_index) {
 }
 
 
-load_bpcells_matrix_dir <- function(file_name, md5sum) {
-  matrixDir <- BPCells::open_matrix_dir(dir=file_name, buffer_size=8192L)
+load_bpcells_matrix_dir <- function(file_name, md5sum, matrix_control) {
+  matrixDirTmp <- BPCells::open_matrix_dir(dir=file_name, buffer_size=8192L)
+  matrixDir <- set_matrix_class(matrixDirTmp, matrix_control=matrix_control)
   return(matrixDir)
 }
 
@@ -1589,6 +1653,10 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
 #'
 #' @param directory_path a string giving the name of the directory
 #'   from which to read the saved cell_data_set files.
+#' @param matrix_control a list. matrix_control is used only to set the
+#'   matrix path when the saved monocle objects count matrix is
+#'   BPCells class. By default, the BPCells matrix directory is set to
+#'   the current working directory.
 #' @return a cell_data_set.
 #'
 #' @examples
@@ -1601,7 +1669,15 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
 #' @export
 # Bioconductor forbids writing to user directories so examples
 # is not run.
-load_monocle_objects <- function(directory_path) {
+load_monocle_objects <- function(directory_path, matrix_control=list(matrix_mode='dir', matrix_type='double', matrix_path='.')) {
+
+  # Use the matrix control to set where to store the BPCells matrix directory.
+  if(is.null(matrix_control[['matrix_class']])) {
+    matrix_control[['matrix_class']] <- 'BPCells'
+  }
+  matrix_control_default <- get_global_variable('matrix_control_bpcells_counts')
+  matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='counts')
+
   appendLF <- FALSE
   # Check for directory.
   if(!file.exists(directory_path))
@@ -1754,15 +1830,17 @@ load_monocle_objects <- function(directory_path) {
     }
     else
     if(cds_object == 'bpcells_matrix_dir') {
+      if(!is.null(assay(cds, 'counts_row_order'))) {
+        assay(cds, 'counts_row_order') <- NULL
+      }
       counts(cds) <- tryCatch(
         {
-          load_bpcells_matrix_dir(file_path, md5sum)
+          load_bpcells_matrix_dir(file_path, md5sum, matrix_control=matrix_control_res)
         },
         error = function(cond) {
           message('problem reading file \'', file_path, '\'', appendLF=appendLF)
           return(NULL)
         })
-
         # Rebuild the BPCells row-major order counts matrix.
         cds <- set_cds_row_order_matrix(cds)
     }

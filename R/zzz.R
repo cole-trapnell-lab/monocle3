@@ -95,11 +95,11 @@ get_global_variable <- function(variable_name=NULL) {
 
   # Default matrix_control list for counts.
   set_global_variable('matrix_control_csparsematrix_counts', list(matrix_class='dgCMatrix'))
-  set_global_variable('matrix_control_bpcells_counts', list(matrix_class='BPCells', matrix_mode='dir', matrix_type='uint32_t', matrix_compress=TRUE, matrix_path='.', matrix_buffer_size=8192L))
+  set_global_variable('matrix_control_bpcells_counts', list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=FALSE, matrix_path='.', matrix_buffer_size=8192L))
 
   # Default matrix_control list for mm.
   set_global_variable('matrix_control_csparsematrix_mm', list(matrix_class='dgCMatrix'))
-  set_global_variable('matrix_control_bpcells_mm', list(matrix_class='BPCells', matrix_mode='dir', matrix_type='uint32_t', matrix_compress=TRUE, matrix_path='.', matrix_buffer_size=8192L))
+  set_global_variable('matrix_control_bpcells_mm', list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=FALSE, matrix_path='.', matrix_buffer_size=8192L))
 
   # Default matrix_control list for pca.
    set_global_variable('matrix_control_csparsematrix_pca', list(matrix_class='dgCMatrix'))

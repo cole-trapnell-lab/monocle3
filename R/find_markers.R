@@ -74,6 +74,13 @@ top_markers <- function(cds,
                         cores=1,
                         verbose=FALSE) {
 
+  if(is(counts(cds), 'IterableMatrix') && is.null(counts_row_order)) {
+    stop(paste('This CDS has a BPCells counts matrix but no counts_row_order matrix, which',
+               'top_markers() requires. Use the command',
+                '  cds <- set_cds_row_order_matrix(cds)',
+                'to make it and re-run top_markers.', sep='\n'))
+  }
+
   rowname <- cell_group <- marker_score <- cell_id <- mean_expression <- NULL # no visible binding
   fraction_expressing <- specificity <- pseudo_R2 <- NULL # no visible binding
   lrtest_p_value <- lrtest_q_value <- gene_short_name <- NULL # no visible binding

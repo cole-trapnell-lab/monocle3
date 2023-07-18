@@ -157,6 +157,7 @@ fit_model_helper <- function(x,
                              clean_model = TRUE,
                              verbose = FALSE,
                              ...) {
+
   model_formula_str <- paste("f_expression", model_formula_str,
                              sep = "")
   orig_x <- x
