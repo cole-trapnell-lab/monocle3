@@ -737,7 +737,6 @@ combine_cds <- function(cds_list,
   }
 
   matrix_id <-  get_unique_id(counts(cds))
- 
   new_cds <- initialize_counts_metadata(new_cds) 
   new_cds <- set_counts_identity(new_cds, 'combin_cds', matrix_id)
 
@@ -809,6 +808,13 @@ get_citations <- function(cds) {
 
 # Make a unique identifier string.
 get_unique_id <- function(object=NULL) {
+  #
+  # I don't have a way to calculate a checksum
+  # without creating an in memory matrix copy
+  # so skip if this is a BPCells matrix.
+  if(is(object, 'IterableMatrix')) {
+    return('BPcells matrix')
+  }
 
   if(!is.null(object)) {
     object_dim <- dim(object)

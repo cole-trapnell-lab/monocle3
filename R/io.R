@@ -381,14 +381,9 @@ load_mm_data <- function( mat_path,
   cds <- cds[,colData(cds)$n.umi >= umi_cutoff]
   cds <- estimate_size_factors(cds)
 
-  # Converting the BPCells matrix to dgCMatrix for
-  # the purpose of calculating an md5 checksum
-  # compromises the value of BPCells.
-  if(matrix_control_res[['matrix_class']] != 'BPCells') {
-    cds <- initialize_counts_metadata(cds)
-    matrix_id <- get_unique_id(counts(cds))
-    cds <- set_counts_identity(cds, mat_path, matrix_id)
-  }
+  cds <- initialize_counts_metadata(cds)
+  matrix_id <- get_unique_id(counts(cds))
+  cds <- set_counts_identity(cds, mat_path, matrix_id)
 
   if(verbose) {
     message('load_mm_data: matrix_info: out:')
