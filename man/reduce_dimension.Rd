@@ -58,7 +58,7 @@ used by UMAP. Default is "annoy". See uwot package's
 \item{cores}{Number of cores to use for computing the UMAP.}
 
 \item{build_nn_index}{logical When this argument is set to TRUE,
-preprocess_cds builds the nearest neighbor index from the
+reduce_dimension builds the nearest neighbor index from the
 reduced dimension matrix for later use. Default is FALSE.}
 
 \item{nn_control}{An optional list of parameters used to make the nearest

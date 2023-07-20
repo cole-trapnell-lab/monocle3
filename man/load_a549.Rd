@@ -4,7 +4,13 @@
 \alias{load_a549}
 \title{Build a small cell_data_set.}
 \usage{
-load_a549()
+load_a549(matrix_control = list())
+}
+\arguments{
+\item{matrix_control}{A list used to control how the counts matrix is stored
+in the CDS. By default, Monocle3 stores the counts matrix in memory as a
+sparse matrix. Setting 'matrix_control=list(matrix_class="BPCells")',
+stores the matrix on disk as a sparse matrix.}
 }
 \value{
 cds object

@@ -736,6 +736,10 @@ combine_cds <- function(cds_list,
     }
   }
 
+  if(bpcells_matrix_flag) {
+    new_cds <- set_cds_row_order_matrix(new_cds)
+  }
+
   matrix_id <-  get_unique_id(counts(cds))
   new_cds <- initialize_counts_metadata(new_cds) 
   new_cds <- set_counts_identity(new_cds, 'combin_cds', matrix_id)

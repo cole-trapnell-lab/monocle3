@@ -98,7 +98,7 @@ list, see the examples below and the set_matrix_control help. See
 also the preprocess_cds help for information about reducing memory
 usage by the preprocess_cds function. Note that for the
 load_mm_data function the BPCells matrix_mode is "dir",
-the matrix_type is "uint32_t", and the matrix_compress is TRUE.}
+the matrix_type is "double", and the matrix_compress is FALSE.}
 }
 \value{
 cds object

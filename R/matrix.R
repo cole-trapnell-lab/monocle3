@@ -770,3 +770,47 @@ set_cds_row_order_matrix <- function(cds) {
   return(cds)
 }
 
+
+#' Convert the counts matrix class in the given CDS.
+#'
+#' @description Converts the counts matrix that is in the
+#'   given CDS to the matrix_class specified in the
+#'   matrix_control list.
+#' @param cds cell_data_set The cell_data_set that has the
+#'   counts matrix to be converted.
+#' @param matrix_control list A list of matrix control
+#'   values used to convert the counts matrix.
+#' @return cell_data_set The cell_data_set with the converted
+#'   counts matrix.
+#' @examples
+#'    cds <- load_a549()
+#'    str(counts(cds))
+#'    cds <- convert_counts_matrix(cds, matrix_control=list(matrix_class='BPCells'))
+#'    str(counts(cds))
+#'
+#' @export
+convert_counts_matrix <- function(cds, matrix_control=list(matrix_class='BPCells')) {
+  if(!is.null(matrix_control[['matrix_class']]) && matrix_control[['matrix_class']] == 'BPCells') {
+    matrix_control_default <- get_global_variable('matrix_control_bpcells_counts')
+  }
+  else {
+    matrix_control_default <- get_global_variable('matrix_control_csparsematrix_counts')
+  }
+  matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='counts')
+
+  mat <- counts(cds)
+
+  if(get_matrix_class(mat) == matrix_control_res[['matrix_class']]) {
+    return(cds)
+  }
+
+  counts(cds) <- set_matrix_class(mat=mat, matrix_control=matrix_control_res)
+
+  if(matrix_control_res[['matrix_class']] == 'BPCells') {
+    push_matrix_path(mat)
+    cds <- set_cds_row_order_matrix(cds)
+  }
+
+  return(cds)
+}
+

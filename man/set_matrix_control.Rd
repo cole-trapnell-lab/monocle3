@@ -7,7 +7,7 @@
 set_matrix_control(
   matrix_control = list(),
   matrix_control_default = list(),
-  control_type = c("any", "mm", "pca")
+  control_type = c("unrestricted", "counts", "mm", "pca")
 )
 }
 \arguments{
@@ -15,7 +15,7 @@ set_matrix_control(
 
 \item{matrix_control_default}{Input default control list.}
 
-\item{control_type}{A string of either "any" or "pca". A control_type of "pca"
+\item{control_type}{A string of either "unrestricted" or "pca". A control_type of "pca"
 restricts certain list parameters.}
 }
 \value{
