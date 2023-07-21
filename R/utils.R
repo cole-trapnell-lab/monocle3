@@ -460,7 +460,9 @@ normalized_counts <- function(cds,
 #'   that indicates which original cds the cell derives from. Default is
 #'   "sample".
 #' @param keep_reduced_dims Logical indicating whether to keep the reduced
-#'   dimension matrices. Default is FALSE.
+#'   dimension matrices. Do not keep the reduced dimensions unless you know
+#'   that the reduced dimensions are the same in each CDS. This is true for
+#'   projected data sets, for example. Default is FALSE.
 #'
 #' @return A combined cell_data_set object.
 #' @export
@@ -722,12 +724,19 @@ combine_cds <- function(cds_list,
 
   # Add in preprocessing results.
   if(keep_reduced_dims) {
-    for(red_dim in names(SingleCellExperiment::reducedDims(cds_list[[1]]))) {
+    # Find intersection of reduced dim names, for example, 'PCA', 'UMAP', 'Aligned'.
+    reduced_dim_names <- names(reducedDims(cds_list[[1]]))
+    for(i in seq(2, length(cds_list), 1)) {
+      reduced_dim_names <- intersect(reduced_dim_names, names(reducedDims(cds_list[[i]])))
+    }
+
+#    for(red_dim in names(SingleCellExperiment::reducedDims(cds_list[[1]]))) {
+    for(red_dim in reduced_dim_names) {
       reduced_dims_list <- list()
       for(j in seq(1, length(cds_list), 1)) {
         reduced_dims_list[[j]] <- SingleCellExperiment::reducedDims(cds_list[[j]])[[red_dim]]
       }
-      SingleCellExperiment::reducedDims(new_cds)[[red_dim]] <- do.call(rbind, reduced_dims_list, quote=FALSE)
+      SingleCellExperiment::reducedDims(new_cds, withDimnames=FALSE)[[red_dim]] <- do.call(rbind, reduced_dims_list, quote=FALSE)
       # The following should not happen; the accessor appears to ensure the
       # correct row order.
       if(!identical(rownames(SingleCellExperiment::reducedDims(new_cds)[[red_dim]]), rownames(all_pd))) {
@@ -736,6 +745,8 @@ combine_cds <- function(cds_list,
     }
   }
 
+  # Add a BPCells row-major order matrix to assays
+  # for BPCells count matrices.
   if(bpcells_matrix_flag) {
     new_cds <- set_cds_row_order_matrix(new_cds)
   }
