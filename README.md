@@ -55,8 +55,8 @@ You may need to update the version strings in your hdf5.pc file.
 
 ### Notes
 
+- The function convert_counts_matrix() converts the counts matrix in an existing CDS. For example, `cds <- convert_counts_matrix(cds, matrix_control=list(matrix_class="BPCells"))`.
 - I tested this version using BPCells counts matrices on the examples in the Monocle3 documentation although I did not try all of the plotting functions.
 - There are likely to be more than a few problems that I did not find. Please let me know when you bump into them!
-
 
 
