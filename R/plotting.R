@@ -606,7 +606,7 @@ plot_cells <- function(cds,
       } else {
         cds_exprs = round(cds_exprs, digits=4)
         # bge
-        if(!is(markers_exprs, 'IterableMatrix')) {
+        if(!is(cds_exprs, 'IterableMatrix')) {
           markers_exprs = matrix(cds_exprs, nrow=nrow(markers_rowData))   # bge
         }
         else {
