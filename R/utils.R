@@ -472,7 +472,10 @@ combine_cds <- function(cds_list,
                         cell_names_unique = FALSE,
                         sample_col_name = "sample",
                         keep_reduced_dims = FALSE,
-                        matrix_control = list()) {
+                        matrix_control = list(),
+                        diagnostics=FALSE) {
+
+  if(diagnostics) { message('Diag: here 1') }
 
   assertthat::assert_that(is.list(cds_list),
                           msg=paste("cds_list must be a list."))
@@ -504,6 +507,8 @@ combine_cds <- function(cds_list,
                  "remove or rename that column before ",
                  "proceeding."))
 
+  if(diagnostics) { message('Diag: here 2') }
+
   num_cells <- sapply(cds_list, ncol)
   if(sum(num_cells == 0) != 0) {
     message("Some CDS' have no cells, these will be skipped.")
@@ -518,6 +523,8 @@ combine_cds <- function(cds_list,
   if(is.null(names(cds_list))) {
     list_named <- FALSE
   }
+
+  if(diagnostics) { message('Diag: here 3') }
 
   if(!is.null(matrix_control[['matrix_class']]) &&
      matrix_control[['matrix_class']] == 'BPCells') {
@@ -534,6 +541,8 @@ combine_cds <- function(cds_list,
     }
   }
 
+  if(diagnostics) { message('Diag: here 4') }
+
   check_matrix_control(matrix_control=matrix_control, control_type='counts', check_conditional=FALSE)
   if(bpcells_matrix_flag ||
      (!is.null(matrix_control[['matrix_class']]) && matrix_control[['matrix_class']] == 'BPCells')) {
@@ -544,6 +553,8 @@ combine_cds <- function(cds_list,
   }
   matrix_control <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='unrestricted')
 
+  if(diagnostics) { message('Diag: here 5') }
+
   exprs_list <- list()
   fd_list <- list()
   pd_list <- list()
@@ -552,6 +563,8 @@ combine_cds <- function(cds_list,
   pdata_cols <- c()
   fdata_cols <- c()
   all_cells <- c()
+
+  if(diagnostics) { message('Diag: here 6') }
 
   for(cds in cds_list) {
     # Make a vector of gene names either all names or
@@ -562,12 +575,16 @@ combine_cds <- function(cds_list,
       gene_list <- overlap_list
     }
 
+  if(diagnostics) { message('Diag: here 7') }
+
     # Make concatenated vectors of column (header) names of the cells
     # and features, and of cell names.
     pdata_cols <- c(pdata_cols, names(pData(cds)))
     fdata_cols <- c(fdata_cols, names(fData(cds)))
     all_cells <- c(all_cells, row.names(pData(cds)))
   }
+
+  if(diagnostics) { message('Diag: here 8') }
 
   # Remove duplicate gene names, feature and cell column
   # names, and cell names.
@@ -580,6 +597,9 @@ combine_cds <- function(cds_list,
                  "a combined CDS with all genes, use keep_all_genes = TRUE")
     }
   }
+
+  if(diagnostics) { message('Diag: here 9') }
+
   pdata_cols <- unique(pdata_cols)
   fdata_cols <- unique(fdata_cols)
   if (sum(duplicated(all_cells)) != 0 & cell_names_unique) {
@@ -588,10 +608,14 @@ combine_cds <- function(cds_list,
   }
   all_cells <- unique(all_cells)
 
+  if(diagnostics) { message('Diag: here 10') }
+
   # Give all CDSes the same set of rows (amongst other things),
   # looping through the CDSes.
   for(i in seq(1, length(cds_list), 1)) {
     pd <- as.data.frame(pData(cds_list[[i]]))
+
+  if(diagnostics) { message('Diag: here 11') }
 
     # Counts matrix rows of genes common to the CDSes examined
     # up to this pass through the loop.
@@ -600,6 +624,8 @@ combine_cds <- function(cds_list,
       exp <- as(exp, 'IterableMatrix')
     }
     exp <- exp[intersect(row.names(exp), gene_list),, drop=FALSE]
+
+  if(diagnostics) { message('Diag: here 12') }
 
     # Make cell names distinct, if necessary, assign cell names to
     # pd, the sample names to a column in pd, and cell names to
@@ -621,11 +647,15 @@ combine_cds <- function(cds_list,
       }
     }
 
+  if(diagnostics) { message('Diag: here 13') }
+
     # Initialize new entries in pd to 'NA'.
     not_in <- pdata_cols[!pdata_cols %in% names(pd)]
     for (n in not_in) {
       pd[,n] <- NA
     }
+
+  if(diagnostics) { message('Diag: here 14') }
 
     # Select feature data frame rows that are common to
     # fd and gene_list.
@@ -645,10 +675,15 @@ combine_cds <- function(cds_list,
     }
     not_in_g <- gene_list[!gene_list %in% row.names(fd)]
 
+  if(diagnostics) { message('Diag: here 15') }
+
     # Make an empty matrix (and fd data frame) with the rows
     # that need to be added to the counts matrix for cds_list[[i]],
     # and append it to the accumulating counts matrix.
     if (length(not_in_g) > 0) {
+
+  if(diagnostics) { message('Diag: here 16') }
+
       not_in_g_df <- as.data.frame(matrix(NA, nrow = length(not_in_g), ncol=ncol(fd)))
       row.names(not_in_g_df) <- not_in_g
       names(not_in_g_df) <- names(fd)
@@ -660,6 +695,8 @@ combine_cds <- function(cds_list,
       row.names(extra_rows) <- not_in_g
       colnames(extra_rows) <- colnames(exp)
 
+  if(diagnostics) { message('Diag: here 17') }
+
       # Append additional rows.
       if(bpcells_matrix_flag) {
         exp <- rbind2(exp, as(extra_rows, 'IterableMatrix'))
@@ -668,7 +705,12 @@ combine_cds <- function(cds_list,
         exp <- rbind(exp, extra_rows)
       }
 #      exp <- exp
+
+  if(diagnostics) { message('Diag: here 18') }
+
     }
+
+  if(diagnostics) { message('Diag: here 19') }
 
     # Gather matrices and data frames into lists.
     exprs_list[[i]] <- exp[gene_list, , drop=FALSE]
@@ -676,7 +718,11 @@ combine_cds <- function(cds_list,
     pd_list[[i]] <- pd
   }
 
+  if(diagnostics) { message('Diag: here 20') }
+
   all_fd <- array(NA,dim(fd_list[[1]]),dimnames(fd_list[[1]]))
+
+  if(diagnostics) { message('Diag: here 21') }
 
   for (fd in fd_list) {
     for (j in colnames(fd)) {
@@ -686,6 +732,8 @@ combine_cds <- function(cds_list,
       all_fd[,j] <- col_info
     }
   }
+
+  if(diagnostics) { message('Diag: here 22') }
 
   confs <- sum(all_fd == "conf", na.rm=TRUE)
 
@@ -697,6 +745,8 @@ combine_cds <- function(cds_list,
   }
   #all_fd <- do.call(cbind, fd_list)
   all_fd <- all_fd[,fdata_cols, drop=FALSE]
+
+  if(diagnostics) { message('Diag: here 23') }
 
   # Build the final, comprehensive cell data frame and counts matrix.
   all_pd <- do.call(rbind, pd_list)    # bge rbind
@@ -711,24 +761,37 @@ combine_cds <- function(cds_list,
     all_exp <- do.call(cbind, exprs_list)
   }
 
+  if(diagnostics) { message('Diag: here 24') }
+
   # Filter counts matrix by fd and pd names.
   all_exp <- all_exp[row.names(all_fd), row.names(all_pd), drop=FALSE]
+
+  if(diagnostics) { message('Diag: here 25') }
 
   # Make a BPCells count matrix, if necessary.
   if(bpcells_matrix_flag) {
     all_exp <- set_matrix_class(mat=all_exp, matrix_control=matrix_control)
   }
 
+  if(diagnostics) { message('Diag: here 26') }
+
   # Make a combined CDS from all_exp, all_pd, and all_fd.
   new_cds <- new_cell_data_set(all_exp, cell_metadata = all_pd, gene_metadata = all_fd)
 
+  if(diagnostics) { message('Diag: here 27') }
+
   # Add in preprocessing results.
   if(keep_reduced_dims) {
+
+  if(diagnostics) { message('Diag: here 28') }
+
     # Find intersection of reduced dim names, for example, 'PCA', 'UMAP', 'Aligned'.
     reduced_dim_names <- names(reducedDims(cds_list[[1]]))
     for(i in seq(2, length(cds_list), 1)) {
       reduced_dim_names <- intersect(reduced_dim_names, names(reducedDims(cds_list[[i]])))
     }
+
+  if(diagnostics) { message('Diag: here 29') }
 
 #    for(red_dim in names(SingleCellExperiment::reducedDims(cds_list[[1]]))) {
     for(red_dim in reduced_dim_names) {
@@ -743,6 +806,9 @@ combine_cds <- function(cds_list,
         stop('Mis-ordered reduced matrix rows.')
       }
     }
+
+  if(diagnostics) { message('Diag: here 30') }
+
   }
 
   # Add a BPCells row-major order matrix to assays
@@ -751,9 +817,13 @@ combine_cds <- function(cds_list,
     new_cds <- set_cds_row_order_matrix(new_cds)
   }
 
+  if(diagnostics) { message('Diag: here 31') }
+
   matrix_id <-  get_unique_id(counts(cds))
   new_cds <- initialize_counts_metadata(new_cds) 
   new_cds <- set_counts_identity(new_cds, 'combin_cds', matrix_id)
+
+  if(diagnostics) { message('Diag: here 32') }
 
   new_cds
 }
