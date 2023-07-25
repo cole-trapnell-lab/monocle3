@@ -95,7 +95,7 @@ select_matrix_parameter_value <- function(parameter, matrix_control, matrix_cont
 # Usage
 #   matrix_class: default: 'dgCMatrix'
 #   matrix_class: 'BPCells'
-#     matrix_mode: 'mem'  default: 'dir'
+#     matrix_mode: 'mem'  default: 'dir' NOTE: disallow matrix_mode 'mem'
 #       matrix_type: 'uint32_t', 'float', 'double'  NOTE: 'uint32_t' is valid for assay matrix only
 #       matrix_compress: TRUE, FALSE default: FALSE
 #     matrix_mode: 'dir'
@@ -129,7 +129,7 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
 
   allowed_matrix_class <- c('dgCMatrix', 'BPCells')
 
-  allowed_matrix_mode_unrestricted <- c('mem', 'dir')
+  allowed_matrix_mode_unrestricted <- c('dir')
   allowed_matrix_mode_counts <- c('dir')
   allowed_matrix_mode_mm <- c('dir')
   allowed_matrix_mode_pca <- c('dir')
@@ -749,8 +749,20 @@ set_cds_row_order_matrix <- function(cds) {
     return(cds)
   }
 
-  bmat <- bpcells_find_base_matrix(mat_c)
-  matrix_path <- dirname(bmat@dir)
+  matrix_info <- get_matrix_info(counts(cds))
+  if(matrix_info[['matrix_mode']] == 'dir') {
+    bmat <- bpcells_find_base_matrix(mat_c)
+    matrix_path <- dirname(bmat@dir)
+  }
+  else {
+    matrix_path <- '.'
+  }
+
+  # Remove existing counts_row_order matrix and directory.
+  if(!is.null(assays(cds)[['counts_row_order']])) {
+    rm_bpcells_dir(assays(cds)[['counts_row_order']])
+    assays(cds)[['counts_row_order']] = NULL
+  }
 
   # Make a BPCells count matrix in row major order.
   outdir <- tempfile(pattern=paste0('monocle.bpcells.',
@@ -804,7 +816,7 @@ convert_counts_matrix <- function(cds, matrix_control=list(matrix_class='BPCells
     return(cds)
   }
 
-  counts(cds) <- set_matrix_class(mat=mat, matrix_control=matrix_control_res)
+  assay(cds, 'counts') <- set_matrix_class(mat=mat, matrix_control=matrix_control_res)
 
   if(matrix_control_res[['matrix_class']] == 'BPCells') {
     push_matrix_path(mat)
