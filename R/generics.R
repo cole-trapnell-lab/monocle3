@@ -610,14 +610,17 @@ setMethod("counts<-", signature(object="SingleCellExperiment"),
     function(object, ..., value) {
         largs <- list(...)
         assay(object, 'counts') <- value
+#        SingleCellExperiment::counts(object) <- value
         if(is(assays(object)[['counts']], "IterableMatrix") &&
            (is.null(largs[['bpcells_warn']]) ||
            !is.logical(largs[['bpcells_warn']]) ||
            largs[['bpcells_warn']] != FALSE)) {
-          message(paste0('\nMonocle3 counts setter: setting a BPCells counts matrix. Update the assays\n',
-                         'row-major order counts matrix using set_cds_row_order_matrix. For example,\n',
+          message(paste0('\nMonocle3 counts setter: setting a BPCells counts matrix.\n',
+                         'Now you must update the assays row-major order counts matrix\n',
+                         'which must have the same values as this counts matrix. Use\n',
+                         ' set_cds_row_order_matrix functions to do this. For example,\n',
                          '  cds <- set_cds_row_order_matrix(cds)\n',
-                         '*** Bad things may happen if you don\'t. ***\n'))
+                         '*** Bad things may happen if you don\'t do this. ***\n'))
         }
         object
     }
