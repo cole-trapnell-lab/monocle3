@@ -610,7 +610,6 @@ setMethod("counts<-", signature(object="SingleCellExperiment"),
     function(object, ..., value) {
         largs <- list(...)
         assay(object, 'counts') <- value
-#        SingleCellExperiment::counts(object) <- value
         if(is(assays(object)[['counts']], "IterableMatrix") &&
            (is.null(largs[['bpcells_warn']]) ||
            !is.logical(largs[['bpcells_warn']]) ||
