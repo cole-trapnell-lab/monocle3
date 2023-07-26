@@ -38,24 +38,6 @@
 #'   reduced dimension matrix for later use. Default is FALSE.
 #' @param nn_control An optional list of parameters used to make the nearest
 #'  neighbor index. See the set_nn_control help for detailed information.
-#' @param matrix_control An optional list of parameters that control the
-#'  storage of an intermediate matrix that is required for cds
-#'  preprocessing. By default, matrices are stored in memory as dgCMatrix
-#'  class (compressed sparse matrix) objects, which can be set explicitly
-#'  using the matrix_class="dgCMatrix" list value. A very large matrix can
-#'  be stored in a file and accessed by Monocle3 as if it were in memory.
-#'  For this, Monocle3 uses the BPCells R package. Here the matrix_control
-#'  list values are set to matrix_class="BPCells" and matrix_mode="dir".
-#'  Then the count matrix is stored in a directory, on-disk, which is created
-#'  by Monocle3 in the directory where you run Monocle3. This directory has
-#'  a name with the form "monocle.bpcells.*.tmp" where the asterisk is a
-#'  random string that makes the name unique. Do not remove this directory
-#'  while Monocle3 is running! Monocle3 tries to remove the BPCells matrix
-#'  directory when the preprocess_cds function finishes running; however,
-#'  sometimes a matrix directory may persist after preprocess_cds finishes.
-#'  In this case, the user must remove the directory after the session
-#'  ends. For additional information about the matrix_control list, see the
-#'  set_matrix_control help.
 #' @return an updated cell_data_set object
 #'
 #' @examples
@@ -73,24 +55,6 @@
 #'                              cell_metadata=cell_metadata,
 #'                              gene_metadata=gene_metadata)
 #'     cds <- preprocess_cds(cds)
-#'
-#'     # For typical count matrices with a small to large number of cells,
-#'     # we suggest that you use the default matrix_control list by not
-#'     # not setting the matrix_control parameter. In this case, the
-#'     # intermediate matrices are stored in memory as sparse matrices
-#'     # in the dgCMatrix format, as they have in the past. It is also
-#'     # possible to set the matrix_control list explicitly to use this
-#'     # in-memory dgCMatrix format by setting the matrix_control parameter
-#'     # list to
-#'     #
-#'       preprocess_cds(..., matrix_control=list(matrix_class='dgCMatrix'))
-#'     #
-#'     # For larger count matrices, we suggest that you try storing the
-#'     # intermediate matrices as on-disk BPCells class objects by setting
-#'     # the matrix_control parameter list as follows
-#'     #
-#'       preprocess_cds(..., matrix_control=list(matrix_class='BPCells', matrix_mode='dir'))
-#'     #
 #'   }
 #'
 #' @export
@@ -103,8 +67,7 @@ preprocess_cds <- function(cds,
                            scaling = TRUE,
                            verbose = FALSE,
                            build_nn_index = FALSE,
-                           nn_control = list(),
-                           matrix_control = list()) {
+                           nn_control = list()) {
 
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(method) == "",TRUE, TRUE),
@@ -132,8 +95,6 @@ preprocess_cds <- function(cds,
   assertthat::assert_that(sum(is.na(size_factors(cds))) == 0,
                           msg = paste("One or more cells has a size factor of",
                                       "NA."))
-  matrix_control_res <- set_pca_matrix_control(mat=SingleCellExperiment::counts(cds),
-                                               matrix_control=matrix_control)
 
   if(build_nn_index) {
     nn_control <- set_nn_control(mode=1,
@@ -154,7 +115,16 @@ preprocess_cds <- function(cds,
   #      operations in counts(cds). Commit additional
   #      FM queued operations before submitting to
   #      the SVD function.
+  #
   FM <- SingleCellExperiment::counts(cds)
+
+  #
+  # Is this a IterableMatrix (BPCells) counts matrix?
+  iterable_matrix_flag <- is(FM, 'IterableMatrix')
+
+  #
+  # normalize_expr_data() determines matrix_class
+  #
   FM <- normalize_expr_data(FM=FM, size_factors=size_factors(cds), norm_method=norm_method, pseudo_count=pseudo_count)
 
   if (nrow(FM) == 0) {
@@ -180,7 +150,7 @@ preprocess_cds <- function(cds,
 
     if (verbose) message("Remove noise by PCA ...")
 
-    if(matrix_control_res[['matrix_class']] == 'dgCMatrix') {
+    if(!iterable_matrix_flag) {
 
       if(verbose) {
         message('preprocess_cds: FM matrix class: ', class(FM))
@@ -193,9 +163,7 @@ preprocess_cds <- function(cds,
                                        center = scaling, scale. = scaling,
                                        verbose = verbose)
     }
-    else
-    if(matrix_control_res[['matrix_class']] == 'BPCells') {
-
+    else {
       if(verbose) {
         message('preprocess_cds: FM matrix info:')
         message(show_matrix_info(get_matrix_info(FM), '  '), appendLF=FALSE)
@@ -206,11 +174,7 @@ preprocess_cds <- function(cds,
       irlba_res <- bpcells_prcomp_irlba(BPCells::t(FM),
                                         n = min(num_dim,min(dim(FM)) - 1),
                                         center = scaling, scale. = scaling,
-                                        matrix_control=matrix_control_res,
                                         verbose = verbose)
-    }
-    else {
-      stop('Unrecognized expression matrix class')
     }
 
     preproc_res <- irlba_res$x
@@ -262,16 +226,27 @@ preprocess_cds <- function(cds,
     cds <- initialize_reduce_dim_metadata(cds, 'LSI')
     cds <- initialize_reduce_dim_model_identity(cds, 'LSI')
 
-    fm_rowsums = Matrix::rowSums(FM)
+    if(!iterable_matrix_flag) {
+      fm_rowsums = Matrix::rowSums(FM)
+    }
+    else {
+    }
+
     FM <- FM[is.finite(fm_rowsums) & fm_rowsums != 0, ]
 
 #    preproc_res <- tfidf(FM)
-    tfidf_res <- tfidf(FM)
+    tfidf_res <- tfidf(FM, iterable_matrix_flag)
     preproc_res <- tfidf_res[['tf_idf_counts']]
 
     num_col <- ncol(preproc_res)
-    irlba_res <- irlba::irlba(Matrix::t(preproc_res),
-                              nv = min(num_dim,min(dim(FM)) - 1))
+    if(!iterable_matrix_flag) {
+      irlba_res <- irlba::irlba(Matrix::t(preproc_res),
+                                nv = min(num_dim,min(dim(FM)) - 1))
+    }
+    else {
+      irlba_res <- irlba::irlba(BPCells::t(preproc_res),
+                                nv = min(num_dim,min(dim(FM)) - 1))
+    }
 
     preproc_res <- irlba_res$u %*% diag(irlba_res$d)
     row.names(preproc_res) <- colnames(cds)
@@ -380,12 +355,19 @@ normalize_expr_data <- function(FM, size_factors=NULL,
 
 # Andrew's tfidf
 tfidf <- function(count_matrix, frequencies=TRUE, log_scale_tf=TRUE,
-                  scale_factor=100000, block_size=2000e6) {
+                  scale_factor=100000, block_size=2000e6,
+                  iterable_matrix_flag=FALSE) {
   # Use either raw counts or divide by total counts in each cell
   if (frequencies) {
     # "term frequency" method
-    col_sums <- Matrix::colSums(count_matrix)
-    tf <- Matrix::t(Matrix::t(count_matrix) / col_sums)
+    if(!iterable_matrix_flag) {
+      col_sums <- Matrix::colSums(count_matrix)
+      tf <- Matrix::t(Matrix::t(count_matrix) / col_sums)
+    }
+    else {
+      col_sums <- BPCells::colSums(count_matrix)
+      tf <- BPCells::t(BPCells::t(count_matrix) / col_sums)
+    }
   } else {
     # "raw count" method
     col_sums <- NA
@@ -394,39 +376,60 @@ tfidf <- function(count_matrix, frequencies=TRUE, log_scale_tf=TRUE,
 
   # Either TF method can optionally be log scaled
   if (log_scale_tf) {
-    if (frequencies) {
-      tf@x = log1p(tf@x * scale_factor)
-    } else {
-      tf@x = log1p(tf@x * 1)
+    if(!iterable_matrix_flag) {
+      if (frequencies) {
+        tf@x = log1p(tf@x * scale_factor)
+      } else {
+        tf@x = log1p(tf@x * 1)
+      }
+    }
+    else {
+      if (frequencies) {
+        tf = BPCells::log1p(tf * scale_factor)
+      } else {
+        tf = BPCells::log1p(tf * 1)
+      }
     }
   }
 
   # IDF w/ "inverse document frequency smooth" method
   num_cols <- ncol(count_matrix)
-  row_sums <- Matrix::rowSums(count_matrix > 0)
+  if(!iterable_matrix_flag) {
+    row_sums <- Matrix::rowSums(count_matrix > 0)
+  }
+  else {
+    row_sums <- BPCells::rowSums(BPCells::binarize(count_matrix, threshold=0))
+  }
   idf = log(1 + num_cols / row_sums)
 
   # Try to just to the multiplication and fall back on delayed array
   # TODO hopefully this actually falls back and not get jobs killed in SGE
-  tf_idf_counts = tryCatch({
+  if(!iterable_matrix_flag) {
+    tf_idf_counts = tryCatch({
+      tf_idf_counts = tf * idf
+      tf_idf_counts
+    }, error = function(e) {
+      print(paste("TF*IDF multiplication too large for in-memory, falling back",
+                  "on DelayedArray."))
+      options(DelayedArray.block.size=block_size)
+      DelayedArray:::set_verbose_block_processing(TRUE)
+  
+      tf = DelayedArray::DelayedArray(tf)
+      idf = as.matrix(idf)
+  
+      tf_idf_counts = tf * idf
+      tf_idf_counts
+    })
+  }
+  else {
     tf_idf_counts = tf * idf
-    tf_idf_counts
-  }, error = function(e) {
-    print(paste("TF*IDF multiplication too large for in-memory, falling back",
-                "on DelayedArray."))
-    options(DelayedArray.block.size=block_size)
-    DelayedArray:::set_verbose_block_processing(TRUE)
-
-    tf = DelayedArray::DelayedArray(tf)
-    idf = as.matrix(idf)
-
-    tf_idf_counts = tf * idf
-    tf_idf_counts
-  })
+  }
 
   rownames(tf_idf_counts) = rownames(count_matrix)
   colnames(tf_idf_counts) = colnames(count_matrix)
-  tf_idf_counts = methods::as(tf_idf_counts, "sparseMatrix")
+  if(!iterable_matrix_flag) {
+    tf_idf_counts = methods::as(tf_idf_counts, "sparseMatrix")
+  }
   return(list(tf_idf_counts=tf_idf_counts, frequencies=frequencies, log_scale_tf=log_scale_tf, scale_factor=scale_factor, col_sums=col_sums, row_sums=row_sums, num_cols=num_cols))
 }
 
