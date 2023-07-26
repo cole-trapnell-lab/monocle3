@@ -761,7 +761,7 @@ set_cds_row_order_matrix <- function(cds) {
   # Remove existing counts_row_order matrix and directory.
   if(!is.null(assays(cds)[['counts_row_order']])) {
     rm_bpcells_dir(assays(cds)[['counts_row_order']])
-    assays(cds)[['counts_row_order']] = NULL
+    assays(cds)[['counts_row_order']] <- NULL
   }
 
   # Make a BPCells count matrix in row major order.
@@ -816,7 +816,7 @@ convert_counts_matrix <- function(cds, matrix_control=list(matrix_class='BPCells
     return(cds)
   }
 
-  assay(cds, 'counts') <- set_matrix_class(mat=mat, matrix_control=matrix_control_res)
+  counts(cds, bpcells_warn=FALSE) <- set_matrix_class(mat=mat, matrix_control=matrix_control_res)
 
   if(matrix_control_res[['matrix_class']] == 'BPCells') {
     push_matrix_path(mat)

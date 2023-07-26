@@ -1828,7 +1828,7 @@ load_monocle_objects <- function(directory_path, matrix_control=list(matrix_mode
       if(!is.null(assay(cds, 'counts_row_order'))) {
         assay(cds, 'counts_row_order') <- NULL
       }
-      assay(cds, 'counts') <- tryCatch(
+      counts(cds, bpcells_warn=FALSE ) <- tryCatch(
         {
           load_bpcells_matrix_dir(file_path, md5sum, matrix_control=matrix_control_res)
         },
