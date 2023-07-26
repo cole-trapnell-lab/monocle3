@@ -435,40 +435,6 @@ setReplaceMethod("principal_graph_aux", "cell_data_set", function(x, value) {
 })
 
 
-#' Generic to access cds row order BPCells count matrix.
-#' @param x A cell_data_set object.
-#' 
-#' @examples
-#'  \donttest{
-#'    cds <- load_a549()
-#'    exprs(cds)
-#'  }         
-#'          
-#' @return BPCells row order ount matrix.
-#'
-#' @export
-setGeneric("counts_row_order", function(x) standardGeneric("counts_row_order"))
-  
-#' Method to access cds row order BPCells count matrix
-#' @param x A cell_data_set object.
-#'
-#' @return BPCells row order count matrix.
-#' 
-#' @export
-setMethod("counts_row_order", "cell_data_set", function(x) {
-  if(is.null(assay(x, 'counts_row_order'))) {
-    if(!is(counts(x), 'IterableMatrix')) {
-      stop('CDS counts matrix is not a BPCells matrix')
-    }
-    else {
-      stop('CDS has no BPCells row order counts matrix')
-    }
-  }
-  value <- assay(x, 'counts_row_order')
-  return(value)
-})                                 
-
-
 # Set of wrappers for easy transition from monocle.
 
 #' Generic to access cds count matrix
@@ -618,6 +584,10 @@ setReplaceMethod("fData", "cell_data_set", function(x, value) {
 })
 
 
+#
+# Redefine some methods in order to manage Monocle3 internal objects.
+#
+
 if (!isGeneric("saveRDS")) {setGeneric("saveRDS", function (object, file="", ascii=FALSE, version=NULL, compress=TRUE, refhook=NULL) standardGeneric("saveRDS"))}
 
 #' @export
@@ -632,5 +602,59 @@ you requested anyway.')
         base::saveRDS(object, file=file, ascii = ascii, version = version, compress=compress, refhook = refhook)
     }
 )
+
+
+#' @export
+#' @importFrom BiocGenerics "counts<-"
+setMethod("counts<-", signature(object="SingleCellExperiment"),
+    function(object, ..., value) {
+        largs <- list(...)
+        assay(object, 'counts') <- value
+        if(is(assays(object)[['counts']], "IterableMatrix") &&
+           (is.null(largs[['bpcells_warn']]) ||
+           !is.logical(largs[['bpcells_warn']]) ||
+           largs[['bpcells_warn']] != FALSE)) {
+          message(paste0('\nMonocle3 counts setter: setting a BPCells counts matrix. Update the assays\n',
+                         'row-major order counts matrix using set_cds_row_order_matrix. For example,\n',
+                         '  cds <- set_cds_row_order_matrix(cds)\n',
+                         '*** Bad things may happen if you don\'t. ***\n'))
+        }
+        object
+    }
+)
+
+
+#' Generic to access cds row order BPCells count matrix.
+#' @param x A cell_data_set object.
+#' 
+#' @examples
+#'  \donttest{
+#'    cds <- load_a549()
+#'    exprs(cds)
+#'  }         
+#'          
+#' @return BPCells row order ount matrix.
+#'
+#' @export
+setGeneric("counts_row_order", function(x) standardGeneric("counts_row_order"))
+  
+#' Method to access cds row order BPCells count matrix
+#' @param x A cell_data_set object.
+#'
+#' @return BPCells row order count matrix.
+#' 
+#' @export
+setMethod("counts_row_order", "cell_data_set", function(x) {
+  if(is.null(assay(x, 'counts_row_order'))) {
+    if(!is(counts(x), 'IterableMatrix')) {
+      stop('CDS counts matrix is not a BPCells matrix')
+    }
+    else {
+      stop('CDS has no BPCells row order counts matrix')
+    }
+  }
+  value <- assay(x, 'counts_row_order')
+  return(value)
+})                                 
 
 

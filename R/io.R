@@ -370,12 +370,12 @@ load_mm_data <- function( mat_path,
                            gene_metadata = feature_annotations$metadata,
                            verbose = verbose)
 
-  if(is(exprs(cds), 'CsparseMatrix')) {
-    colData(cds)$n.umi <- Matrix::colSums(exprs(cds))
+  if(is(counts(cds), 'CsparseMatrix')) {
+    colData(cds)$n.umi <- Matrix::colSums(counts(cds))
   }
   else
-  if(is(exprs(cds), 'IterableMatrix')) {
-    colData(cds)$n.umi <- BPCells::colSums(exprs(cds))
+  if(is(counts(cds), 'IterableMatrix')) {
+    colData(cds)$n.umi <- BPCells::colSums(counts(cds))
   }
 
   cds <- cds[,colData(cds)$n.umi >= umi_cutoff]
@@ -491,7 +491,7 @@ load_mtx_data <- function( mat_path,
 
   cds <- new_cell_data_set(mat, cell_metadata = cell.annotations,
       gene_metadata = gene.annotations)
-  colData(cds)$n.umi <- Matrix::colSums(exprs(cds))
+  colData(cds)$n.umi <- Matrix::colSums(counts(cds))
   cds <- cds[,colData(cds)$n.umi >= umi_cutoff]
   cds <- estimate_size_factors(cds)
 
@@ -1828,7 +1828,7 @@ load_monocle_objects <- function(directory_path, matrix_control=list(matrix_mode
       if(!is.null(assay(cds, 'counts_row_order'))) {
         assay(cds, 'counts_row_order') <- NULL
       }
-      counts(cds) <- tryCatch(
+      assay(cds, 'counts') <- tryCatch(
         {
           load_bpcells_matrix_dir(file_path, md5sum, matrix_control=matrix_control_res)
         },

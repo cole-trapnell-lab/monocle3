@@ -420,7 +420,7 @@ calculateLW <- function(cds,
                                                  colnames(pr_graph_node_coords)]
   }
 
-  exprs_mat <- exprs(cds)
+  exprs_mat <- counts(cds)
 
   if(neighbor_graph == "knn") {
     if(is.null(knn_res)) {

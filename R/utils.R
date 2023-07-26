@@ -34,7 +34,7 @@ estimate_size_factors <- function(cds,
       warning("Your CDS object contains cells with zero reads. ",
                     "This causes size factor calculation to fail. Please remove ",
                     "the zero read cells using ",
-                    "cds <- cds[,Matrix::colSums(exprs(cds)) != 0] and then ",
+                    "cds <- cds[,Matrix::colSums(counts(cds)) != 0] and then ",
                     "run cds <- estimate_size_factors(cds)")
       return(cds)
     }
@@ -44,7 +44,7 @@ estimate_size_factors <- function(cds,
       warning("Your CDS object contains cells with zero reads. ",
                     "This causes size factor calculation to fail. Please remove ",
                     "the zero read cells using ",
-                    "cds <- cds[,Matrix::colSums(exprs(cds)) != 0] and then ",
+                    "cds <- cds[,Matrix::colSums(counts(cds)) != 0] and then ",
                     "run cds <- estimate_size_factors(cds)")
       return(cds)
     }
@@ -595,7 +595,7 @@ combine_cds <- function(cds_list,
 
     # Counts matrix rows of genes common to the CDSes examined
     # up to this pass through the loop.
-    exp <- exprs(cds_list[[i]])
+    exp <- counts(cds_list[[i]])
     if(bpcells_matrix_flag && !is(exp, 'IterableMatrix')) {
       exp <- as(exp, 'IterableMatrix')
     }
