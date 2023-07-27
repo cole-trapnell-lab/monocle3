@@ -236,16 +236,16 @@ preprocess_cds <- function(cds,
     FM <- FM[is.finite(fm_rowsums) & fm_rowsums != 0, ]
 
 #    preproc_res <- tfidf(FM)
-    tfidf_res <- tfidf(FM, iterable_matrix_flag=iterable_matrix_flag)
+    tfidf_res <- tfidf(count_matrix=FM, iterable_matrix_flag=iterable_matrix_flag)
     preproc_res <- tfidf_res[['tf_idf_counts']]
 
     num_col <- ncol(preproc_res)
     if(!iterable_matrix_flag) {
-      irlba_res <- irlba::irlba(Matrix::t(preproc_res),
+      irlba_res <- irlba::irlba(A=Matrix::t(preproc_res),
                                 nv = min(num_dim,min(dim(FM)) - 1))
     }
     else {
-      irlba_res <- irlba::irlba(BPCells::t(preproc_res),
+      irlba_res <- irlba::irlba(A=BPCells::t(preproc_res),
                                 nv = min(num_dim,min(dim(FM)) - 1))
     }
 
