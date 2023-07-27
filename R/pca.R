@@ -292,16 +292,11 @@ sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
 #'
 #' @seealso \code{\link{prcomp}}
 bpcells_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
-                                 scale. = FALSE, matrix_control=list(),
-                                 verbose = FALSE, ...)
+                                 scale. = FALSE, verbose = FALSE, ...)
 {
   if(verbose) {
     message('pca: bpcells_prcomp_irlba: matrix class: ', class(x))
     message(show_matrix_info(get_matrix_info(mat=x), indent='  '), appendLF=FALSE)
-  }
-
-  if(!is.null(matrix_control[['class']]) && matrix_control[['matrix_class']] != 'BPCells') {
-    stop('bpcells_prcomp_irlba: matrix_control[[\'matrix_class\']] must be \'BPCells\'')
   }
 
   a <- names(as.list(match.call()))
@@ -312,7 +307,10 @@ bpcells_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
             function to control that algorithm's convergence tolerance. See
             `?prcomp_irlba` for help.")
 
-  x_commit <- set_matrix_class(mat=x, matrix_control=matrix_control)
+  matrix_control <- list(matrix_class='BPCells')
+  matrix_control_default <- get_global_variable('matrix_control_bpcells_pca')
+  matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='pca')
+  x_commit <- set_matrix_class(mat=x, matrix_control=matrix_control_res)
 
   stats <- BPCells::matrix_stats(matrix = x_commit, row_stats = 'none', col_stats = 'variance')
   center <- stats[['col_stats']]['mean',]

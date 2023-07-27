@@ -227,15 +227,16 @@ preprocess_cds <- function(cds,
     cds <- initialize_reduce_dim_model_identity(cds, 'LSI')
 
     if(!iterable_matrix_flag) {
-      fm_rowsums = Matrix::rowSums(FM)
+      fm_rowsums <- Matrix::rowSums(FM)
     }
     else {
+      fm_rowsums <- BPCells::rowSums(FM)
     }
 
     FM <- FM[is.finite(fm_rowsums) & fm_rowsums != 0, ]
 
 #    preproc_res <- tfidf(FM)
-    tfidf_res <- tfidf(FM, iterable_matrix_flag)
+    tfidf_res <- tfidf(FM, iterable_matrix_flag=iterable_matrix_flag)
     preproc_res <- tfidf_res[['tf_idf_counts']]
 
     num_col <- ncol(preproc_res)
@@ -323,32 +324,39 @@ normalize_expr_data <- function(FM, size_factors=NULL,
       pseudo_count <- 0
   }
 
-  if (is(FM, 'IterableMatrix')) {
-    if(norm_method != 'log' || pseudo_count != 1) {
-      stop('BPCells count matrix requires norm_method = \'log\' and pseudo_count = 1.')
+  if(!is(FM, 'IterableMatrix')) {
+    if (norm_method == "log") {
+      FM <- Matrix::t(Matrix::t(FM)/size_factors)
+      if (pseudo_count != 1 || is_sparse_matrix(FM) == FALSE){
+        FM <- FM + pseudo_count
+        FM <- log2(FM)
+      }
+      else {
+        FM@x = log2(FM@x + 1)
+      }
+  
     }
-    FM <- BPCells::t(BPCells::t(FM)/size_factors)
-    FM <- log1p(FM) / log(2)
-  }
-  else
-  if (norm_method == "log") {
-    # If we are using log, normalize by size factor before log-transforming
-
-    FM <- Matrix::t(Matrix::t(FM)/size_factors)
-
-    if (pseudo_count != 1 || is_sparse_matrix(FM) == FALSE){
+    else if (norm_method == "size_only") {
+      FM <- Matrix::t(Matrix::t(FM)/size_factors)
       FM <- FM + pseudo_count
-      FM <- log2(FM)
     }
-    else {
-      FM@x = log2(FM@x + 1)
+  }
+  else {
+    if(norm_method == 'log') {
+      FM <- BPCells::t(BPCells::t(FM)/size_factors)
+      if(pseudo_count == 1) {
+          FM <- log1p(FM) / log(2)
+      }
+      else {
+        FM <- log1p(FM+pseudo_count-1) / log(2)
+      }
     }
+    else if (norm_method == "size_only") {
+      FM <- BPCells::t(BPCells::t(FM)/size_factors)
+      FM <- FM + pseudo_count
+    }
+  }
 
-  }
-  else if (norm_method == "size_only") {
-    FM <- Matrix::t(Matrix::t(FM)/size_factors)
-    FM <- FM + pseudo_count
-  }
   return (FM)
 }
 
@@ -378,16 +386,16 @@ tfidf <- function(count_matrix, frequencies=TRUE, log_scale_tf=TRUE,
   if (log_scale_tf) {
     if(!iterable_matrix_flag) {
       if (frequencies) {
-        tf@x = log1p(tf@x * scale_factor)
+        tf@x <- log1p(tf@x * scale_factor)
       } else {
-        tf@x = log1p(tf@x * 1)
+        tf@x <- log1p(tf@x * 1)
       }
     }
     else {
       if (frequencies) {
-        tf = BPCells::log1p(tf * scale_factor)
+        tf <- log1p(tf * scale_factor)
       } else {
-        tf = BPCells::log1p(tf * 1)
+        tf <- log1p(tf * 1)
       }
     }
   }
@@ -400,13 +408,13 @@ tfidf <- function(count_matrix, frequencies=TRUE, log_scale_tf=TRUE,
   else {
     row_sums <- BPCells::rowSums(BPCells::binarize(count_matrix, threshold=0))
   }
-  idf = log(1 + num_cols / row_sums)
+  idf <- log(1 + num_cols / row_sums)
 
   # Try to just to the multiplication and fall back on delayed array
   # TODO hopefully this actually falls back and not get jobs killed in SGE
   if(!iterable_matrix_flag) {
     tf_idf_counts = tryCatch({
-      tf_idf_counts = tf * idf
+      tf_idf_counts <- tf * idf
       tf_idf_counts
     }, error = function(e) {
       print(paste("TF*IDF multiplication too large for in-memory, falling back",
@@ -414,22 +422,23 @@ tfidf <- function(count_matrix, frequencies=TRUE, log_scale_tf=TRUE,
       options(DelayedArray.block.size=block_size)
       DelayedArray:::set_verbose_block_processing(TRUE)
   
-      tf = DelayedArray::DelayedArray(tf)
-      idf = as.matrix(idf)
+      tf <- DelayedArray::DelayedArray(tf)
+      idf <- as.matrix(idf)
   
-      tf_idf_counts = tf * idf
+      tf_idf_counts <- tf * idf
       tf_idf_counts
     })
   }
   else {
-    tf_idf_counts = tf * idf
+    tf_idf_counts <- tf * idf
   }
 
-  rownames(tf_idf_counts) = rownames(count_matrix)
-  colnames(tf_idf_counts) = colnames(count_matrix)
+  rownames(tf_idf_counts) <- rownames(count_matrix)
+  colnames(tf_idf_counts) <- colnames(count_matrix)
   if(!iterable_matrix_flag) {
-    tf_idf_counts = methods::as(tf_idf_counts, "sparseMatrix")
+    tf_idf_counts <- methods::as(tf_idf_counts, "sparseMatrix")
   }
+  
   return(list(tf_idf_counts=tf_idf_counts, frequencies=frequencies, log_scale_tf=log_scale_tf, scale_factor=scale_factor, col_sums=col_sums, row_sums=row_sums, num_cols=num_cols))
 }
 

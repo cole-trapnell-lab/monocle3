@@ -68,6 +68,12 @@ test_that("preprocessing stays the same", {
   expect_equal(nrow(reducedDims(cds)$PCA), nrow(colData(cds)))
   expect_equal(reducedDims(cds)$PCA[1,1], -24.30544, tol = 1e-5)
 
+  cds <- preprocess_cds(cds, method = "PCA", norm_method = "log",
+                        pseudo_count = 1, num_dim = 20)
+  expect_equal(ncol(reducedDims(cds)$PCA), 20)
+  expect_equal(nrow(reducedDims(cds)$PCA), nrow(colData(cds)))
+  expect_equal(reducedDims(cds)$PCA[1,1], 2.42, tol = 1e-2)
+
   # with reduce dim
   cds <- preprocess_cds(cds, method = "PCA", num_dim = 20)
   expect_equal(ncol(reducedDims(cds)$PCA), 20)
