@@ -9,7 +9,7 @@ set_pca_matrix_control <- function(mat, matrix_control=list()) {
 
   check_matrix_control(matrix_control=matrix_control, control_type='pca', check_conditional=FALSE)
 
-  matrix_info <- get_matrix_info(mat)
+  matrix_info <- get_matrix_info(mat=mat)
   if(!is.null(matrix_control[['matrix_class']])) {
     if(matrix_control[['matrix_class']] == 'dgCMatrix') {
        matrix_control_default <- get_global_variable('matrix_control_csparsematrix_pca')
@@ -296,7 +296,7 @@ bpcells_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
 {
   if(verbose) {
     message('pca: bpcells_prcomp_irlba: matrix class: ', class(x))
-    message(show_matrix_info(get_matrix_info(mat=x), indent='  '), appendLF=FALSE)
+    message(show_matrix_info(matrix_info=get_matrix_info(mat=x), indent='  '), appendLF=FALSE)
   }
 
   a <- names(as.list(match.call()))
@@ -318,7 +318,7 @@ bpcells_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
 
   if(verbose) {
     message('pca: bpcells_prcomp_irlba: x_commit:')
-    message(show_matrix_info(get_matrix_info(mat=x_commit), indent='  '), appendLF=FALSE)
+    message(show_matrix_info(matrix_info=get_matrix_info(mat=x_commit), indent='  '), appendLF=FALSE)
   }
 
   # BPCells:::linear_operator() is meant to reduce irlba run time.
@@ -334,7 +334,7 @@ bpcells_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
     message('end time: ', Sys.time())
   }
 
-  rm_bpcells_dir(x_commit)
+  rm_bpcells_dir(mat=x_commit)
 
   # Diagnostic test.
   #message('bpcells svd')

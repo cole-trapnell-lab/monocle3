@@ -359,21 +359,21 @@ set_matrix_control <- function(matrix_control=list(), matrix_control_default=lis
 
   matrix_control_out = list()
 
-  matrix_control_out[['matrix_class']] <- select_matrix_parameter_value('matrix_class', matrix_control, matrix_control_default, default_matrix_class)
+  matrix_control_out[['matrix_class']] <- select_matrix_parameter_value(parameter='matrix_class', matrix_control=matrix_control, matrix_control_default=matrix_control_default, default_value=default_matrix_class)
 
   if(matrix_control_out[['matrix_class']] == 'BPCells') {
-     matrix_control_out[['matrix_mode']] <- select_matrix_parameter_value('matrix_mode', matrix_control, matrix_control_default, default_matrix_mode)
+     matrix_control_out[['matrix_mode']] <- select_matrix_parameter_value(parameter='matrix_mode', matrix_control=matrix_control, matrix_control_default=matrix_control_default, default_value=default_matrix_mode)
 
     if(matrix_control_out[['matrix_mode']] == 'mem') {
-       matrix_control_out[['matrix_type']] <- select_matrix_parameter_value('matrix_type', matrix_control, matrix_control_default, default_matrix_type)
-       matrix_control_out[['matrix_compress']] <- select_matrix_parameter_value('matrix_compress', matrix_control, matrix_control_default, default_matrix_compress)
+       matrix_control_out[['matrix_type']] <- select_matrix_parameter_value(parameter='matrix_type', matrix_control=matrix_control, matrix_control_default=matrix_control_default, default_value=default_matrix_type)
+       matrix_control_out[['matrix_compress']] <- select_matrix_parameter_value(parameter='matrix_compress', matrix_control=matrix_control, matrix_control_default=matrix_control_default, default_value=default_matrix_compress)
     }
     else
     if(matrix_control_out[['matrix_mode']] == 'dir') {
-       matrix_control_out[['matrix_type']] <- select_matrix_parameter_value('matrix_type', matrix_control, matrix_control_default, default_matrix_type)
-       matrix_control_out[['matrix_path']] <- select_matrix_parameter_value('matrix_path', matrix_control, matrix_control_default, default_matrix_path)
-       matrix_control_out[['matrix_compress']] <- select_matrix_parameter_value('matrix_compress', matrix_control, matrix_control_default, default_matrix_compress)
-       matrix_control_out[['matrix_buffer_size']] <- select_matrix_parameter_value('matrix_buffer_size', matrix_control, matrix_control_default, default_matrix_buffer_size)
+       matrix_control_out[['matrix_type']] <- select_matrix_parameter_value(parameter='matrix_type', matrix_control=matrix_control, matrix_control_default=matrix_control_default, default_value=default_matrix_type)
+       matrix_control_out[['matrix_path']] <- select_matrix_parameter_value(parameter='matrix_path', matrix_control=matrix_control, matrix_control_default=matrix_control_default, default_value=default_matrix_path)
+       matrix_control_out[['matrix_compress']] <- select_matrix_parameter_value(parameter='matrix_compress', matrix_control=matrix_control, matrix_control_default=matrix_control_default, default_value=default_matrix_compress)
+       matrix_control_out[['matrix_buffer_size']] <- select_matrix_parameter_value(parameter='matrix_buffer_size', matrix_control=matrix_control, matrix_control_default=matrix_control_default, default_value=default_matrix_buffer_size)
     }
   }
 
@@ -393,7 +393,7 @@ set_matrix_control <- function(matrix_control=list(), matrix_control_default=lis
   #
   if(!is.null(matrix_control[['show_values']]) && matrix_control[['show_values']] == TRUE)
   {
-    show_matrix_control(matrix_control=matrix_control_out, '  matrix_control: ')
+    show_matrix_control(matrix_control=matrix_control_out, label='  matrix_control: ')
     stop_no_noise()
   }
 
@@ -460,7 +460,7 @@ push_matrix_path <- function(mat) {
 #
 bpcells_find_base_matrix <- function(mat) {
   if(length(BPCells:::matrix_inputs(mat)) > 0) {
-    return(bpcells_find_base_matrix(BPCells:::matrix_inputs(mat)[[1]]))
+    return(bpcells_find_base_matrix(mat=BPCells:::matrix_inputs(mat)[[1]]))
   }
   return(mat)
 }
@@ -514,7 +514,7 @@ get_matrix_class <- function(mat) {
 
 
 get_matrix_info <- function(mat) {
-  matrix_info <- get_matrix_class(mat)
+  matrix_info <- get_matrix_class(mat=mat)
 
   if(is.null(matrix_info[['matrix_class']])) {
     message('bad matrix info -- dropping into browser')
@@ -525,7 +525,7 @@ get_matrix_info <- function(mat) {
     return(matrix_info)
   }
 
-  bmat <- bpcells_find_base_matrix(mat)
+  bmat <- bpcells_find_base_matrix(mat=mat)
 
   # In-memory iterable matrix object classes.
   #   UnpackedMatrixMem_uint32_t
@@ -640,7 +640,7 @@ set_matrix_class <- function(mat, matrix_control=list()) {
   check_matrix_control(matrix_control=matrix_control, control_type='unrestricted', check_conditional=TRUE)
 
   # Get input matrix info.
-  matrix_info <- get_matrix_info(mat)
+  matrix_info <- get_matrix_info(mat=mat)
 
 
 #message('set_matrix_class: matrix_info: in:')
@@ -690,7 +690,7 @@ set_matrix_class <- function(mat, matrix_control=list()) {
                                              compress=matrix_compress_d,
                                              buffer_size=matrix_buffer_size_d,
                                              overwrite=FALSE)
-        push_matrix_path(mat_out)
+        push_matrix_path(mat=mat_out)
       }
       else {
         stop('set_matrix_class: unrecognized matrix_info[[\'matrix_mode\']]')
@@ -714,7 +714,7 @@ set_matrix_class <- function(mat, matrix_control=list()) {
                                              compress=matrix_compress_d, 
                                              buffer_size=matrix_buffer_size_d, 
                                              overwrite=FALSE)
-        push_matrix_path(mat_out)
+        push_matrix_path(mat=mat_out)
       }
     }
   }
@@ -723,14 +723,14 @@ set_matrix_class <- function(mat, matrix_control=list()) {
   }
 
 #message('set_matrix_class: matrix_info: out:')
-#show_matrix_info(get_matrix_info(mat_out), indent='  ')
+#show_matrix_info(get_matrix_info(mat=mat_out), indent='  ')
 
   return(mat_out)
 }
 
 
 rm_bpcells_dir <- function(mat) {
-  mat_info <- get_matrix_info(mat)
+  mat_info <- get_matrix_info(mat=mat)
   if(mat_info[['matrix_class']] == 'BPCells' &&
      mat_info[['matrix_mode']] == 'dir') {
     unlink(mat_info[['matrix_path']], recursive=TRUE)
@@ -749,9 +749,9 @@ set_cds_row_order_matrix <- function(cds) {
     return(cds)
   }
 
-  matrix_info <- get_matrix_info(counts(cds))
+  matrix_info <- get_matrix_info(mat=counts(cds))
   if(matrix_info[['matrix_mode']] == 'dir') {
-    bmat <- bpcells_find_base_matrix(mat_c)
+    bmat <- bpcells_find_base_matrix(mat=mat_c)
     matrix_path <- dirname(bmat@dir)
   }
   else {
@@ -760,7 +760,7 @@ set_cds_row_order_matrix <- function(cds) {
 
   # Remove existing counts_row_order matrix and directory.
   if(!is.null(assays(cds)[['counts_row_order']])) {
-    rm_bpcells_dir(assays(cds)[['counts_row_order']])
+    rm_bpcells_dir(mat=assays(cds)[['counts_row_order']])
     assays(cds)[['counts_row_order']] <- NULL
   }
 
@@ -775,7 +775,7 @@ set_cds_row_order_matrix <- function(cds) {
   # compress. This is not a big deal because only the indices are compressed.
   mat_r <- BPCells::transpose_storage_order(matrix=mat_c, outdir=outdir, tmpdir=tmpdir, load_bytes=4194304L, sort_bytes=1073741824L)
   unlink(tmpdir, recursive=TRUE)
-  push_matrix_path(mat_r)
+  push_matrix_path(mat=mat_r)
 
   assay(cds, 'counts_row_order') <- mat_r
 
@@ -812,15 +812,15 @@ convert_counts_matrix <- function(cds, matrix_control=list(matrix_class='BPCells
 
   mat <- counts(cds)
 
-  if(get_matrix_class(mat) == matrix_control_res[['matrix_class']]) {
+  if(get_matrix_class(mat=mat) == matrix_control_res[['matrix_class']]) {
     return(cds)
   }
 
   counts(cds, bpcells_warn=FALSE) <- set_matrix_class(mat=mat, matrix_control=matrix_control_res)
 
   if(matrix_control_res[['matrix_class']] == 'BPCells') {
-    push_matrix_path(mat)
-    cds <- set_cds_row_order_matrix(cds)
+    push_matrix_path(mat=mat)
+    cds <- set_cds_row_order_matrix(cds=cds)
   }
 
   return(cds)

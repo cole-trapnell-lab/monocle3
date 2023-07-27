@@ -220,7 +220,7 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
       irlba_res <- bpcells_apply_transform(FM=FM, rotation_matrix=rotation_matrix, vcenter=vcenter, vscale=vscale, pca_control=pca_control, verbose=verbose)
 
       # Remove BPCells MatrixDir, if it is defined.
-      fm_info <- get_matrix_info(FM)
+      fm_info <- get_matrix_info(mat=FM)
       if(fm_info[['matrix_class']] == 'BPCells' &&
          fm_info[['matrix_mode']] == 'dir') {
         unlink(fm_info[['matrix_path']], recursive=TRUE)

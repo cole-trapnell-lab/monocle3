@@ -77,7 +77,7 @@ top_markers <- function(cds,
   if(is(counts(cds), 'IterableMatrix') && is.null(counts_row_order)) {
     stop(paste('This CDS has a BPCells counts matrix but no counts_row_order matrix, which',
                'top_markers() requires. Use the command',
-                '  cds <- set_cds_row_order_matrix(cds)',
+                '  cds <- set_cds_row_order_matrix(cds=cds)',
                 'to make it and re-run top_markers.', sep='\n'))
   }
 

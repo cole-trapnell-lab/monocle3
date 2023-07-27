@@ -111,7 +111,7 @@ new_cell_data_set <- function(expression_data,
             "named 'gene_short_name' for certain functions.")
   }
 
-  matrix_info <- get_matrix_info(expression_data)
+  matrix_info <- get_matrix_info(mat=expression_data)
 
   # I believe that the matrix needs to be either a dgCMatrix
   # class matrix or a BPCells class matrix. See get_matrix_class
@@ -147,7 +147,7 @@ new_cell_data_set <- function(expression_data,
   # the row major order BPCells counts matrix. This is
   # called 'counts_row_order'.
   if(is(counts(cds), 'IterableMatrix')) {
-    cds <- set_cds_row_order_matrix(cds)
+    cds <- set_cds_row_order_matrix(cds=cds)
   }
 
   S4Vectors::metadata(cds)$cds_version <- Biobase::package.version("monocle3")

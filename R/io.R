@@ -32,7 +32,7 @@ load_a549 <- function(matrix_control=list()){
           package = "monocle3"))
   small_a549_exprs <- small_a549_exprs[,row.names(small_a549_colData_df)]
 
-  expression_matrix <- set_matrix_class(small_a549_exprs, matrix_control=matrix_control_res)
+  expression_matrix <- set_matrix_class(mat=small_a549_exprs, matrix_control=matrix_control_res)
 
   cds <- new_cell_data_set(expression_data = expression_matrix,
                            cell_metadata = small_a549_colData_df,
@@ -64,7 +64,7 @@ load_worm_embryo <- function(matrix_control=list()) {
   gene_annotation <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/packer_embryo_rowData.rds"))
   gene_annotation$use_for_ordering <- NULL
 
-  expression_matrix <- set_matrix_class(expression_matrix, matrix_control=matrix_control_res)
+  expression_matrix <- set_matrix_class(mat=expression_matrix, matrix_control=matrix_control_res)
 
   cds <- new_cell_data_set(expression_matrix,
       cell_metadata = cell_metadata,
@@ -101,7 +101,7 @@ load_worm_l2 <- function(matrix_control=list()) {
   cell_metadata <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/cao_l2_colData.rds"))
   gene_annotation <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/cao_l2_rowData.rds"))
 
-  expression_matrix <- set_matrix_class(expression_matrix, matrix_control=matrix_control_res)
+  expression_matrix <- set_matrix_class(mat=expression_matrix, matrix_control=matrix_control_res)
 
   cds <- new_cell_data_set(expression_matrix,
       cell_metadata = cell_metadata,
@@ -362,7 +362,7 @@ load_mm_data <- function( mat_path,
                          fileext='.tmp')[[1]]
     mat <- BPCells::write_matrix_dir(BPCells::convert_matrix_type(tmat, 'double'), outdir_c, compress=FALSE, buffer_size=8192L, overwrite=FALSE)
     unlink(toutdir, recursive=TRUE)
-    push_matrix_path(mat)
+    push_matrix_path(mat=mat)
   }
 
   cds <- new_cell_data_set(mat,
@@ -387,7 +387,7 @@ load_mm_data <- function( mat_path,
 
   if(verbose) {
     message('load_mm_data: matrix_info: out:')
-    show_matrix_info(get_matrix_info(mat), '  ')
+    show_matrix_info(matrix_info=get_matrix_info(mat=mat), '  ')
   }
 
   return(cds)
@@ -484,7 +484,7 @@ load_mtx_data <- function( mat_path,
     mat <- mat[, 1:(ncol(mat)-1), drop=FALSE]
   }
 
-  mat <- set_matrix_class(mat, matrix_control=matrix_control_res)
+  mat <- set_matrix_class(mat=mat, matrix_control=matrix_control_res)
 
   rownames(mat) <- gene.annotations$id
   colnames(mat) <- cell.annotations$cell
@@ -881,7 +881,7 @@ load_umap_nn_indexes <- function(umap_model, file_name, md5sum_umap_index) {
 
 load_bpcells_matrix_dir <- function(file_name, md5sum, matrix_control) {
   matrixDirTmp <- BPCells::open_matrix_dir(dir=file_name, buffer_size=8192L)
-  matrixDir <- set_matrix_class(matrixDirTmp, matrix_control=matrix_control)
+  matrixDir <- set_matrix_class(mat=matrixDirTmp, matrix_control=matrix_control)
   return(matrixDir)
 }
 
@@ -1837,7 +1837,7 @@ load_monocle_objects <- function(directory_path, matrix_control=list(matrix_mode
           return(NULL)
         })
         # Rebuild the BPCells row-major order counts matrix.
-        cds <- set_cds_row_order_matrix(cds)
+        cds <- set_cds_row_order_matrix(cds=cds)
     }
     else {
       stop('Unrecognized cds_object value \'', cds_object, '\'')

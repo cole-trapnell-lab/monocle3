@@ -177,7 +177,7 @@ load_cellranger_data <- function(pipestance_path=NULL, genome=NULL,
   data <- data[,Matrix::colSums(data) > umi_cutoff]
   pd <- pd[colnames(data),, drop=FALSE]
 
-  data <- set_matrix_class(data, matrix_control=matrix_control_res)
+  data <- set_matrix_class(mat=data, matrix_control=matrix_control_res)
   gbm <- new_cell_data_set(data,
                         cell_metadata = pd,
                         gene_metadata =  feature.names)
