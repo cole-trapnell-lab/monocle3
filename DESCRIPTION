@@ -106,7 +106,6 @@ Imports:
     SummarizedExperiment (>= 1.11.5),
     utils,
     uwot (>= 0.1.8),
-    terra (>= 1.4-17),
     tibble (>= 2.1.1),
     tidyr (>= 0.8.3),
     viridis (>= 0.5.1)
