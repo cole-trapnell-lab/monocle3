@@ -1,9 +1,9 @@
 context("test-preprocessing")
 
-cds <- load_a549()
-cds <- estimate_size_factors(cds)
-
 test_that("preprocessing stays the same", {
+  cds <- load_a549()
+  cds <- estimate_size_factors(cds)
+
   # norm_method = log
   cds <- preprocess_cds(cds, method = "PCA", num_dim = 20)
   expect_equivalent(ncol(reducedDims(cds)$PCA), 20)
@@ -38,6 +38,48 @@ test_that("preprocessing stays the same", {
   expect_equivalent(ncol(reducedDims(cds)$LSI), 20)
   expect_equivalent(nrow(reducedDims(cds)$LSI), nrow(colData(cds)))
   expect_equivalent(reducedDims(cds)$LSI[1,1], 13.49733, tol = 1e-5)
+
+  # BPCells counts matrix.
+  cds <- load_a549(matrix_control=list(matrix_class='BPCells'))
+  cds <- estimate_size_factors(cds)
+
+  expect_true(is(counts(cds), 'IterableMatrix'))
+
+  # norm_method = log
+  cds <- preprocess_cds(cds, method = "PCA", num_dim = 20)
+  expect_equivalent(ncol(reducedDims(cds)$PCA), 20)
+  expect_equivalent(nrow(reducedDims(cds)$PCA), nrow(colData(cds)))
+  expect_equivalent(reducedDims(cds)$PCA[1,1], 2.4207391, tol = 1e-5)
+
+  cds <- preprocess_cds(cds, method = "LSI", num_dim = 20)
+  expect_equivalent(ncol(reducedDims(cds)$LSI), 20)
+  expect_equivalent(nrow(reducedDims(cds)$LSI), nrow(colData(cds)))
+  expect_equivalent(reducedDims(cds)$LSI[1,1], 13.73796, tol = 1e-5)
+
+  cds <- preprocess_cds(cds, method = "PCA", norm_method = "size_only",
+                        num_dim = 20)
+  expect_equivalent(ncol(reducedDims(cds)$PCA), 20)
+  expect_equivalent(nrow(reducedDims(cds)$PCA), nrow(colData(cds)))
+  expect_equivalent(reducedDims(cds)$PCA[1,1], 2.222207, tol = 1e-5)
+
+  cds <- preprocess_cds(cds, method = "LSI", norm_method = "size_only",
+                        num_dim = 20)
+  expect_equivalent(ncol(reducedDims(cds)$LSI), 20)
+  expect_equivalent(nrow(reducedDims(cds)$LSI), nrow(colData(cds)))
+  expect_equivalent(reducedDims(cds)$LSI[1,1], 13.49733, tol = 1e-5)
+
+  cds <- preprocess_cds(cds, method = "PCA", norm_method = "none",
+                        num_dim = 20)
+  expect_equivalent(ncol(reducedDims(cds)$PCA), 20)
+  expect_equivalent(nrow(reducedDims(cds)$PCA), nrow(colData(cds)))
+  expect_equivalent(reducedDims(cds)$PCA[1,1], -2.42836, tol = 1e-5)
+
+  cds <- preprocess_cds(cds, method = "LSI", norm_method = "none",
+                        num_dim = 20)
+  expect_equivalent(ncol(reducedDims(cds)$LSI), 20)
+  expect_equivalent(nrow(reducedDims(cds)$LSI), nrow(colData(cds)))
+  expect_equivalent(reducedDims(cds)$LSI[1,1], 13.49733, tol = 1e-5)
+
 
   # PCA model
   cds <- load_a549()
