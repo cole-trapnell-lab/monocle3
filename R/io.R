@@ -878,10 +878,20 @@ load_umap_nn_indexes <- function(umap_model, file_name, md5sum_umap_index) {
   return(umap_model)
 }
 
-
-load_bpcells_matrix_dir <- function(file_name, md5sum, matrix_control) {
+# This is a specialized function for use in load_monocle_objects. There are
+# no matrix_control checks and it requires the path to an existing
+# BPCells matrix stored in a directory. The matrix control is used only
+# to set the resulting the matrix_path.
+load_bpcells_matrix_dir <- function(file_name, md5sum, matrix_control=list()) {
   matrixDirTmp <- BPCells::open_matrix_dir(dir=file_name, buffer_size=8192L)
-  matrixDir <- set_matrix_class(mat=matrixDirTmp, matrix_control=matrix_control)
+  matrix_info <- get_matrix_info(mat=matrixDirTmp)
+  matrix_control_res <- list(matrix_class=matrix_info[['matrix_class']],
+                             matrix_mode=matrix_info[['matrix_mode']],
+                             matrix_type=matrix_info[['matrix_type']],
+                             matrix_compress=matrix_info[['matrix_compress']],
+                             matrix_path=matrix_control[['matrix_path']],
+                             matrix_buffer_size=matrix_info[['matrix_buffer_size']])
+  matrixDir <- set_matrix_class(mat=matrixDirTmp, matrix_control=matrix_control_res)
   return(matrixDir)
 }
 
@@ -1525,7 +1535,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
         if(bpcells_matrix_dir_flag) {
           bpcells_matrix_path <- file.path(directory_path, bpcells_matrix_dir)
           mat <- counts(cds)
-          BPCells::write_matrix_dir(mat=mat, dir=bpcells_matrix_path, compress=TRUE, buffer_size=8192L, overwrite=FALSE)
+          BPCells::write_matrix_dir(mat=mat, dir=bpcells_matrix_path, compress=FALSE, buffer_size=8192L, overwrite=FALSE)
 
           file_index[['files']] <- rbind(file_index[['files']],
                                          data.frame(cds_object = 'bpcells_matrix_dir',
@@ -1648,10 +1658,10 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
 #'
 #' @param directory_path a string giving the name of the directory
 #'   from which to read the saved cell_data_set files.
-#' @param matrix_control a list. matrix_control is used only to set the
-#'   matrix path when the saved monocle objects count matrix is
-#'   BPCells class. By default, the BPCells matrix directory is set to
-#'   the current working directory.
+#' @param matrix_control a list that is used only to set the
+#'   matrix path when the saved monocle objects has the count matrix
+#'   stored as a BPCells on-disk matrix. By default, the BPCells matrix
+#'   directory is set to the current working directory.
 #' @return a cell_data_set.
 #'
 #' @examples
@@ -1664,15 +1674,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
 #' @export
 # Bioconductor forbids writing to user directories so examples
 # is not run.
-load_monocle_objects <- function(directory_path, matrix_control=list(matrix_mode='dir', matrix_type='double', matrix_path='.')) {
-
-  # Use the matrix control to set where to store the BPCells matrix directory.
-  if(is.null(matrix_control[['matrix_class']])) {
-    matrix_control[['matrix_class']] <- 'BPCells'
-  }
-  matrix_control_default <- get_global_variable('matrix_control_bpcells_counts')
-  matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='counts')
-
+load_monocle_objects <- function(directory_path, matrix_control=list(matrix_path='.')) {
   appendLF <- FALSE
   # Check for directory.
   if(!file.exists(directory_path))
@@ -1830,7 +1832,7 @@ load_monocle_objects <- function(directory_path, matrix_control=list(matrix_mode
       }
       counts(cds, bpcells_warn=FALSE ) <- tryCatch(
         {
-          load_bpcells_matrix_dir(file_path, md5sum, matrix_control=matrix_control_res)
+          load_bpcells_matrix_dir(file_path, md5sum, matrix_control=matrix_control)
         },
         error = function(cond) {
           message('problem reading file \'', file_path, '\'', appendLF=appendLF)

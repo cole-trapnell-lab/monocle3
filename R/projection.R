@@ -248,6 +248,8 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
     num_cols <- cds@reduce_dim_aux[[reduction_method]][['model']][['num_cols']]
 
     FM <- SingleCellExperiment::counts(cds) 
+    matrix_control_res <- set_pca_matrix_control(mat=mat_counts, matrix_control=matrix_control)
+    FM <- set_matrix_class(mat=mat_counts, matrix_control=matrix_control_res)
     FM <- normalize_expr_data(FM=FM, size_factors=size_factors(cds), norm_method=norm_method, pseudo_count=pseudo_count)
     if (nrow(FM) == 0) {
       stop("all rows have standard deviation zero")

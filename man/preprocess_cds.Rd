@@ -14,8 +14,7 @@ preprocess_cds(
   scaling = TRUE,
   verbose = FALSE,
   build_nn_index = FALSE,
-  nn_control = list(),
-  matrix_control = list()
+  nn_control = list()
 )
 }
 \arguments{
@@ -56,25 +55,6 @@ reduced dimension matrix for later use. Default is FALSE.}
 
 \item{nn_control}{An optional list of parameters used to make the nearest
 neighbor index. See the set_nn_control help for detailed information.}
-
-\item{matrix_control}{An optional list of parameters that control the
-storage of an intermediate matrix that is required for cds
-preprocessing. By default, matrices are stored in memory as dgCMatrix
-class (compressed sparse matrix) objects, which can be set explicitly
-using the matrix_class="dgCMatrix" list value. A very large matrix can
-be stored in a file and accessed by Monocle3 as if it were in memory.
-For this, Monocle3 uses the BPCells R package. Here the matrix_control
-list values are set to matrix_class="BPCells" and matrix_mode="dir".
-Then the count matrix is stored in a directory, on-disk, which is created
-by Monocle3 in the directory where you run Monocle3. This directory has
-a name with the form "monocle.bpcells.*.tmp" where the asterisk is a
-random string that makes the name unique. Do not remove this directory
-while Monocle3 is running! Monocle3 tries to remove the BPCells matrix
-directory when the preprocess_cds function finishes running; however,
-sometimes a matrix directory may persist after preprocess_cds finishes.
-In this case, the user must remove the directory after the session
-ends. For additional information about the matrix_control list, see the
-set_matrix_control help.}
 }
 \value{
 an updated cell_data_set object
@@ -105,24 +85,6 @@ reduction like tSNE and UMAP.
                              cell_metadata=cell_metadata,
                              gene_metadata=gene_metadata)
     cds <- preprocess_cds(cds)
-
-    # For typical count matrices with a small to large number of cells,
-    # we suggest that you use the default matrix_control list by not
-    # not setting the matrix_control parameter. In this case, the
-    # intermediate matrices are stored in memory as sparse matrices
-    # in the dgCMatrix format, as they have in the past. It is also
-    # possible to set the matrix_control list explicitly to use this
-    # in-memory dgCMatrix format by setting the matrix_control parameter
-    # list to
-    #
-      preprocess_cds(..., matrix_control=list(matrix_class='dgCMatrix'))
-    #
-    # For larger count matrices, we suggest that you try storing the
-    # intermediate matrices as on-disk BPCells class objects by setting
-    # the matrix_control parameter list as follows
-    #
-      preprocess_cds(..., matrix_control=list(matrix_class='BPCells', matrix_mode='dir'))
-    #
   }
 
 }

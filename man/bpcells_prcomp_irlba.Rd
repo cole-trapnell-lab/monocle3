@@ -10,7 +10,6 @@ bpcells_prcomp_irlba(
   retx = TRUE,
   center = TRUE,
   scale. = FALSE,
-  matrix_control = list(),
   verbose = FALSE,
   ...
 )

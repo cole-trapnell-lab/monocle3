@@ -33,7 +33,9 @@ that indicates which original cds the cell derives from. Default is
 "sample".}
 
 \item{keep_reduced_dims}{Logical indicating whether to keep the reduced
-dimension matrices. Default is FALSE.}
+dimension matrices. Do not keep the reduced dimensions unless you know
+that the reduced dimensions are the same in each CDS. This is true for
+projected data sets, for example. Default is FALSE.}
 }
 \value{
 A combined cell_data_set object.

@@ -402,7 +402,7 @@ set_matrix_control <- function(matrix_control=list(), matrix_control_default=lis
 
 
 # Report matrix_control list values.
-show_matrix_control <- function(matrix_control, label=NULL) {
+show_matrix_control <- function(matrix_control=list(), label=NULL) {
   message('matrix_control:')
   indent <- ''
   if(!is.null(label)) {
@@ -749,7 +749,7 @@ set_cds_row_order_matrix <- function(cds) {
     return(cds)
   }
 
-  matrix_info <- get_matrix_info(mat=counts(cds))
+  matrix_info <- get_matrix_info(mat=mat_c)
   if(matrix_info[['matrix_mode']] == 'dir') {
     bmat <- bpcells_find_base_matrix(mat=mat_c)
     matrix_path <- dirname(bmat@dir)
