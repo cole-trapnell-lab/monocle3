@@ -5,3 +5,4 @@ inst/doc
 .Ruserdata
 .DS_store
 .httr-oauth
+^save_old.1$
