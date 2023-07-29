@@ -129,11 +129,13 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
 
   allowed_matrix_class <- c('dgCMatrix', 'BPCells')
 
+  allowed_matrix_mode <- list()
   allowed_matrix_mode[['unrestricted']] <- c('dir')
   allowed_matrix_mode[['counts']] <- c('dir')
   allowed_matrix_mode[['mm']] <- c('dir')
   allowed_matrix_mode[['pca']] <- c('dir')
 
+  allowed_matrix_type <- list()
   allowed_matrix_type[['unrestricted']] <- c('float', 'double')
   allowed_matrix_type[['counts']] <- c('float', 'double')
   allowed_matrix_type[['mm']] <- c('float', 'double')
