@@ -55,7 +55,7 @@ You may need to update the version strings in your hdf5.pc file.
 
 ### Notes
 
-- The function convert_counts_matrix() converts the counts matrix in an existing CDS. For example, `cds <- convert_counts_matrix(cds, matrix_control=list(matrix_class="BPCells"))`.
+- The function convert_counts_matrix() converts the counts matrix in an existing CDS. For example, `cds <- convert_counts_matrix(cds, matrix_control=list(matrix_class="BPCells"))` converts an in-memory dgCMatrix that is stored in the cds to an on-disk BPCells matrix.
 - I tested this version using BPCells counts matrices on the examples in the Monocle3 documentation although I did not try all of the plotting functions.
 - There are likely to be more than a few problems that I did not find. Please let me know when you bump into them!
 - The BPCells matrix in-memory storage is not supported by Monocle3; that is, matrix_control=list(matrix_class='BPCells', matrix_mode='mem'). Do not use it. The default matrix_mode='dir', which is on-disk storage.
