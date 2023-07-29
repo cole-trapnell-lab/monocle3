@@ -129,15 +129,15 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
 
   allowed_matrix_class <- c('dgCMatrix', 'BPCells')
 
-  allowed_matrix_mode_unrestricted <- c('dir')
-  allowed_matrix_mode_counts <- c('dir')
-  allowed_matrix_mode_mm <- c('dir')
-  allowed_matrix_mode_pca <- c('dir')
+  allowed_matrix_mode[['unrestricted']] <- c('dir')
+  allowed_matrix_mode[['counts']] <- c('dir')
+  allowed_matrix_mode[['mm']] <- c('dir')
+  allowed_matrix_mode[['pca']] <- c('dir')
 
-  allowed_matrix_type_unrestricted <- c('float', 'double')
-  allowed_matrix_type_counts <- c('float', 'double')
-  allowed_matrix_type_mm <- c('float', 'double')
-  allowed_matrix_type_pca <- c('float', 'double')
+  allowed_matrix_type[['unrestricted']] <- c('float', 'double')
+  allowed_matrix_type[['counts']] <- c('float', 'double')
+  allowed_matrix_type[['mm']] <- c('float', 'double')
+  allowed_matrix_type[['pca']] <- c('float', 'double')
 
   error_string <- ''
 
@@ -153,31 +153,31 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
 
     if(matrix_control[['matrix_class']] == 'BPCells') {
       if(control_type == 'counts')
-        allowed_values <- allowed_matrix_mode_counts
+        allowed_values <- allowed_matrix_mode[['counts']]
       else
       if(control_type == 'mm')
-        allowed_values <- allowed_matrix_mode_mm
+        allowed_values <- allowed_matrix_mode[['mm']]
       else
       if(control_type == 'pca')
-        allowed_values <- allowed_matrix_mode_pca
+        allowed_values <- allowed_matrix_mode[['pca']]
       else
-        allowed_values <- allowed_matrix_mode_unrestricted
+        allowed_values <- allowed_matrix_mode[['unrestricted']]
       if(!(is.null(matrix_control[['matrix_mode']])) &&
          !(matrix_control[['matrix_mode']] %in% allowed_values)) {
         error_string <- paste0('\ninvalid matrix_mode "', matrix_control[['matrix_mode']], '"')
       }
     
       if(control_type == 'unrestricted')
-        allowed_values <- allowed_matrix_type_unrestricted
+        allowed_values <- allowed_matrix_type[['unrestricted']]
       else
       if(control_type == 'counts')
-        allowed_values <- allowed_matrix_type_counts
+        allowed_values <- allowed_matrix_type[['counts']]
       else
       if(control_type == 'mm')
-        allowed_values <- allowed_matrix_type_mm
+        allowed_values <- allowed_matrix_type[['mm']]
       else
       if(control_type == 'pca')
-        allowed_values <- allowed_matrix_type_pca
+        allowed_values <- allowed_matrix_type[['pca']]
       if(!(is.null(matrix_control[['matrix_type']])) &&
          !(matrix_control[['matrix_type']] %in% allowed_values)) {
         error_string <- paste0('\ninvalid matrix_type "', matrix_control[['matrix_type']], '"')
@@ -216,16 +216,16 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
     if(matrix_control[['matrix_class']] == 'BPCells') {
       # Check matrix_type value.
       if(control_type == 'unrestricted')
-        allowed_values <- allowed_matrix_type_unrestricted
+        allowed_values <- allowed_matrix_type[['unrestricted']]
       else
       if(control_type == 'counts')
-        allowed_values <- allowed_matrix_type_counts
+        allowed_values <- allowed_matrix_type[['counts']]
       else
       if(control_type == 'mm')
-        allowed_values <- allowed_matrix_type_mm
+        allowed_values <- allowed_matrix_type[['mm']]
       else
       if(control_type == 'pca')
-        allowed_values <- allowed_matrix_type_pca
+        allowed_values <- allowed_matrix_type[['pca']]
       if(!(matrix_control[['matrix_type']] %in% allowed_values)) {
         error_string <- paste0('\nbad  matrix_type "', matrix_control[['matrix_type']], '"\n')
       }
@@ -237,15 +237,15 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
   
       # Check matrix_mode value.
       if(control_type == 'counts')
-        allowed_values <- allowed_matrix_mode_counts
+        allowed_values <- allowed_matrix_mode[['counts']]
       else
       if(control_type == 'mm')
-        allowed_values <- allowed_matrix_mode_mm
+        allowed_values <- allowed_matrix_mode[['mm']]
       else
       if(control_type == 'pca')
-        allowed_values <- allowed_matrix_mode_pca
+        allowed_values <- allowed_matrix_mode[['pca']]
       else
-        allowed_values <- allowed_matrix_mode_unrestricted
+        allowed_values <- allowed_matrix_mode[['unrestricted']]
       if(!(matrix_control[['matrix_mode']] %in% allowed_values)) {
         error_string <- paste0('\ninvalid matrix_mode "', matrix_control[['matrix_mode']], '"')
       }
@@ -309,16 +309,14 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
 #'      matrix storage. The acceptable values are "dgCMatrix"
 #'      and "BPCells".}
 #'   \item{matrix_type}{Specifies whether to store the matrix
-#'      values as unsigned 32-bit integers
-#'      (matrix_type="uint32_t"), single precision "floats"
-#'      (matrix_type="float"), or double precision "doubles"
-#'      (matrix_type="double"). Unsigned 32-bit integers are
-#'      suitable for storing non-negative values such as counts.
+#'      values as single precision "floats" (matrix_type="float"),
+#'      or double precision "doubles" (matrix_type="double").
 #'      "matrix_type" is used only for BPCells class matrices.}
 #'   \item{matrix_mode}{Specifies whether to store the BPCells
 #'      class matrix in memory (matrix_mode="mem") or on
 #'      disk (matrix_mode="dir"). "matrix_mode" is used only
-#'      for BPCells class matrices.}
+#'      for BPCells class matrices. At this time, only 'dir'
+#'      is allowed.}
 #'   \item{matrix_path}{Specifies the directory where the
 #'      BPCells on-disk matrix data are stored in a
 #'      sub-directory with a randomized name. The default is
@@ -330,12 +328,10 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
 #'      "/tmp". The asterisk represents a random string that
 #'      makes the names unique.}
 #'   \item{matrix_compress}{Specifies whether to use bit-packing
-#'      compression to store BPCells matrix values. This is
-#'      most effective for values stored as matrix_type="uint32_t"
-#'      but has some benefit for values stored as matrix_type="float"
-#'      and matrix_type="double". Compression reduces storage
-#'      requirements but increases run time. "matrix_compress" is
-#'      used only for BPCells class matrices.}
+#'      compression to store BPCells matrix values. Only the
+#'      matrix indices are compressed for matrix_types "float"
+#'      and "double". "matrix_compress" is used only for BPCells
+#'      class matrices.}
 #'   \item{matrix_buffer_size}{Specifies how many items of
 #'      data to buffer in memory before flushing to disk. This
 #'      is used for matrix_class="BPCells" with matrix_mode="dir".}
@@ -626,6 +622,33 @@ show_matrix_info <- function(matrix_info, indent='') {
 }
 
 
+compare_matrix_control <- function(matrix_control=list(), matrix_info=list()) {
+  if(matrix_control[['matrix_class']] == 'dgCMatrix' && matrix_info[['matrix_class']] == 'dgCMatrix') {
+    return(TRUE)
+  }
+  else
+  if(matrix_control[['matrix_class']] == 'BPCells' && matrix_info[['matrix_class']] == 'BPCells') {
+    if(matrix_control[['matrix_mode']] == 'mem' && matrix_info[['matrix_mode']] == 'mem') {
+      if(matrix_control[['matrix_type']] == matrix_info[['matrix_type']] &&
+         matrix_control[['matrix_compress']] == matrix_info[['matrix_compress']]) {
+        return(TRUE)
+      }
+    }
+    else
+    if(matrix_control[['matrix_mode']] == 'dir' && matrix_info[['matrix_mode']] == 'dir') {
+      if(matrix_control[['matrix_type']] == matrix_info[['matrix_type']] &&
+         matrix_control[['matrix_path']] == matrix_info[['matrix_path']] &&
+         matrix_control[['matrix_compress']] == matrix_info[['matrix_compress']] &&
+         matrix_control[['matrix_buffer_size']] == matrix_info[['matrix_buffer_size']]) {
+        return(TRUE)
+      }
+    }
+  }
+
+  return(FALSE)
+}
+
+
 # set_matrix_class
 #  Notes:
 #    o  Cast an input matrix into a class given or inferred from the
@@ -656,6 +679,11 @@ set_matrix_class <- function(mat, matrix_control=list()) {
   }
 
   mat_out <- mat
+
+  if(compare_matrix_control(matrix_control, matrix_info)) {
+    return(mat_out)
+  }
+
   if(matrix_control[['matrix_class']] == 'dgCMatrix') {
     if(matrix_info[['matrix_class']] != 'dgCMatrix') {
       if(matrix_info[['matrix_class']] == 'BPCells') {
@@ -674,6 +702,7 @@ set_matrix_class <- function(mat, matrix_control=list()) {
     matrix_compress_d <- matrix_control[['matrix_compress']]
     matrix_path_d <- matrix_control[['matrix_path']]
     matrix_buffer_size_d <- matrix_control[['matrix_buffer_size']]
+
     if(matrix_info[['matrix_class']] == 'dgCMatrix') {
       if(matrix_mode_d == 'mem') {
         mat_out <- BPCells::write_matrix_memory(mat=BPCells::convert_matrix_type(mat, type=matrix_type_d),
@@ -812,7 +841,7 @@ convert_counts_matrix <- function(cds, matrix_control=list(matrix_class='BPCells
 
   mat <- counts(cds)
 
-  if(get_matrix_class(mat=mat) == matrix_control_res[['matrix_class']]) {
+  if(get_matrix_class(mat=mat) == 'dgCMatrix' && matrix_control_res[['matrix_class']] == 'dgCMatrix') {
     return(cds)
   }
 

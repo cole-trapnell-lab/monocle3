@@ -39,16 +39,14 @@ show the matrix_control values to be used and then stop.
 matrix storage. The acceptable values are "dgCMatrix"
 and "BPCells".}
 \item{matrix_type}{Specifies whether to store the matrix
-values as unsigned 32-bit integers
-(matrix_type="uint32_t"), single precision "floats"
-(matrix_type="float"), or double precision "doubles"
-(matrix_type="double"). Unsigned 32-bit integers are
-suitable for storing non-negative values such as counts.
+values as single precision "floats" (matrix_type="float"),
+or double precision "doubles" (matrix_type="double").
 "matrix_type" is used only for BPCells class matrices.}
 \item{matrix_mode}{Specifies whether to store the BPCells
 class matrix in memory (matrix_mode="mem") or on
 disk (matrix_mode="dir"). "matrix_mode" is used only
-for BPCells class matrices.}
+for BPCells class matrices. At this time, only 'dir'
+is allowed.}
 \item{matrix_path}{Specifies the directory where the
 BPCells on-disk matrix data are stored in a
 sub-directory with a randomized name. The default is
@@ -60,12 +58,10 @@ name that has the form "monocle.bpcells.*.tmp" in
 "/tmp". The asterisk represents a random string that
 makes the names unique.}
 \item{matrix_compress}{Specifies whether to use bit-packing
-compression to store BPCells matrix values. This is
-most effective for values stored as matrix_type="uint32_t"
-but has some benefit for values stored as matrix_type="float"
-and matrix_type="double". Compression reduces storage
-requirements but increases run time. "matrix_compress" is
-used only for BPCells class matrices.}
+compression to store BPCells matrix values. Only the
+matrix indices are compressed for matrix_types "float"
+and "double". "matrix_compress" is used only for BPCells
+class matrices.}
 \item{matrix_buffer_size}{Specifies how many items of
 data to buffer in memory before flushing to disk. This
 is used for matrix_class="BPCells" with matrix_mode="dir".}
