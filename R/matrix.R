@@ -98,11 +98,13 @@ select_matrix_parameter_value <- function(parameter, matrix_control, matrix_cont
 #     matrix_mode: 'mem'  default: 'dir' NOTE: disallow matrix_mode 'mem'
 #       matrix_type: 'uint32_t', 'float', 'double'  NOTE: 'uint32_t' is valid for assay matrix only
 #       matrix_compress: TRUE, FALSE default: FALSE
+#       matrix_bpcells_copy: TRUE, FALSE default: TRUE
 #     matrix_mode: 'dir'
 #       matrix_type: 'uint32_t', 'float', 'double' default: 'uint32_t'
 #       matrix_path: <path to directory or file> default: 'NULL' -> temporary directory in pwd
 #       matrix_compress: TRUE, FALSE default: FALSE
 #       matrix_buffer_size: <integer> default: 8192L
+#       matrix_bpcells_copy: TRUE, FALSE default: TRUE
 check_matrix_control <- function(matrix_control=list(), control_type=c('unrestricted', 'counts', 'mm', 'pca'), check_conditional=FALSE) {
   control_type <- match.arg(control_type)
   assertthat::assert_that(is.list(matrix_control))
@@ -125,6 +127,7 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
                                   'matrix_compress',
                                   'matrix_path',
                                   'matrix_buffer_size',
+                                  'matrix_bpcells_copy',
                                   'show_values')
 
   allowed_matrix_class <- c('dgCMatrix', 'BPCells')
@@ -200,6 +203,10 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
         error_string <- paste0('\nmatrix_buffer_size value must be an integer type')
       }
     }
+
+    if(!is.logical(matrix_control[['matrix_bpcells_copy']])) {
+      error_string <- paste0('\nmatrix_bpcells_copy value must be a logical type')
+    }
   }
   else {
     # Check matrix_class value.
@@ -264,6 +271,9 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
         }
       }
     }
+    if(!is.logical(matrix_control[['matrix_bpcells_copy']])) {
+      error_string <- paste0('\nmatrix_bpcells_copy value must be a logical type')
+    }
   }
 
   if(error_string != '') {
@@ -278,11 +288,13 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
 #     matrix_mode: 'mem'  default: 'dir'
 #       matrix_type: 'uint32_t', 'float', 'double'
 #       matrix_compress: TRUE, FALSE default: FALSE
+#       matrix_bpcells_copy: TRUE, FALSE default: TRUE
 #     matrix_mode: 'dir'
 #       matrix_type: 'uint32_t', 'float', 'double' default: 'uint32_t'
 #       matrix_path: <path to directory or file> default: 'NULL' -> temporary directory in pwd
 #       matrix_compress: TRUE, FALSE default: FALSE
 #       matrix_buffer_size: <integer> default: 8192L
+#       matrix_bpcells_copy: TRUE, FALSE default: TRUE
 # Notes:
 #   o  modification to any of set_assay_control, set_pca_control,
 #      or set_pca_control_default may necessitate modifications
@@ -337,6 +349,16 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
 #'   \item{matrix_buffer_size}{Specifies how many items of
 #'      data to buffer in memory before flushing to disk. This
 #'      is used for matrix_class="BPCells" with matrix_mode="dir".}
+#'   \item{matrix_bpcells_copy}{A logical value that specifies
+#'      whether the input BPCells matrix is to be copied. This
+#'      is relevant only when the input matrix and the desired
+#'      output matrix are the same; that is, have the same
+#'      matrix_mode, matrix_path, matrix_compress, and
+#'      matrix_buffer_size values. If matrix_bpcells_copy is
+#'      TRUE, the queued operations are applied to an new
+#'      on-disk copy of of the input matrix and the operation
+#'      queue is emptied. If FALSE, the queued operations are
+#'      not applied and the on-disk storage is unaltered.}
 #' }
 #' @export
 set_matrix_control <- function(matrix_control=list(), matrix_control_default=list(), control_type=c('unrestricted', 'counts', 'mm', 'pca')) {
@@ -354,6 +376,7 @@ set_matrix_control <- function(matrix_control=list(), matrix_control_default=lis
   default_matrix_compress <- NULL
   default_matrix_path <- NULL
   default_matrix_buffer_size <- NULL
+  default_matrix_bpcells_copy <- NULL
 
   matrix_control_out = list()
 
@@ -365,6 +388,7 @@ set_matrix_control <- function(matrix_control=list(), matrix_control_default=lis
     if(matrix_control_out[['matrix_mode']] == 'mem') {
        matrix_control_out[['matrix_type']] <- select_matrix_parameter_value(parameter='matrix_type', matrix_control=matrix_control, matrix_control_default=matrix_control_default, default_value=default_matrix_type)
        matrix_control_out[['matrix_compress']] <- select_matrix_parameter_value(parameter='matrix_compress', matrix_control=matrix_control, matrix_control_default=matrix_control_default, default_value=default_matrix_compress)
+       matrix_control_out[['matrix_bpcells_copy']] <- select_matrix_parameter_value(parameter='matrix_bpcells_copy', matrix_control=matrix_control, matrix_control_default=matrix_control_default, default_value=default_matrix_bpcells_copy)
     }
     else
     if(matrix_control_out[['matrix_mode']] == 'dir') {
@@ -372,6 +396,7 @@ set_matrix_control <- function(matrix_control=list(), matrix_control_default=lis
        matrix_control_out[['matrix_path']] <- select_matrix_parameter_value(parameter='matrix_path', matrix_control=matrix_control, matrix_control_default=matrix_control_default, default_value=default_matrix_path)
        matrix_control_out[['matrix_compress']] <- select_matrix_parameter_value(parameter='matrix_compress', matrix_control=matrix_control, matrix_control_default=matrix_control_default, default_value=default_matrix_compress)
        matrix_control_out[['matrix_buffer_size']] <- select_matrix_parameter_value(parameter='matrix_buffer_size', matrix_control=matrix_control, matrix_control_default=matrix_control_default, default_value=default_matrix_buffer_size)
+       matrix_control_out[['matrix_bpcells_copy']] <- select_matrix_parameter_value(parameter='matrix_bpcells_copy', matrix_control=matrix_control, matrix_control_default=matrix_control_default, default_value=default_matrix_bpcells_copy)
     }
   }
 
@@ -418,6 +443,7 @@ show_matrix_control <- function(matrix_control=list(), label=NULL) {
       message(indent, '  matrix_mode: ', ifelse(!is.null(matrix_control[['matrix_mode']]), matrix_control[['matrix_mode']], as.character(NA)))
       message(indent, '  matrix_type: ', ifelse(!is.null(matrix_control[['matrix_type']]), matrix_control[['matrix_type']], as.character(NA)))
       message(indent, '  matrix_compress: ', ifelse(!is.null(matrix_control[['matrix_compress']]), matrix_control[['matrix_compress']], as.character(NA)))
+      message(indent, '  matrix_bpcells_copy: ', ifelse(!is.null(matrix_control[['matrix_bpcells_copy']]), matrix_control[['matrix_bpcells_copy']], as.character(NA)))
     }
     else
     if(matrix_control[['matrix_mode']] == 'dir') {
@@ -426,6 +452,7 @@ show_matrix_control <- function(matrix_control=list(), label=NULL) {
       message(indent, '  matrix_path: ', ifelse(!is.null(matrix_control[['matrix_path']]), matrix_control[['matrix_path']], as.character(NA)))
       message(indent, '  matrix_compress: ', ifelse(!is.null(matrix_control[['matrix_compress']]), matrix_control[['matrix_compress']], as.character(NA)))
       message(indent, '  matrix_buffer_size: ', ifelse(!is.null(matrix_control[['matrix_buffer_size']]), matrix_control[['matrix_buffer_size']], as.character(NA)))
+      message(indent, '  matrix_bpcells_copy: ', ifelse(!is.null(matrix_control[['matrix_bpcells_copy']]), matrix_control[['matrix_bpcells_copy']], as.character(NA)))
     }
     else {
       stop('show_matrix_control: unsupported matrix class/mode/...\'', matrix_control[['method']], '\'')
@@ -656,9 +683,13 @@ compare_matrix_control <- function(matrix_control=list(), matrix_info=list()) {
 #    o  Cast an input matrix into a class given or inferred from the
 #       matrix_control, which must be complete in the sense that all
 #       values required for the class are given explicitly.
-#    o  Always make a new matrix, even if the matrix is a BPCells
-#       class and the parameters are the same because we may need to
-#       commit the queued operations.
+#    o  When the matrix_info values of the input matrix are the same
+#       as the matrix_control values AND the matrix_class is BPCells,
+#       the queued operations are not applied (without copying the
+#       on-disk matrix) when matrix_control[['matrix_bpcells_copy']] is
+#       FALSE. Otherwise, the queued BPCells operations are applied
+#       and the result is stored in a new on-disk directory. Applying
+#       the queued BPCells operations improves performance.
 #   
 set_matrix_class <- function(mat, matrix_control=list()) {
   # Check matrix_control list.
@@ -666,7 +697,6 @@ set_matrix_class <- function(mat, matrix_control=list()) {
 
   # Get input matrix info.
   matrix_info <- get_matrix_info(mat=mat)
-
 
 #message('set_matrix_class: matrix_info: in:')
 #show_matrix_info(matrix_info, indent='  ')
@@ -682,8 +712,16 @@ set_matrix_class <- function(mat, matrix_control=list()) {
 
   mat_out <- mat
 
+  # Can we return the input matrix object immediately? We
+  # can when the matrix_info and matrix_control are the same
+  # AND the matrix_class is dgCMatrix OR (the matrix_class
+  # is 'BPCells' AND matrix_bpcells_copy is FALSE_.
   if(compare_matrix_control(matrix_control, matrix_info)) {
-    return(mat_out)
+    if(matrix_control[['matrix_class']] == 'dgCMatrix']] ||
+       (matrix_control[['matrix_class']] == 'BPCells']] &&
+        matrix_control[['matrix_bpcells_copy']] == FALSE)) {
+      return(mat_out)
+    }
   }
 
   if(matrix_control[['matrix_class']] == 'dgCMatrix') {
@@ -698,6 +736,7 @@ set_matrix_class <- function(mat, matrix_control=list()) {
   }
   else
   if(matrix_control[['matrix_class']] == 'BPCells') {
+
     matrix_class_d <- matrix_control[['matrix_class']]
     matrix_mode_d <- matrix_control[['matrix_mode']]
     matrix_type_d <- matrix_control[['matrix_type']]
@@ -822,7 +861,9 @@ set_cds_row_order_matrix <- function(cds) {
 #' @param cds cell_data_set The cell_data_set that has the
 #'   counts matrix to be converted.
 #' @param matrix_control list A list of matrix control
-#'   values used to convert the counts matrix.
+#'   values used to convert the counts matrix. If the
+#'   counts matrix in the cds is the same as the desired
+#'   counts matrix, it is not altered.
 #' @return cell_data_set The cell_data_set with the converted
 #'   counts matrix.
 #' @examples
@@ -841,11 +882,12 @@ convert_counts_matrix <- function(cds, matrix_control=list(matrix_class='BPCells
   }
   matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='counts')
 
-  mat <- counts(cds)
+  # Do not make a BPCells matrix on-disk copy if the
+  # matrix_info values of the counts matrix are the
+  # same as the matrix_control values.
+  matrix_control_res[['matrix_bpcells_copy']] <- FALSE
 
-  if(get_matrix_class(mat=mat) == 'dgCMatrix' && matrix_control_res[['matrix_class']] == 'dgCMatrix') {
-    return(cds)
-  }
+  mat <- counts(cds)
 
   counts(cds, bpcells_warn=FALSE) <- set_matrix_class(mat=mat, matrix_control=matrix_control_res)
 

@@ -91,19 +91,19 @@ get_global_variable <- function(variable_name=NULL) {
 
   # Default matrix_control list for any.
   set_global_variable('matrix_control_csparsematrix_unrestriced', list(matrix_class='dgCMatrix'))
-  set_global_variable('matrix_control_bpcells_unrestriced', list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=FALSE, matrix_path='.', matrix_buffer_size=8192L))
+  set_global_variable('matrix_control_bpcells_unrestriced', list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=FALSE, matrix_path='.', matrix_buffer_size=8192L, matrix_bpcells_copy=TRUE))
 
   # Default matrix_control list for counts.
   set_global_variable('matrix_control_csparsematrix_counts', list(matrix_class='dgCMatrix'))
-  set_global_variable('matrix_control_bpcells_counts', list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=FALSE, matrix_path='.', matrix_buffer_size=8192L))
+  set_global_variable('matrix_control_bpcells_counts', list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=FALSE, matrix_path='.', matrix_buffer_size=8192L, matrix_bpcells_copy=TRUE))
 
   # Default matrix_control list for mm.
   set_global_variable('matrix_control_csparsematrix_mm', list(matrix_class='dgCMatrix'))
-  set_global_variable('matrix_control_bpcells_mm', list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=FALSE, matrix_path='.', matrix_buffer_size=8192L))
+  set_global_variable('matrix_control_bpcells_mm', list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=FALSE, matrix_path='.', matrix_buffer_size=8192L, matrix_bpcells_copy=TRUE))
 
   # Default matrix_control list for pca.
    set_global_variable('matrix_control_csparsematrix_pca', list(matrix_class='dgCMatrix'))
-   set_global_variable('matrix_control_bpcells_pca', list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=FALSE, matrix_path='.', matrix_buffer_size=8192L))
+   set_global_variable('matrix_control_bpcells_pca', list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=FALSE, matrix_path='.', matrix_buffer_size=8192L, matrix_bpcells_copy=TRUE))
 
 
   # Watching preprocess_cds() it appears that R uses OMP_NUM_THREADS

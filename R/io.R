@@ -890,7 +890,8 @@ load_bpcells_matrix_dir <- function(file_name, md5sum, matrix_control=list()) {
                              matrix_type=matrix_info[['matrix_type']],
                              matrix_compress=matrix_info[['matrix_compress']],
                              matrix_path=matrix_control[['matrix_path']],
-                             matrix_buffer_size=matrix_info[['matrix_buffer_size']])
+                             matrix_buffer_size=matrix_info[['matrix_buffer_size']],
+                             matrix_bpcells_copy=TRUE)
   matrixDir <- set_matrix_class(mat=matrixDirTmp, matrix_control=matrix_control_res)
   return(matrixDir)
 }
