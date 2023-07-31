@@ -202,10 +202,11 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
          !(is.integer(matrix_control[['matrix_buffer_size']]))) {
         error_string <- paste0('\nmatrix_buffer_size value must be an integer type')
       }
-    }
 
-    if(!is.logical(matrix_control[['matrix_bpcells_copy']])) {
-      error_string <- paste0('\nmatrix_bpcells_copy value must be a logical type')
+      if(!(is.null(matrix_control[['matrix_bpcells_copy']])) &&
+         !(is.logical(matrix_control[['matrix_bpcells_copy']]))) {
+        error_string <- paste0('\nmatrix_bpcells_copy value must be a logical type')
+      }
     }
   }
   else {
@@ -270,9 +271,9 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
           error_string <- paste0('\nmatrix_buffer_size must be an integer')
         }
       }
-    }
-    if(!is.logical(matrix_control[['matrix_bpcells_copy']])) {
-      error_string <- paste0('\nmatrix_bpcells_copy value must be a logical type')
+      if(!is.logical(matrix_control[['matrix_bpcells_copy']])) {
+        error_string <- paste0('\nmatrix_bpcells_copy value must be a logical type')
+      }
     }
   }
 

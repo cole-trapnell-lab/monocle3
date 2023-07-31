@@ -312,6 +312,7 @@ load_mm_data <- function( mat_path,
   else {
     matrix_control_default <- get_global_variable('matrix_control_csparsematrix_mm')
   }
+
   matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='mm')
 
   feature_annotations <- load_annotations_data( feature_anno_path, feature_metadata_column_names, header, sep, quote=quote, annotation_type='features' )
