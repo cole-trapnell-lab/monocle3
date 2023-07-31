@@ -717,8 +717,8 @@ set_matrix_class <- function(mat, matrix_control=list()) {
   # AND the matrix_class is dgCMatrix OR (the matrix_class
   # is 'BPCells' AND matrix_bpcells_copy is FALSE_.
   if(compare_matrix_control(matrix_control, matrix_info)) {
-    if(matrix_control[['matrix_class']] == 'dgCMatrix']] ||
-       (matrix_control[['matrix_class']] == 'BPCells']] &&
+    if(matrix_control[['matrix_class']] == 'dgCMatrix' ||
+       (matrix_control[['matrix_class']] == 'BPCells' &&
         matrix_control[['matrix_bpcells_copy']] == FALSE)) {
       return(mat_out)
     }

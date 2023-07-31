@@ -11,7 +11,9 @@ convert_counts_matrix(cds, matrix_control = list(matrix_class = "BPCells"))
 counts matrix to be converted.}
 
 \item{matrix_control}{list A list of matrix control
-values used to convert the counts matrix.}
+values used to convert the counts matrix. If the
+counts matrix in the cds is the same as the desired
+counts matrix, it is not altered.}
 }
 \value{
 cell_data_set The cell_data_set with the converted

@@ -65,6 +65,16 @@ class matrices.}
 \item{matrix_buffer_size}{Specifies how many items of
 data to buffer in memory before flushing to disk. This
 is used for matrix_class="BPCells" with matrix_mode="dir".}
+\item{matrix_bpcells_copy}{A logical value that specifies
+whether the input BPCells matrix is to be copied. This
+is relevant only when the input matrix and the desired
+output matrix are the same; that is, have the same
+matrix_mode, matrix_path, matrix_compress, and
+matrix_buffer_size values. If matrix_bpcells_copy is
+TRUE, the queued operations are applied to an new
+on-disk copy of of the input matrix and the operation
+queue is emptied. If FALSE, the queued operations are
+not applied and the on-disk storage is unaltered.}
 }
 }
 
