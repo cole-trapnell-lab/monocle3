@@ -7,7 +7,7 @@
 set_matrix_control(
   matrix_control = list(),
   matrix_control_default = list(),
-  control_type = c("unrestricted", "counts", "mm", "pca")
+  control_type = c("unrestricted", "pca")
 )
 }
 \arguments{
@@ -24,7 +24,7 @@ matrix_control Output control list.
 \description{
 Verifies and sets the list of parameter values
 that is used to make the count matrix that is stored in the
-cell_data_set or certain other matrices thare are used
+cell_data_set or certain other matrices that are used
 during the Monocle3 run. To see the
 default values,
 call "set_matrix_control(matrix_control=list(matrix_class='BPCells', show_values=TRUE))".
@@ -35,43 +35,46 @@ show the matrix_control values to be used and then stop.
 \section{matrix_control parameters}{
 
 \describe{
-\item{matrix_class}{Specifies the matrix class to use for
-matrix storage. The acceptable values are "dgCMatrix"
-and "BPCells".}
-\item{matrix_type}{Specifies whether to store the matrix
-values as single precision "floats" (matrix_type="float"),
-or double precision "doubles" (matrix_type="double").
+\item{matrix_class}{A string that specifies the matrix
+class to use for matrix storage. The acceptable
+values are "dgCMatrix" and "BPCells".}
+\item{matrix_type}{A string that specifies whether to
+store the matrix values as single precision "floats"
+(matrix_type="float") or double precision "doubles"
+(matrix_type="double"). The default is "double".
 "matrix_type" is used only for BPCells class matrices.}
-\item{matrix_mode}{Specifies whether to store the BPCells
-class matrix in memory (matrix_mode="mem") or on
-disk (matrix_mode="dir"). "matrix_mode" is used only
-for BPCells class matrices. At this time, only 'dir'
-is allowed.}
-\item{matrix_path}{Specifies the directory where the
-BPCells on-disk matrix data are stored in a
+\item{matrix_mode}{A string that specifies whether to
+store the BPCells class matrix in memory
+(matrix_mode="mem") or on disk (matrix_mode="dir").
+"matrix_mode" is used only for BPCells class
+matrices. At this time, only 'dir' is allowed.}
+\item{matrix_path}{A string that specifies the directory
+where the BPCells on-disk matrix data are stored in a
 sub-directory with a randomized name. The default is
 in the directory where R is running. "matrix_path" is
 used only for BPCells class matrices with
 matrix_mode="dir". For example, if matrix_path is set
-to "/tmp" Monocle3 will create a directory with a
+to "my_dir" Monocle3 will create a directory with a
 name that has the form "monocle.bpcells.*.tmp" in
-"/tmp". The asterisk represents a random string that
-makes the names unique.}
-\item{matrix_compress}{Specifies whether to use bit-packing
-compression to store BPCells matrix values. Only the
-matrix indices are compressed for matrix_types "float"
-and "double". "matrix_compress" is used only for BPCells
-class matrices.}
-\item{matrix_buffer_size}{Specifies how many items of
-data to buffer in memory before flushing to disk. This
-is used for matrix_class="BPCells" with matrix_mode="dir".}
-\item{matrix_bpcells_copy}{A logical value that specifies
+"my_dir". The asterisk represents a random string that
+makes the name unique.}
+\item{matrix_compress}{A logical that specifies whether
+to use bit-packing compression to store BPCells matrix
+values. Only the matrix indices are compressed for
+matrix_types "float" and "double". "matrix_compress"
+is used only for BPCells class matrices. The default is
+FALSE, which improves processing speed.}
+\item{matrix_buffer_size}{An integer that specifies how
+many items of data to buffer in memory before flushing
+to disk. This is used for matrix_class="BPCells" with
+matrix_mode="dir". The default is 8192L.}
+\item{matrix_bpcells_copy}{A logical that specifies
 whether the input BPCells matrix is to be copied. This
 is relevant only when the input matrix and the desired
 output matrix are the same; that is, have the same
 matrix_mode, matrix_path, matrix_compress, and
 matrix_buffer_size values. If matrix_bpcells_copy is
-TRUE, the queued operations are applied to an new
+TRUE, the queued operations are applied to a new
 on-disk copy of of the input matrix and the operation
 queue is emptied. If FALSE, the queued operations are
 not applied and the on-disk storage is unaltered.}

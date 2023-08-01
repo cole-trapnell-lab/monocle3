@@ -9,8 +9,8 @@ skip_not_travis <- function ()
 
 # functions
 #   select_matrix_parameter_value <- function(parameter, matrix_control, matrix_control_default, default_value)
-#   check_matrix_control <- function(matrix_control=list(), control_type=c('unrestricted', 'counts', 'mm', 'pca'), check_conditional=FALSE)
-#   set_matrix_control <- function(matrix_control=list(), matrix_control_default=list(), control_type=c('unrestricted', 'counts', 'mm', 'pca'))
+#   check_matrix_control <- function(matrix_control=list(), control_type=c('unrestricted', 'pca'), check_conditional=FALSE)
+#   set_matrix_control <- function(matrix_control=list(), matrix_control_default=list(), control_type=c('unrestricted', 'pca'))
 #   show_matrix_control <- function(matrix_control, label=NULL)
 #   push_matrix_path <- function(mat)
 #   bpcells_find_base_matrix <- function(mat)
@@ -24,8 +24,8 @@ skip_not_travis <- function ()
 #
 
 # functions that need additional review
-#   (done) check_matrix_control <- function(matrix_control=list(), control_type=c('unrestricted', 'counts', 'mm', 'pca'), check_conditional=FALSE)
-#   (done) set_matrix_control <- function(matrix_control=list(), matrix_control_default=list(), control_type=c('unrestricted', 'counts', 'mm', 'pca'))
+#   (done) check_matrix_control <- function(matrix_control=list(), control_type=c('unrestricted', 'pca'), check_conditional=FALSE)
+#   (done) set_matrix_control <- function(matrix_control=list(), matrix_control_default=list(), control_type=c('unrestricted', 'pca'))
 #   (done) set_matrix_class <- function(mat, matrix_control=list())
 #   (done) convert_counts_matrix <- function(cds, matrix_control=list(matrix_class='BPCells'))
 #   (done) get_matrix_info <- function(mat)
@@ -93,4 +93,183 @@ skip_not_travis <- function ()
 #   utils.R
 #     (yes) combine_cds()
 #
+
+# # Test priorities.
+# 
+# (done) check_matrix_control
+# (done) set_matrix_control
+# (done) set_matrix_class
+# 
+# (done) convert_counts_matrix
+# 
+# (done) save_monocle_objects
+# (done) load_monocle_objects
+# 
+
+#
+# These tests are not exhaustive but may check more frequently used and
+# important combinations.
+#
+
+test_that("check_matrix_control", {
+
+  # matrix_class = bad_class
+  matrix_control <- list(matrix_class='bad_class')
+  testthat::expect_error(check_matrix_control(matrix_control=matrix_control))
+
+  # matrix_class = dgCMatrix
+  matrix_control <- list(matrix_class='dgCMatrix')
+  testthat::expect_true(check_matrix_control(matrix_control=matrix_control))
+  testthat::expect_true(check_matrix_control(matrix_control=matrix_control, control_type='unrestricted', check_conditional=FALSE))
+  testthat::expect_true(check_matrix_control(matrix_control=matrix_control, control_type='unrestricted', check_conditional=TRUE))
+  testthat::expect_true(check_matrix_control(matrix_control=matrix_control, control_type='pca', check_conditional=TRUE))
+
+
+  # matrix_class = BPCells
+  matrix_control <- list(matrix_class='BPCells')
+  testthat::expect_true(check_matrix_control(matrix_control=matrix_control))
+
+  testthat::expect_true(check_matrix_control(matrix_control=matrix_control, control_type='unrestricted', check_conditional=FALSE))
+  testthat::expect_true(check_matrix_control(matrix_control=matrix_control, control_type='pca', check_conditional=FALSE))
+
+  testthat::expect_error(check_matrix_control(matrix_control=matrix_control, control_type='unrestricted', check_conditional=TRUE))
+  testthat::expect_error(check_matrix_control(matrix_control=matrix_control, control_type='pca', check_conditional=TRUE))
+
+  matrix_control <- list(matrix_class='BPCells', matrix_mode='mem')
+  testthat::expect_error(check_matrix_control(matrix_control=matrix_control, control_type='unrestricted', check_conditional=FALSE))
+  testthat::expect_error(check_matrix_control(matrix_control=matrix_control, control_type='pca', check_conditional=FALSE))
+
+  matrix_control <- list(matrix_class='BPCells', matrix_mode='dir')
+  testthat::expect_true(check_matrix_control(matrix_control=matrix_control, control_type='unrestricted', check_conditional=FALSE))
+  testthat::expect_true(check_matrix_control(matrix_control=matrix_control, control_type='pca', check_conditional=FALSE))
+
+  matrix_control <- list(matrix_class='BPCells', matrix_mode='dir')
+  testthat::expect_error(check_matrix_control(matrix_control=matrix_control, control_type='unrestricted', check_conditional=TRUE))
+  testthat::expect_error(check_matrix_control(matrix_control=matrix_control, control_type='pca', check_conditional=TRUE))
+
+  matrix_control <- list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=FALSE, matrix_path='.', matrix_buffer_size=8192L, matrix_bpcells_copy=TRUE)
+  testthat::expect_true(check_matrix_control(matrix_control=matrix_control, control_type='unrestricted', check_conditional=TRUE))
+  testthat::expect_true(check_matrix_control(matrix_control=matrix_control, control_type='pca', check_conditional=TRUE))
+
+  matrix_control <- list(matrix_class='BPCells', matrix_mode='dir', matrix_type='float', matrix_compress=FALSE, matrix_path='.', matrix_buffer_size=8192L, matrix_bpcells_copy=TRUE)
+  testthat::expect_true(check_matrix_control(matrix_control=matrix_control, control_type='unrestricted', check_conditional=TRUE))
+  testthat::expect_true(check_matrix_control(matrix_control=matrix_control, control_type='pca', check_conditional=TRUE))
+
+  matrix_control <- list(matrix_class='BPCells', matrix_mode='dir', matrix_type='unint32_t', matrix_compress=FALSE, matrix_path='.', matrix_buffer_size=8192L, matrix_bpcells_copy=TRUE)
+  testthat::expect_error(check_matrix_control(matrix_control=matrix_control, control_type='unrestricted', check_conditional=TRUE))
+  testthat::expect_error(check_matrix_control(matrix_control=matrix_control, control_type='pca', check_conditional=TRUE))
+
+} )
+
+
+test_that("set_matrix_control", {
+
+  # Check defaults are set.
+  matrix_control <- list()
+  matrix_control_default <- get_global_variable('matrix_control_csparsematrix_unrestricted')
+  matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='unrestricted')
+  testthat::expect_true(all(matrix_control_res %in% matrix_control_default))
+
+  # Check dgCMatrix defaults are set.
+  matrix_control <- list(matrix_class='dgCMatrix')
+  matrix_control_default <- get_global_variable('matrix_control_csparsematrix_unrestricted')
+  matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='unrestricted')
+  testthat::expect_true(all(matrix_control_res %in% matrix_control_default))
+
+  # Check BPCells defaults are set.
+  matrix_control <- list(matrix_class='BPCells')
+  matrix_control_default <- get_global_variable('matrix_control_bpcells_unrestricted')
+  matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='unrestricted')
+  testthat::expect_true(all(matrix_control_res %in% matrix_control_default))
+
+  # Check BPCells non-defaults are set.
+  matrix_control <- get_global_variable('matrix_control_bpcells_unrestricted')
+  matrix_control[['matrix_type']] <- 'float'
+  matrix_control_default <- get_global_variable('matrix_control_bpcells_unrestricted')
+  matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='unrestricted')
+  testthat::expect_true(all(matrix_control_res %in% matrix_control))
+
+  matrix_control <- get_global_variable('matrix_control_bpcells_unrestricted')
+  matrix_control[['matrix_compress']] <- TRUE
+  matrix_control_default <- get_global_variable('matrix_control_bpcells_unrestricted')
+  matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='unrestricted')
+  testthat::expect_true(all(matrix_control_res %in% matrix_control))
+
+  matrix_control <- get_global_variable('matrix_control_bpcells_unrestricted')
+  matrix_control[['matrix_path']] <- 'new_dir'
+  matrix_control_default <- get_global_variable('matrix_control_bpcells_unrestricted')
+  matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='unrestricted')
+  testthat::expect_true(all(matrix_control_res %in% matrix_control))
+
+  matrix_control <- get_global_variable('matrix_control_bpcells_unrestricted')
+  matrix_control[['matrix_bpcells_copy']] <- FALSE
+  matrix_control_default <- get_global_variable('matrix_control_bpcells_unrestricted')
+  matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='unrestricted')
+  testthat::expect_true(all(matrix_control_res %in% matrix_control))
+} )
+
+
+test_that("set_matrix_class", {
+
+  # Check dgCMatrix -> dgCMatrix matrix
+  matrix_control <- get_global_variable('matrix_control_csparsematrix_unrestricted')
+  mat1 <- counts(load_a549())
+  mat2 <- set_matrix_class(mat1, matrix_control=matrix_control) 
+  testthat::expect_true(is(mat2, 'dgCMatrix'))
+
+  # Check BPCells -> BPCells matrix with copy
+  matrix_control <- get_global_variable('matrix_control_bpcells_unrestricted')
+  mat1 <- counts(load_a549(matrix_control=list(matrix_class='BPCells')))
+  mat2 <- set_matrix_class(mat1, matrix_control=matrix_control)
+  testthat::expect_true(is(mat2, 'IterableMatrix'))
+  testthat::expect_false(mat2@dir == mat1@dir)
+  unlink(c(mat1@dir, mat2@dir), recursive=TRUE)
+  rm(mat1, mat2)
+
+  # Check BPCells -> BPCells matrix without copy
+  matrix_control <- get_global_variable('matrix_control_bpcells_unrestricted')
+  matrix_control[['matrix_bpcells_copy']] <- FALSE
+  mat1 <- counts(load_a549(matrix_control=list(matrix_class='BPCells')))
+  mat2 <- set_matrix_class(mat1, matrix_control=matrix_control)
+  testthat::expect_true(is(mat2, 'IterableMatrix'))
+  testthat::expect_true(mat2@dir == mat1@dir)
+  unlink(c(mat1@dir, mat2@dir), recursive=TRUE)
+  rm(mat1, mat2)
+
+  # Check dgCMatrix -> BPCells matrix
+  matrix_control <- get_global_variable('matrix_control_bpcells_unrestricted')
+  mat1 <- counts(load_a549(matrix_control=list(matrix_class='dgCMatrix')))
+  mat2 <- set_matrix_class(mat1, matrix_control=matrix_control)
+  testthat::expect_true(is(mat2, 'IterableMatrix'))
+  unlink(mat2@dir, recursive=TRUE)
+  rm(mat1, mat2)
+
+  # Check BPCells -> dgCMatrix matrix
+  matrix_control <- get_global_variable('matrix_control_csparsematrix_unrestricted')
+  mat1 <- counts(load_a549(matrix_control=list(matrix_class='BPCells')))
+  mat2 <- set_matrix_class(mat1, matrix_control=matrix_control)
+  testthat::expect_true(is(mat2, 'dgCMatrix'))
+  unlink(mat1@dir, recursive=TRUE)
+  rm(mat1, mat2)
+
+} )
+
+
+test_that("convert_counts_matrix", {
+  cds1 <- load_a549()
+  testthat::expect_true(is(counts(cds1), 'dgCMatrix'))
+  matrix_control <- list(matrix_class='BPCells')
+  cds2 <- convert_counts_matrix(cds1, matrix_control=matrix_control)
+  testthat::expect_true(is(counts(cds2), 'IterableMatrix'))
+} )
+
+
+test_that("save_monocle_objects and load_monocle_objects", {
+  cds1 <- load_a549(matrix_control=list(matrix_class='BPCells'))
+  save_monocle_objects(cds1, directory_path='monocle_objects_test.tmp')
+  cds2 <- load_monocle_objects(directory_path='monocle_objects_test.tmp')
+  testthat::expect_true(is(counts(cds2), 'IterableMatrix'))
+  testthat::expect_true(compare_matrix_control(get_matrix_info(mat=counts(cds1)), get_matrix_info(mat=counts(cds2)), compare_matrix_path_flag=FALSE))
+  unlink('monocle_objects_test.tmp', recursive=TRUE)
+} )
 

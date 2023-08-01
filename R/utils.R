@@ -534,13 +534,13 @@ combine_cds <- function(cds_list,
     }
   }
 
-  check_matrix_control(matrix_control=matrix_control, control_type='counts', check_conditional=FALSE)
+  check_matrix_control(matrix_control=matrix_control, control_type='unrestricted', check_conditional=FALSE)
   if(bpcells_matrix_flag ||
      (!is.null(matrix_control[['matrix_class']]) && matrix_control[['matrix_class']] == 'BPCells')) {
-    matrix_control_default <- get_global_variable('matrix_control_bpcells_counts')
+    matrix_control_default <- get_global_variable('matrix_control_bpcells_unrestricted')
   }
   else {
-    matrix_control_default <- get_global_variable('matrix_control_csparsematrix_counts')
+    matrix_control_default <- get_global_variable('matrix_control_csparsematrix_unrestricted')
   }
   matrix_control <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='unrestricted')
 

@@ -77,12 +77,12 @@ load_cellranger_data <- function(pipestance_path=NULL, genome=NULL,
                                  matrix_control=list()) {
 
   if(!is.null(matrix_control[['matrix_class']]) && matrix_control[['matrix_class']] == 'BPCells') {
-    matrix_control_default <- get_global_variable('matrix_control_bpcells_counts')
+    matrix_control_default <- get_global_variable('matrix_control_bpcells_unrestricted')
   }
   else {
-    matrix_control_default <- get_global_variable('matrix_control_csparsematrix_counts')
+    matrix_control_default <- get_global_variable('matrix_control_csparsematrix_unrestricted')
   }
-  matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='counts')
+  matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='unrestricted')
 
   # check for correct directory structure
   if (!dir.exists(pipestance_path))

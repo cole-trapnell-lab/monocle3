@@ -96,16 +96,16 @@ select_matrix_parameter_value <- function(parameter, matrix_control, matrix_cont
 #   matrix_class: default: 'dgCMatrix'
 #   matrix_class: 'BPCells'
 #     matrix_mode: 'mem'  default: 'dir' NOTE: disallow matrix_mode 'mem'
-#       matrix_type: 'uint32_t', 'float', 'double'  NOTE: 'uint32_t' is valid for assay matrix only
+#       matrix_type: 'float', 'double'  default: 'double'
 #       matrix_compress: TRUE, FALSE default: FALSE
 #       matrix_bpcells_copy: TRUE, FALSE default: TRUE
 #     matrix_mode: 'dir'
-#       matrix_type: 'uint32_t', 'float', 'double' default: 'uint32_t'
+#       matrix_type: 'float', 'double' default: 'double'
 #       matrix_path: <path to directory or file> default: 'NULL' -> temporary directory in pwd
 #       matrix_compress: TRUE, FALSE default: FALSE
 #       matrix_buffer_size: <integer> default: 8192L
 #       matrix_bpcells_copy: TRUE, FALSE default: TRUE
-check_matrix_control <- function(matrix_control=list(), control_type=c('unrestricted', 'counts', 'mm', 'pca'), check_conditional=FALSE) {
+check_matrix_control <- function(matrix_control=list(), control_type=c('unrestricted', 'pca'), check_conditional=FALSE) {
   control_type <- match.arg(control_type)
   assertthat::assert_that(is.list(matrix_control))
   assertthat::assert_that(is.logical(check_conditional))
@@ -134,14 +134,10 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
 
   allowed_matrix_mode <- list()
   allowed_matrix_mode[['unrestricted']] <- c('dir')
-  allowed_matrix_mode[['counts']] <- c('dir')
-  allowed_matrix_mode[['mm']] <- c('dir')
   allowed_matrix_mode[['pca']] <- c('dir')
 
   allowed_matrix_type <- list()
   allowed_matrix_type[['unrestricted']] <- c('float', 'double')
-  allowed_matrix_type[['counts']] <- c('float', 'double')
-  allowed_matrix_type[['mm']] <- c('float', 'double')
   allowed_matrix_type[['pca']] <- c('float', 'double')
 
   error_string <- ''
@@ -157,16 +153,13 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
     }
 
     if(matrix_control[['matrix_class']] == 'BPCells') {
-      if(control_type == 'counts')
-        allowed_values <- allowed_matrix_mode[['counts']]
-      else
-      if(control_type == 'mm')
-        allowed_values <- allowed_matrix_mode[['mm']]
+      if(control_type == 'unrestricted')
+        allowed_values <- allowed_matrix_mode[['unrestricted']]
       else
       if(control_type == 'pca')
         allowed_values <- allowed_matrix_mode[['pca']]
       else
-        allowed_values <- allowed_matrix_mode[['unrestricted']]
+        stop('check_matrix_control: unknown control type \'', control_type, '\'')
       if(!(is.null(matrix_control[['matrix_mode']])) &&
          !(matrix_control[['matrix_mode']] %in% allowed_values)) {
         error_string <- paste0('\ninvalid matrix_mode "', matrix_control[['matrix_mode']], '"')
@@ -175,14 +168,10 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
       if(control_type == 'unrestricted')
         allowed_values <- allowed_matrix_type[['unrestricted']]
       else
-      if(control_type == 'counts')
-        allowed_values <- allowed_matrix_type[['counts']]
-      else
-      if(control_type == 'mm')
-        allowed_values <- allowed_matrix_type[['mm']]
-      else
       if(control_type == 'pca')
         allowed_values <- allowed_matrix_type[['pca']]
+      else
+        stop('check_matrix_control: unknown control type \'', control_type, '\'')
       if(!(is.null(matrix_control[['matrix_type']])) &&
          !(matrix_control[['matrix_type']] %in% allowed_values)) {
         error_string <- paste0('\ninvalid matrix_type "', matrix_control[['matrix_type']], '"')
@@ -219,23 +208,15 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
       error_string <- paste0('\ninvalid matrix_class "', matrix_control[['matrix_class']], '\n')
     }
 
-#message('check_matrix_control: check_conditional: true')
-#message('check_matrix_control: matrix class: ', matrix_control[['matrix_class']])
-
-
     if(matrix_control[['matrix_class']] == 'BPCells') {
       # Check matrix_type value.
       if(control_type == 'unrestricted')
         allowed_values <- allowed_matrix_type[['unrestricted']]
       else
-      if(control_type == 'counts')
-        allowed_values <- allowed_matrix_type[['counts']]
-      else
-      if(control_type == 'mm')
-        allowed_values <- allowed_matrix_type[['mm']]
-      else
       if(control_type == 'pca')
         allowed_values <- allowed_matrix_type[['pca']]
+      else
+        stop('check_matrix_control: unknown control type \'', control_type, '\'')
       if(!(matrix_control[['matrix_type']] %in% allowed_values)) {
         error_string <- paste0('\nbad  matrix_type "', matrix_control[['matrix_type']], '"\n')
       }
@@ -246,16 +227,13 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
       }
   
       # Check matrix_mode value.
-      if(control_type == 'counts')
-        allowed_values <- allowed_matrix_mode[['counts']]
-      else
-      if(control_type == 'mm')
-        allowed_values <- allowed_matrix_mode[['mm']]
+      if(control_type == 'unrestricted')
+        allowed_values <- allowed_matrix_mode[['unrestricted']]
       else
       if(control_type == 'pca')
         allowed_values <- allowed_matrix_mode[['pca']]
       else
-        allowed_values <- allowed_matrix_mode[['unrestricted']]
+        stop('check_matrix_control: unknown control type \'', control_type, '\'')
       if(!(matrix_control[['matrix_mode']] %in% allowed_values)) {
         error_string <- paste0('\ninvalid matrix_mode "', matrix_control[['matrix_mode']], '"')
       }
@@ -280,6 +258,8 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
   if(error_string != '') {
     stop(paste0(stringr::str_trim(error_string), '\n'))
   }
+
+  return(TRUE)
 }
 
 
@@ -287,11 +267,11 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
 #   matrix_class: default: 'dgCMatrix'
 #   matrix_class: 'BPCells'
 #     matrix_mode: 'mem'  default: 'dir'
-#       matrix_type: 'uint32_t', 'float', 'double'
+#       matrix_type: 'float', 'double' default: 'double'
 #       matrix_compress: TRUE, FALSE default: FALSE
 #       matrix_bpcells_copy: TRUE, FALSE default: TRUE
 #     matrix_mode: 'dir'
-#       matrix_type: 'uint32_t', 'float', 'double' default: 'uint32_t'
+#       matrix_type: 'float', 'double' default: 'double'
 #       matrix_path: <path to directory or file> default: 'NULL' -> temporary directory in pwd
 #       matrix_compress: TRUE, FALSE default: FALSE
 #       matrix_buffer_size: <integer> default: 8192L
@@ -305,10 +285,10 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
 #'
 #' @description Verifies and sets the list of parameter values
 #'   that is used to make the count matrix that is stored in the
-#'   cell_data_set or certain other matrices thare are used
+#'   cell_data_set or certain other matrices that are used
 #'   during the Monocle3 run. To see the
 #'   default values,
-#' call "set_matrix_control(matrix_control=list(matrix_class='BPCells', show_values=TRUE))".
+#'   call "set_matrix_control(matrix_control=list(matrix_class='BPCells', show_values=TRUE))".
 #'   "show_values=TRUE" can be used in functions that have the
 #'   matrix_control list parameter, in which case the function will
 #'   show the matrix_control values to be used and then stop.
@@ -320,51 +300,53 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
 #'
 #' @section matrix_control parameters:
 #' \describe{
-#'   \item{matrix_class}{Specifies the matrix class to use for
-#'      matrix storage. The acceptable values are "dgCMatrix"
-#'      and "BPCells".}
-#'   \item{matrix_type}{Specifies whether to store the matrix
-#'      values as single precision "floats" (matrix_type="float"),
-#'      or double precision "doubles" (matrix_type="double").
+#'   \item{matrix_class}{A string that specifies the matrix
+#'      class to use for matrix storage. The acceptable
+#'      values are "dgCMatrix" and "BPCells".}
+#'   \item{matrix_type}{A string that specifies whether to
+#'      store the matrix values as single precision "floats"
+#'      (matrix_type="float") or double precision "doubles"
+#'      (matrix_type="double"). The default is "double".
 #'      "matrix_type" is used only for BPCells class matrices.}
-#'   \item{matrix_mode}{Specifies whether to store the BPCells
-#'      class matrix in memory (matrix_mode="mem") or on
-#'      disk (matrix_mode="dir"). "matrix_mode" is used only
-#'      for BPCells class matrices. At this time, only 'dir'
-#'      is allowed.}
-#'   \item{matrix_path}{Specifies the directory where the
-#'      BPCells on-disk matrix data are stored in a
+#'   \item{matrix_mode}{A string that specifies whether to
+#'      store the BPCells class matrix in memory
+#'      (matrix_mode="mem") or on disk (matrix_mode="dir").
+#'      "matrix_mode" is used only for BPCells class
+#'      matrices. At this time, only 'dir' is allowed.}
+#'   \item{matrix_path}{A string that specifies the directory
+#'      where the BPCells on-disk matrix data are stored in a
 #'      sub-directory with a randomized name. The default is
 #'      in the directory where R is running. "matrix_path" is
 #'      used only for BPCells class matrices with
 #'      matrix_mode="dir". For example, if matrix_path is set
-#'      to "/tmp" Monocle3 will create a directory with a
+#'      to "my_dir" Monocle3 will create a directory with a
 #'      name that has the form "monocle.bpcells.*.tmp" in
-#'      "/tmp". The asterisk represents a random string that
-#'      makes the names unique.}
-#'   \item{matrix_compress}{Specifies whether to use bit-packing
-#'      compression to store BPCells matrix values. Only the
-#'      matrix indices are compressed for matrix_types "float"
-#'      and "double". "matrix_compress" is used only for BPCells
-#'      class matrices.}
-#'   \item{matrix_buffer_size}{Specifies how many items of
-#'      data to buffer in memory before flushing to disk. This
-#'      is used for matrix_class="BPCells" with matrix_mode="dir".}
-#'   \item{matrix_bpcells_copy}{A logical value that specifies
+#'      "my_dir". The asterisk represents a random string that
+#'      makes the name unique.}
+#'   \item{matrix_compress}{A logical that specifies whether
+#'      to use bit-packing compression to store BPCells matrix
+#'      values. Only the matrix indices are compressed for
+#'      matrix_types "float" and "double". "matrix_compress"
+#'      is used only for BPCells class matrices. The default is
+#'      FALSE, which improves processing speed.}
+#'   \item{matrix_buffer_size}{An integer that specifies how
+#'      many items of data to buffer in memory before flushing
+#'      to disk. This is used for matrix_class="BPCells" with
+#'      matrix_mode="dir". The default is 8192L.}
+#'   \item{matrix_bpcells_copy}{A logical that specifies
 #'      whether the input BPCells matrix is to be copied. This
 #'      is relevant only when the input matrix and the desired
 #'      output matrix are the same; that is, have the same
 #'      matrix_mode, matrix_path, matrix_compress, and
 #'      matrix_buffer_size values. If matrix_bpcells_copy is
-#'      TRUE, the queued operations are applied to an new
+#'      TRUE, the queued operations are applied to a new
 #'      on-disk copy of of the input matrix and the operation
 #'      queue is emptied. If FALSE, the queued operations are
 #'      not applied and the on-disk storage is unaltered.}
 #' }
 #' @export
-set_matrix_control <- function(matrix_control=list(), matrix_control_default=list(), control_type=c('unrestricted', 'counts', 'mm', 'pca')) {
+set_matrix_control <- function(matrix_control=list(), matrix_control_default=list(), control_type=c('unrestricted', 'pca')) {
   control_type <- match.arg(control_type)
-
   check_matrix_control(matrix_control=matrix_control, control_type=control_type, check_conditional=FALSE)
   check_matrix_control(matrix_control=matrix_control_default, control_type=control_type, check_conditional=FALSE)
 
@@ -497,8 +479,8 @@ bpcells_find_base_matrix <- function(mat) {
 #   o  dense matrix: matrix
 #   o  sparse matrix: CsparseMatrix, dgCMatrix, ...
 #   o  BPCells matrix:
-#        o  matrix_mode: 'mem', 'dir'
-#        o  matrix_type: uint32_t, float, double
+#        o  matrix_mode: 'dir'
+#        o  matrix_type: float, double
 #        o  matrix_compress: TRUE, FALSE
 #        o  matrix_path
 #        o  matrix_buffer_size
@@ -652,7 +634,7 @@ show_matrix_info <- function(matrix_info, indent='') {
 }
 
 
-compare_matrix_control <- function(matrix_control=list(), matrix_info=list()) {
+compare_matrix_control <- function(matrix_control=list(), matrix_info=list(), compare_matrix_path_flag=FALSE) {
   if(matrix_control[['matrix_class']] == 'dgCMatrix' && matrix_info[['matrix_class']] == 'dgCMatrix') {
     return(TRUE)
   }
@@ -667,10 +649,15 @@ compare_matrix_control <- function(matrix_control=list(), matrix_info=list()) {
     else
     if(matrix_control[['matrix_mode']] == 'dir' && matrix_info[['matrix_mode']] == 'dir') {
       if(matrix_control[['matrix_type']] == matrix_info[['matrix_type']] &&
-         matrix_control[['matrix_path']] == matrix_info[['matrix_path']] &&
          matrix_control[['matrix_compress']] == matrix_info[['matrix_compress']] &&
          matrix_control[['matrix_buffer_size']] == matrix_info[['matrix_buffer_size']]) {
-        return(TRUE)
+        if(compare_matrix_path_flag == FALSE ||
+            matrix_control[['matrix_path']] == matrix_info[['matrix_path']]) {
+          return(TRUE)
+        }
+        else {
+          return(FALSE)
+        }
       }
     }
   }
@@ -681,6 +668,10 @@ compare_matrix_control <- function(matrix_control=list(), matrix_info=list()) {
 
 # set_matrix_class
 #  Notes:
+#    o  set_matrix_class is meant to be the function used
+#       nearly exclusively for making BPCells matrices. The
+#       exceptions are load_monocle_objects and save_monocle_objects
+#       which use write_matrix_dir 'directly'.
 #    o  Cast an input matrix into a class given or inferred from the
 #       matrix_control, which must be complete in the sense that all
 #       values required for the class are given explicitly.
@@ -699,12 +690,12 @@ set_matrix_class <- function(mat, matrix_control=list()) {
   # Get input matrix info.
   matrix_info <- get_matrix_info(mat=mat)
 
-#message('set_matrix_class: matrix_info: in:')
-#show_matrix_info(matrix_info, indent='  ')
-#message('')
-#message('set_matrix_class: matrix_control in:')
-#show_matrix_control(matrix_control)
-#message('')
+# message('set_matrix_class: matrix_info: in:')
+# show_matrix_info(matrix_info, indent='  ')
+# message('')
+# message('set_matrix_class: matrix_control in:')
+# show_matrix_control(matrix_control)
+# message('')
 
   if(matrix_info[['matrix_class']] == 'dgTMatrix') {
     mat <- as(mat, 'CsparseMatrix')
@@ -715,9 +706,10 @@ set_matrix_class <- function(mat, matrix_control=list()) {
 
   # Can we return the input matrix object immediately? We
   # can when the matrix_info and matrix_control are the same
-  # AND the matrix_class is dgCMatrix OR (the matrix_class
-  # is 'BPCells' AND matrix_bpcells_copy is FALSE_.
-  if(compare_matrix_control(matrix_control, matrix_info)) {
+  # (except for the matrix_path) AND the matrix_class is
+  # dgCMatrix OR (the matrix_class is 'BPCells' AND
+  # matrix_bpcells_copy is FALSE.
+  if(compare_matrix_control(matrix_control, matrix_info, compare_matrix_path_flag=FALSE)) {
     if(matrix_control[['matrix_class']] == 'dgCMatrix' ||
        (matrix_control[['matrix_class']] == 'BPCells' &&
         matrix_control[['matrix_bpcells_copy']] == FALSE)) {
@@ -876,12 +868,12 @@ set_cds_row_order_matrix <- function(cds) {
 #' @export
 convert_counts_matrix <- function(cds, matrix_control=list(matrix_class='BPCells')) {
   if(!is.null(matrix_control[['matrix_class']]) && matrix_control[['matrix_class']] == 'BPCells') {
-    matrix_control_default <- get_global_variable('matrix_control_bpcells_counts')
+    matrix_control_default <- get_global_variable('matrix_control_bpcells_unrestricted')
   }
   else {
-    matrix_control_default <- get_global_variable('matrix_control_csparsematrix_counts')
+    matrix_control_default <- get_global_variable('matrix_control_csparsematrix_unrestricted')
   }
-  matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='counts')
+  matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='unrestricted')
 
   # Do not make a BPCells matrix on-disk copy if the
   # matrix_info values of the counts matrix are the

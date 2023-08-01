@@ -5,6 +5,10 @@ svd_rebuild_matrix <- function(u, s, v, filename) {
 }
 
 
+#
+# This is probably replaced by set_matrix_contol with control_type='pca'. Consider
+# removing this function.
+#
 set_pca_matrix_control <- function(mat, matrix_control=list()) {
 
   check_matrix_control(matrix_control=matrix_control, control_type='pca', check_conditional=FALSE)
@@ -44,6 +48,7 @@ set_pca_matrix_control <- function(mat, matrix_control=list()) {
     if(matrix_control_res[['matrix_mode']] == 'dir') {
       matrix_control_res[['matrix_path']] <- dirname(matrix_control_res[['matrix_path']])
     }
+    matrix_control_res[['matrix_bpcells_copy']] <- TRUE
   }
 
   check_matrix_control(matrix_control=matrix_control_res, control_type='pca', check_conditional=TRUE)
