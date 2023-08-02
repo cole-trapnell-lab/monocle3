@@ -62,7 +62,7 @@ You may need to update the version strings in your hdf5.pc file.
   - `load_a549()`
   - `load_worm_embryo()`
   - `load_worm_l2()`
-  - `convert_counts_matrix()
+  - `convert_counts_matrix()`
 
   For example, to convert a dgCMatrix counts matrix to a BPCells on-disk matrix in an existing CDS, use the command `cds <- convert_counts_matrix(cds, matrix_control=list(matrix_class="BPCells"))`.
 - The method `new_cell_data_set()` accepts a BPCells on-disk counts matrix.
