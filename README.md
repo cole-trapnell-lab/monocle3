@@ -9,7 +9,7 @@ http://cole-trapnell-lab.github.io/monocle3/
 
 ## Monocle3 with BPCells counts matrix support
 
-This development branch version of Monocle3 adds the ability to store the counts matrix on-disk using the BPCells package. By default, Monocle3 stores the counts matrix in-memory as a sparse matrix, as in previous versions. In order to store the matrix on-disk, you must set the matrix_control list value 'matrix_class="BPCells"' in the affected commands. For example, to load a MatrixMarket file as an on-disk matrix, use the command
+This development branch version of Monocle3 adds the ability to store the counts matrix on-disk using the BPCells package. By default, Monocle3 stores the counts matrix in-memory as a sparse matrix, as in previous versions. In order to store the matrix on-disk, you must set the matrix_control list value `matrix_class="BPCells"` in the affected commands. For example, to load a MatrixMarket file as an on-disk matrix, use the command
 
 ```
 cds <- load_mm_data(mat_path=<path_to_mtx_file>,
