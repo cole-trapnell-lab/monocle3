@@ -480,7 +480,10 @@ normalized_counts <- function(cds,
   norm_method = match.arg(norm_method)
   norm_mat = SingleCellExperiment::counts(cds)
   if (norm_method == "binary"){
-    norm_mat = norm_mat > 0
+    # The '+ 0' coerces the matrix to type numeric. It's possible
+    # to use 'as.numeric(norm_mat > 0)' but the matrix
+    # attributes disappear...            
+    norm_mat = (norm_mat > 0) + 0
     if (is_sparse_matrix(norm_mat)){
       norm_mat = methods::as(norm_mat, "dgCMatrix")
     }
