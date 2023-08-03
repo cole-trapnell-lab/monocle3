@@ -108,7 +108,14 @@ bpcells_apply_transform <- function(FM, rotation_matrix, vcenter=vcenter, vscale
 #'   NULL, which does not affect the current block size.
 #' @param cores the number of cores to use for the matrix
 #'   multiplication. The default is 1.
-#'
+#' @param matrix_control A list used to control how the temporary
+#'   version of the counts matrix used by preprocess_transform is
+#'   stored. By default the matrix is stored in memory as a
+#'   sparse matrix. Setting
+#'   'matrix_control=list(matrix_class="BPCells")' stores the matrix
+#'   on-disk as a sparse matrix.
+#' @param verbose logical Whether to emit verbose output during dimensionality
+#'   reduction.
 #' @return a cell_data_set with a preprocess reduced count
 #'   matrix.
 #'
@@ -220,12 +227,7 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
       irlba_res <- bpcells_apply_transform(FM=FM, rotation_matrix=rotation_matrix, vcenter=vcenter, vscale=vscale, pca_control=pca_control, verbose=verbose)
 
       # Remove BPCells MatrixDir, if it is defined.
-      fm_info <- get_matrix_info(mat=FM)
-      if(fm_info[['matrix_class']] == 'BPCells' &&
-         fm_info[['matrix_mode']] == 'dir') {
-        unlink(fm_info[['matrix_path']], recursive=TRUE)
-        rm(FM)
-      }
+      rm_bpcells_dir(mat=FM)
     }
 
     # 'reference' gene names are in the cds@preproc
@@ -248,9 +250,11 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
     num_cols <- cds@reduce_dim_aux[[reduction_method]][['model']][['num_cols']]
 
     mat_counts <- SingleCellExperiment::counts(cds) 
-    matrix_control_res <- set_pca_matrix_control(mat=mat_counts, matrix_control=matrix_control)
-    FM <- set_matrix_class(mat=mat_counts, matrix_control=matrix_control_res)
-    FM <- normalize_expr_data(FM=FM, size_factors=size_factors(cds), norm_method=norm_method, pseudo_count=pseudo_count)
+
+#    matrix_control_res <- set_pca_matrix_control(mat=mat_counts, matrix_control=matrix_control)
+#    FM <- set_matrix_class(mat=mat_counts, matrix_control=matrix_control_res)
+
+    FM <- normalize_expr_data(FM=mat_counts, size_factors=size_factors(cds), norm_method=norm_method, pseudo_count=pseudo_count)
     if (nrow(FM) == 0) {
       stop("all rows have standard deviation zero")
     }
@@ -358,7 +362,13 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
       colnames(tf_idf_counts) = colnames(FM)
 
       xt <- BPCells::t(tf_idf_counts)
-      irlba_res$x <- xt %*% rotation_matrix[intersect_indices,]
+
+      matrix_control_res <- set_pca_matrix_control(mat=mat_counts, matrix_control=matrix_control)
+      xt <- set_matrix_class(mat=xt, matrix_control=matrix_control_res)
+
+      irlba_res$x <- BPCells:::linear_operator(xt) %*% rotation_matrix[intersect_indices,]
+
+      rm_bpcells_dir(mat=xt)
 
       irlba_res$x <- as.matrix(irlba_res$x)
       class(irlba_res) <- c('irlba_prcomp', 'prcomp')

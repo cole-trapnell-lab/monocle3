@@ -245,8 +245,15 @@ preprocess_cds <- function(cds,
                                 nv = min(num_dim,min(dim(FM)) - 1))
     }
     else {
-      irlba_res <- irlba::irlba(A=BPCells::t(preproc_res),
+      matrix_control <- list(matrix_class='BPCells')
+      matrix_control_default <- get_global_variable('matrix_control_bpcells_pca')
+      matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='pca')
+      preproc_res_commit <- set_matrix_class(mat=BPCells::t(preproc_res), matrix_control=matrix_control_res)
+
+      irlba_res <- irlba::irlba(A=BPCells:::linear_operator(preproc_res_commit),
                                 nv = min(num_dim,min(dim(FM)) - 1))
+
+      rm_bpcells_dir(mat=preproc_res_commit)
     }
 
     preproc_res <- irlba_res$u %*% diag(irlba_res$d)

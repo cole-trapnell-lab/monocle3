@@ -11,9 +11,9 @@ load_monocle_objects(directory_path, matrix_control = list(matrix_path = "."))
 from which to read the saved cell_data_set files.}
 
 \item{matrix_control}{a list that is used only to set the
-matrix path when the saved monocle objects has the count matrix
+matrix path when the saved monocle objects has the counts matrix
 stored as a BPCells on-disk matrix. By default, the BPCells matrix
-directory is set to the current working directory.}
+directory path is set to the current working directory.}
 }
 \value{
 a cell_data_set.

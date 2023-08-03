@@ -32,7 +32,7 @@ call "set_matrix_control(matrix_control=list(matrix_class='BPCells', show_values
 matrix_control list parameter, in which case the function will
 show the matrix_control values to be used and then stop.
 }
-\section{matrix_control parameters}{
+\section{matrix_control list values}{
 
 \describe{
 \item{matrix_class}{A string that specifies the matrix
@@ -47,7 +47,7 @@ store the matrix values as single precision "floats"
 store the BPCells class matrix in memory
 (matrix_mode="mem") or on disk (matrix_mode="dir").
 "matrix_mode" is used only for BPCells class
-matrices. At this time, only 'dir' is allowed.}
+matrices. At this time, only "dir" is allowed.}
 \item{matrix_path}{A string that specifies the directory
 where the BPCells on-disk matrix data are stored in a
 sub-directory with a randomized name. The default is

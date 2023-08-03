@@ -80,6 +80,7 @@
 #      matrix_stats()
 
 
+# select_matrix_parameter_value() is used by set_matrix_control to select matrix_control values.
 select_matrix_parameter_value <- function(parameter, matrix_control, matrix_control_default, default_value) {
   if(!is.null(matrix_control[[parameter]])) {
     return(matrix_control[[parameter]])
@@ -298,7 +299,7 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
 #'   restricts certain list parameters.
 #' @return matrix_control Output control list.
 #'
-#' @section matrix_control parameters:
+#' @section matrix_control list values:
 #' \describe{
 #'   \item{matrix_class}{A string that specifies the matrix
 #'      class to use for matrix storage. The acceptable
@@ -312,7 +313,7 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
 #'      store the BPCells class matrix in memory
 #'      (matrix_mode="mem") or on disk (matrix_mode="dir").
 #'      "matrix_mode" is used only for BPCells class
-#'      matrices. At this time, only 'dir' is allowed.}
+#'      matrices. At this time, only "dir" is allowed.}
 #'   \item{matrix_path}{A string that specifies the directory
 #'      where the BPCells on-disk matrix data are stored in a
 #'      sub-directory with a randomized name. The default is
@@ -447,6 +448,8 @@ show_matrix_control <- function(matrix_control=list(), label=NULL) {
 }
 
 
+# Push the directory path of the BPCells on-disk matrix onto the path stack. This is used
+# to remove the directories when R is exited.
 push_matrix_path <- function(mat) {
   matrix_info <- get_matrix_info(mat=mat)
   if(matrix_info[['matrix_class']] == 'BPCells' &&
@@ -521,6 +524,7 @@ get_matrix_class <- function(mat) {
 }
 
 
+# Get/infer the matrix information.
 get_matrix_info <- function(mat) {
   matrix_info <- get_matrix_class(mat=mat)
 
@@ -611,6 +615,7 @@ get_matrix_info <- function(mat) {
 }
 
 
+# Show the matrix information.
 show_matrix_info <- function(matrix_info, indent='') {
   message('matrix_info:')
   if(!is.null(matrix_info[['matrix_class']])) {
@@ -634,6 +639,11 @@ show_matrix_info <- function(matrix_info, indent='') {
 }
 
 
+# Compare two matrix control lists. Return TRUE if they are the same. There is
+# a minor complication. If the matrix_class in both lists is BPCells, the
+# matrix storage mode is 'dir, and compare_matrix_path_flag is FALSE, the
+# matrix_path values may differ and compare_matrix_control still returns TRUE.
+# Otherwise, compare_matrix_control returns FALSE.
 compare_matrix_control <- function(matrix_control=list(), matrix_info=list(), compare_matrix_path_flag=FALSE) {
   if(matrix_control[['matrix_class']] == 'dgCMatrix' && matrix_info[['matrix_class']] == 'dgCMatrix') {
     return(TRUE)
@@ -671,7 +681,7 @@ compare_matrix_control <- function(matrix_control=list(), matrix_info=list(), co
 #    o  set_matrix_class is meant to be the function used
 #       nearly exclusively for making BPCells matrices. The
 #       exceptions are load_monocle_objects and save_monocle_objects
-#       which use write_matrix_dir 'directly'.
+#       which use BPCells::write_matrix_dir() 'directly'.
 #    o  Cast an input matrix into a class given or inferred from the
 #       matrix_control, which must be complete in the sense that all
 #       values required for the class are given explicitly.
@@ -792,6 +802,7 @@ set_matrix_class <- function(mat, matrix_control=list()) {
 }
 
 
+# Remove the BPCells matrix directory and the matrix R object.
 rm_bpcells_dir <- function(mat) {
   mat_info <- get_matrix_info(mat=mat)
   if(mat_info[['matrix_class']] == 'BPCells' &&
@@ -805,6 +816,27 @@ rm_bpcells_dir <- function(mat) {
 #
 # Set row-major order counts matrix in cds with BPCells counts matrix.
 #
+
+#' Set the row-major order counts matrix in the assays slot of the CDS when the
+#'   CDS has a BPCells counts matrix.
+#'
+#' @description
+#' By default, BPCells stores matrices as one-dimensional vectors in column-major order, as does R.
+#' As a result, column access is fast and row access is slow. We use BPCell's ability to also store and
+#' access matrices in row-major order, which gives fast row access. The function set_cds_row_order_matrix
+#' creates the row-major order matrix and stores it in the assays slot of the CDS with the name
+#' "counts_row_order". The two copies of the counts matrix must have the same count values so if you
+#' replace or change the CDS's counts matrix, you must also update the `counts_row_order` matrix, which
+#' you can do using this function set_cds_row_order_matrix.
+#' @param cds cell_data_set A cell_data_set.
+#' @return cell_data_set The cell_data_set with the additional row-major order
+#'    counts matrix.
+#' @examples
+#'    cds <- load_a549(matrix_control=list(matrix_class='BPCells'))
+#'    cds <- set_cds_row_order_matrix(cds)
+#'    str(cds)
+#'
+#' @export
 set_cds_row_order_matrix <- function(cds) {
 
   mat_c <- counts(cds)
