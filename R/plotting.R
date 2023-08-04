@@ -139,7 +139,7 @@ plot_cells_3d <- function(cds,
   ## Marker genes
   markers_exprs <- NULL
   if (!is.null(genes)) {
-    if ((is.null(dim(genes)) == FALSE) && dim(genes) >= 2){
+    if ((is.null(dim(genes)) == FALSE) && dim(genes)[[1]] >= 2){
       markers <- unlist(genes[,1], use.names=FALSE)
     } else {
       markers <- genes
@@ -151,7 +151,7 @@ plot_cells_3d <- function(cds,
       cds_exprs <- SingleCellExperiment::counts(cds)[row.names(markers_rowData), ,drop=FALSE]
       cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds))
 
-      if ((is.null(dim(genes)) == FALSE) && dim(genes) >= 2){
+      if ((is.null(dim(genes)) == FALSE) && dim(genes)[[1]] >= 2){
         genes <- as.data.frame(genes)
         row.names(genes) <- genes[,1]
         genes <- genes[row.names(cds_exprs),]
@@ -566,7 +566,7 @@ plot_cells <- function(cds,
   markers_exprs <- NULL
   expression_legend_label <- NULL
   if (!is.null(genes)) {
-    if (!is.null(dim(genes)) && dim(genes) >= 2){
+    if (!is.null(dim(genes)) && dim(genes)[[1]] >= 2){
       markers = unlist(genes[,1], use.names=FALSE)
     } else {
       markers = genes
@@ -580,8 +580,7 @@ plot_cells <- function(cds,
     if (nrow(markers_rowData) >= 1) {
       cds_exprs <- SingleCellExperiment::counts(cds)[row.names(markers_rowData), ,drop=FALSE]
       cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds))
-
-      if (!is.null(dim(genes)) && dim(genes) >= 2){
+      if (!is.null(dim(genes)) && dim(genes)[[1]] >= 2){
         #genes = as.data.frame(genes)
         #row.names(genes) = genes[,1]
         #genes = genes[row.names(cds_exprs),]
