@@ -1266,18 +1266,21 @@ plot_genes_violin <- function (cds_subset,
 
   cds_exprs[,group_cells_by] <- as.factor(cds_exprs[,group_cells_by])
 
-  q <- ggplot(aes_string(x = group_cells_by, y = "expression"),
-              data = cds_exprs) +
+  cluster_mean <- aggregate(x=cds_exprs[['expression']],
+                            by=list(cds_exprs[['feature_label']], cds_exprs[[group_cells_by]]),
+                            FUN=mean)
+  colnames(cluster_mean) <- c('feature_label', group_cells_by, 'mean')
+
+  q <- ggplot(aes_string(x=group_cells_by, y="expression"), data=cds_exprs) +
     monocle_theme_opts()
 
-  cds_exprs[,group_cells_by] <- as.factor(cds_exprs[,group_cells_by])
-  q <- q + geom_violin(aes_string(fill = group_cells_by), scale="width") +
+  q <- q + geom_violin(aes_string(fill=group_cells_by), scale="width") +
     guides(fill='none')
-  q <- q + stat_summary(fun=mean, geom="point", size=1, color="black")
-  q <- q + facet_wrap(~feature_label, nrow = nrow,
-                      ncol = ncol, scales = "free_y")
+  q <- q + geom_point(mapping=aes_string(x=group_cells_by, y='mean'), data=cluster_mean, size=1, color="black")
+  q <- q + facet_wrap(~feature_label, nrow=nrow,
+                      ncol=ncol, scales="free_y")
   if (min_expr < 1) {
-    q <- q + expand_limits(y = c(min_expr, 1))
+    q <- q + expand_limits(y=c(min_expr, 1))
   }
 
   q <- q + ylab("Expression") + xlab(group_cells_by)
