@@ -1160,7 +1160,8 @@ plot_pc_variance_explained <- function(cds) {
 #' @param normalize Logical, whether or not to normalize expression by size
 #'   factor. Default is TRUE.
 #' @param log_scale Logical, whether or not to scale data logarithmically.
-#'   Default is TRUE.
+#'   Default is TRUE. Zero values are not displayed in the density plot but
+#'   are included for the mean value when log_scale is TRUE.
 #' @param pseudocount A pseudo-count added to the gene expression. Default is 0.
 #' @return a ggplot2 plot object
 #' @import ggplot2

@@ -37,12 +37,12 @@ for example, pipestance_path=10x_data
 find the required files barcodes.tsv, genes.tsv, and
 matrix.mtx in the directories as
 \itemize{
-\item 10x_data/outs/filtered_gene_bc_matrices/<genome>/barcodes.tsv
-\item 10x_data/outs/filtered_gene_bc_matrices/<genome>/genes.tsv
-\item 10x_data/outs/filtered_gene_bc_matrices/<genome>/matrix.mtx
+\item 10x_data/outs/filtered_gene_bc_matrices/\if{html}{\out{<genome>}}/barcodes.tsv
+\item 10x_data/outs/filtered_gene_bc_matrices/\if{html}{\out{<genome>}}/genes.tsv
+\item 10x_data/outs/filtered_gene_bc_matrices/\if{html}{\out{<genome>}}/matrix.mtx
 }
 
-where <genome> is the name of a genome. load_cellranger_data
+where \if{html}{\out{<genome>}} is the name of a genome. load_cellranger_data
 expects to find either a single genome directory in
 10x_data/outs/filtered_gene_bc_matrices or a genome
 directory with the name given with the genome argument.

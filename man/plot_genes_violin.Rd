@@ -43,7 +43,8 @@ feature id (FALSE). Default is TRUE.}
 factor. Default is TRUE.}
 
 \item{log_scale}{Logical, whether or not to scale data logarithmically.
-Default is TRUE.}
+Default is TRUE. Zero values are not displayed in the density plot but
+are included for the mean value when log_scale is TRUE.}
 
 \item{pseudocount}{A pseudo-count added to the gene expression. Default is 0.}
 }
