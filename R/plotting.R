@@ -1163,6 +1163,7 @@ plot_pc_variance_explained <- function(cds) {
 #'   Default is TRUE. Zero values are not displayed in the density plot but
 #'   are included for the mean value when log_scale is TRUE.
 #' @param pseudocount A pseudo-count added to the gene expression. Default is 0.
+#'   If pseudocount is set to a non-zero value, Monocle3 uses pseudocount of 1.
 #' @return a ggplot2 plot object
 #' @import ggplot2
 #'
@@ -1272,12 +1273,12 @@ plot_genes_violin <- function (cds_subset,
                             FUN=mean)
   colnames(cluster_mean) <- c('feature_label', group_cells_by, 'mean')
 
-  q <- ggplot(aes_string(x=group_cells_by, y="expression"), data=cds_exprs) +
+  q <- ggplot(aes(x=.data[[group_cells_by]], y=.data[['expression']]), data=cds_exprs) +
     monocle_theme_opts()
 
-  q <- q + geom_violin(aes_string(fill=group_cells_by), scale="width") +
+  q <- q + geom_violin(aes(fill=.data[[group_cells_by]]), scale="width") +
     guides(fill='none')
-  q <- q + geom_point(mapping=aes_string(x=group_cells_by, y='mean'), data=cluster_mean, size=1, color="black")
+  q <- q + geom_point(mapping=aes(x=.data[[group_cells_by]], y=.data[['mean']]), data=cluster_mean, size=1, color="black")
   q <- q + facet_wrap(~feature_label, nrow=nrow,
                       ncol=ncol, scales="free_y")
   if (min_expr < 1) {

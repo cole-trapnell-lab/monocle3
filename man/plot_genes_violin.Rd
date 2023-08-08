@@ -46,7 +46,8 @@ factor. Default is TRUE.}
 Default is TRUE. Zero values are not displayed in the density plot but
 are included for the mean value when log_scale is TRUE.}
 
-\item{pseudocount}{A pseudo-count added to the gene expression. Default is 0.}
+\item{pseudocount}{A pseudo-count added to the gene expression. Default is 0.
+If pseudocount is set to a non-zero value, Monocle3 uses pseudocount of 1.}
 }
 \value{
 a ggplot2 plot object
