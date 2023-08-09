@@ -1161,7 +1161,7 @@ plot_pc_variance_explained <- function(cds) {
 #'   factor. Default is TRUE.
 #' @param log_scale Logical, whether or not to scale data logarithmically.
 #'   Default is TRUE. Zero values are not displayed in the density plot but
-#'   are included for the mean value when log_scale is TRUE.
+#'   are included in the mean value calculation when log_scale is TRUE.
 #' @param pseudocount A pseudo-count added to the gene expression. Default is 0.
 #'   If pseudocount is set to a non-zero value, Monocle3 uses pseudocount of 1.
 #' @return a ggplot2 plot object
@@ -1268,6 +1268,18 @@ plot_genes_violin <- function (cds_subset,
 
   cds_exprs[,group_cells_by] <- as.factor(cds_exprs[,group_cells_by])
 
+  #
+  # Notes:
+  #   o  the scale_y_log10() function scales the data before
+  #      the statistics are calculated. This introduces to
+  #      problems (1) the zero values are dropped and (2) we
+  #      want the mean of the expression data values, not the
+  #      mean of log10(data).
+  #   o  so we do not use the stat_summary() function to
+  #      calculate the means; instead we calculate the means
+  #      from cds_exprs using the aggregate function, and
+  #      display the log10(mean(data)) in the geom_point()
+  #      layer.
   cluster_mean <- aggregate(x=cds_exprs[['expression']],
                             by=list(cds_exprs[['feature_label']], cds_exprs[[group_cells_by]]),
                             FUN=mean)
