@@ -1,6 +1,6 @@
 # Test whether a matrix is one of our supported sparse matrices
 is_sparse_matrix <- function(x){
-  class(x) %in% c("dgCMatrix", "dgTMatrix", "lgCMatrix")
+  any(class(x) %in% c("dgCMatrix", "dgTMatrix", "lgCMatrix", "CsparseMatrix"))
 }
 
 #' Function to calculate size factors for single-cell RNA-seq data
@@ -29,18 +29,35 @@ estimate_size_factors <- function(cds,
                                            'mean-geometric-mean-log-total'))
 {
   method <- match.arg(method)
-  if(any(Matrix::colSums(SingleCellExperiment::counts(cds)) == 0)) {
-    warning("Your CDS object contains cells with zero reads. ",
-                  "This causes size factor calculation to fail. Please remove ",
-                  "the zero read cells using ",
-                  "cds <- cds[,Matrix::colSums(exprs(cds)) != 0] and then ",
-                  "run cds <- estimate_size_factors(cds)")
-    return(cds)
+  if(is(SingleCellExperiment::counts(cds), 'IterableMatrix')) {
+    if(any(BPCells::colSums(SingleCellExperiment::counts(cds)) == 0)) {
+      warning("Your CDS object contains cells with zero reads. ",
+                    "This causes size factor calculation to fail. Please remove ",
+                    "the zero read cells using ",
+                    "cds <- cds[,Matrix::colSums(counts(cds)) != 0] and then ",
+                    "run cds <- estimate_size_factors(cds)")
+      return(cds)
+    }
   }
+  else {
+    if(any(Matrix::colSums(SingleCellExperiment::counts(cds)) == 0)) {
+      warning("Your CDS object contains cells with zero reads. ",
+                    "This causes size factor calculation to fail. Please remove ",
+                    "the zero read cells using ",
+                    "cds <- cds[,Matrix::colSums(counts(cds)) != 0] and then ",
+                    "run cds <- estimate_size_factors(cds)")
+      return(cds)
+    }
+  }
+
   if (is_sparse_matrix(SingleCellExperiment::counts(cds))){
     size_factors(cds) <- estimate_sf_sparse(SingleCellExperiment::counts(cds),
                                             round_exprs=round_exprs,
                                             method=method)
+  } else if(is(SingleCellExperiment::counts(cds), 'IterableMatrix')) {
+    size_factors(cds) <- estimate_sf_bpcells(SingleCellExperiment::counts(cds),
+                                           round_exprs=round_exprs,
+                                           method=method)
   }else{
     size_factors(cds) <- estimate_sf_dense(SingleCellExperiment::counts(cds),
                                            round_exprs=round_exprs,
@@ -62,6 +79,26 @@ estimate_sf_sparse <- function(counts,
     sfs <- cell_total / exp(mean(log(cell_total)))
   }else if(method == 'mean-geometric-mean-log-total') {
     cell_total <- Matrix::colSums(counts)
+    sfs <- log(cell_total) / exp(mean(log(log(cell_total))))
+  }
+
+  sfs[is.na(sfs)] <- 1
+  sfs
+}
+
+# Estimate size factors for each column, given an IterableMatrix (or
+# derived class) from the BPCells package.
+estimate_sf_bpcells <- function(counts,
+                               round_exprs=TRUE,
+                               method="mean-geometric-mean-total"){
+  if (round_exprs)
+    counts <- round(counts)
+
+  if(method == 'mean-geometric-mean-total') {
+    cell_total <- BPCells::colSums(counts)
+    sfs <- cell_total / exp(mean(log(cell_total)))
+  }else if(method == 'mean-geometric-mean-log-total') {
+    cell_total <- BPCells::colSums(counts)
     sfs <- log(cell_total) / exp(mean(log(log(cell_total))))
   }
 
@@ -118,12 +155,16 @@ sparse_apply <- function(Sp_X, MARGIN, FUN, convert_to_dense, ...){
 
 }
 
+# 20230424 bge: my test suggests that I can subset a BPCells matrix using
+#               the subset operator with the form x[i, , drop = FALSE]
 #' @noRd
 split_rows <- function (x, ncl) {
   lapply(parallel::splitIndices(nrow(x), ncl),
          function(i) x[i, , drop = FALSE])
 }
 
+# 20230424 bge: my test suggests that I can subset a BPCells matrix using
+#               the subset operator with the form x[i, , drop = FALSE]
 #' @noRd
 split_cols <- function (x, ncl) {
   lapply(parallel::splitIndices(ncol(x), ncl),
@@ -133,11 +174,11 @@ split_cols <- function (x, ncl) {
 #' @noRd
 sparse_par_r_apply <- function (cl, x, FUN, convert_to_dense, ...) {
   par_res <- do.call(c, parallel::clusterApply(cl = cl,
-                                                   x = split_rows(x,
-                                                                  length(cl)),
-                                     fun = sparse_apply, MARGIN = 1L,
-                                     FUN = FUN,
-                                     convert_to_dense=convert_to_dense, ...),
+                                               x = split_rows(x,
+                                                              length(cl)),
+                                               fun = sparse_apply, MARGIN = 1L,
+                                               FUN = FUN,
+                                               convert_to_dense=convert_to_dense, ...),
                      quote = TRUE)
   names(par_res) <- row.names(x)
   par_res
@@ -146,11 +187,11 @@ sparse_par_r_apply <- function (cl, x, FUN, convert_to_dense, ...) {
 #' @noRd
 sparse_par_c_apply <- function (cl = NULL, x, FUN, convert_to_dense, ...) {
   par_res <- do.call(c, parallel::clusterApply(cl = cl,
-                                                   x = split_cols(x,
-                                                                  length(cl)),
-                                     fun = sparse_apply, MARGIN = 2L,
-                                     FUN = FUN,
-                                     convert_to_dense=convert_to_dense, ...),
+                                               x = split_cols(x,
+                                                              length(cl)),
+                                               fun = sparse_apply, MARGIN = 2L,
+                                               FUN = FUN,
+                                               convert_to_dense=convert_to_dense, ...),
                      quote = TRUE)
   names(par_res) <- colnames(x)
   par_res
@@ -245,12 +286,15 @@ mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1,
     }, required_packages)
   }
 
+  #
+  # 20230424 bge: These two following calls using counts(cds) appear to work based on my simple test.
+  #
   if (MARGIN == 1){
-    suppressWarnings(res <- sparse_par_r_apply(cl, SingleCellExperiment::counts(cds), FUN,
-                                               convert_to_dense, ...))
+    suppressWarnings(res <- sparse_par_r_apply(cl=cl, x=SingleCellExperiment::counts(cds), FUN=FUN,
+                                               convert_to_dense=convert_to_dense, ...))
   }else{
-    suppressWarnings(res <- sparse_par_c_apply(cl, SingleCellExperiment::counts(cds), FUN,
-                                               convert_to_dense, ...))
+    suppressWarnings(res <- sparse_par_c_apply(cl=cl, x=SingleCellExperiment::counts(cds), FUN=FUN,
+                                               convert_to_dense=convert_to_dense, ...))
   }
 
   res
@@ -287,146 +331,6 @@ smart_es_apply <- function(cds, MARGIN, FUN, convert_to_dense,
   }
 
   res
-}
-
-
-#' Principal Components Analysis
-#'
-#' Efficient computation of a truncated principal components analysis of a
-#' given data matrix using an implicitly restarted Lanczos method from the
-#' \code{\link{irlba}} package.
-#'
-#' @param x a numeric or complex matrix (or data frame) which provides the data
-#'   for the principal components analysis.
-#' @param retx a logical value indicating whether the rotated variables should
-#'   be returned.
-#' @param center a logical value indicating whether the variables should be
-#'   shifted to be zero centered. Alternately, a centering vector of length
-#'   equal the number of columns of \code{x} can be supplied.
-#' @param scale. a logical value indicating whether the variables should be
-#'   scaled to have unit variance before the analysis takes place. The default
-#'   is \code{FALSE} for consistency with S, but scaling is often advisable.
-#'   Alternatively, a vector of length equal the number of columns of \code{x}
-#'   can be supplied.
-#'
-#'   The value of \code{scale} determines how column scaling is performed
-#'   (after centering). If \code{scale} is a numeric vector with length equal
-#'   to the number of columns of \code{x}, then each column of \code{x} is
-#'   divided by the corresponding value from \code{scale}. If \code{scale} is
-#'   \code{TRUE} then scaling is done by dividing the (centered) columns of
-#'   \code{x} by their standard deviations if \code{center=TRUE}, and the root
-#'   mean square otherwise.  If \code{scale} is \code{FALSE}, no scaling is done.
-#'   See \code{\link{scale}} for more details.
-#' @param n integer number of principal component vectors to return, must be
-#'   less than \code{min(dim(x))}.
-#' @param ... additional arguments passed to \code{\link{irlba}}.
-#'
-#' @return
-#' A list with class "prcomp" containing the following components:
-#' \itemize{
-#'    \item{sdev} {the standard deviations of the principal components (i.e.,
-#'      the square roots of the eigenvalues of the covariance/correlation
-#'      matrix, though the calculation is actually done with the singular
-#'      values of the data matrix).}
-#'   \item{rotation} {the matrix of variable loadings (i.e., a matrix whose
-#'     columns contain the eigenvectors).}
-#'   \item {x} {if \code{retx} is \code{TRUE} the value of the rotated data
-#'     (the centered (and scaled if requested) data multiplied by the
-#'     \code{rotation} matrix) is returned. Hence, \code{cov(x)} is the
-#'     diagonal matrix \code{diag(sdev^2)}.}
-#'   \item{center, scale} {the centering and scaling used, or \code{FALSE}.}
-#' }
-#'
-#' @note
-#' The signs of the columns of the rotation matrix are arbitrary, and so may
-#' differ between different programs for PCA, and even between different builds
-#' of R.
-#'
-#' NOTE DIFFERENCES WITH THE DEFAULT \code{\link{prcomp}} FUNCTION! The
-#' \code{tol} truncation argument found in \code{prcomp} is not supported. In
-#' place of the truncation tolerance in the original function, the
-#' \code{prcomp_irlba}  function has the argument \code{n} explicitly giving
-#' the number of principal components to return. A warning is generated if the
-#' argument \code{tol} is used, which is interpreted differently between the
-#' two functions.
-#'
-#' @examples
-#' \dontrun{
-#'   set.seed(1)
-#'   x  <- matrix(rnorm(200), nrow=20)
-#'   p1 <- irlba::prcomp_irlba(x, n=3)
-#'   summary(p1)
-#'
-#'   # Compare with
-#'   p2 <- prcomp(x, tol=0.7)
-#'   summary(p2)}
-#'
-#' @seealso \code{\link{prcomp}}
-sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
-                                scale. = FALSE, ...)
-{
-  a <- names(as.list(match.call()))
-  ans <- list(scale=scale.)
-  if ("tol" %in% a)
-    warning("The `tol` truncation argument from `prcomp` is not supported by
-            `prcomp_irlba`. If specified, `tol` is passed to the `irlba`
-            function to control that algorithm's convergence tolerance. See
-            `?prcomp_irlba` for help.")
-  orig_x <- x
-  if (!methods::is(x, "DelayedMatrix")) {
-    x = DelayedArray::DelayedArray(x)
-  }
-
-  args <- list(A=orig_x, nv=n)
-  if (is.logical(center))
-  {
-    if (center) args$center <- DelayedMatrixStats::colMeans2(x)
-  } else args$center <- center
-  if (is.logical(scale.))
-  {
-    if (is.numeric(args$center))
-    {
-      scale. <- sqrt(DelayedMatrixStats::colVars(x))
-      if (ans$scale) ans$totalvar <- ncol(x)
-      else ans$totalvar <- sum(scale. ^ 2)
-    } else
-    {
-      if (ans$scale)
-      {
-        scale. <-
-          sqrt(DelayedMatrixStats::colSums2(x ^ 2) / (max(1, nrow(x) - 1L)))
-        ans$totalvar <-
-          sum(sqrt(DelayedMatrixStats::colSums2(t(t(x)/scale.) ^ 2) /
-                     (nrow(x) - 1L)))
-      } else
-      {
-        ans$totalvar <-
-          sum(DelayedMatrixStats::colSums2(x ^ 2) / (nrow(x) - 1L))
-      }
-    }
-    if (ans$scale) args$scale <- scale.
-  } else
-  {
-    args$scale <- scale.
-    ans$totalvar <-
-      sum(sqrt(DelayedMatrixStats::colSums2(t(t(x)/scale.) ^ 2) /
-                 (nrow(x) - 1L)))
-  }
-  if (!missing(...)) args <- c(args, list(...))
-
-  s <- do.call(irlba::irlba, args=args)
-  ans$sdev <- s$d / sqrt(max(1, nrow(x) - 1))
-  ans$rotation <- s$v
-  colnames(ans$rotation) <- paste("PC", seq(1, ncol(ans$rotation)), sep="")
-  ans$center <- args$center
-  ans$svd_scale <- args$scale
-  if (retx)
-  {
-    ans <- c(ans, list(x = sweep(s$u, 2, s$d, FUN=`*`)))
-    colnames(ans$x) <- paste("PC", seq(1, ncol(ans$rotation)), sep="")
-  }
-  class(ans) <- c("irlba_prcomp", "prcomp")
-  ans
 }
 
 
@@ -477,17 +381,39 @@ detect_genes <- function(cds, min_expr=0){
 #' @export
 normalized_counts <- function(cds,
                               norm_method=c("log", "binary", "size_only"),
-                              pseudocount=1){
-  norm_method = match.arg(norm_method)
-  norm_mat = SingleCellExperiment::counts(cds)
+                              pseudocount=1) {
+  norm_method <- match.arg(norm_method)
+
+  norm_mat <- SingleCellExperiment::counts(cds)
+
   if (norm_method == "binary"){
-    norm_mat = norm_mat > 0
-    if (is_sparse_matrix(norm_mat)){
-      norm_mat = methods::as(norm_mat, "dgCMatrix")
+    if(is(norm_mat, 'IterableMatrix')) {
+      norm_mat <- BPCells::binarize(norm_mat, threshold=0, strict_inequality=TRUE)
+    }
+    else {
+      # The '+ 0' coerces the matrix to type numeric. It's possible
+      # to use 'as.numeric(norm_mat > 0)' but the matrix
+      # attributes disappear...
+      norm_mat <- (norm_mat > 0) + 0
+      if (is_sparse_matrix(norm_mat)) {
+        norm_mat = methods::as(norm_mat, "dgCMatrix")
+      }
     }
   }
   else {
+    assertthat::assert_that(!is.null(size_factors(cds)))
+    if(is(norm_mat, 'IterableMatrix')) {
+      if(norm_method == 'log' && pseudocount != 1) {
+        stop('normalized_counts: pseudocount must be 1 for sparse expression matrices and norm_method log')
+      }
+      norm_mat <- BPCells::t(BPCells::t(norm_mat) / size_factors(cds))
+      if(norm_method == 'log' && pseudocount == 1) {
+        norm_mat <- log1p(norm_mat) / log(10)
+      }
+    }
+    else
     if (is_sparse_matrix(norm_mat)){
+      norm_mat <- norm_mat
       norm_mat@x = norm_mat@x / rep.int(size_factors(cds), diff(norm_mat@p))
       if (norm_method == "log"){
         if (pseudocount == 1){
@@ -499,10 +425,12 @@ normalized_counts <- function(cds,
     }else{
       norm_mat = Matrix::t(Matrix::t(norm_mat) / size_factors(cds))
       if (norm_method == "log"){
-          norm_mat@x <- log10(norm_mat + pseudocount)
+#          norm_mat@x <- log10(norm_mat + pseudocount)
+          norm_mat <- log10(norm_mat + pseudocount)
       }
     }
   }
+
   return(norm_mat)
 }
 
@@ -512,6 +440,9 @@ normalized_counts <- function(cds,
 #'
 #' This function will combine a list of cell_data_set objects into a new
 #' cell_data_set object.
+#'
+#' @details If any of the counts matrices is BPCells class, the combined
+#'   counts matrix will be BPCells class.
 #'
 #' @param cds_list List of cds objects to be combined.
 #' @param keep_all_genes Logical indicating what to do if there is a mismatch
@@ -528,7 +459,9 @@ normalized_counts <- function(cds,
 #'   that indicates which original cds the cell derives from. Default is
 #'   "sample".
 #' @param keep_reduced_dims Logical indicating whether to keep the reduced
-#'   dimension matrices. Default is FALSE.
+#'   dimension matrices. Do not keep the reduced dimensions unless you know
+#'   that the reduced dimensions are the same in each CDS. This is true for
+#'   projected data sets, for example. Default is FALSE.
 #'
 #' @return A combined cell_data_set object.
 #' @export
@@ -537,7 +470,8 @@ combine_cds <- function(cds_list,
                         keep_all_genes = TRUE,
                         cell_names_unique = FALSE,
                         sample_col_name = "sample",
-                        keep_reduced_dims = FALSE) {
+                        keep_reduced_dims = FALSE,
+                        matrix_control = list()) {
 
   assertthat::assert_that(is.list(cds_list),
                           msg=paste("cds_list must be a list."))
@@ -568,6 +502,7 @@ combine_cds <- function(cds_list,
                  "column name that is NA, please ",
                  "remove or rename that column before ",
                  "proceeding."))
+
   num_cells <- sapply(cds_list, ncol)
   if(sum(num_cells == 0) != 0) {
     message("Some CDS' have no cells, these will be skipped.")
@@ -583,6 +518,31 @@ combine_cds <- function(cds_list,
     list_named <- FALSE
   }
 
+  if(!is.null(matrix_control[['matrix_class']]) &&
+     matrix_control[['matrix_class']] == 'BPCells') {
+    bpcells_matrix_flag <- TRUE
+  }
+  else {
+    bpcells_matrix_flag <- FALSE
+    # Are any of the count matrices BPCells class?
+    for(i in seq(1, length(cds_list), 1)) {
+      if(is(counts(cds_list[[i]]), 'IterableMatrix')) {
+        bpcells_matrix_flag <- TRUE
+        break
+      }
+    }
+  }
+
+  check_matrix_control(matrix_control=matrix_control, control_type='unrestricted', check_conditional=FALSE)
+  if(bpcells_matrix_flag ||
+     (!is.null(matrix_control[['matrix_class']]) && matrix_control[['matrix_class']] == 'BPCells')) {
+    matrix_control_default <- get_global_variable('matrix_control_bpcells_unrestricted')
+  }
+  else {
+    matrix_control_default <- get_global_variable('matrix_control_csparsematrix_unrestricted')
+  }
+  matrix_control <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='unrestricted')
+
   exprs_list <- list()
   fd_list <- list()
   pd_list <- list()
@@ -593,17 +553,23 @@ combine_cds <- function(cds_list,
   all_cells <- c()
 
   for(cds in cds_list) {
+    # Make a vector of gene names either all names or
+    # only names in common to all CDSes.
     gene_list <-  c(gene_list, row.names(fData(cds)))
     overlap_list <- intersect(overlap_list, row.names(fData(cds)))
     if (!keep_all_genes) {
       gene_list <- overlap_list
     }
 
+    # Make concatenated vectors of column (header) names of the cells
+    # and features, and of cell names.
     pdata_cols <- c(pdata_cols, names(pData(cds)))
     fdata_cols <- c(fdata_cols, names(fData(cds)))
     all_cells <- c(all_cells, row.names(pData(cds)))
   }
 
+  # Remove duplicate gene names, feature and cell column
+  # names, and cell names.
   gene_list <- unique(gene_list)
   if(length(overlap_list) == 0) {
     if (keep_all_genes) {
@@ -620,10 +586,23 @@ combine_cds <- function(cds_list,
                "must be FALSE.")
   }
   all_cells <- unique(all_cells)
+
+  # Give all CDSes the same set of rows (amongst other things),
+  # looping through the CDSes.
   for(i in seq(1, length(cds_list), 1)) {
     pd <- as.data.frame(pData(cds_list[[i]]))
-    exp <- exprs(cds_list[[i]])
+
+    # Counts matrix rows of genes common to the CDSes examined
+    # up to this pass through the loop.
+    exp <- counts(cds_list[[i]])
+    if(bpcells_matrix_flag && !is(exp, 'IterableMatrix')) {
+      exp <- as(exp, 'IterableMatrix')
+    }
     exp <- exp[intersect(row.names(exp), gene_list),, drop=FALSE]
+
+    # Make cell names distinct, if necessary, assign cell names to
+    # pd, the sample names to a column in pd, and cell names to
+    # the counts matrix columns.
     if (!cell_names_unique) {
       if(list_named) {
         row.names(pd) <- paste(row.names(pd), names(cds_list)[[i]], sep="_")
@@ -640,13 +619,20 @@ combine_cds <- function(cds_list,
         pd[,sample_col_name] <- i
       }
     }
+
+    # Initialize new entries in pd to 'NA'.
     not_in <- pdata_cols[!pdata_cols %in% names(pd)]
     for (n in not_in) {
       pd[,n] <- NA
     }
 
+    # Select feature data frame rows that are common to
+    # fd and gene_list.
     fd <- as.data.frame(fData(cds_list[[i]]))
     fd <- fd[intersect(row.names(fd), gene_list),, drop=FALSE]
+
+    # Make a vector of gene names that are that are not in
+    # fd.
     not_in <- fdata_cols[!fdata_cols %in% names(fd)]
     for(col in names(fd)) {
       if(methods::is(fd[,col], "factor")) {
@@ -658,27 +644,37 @@ combine_cds <- function(cds_list,
     }
     not_in_g <- gene_list[!gene_list %in% row.names(fd)]
 
+    # Make an empty matrix (and fd data frame) with the rows
+    # that need to be added to the counts matrix for cds_list[[i]],
+    # and append it to the accumulating counts matrix.
     if (length(not_in_g) > 0) {
       not_in_g_df <- as.data.frame(matrix(NA, nrow = length(not_in_g), ncol=ncol(fd)))
       row.names(not_in_g_df) <- not_in_g
       names(not_in_g_df) <- names(fd)
-      fd <- rbind(fd, not_in_g_df)
+      fd <- rbind(fd, not_in_g_df)      # bge rbind
 
       extra_rows <- Matrix::Matrix(0, ncol=ncol(exp),
                                    sparse=TRUE,
                                    nrow=length(not_in_g))
       row.names(extra_rows) <- not_in_g
       colnames(extra_rows) <- colnames(exp)
-      exp <- rbind(exp, extra_rows)
-      exp <- exp
+
+      # Append additional rows.
+      if(bpcells_matrix_flag) {
+        exp <- rbind2(exp, as(extra_rows, 'IterableMatrix'))
+      }
+      else {
+        exp <- rbind(exp, extra_rows)
+      }
+#      exp <- exp
     }
 
-
+    # Gather matrices and data frames into lists.
     exprs_list[[i]] <- exp[gene_list, , drop=FALSE]
     fd_list[[i]] <- fd[gene_list, , drop=FALSE]
     pd_list[[i]] <- pd
-
   }
+
   all_fd <- array(NA,dim(fd_list[[1]]),dimnames(fd_list[[1]]))
 
   for (fd in fd_list) {
@@ -701,20 +697,45 @@ combine_cds <- function(cds_list,
   #all_fd <- do.call(cbind, fd_list)
   all_fd <- all_fd[,fdata_cols, drop=FALSE]
 
-  all_pd <- do.call(rbind, pd_list)
-  all_exp <- do.call(cbind, exprs_list)
+  # Build the final, comprehensive cell data frame and counts matrix.
+  all_pd <- do.call(rbind, pd_list)    # bge rbind
+  if(bpcells_matrix_flag) {
+    num_exprs <- length(exprs_list)
+    all_exp <- exprs_list[[1]]
+    for(i in seq(2, num_exprs, 1)) {
+      all_exp <- cbind2(all_exp, exprs_list[[i]])
+    }
+  }
+  else {
+    all_exp <- do.call(cbind, exprs_list)
+  }
 
+  # Filter counts matrix by fd and pd names.
   all_exp <- all_exp[row.names(all_fd), row.names(all_pd), drop=FALSE]
 
+  # Make a BPCells count matrix, if necessary.
+  if(bpcells_matrix_flag) {
+    all_exp <- set_matrix_class(mat=all_exp, matrix_control=matrix_control)
+  }
+
+  # Make a combined CDS from all_exp, all_pd, and all_fd.
   new_cds <- new_cell_data_set(all_exp, cell_metadata = all_pd, gene_metadata = all_fd)
 
+  # Add in preprocessing results.
   if(keep_reduced_dims) {
-    for(red_dim in names(SingleCellExperiment::reducedDims(cds_list[[1]]))) {
+    # Find intersection of reduced dim names, for example, 'PCA', 'UMAP', 'Aligned'.
+    reduced_dim_names <- names(reducedDims(cds_list[[1]]))
+    for(i in seq(2, length(cds_list), 1)) {
+      reduced_dim_names <- intersect(reduced_dim_names, names(reducedDims(cds_list[[i]])))
+    }
+
+#    for(red_dim in names(SingleCellExperiment::reducedDims(cds_list[[1]]))) {
+    for(red_dim in reduced_dim_names) {
       reduced_dims_list <- list()
       for(j in seq(1, length(cds_list), 1)) {
         reduced_dims_list[[j]] <- SingleCellExperiment::reducedDims(cds_list[[j]])[[red_dim]]
       }
-      SingleCellExperiment::reducedDims(new_cds)[[red_dim]] <- do.call(rbind, reduced_dims_list, quote=FALSE)
+      SingleCellExperiment::reducedDims(new_cds, withDimnames=FALSE)[[red_dim]] <- do.call(rbind, reduced_dims_list, quote=FALSE)
       # The following should not happen; the accessor appears to ensure the
       # correct row order.
       if(!identical(rownames(SingleCellExperiment::reducedDims(new_cds)[[red_dim]]), rownames(all_pd))) {
@@ -722,8 +743,20 @@ combine_cds <- function(cds_list,
       }
     }
   }
+
+  # Add a BPCells row-major order matrix to assays
+  # for BPCells count matrices.
+  if(bpcells_matrix_flag) {
+    new_cds <- set_cds_row_order_matrix(new_cds)
+  }
+
+  matrix_id <-  get_unique_id(counts(cds))
+  new_cds <- initialize_counts_metadata(new_cds) 
+  new_cds <- set_counts_identity(new_cds, 'combin_cds', matrix_id)
+
   new_cds
 }
+
 
 #' Clear CDS slots
 #'
@@ -789,10 +822,22 @@ get_citations <- function(cds) {
 
 # Make a unique identifier string.
 get_unique_id <- function(object=NULL) {
+  #
+  # I don't have a way to calculate a checksum
+  # without creating an in memory matrix copy
+  # so skip if this is a BPCells matrix.
+  if(is(object, 'IterableMatrix')) {
+    return('BPcells matrix')
+  }
 
   if(!is.null(object)) {
     object_dim <- dim(object)
-    object_checksum <- digest::digest(object)
+    if(!is(object, 'IterableMatrix')) {
+      object_checksum <- digest::digest(object)
+    }
+    else {
+      object_checksum <- digest::digest(as(object, 'dgCMatrix'))
+    }
     if(!is.null(object_dim))
       object_id <- list(checksum=object_checksum, dim=object_dim)
     else

@@ -1,5 +1,8 @@
 #' Build a small cell_data_set.
-#'
+#' @param matrix_control A list used to control how the counts matrix is stored
+#'    in the CDS. By default, Monocle3 stores the counts matrix in-memory as a
+#'    sparse matrix. Setting 'matrix_control=list(matrix_class="BPCells")',
+#'    stores the matrix on-disk as a sparse matrix.
 #' @return cds object
 #' @examples
 #'   \donttest{
@@ -7,7 +10,16 @@
 #'   }
 #'
 #' @export
-load_a549 <- function(){
+load_a549 <- function(matrix_control=list()){
+
+  if(!is.null(matrix_control[['matrix_class']]) && matrix_control[['matrix_class']] == 'BPCells') {
+    matrix_control_default <- get_global_variable('matrix_control_bpcells_unrestricted')
+  }
+  else {
+    matrix_control_default <- get_global_variable('matrix_control_csparsematrix_unrestricted')
+  }
+  matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='unrestricted')
+
   small_a549_colData_df <- readRDS(system.file("extdata",
           "small_a549_dex_pdata.rda",
           package = "monocle3"))
@@ -19,22 +31,39 @@ load_a549 <- function(){
           package = "monocle3"))
   small_a549_exprs <- small_a549_exprs[,row.names(small_a549_colData_df)]
 
-  cds <- new_cell_data_set(expression_data = small_a549_exprs,
-      cell_metadata = small_a549_colData_df,
-      gene_metadata = small_a549_rowData_df)
+  expression_matrix <- set_matrix_class(mat=small_a549_exprs, matrix_control=matrix_control_res)
+
+  cds <- new_cell_data_set(expression_data = expression_matrix,
+                           cell_metadata = small_a549_colData_df,
+                           gene_metadata = small_a549_rowData_df)
   cds
 }
 
 
 #' Build a cell_data_set from C. elegans embryo data.
+#' @param matrix_control A list used to control how the counts matrix is stored
+#'    in the CDS. By default, Monocle3 stores the counts matrix in-memory as a
+#'    sparse matrix. Setting 'matrix_control=list(matrix_class="BPCells")',
+#'    stores the matrix on-disk as a sparse matrix.
 #' @return cds object
 #' @importFrom SingleCellExperiment counts
 #' @export
-load_worm_embryo <- function(){
+load_worm_embryo <- function(matrix_control=list()) {
+
+  if(!is.null(matrix_control[['matrix_class']]) && matrix_control[['matrix_class']] == 'BPCells') {
+    matrix_control_default <- get_global_variable('matrix_control_bpcells_unrestricted')
+  }
+  else {
+    matrix_control_default <- get_global_variable('matrix_control_csparsematrix_unrestricted')
+  }
+  matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='unrestricted')
+
   expression_matrix <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/packer_embryo_expression.rds"))
   cell_metadata <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/packer_embryo_colData.rds"))
   gene_annotation <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/packer_embryo_rowData.rds"))
   gene_annotation$use_for_ordering <- NULL
+
+  expression_matrix <- set_matrix_class(mat=expression_matrix, matrix_control=matrix_control_res)
 
   cds <- new_cell_data_set(expression_matrix,
       cell_metadata = cell_metadata,
@@ -50,13 +79,28 @@ load_worm_embryo <- function(){
 
 
 #' Build a cell_data_set from C. elegans L2 data.
+#' @param matrix_control A list used to control how the counts matrix is stored
+#'    in the CDS. By default, Monocle3 stores the counts matrix in-memory as a
+#'    sparse matrix. Setting 'matrix_control=list(matrix_class="BPCells")',
+#'    stores the matrix on-disk as a sparse matrix.
 #' @return cds object
 #' @importFrom SingleCellExperiment counts
 #' @export
-load_worm_l2 <- function(){
+load_worm_l2 <- function(matrix_control=list()) {
+
+  if(!is.null(matrix_control[['matrix_class']]) && matrix_control[['matrix_class']] == 'BPCells') {
+    matrix_control_default <- get_global_variable('matrix_control_bpcells_unrestricted')
+  }
+  else {
+    matrix_control_default <- get_global_variable('matrix_control_csparsematrix_unrestricted')
+  }
+  matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='unrestricted')
+
   expression_matrix <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/cao_l2_expression.rds"))
   cell_metadata <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/cao_l2_colData.rds"))
   gene_annotation <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/cao_l2_rowData.rds"))
+
+  expression_matrix <- set_matrix_class(mat=expression_matrix, matrix_control=matrix_control_res)
 
   cds <- new_cell_data_set(expression_matrix,
       cell_metadata = cell_metadata,
@@ -69,7 +113,6 @@ load_worm_l2 <- function(){
 
   cds
 }
-
 
 #' Test if a file has a Matrix Market header.
 #' @param matpath Path to test file.
@@ -181,7 +224,32 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
 #' sep = "", the separator is white space, that is, one or more spaces,
 #' tabs, newlines, or carriage returns. The default is the tab
 #' character for tab-separated-value files.
-#'
+#' @param verbose a logical value that determines whether or not the
+#' function writes diagnostic information.
+#' @param matrix_control an optional list of values that control how
+#' matrices are stored in the cell_data_set assays slot. Typically,
+#' matrices are stored in-memory as dgCMatrix class (compressed sparse
+#' matrix) objects using matrix_class="dgCMatrix". This is the
+#' default. A very large matrix can be stored in a file and accessed
+#' by Monocle3 as if it were in-memory. For this, Monocle3 uses the
+#' BPCells R package. Here the matrix_control list values are set to
+#' matrix_class="BPCells" and matrix_mode="dir". Then the counts matrix
+#' is stored in a directory, on-disk, which is created by Monocle3 in
+#' the directory where you run Monocle3. This directory has a name
+#' with the form "monocle.bpcells.*.tmp" where the asterisk is a
+#' string of random characters that makes the name unique. Do not
+#' remove this directory while Monocle3 is running! If you choose to
+#' store the counts matrix as an on-disk BPCells object, you must use
+#' the "save_monocle_objects" and "load_monocle_objects" functions
+#' to save and restore the cell_data_set. Monocle3 tries to remove
+#' the BPCells matrix directory when your R session ends; however,
+#' sometimes a matrix directory may persist after the session ends.
+#' In this case, the user must remove the directory after the
+#' session ends. For additional information about the matrix_control
+#' list, see the examples below and the set_matrix_control help.
+#' Note that for the load_mm_data function the BPCells matrix_mode
+#' is "dir", the matrix_type is "double", and the matrix_compress is
+#' FALSE.
 #' @return cds object
 #'
 #' @section Comments:
@@ -199,8 +267,25 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
 #'     # In this example, the features_c3h0.txt file has three columns,
 #'     # separated by spaces. The first column has official gene names, the
 #'     # second has short gene names, and the third has gene biotypes.
+#'     #
+#'     # For typical count matrices with a small to medium number of cells,
+#'     # we suggest that you use the default matrix_control list by not
+#'     # not setting the matrix_control parameter. In this case, the
+#'     # counts matrix is stored in-memory as a sparse matrix in the
+#'     # dgCMatrix format, as it has in the past. It is also possible to
+#'     # set the matrix_control list explicitly to use this in-memory
+#'     # dgCMatrix format by setting the matrix_control parameter to
+#'     #
+#'       load_mm_data(..., matrix_control=list(matrix_class='dgCMatrix'))
+#'     #
+#'     # For large matrices, we suggest that you try storing the count
+#'     # matrix as a BPCells object on-disk by setting the matrix_control
+#'     # parameter list as follows
+#'     #
+#'       load_mm_data(..., matrix_control=list(matrix_class='BPCells'))
+#'     #
 #'   }
-#'
+#' 
 #' @importFrom SingleCellExperiment counts
 #' @export
 load_mm_data <- function( mat_path,
@@ -211,11 +296,22 @@ load_mm_data <- function( mat_path,
     cell_metadata_column_names = NULL,
     umi_cutoff = 100,
     quote="\"'",
-    sep="\t") {
+    sep="\t",
+    verbose=FALSE,
+    matrix_control=list()) {
   assertthat::assert_that(assertthat::is.readable(mat_path), msg='unable to read matrix file')
   assertthat::assert_that(assertthat::is.readable(feature_anno_path), msg='unable to read feature annotation file')
   assertthat::assert_that(assertthat::is.readable(cell_anno_path), msg='unable to read cell annotation file')
   assertthat::assert_that(is.numeric(umi_cutoff))
+
+  if(!is.null(matrix_control[['matrix_class']]) && matrix_control[['matrix_class']] == 'BPCells') {
+    matrix_control_default <- get_global_variable('matrix_control_bpcells_unrestricted')
+  }
+  else {
+    matrix_control_default <- get_global_variable('matrix_control_csparsematrix_unrestricted')
+  }
+
+  matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='unrestricted')
 
   feature_annotations <- load_annotations_data( feature_anno_path, feature_metadata_column_names, header, sep, quote=quote, annotation_type='features' )
   cell_annotations <- load_annotations_data( cell_anno_path, cell_metadata_column_names, header, sep, quote=quote, annotation_type='cells' )
@@ -223,29 +319,64 @@ load_mm_data <- function( mat_path,
   assertthat::assert_that( ! any( duplicated( feature_annotations$names ) ), msg='duplicate feature names in feature annotation file' )
   assertthat::assert_that( ! any( duplicated( cell_annotations$names ) ), msg='duplicate cell names in cell annotation file' )
 
-  mat <- Matrix::readMM( mat_path )
+  if(matrix_control_res[['matrix_class']] != 'BPCells') {
+    # Read MatrixMarket file and convert to dgCMatrix format.
+    mat <- Matrix::readMM(mat_path)
+    mat <- set_matrix_class(mat=mat, matrix_control=matrix_control_res)
+  
+    assertthat::assert_that( length( feature_annotations$names ) == nrow( mat ),
+        msg=paste0( 'feature name count (',
+            length( feature_annotations$names ),
+            ') != matrix row count (',
+            nrow( mat ),
+            ')' ) )
+    assertthat::assert_that( length( cell_annotations$names ) == ncol( mat ),
+        msg=paste0( 'cell name count (',
+            length( cell_annotations$names ),
+            ') != matrix column count (',
+            ncol( mat ),
+            ')' ) )
+  
+    rownames( mat ) <- feature_annotations$names
+    colnames( mat ) <- cell_annotations$names
+  }
+  else {
+    toutdir <- tempfile(pattern=paste0('monocle.bpcells.',
+                                       format(Sys.Date(), format='%Y%m%d'), '.'),
+                        tmpdir=matrix_control_res[['matrix_path']],
+                        fileext='.tmp')[[1]]
+    tmpdir <- tempfile('monocle.import_mm.', '.', '.tmp')
+    tmat <- BPCells::import_matrix_market(mtx_path=mat_path,
+                                          outdir=toutdir,
+                                          row_names=feature_annotations$names,
+                                          col_names=cell_annotations$names,
+                                          row_major=FALSE,
+                                          tmpdir=tmpdir,
+                                          load_bytes=4194304L,
+                                          sort_bytes=1073741824L)
+    unlink(tmpdir, recursive=TRUE)
+    outdir_c <- tempfile(pattern=paste0('monocle.bpcells.',
+                                        format(Sys.Date(), format='%Y%m%d'), '.'),
+                         tmpdir=matrix_control_res[['matrix_path']],
+                         fileext='.tmp')[[1]]
+    mat <- BPCells::write_matrix_dir(BPCells::convert_matrix_type(tmat, 'double'), outdir_c, compress=FALSE, buffer_size=8192L, overwrite=FALSE)
+    unlink(toutdir, recursive=TRUE)
+    push_matrix_path(mat=mat)
+  }
 
-  assertthat::assert_that( length( feature_annotations$names ) == nrow( mat ),
-      msg=paste0( 'feature name count (',
-          length( feature_annotations$names ),
-          ') != matrix row count (',
-          nrow( mat ),
-          ')' ) )
-  assertthat::assert_that( length( cell_annotations$names ) == ncol( mat ),
-      msg=paste0( 'cell name count (',
-          length( cell_annotations$names ),
-          ') != matrix column count (',
-          ncol( mat ),
-          ')' ) )
+  cds <- new_cell_data_set(mat,
+                           cell_metadata = cell_annotations$metadata,
+                           gene_metadata = feature_annotations$metadata,
+                           verbose = verbose)
 
-  rownames( mat ) <- feature_annotations$names
-  colnames( mat ) <- cell_annotations$names
+  if(is(counts(cds), 'CsparseMatrix')) {
+    colData(cds)$n.umi <- Matrix::colSums(counts(cds))
+  }
+  else
+  if(is(counts(cds), 'IterableMatrix')) {
+    colData(cds)$n.umi <- BPCells::colSums(counts(cds))
+  }
 
-  cds <- new_cell_data_set( mat,
-      cell_metadata = cell_annotations$metadata,
-      gene_metadata = feature_annotations$metadata )
-
-  colData(cds)$n.umi <- Matrix::colSums(exprs(cds))
   cds <- cds[,colData(cds)$n.umi >= umi_cutoff]
   cds <- estimate_size_factors(cds)
 
@@ -253,7 +384,12 @@ load_mm_data <- function( mat_path,
   matrix_id <- get_unique_id(counts(cds))
   cds <- set_counts_identity(cds, mat_path, matrix_id)
 
-  return( cds )
+  if(verbose) {
+    message('load_mm_data: matrix_info: out:')
+    show_matrix_info(matrix_info=get_matrix_info(mat=mat), '  ')
+  }
+
+  return(cds)
 }
 
 
@@ -263,6 +399,10 @@ load_mm_data <- function( mat_path,
 #' @param gene_anno_path Path to gene annotation file.
 #' @param cell_anno_path Path to cell annotation file.
 #' @param umi_cutoff UMI per cell cutoff, default is 100.
+#' @param matrix_control A list used to control how the counts matrix is stored
+#'    in the CDS. By default, Monocle3 stores the counts matrix in-memory as a
+#'    sparse matrix. Setting 'matrix_control=list(matrix_class="BPCells")',
+#'    stores the matrix BPCells on-disk as a sparse matrix.
 #'
 #' @return cds object
 #' @importFrom SingleCellExperiment counts
@@ -279,7 +419,9 @@ load_mm_data <- function( mat_path,
 load_mtx_data <- function( mat_path,
     gene_anno_path,
     cell_anno_path,
-    umi_cutoff = 100) {
+    umi_cutoff = 100,
+    matrix_control=list()) {
+
   assertthat::assert_that(assertthat::is.readable(mat_path))
   assertthat::assert_that(assertthat::is.readable(gene_anno_path))
   assertthat::assert_that(assertthat::is.readable(cell_anno_path))
@@ -298,9 +440,19 @@ load_mtx_data <- function( mat_path,
         cell_anno_path,
         feature_metadata_column_names=c('gene_short_name'),
         umi_cutoff=umi_cutoff,
-        sep="\t" )
+        sep="\t",
+        verbose=FALSE,
+        matrix_control=matrix_control)
     return( cds )
   }
+
+  if(!is.null(matrix_control[['matrix_class']]) && matrix_control[['matrix_class']] == 'BPCells') {
+    matrix_control_default <- get_global_variable('matrix_control_bpcells_unrestricted')
+  }
+  else {
+    matrix_control_default <- get_global_variable('matrix_control_csparsematrix_unrestricted')
+  }
+  matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='unrestricted')
 
   df <- utils::read.table(mat_path, col.names = c("gene.idx", "cell.idx", "count"),
       colClasses = c("integer", "integer", "integer"))
@@ -325,17 +477,20 @@ load_mtx_data <- function( mat_path,
 
   if(ncol(mat) == 1) {
     mat <- mat[,0, drop=FALSE]
-  } else {
+  }
+  else {
     if(ncol(mat) < 2) warning('bad loop: ncol(mat) < 2')
     mat <- mat[, 1:(ncol(mat)-1), drop=FALSE]
   }
+
+  mat <- set_matrix_class(mat=mat, matrix_control=matrix_control_res)
 
   rownames(mat) <- gene.annotations$id
   colnames(mat) <- cell.annotations$cell
 
   cds <- new_cell_data_set(mat, cell_metadata = cell.annotations,
       gene_metadata = gene.annotations)
-  colData(cds)$n.umi <- Matrix::colSums(exprs(cds))
+  colData(cds)$n.umi <- Matrix::colSums(counts(cds))
   cds <- cds[,colData(cds)$n.umi >= umi_cutoff]
   cds <- estimate_size_factors(cds)
 
@@ -467,7 +622,8 @@ save_annoy_index <- function(nn_index, file_name) {
     if(nn_index[['version']] == 1 || nn_index[['version']] == 2) {
       tryCatch( nn_index[['annoy_index']]$save(file_name),
                 error = function(e) {message('Unable to save annoy index: it may not exist in this cds: error message is ', e)})
-    } else {
+    }
+    else {
       stop('Unrecognized Monocle3 annoy index type')
     }
   }
@@ -609,7 +765,8 @@ load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
       }
     )
     unlink(file_name)
-  } else
+  }
+  else
   if(metric == 'euclidean') {
     tryCatch(
       {
@@ -621,7 +778,8 @@ load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
     )
     attr(new_index, "distance") <- "euclidean"
     unlink(file_name)
-  } else
+  }
+  else
     if(metric == 'cosine') {
     tryCatch(
       {
@@ -632,7 +790,8 @@ load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
       }
     )
     unlink(file_name)
-  } else
+  }
+  else
   if(metric == 'ip') {
     tryCatch(
       {
@@ -643,7 +802,8 @@ load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
       }
     )
     unlink(file_name)
-  } else
+  }
+  else
     stop('Unrecognized HNSW metric ', metric)
 
   if(!is.null(nn_index[['version']]))
@@ -667,7 +827,8 @@ save_umap_nn_indexes <- function(umap_model, file_name) {
   if(n_metrics == 1) {
     save_umap_annoy_index(umap_model[['nn_index']], file_name)
     md5sum_umap_index <- tools::md5sum(file_name)
-  } else {
+  }
+  else {
     warning('save_umap_nn_indexes is untested with more than one umap metric')
     md5sum_vec <- character()
     for(i in seq(1, n_metrics, 1)) {
@@ -695,7 +856,8 @@ load_umap_nn_indexes <- function(umap_model, file_name, md5sum_umap_index) {
     annoy_metric <- if(metric == 'correlation') 'cosine' else metric
     annoy_ndim <- umap_model[['metric']][[1]][['ndim']]
     umap_model[['nn_index']] <- load_umap_annoy_index(umap_model[['nn_index']], file_name, annoy_metric, annoy_ndim)
-  } else {
+  }
+  else {
     warning('load_umap_nn_indexes is untested with more than one umap metric')
     if(!is.null(md5sum_umap_index)) {
       md5sum_vec <- unlist(strsplit(md5sum_umap_index, '_', fixed=TRUE))
@@ -715,6 +877,24 @@ load_umap_nn_indexes <- function(umap_model, file_name, md5sum_umap_index) {
   return(umap_model)
 }
 
+# This is a specialized function for use in load_monocle_objects. There are
+# no matrix_control checks and it requires the path to an existing
+# BPCells matrix stored in a directory. The matrix control is used only
+# to set the resulting the matrix_path.
+load_bpcells_matrix_dir <- function(file_name, md5sum, matrix_control=list()) {
+  matrixDirTmp <- BPCells::open_matrix_dir(dir=file_name, buffer_size=8192L)
+  matrix_info <- get_matrix_info(mat=matrixDirTmp)
+  matrix_control_res <- list(matrix_class=matrix_info[['matrix_class']],
+                             matrix_mode=matrix_info[['matrix_mode']],
+                             matrix_type=matrix_info[['matrix_type']],
+                             matrix_compress=matrix_info[['matrix_compress']],
+                             matrix_path=matrix_control[['matrix_path']],
+                             matrix_buffer_size=matrix_info[['matrix_buffer_size']],
+                             matrix_bpcells_copy=TRUE)
+  matrixDir <- set_matrix_class(mat=matrixDirTmp, matrix_control=matrix_control_res)
+  return(matrixDir)
+}
+
 
 #
 # Report files saved.
@@ -728,35 +908,53 @@ report_files_saved <- function(file_index) {
     if(cds_object == 'cds') {
       process <- 'cell_data_set'
       reduction_method <- 'full_cds'
-    } else
+    }
+    else
     if(cds_object == 'reduce_dim_aux') {
       if(reduction_method == 'Aligned') {
         process <- 'align_cds'
-      } else
+      }
+      else
       if(reduction_method == 'PCA' || reduction_method == 'LSI') {
         process <- 'preprocess_cds'
-      } else
+      }
+      else
       if(reduction_method == 'tSNE' || reduction_method == 'UMAP') {
         process <- 'reduce_dimension'
-      } else {
+      }
+      else {
         stop('Unrecognized preprocess reduction_method \'', reduction_method, '\'')
       }
-    } else {
+    }
+    else
+    if(cds_object == 'bpcells_matrix_dir') {
+      process <- 'BPCells MatrixDir'
+      reduction_method <- 'full_counts_matrix'
+    }
+    else {
       stop('Unrecognized cds_object value \'', files[['cds_object']][[i]], '\'')
     }
     file_format <- files[['file_format']][[i]]
     if(file_format == 'rds') {
       file_type <- 'RDS'
-    } else
+    }
+    else
     if(file_format == 'hdf5') {
       file_type <- 'RDS_HDF5'
-    } else
+    }
+    else
     if(file_format == 'annoy_index' || file_format == 'hnsw_index') {
       file_type <- 'NN_index'
-    } else
+    }
+    else
     if(file_format == 'umap_annoy_index') {
       file_type <- 'UMAP_NN_index'
-    } else {
+    }
+    else
+    if(file_format == 'BPCells:MatrixDir') {
+      file_type <- 'BPCells:MatrixDir'
+    }
+    else {
       stop('Unrecognized file_format value \'', file_format, '\'')
     }
 
@@ -905,7 +1103,7 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
   for(reduction_method in names(methods_reduce_dim)) {
     tryCatch(
       {
-        saveRDS(cds@reduce_dim_aux[[reduction_method]], file=file.path(directory_path, methods_reduce_dim[[reduction_method]][['rds_path']]))
+        base::saveRDS(cds@reduce_dim_aux[[reduction_method]], file=file.path(directory_path, methods_reduce_dim[[reduction_method]][['rds_path']]))
       },
       error = function(cond) {
                      message('problem writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['rds_path']]), '\': ', cond, appendLF=appendLF)
@@ -988,7 +1186,7 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
   }
 
   # Save file_index.rds.
-  saveRDS(file_index, file=file.path(directory_path, 'file_index.rds'))
+  base::saveRDS(file_index, file=file.path(directory_path, 'file_index.rds'))
 
   if(verbose) {
     report_files_saved(file_index)
@@ -1095,7 +1293,8 @@ load_transform_models <- function(cds, directory_path) {
             message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
-      } else
+      }
+      else
       if(file_format == 'annoy_index') {
         cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']] <- update_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']])
 
@@ -1109,7 +1308,8 @@ load_transform_models <- function(cds, directory_path) {
             message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
-      } else
+      }
+      else
       if(file_format == 'hnsw_index') {
         cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']] <- update_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']])
 
@@ -1123,7 +1323,8 @@ load_transform_models <- function(cds, directory_path) {
             message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
-      } else
+      }
+      else
       if(reduction_method == 'UMAP' && file_format == 'umap_annoy_index') {
         cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']] <- tryCatch(
           {
@@ -1133,11 +1334,13 @@ load_transform_models <- function(cds, directory_path) {
             message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
          })
-      } else {
+      }
+      else {
         stop('Unrecognized file format value \'', file_format, '\'')
       }
       cds <- set_model_identity_path(cds, reduction_method, directory_path)
-    } else {
+    }
+    else {
       stop('Unrecognized cds_object value \'', cds_object, '\'')
     }
   }
@@ -1218,6 +1421,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
                       'uwot_version' = utils::packageVersion('uwot'),
                       'hnsw_version' = utils::packageVersion('RcppHNSW'),
                       'hdf5array_version' = utils::packageVersion('HDF5Array'),
+                      'bpcells_version' = utils::packageVersion('BPCells'),
                       'monocle_version' = utils::packageVersion('monocle3'),
                       'cds_version' = S4Vectors::metadata(cds)$cds_version,
                       'archive_version' = get_global_variable('monocle_objects_version'),
@@ -1234,10 +1438,19 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
   # Save assays as HDF5Array objects?
   hdf5_assay_flag <- hdf5_assays || test_hdf5_assays(cds)
 
+  # Save assays as BPCells Matrix_dir or BPCells 10xHDF5 file?
+  bpcells_matrix_dir_flag <- FALSE
+  matrix_info <- get_matrix_info(mat=counts(cds))
+  if(matrix_info[['matrix_class']] == 'BPCells' &&
+     matrix_info[['matrix_mode']] == 'dir') {
+    bpcells_matrix_dir_flag <- TRUE
+  }
+
   # Path of cds object file.
   rds_path <- 'cds_object.rds'
   hdf5_path <- 'hdf5_object'
-
+  bpcells_matrix_dir <- 'bpcells_matrix_dir'
+  
   # Gather reduce_dimension reduction_method names for which indexes exist.
   methods_reduce_dim <- list()
   for(reduction_method in names(cds@reduce_dim_aux)) {
@@ -1270,6 +1483,12 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
   dir.create(path = directory_path, showWarnings=FALSE, recursive=TRUE, mode='0700')
 
   # Remove files, if they exist.
+
+  # BPCells MatrixDir directory.
+  if(file.exists(file.path(directory_path, bpcells_matrix_dir)))
+    unlink(file.path(directory_path, bpcells_matrix_dir), recursive=TRUE)
+
+  # Reduction method related files.
   for(reduction_method in names(methods_reduce_dim)) {
     if(file.exists(file.path(directory_path, rds_path)))
       file.remove(file.path(directory_path, rds_path))
@@ -1296,7 +1515,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
   if(!hdf5_assay_flag) {
     tryCatch(
       {
-        saveRDS(cds, file.path(directory_path, rds_path))
+        base::saveRDS(cds, file.path(directory_path, rds_path))
       },
       error = function(cond) {
                        message('problem writing file \'', file.path(directory_path, rds_path), '\': ', cond, appendLF=appendLF)
@@ -1312,8 +1531,24 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
                                                   file_path = rds_path,
                                                   file_md5sum = md5sum,
                                                   stringsAsFactors = FALSE))
+        # Save BCells MatrixDir, if required.
+        if(bpcells_matrix_dir_flag) {
+          bpcells_matrix_path <- file.path(directory_path, bpcells_matrix_dir)
+          mat <- counts(cds)
+          BPCells::write_matrix_dir(mat=mat, dir=bpcells_matrix_path, compress=FALSE, buffer_size=8192L, overwrite=FALSE)
+
+          file_index[['files']] <- rbind(file_index[['files']],
+                                         data.frame(cds_object = 'bpcells_matrix_dir',
+                                                    reduction_method = NA,
+                                                    object_spec = object_name_to_string(mat),
+                                                    file_format = 'BPCells:MatrixDir',
+                                                    file_path = bpcells_matrix_dir,
+                                                    file_md5sum = NA,
+                                                    stringsAsFactors = FALSE))
+        }
       })
-  } else {
+  }
+  else {
     tryCatch(
       {
         HDF5Array::saveHDF5SummarizedExperiment(cds, file.path(directory_path, hdf5_path), replace=TRUE)
@@ -1406,7 +1641,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
   }
 
   # Save file_index.rds.
-  saveRDS(file_index, file=file.path(directory_path, 'file_index.rds'))
+  base::saveRDS(file_index, file=file.path(directory_path, 'file_index.rds'))
 
   if(verbose) {
     report_files_saved(file_index)
@@ -1423,6 +1658,10 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
 #'
 #' @param directory_path a string giving the name of the directory
 #'   from which to read the saved cell_data_set files.
+#' @param matrix_control a list that is used only to set the
+#'   matrix path when the saved monocle objects has the counts matrix
+#'   stored as a BPCells on-disk matrix. By default, the BPCells matrix
+#'   directory path is set to the current working directory.
 #' @return a cell_data_set.
 #'
 #' @examples
@@ -1435,7 +1674,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
 #' @export
 # Bioconductor forbids writing to user directories so examples
 # is not run.
-load_monocle_objects <- function(directory_path) {
+load_monocle_objects <- function(directory_path, matrix_control=list(matrix_path='.')) {
   appendLF <- FALSE
   # Check for directory.
   if(!file.exists(directory_path))
@@ -1500,7 +1739,8 @@ load_monocle_objects <- function(directory_path) {
          reduction_method == 'UMAP' &&
          file_format == 'umap_nn_index' &&
          nchar(md5sum) > 32) &&
-       file_format != 'hdf5') {
+       file_format != 'hdf5' &&
+       cds_object != 'bpcells_matrix_dir') {
       md5sum_file <- tools::md5sum(file_path)
       if(is.na(md5sum_file) || (md5sum_file != md5sum)) {
         stop('md5sum mismatch for file \'', file_path, '\'')
@@ -1522,7 +1762,8 @@ load_monocle_objects <- function(directory_path) {
             message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
-      } else
+      }
+      else
       if(file_format == 'hdf5') {
         cds <- tryCatch(
           {
@@ -1532,10 +1773,12 @@ load_monocle_objects <- function(directory_path) {
             message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
-      } else {
+      }
+      else {
         stop('Unrecognized cds format value \'', file_format, '\'')
       }
-    } else
+    }
+    else
     if(cds_object == 'reduce_dim_aux') {
       if(file_format == 'annoy_index') {
         cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']] <- update_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']])
@@ -1550,7 +1793,8 @@ load_monocle_objects <- function(directory_path) {
             message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
-      } else
+      }
+      else
       if(file_format == 'hnsw_index') {
         cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']] <- update_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']])
 
@@ -1564,7 +1808,8 @@ load_monocle_objects <- function(directory_path) {
             message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
           })
-      } else
+      }
+      else
       if(reduction_method == 'UMAP' && file_format == 'umap_annoy_index') {
         cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']] <- tryCatch(
           {
@@ -1574,11 +1819,29 @@ load_monocle_objects <- function(directory_path) {
             message('problem reading file \'', file_path, '\'', appendLF=appendLF)
             return(NULL)
          })
-      } else {
+      }
+      else {
         stop('Unrecognized file format value \'', file_format, '\'')
       }
       cds <- set_model_identity_path(cds, reduction_method, directory_path)
-    } else {
+    }
+    else
+    if(cds_object == 'bpcells_matrix_dir') {
+      if(!is.null(assay(cds, 'counts_row_order'))) {
+        assay(cds, 'counts_row_order') <- NULL
+      }
+      counts(cds, bpcells_warn=FALSE ) <- tryCatch(
+        {
+          load_bpcells_matrix_dir(file_path, md5sum, matrix_control=matrix_control)
+        },
+        error = function(cond) {
+          message('problem reading file \'', file_path, '\'', appendLF=appendLF)
+          return(NULL)
+        })
+        # Rebuild the BPCells row-major order counts matrix.
+        cds <- set_cds_row_order_matrix(cds=cds)
+    }
+    else {
       stop('Unrecognized cds_object value \'', cds_object, '\'')
     }
   }

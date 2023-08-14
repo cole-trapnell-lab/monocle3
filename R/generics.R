@@ -462,6 +462,7 @@ setMethod("exprs", "cell_data_set", function(x) {
   return(value)
 })
 
+
 #' Generic to access cds colData table
 #' @param x A cell_data_set object.
 #'
@@ -581,3 +582,81 @@ setReplaceMethod("fData", "cell_data_set", function(x, value) {
   methods::validObject(x)
   return(x)
 })
+
+
+#
+# Redefine some methods in order to manage Monocle3 internal objects.
+#
+
+if (!isGeneric("saveRDS")) {setGeneric("saveRDS", function (object, file="", ascii=FALSE, version=NULL, compress=TRUE, refhook=NULL) standardGeneric("saveRDS"))}
+
+#' @export
+setMethod("saveRDS", signature(object="cell_data_set"),
+    function(object, file="", ascii = FALSE, version = NULL, compress=TRUE, refhook = NULL) {
+        if(is(counts(object), 'IterableMatrix')) {
+          message('Warning: saveRDS(cds, ...) does not save the BPCells out-of-core CDS\
+counts matrix. We suggest that you use the "save_monocle_objects()"\
+function to save this CDS although we are running base::saveRDS() as\
+you requested anyway.')
+        }
+        base::saveRDS(object, file=file, ascii = ascii, version = version, compress=compress, refhook = refhook)
+    }
+)
+
+
+#' @export
+#' @importFrom BiocGenerics "counts<-"
+setMethod("counts<-", signature(object="SingleCellExperiment"),
+    function(object, ..., value) {
+        largs <- list(...)
+        assay(object, 'counts') <- value
+        if(is(assays(object)[['counts']], "IterableMatrix") &&
+           (is.null(largs[['bpcells_warn']]) ||
+           !is.logical(largs[['bpcells_warn']]) ||
+           largs[['bpcells_warn']] != FALSE)) {
+          message(paste0('\nMonocle3 counts setter: setting a BPCells counts matrix.\n',
+                         'Now you must update the assays row-major order counts matrix\n',
+                         'which must have the same values as this counts matrix. Use\n',
+                         ' set_cds_row_order_matrix functions to do this. For example,\n',
+                         '  cds <- set_cds_row_order_matrix(cds)\n',
+                         '*** Bad things may happen if you don\'t do this. ***\n'))
+        }
+        object
+    }
+)
+
+
+#' Generic to access cds row order BPCells count matrix.
+#' @param x A cell_data_set object.
+#' 
+#' @examples
+#'  \donttest{
+#'    cds <- load_a549()
+#'    exprs(cds)
+#'  }         
+#'          
+#' @return BPCells row order ount matrix.
+#'
+#' @export
+setGeneric("counts_row_order", function(x) standardGeneric("counts_row_order"))
+  
+#' Method to access cds row order BPCells count matrix
+#' @param x A cell_data_set object.
+#'
+#' @return BPCells row order count matrix.
+#' 
+#' @export
+setMethod("counts_row_order", "cell_data_set", function(x) {
+  if(is.null(assay(x, 'counts_row_order'))) {
+    if(!is(counts(x), 'IterableMatrix')) {
+      stop('CDS counts matrix is not a BPCells matrix')
+    }
+    else {
+      stop('CDS has no BPCells row order counts matrix')
+    }
+  }
+  value <- assay(x, 'counts_row_order')
+  return(value)
+})                                 
+
+

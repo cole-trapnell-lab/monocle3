@@ -1,4 +1,9 @@
 #
+# Set global options.
+#
+options("sp_evolution_status"=2)
+
+#
 # Set up a global-variable-like environment.
 #
 
@@ -74,6 +79,7 @@ get_global_variable <- function(variable_name=NULL) {
   set_global_variable('monocle3_hnsw_index_version', 1)
   set_global_variable('monocle3_timer_t0', 0)
   set_global_variable('monocle3_timer_msg', "")
+  set_global_variable('monocle_gc_matrix_path', list())
 
   # Default nn_control list for functions that do not need
   # an index, which is all but the label transfer functions.
@@ -82,6 +88,15 @@ get_global_variable <- function(variable_name=NULL) {
   # Default nn_control list for functions that need an index,
   # which are the label transfer functions.
   set_global_variable('nn_control_annoy_cosine', list(method='annoy', metric='cosine', n_trees=50, M=48, ef_construction=200, ef=150, grain_size=1, cores=1))
+
+  # Default matrix_control list for any.
+  set_global_variable('matrix_control_csparsematrix_unrestricted', list(matrix_class='dgCMatrix'))
+  set_global_variable('matrix_control_bpcells_unrestricted', list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=FALSE, matrix_path='.', matrix_buffer_size=8192L, matrix_bpcells_copy=TRUE))
+
+  # Default matrix_control list for pca.
+   set_global_variable('matrix_control_csparsematrix_pca', list(matrix_class='dgCMatrix'))
+   set_global_variable('matrix_control_bpcells_pca', list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=FALSE, matrix_path='.', matrix_buffer_size=8192L, matrix_bpcells_copy=TRUE))
+
 
   # Watching preprocess_cds() it appears that R uses OMP_NUM_THREADS
   # threads if OMP_NUM_THREADS > 1 and OPENBLAS_NUM_THREADS is NA.
@@ -109,4 +124,18 @@ get_global_variable <- function(variable_name=NULL) {
   # for travis
   Sys.setenv('TESTTHAT_MAX_FAILS' = Inf)
 }
+
+#
+# Try to clean up any temporary matrix files and directories on exiting.
+#
+._._gc_matrix_object_remove_._. <- function(env) {
+  matrix_path_list <- get_global_variable('monocle_gc_matrix_path')
+  for(matrix_path in matrix_path_list) {
+    if(file.exists(matrix_path) || dir.exists(matrix_path)) {
+      unlink(matrix_path, recursive=TRUE)
+    }
+  }
+}
+
+reg.finalizer(._._global_variable_env_._., ._._gc_matrix_object_remove_._., onexit=TRUE)
 

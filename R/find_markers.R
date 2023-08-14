@@ -74,6 +74,13 @@ top_markers <- function(cds,
                         cores=1,
                         verbose=FALSE) {
 
+  if(is(counts(cds), 'IterableMatrix') && is.null(counts_row_order)) {
+    stop(paste('This CDS has a BPCells counts matrix but no counts_row_order matrix, which',
+               'top_markers() requires. Use the command',
+                '  cds <- set_cds_row_order_matrix(cds=cds)',
+                'to make it and re-run top_markers.', sep='\n'))
+  }
+
   rowname <- cell_group <- marker_score <- cell_id <- mean_expression <- NULL # no visible binding
   fraction_expressing <- specificity <- pseudo_R2 <- NULL # no visible binding
   lrtest_p_value <- lrtest_q_value <- gene_short_name <- NULL # no visible binding
@@ -339,8 +346,27 @@ test_marker_for_cell_group = function(gene_id, cell_group, cell_group_df, cds,
   #print(cell_group)
   #print (length(reference_cells))
   results <- tryCatch({
-    f_expression <-
-      log(as.numeric(SingleCellExperiment::counts(cds)[gene_id,]) / size_factors(cds) + 0.1)
+    # My tests suggest that I cannot coerce a BPCells subset into a numeric vector
+    # (which I probably want to not do for space reasons):
+    # > cds <- readRDS('packer_embryo.load.rds')
+    # > library(BPCells)
+    # > bpcds <- cds
+    # > counts(bpcds) <- BPCells::write_matrix_memory(counts(cds))
+    # > f_e <- as.numeric(counts(bpcds)[1,])
+    # Error in as.numeric(counts(bpcds)[1, ]) : 
+    #   cannot coerce type 'S4' to vector of type 'double'
+    # I am not pursuing it now because it's a subset and may
+    # not exceed available memory. bge
+
+    if(!is(counts(cds), 'IterableMatrix')) {
+      f_expression <-
+        log(as.numeric(SingleCellExperiment::counts(cds)[gene_id,]) / size_factors(cds) + 0.1)
+    }
+    else {
+      f_expression <-
+        log(as.numeric(as(counts_row_order(cds)[gene_id,], 'dgCMatrix')) / size_factors(cds) + 0.1)
+    }
+
     #print(sum(SingleCellExperiment::counts(cds)[gene_id,] > 0))
     is_member <-
       as.character(cell_group_df[colnames(cds),2]) == as.character(cell_group)

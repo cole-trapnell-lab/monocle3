@@ -4,7 +4,13 @@
 \alias{load_mtx_data}
 \title{Load data from matrix market format}
 \usage{
-load_mtx_data(mat_path, gene_anno_path, cell_anno_path, umi_cutoff = 100)
+load_mtx_data(
+  mat_path,
+  gene_anno_path,
+  cell_anno_path,
+  umi_cutoff = 100,
+  matrix_control = list()
+)
 }
 \arguments{
 \item{mat_path}{Path to the .mtx matrix market file.}
@@ -14,6 +20,11 @@ load_mtx_data(mat_path, gene_anno_path, cell_anno_path, umi_cutoff = 100)
 \item{cell_anno_path}{Path to cell annotation file.}
 
 \item{umi_cutoff}{UMI per cell cutoff, default is 100.}
+
+\item{matrix_control}{A list used to control how the counts matrix is stored
+in the CDS. By default, Monocle3 stores the counts matrix in-memory as a
+sparse matrix. Setting 'matrix_control=list(matrix_class="BPCells")',
+stores the matrix BPCells on-disk as a sparse matrix.}
 }
 \value{
 cds object

@@ -9,7 +9,8 @@ combine_cds(
   keep_all_genes = TRUE,
   cell_names_unique = FALSE,
   sample_col_name = "sample",
-  keep_reduced_dims = FALSE
+  keep_reduced_dims = FALSE,
+  matrix_control = list()
 )
 }
 \arguments{
@@ -32,7 +33,9 @@ that indicates which original cds the cell derives from. Default is
 "sample".}
 
 \item{keep_reduced_dims}{Logical indicating whether to keep the reduced
-dimension matrices. Default is FALSE.}
+dimension matrices. Do not keep the reduced dimensions unless you know
+that the reduced dimensions are the same in each CDS. This is true for
+projected data sets, for example. Default is FALSE.}
 }
 \value{
 A combined cell_data_set object.
@@ -40,4 +43,8 @@ A combined cell_data_set object.
 \description{
 This function will combine a list of cell_data_set objects into a new
 cell_data_set object.
+}
+\details{
+If any of the counts matrices is BPCells class, the combined
+counts matrix will be BPCells class.
 }

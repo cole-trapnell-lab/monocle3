@@ -38,7 +38,6 @@
 #'   reduced dimension matrix for later use. Default is FALSE.
 #' @param nn_control An optional list of parameters used to make the nearest
 #'  neighbor index. See the set_nn_control help for detailed information.
-#'
 #' @return an updated cell_data_set object
 #'
 #' @examples
@@ -108,7 +107,25 @@ preprocess_cds <- function(cds,
 
   #ensure results from RNG sensitive algorithms are the same on all calls
   set.seed(2016)
-  FM <- normalize_expr_data(cds, norm_method, pseudo_count)
+
+  #
+  # Notes:
+  #   o  set_matrix_class commits BPCells queued
+  #      operations to make FM but does not commit
+  #      operations in counts(cds). Commit additional
+  #      FM queued operations before submitting to
+  #      the SVD function.
+  #
+  FM <- SingleCellExperiment::counts(cds)
+
+  #
+  # Is this a IterableMatrix (BPCells) counts matrix?
+  iterable_matrix_flag <- is(FM, 'IterableMatrix')
+
+  #
+  # normalize_expr_data() determines matrix_class
+  #
+  FM <- normalize_expr_data(FM=FM, size_factors=size_factors(cds), norm_method=norm_method, pseudo_count=pseudo_count)
 
   if (nrow(FM) == 0) {
     stop("all rows have standard deviation zero")
@@ -117,9 +134,6 @@ preprocess_cds <- function(cds,
   if (!is.null(use_genes)) {
     FM <- FM[use_genes, ]
   }
-
-  fm_rowsums = Matrix::rowSums(FM)
-  FM <- FM[is.finite(fm_rowsums) & fm_rowsums != 0, ]
 
   #
   # Notes:
@@ -136,9 +150,33 @@ preprocess_cds <- function(cds,
 
     if (verbose) message("Remove noise by PCA ...")
 
-    irlba_res <- sparse_prcomp_irlba(Matrix::t(FM),
-                                     n = min(num_dim,min(dim(FM)) - 1),
-                                     center = scaling, scale. = scaling)
+    if(!iterable_matrix_flag) {
+
+      if(verbose) {
+        message('preprocess_cds: FM matrix class: ', class(FM))
+      }
+
+      fm_rowsums = Matrix::rowSums(FM)
+      FM <- FM[is.finite(fm_rowsums) & fm_rowsums != 0, ]
+      irlba_res <- sparse_prcomp_irlba(Matrix::t(FM),
+                                       n = min(num_dim,min(dim(FM)) - 1),
+                                       center = scaling, scale. = scaling,
+                                       verbose = verbose)
+    }
+    else {
+      if(verbose) {
+        message('preprocess_cds: FM matrix info:')
+        message(show_matrix_info(matrix_info=get_matrix_info(mat=FM), '  '), appendLF=FALSE)
+      }
+
+      fm_rowsums = BPCells::rowSums(FM)
+      FM <- FM[is.finite(fm_rowsums) & fm_rowsums != 0, ]
+      irlba_res <- bpcells_prcomp_irlba(BPCells::t(FM),
+                                        n = min(num_dim,min(dim(FM)) - 1),
+                                        center = scaling, scale. = scaling,
+                                        verbose = verbose)
+    }
+
     preproc_res <- irlba_res$x
     row.names(preproc_res) <- colnames(cds)
     SingleCellExperiment::reducedDims(cds)[[method]] <- as.matrix(preproc_res)
@@ -182,17 +220,41 @@ preprocess_cds <- function(cds,
     else
       cds <- clear_cds_nn_index(cds=cds, reduction_method=method, nn_method='all')
 
-  } else if(method == "LSI") {
+  }
+  else
+  if(method == "LSI") {
     cds <- initialize_reduce_dim_metadata(cds, 'LSI')
     cds <- initialize_reduce_dim_model_identity(cds, 'LSI')
 
+    if(!iterable_matrix_flag) {
+      fm_rowsums <- Matrix::rowSums(FM)
+    }
+    else {
+      fm_rowsums <- BPCells::rowSums(FM)
+    }
+
+    FM <- FM[is.finite(fm_rowsums) & fm_rowsums != 0, ]
+
 #    preproc_res <- tfidf(FM)
-    tfidf_res <- tfidf(FM)
+    tfidf_res <- tfidf(count_matrix=FM, iterable_matrix_flag=iterable_matrix_flag)
     preproc_res <- tfidf_res[['tf_idf_counts']]
 
     num_col <- ncol(preproc_res)
-    irlba_res <- irlba::irlba(Matrix::t(preproc_res),
-                              nv = min(num_dim,min(dim(FM)) - 1))
+    if(!iterable_matrix_flag) {
+      irlba_res <- irlba::irlba(A=Matrix::t(preproc_res),
+                                nv = min(num_dim,min(dim(FM)) - 1))
+    }
+    else {
+      matrix_control <- list(matrix_class='BPCells')
+      matrix_control_default <- get_global_variable('matrix_control_bpcells_pca')
+      matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='pca')
+      preproc_res_commit <- set_matrix_class(mat=BPCells::t(preproc_res), matrix_control=matrix_control_res)
+
+      irlba_res <- irlba::irlba(A=BPCells:::linear_operator(preproc_res_commit),
+                                nv = min(num_dim,min(dim(FM)) - 1))
+
+      rm_bpcells_dir(mat=preproc_res_commit)
+    }
 
     preproc_res <- irlba_res$u %*% diag(irlba_res$d)
     row.names(preproc_res) <- colnames(cds)
@@ -250,12 +312,15 @@ preprocess_cds <- function(cds,
 
 # Helper function to normalize the expression data prior to dimensionality
 # reduction
-normalize_expr_data <- function(cds,
+normalize_expr_data <- function(FM, size_factors=NULL,
                                 norm_method = c("log", "size_only", "none"),
                                 pseudo_count = NULL) {
+
+  assertthat::assert_that(!is.null(size_factors))
+  assertthat::assert_that(length(size_factors) == ncol(FM))
+
   norm_method <- match.arg(norm_method)
 
-  FM <- SingleCellExperiment::counts(cds)
 
   # If we're going to be using log, and the user hasn't given us a
   # pseudocount set it to 1 by default.
@@ -266,33 +331,58 @@ normalize_expr_data <- function(cds,
       pseudo_count <- 0
   }
 
-  if (norm_method == "log") {
-    # If we are using log, normalize by size factor before log-transforming
-
-    FM <- Matrix::t(Matrix::t(FM)/size_factors(cds))
-
-    if (pseudo_count != 1 || is_sparse_matrix(SingleCellExperiment::counts(cds)) == FALSE){
-      FM <- FM + pseudo_count
-      FM <- log2(FM)
-    } else {
-      FM@x = log2(FM@x + 1)
+  if(!is(FM, 'IterableMatrix')) {
+    if (norm_method == "log") {
+      FM <- Matrix::t(Matrix::t(FM)/size_factors)
+      if (pseudo_count != 1 || is_sparse_matrix(FM) == FALSE){
+        FM <- FM + pseudo_count
+        FM <- log2(FM)
+      }
+      else {
+        FM@x = log2(FM@x + 1)
+      }
+  
     }
-
-  } else if (norm_method == "size_only") {
-    FM <- Matrix::t(Matrix::t(FM)/size_factors(cds))
-    FM <- FM + pseudo_count
+    else if (norm_method == "size_only") {
+      FM <- Matrix::t(Matrix::t(FM)/size_factors)
+      FM <- FM + pseudo_count
+    }
   }
+  else {
+    if(norm_method == 'log') {
+      FM <- BPCells::t(BPCells::t(FM)/size_factors)
+      if(pseudo_count == 1) {
+          FM <- log1p(FM) / log(2)
+      }
+      else {
+        FM <- log1p(FM+pseudo_count-1) / log(2)
+      }
+    }
+    else if (norm_method == "size_only") {
+      FM <- BPCells::t(BPCells::t(FM)/size_factors)
+      FM <- FM + pseudo_count
+    }
+  }
+
   return (FM)
 }
 
+
 # Andrew's tfidf
 tfidf <- function(count_matrix, frequencies=TRUE, log_scale_tf=TRUE,
-                  scale_factor=100000, block_size=2000e6) {
+                  scale_factor=100000, block_size=2000e6,
+                  iterable_matrix_flag=FALSE) {
   # Use either raw counts or divide by total counts in each cell
   if (frequencies) {
     # "term frequency" method
-    col_sums <- Matrix::colSums(count_matrix)
-    tf <- Matrix::t(Matrix::t(count_matrix) / col_sums)
+    if(!iterable_matrix_flag) {
+      col_sums <- Matrix::colSums(count_matrix)
+      tf <- Matrix::t(Matrix::t(count_matrix) / col_sums)
+    }
+    else {
+      col_sums <- BPCells::colSums(count_matrix)
+      tf <- BPCells::t(BPCells::t(count_matrix) / col_sums)
+    }
   } else {
     # "raw count" method
     col_sums <- NA
@@ -301,39 +391,61 @@ tfidf <- function(count_matrix, frequencies=TRUE, log_scale_tf=TRUE,
 
   # Either TF method can optionally be log scaled
   if (log_scale_tf) {
-    if (frequencies) {
-      tf@x = log1p(tf@x * scale_factor)
-    } else {
-      tf@x = log1p(tf@x * 1)
+    if(!iterable_matrix_flag) {
+      if (frequencies) {
+        tf@x <- log1p(tf@x * scale_factor)
+      } else {
+        tf@x <- log1p(tf@x * 1)
+      }
+    }
+    else {
+      if (frequencies) {
+        tf <- log1p(tf * scale_factor)
+      } else {
+        tf <- log1p(tf * 1)
+      }
     }
   }
 
   # IDF w/ "inverse document frequency smooth" method
   num_cols <- ncol(count_matrix)
-  row_sums <- Matrix::rowSums(count_matrix > 0)
-  idf = log(1 + num_cols / row_sums)
+  if(!iterable_matrix_flag) {
+    row_sums <- Matrix::rowSums(count_matrix > 0)
+  }
+  else {
+    row_sums <- BPCells::rowSums(BPCells::binarize(count_matrix, threshold=0))
+  }
+  idf <- log(1 + num_cols / row_sums)
 
   # Try to just to the multiplication and fall back on delayed array
   # TODO hopefully this actually falls back and not get jobs killed in SGE
-  tf_idf_counts = tryCatch({
-    tf_idf_counts = tf * idf
-    tf_idf_counts
-  }, error = function(e) {
-    print(paste("TF*IDF multiplication too large for in-memory, falling back",
-                "on DelayedArray."))
-    options(DelayedArray.block.size=block_size)
-    DelayedArray:::set_verbose_block_processing(TRUE)
+  if(!iterable_matrix_flag) {
+    tf_idf_counts = tryCatch({
+      tf_idf_counts <- tf * idf
+      tf_idf_counts
+    }, error = function(e) {
+      print(paste("TF*IDF multiplication too large for in-memory, falling back",
+                  "on DelayedArray."))
+      options(DelayedArray.block.size=block_size)
+      DelayedArray:::set_verbose_block_processing(TRUE)
+  
+      tf <- DelayedArray::DelayedArray(tf)
+      idf <- as.matrix(idf)
+  
+      tf_idf_counts <- tf * idf
+      tf_idf_counts
+    })
+  }
+  else {
+    tf_idf_counts <- tf * idf
+  }
 
-    tf = DelayedArray::DelayedArray(tf)
-    idf = as.matrix(idf)
-
-    tf_idf_counts = tf * idf
-    tf_idf_counts
-  })
-
-  rownames(tf_idf_counts) = rownames(count_matrix)
-  colnames(tf_idf_counts) = colnames(count_matrix)
-  tf_idf_counts = methods::as(tf_idf_counts, "sparseMatrix")
+  rownames(tf_idf_counts) <- rownames(count_matrix)
+  colnames(tf_idf_counts) <- colnames(count_matrix)
+  if(!iterable_matrix_flag) {
+    tf_idf_counts <- methods::as(tf_idf_counts, "sparseMatrix")
+  }
+  
   return(list(tf_idf_counts=tf_idf_counts, frequencies=frequencies, log_scale_tf=log_scale_tf, scale_factor=scale_factor, col_sums=col_sums, row_sums=row_sums, num_cols=num_cols))
 }
 

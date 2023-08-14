@@ -108,6 +108,7 @@ jobs:
     env:
       TRAVIS: true
       _R_CHECK_TESTS_NLINES_: 0
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       # Get current repository contents.
@@ -119,6 +120,7 @@ jobs:
       #       regressions tests is output.
       - name: Run R CMD build and R CMD check
         run: |
+          R -e 'devtools::install_github("bnprks/BPCells")'
           R CMD build .
           R CMD check monocle3*tar.gz
         shell: bash

@@ -4,7 +4,13 @@
 \alias{load_worm_embryo}
 \title{Build a cell_data_set from C. elegans embryo data.}
 \usage{
-load_worm_embryo()
+load_worm_embryo(matrix_control = list())
+}
+\arguments{
+\item{matrix_control}{A list used to control how the counts matrix is stored
+in the CDS. By default, Monocle3 stores the counts matrix in-memory as a
+sparse matrix. Setting 'matrix_control=list(matrix_class="BPCells")',
+stores the matrix on-disk as a sparse matrix.}
 }
 \value{
 cds object

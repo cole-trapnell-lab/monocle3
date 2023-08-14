@@ -4,7 +4,12 @@
 \alias{new_cell_data_set}
 \title{Create a new cell_data_set object.}
 \usage{
-new_cell_data_set(expression_data, cell_metadata = NULL, gene_metadata = NULL)
+new_cell_data_set(
+  expression_data,
+  cell_metadata = NULL,
+  gene_metadata = NULL,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{expression_data}{expression data matrix for an experiment, can be a
@@ -16,6 +21,9 @@ where \code{row.names(cell_metadata) = colnames(expression_data)}.}
 \item{gene_metadata}{data frame containing attributes of features
 (e.g. genes), where
 \code{row.names(gene_metadata) = row.names(expression_data)}.}
+
+\item{verbose}{a logical value that determines whether or not the
+function writes diagnostic information.}
 }
 \value{
 a new cell_data_set object
