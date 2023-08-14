@@ -139,7 +139,7 @@ plot_cells_3d <- function(cds,
   ## Marker genes
   markers_exprs <- NULL
   if (!is.null(genes)) {
-    if ((is.null(dim(genes)) == FALSE) && dim(genes) >= 2){
+    if ((is.null(dim(genes)) == FALSE) && dim(genes)[[2]] >= 2){
       markers <- unlist(genes[,1], use.names=FALSE)
     } else {
       markers <- genes
@@ -151,7 +151,7 @@ plot_cells_3d <- function(cds,
       cds_exprs <- SingleCellExperiment::counts(cds)[row.names(markers_rowData), ,drop=FALSE]    # plot_cells_3d() row selection needs help
       cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds))
 
-      if ((is.null(dim(genes)) == FALSE) && dim(genes) >= 2){
+      if ((is.null(dim(genes)) == FALSE) && dim(genes)[[2]] >= 2){
         genes <- as.data.frame(genes)
         row.names(genes) <- genes[,1]
         genes <- genes[row.names(cds_exprs),]
@@ -1243,6 +1243,7 @@ plot_genes_violin <- function (cds_subset,
   } else {
     cds_exprs <- SingleCellExperiment::counts(cds_subset)      # plot_genes_violin()
   }
+
   if (normalize) {
     cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds_subset))     #  scale
     cds_exprs <- reshape2::melt(as.matrix(cds_exprs))                         #  convert to dense
@@ -1596,7 +1597,7 @@ plot_genes_by_group <- function(cds,
     minor_axis <- 1
   }
 
-  exprs_mat <- t(as.matrix(normalized_counts(cds)[gene_ids, ]))
+  exprs_mat <- t(as.matrix(normalized_counts(cds=cds, norm_method=norm_method)[gene_ids, ]))
   exprs_mat <- reshape2::melt(exprs_mat)
   colnames(exprs_mat) <- c('Cell', 'Gene', 'Expression')
   exprs_mat$Gene <- as.character(exprs_mat$Gene)
