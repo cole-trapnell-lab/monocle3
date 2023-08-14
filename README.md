@@ -73,7 +73,7 @@ You may need to update the version strings in your hdf5.pc file.
   - The CDS assays slot is a named list where the standard, column-major order, matrix is called `counts` and the BPCells row-major order matrix is called `counts_row_order`.
   - The `counts` matrix getter and setter methods are `counts(cds)` and `counts(cds)<-`.
   - The Monocle3 setter warns about re-setting the BPCells `counts_row_order` matrix, unless called with the parameter `bpcells_warn=FALSE`.
-  - The `counts_row_order` setter method is called `counts_row_order`.
+  - The `counts_row_order` getter method is called `counts_row_order`.
   - There is no corresponding `counts_row_order` setter method
 - By default, the BPCells on-disk matrix is stored in a directory that is created where R is started. You can change the directory location using the `matrix_path` value in the `matrix_control` parameter.
 - For more information about the `matrix_control` values, see the help document for the function `set_matrix_control()`.
