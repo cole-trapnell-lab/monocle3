@@ -411,6 +411,7 @@ traverse_graph <- function(g, starting_cell, end_cells){
 
 
 #' @importFrom plyr "."
+#' @importFrom dplyr n
 #' @noRd
 plot_principal_graph <- function(cds,
                                  data_df,

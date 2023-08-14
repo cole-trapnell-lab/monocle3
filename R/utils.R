@@ -373,8 +373,9 @@ sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
             function to control that algorithm's convergence tolerance. See
             `?prcomp_irlba` for help.")
   orig_x <- x
-  if (methods::is(x, "DelayedMatrix"))
+  if (!methods::is(x, "DelayedMatrix")) {
     x = DelayedArray::DelayedArray(x)
+  }
 
   args <- list(A=orig_x, nv=n)
   if (is.logical(center))
@@ -479,7 +480,10 @@ normalized_counts <- function(cds,
   norm_method = match.arg(norm_method)
   norm_mat = SingleCellExperiment::counts(cds)
   if (norm_method == "binary"){
-    norm_mat = norm_mat > 0
+    # The '+ 0' coerces the matrix to type numeric. It's possible
+    # to use 'as.numeric(norm_mat > 0)' but the matrix
+    # attributes disappear...            
+    norm_mat = (norm_mat > 0) + 0
     if (is_sparse_matrix(norm_mat)){
       norm_mat = methods::as(norm_mat, "dgCMatrix")
     }
@@ -902,3 +906,26 @@ tasks_per_block <- function(ntask=NULL, nblock=NULL) {
   return(tasks_block)
 }
 
+
+#
+# Initialize Monocle3 timer.
+#
+tick <- function(msg="") {
+  set_global_variable('monocle3_timer_t0', Sys.time())
+  set_global_variable('monocle3_timer_msg', msg)
+}
+
+#
+# Return time elapsed since call to tick.
+#
+tock <- function() {
+  t1 <- Sys.time()
+  t0 <- get_global_variable('monocle3_timer_t0')
+  msg <- get_global_variable('monocle3_timer_msg')
+  if(length(msg) > 0) {
+    message(sprintf('%s %.2f seconds.',msg, t1 - t0))
+  }
+  else {
+    return(t1 - t0)
+  }
+}

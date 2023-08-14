@@ -545,7 +545,7 @@ make_nn_index <- function(subject_matrix, nn_control=list(), verbose=FALSE) {
   if(verbose) {
     message('make_nn_index:')
     report_nn_control('  nn_control: ', nn_control)
-    tictoc::tic('make_nn_index: build time')
+    tick('make_nn_index: build time')
   }
 
   nn_method <- nn_control[['method']]
@@ -554,7 +554,7 @@ make_nn_index <- function(subject_matrix, nn_control=list(), verbose=FALSE) {
   num_row <- nrow(subject_matrix)
   num_col <- ncol(subject_matrix)
   if(!is.null(rownames(subject_matrix)))
-    checksum_rownames <- digest::digest(rownames(subject_matrix))
+    checksum_rownames <- digest::digest(sort(rownames(subject_matrix)))
   else
     checksum_rownames <- NA_character_
 
@@ -594,7 +594,7 @@ make_nn_index <- function(subject_matrix, nn_control=list(), verbose=FALSE) {
     stop('make_nn_index: unsupported nearest neighbor index type \'', nn_method, '\'')
 
   if(verbose) {
-    tictoc::toc()
+    tock()
   }
 
   return(nn_index)
@@ -911,7 +911,7 @@ search_nn_index <- function(query_matrix, nn_index, k=25, nn_control=list(), ver
     message('search_nn_index:')
     message('  k: ', k)
     report_nn_control('  nn_control: ', nn_control)
-    tictoc::tic('search_nn_index: search time:')
+    tick('search_nn_index: search time:')
   }
 
   k <- min(k, nrow(query_matrix))
@@ -1006,7 +1006,7 @@ search_nn_index <- function(query_matrix, nn_index, k=25, nn_control=list(), ver
     stop('search_nn_index: unsupported nearest neighbor index type \'', nn_method, '\'')
 
   if(verbose) {
-    tictoc::toc()
+    tock()
   }
 
   return(nn_res)
@@ -1350,7 +1350,7 @@ search_nn_matrix <- function(subject_matrix, query_matrix, k=25, nn_control=list
     message('search_nn_matrix:')
     message('  k: ', k)
     report_nn_control('  nn_control: ', nn_control)
-    tictoc::tic('search_nn_matrix: search_time')
+    tick('search_nn_matrix: search_time')
   }
 
 
@@ -1363,7 +1363,7 @@ search_nn_matrix <- function(subject_matrix, query_matrix, k=25, nn_control=list
   }
 
   if(verbose)
-    tictoc::toc()
+    tock()
 
   return(nn_res)
 }

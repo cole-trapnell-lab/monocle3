@@ -1,0 +1,16 @@
+== Docker image used for Github Actions CI
+
+   The Github Actions CI uses a Docker image that is stored in the github
+   cole-trapnell-lab docker repository. See github.com/cole-trapnell-lab
+   'Packages' tab.
+
+   There are notes for building, uploading, and linking the docker image
+   to the monocle3 repository in the file
+
+     URL: github.com/cole-trapnell-lab/Docker/monocle3_depend/NOTES
+
+   The Dockerfile and supporting scripts are in
+
+     github.com/cole-trapnell-lab/Docker/monocle3_depend/<monocle3_depend_version>
+
+

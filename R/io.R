@@ -31,9 +31,9 @@ load_a549 <- function(){
 #' @importFrom SingleCellExperiment counts
 #' @export
 load_worm_embryo <- function(){
-  expression_matrix <- readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_expression.rds"))
-  cell_metadata <- readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_colData.rds"))
-  gene_annotation <- readRDS(url("http://staff.washington.edu/hpliner/data/packer_embryo_rowData.rds"))
+  expression_matrix <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/packer_embryo_expression.rds"))
+  cell_metadata <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/packer_embryo_colData.rds"))
+  gene_annotation <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/packer_embryo_rowData.rds"))
   gene_annotation$use_for_ordering <- NULL
 
   cds <- new_cell_data_set(expression_matrix,
@@ -43,7 +43,7 @@ load_worm_embryo <- function(){
 
   cds <- initialize_counts_metadata(cds)
   matrix_id <- get_unique_id(counts(cds))
-  cds <- set_counts_identity(cds, 'URL: http://staff.washington.edu/hpliner/data/packer_embryo_expression.rds', matrix_id)
+  cds <- set_counts_identity(cds, 'URL: https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/packer_embryo_expression.rds', matrix_id)
 
   cds
 }
@@ -54,14 +54,18 @@ load_worm_embryo <- function(){
 #' @importFrom SingleCellExperiment counts
 #' @export
 load_worm_l2 <- function(){
-  expression_matrix <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_expression.rds"))
-  cell_metadata <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_colData.rds"))
-  gene_annotation <- gene_annotation <- readRDS(url("http://staff.washington.edu/hpliner/data/cao_l2_rowData.rds"))
+  expression_matrix <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/cao_l2_expression.rds"))
+  cell_metadata <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/cao_l2_colData.rds"))
+  gene_annotation <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/cao_l2_rowData.rds"))
 
   cds <- new_cell_data_set(expression_matrix,
       cell_metadata = cell_metadata,
       gene_metadata = gene_annotation)
   cds <- estimate_size_factors(cds)
+
+  cds <- initialize_counts_metadata(cds)
+  matrix_id <- get_unique_id(counts(cds))
+  cds <- set_counts_identity(cds, 'URL: https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/cao_l2_expression.rds', matrix_id)
 
   cds
 }
