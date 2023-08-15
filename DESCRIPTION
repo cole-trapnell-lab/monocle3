@@ -69,7 +69,7 @@ Imports:
     ggrepel (>= 0.8.1),
     grr,
     HDF5Array,
-    igraph (>= 1.2.4),
+    igraph (>= 1.5.0),
     irlba (>= 2.3.3),
     leidenbase (>= 0.1.9),
     limma (>= 3.38.3),
