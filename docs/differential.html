@@ -538,7 +538,7 @@ plot_cells(neurons_cds, color_cells_by="partition")
         There are many subtypes of neurons, so perhaps the different neuron clusters correspond to different subtypes. To 
         investigate which genes are expressed differentially across the clusters, we could use the regression analysis tools 
         discussed above. However, Monocle provides an alternative way of finding genes that vary between groups of cells in UMAP 
-        or t-SNE space. The function <code>graph_test()</code> uses a statistic from spatial autocorrelation analysis called 
+        space. The function <code>graph_test()</code> uses a statistic from spatial autocorrelation analysis called 
         <a href="https://en.wikipedia.org/wiki/Moran%27s_I">Moran's I</a>, which Cao & Spielmann <emph>et al</emph> showed to 
         be effective in finding genes that vary in single-cell RNA-seq datasets.
       </p>
@@ -627,9 +627,21 @@ plot_cells(neurons_cds,
         <a href="https://dx.doi.org/10.1016/j.cell.2018.12.003">Sharon and Chawla et al</a> recently analyzed pseudotime-dependent 
         genes to arrive at a whole new model of how islets form in the pancreas.
       </p>
-      <p>Let's return to the embryo data:</p>
+      <p>Let's return to the embryo data, which we processed using the commands</p>
       
 {% highlight R %}
+expression_matrix <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/packer_embryo_expression.rds"))
+cell_metadata <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/packer_embryo_colData.rds"))
+gene_annotation <- readRDS(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/packer_embryo_rowData.rds"))
+cds <- new_cell_data_set(expression_matrix,
+                         cell_metadata = cell_metadata,
+                         gene_metadata = gene_annotation)
+cds <- preprocess_cds(cds, num_dim = 50)
+cds <- align_cds(cds, alignment_group = "batch", residual_model_formula_str = "~ bg.300.loading + bg.400.loading + bg.500.1.loading + bg.500.2.loading + bg.r17.loading + bg.b01.loading + bg.b02.loading")
+cds <- reduce_dimension(cds)
+cds <- cluster_cells(cds)
+cds <- learn_graph(cds)
+cds <- order_cells(cds)
 plot_cells(cds,
            color_cells_by = "cell.type",
            label_groups_by_cluster=FALSE,
@@ -713,6 +725,7 @@ plot_cells(cds,
 AFD_genes <- c("gcy-8", "dac-1", "oig-8")
 AFD_lineage_cds <- cds[rowData(cds)$gene_short_name %in% AFD_genes,
                        colData(cds)$cell.type %in% c("AFD")]
+AFD_lineage_cds <- order_cells(AFD_lineage_cds)
 {% endhighlight %}
 
       <p>
