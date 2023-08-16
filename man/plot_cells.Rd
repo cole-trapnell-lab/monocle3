@@ -10,7 +10,7 @@ plot_cells(
   y = 2,
   reduction_method = c("UMAP", "tSNE", "PCA", "LSI", "Aligned"),
   color_cells_by = "cluster",
-  group_cells_by = c("cluster", "partition"),
+  group_cells_by = "cluster",
   genes = NULL,
   show_trajectory_graph = TRUE,
   trajectory_graph_color = "grey28",
