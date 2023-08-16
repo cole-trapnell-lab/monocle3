@@ -71,7 +71,7 @@ Imports:
     HDF5Array,
     igraph (>= 1.5.0),
     irlba (>= 2.3.3),
-    leidenbase (>= 0.1.9),
+    leidenbase (>= 0.1.25),
     limma (>= 3.38.3),
     lme4 (>= 1.1-27),
     lmtest (>= 0.9-36),
