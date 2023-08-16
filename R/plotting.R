@@ -396,7 +396,7 @@ plot_cells <- function(cds,
                        y=2,
                        reduction_method = c("UMAP", "tSNE", "PCA", "LSI", "Aligned"),
                        color_cells_by="cluster",
-                       group_cells_by=c("cluster", "partition"),
+                       group_cells_by="cluster",
                        genes=NULL,
                        show_trajectory_graph=TRUE,
                        trajectory_graph_color="grey28",
@@ -455,7 +455,12 @@ plot_cells <- function(cds,
                                       "be NULL, cannot color by both!"))
 
   norm_method = match.arg(norm_method)
-  group_cells_by=match.arg(group_cells_by)
+
+  assertthat::assert_that((group_cells_by %in% c("cluster", "partition")) ||
+                          (group_cells_by %in% names(SummarizedExperiment::colData(cds))),
+                          msg = paste("group_cells_by must be one of",
+                          "'cluster', 'partition', or a column in the colData table."))
+
   assertthat::assert_that(!is.null(color_cells_by) || !is.null(genes),
                           msg = paste("Either color_cells_by or genes must be",
                                       "NULL, cannot color by both!"))
@@ -478,7 +483,6 @@ plot_cells <- function(cds,
   }
 
 
-
   gene_short_name <- NA
   sample_name <- NA
   #sample_state <- colData(cds)$State
@@ -497,7 +501,7 @@ plot_cells <- function(cds,
   data_df$sample_name <- row.names(data_df)
 
   data_df <- as.data.frame(cbind(data_df, colData(cds)))
-  if (group_cells_by == "cluster"){
+  if (group_cells_by == "cluster") {
     data_df$cell_group <-
       tryCatch({clusters(cds,
                          reduction_method = reduction_method)[
@@ -510,7 +514,7 @@ plot_cells <- function(cds,
                              data_df$sample_name]},
                error = function(e) {NULL})
   } else{
-    stop("Unrecognized way of grouping cells.")
+    data_df$cell_group <- SummarizedExperiment::colData(cds)[data_df$sample_name, group_cells_by]
   }
 
   if (color_cells_by == "cluster"){
@@ -531,7 +535,7 @@ plot_cells <- function(cds,
                            reduction_method = reduction_method)[
                              data_df$sample_name]}, error = function(e) {NULL})
   } else{
-    data_df$cell_color <- colData(cds)[data_df$sample_name,color_cells_by]
+    data_df$cell_color <- colData(cds)[data_df$sample_name, color_cells_by]
   }
 
   ## Graph info
