@@ -121,6 +121,8 @@ jobs:
       - name: Run R CMD build and R CMD check
         run: |
           R -e 'devtools::install_github("bnprks/BPCells")'
+          R -e 'install.packages(c('igraph'))
+          R -e 'devtools::install_github('cole-trapnell-lab/leidenbase')
           R CMD build .
           R CMD check monocle3*tar.gz
         shell: bash
