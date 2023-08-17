@@ -65,7 +65,7 @@ jobs:
       # The following Docker image was pushed initially to the Docker container
       # but we use now the Github container registry. The following image and
       # credential lines are here for documentation, if require in the future.
-      # image: docker.io/brgew/monocle3_depend:v1.3.0
+      # image: docker.io/brgew/monocle3_depend:v1.4.0
       #
       # The following three (commented out) lines give credentials for a docker
       # image stored at the Docker container registry.
@@ -78,7 +78,7 @@ jobs:
       # The following Docker image was pushed to the Github container registry,
       # which is found at the Github Packages tab.
       # image: ghcr.io/cole-trapnell-lab/monocle3_depend.v1.3.0_20221103:v1 # old and replaced
-      image: ghcr.io/cole-trapnell-lab/monocle3_depend:v1.3.0_1
+      image: ghcr.io/cole-trapnell-lab/monocle3_depend:v1.4.0_1
 
       #
       #
@@ -101,7 +101,7 @@ jobs:
     # TRAVIS: the testthat scripts check for the TRAVIS environment variable
     # in order to choose the correct set of target values and to avoid
     # running interactive code. For convenience, I keep the name TRAVIS after
-    # switching to  Actions CI.
+    # switching to Github Actions CI.
     # _R_CHECK_TESTS_NLINES_: instruct the devtools::test scripts to output all
     # error lines rather than the last 13. See
     # https://yihui.org/en/2017/12/last-13-lines-of-output/
@@ -120,9 +120,6 @@ jobs:
       #       regressions tests is output.
       - name: Run R CMD build and R CMD check
         run: |
-          R -e 'devtools::install_github("bnprks/BPCells")'
-          R -e 'install.packages(c("igraph"))'
-          R -e 'devtools::install_github("cole-trapnell-lab/leidenbase")'
           R CMD build .
           R CMD check monocle3*tar.gz
         shell: bash
