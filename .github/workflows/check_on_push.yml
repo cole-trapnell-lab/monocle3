@@ -101,7 +101,7 @@ jobs:
     # TRAVIS: the testthat scripts check for the TRAVIS environment variable
     # in order to choose the correct set of target values and to avoid
     # running interactive code. For convenience, I keep the name TRAVIS after
-    # switching to  Actions CI.
+    # switching to Github Actions CI.
     # _R_CHECK_TESTS_NLINES_: instruct the devtools::test scripts to output all
     # error lines rather than the last 13. See
     # https://yihui.org/en/2017/12/last-13-lines-of-output/
