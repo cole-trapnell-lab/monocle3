@@ -583,7 +583,7 @@ plot_cells <- function(cds,
     }
     if (nrow(markers_rowData) >= 1) {
       cds_exprs <- SingleCellExperiment::counts(cds)[row.names(markers_rowData), ,drop=FALSE]
-      assertthat::assert_that(!is.null(size_factors(cds_exprs)))
+#      assertthat::assert_that(!is.null(size_factors(cds_exprs)))
       cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds))
 
       if (!is.null(dim(genes)) && dim(genes)[[2]] >= 2){
