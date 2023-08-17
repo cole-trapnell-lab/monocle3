@@ -108,6 +108,7 @@ jobs:
     env:
       TRAVIS: true
       _R_CHECK_TESTS_NLINES_: 0
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       # Get current repository contents.
