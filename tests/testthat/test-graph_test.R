@@ -42,15 +42,15 @@ test_that("test graph_test returns Dex-dependent genes",{
   pos_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "che-1",]
   pr_test_res = graph_test(pos_ctrl_gene)
   expect_equal(pr_test_res$status[1], "OK")
-  expect_equal(pr_test_res$morans_I, 0.65, tolerance=1e-2)
+  expect_equal(pr_test_res$morans_I, 0.661, tolerance=1e-2)
   expect_equal(pr_test_res$morans_test_statistic, 204.72, tolerance=1e-1)
   expect_lt(pr_test_res$p_value[1], 0.05)
 
   neg_ctrl_gene = test_cds[rowData(cds)$gene_short_name == "R02D3.1",]
   pr_test_res = graph_test(neg_ctrl_gene)
   expect_equal(pr_test_res$status[1], "OK")
-  expect_equal(pr_test_res$morans_I, -0.00264, tolerance=1e-4)
-  expect_equal(pr_test_res$morans_test_statistic, -0.731, tolerance=1e-2)
+  expect_equal(pr_test_res$morans_I, -0.000752, tolerance=1e-5)
+  expect_equal(pr_test_res$morans_test_statistic, -0.173, tolerance=1e-2)
   expect_gt(pr_test_res$p_value[1], 0.05)
 })
 

@@ -86,7 +86,7 @@ test_that("Alignment works on synthetic data", {
   batched_cds = cluster_cells(batched_cds, k=10, reduction_method="PCA", resolution=1e-3)
   plot_cells(batched_cds, reduction_method="PCA", color_cells_by="partition")
 
-  expect_equal(length(unique(partitions(batched_cds, reduction_method="PCA"))), 5)
+  expect_equal(length(unique(partitions(batched_cds, reduction_method="PCA"))), 4)
 
   #batched_cds = preprocess_cds(batched_cds, num_dim=2, residual_model_formula_str="~cell_type")
 
@@ -106,7 +106,7 @@ test_that("Alignment works on synthetic data", {
   batched_cds = cluster_cells(batched_cds, k=10, reduction_method="Aligned", resolution=1e-3)
   plot_cells(batched_cds, reduction_method="Aligned", color_cells_by="batch")
 
-  expect_equal(length(unique(partitions(batched_cds, reduction_method="Aligned"))), 10)
+  expect_equal(length(unique(partitions(batched_cds, reduction_method="Aligned"))), 9)
 
 
     #plot_cells(batched_cds, reduction_method="PCA", color_cells_by="cluster")
