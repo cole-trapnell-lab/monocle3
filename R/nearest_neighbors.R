@@ -5,6 +5,8 @@
 # Indices checked:
 #   pca_search_annoy
 #   pca_search_hnsw
+#   lsi_search_annoy
+#   lsi_search_hnsw
 #   aligned_search_annoy
 #   aligned_search_hnsw
 #   umap_search_annoy
@@ -23,6 +25,21 @@ has_nn_index <- function(cds, nn_index_type) {
     res <- test_hnsw_index(nn_index=nn_index, verbose=FALSE)
   }
   else
+
+  if(nn_index_type == 'lsi_search_annoy') {
+    # Monocle3 LSI search using annoy.
+    nn_index <- cds@reduce_dim_aux[['LSI']][['nn_index']][['annoy']][['nn_index']]
+    res <- test_annoy_index(nn_index=nn_index, verbose=FALSE)
+  }
+  else
+  if(nn_index_type == 'lsi_search_hnsw') {
+    # Monocle3 LSI search using hnsw.
+    nn_index <- cds@reduce_dim_aux[['LSI']][['nn_index']][['hnsw']][['nn_index']]
+    res <- test_hnsw_index(nn_index=nn_index, verbose=FALSE)
+  }
+  else
+
+
   if(nn_index_type == 'aligned_search_annoy') {
     # Monocle3 Aligned search using annoy.
     nn_index <- cds@reduce_dim_aux[['Aligned']][['nn_index']][['annoy']][['nn_index']]

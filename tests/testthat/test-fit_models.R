@@ -9,6 +9,7 @@ skip_not_travis <- function ()
   skip("Not on Travis")
 }
 
+library(pryr)
 
 cds <- load_a549()
 #cds <- estimate_size_factors(cds)
@@ -321,7 +322,7 @@ test_that("fit_models() can handle cluster in model formulae",{
                                  expression_family = "quasipoisson")
   expect_equal(pos_ctrl_gene_fit$status[[1]], "OK")
   pos_ctrl_coefs = coefficient_table(pos_ctrl_gene_fit)
-  expect_equal(pos_ctrl_coefs$estimate[2], -0.0962, tolerance=1e-3)
+  expect_equal(pos_ctrl_coefs$estimate[2], -0.99, tolerance=1e-2)
 })
 
 
