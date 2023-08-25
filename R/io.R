@@ -1053,7 +1053,7 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
     methods_reduce_dim[[reduction_method]][['hnsw_index_path']] <- paste0('rdd_', tolower(reduction_method), '_transform_model_hnsw.idx')
 
     if(reduction_method == 'UMAP') {
-      if(!is.null(cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']][['nn_index']])){
+      if(has_nn_index(cds, 'umap_model_annoy')) {
         methods_reduce_dim[[reduction_method]][['has_model_index']] <- TRUE
         methods_reduce_dim[[reduction_method]][['umap_index_path']] <- paste0('rdd_', tolower(reduction_method), '_transform_model_umap.idx')
       }
@@ -1061,12 +1061,12 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
         methods_reduce_dim[[reduction_method]][['has_model_index']] <- FALSE
     }
 
-    if(!is.null(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']]))
+    if(has_nn_index(cds, paste0(tolower(reduction_method), '_search_annoy')))
       methods_reduce_dim[[reduction_method]][['has_annoy_index']] <- TRUE
     else
       methods_reduce_dim[[reduction_method]][['has_annoy_index']] <- FALSE
 
-    if(!is.null(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']]))
+    if(has_nn_index(cds, paste0(tolower(reduction_method), '_search_hnsw')))
       methods_reduce_dim[[reduction_method]][['has_hnsw_index']] <- TRUE
     else
       methods_reduce_dim[[reduction_method]][['has_hnsw_index']] <- FALSE
@@ -1459,24 +1459,25 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
     methods_reduce_dim[[reduction_method]][['annoy_index_path']] <- paste0('rdd_', tolower(reduction_method), '_transform_model_annoy.idx')
     methods_reduce_dim[[reduction_method]][['hnsw_index_path']] <- paste0('rdd_', tolower(reduction_method), '_transform_model_hnsw.idx')
 
-    if(!is.null(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']]))
-      methods_reduce_dim[[reduction_method]][['has_annoy_index']] <- TRUE
-    else
-      methods_reduce_dim[[reduction_method]][['has_annoy_index']] <- FALSE
-
-    if(!is.null(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']]))
-      methods_reduce_dim[[reduction_method]][['has_hnsw_index']] <- TRUE
-    else
-      methods_reduce_dim[[reduction_method]][['has_hnsw_index']] <- FALSE
-
     if(reduction_method == 'UMAP') {
-      if(!is.null(cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']][['nn_index']])){
+      if(has_nn_index(cds, 'umap_model_annoy')) {
         methods_reduce_dim[[reduction_method]][['has_model_index']] <- TRUE
         methods_reduce_dim[[reduction_method]][['umap_index_path']] <- paste0('rdd_', tolower(reduction_method), '_transform_model_umap.idx')
       }
       else
         methods_reduce_dim[[reduction_method]][['has_model_index']] <- FALSE
     }
+
+    if(has_nn_index(cds, paste0(tolower(reduction_method), '_search_annoy')))
+      methods_reduce_dim[[reduction_method]][['has_annoy_index']] <- TRUE
+    else
+      methods_reduce_dim[[reduction_method]][['has_annoy_index']] <- FALSE
+
+    if(has_nn_index(cds, paste0(tolower(reduction_method), '_search_hnsw')))
+      methods_reduce_dim[[reduction_method]][['has_hnsw_index']] <- TRUE
+    else
+      methods_reduce_dim[[reduction_method]][['has_hnsw_index']] <- FALSE
+
   }
 
   # Make directory if necessary.

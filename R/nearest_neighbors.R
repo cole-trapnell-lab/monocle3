@@ -1,6 +1,64 @@
 # Functions that support nearest neighbors use.
 
 
+# Check if a cds has an nn_index.
+# Indices checked:
+#   pca_search_annoy
+#   pca_search_hnsw
+#   aligned_search_annoy
+#   aligned_search_hnsw
+#   umap_search_annoy
+#   umap_search_hnsw
+#   umap_model_hnsw
+has_nn_index <- function(cds, nn_index_type) {
+  if(nn_index_type == 'pca_search_annoy') {
+    # Monocle3 PCA search using annoy.
+    nn_index <- cds@reduce_dim_aux[['PCA']][['nn_index']][['annoy']][['nn_index']]
+    res <- test_annoy_index(nn_index=nn_index, verbose=FALSE)
+  }
+  else
+  if(nn_index_type == 'pca_search_hnsw') {
+    # Monocle3 PCA search using hnsw.
+    nn_index <- cds@reduce_dim_aux[['PCA']][['nn_index']][['hnsw']][['nn_index']]
+    res <- test_hnsw_index(nn_index=nn_index, verbose=FALSE)
+  }
+  else
+  if(nn_index_type == 'aligned_search_annoy') {
+    # Monocle3 Aligned search using annoy.
+    nn_index <- cds@reduce_dim_aux[['Aligned']][['nn_index']][['annoy']][['nn_index']]
+    res <- test_annoy_index(nn_index=nn_index, verbose=FALSE)
+  }
+  else
+  if(nn_index_type == 'aligned_search_hnsw') {
+    # Monocle3 Aligned search using hnsw.
+    nn_index <- cds@reduce_dim_aux[['Aligned']][['nn_index']][['hnsw']][['nn_index']]
+    res <- test_hnsw_index(nn_index=nn_index, verbose=FALSE)
+  }
+  else
+  if(nn_index_type == 'umap_search_annoy') {
+    # Monocle3 UMAP search using annoy.
+    nn_index <- cds@reduce_dim_aux[['UMAP']][['nn_index']][['annoy']][['nn_index']]
+    res <- test_annoy_index(nn_index=nn_index, verbose=FALSE)
+  }
+  else
+  if(nn_index_type == 'umap_search_hnsw') {
+    # Monocle3 UMAP search using hnsw.
+    nn_index <- cds@reduce_dim_aux[['UMAP']][['nn_index']][['hnsw']][['nn_index']]
+    res <- test_hnsw_index(nn_index=nn_index, verbose=FALSE)
+  }
+  else
+  if(nn_index_type == 'umap_model_annoy') {
+    # UWOT UMAP model using annoy.
+    nn_index <- cds@reduce_dim_aux[['UMAP']][['model']][['umap_model']][['nn_index']]
+    res <- test_annoy_index(nn_index=nn_index, verbose=FALSE)
+  }
+  else {
+    stop('has_nn_index: unrecognized nn_index_type: \'', nn_index_type, '\'')
+  }
+  return(res)
+}
+
+
 # Check whether nn index exists and is consistent with matrix and parameters.
 # This function is not in use currently and may fall into disrepair.
 check_cds_nn_index_is_current <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP'), nn_control=list(), verbose=FALSE) {
@@ -764,27 +822,29 @@ get_cds_nn_index <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Alig
 # Returns logical TRUE if the index exists.
 test_annoy_index <- function(nn_index, verbose=FALSE) {
   res <- TRUE
-  if(is.null(nn_index[['annoy_index']])) {
-    if(!verbose) {
+  index_obj <- NULL
+  if(!is.null(nn_index[['annoy_index']])) {
+    index_obj <- nn_index[['annoy_index']]
+  }
+  else
+  if(!is.null(nn_index[['ann']])) {
+    index_obj <- nn_index[['ann']]
+  }
+  else {
+    if(verbose) {
       cs <- get_call_stack_as_string()
       message('test_annoy_index: the annoy nearest neighbor does not exist\ncall stack: ', cs)
-    }
-    else {
-      message('test_annoy_index: the annoy nearest neighbor does not exist.')
     }
     return(FALSE)
   }
 
   tryCatch( {
-    dist_res <- nn_index[['annoy_index']]$getDistance(0,1)
+    dist_res <- index_obj$getDistance(0,1)
   },
   error=function(emsg) {
-    if(!verbose) {
+    if(verbose) {
       cs <- get_call_stack_as_string()
       message('test_annoy_index: the annoy nearest neighbor does not exist\ncall stack: ', cs)
-    }
-    else {
-      message('test_annoy_index: the annoy nearest neighbor does not exist.')  
     }
     res <<- FALSE
   } )
@@ -798,12 +858,9 @@ test_annoy_index <- function(nn_index, verbose=FALSE) {
 test_hnsw_index <- function(nn_index, verbose=FALSE) {
   res <- TRUE
   if(is.null(nn_index[['hnsw_index']])) {
-    if(!verbose) {
+    if(verbose) {
       cs <- get_call_stack_as_string()
       message('test_hnsw_index: the hnsw nearest neighbor does not exist\ncall stack: ', cs)
-    }
-    else {
-      message('test_hnsw_index: the hnsw nearest neighbor does not exist.')
     }
     return(FALSE)
   }
@@ -812,12 +869,9 @@ test_hnsw_index <- function(nn_index, verbose=FALSE) {
     size_res <- nn_index[['hnsw_index']]$size()
   },
   error=function(emsg) {
-    if(!verbose) {
+    if(verbose) {
       cs <- get_call_stack_as_string()
       message('test_hnsw_index: the hnsw nearest neighbor does not exist\ncall stack: ', cs)
-    }
-    else {
-      message('test_hnsw_index: the hnsw nearest neighbor does not exist.')
     }
     res <<- FALSE
   } )
@@ -923,7 +977,7 @@ search_nn_index <- function(query_matrix, nn_index, k=25, nn_control=list(), ver
   } else
   if(nn_method == 'annoy') {
     if(!test_annoy_index(nn_index=nn_index, verbose=verbose)) {
-      stop_no_noise()
+      stop('search_nn_index: the annoy nearest neighbor does not exist.')
     }
 
     # notes:
@@ -982,7 +1036,7 @@ search_nn_index <- function(query_matrix, nn_index, k=25, nn_control=list(), ver
   else
   if(nn_method == 'hnsw') {
     if(!test_hnsw_index(nn_index=nn_index, verbose=verbose)) {
-      stop_no_noise()
+      stop('search_nn_index: the hnsw nearest neighbor does not exist.')
     }
 
     assertthat::assert_that(nn_control[['ef']] >= k,
