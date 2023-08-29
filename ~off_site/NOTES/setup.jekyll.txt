@@ -27,3 +27,14 @@ bundle exec jekyll serve --watch
 
 9. Load the site in chrome:
 http://127.0.0.1:4000/monocle3
+
+Notes:
+  o  I recently had difficulty with versions and resolved it by deleting
+     Gemfile and Gemfile.lock and recreating the Gemfile with 'bundle install'.
+     I needed then at add the line
+
+       gem "jekyll", "~> 4.0"
+
+     to the resulting Gemfile. After that I continued with step 7. above.
+
+
