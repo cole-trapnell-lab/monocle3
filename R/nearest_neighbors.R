@@ -13,6 +13,7 @@
 #   umap_search_hnsw
 #   umap_model_hnsw
 has_nn_index <- function(cds, nn_index_type) {
+  res <- FALSE
   if(nn_index_type == 'pca_search_annoy') {
     # Monocle3 PCA search using annoy.
     nn_index <- cds@reduce_dim_aux[['PCA']][['nn_index']][['annoy']][['nn_index']]
@@ -25,7 +26,6 @@ has_nn_index <- function(cds, nn_index_type) {
     res <- test_hnsw_index(nn_index=nn_index, verbose=FALSE)
   }
   else
-
   if(nn_index_type == 'lsi_search_annoy') {
     # Monocle3 LSI search using annoy.
     nn_index <- cds@reduce_dim_aux[['LSI']][['nn_index']][['annoy']][['nn_index']]
@@ -38,8 +38,6 @@ has_nn_index <- function(cds, nn_index_type) {
     res <- test_hnsw_index(nn_index=nn_index, verbose=FALSE)
   }
   else
-
-
   if(nn_index_type == 'aligned_search_annoy') {
     # Monocle3 Aligned search using annoy.
     nn_index <- cds@reduce_dim_aux[['Aligned']][['nn_index']][['annoy']][['nn_index']]
