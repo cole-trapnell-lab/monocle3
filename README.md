@@ -65,6 +65,7 @@ You may need to update the version strings in your hdf5.pc file.
   - `convert_counts_matrix()`
 
   For example, to convert a dgCMatrix counts matrix to a BPCells on-disk matrix in an existing CDS, use the command `cds <- convert_counts_matrix(cds, matrix_control=list(matrix_class="BPCells"))`.
+- BPCells stores the count matrix information in directories with names similar to `monocle.bpcells.20230830.4c4b1bebe4b4.tmp`. Monocle3 tries to remove those directories when you quit R. Please do not remove them while Monocle3 is running because doing so eliminates the count matrix data. You *can* remove them after quitting R if Monocle3 fails to remove them.
 - The method `new_cell_data_set()` accepts a BPCells on-disk counts matrix.
 - The functions `save_monocle_objects()` and `load_monocle_objects()` store and load BPCells on-disk matrices when the CDS counts matrix is an on-disk BPCells matrix.
 - The Monocle3 `saveRDS()` function warns the user to use `save_monocle_objects()` when saving a CDS with a BPCells on-disk counts matrix. If you insist on using the `saveRDS()` function, the BPCells on-disk matrix directory will not be stored and you will be unable to load it with the `readRDS()` function.
