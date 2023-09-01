@@ -229,8 +229,9 @@ find_gene_modules <- function(cds,
 #' @noRd
 my.aggregate.Matrix = function (x, groupings = NULL, form = NULL, fun = "sum", ...)
 {
-  if (!methods::is(x, "Matrix"))
+  if (!methods::is(x, "Matrix") && !methods::is(x, "IterableMatrix")) {
     x <- Matrix::Matrix(as.matrix(x), sparse = TRUE)
+  }
   if (fun == "count")
     x <- x != 0
   groupings2 <- data.frame(A=as.factor(groupings))
@@ -240,6 +241,11 @@ my.aggregate.Matrix = function (x, groupings = NULL, form = NULL, fun = "sum", .
   mapping <- my.dMcast(groupings2, form)
   colnames(mapping) <- substring(colnames(mapping), 2)
   result <- Matrix::t(mapping) %*% x
+  # The BPCells %*% appears to omit the result column names.
+  # I consider this to be a temporary fix.
+  if(is(x, 'IterableMatrix')) {
+    colnames(result) <- colnames(x)
+  }
   if (fun == "mean")
     result <- result/as.numeric(table(groupings)[rownames(result)])
   attr(result, "crosswalk") <- grr::extract(groupings, match(rownames(result),
@@ -459,8 +465,7 @@ aggregate_gene_expression <- function(cds,
                                       cell_agg_fun="mean"){
   if (is.null(gene_group_df) && is.null(cell_group_df))
     stop("one of either gene_group_df or cell_group_df must not be NULL.")
-  agg_mat <- normalized_counts(cds, norm_method=norm_method,
-                               pseudocount=pseudocount)
+  agg_mat <- normalized_counts(cds, norm_method=norm_method, pseudocount=pseudocount)
   if (is.null(gene_group_df) == FALSE){
     gene_group_df <- as.data.frame(gene_group_df)
     gene_group_df <- gene_group_df[gene_group_df[,1] %in%
