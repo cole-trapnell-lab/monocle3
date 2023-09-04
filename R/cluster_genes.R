@@ -241,11 +241,6 @@ my.aggregate.Matrix = function (x, groupings = NULL, form = NULL, fun = "sum", .
   mapping <- my.dMcast(groupings2, form)
   colnames(mapping) <- substring(colnames(mapping), 2)
   result <- Matrix::t(mapping) %*% x
-  # The BPCells %*% appears to omit the result column names.
-  # I consider this to be a temporary fix.
-  if(is(x, 'IterableMatrix')) {
-    colnames(result) <- colnames(x)
-  }
   if (fun == "mean")
     result <- result/as.numeric(table(groupings)[rownames(result)])
   attr(result, "crosswalk") <- grr::extract(groupings, match(rownames(result),
