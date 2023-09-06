@@ -1443,7 +1443,19 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
   matrix_info <- get_matrix_info(mat=counts(cds))
   if(matrix_info[['matrix_class']] == 'BPCells' &&
      matrix_info[['matrix_mode']] == 'dir') {
-    bpcells_matrix_dir_flag <- TRUE
+    #
+    # Check that BPCells matrix directory exists.
+    # We use the bpcells_matrix_dir_flag to save the
+    # directory (later) and so we don't try to save
+    # the BPCells matrix files if the directory
+    # doesn't exist.
+    #
+    if(dir.exists(matrix_info[['matrix_path']])) {
+      bpcells_matrix_dir_flag <- TRUE
+    }
+    else {
+      message('save_monocle_objects: warning: the CDS has a BPCells count matrix but\nbut the BPCells count matrix directory is missing, which will likely\ncause problems in the future.\nI\'m continuing without it.')
+    }
   }
 
   # Path of cds object file.
