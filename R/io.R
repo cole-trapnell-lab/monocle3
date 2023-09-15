@@ -1427,6 +1427,21 @@ test_hdf5_assays <- function(cds) {
 #'   the objects.
 #' @param verbose a boolean determining whether to print information
 #'   about the saved files.
+#' @param archive_control a list that is used to control archiving
+#'   the output directory. The archive_control parameters are
+#'   \describe{
+#'     \item{archive_type}{a string giving the method used to
+#'        archive the directory. The acceptable values are
+#'        "tar" and "none". The directory is not archive when
+#'        archive_type is "none". The default is "tar".}
+#'     \item{archive_compression}{a string giving the type of
+#'        compression applied to the archive file. The acceptable
+#'        values are "none", "gzip", "bzip2", and "xz". The
+#'        default is "none".}
+#'   }
+#'   Note: the output directory is not removed after it is
+#'         archived.
+#'
 #' @return none.
 #'
 #' @examples
@@ -1438,7 +1453,17 @@ test_hdf5_assays <- function(cds) {
 #' @export
 # Bioconductor forbids writing to user directories so examples
 # is not run.
-save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment="", verbose=TRUE) {
+save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment="", verbose=TRUE, archive_control=list(archive_type="tar", archive_compression="none")) {
+
+  if(is.null(archive_control[['archive_type']])) archive_control[['archive_type']] <- 'tar'
+  if(is.null(archive_control[['archive_compression']])) archive_control[['archive_compression']] <- 'none'
+
+  assertthat::assert_that(archive_control[['archive_type']] %in% c('tar', 'none'),
+    msg=paste0("archive_type must be either \'none\' or \'tar\'"))
+  assertthat::assert_that(archive_control[['archive_compression']] %in% c('gzip', 'bzip2', 'xz', 'none'),
+    msg=paste0("archive_compression must be \'none\', \'gzip\', \'bzip2\', or \'xz\'."))
+  assertthat::assert_that(archive_control[['archive_compression']] %in% c('gzip', 'bzip2', 'xz', 'none'))
+
   appendLF <- TRUE
   # file information is written to an RDS file
   # in directory_path
@@ -1693,6 +1718,36 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
   if(verbose) {
     report_files_saved(file_index)
   }
+
+  if(archive_control[['archive_type']] == 'tar') {
+    if(archive_control[['archive_compression']] == 'gzip') {
+      archive_name <- paste0(directory_path, '.tar.gz')
+    }
+    else
+    if(archive_control[['archive_compression']] == 'bzip2') {
+      archive_name <- paste0(directory_path, '.tar.bz2')
+    }
+    else
+    if(archive_control[['archive_compression']] == 'xz') {
+      archive_name <- paste0(directory_path, '.tar.xz')
+    }
+    else {
+      archive_name <- paste0(directory_path, '.tar')
+    }
+    tryCatch({
+      tar(tarfile=archive_name,
+          files=directory_path,
+          compression=archive_control[['archive_compression']])
+      },
+      error=function(cond) {
+              message('problem writing the archive file \'', archive_name, '\': ', cond, appendLF=appendLR)
+              return(NULL)
+      },
+      finally={
+        message(paste0('save_monocle_objects made an archive file called \"', archive_name, '\"'))
+      }
+    ) # tryCatch
+  } # if(archive_control...
 }
 
 

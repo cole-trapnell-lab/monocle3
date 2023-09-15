@@ -9,7 +9,8 @@ save_monocle_objects(
   directory_path,
   hdf5_assays = FALSE,
   comment = "",
-  verbose = TRUE
+  verbose = TRUE,
+  archive_control = list(archive_type = "tar", archive_compression = "none")
 )
 }
 \arguments{
@@ -28,6 +29,21 @@ the objects.}
 
 \item{verbose}{a boolean determining whether to print information
 about the saved files.}
+
+\item{archive_control}{a list that is used to control archiving
+the output directory. The archive_control parameters are
+\describe{
+\item{archive_type}{a string giving the method used to
+archive the directory. The acceptable values are
+"tar" and "none". The directory is not archive when
+archive_type is "none". The default is "tar".}
+\item{archive_compression}{a string giving the type of
+compression applied to the archive file. The acceptable
+values are "none", "gzip", "bzip2", and "xz". The
+default is "none".}
+}
+Note: the output directory is not removed after it is
+archived.}
 }
 \value{
 none.
