@@ -1194,6 +1194,20 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
 }
 
 
+#
+# Copy reduce_dim_aux slot objects from cds_src to cds_dst. The copy
+# runs on the R objects only. It does not try to copy objects about
+# which R knows nothing, such as annoy and hnsw indices. At this
+# time, this function is used only by load_transform_models().
+#
+copy_reduce_dim_aux <- function(cds_dst, cds_src) {
+  for( reduction_method in names(cds_src@reduce_dim_aux@listData)) {
+    cds_dst@reduce_dim_aux[[reduction_method]] <- cds_src@reduce_dim_aux[[reduction_method]]
+  }
+  return(cds_dst)
+}
+
+
 #' Load transform models into a cell_data_set.
 #'
 #' Load transform models, which were saved using save_transform_models,
@@ -1203,7 +1217,9 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
 #'
 #' @param cds a cell_data_set to be transformed using the models.
 #' @param directory_path a string giving the name of the directory
-#'   from which to read the model files.
+#'   from which to read the model files. The model file directory
+#'   is made by either save_transform_models() or
+#'   save_monocle_objects().
 #'
 #' @return a cell_data_set with the transform models loaded by
 #'   load_transform_models.
@@ -1243,8 +1259,8 @@ load_transform_models <- function(cds, directory_path) {
   )
 
   # Check that this is a save_transform_models archive.
-  if(file_index[['save_function']] != 'save_transform_models') {
-    stop('The files in ', directory_path, ' are not from save_transform_models.')
+  if(file_index[['save_function']] != 'save_transform_models' && file_index[['save_function']] != 'save_monocle_objects') {
+    stop('The files in ', directory_path, ' are not from save_transform_models or save_monocle_objects.')
   }
 
   # Write stored comment field.
@@ -1281,8 +1297,26 @@ load_transform_models <- function(cds, directory_path) {
     #
     # Note:
     #   o  expect that the RDS file for a reduction_method
-    #      appears before index files for the reduction_method
+    #      (or cds) appears before index files for the
+    #      reduction_method
     #
+
+    if(cds_object == 'cds') {
+      if(file_format == 'rds') {
+        cds_tmp <- tryCatch(
+          {
+            readRDS(file_path)
+          },
+          error = function(cond) {
+            message('problem reading file \'', file_path, '\'', appendLF=appendLF)
+            return(NULL)
+          })
+        cds <- copy_reduce_dim_aux(cds, cds_tmp)
+        rm(cds_tmp)
+      }
+    }
+    else
+
     if(cds_object == 'reduce_dim_aux') {
       if(file_format == 'rds') {
         cds@reduce_dim_aux[[reduction_method]] <- tryCatch(
