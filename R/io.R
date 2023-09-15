@@ -1194,6 +1194,20 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
 }
 
 
+#
+# Copy reduce_dim_aux slot objects from cds_src to cds_dst. The copy
+# runs on the R objects only. It does not try to copy objects about
+# which R knows nothing, such as annoy and hnsw indices. At this
+# time, this function is used only by load_transform_models().
+#
+copy_reduce_dim_aux <- function(cds_dst, cds_src) {
+  for( reduction_method in names(cds_src@reduce_dim_aux@listData)) {
+    cds_dst@reduce_dim_aux[[reduction_method]] <- cds_src@reduce_dim_aux[[reduction_method]]
+  }
+  return(cds_dst)
+}
+
+
 #' Load transform models into a cell_data_set.
 #'
 #' Load transform models, which were saved using save_transform_models,
@@ -1203,7 +1217,9 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
 #'
 #' @param cds a cell_data_set to be transformed using the models.
 #' @param directory_path a string giving the name of the directory
-#'   from which to read the model files.
+#'   from which to read the model files. The model file directory
+#'   is made by either save_transform_models() or
+#'   save_monocle_objects().
 #'
 #' @return a cell_data_set with the transform models loaded by
 #'   load_transform_models.
@@ -1243,8 +1259,8 @@ load_transform_models <- function(cds, directory_path) {
   )
 
   # Check that this is a save_transform_models archive.
-  if(file_index[['save_function']] != 'save_transform_models') {
-    stop('The files in ', directory_path, ' are not from save_transform_models.')
+  if(file_index[['save_function']] != 'save_transform_models' && file_index[['save_function']] != 'save_monocle_objects') {
+    stop('The files in ', directory_path, ' are not from save_transform_models or save_monocle_objects.')
   }
 
   # Write stored comment field.
@@ -1281,8 +1297,26 @@ load_transform_models <- function(cds, directory_path) {
     #
     # Note:
     #   o  expect that the RDS file for a reduction_method
-    #      appears before index files for the reduction_method
+    #      (or cds) appears before index files for the
+    #      reduction_method
     #
+
+    if(cds_object == 'cds') {
+      if(file_format == 'rds') {
+        cds_tmp <- tryCatch(
+          {
+            readRDS(file_path)
+          },
+          error = function(cond) {
+            message('problem reading file \'', file_path, '\'', appendLF=appendLF)
+            return(NULL)
+          })
+        cds <- copy_reduce_dim_aux(cds, cds_tmp)
+        rm(cds_tmp)
+      }
+    }
+    else
+
     if(cds_object == 'reduce_dim_aux') {
       if(file_format == 'rds') {
         cds@reduce_dim_aux[[reduction_method]] <- tryCatch(
@@ -1393,6 +1427,21 @@ test_hdf5_assays <- function(cds) {
 #'   the objects.
 #' @param verbose a boolean determining whether to print information
 #'   about the saved files.
+#' @param archive_control a list that is used to control archiving
+#'   the output directory. The archive_control parameters are
+#'   \describe{
+#'     \item{archive_type}{a string giving the method used to
+#'        archive the directory. The acceptable values are
+#'        "tar" and "none". The directory is not archived when
+#'        archive_type is "none". The default is "tar".}
+#'     \item{archive_compression}{a string giving the type of
+#'        compression applied to the archive file. The acceptable
+#'        values are "none", "gzip", "bzip2", and "xz". The
+#'        default is "none".}
+#'   }
+#'   Note: the output directory is not removed after it is
+#'         archived.
+#'
 #' @return none.
 #'
 #' @examples
@@ -1404,7 +1453,17 @@ test_hdf5_assays <- function(cds) {
 #' @export
 # Bioconductor forbids writing to user directories so examples
 # is not run.
-save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment="", verbose=TRUE) {
+save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment="", verbose=TRUE, archive_control=list(archive_type="tar", archive_compression="none")) {
+
+  if(is.null(archive_control[['archive_type']])) archive_control[['archive_type']] <- 'tar'
+  if(is.null(archive_control[['archive_compression']])) archive_control[['archive_compression']] <- 'none'
+
+  assertthat::assert_that(archive_control[['archive_type']] %in% c('tar', 'none'),
+    msg=paste0("archive_type must be either \'none\' or \'tar\'"))
+  assertthat::assert_that(archive_control[['archive_compression']] %in% c('gzip', 'bzip2', 'xz', 'none'),
+    msg=paste0("archive_compression must be \'none\', \'gzip\', \'bzip2\', or \'xz\'."))
+  assertthat::assert_that(archive_control[['archive_compression']] %in% c('gzip', 'bzip2', 'xz', 'none'))
+
   appendLF <- TRUE
   # file information is written to an RDS file
   # in directory_path
@@ -1659,6 +1718,36 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
   if(verbose) {
     report_files_saved(file_index)
   }
+
+  if(archive_control[['archive_type']] == 'tar') {
+    if(archive_control[['archive_compression']] == 'gzip') {
+      archive_name <- paste0(directory_path, '.tar.gz')
+    }
+    else
+    if(archive_control[['archive_compression']] == 'bzip2') {
+      archive_name <- paste0(directory_path, '.tar.bz2')
+    }
+    else
+    if(archive_control[['archive_compression']] == 'xz') {
+      archive_name <- paste0(directory_path, '.tar.xz')
+    }
+    else {
+      archive_name <- paste0(directory_path, '.tar')
+    }
+    tryCatch({
+      tar(tarfile=archive_name,
+          files=directory_path,
+          compression=archive_control[['archive_compression']])
+      },
+      error=function(cond) {
+              message('problem writing the archive file \'', archive_name, '\': ', cond, appendLF=appendLR)
+              return(NULL)
+      },
+      finally={
+        message(paste0('save_monocle_objects made an archive file called \"', archive_name, '\"'))
+      }
+    ) # tryCatch
+  } # if(archive_control...
 }
 
 

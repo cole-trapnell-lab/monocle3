@@ -10,7 +10,9 @@ load_transform_models(cds, directory_path)
 \item{cds}{a cell_data_set to be transformed using the models.}
 
 \item{directory_path}{a string giving the name of the directory
-from which to read the model files.}
+from which to read the model files. The model file directory
+is made by either save_transform_models() or
+save_monocle_objects().}
 }
 \value{
 a cell_data_set with the transform models loaded by
