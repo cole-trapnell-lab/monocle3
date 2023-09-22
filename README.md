@@ -53,6 +53,8 @@ Libs: -L${libdir} -lhdf5
 
 You may need to update the version strings in your hdf5.pc file.
 
+Monocle3 no longer uses the terra package, so it does not need to be installed.
+
 ### Notes
 
 - Monocle3 can use the BPCells package to store the feature-cell counts matrix on-disk rather than in-memory, which enables analysis of considerably larger data sets than before. By default, Monocle3 stores the counts matrix in-memory as a sparse matrix, as it has in the past. To store the counts matrix on-disk, use the parameter `matrix_control=list(matrix_class="BPCells")` when you make the CDS or convert the counts matrix using one of the functions
