@@ -35,7 +35,7 @@ the output directory. The archive_control parameters are
 \describe{
 \item{archive_type}{a string giving the method used to
 archive the directory. The acceptable values are
-"tar" and "none". The directory is not archive when
+"tar" and "none". The directory is not archived when
 archive_type is "none". The default is "tar".}
 \item{archive_compression}{a string giving the type of
 compression applied to the archive file. The acceptable
