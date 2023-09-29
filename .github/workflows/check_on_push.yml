@@ -120,6 +120,7 @@ jobs:
       #       regressions tests is output.
       - name: Run R CMD build and R CMD check
         run: |
+          R CMD -e 'install.packages(c("ggdist", "ggforce"))'
           R CMD build .
           R CMD check monocle3*tar.gz
         shell: bash
