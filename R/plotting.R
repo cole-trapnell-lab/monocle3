@@ -1158,7 +1158,7 @@ plot_pc_variance_explained <- function(cds) {
 #'
 #' @description Accepts a subset of a cell_data_set and an attribute to group
 #' cells by, and produces a ggplot2 object that plots the level of expression
-#' for each group of cells.
+#' for each group of cells. The median value is plotted as a black dot.
 #'
 #' @param cds_subset Subset cell_data_set to be plotted.
 #' @param group_cells_by NULL of the cell attribute (e.g. the column of
@@ -1177,8 +1177,10 @@ plot_pc_variance_explained <- function(cds) {
 #' @param normalize Logical, whether or not to normalize expression by size
 #'   factor. Default is TRUE.
 #' @param log_scale Logical, whether or not to scale data logarithmically.
-#'   Default is TRUE.
-#' @param pseudocount A pseudo-count added to the gene expression. Default is 0.
+#'   Zero count cells are excluded from the plot and median when log_scale
+#'   is TRUE. Default is TRUE.
+#' @param pseudocount A pseudo-count added to the gene expression. A
+#'   pseudocount value greater than 0 is reset to 1. Default is 0.
 #' @return a ggplot2 plot object
 #' @import ggplot2
 #'
@@ -1290,9 +1292,190 @@ plot_genes_violin <- function (cds_subset,
   cds_exprs[,group_cells_by] <- as.factor(cds_exprs[,group_cells_by])
   q <- q + geom_violin(aes_string(fill = group_cells_by), scale="width") +
     guides(fill='none')
-  q <- q + stat_summary(fun=mean, geom="point", size=1, color="black")
+  q <- q + stat_summary(fun=median, geom="point", size=1, color="black")
   q <- q + facet_wrap(~feature_label, nrow = nrow,
                       ncol = ncol, scales = "free_y")
+  if (min_expr < 1) {
+    q <- q + expand_limits(y = c(min_expr, 1))
+  }
+
+  q <- q + ylab("Expression") + xlab(group_cells_by)
+
+  if (log_scale){
+    q <- q + scale_y_log10()
+  }
+  q
+}
+
+
+#' Plot expression for one or more genes as a hybrid histogram-interval with
+#' a Sina plot overlay.
+#'
+#' @description Accepts a subset of a cell_data_set and an attribute to group
+#' cells by, and produces a ggplot2 object that plots the level of expression
+#' for each group of cells. The cells appear as red dots in a Sina plot
+#' and the cell distribution appears as a histogram with green bars and
+#' a blue median_qi interval. See help for ggforce::geom_sina and
+#' ggdist::stat_histinterval for additional information.
+#'
+#' @param cds_subset Subset cell_data_set to be plotted.
+#' @param group_cells_by NULL of the cell attribute (e.g. the column of
+#'   colData(cds)) to group cells by on the horizontal axis. If NULL, all cells
+#'   are plotted together.
+#' @param min_expr the minimum (untransformed) expression level to be plotted.
+#'   Default is 0.
+#' @param nrow the number of panels per row in the figure.
+#' @param ncol the number of panels per column in the figure.
+#' @param panel_order the order in which genes should be laid out
+#'   (left-to-right, top-to-bottom). Should be gene_short_name if
+#'   \code{label_by_short_name = TRUE} or feature ID if
+#'   \code{label_by_short_name = FALSE}.
+#' @param label_by_short_name label figure panels by gene_short_name (TRUE) or
+#'   feature id (FALSE). Default is TRUE.
+#' @param normalize Logical, whether or not to normalize expression by size
+#'   factor. Default is TRUE.
+#' @param log_scale Logical, whether or not to scale data logarithmically.
+#'   Zero count cells are excluded from the plot, interval, and median
+#'   when log_scale is TRUE. Default is TRUE.
+#' @param pseudocount A pseudo-count added to the gene expression. A
+#'   pseudocount value greater than 0 is reset to 1. Default is 0.
+#' @return a ggplot2 plot object
+#' @import ggplot2
+#'
+#' @examples
+#'   \donttest{
+#'     cds <- load_a549()
+#'     cds_subset <- cds[row.names(subset(rowData(cds),
+#'                      gene_short_name %in% c("ACTA1", "ID1", "CCNB2"))),]
+#'     plot_genes_hybrid(cds_subset, group_cells_by="culture_plate", ncol=2,
+#'                       min_expr=0.1)
+#'   }
+#'
+#' @export
+plot_genes_hybrid <- function (cds_subset,
+                               group_cells_by = NULL,
+                               min_expr = 0,
+                               nrow = NULL,
+                               ncol = 1,
+                               panel_order = NULL,
+                               label_by_short_name = TRUE,
+                               normalize = TRUE,
+                               log_scale = TRUE,
+                               pseudocount = 0) {
+
+  assertthat::assert_that(methods::is(cds_subset, "cell_data_set"))
+
+  if(!is.null(group_cells_by)) {
+    assertthat::assert_that(group_cells_by %in% names(colData(cds_subset)),
+                            msg = paste("group_cells_by must be a column in",
+                                        "the colData table"))
+  }
+
+  assertthat::assert_that(assertthat::is.number(min_expr))
+
+  if(!is.null(nrow)) {
+    assertthat::assert_that(assertthat::is.count(nrow))
+  }
+
+  assertthat::assert_that(assertthat::is.count(ncol))
+  assertthat::assert_that(assertthat::is.number(pseudocount))
+  assertthat::assert_that(is.logical(label_by_short_name))
+  if (label_by_short_name) {
+    assertthat::assert_that("gene_short_name" %in% names(rowData(cds_subset)),
+                            msg = paste("When label_by_short_name = TRUE,",
+                                        "rowData must have a column of gene",
+                                        "names called gene_short_name."))
+  }
+  if(!is.null(panel_order)) {
+    if (label_by_short_name) {
+      assertthat::assert_that(all(panel_order %in%
+                                    rowData(cds_subset)$gene_short_name))
+    } else {
+      assertthat::assert_that(all(panel_order %in%
+                                    row.names(rowData(cds_subset))))
+    }
+  }
+
+  assertthat::assert_that(is.logical(normalize))
+  assertthat::assert_that(is.logical(log_scale))
+
+  assertthat::assert_that(nrow(rowData(cds_subset)) <= 100,
+                          msg = paste("cds_subset has more than 100 genes -",
+                                      "pass only the subset of the CDS to be",
+                                      "plotted."))
+  if (pseudocount > 0) {
+    cds_exprs <- SingleCellExperiment::counts(cds_subset) + 1
+  } else {
+    cds_exprs <- SingleCellExperiment::counts(cds_subset)
+  }
+
+  if (normalize) {
+    cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds_subset))
+    cds_exprs <- reshape2::melt(as.matrix(cds_exprs))
+  } else {
+    cds_exprs <- reshape2::melt(as.matrix(cds_exprs))
+  }
+
+  colnames(cds_exprs) <- c("f_id", "Cell", "expression")
+  cds_exprs$expression[cds_exprs$expression < min_expr] <- min_expr
+
+
+  cds_exprs <- merge(cds_exprs, rowData(cds_subset), by.x = "f_id",
+                     by.y = "row.names")
+  cds_exprs <- merge(cds_exprs, colData(cds_subset), by.x = "Cell",
+                     by.y = "row.names")
+
+  if (label_by_short_name) {
+    if (!is.null(cds_exprs$gene_short_name)) {
+      cds_exprs$feature_label <- cds_exprs$gene_short_name
+      cds_exprs$feature_label[is.na(cds_exprs$feature_label)] <- cds_exprs$f_id
+    } else {
+      cds_exprs$feature_label <- cds_exprs$f_id
+    }
+  } else {
+    cds_exprs$feature_label <- cds_exprs$f_id
+  }
+
+  if (!is.null(panel_order)) {
+    cds_exprs$feature_label = factor(cds_exprs$feature_label,
+                                     levels = panel_order)
+  }
+
+  cds_exprs[,group_cells_by] <- as.factor(cds_exprs[,group_cells_by])
+
+  #
+  # For log-scaled plots, Drop cells with zero counts.
+  if(log_scale) {
+    cds_exprs <- cds_exprs[cds_exprs[['expression']] > 0,]
+  }
+
+  q <- ggplot(data=cds_exprs, aes(x = .data[[group_cells_by]], y = .data[['expression']])) +
+       monocle_theme_opts()
+  q <- q + facet_wrap(~feature_label, nrow = nrow, ncol = ncol, scales = "free_y")
+
+  q <- q + ggdist::stat_histinterval(mapping=aes(x=.data[[group_cells_by]], y=.data[['expression']]),
+                                     breaks=ggdist::breaks_fixed(width=.05),
+                                     linewidth=20,
+                                     color='blue',
+                                     alpha=0.1,
+                                     size=1,
+                                     normalize='groups',
+                                     point_interval = 'median_qi',
+                                     point_alpha=1.0,
+                                     outline_bars=TRUE,
+                                     slab_color='black', 
+                                     slab_linewidth=0.1,
+                                     slab_fill='green',
+                                     slab_alpha=0.3)
+
+  q <- q + ggforce::geom_sina(maxwidth = .6,
+                              scale = "count",
+                              size = 0.2,
+                              alpha = 0.3,
+                              seed = 0,
+                              color='red',
+                              position='dodge')
+
   if (min_expr < 1) {
     q <- q + expand_limits(y = c(min_expr, 1))
   }

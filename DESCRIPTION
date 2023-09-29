@@ -1,7 +1,7 @@
 Package: monocle3
 Title: Clustering, Differential Expression, and Trajectory Analysis for
     Single-Cell RNA-Seq
-Version: 1.4.4
+Version: 1.4.5
 Authors@R: c(
     person(given = "Hannah",
            family = "Pliner",
@@ -64,6 +64,8 @@ Imports:
     digest (>= 0.6.28),
     dplyr (>= 0.8.0.1),
     future (>= 1.23.0),
+    ggdist (>= 3.3.0),
+    ggforce (>= 0.4.1),
     ggplot2 (>= 3.1.1),
     ggrastr,
     ggrepel (>= 0.8.1),
