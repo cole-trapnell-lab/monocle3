@@ -53,6 +53,20 @@ get_global_variable <- function(variable_name=NULL) {
 # functions to access them.
 ._._global_variable_env_._. <- new.env(parent=emptyenv())
 
+
+#
+# Try to clean up any temporary matrix files and directories on exiting.
+#
+._._gc_matrix_object_remove_._. <- function(env) {
+  matrix_path_list <- get_global_variable('monocle_gc_matrix_path')
+  for(matrix_path in matrix_path_list) {
+    if(file.exists(matrix_path) || dir.exists(matrix_path)) {
+      unlink(matrix_path, recursive=TRUE)
+    }
+  }
+}
+
+
 # Define some global variables.
 .onLoad <- function(libname, pkgname) {
   # A value used to ensure that this is the Monocle3
@@ -123,19 +137,10 @@ get_global_variable <- function(variable_name=NULL) {
 
   # for travis
   Sys.setenv('TESTTHAT_MAX_FAILS' = Inf)
-}
 
-#
-# Try to clean up any temporary matrix files and directories on exiting.
-#
-._._gc_matrix_object_remove_._. <- function(env) {
-  matrix_path_list <- get_global_variable('monocle_gc_matrix_path')
-  for(matrix_path in matrix_path_list) {
-    if(file.exists(matrix_path) || dir.exists(matrix_path)) {
-      unlink(matrix_path, recursive=TRUE)
-    }
-  }
+  # Initialize 'finalizer' to clean up BPCells matrix directory
+  # on close of session when the global environment, .GlobalEnv,
+  # loses its last reference.
+  reg.finalizer(.GlobalEnv, ._._gc_matrix_object_remove_._., onexit=TRUE)
 }
-
-reg.finalizer(._._global_variable_env_._., ._._gc_matrix_object_remove_._., onexit=TRUE)
 
