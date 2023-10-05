@@ -1527,9 +1527,13 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
   for(reduction_method in names(cds@reduce_dim_aux)) {
     methods_reduce_dim[[reduction_method]] <- list()
 
+    # These are the nn search indices make when build_nn_index=TRUE.
+    # These names are confusing...
     methods_reduce_dim[[reduction_method]][['annoy_index_path']] <- paste0('rdd_', tolower(reduction_method), '_transform_model_annoy.idx')
     methods_reduce_dim[[reduction_method]][['hnsw_index_path']] <- paste0('rdd_', tolower(reduction_method), '_transform_model_hnsw.idx')
 
+    # This is the annoy index used internally by UMAP.
+    # These names are confusing...
     if(reduction_method == 'UMAP') {
       if(has_nn_index(cds, 'umap_model_annoy')) {
         methods_reduce_dim[[reduction_method]][['has_model_index']] <- TRUE
@@ -1548,7 +1552,6 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
       methods_reduce_dim[[reduction_method]][['has_hnsw_index']] <- TRUE
     else
       methods_reduce_dim[[reduction_method]][['has_hnsw_index']] <- FALSE
-
   }
 
   # Make directory if necessary.
