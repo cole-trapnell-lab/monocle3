@@ -964,6 +964,93 @@ report_files_saved <- function(file_index) {
 }
 
 
+check_monocle_object_files <- function( directory_path, file_index, read_test=FALSE, verbose=FALSE ) {
+
+  if(read_test == TRUE) {
+    message('Info: check_monocle_object_files: read_test is not implemented yet.')
+  }
+
+  message('Info: checking for monocle object files...')
+
+  error_list <- list()
+
+  for(ifile in seq_along(file_index[['files']][['cds_object']])) {
+    file_path <- file.path(directory_path, file_index[['files']][['file_path']][[ifile]])
+    file_format <- file_index[['files']][['file_format']][[ifile]]
+    cds_object <- file_index[['files']][['cds_object']][[ifile]]
+    reduction_method <- file_index[['files']][['reduction_method']][[ifile]]
+    md5sum <- file_index[['files']][['file_md5sum']][[ifile]]
+
+    message('  check for ', file_path)
+
+    if(cds_object == 'cds') {
+      if(file_format == 'rds') {
+        if(!file.exists(file_path)) {
+          error_list[[length(error_list)+1]] <- paste0('missing file: ', file_path)
+        }
+      }
+      else
+      if(file_format == 'hdf5') {
+        if(!file.exists(file_path)) {
+          error_list[[length(error_list)+1]] <- paste0('missing file: ', file_path)
+        }
+      }
+      else {
+        stop('Unrecognized cds format value \'', file_format, '\'')
+      }
+    }
+    else
+    if(cds_object == 'reduce_dim_aux') {
+      if(file_format == 'rds') {
+        if(!file.exists(file_path)) {
+          error_list[[length(error_list)+1]] <- paste0('missing file: ', file_path)
+        }
+      }
+      else
+      if(file_format == 'annoy_index') {
+        if(!file.exists(file_path)) {
+          error_list[[length(error_list)+1]] <- paste0('missing file: ', file_path)
+        }
+      }
+      else
+      if(file_format == 'hnsw_index') {
+        if(!file.exists(file_path)) {
+          error_list[[length(error_list)+1]] <- paste0('missing file: ', file_path)
+        }
+      }
+      else
+      if(reduction_method == 'UMAP' && file_format == 'umap_annoy_index') {
+        if(!file.exists(file_path)) {
+          error_list[[length(error_list)+1]] <- paste0('missing file: ', file_path)
+        }
+      }
+      else {
+        stop('Unrecognized file format value \'', file_format, '\'')
+      }
+    }
+    else
+    if(cds_object == 'bpcells_matrix_dir') {
+      if(!dir.exists(file_path)) {
+        error_list[[length(error_list)+1]] <- paste0('missing directory: ', file_path)
+      }
+    }
+    else {
+      stop('Unrecognized cds_object value \'', cds_object, '\'')
+    }
+  }
+  if(length(error_list) > 0) {
+    message('Error: check_monocle_object_files: ')
+    message(paste0('  ', error_list, collapse='\n'))
+    return(-1)
+  }
+  else {
+    message('Info: all expected monocle object files exist.')
+  }
+
+  return(0)
+}
+
+
 #
 #' Save cell_data_set transform models.
 #'
@@ -1190,6 +1277,13 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
 
   if(verbose) {
     report_files_saved(file_index)
+  }
+
+  #
+  # Check for saved files.
+  #
+  if(check_monocle_object_files( directory_path, file_index, read_test=FALSE, verbose=verbose ) == -1) {
+    stop('Error: save_transform_models: error detected: please check that you have enough free disk space and retry')
   }
 }
 
@@ -1722,6 +1816,13 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
     report_files_saved(file_index)
   }
 
+  #
+  # Check for saved files.
+  #
+  if(check_monocle_object_files( directory_path, file_index, read_test=FALSE, verbose=verbose ) == -1) {
+    stop('Error: save_transform_models: error detected: please check that you have enough free disk space and retry')
+  }
+
   if(archive_control[['archive_type']] == 'tar') {
     if(archive_control[['archive_compression']] == 'gzip') {
       archive_name <- paste0(directory_path, '.tar.gz')
@@ -1747,7 +1848,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
               return(NULL)
       },
       finally={
-        message(paste0('save_monocle_objects made an archive file called \"', archive_name, '\"'))
+        message(paste0('Info: save_monocle_objects made an archive file called \"', archive_name, '\"'))
       }
     ) # tryCatch
   } # if(archive_control...
