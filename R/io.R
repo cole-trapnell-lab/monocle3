@@ -902,6 +902,7 @@ load_bpcells_matrix_dir <- function(file_name, md5sum, matrix_control=list()) {
 report_files_saved <- function(file_index) {
   appendLF <- TRUE
   files <- file_index[['files']]
+  message('Info: save_monocle_objects: saving monocle object files:')
   for( i in seq_along(files[['cds_object']])) {
     cds_object <- files[['cds_object']][[i]]
     reduction_method <- files[['reduction_method']][[i]]
@@ -981,17 +982,24 @@ check_monocle_object_files <- function( directory_path, file_index, read_test=FA
     reduction_method <- file_index[['files']][['reduction_method']][[ifile]]
     md5sum <- file_index[['files']][['file_md5sum']][[ifile]]
 
-    message('  check for ', file_path)
-
+    message('  ', file_path, '...', appendLF=FALSE)
     if(cds_object == 'cds') {
       if(file_format == 'rds') {
-        if(!file.exists(file_path)) {
+        if(file.exists(file_path)) {
+          message('OK')
+        }
+        else{
+          message(' *** file missing ***')
           error_list[[length(error_list)+1]] <- paste0('missing file: ', file_path)
         }
       }
       else
       if(file_format == 'hdf5') {
-        if(!file.exists(file_path)) {
+        if(file.exists(file_path)) {
+          message('OK')
+        }
+        else {
+          message(' *** file missing ***')
           error_list[[length(error_list)+1]] <- paste0('missing file: ', file_path)
         }
       }
@@ -1002,25 +1010,42 @@ check_monocle_object_files <- function( directory_path, file_index, read_test=FA
     else
     if(cds_object == 'reduce_dim_aux') {
       if(file_format == 'rds') {
-        if(!file.exists(file_path)) {
+        if(file.exists(file_path)) {
+          message('OK')
+        }
+        else {
+          message(' *** file missing ***')
           error_list[[length(error_list)+1]] <- paste0('missing file: ', file_path)
         }
       }
       else
       if(file_format == 'annoy_index') {
-        if(!file.exists(file_path)) {
+        if(file.exists(file_path)) {
+          message('OK')
+        }
+        else {
+          message(' *** file missing ***')
           error_list[[length(error_list)+1]] <- paste0('missing file: ', file_path)
         }
       }
       else
       if(file_format == 'hnsw_index') {
-        if(!file.exists(file_path)) {
+        if(file.exists(file_path)) {
+          message('OK')
+        }
+        else
+        {
+          message(' *** file missing ***')
           error_list[[length(error_list)+1]] <- paste0('missing file: ', file_path)
         }
       }
       else
       if(reduction_method == 'UMAP' && file_format == 'umap_annoy_index') {
-        if(!file.exists(file_path)) {
+        if(file.exists(file_path)) {
+          message('OK')
+        }
+        else {
+          message(' *** file missing ***')
           error_list[[length(error_list)+1]] <- paste0('missing file: ', file_path)
         }
       }
@@ -1030,7 +1055,11 @@ check_monocle_object_files <- function( directory_path, file_index, read_test=FA
     }
     else
     if(cds_object == 'bpcells_matrix_dir') {
-      if(!dir.exists(file_path)) {
+      if(dir.exists(file_path)) {
+        message('OK')
+      }
+      else {
+          message(' *** directory missing ***')
         error_list[[length(error_list)+1]] <- paste0('missing directory: ', file_path)
       }
     }
@@ -1283,7 +1312,7 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
   # Check for saved files.
   #
   if(check_monocle_object_files( directory_path, file_index, read_test=FALSE, verbose=verbose ) == -1) {
-    stop('Error: save_transform_models: error detected: please check that you have enough free disk space and retry')
+    stop(paste0('Error: save_transform_models: error detected: check that you have enough free\n         disk space and try running save_monocle_objects again.'))
   }
 }
 
@@ -1820,7 +1849,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
   # Check for saved files.
   #
   if(check_monocle_object_files( directory_path, file_index, read_test=FALSE, verbose=verbose ) == -1) {
-    stop('Error: save_transform_models: error detected: please check that you have enough free disk space and retry')
+    stop(paste0('Error: save_transform_models: error detected: check that you have enough free\n         disk space and try running save_monocle_objects again.'))
   }
 
   if(archive_control[['archive_type']] == 'tar') {
@@ -1848,7 +1877,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
               return(NULL)
       },
       finally={
-        message(paste0('Info: save_monocle_objects made an archive file called \"', archive_name, '\"'))
+        message(paste0('Info: save_monocle_objects: made archive file \"', archive_name, '\"'))
       }
     ) # tryCatch
   } # if(archive_control...
