@@ -4,7 +4,13 @@
 \alias{save_transform_models}
 \title{Save cell_data_set transform models.}
 \usage{
-save_transform_models(cds, directory_path, comment = "", verbose = TRUE)
+save_transform_models(
+  cds,
+  directory_path,
+  comment = "",
+  verbose = TRUE,
+  archive_control = list(archive_type = "tar", archive_compression = "none")
+)
 }
 \arguments{
 \item{cds}{a cell_data_set with existing models.}

@@ -897,6 +897,18 @@ load_bpcells_matrix_dir <- function(file_name, md5sum, matrix_control=list()) {
 
 
 #
+# Error message for file/directory writes in save_monocle_objects() and save_transform_models().
+#
+stop_condition_message <- function(func=c('save_monocle_objects', 'save_transform_models'), path, write_type=c('file', 'directory'), cond) {
+  func <- match.arg(func)
+  write_type <- match.arg(write_type)
+
+  string <- paste0(func, ' failed: unable to write ', write_type, ' \'', path, '\'\nReported condition: ', cond, '*** Perhaps check available disk space and re-run ', func, '() ***')
+  return(string)
+}
+
+
+#
 # Report files saved.
 #
 report_files_saved <- function(file_index) {
@@ -960,7 +972,7 @@ report_files_saved <- function(file_index) {
     }
 
     file_name <- basename(files[['file_path']][[i]])
-    message('  ', file_name, '  (', reduction_method, '  ', file_type, '  from  ', process, ')', appendLF=appendLF)
+    message('  ', file_name, '  (', reduction_method, ':  ', file_type, ' from ', process, ')', appendLF=appendLF)
   }
 }
 
@@ -1130,8 +1142,15 @@ check_monocle_object_files <- function( directory_path, file_index, read_test=FA
 #' @export
 # Bioconductor forbids writing to user directories so examples
 # is not run.
-save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE) {
-  appendLF <- TRUE
+save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE, archive_control=list(archive_type="tar", archive_compression="none")) {
+  if(is.null(archive_control[['archive_type']])) archive_control[['archive_type']] <- 'tar'
+  if(is.null(archive_control[['archive_compression']])) archive_control[['archive_compression']] <- 'none'
+
+  assertthat::assert_that(archive_control[['archive_type']] %in% c('tar', 'none'),
+    msg=paste0("archive_type must be either \'none\' or \'tar\'"))
+  assertthat::assert_that(archive_control[['archive_compression']] %in% c('gzip', 'bzip2', 'xz', 'none'),
+    msg=paste0("archive_compression must be \'none\', \'gzip\', \'bzip2\', or \'xz\'."))
+
   # file information is written to an RDS file
   # in directory_path
   #   cds_object: reduce_dim_aux
@@ -1217,16 +1236,16 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
   #      order to enable loading.
   #
   for(reduction_method in names(methods_reduce_dim)) {
+    file_path <- file.path(directory_path, methods_reduce_dim[[reduction_method]][['rds_path']])
     tryCatch(
       {
-        base::saveRDS(cds@reduce_dim_aux[[reduction_method]], file=file.path(directory_path, methods_reduce_dim[[reduction_method]][['rds_path']]))
+        base::saveRDS(cds@reduce_dim_aux[[reduction_method]], file=file_path)
       },
       error = function(cond) {
-                     message('problem writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['rds_path']]), '\': ', cond, appendLF=appendLF)
-                     return(NULL)
+        stop(stop_condition_message('save_transform_models', file_path, write_type='file', cond), call.=FALSE)
       },
       finally = {
-        md5sum <- tools::md5sum(file.path(directory_path, methods_reduce_dim[[reduction_method]][['rds_path']]))
+        md5sum <- tools::md5sum(file_path)
         file_index[['files']] <- rbind(file_index[['files']],
                                        data.frame(cds_object = 'reduce_dim_aux',
                                                   reduction_method = reduction_method,
@@ -1237,16 +1256,16 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
                                                   stringsAsFactors = FALSE))
     })
     if(methods_reduce_dim[[reduction_method]][['has_annoy_index']]) {
+      file_path <- file.path(directory_path, methods_reduce_dim[[reduction_method]][['annoy_index_path']])
       tryCatch(
         {
-          save_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']], file.path(directory_path, methods_reduce_dim[[reduction_method]][['annoy_index_path']]))
+          save_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']], file_path)
         },
         error = function(cond) {
-                       message('problem writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['annoy_index_path']]), '\': ', cond, appendLF=appendLF)
-                       return(NULL)
+          stop(stop_condition_message('save_transform_models', file_path, write_type='file', cond), call.=FALSE)
         },
         finally = {
-          md5sum <- tools::md5sum(file.path(directory_path, methods_reduce_dim[[reduction_method]][['annoy_index_path']]))
+          md5sum <- tools::md5sum(file_path)
           file_index[['files']] <- rbind(file_index[['files']],
                                          data.frame(cds_object = 'reduce_dim_aux',
                                                     reduction_method = reduction_method,
@@ -1259,16 +1278,16 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
     }
 
     if(methods_reduce_dim[[reduction_method]][['has_hnsw_index']]) {
+      file_path <- file.path(directory_path, methods_reduce_dim[[reduction_method]][['hnsw_index_path']])
       tryCatch(
         {
-          save_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']], file.path(directory_path, methods_reduce_dim[[reduction_method]][['hnsw_index_path']]))
+          save_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']], file_path)
         },
         error = function(cond) {
-                       message('problem writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['hnsw_index_path']]), '\': ', cond, appendLF=appendLF)
-                       return(NULL)
+          stop(stop_condition_message('save_transform_models', file_path, write_type='file', cond), call.=FALSE)
         },
         finally = {
-          md5sum <- tools::md5sum(file.path(directory_path, methods_reduce_dim[[reduction_method]][['hnsw_index_path']]))
+          md5sum <- tools::md5sum(file_path)
           file_index[['files']] <- rbind(file_index[['files']],
                                          data.frame(cds_object = 'reduce_dim_aux',
                                                     reduction_method = reduction_method,
@@ -1280,13 +1299,13 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
         })
     }
     if(reduction_method == 'UMAP' && methods_reduce_dim[[reduction_method]][['has_model_index']]) {
+      file_path <- file.path(directory_path, methods_reduce_dim[[reduction_method]][['umap_index_path']])
       tryCatch(
         {
-          md5sum <- save_umap_nn_indexes(cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']], file.path(directory_path, methods_reduce_dim[[reduction_method]][['umap_index_path']]))
+          md5sum <- save_umap_nn_indexes(cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']], file_path)
         },
         error = function(cond) {
-                       message('problem writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['umap_index_path']]), '\': ', cond, appendLF=appendLF)
-                       return(NULL)
+          stop(stop_condition_message('save_transform_models', file_path, write_type='file', cond), call.=FALSE)
         },
         finally = {
           file_index[['files']] <- rbind(file_index[['files']],
@@ -1312,8 +1331,38 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
   # Check for saved files.
   #
   if(check_monocle_object_files( directory_path, file_index, read_test=FALSE, verbose=verbose ) == -1) {
-    stop(paste0('Error: save_transform_models: error detected: check that you have enough free\n         disk space and try running save_monocle_objects again.'))
+    stop(paste0('save_transform_models: check that you have enough free disk space and\ntry running save_transform_models again.'))
   }
+
+  # Make a tar file of output directory, if requested.
+  if(archive_control[['archive_type']] == 'tar') {
+    if(archive_control[['archive_compression']] == 'gzip') {
+      archive_name <- paste0(directory_path, '.tar.gz')
+    }
+    else
+    if(archive_control[['archive_compression']] == 'bzip2') {
+      archive_name <- paste0(directory_path, '.tar.bz2')
+    }
+    else
+    if(archive_control[['archive_compression']] == 'xz') {
+      archive_name <- paste0(directory_path, '.tar.xz')
+    }
+    else {
+      archive_name <- paste0(directory_path, '.tar')
+    }
+    tryCatch({
+      tar(tarfile=archive_name,
+          files=directory_path,
+          compression=archive_control[['archive_compression']])
+      },
+      error=function(cond) {
+        stop('save_transform_models: unable to write the archive file \'', archive_name, '\': ', cond, call.=FALSE)
+      },
+      finally={
+        message(paste0('Info: save_transform_models: made archive file \"', archive_name, '\"'))
+      }
+    ) # tryCatch
+  } # if(archive_control...
 }
 
 
@@ -1333,10 +1382,13 @@ copy_reduce_dim_aux <- function(cds_dst, cds_src) {
 
 #' Load transform models into a cell_data_set.
 #'
-#' Load transform models, which were saved using save_transform_models,
-#' into a cell_data_set. This function over-writes existing models in
-#' the cell_data_set. For more information read the help information
-#' for save_transform_models.
+#' Load transform models into a cell_data_set where the transform
+#' models directory was made using either save_transform_models
+#' or save_monocle_objects. This function over-writes existing
+#' models in the cell_data_set. For more information read the
+#' help information for save_transform_models. Note that
+#' load_transform_models cannot load from a cds saved as an HDF5
+#' file by save_monocle_objects.
 #'
 #' @param cds a cell_data_set to be transformed using the models.
 #' @param directory_path a string giving the name of the directory
@@ -1382,8 +1434,9 @@ load_transform_models <- function(cds, directory_path) {
   )
 
   # Check that this is a save_transform_models archive.
-  if(file_index[['save_function']] != 'save_transform_models' && file_index[['save_function']] != 'save_monocle_objects') {
-    stop('The files in ', directory_path, ' are not from save_transform_models or save_monocle_objects.')
+  save_function <- file_index[['save_function']]
+  if(save_function != 'save_transform_models' && save_function != 'save_monocle_objects') {
+    stop('The files in ', directory_path, ' are not from either save_transform_models or save_monocle_objects.')
   }
 
   # Write stored comment field.
@@ -1399,6 +1452,11 @@ load_transform_models <- function(cds, directory_path) {
     cds_object <- file_index[['files']][['cds_object']][[ifile]]
     reduction_method <- file_index[['files']][['reduction_method']][[ifile]]
     md5sum <- file_index[['files']][['file_md5sum']][[ifile]]
+
+    # Don't try to load BPCells matrix.
+    if(save_function == 'save_monocle_objects' && cds_object == 'bpcells_matrix_dir') {
+      next
+    }
 
     if(!file.exists(file_path))
       stop('load_transform_models: missing file \'', file_path, '\'')
@@ -1437,9 +1495,12 @@ load_transform_models <- function(cds, directory_path) {
         cds <- copy_reduce_dim_aux(cds, cds_tmp)
         rm(cds_tmp)
       }
+      else
+      if(file_format == 'hdf5') {
+        stop('loading transform models from an HDF5 file is not supported')
+      }
     }
     else
-
     if(cds_object == 'reduce_dim_aux') {
       if(file_format == 'rds') {
         cds@reduce_dim_aux[[reduction_method]] <- tryCatch(
@@ -1574,8 +1635,14 @@ test_hdf5_assays <- function(cds) {
 #'   }
 #'
 #' @export
+#
 # Bioconductor forbids writing to user directories so examples
 # is not run.
+#
+# *** Warning: watch for changes to save_monocle_objects() that may ***
+# *** break load_transform_models() because load_transform_models() ***
+# *** can read a save_monocle_objects() output directory.           ***
+#
 save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment="", verbose=TRUE, archive_control=list(archive_type="tar", archive_compression="none")) {
 
   if(is.null(archive_control[['archive_type']])) archive_control[['archive_type']] <- 'tar'
@@ -1585,9 +1652,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
     msg=paste0("archive_type must be either \'none\' or \'tar\'"))
   assertthat::assert_that(archive_control[['archive_compression']] %in% c('gzip', 'bzip2', 'xz', 'none'),
     msg=paste0("archive_compression must be \'none\', \'gzip\', \'bzip2\', or \'xz\'."))
-  assertthat::assert_that(archive_control[['archive_compression']] %in% c('gzip', 'bzip2', 'xz', 'none'))
 
-  appendLF <- TRUE
   # file information is written to an RDS file
   # in directory_path
   #   cds_object: cds | reduce_dim_aux
@@ -1636,7 +1701,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
       bpcells_matrix_dir_flag <- TRUE
     }
     else {
-      message('save_monocle_objects: warning: the CDS has a BPCells count matrix but\nbut the BPCells count matrix directory is missing, which will likely\ncause problems in the future.\nI\'m continuing without it.')
+      message('Warning: save_monocle_objects: the CDS has a BPCells count matrix but\nthe BPCells count matrix directory is missing, which will likely\ncause problems for anyone using this file in the future.\nI\'m continuing without it.')
     }
   }
 
@@ -1711,16 +1776,16 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
   #   o  allow for HDF5Array assay objects.
   #
   if(!hdf5_assay_flag) {
+    file_path <- file.path(directory_path, rds_path)
     tryCatch(
       {
-        base::saveRDS(cds, file.path(directory_path, rds_path))
+        base::saveRDS(cds, file_path)
       },
       error = function(cond) {
-                       message('problem writing file \'', file.path(directory_path, rds_path), '\': ', cond, appendLF=appendLF)
-                       return(NULL)
+        stop(stop_condition_message('save_monocle_objects', file_path, write_type='file', cond), call.=FALSE)
       },
       finally = {
-        md5sum <- tools::md5sum(file.path(directory_path, rds_path))
+        md5sum <- tools::md5sum(file_path)
         file_index[['files']] <- rbind(file_index[['files']],
                                        data.frame(cds_object = 'cds',
                                                   reduction_method = NA,
@@ -1729,12 +1794,21 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
                                                   file_path = rds_path,
                                                   file_md5sum = md5sum,
                                                   stringsAsFactors = FALSE))
-        # Save BCells MatrixDir, if required.
-        if(bpcells_matrix_dir_flag) {
-          bpcells_matrix_path <- file.path(directory_path, bpcells_matrix_dir)
-          mat <- counts(cds)
-          BPCells::write_matrix_dir(mat=mat, dir=bpcells_matrix_path, compress=FALSE, buffer_size=8192L, overwrite=FALSE)
+      })
 
+
+    # Save BPCells MatrixDir, if required.
+    if(bpcells_matrix_dir_flag) {
+      bpcells_matrix_path <- file.path(directory_path, bpcells_matrix_dir)
+      mat <- counts(cds)
+      tryCatch(
+        {
+          BPCells::write_matrix_dir(mat=mat, dir=bpcells_matrix_path, compress=FALSE, buffer_size=8192L, overwrite=FALSE)
+        },
+        error = function(cond) {
+          stop(stop_condition_message('save_monocle_objects', bpcells_matrix_path, write_type='directory', cond), call.=FALSE)
+        },
+        finally = {
           file_index[['files']] <- rbind(file_index[['files']],
                                          data.frame(cds_object = 'bpcells_matrix_dir',
                                                     reduction_method = NA,
@@ -1743,17 +1817,20 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
                                                     file_path = bpcells_matrix_dir,
                                                     file_md5sum = NA,
                                                     stringsAsFactors = FALSE))
-        }
-      })
+        })
+    }
   }
   else {
+    if(bpcells_matrix_dir_flag) {
+      stop('save_monocle_objects: a BPCells count matrix cannot be saved as an HDF5 file.', call.=FALSE)
+    }
+    file_path <- file.path(directory_path, hdf5_path)
     tryCatch(
       {
-        HDF5Array::saveHDF5SummarizedExperiment(cds, file.path(directory_path, hdf5_path), replace=TRUE)
+        HDF5Array::saveHDF5SummarizedExperiment(cds, file_path, replace=TRUE)
       },
       error = function(cond) {
-                       message('problem writing file \'', file.path(directory_path, hdf5_path), '\': ', cond, appendLF=appendLF)
-                       return(NULL)
+        stop(stop_condition_message('save_monocle_objects', file_path, write_type='file', cond), call.=FALSE)
       },
       finally = {
         md5sum <- tools::md5sum(file.path(directory_path, hdf5_path, 'se.rds'))
@@ -1775,16 +1852,16 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
   #
   for(reduction_method in names(methods_reduce_dim)) {
     if(methods_reduce_dim[[reduction_method]][['has_annoy_index']]) {
+      file_path <- file.path(directory_path, methods_reduce_dim[[reduction_method]][['annoy_index_path']])
       tryCatch(
         {
-          save_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']], file.path(directory_path, methods_reduce_dim[[reduction_method]][['annoy_index_path']]))
+          save_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']], file_path)
         },
         error = function(cond) {
-                       message('problem writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['annoy_index_path']]), '\': ', cond, appendLF=appendLF)
-                       return(NULL)
+          stop(stop_condition_message('save_monocle_objects', file_path, write_type='file', cond), call.=FALSE)
         },
         finally = {
-          md5sum <- tools::md5sum(file.path(directory_path, methods_reduce_dim[[reduction_method]][['annoy_index_path']]))
+          md5sum <- tools::md5sum(file_path)
           file_index[['files']] <- rbind(file_index[['files']],
                                          data.frame(cds_object = 'reduce_dim_aux',
                                                     reduction_method = reduction_method,
@@ -1796,16 +1873,16 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
         })
     }
     if(methods_reduce_dim[[reduction_method]][['has_hnsw_index']]) {
+      file_path <- file.path(directory_path, methods_reduce_dim[[reduction_method]][['hnsw_index_path']])
       tryCatch(
         {
-          save_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']], file.path(directory_path, methods_reduce_dim[[reduction_method]][['hnsw_index_path']]))
+          save_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']], file_path)
         },
         error = function(cond) {
-                       message('problem writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['hswn_index_path']]), '\': ', cond, appendLF=appendLF)
-                       return(NULL)
+          stop(stop_condition_message('save_monocle_objects', file_path, write_type='file', cond), call.=FALSE)
         },
         finally = {
-          md5sum <- tools::md5sum(file.path(directory_path, methods_reduce_dim[[reduction_method]][['hnsw_index_path']]))
+          md5sum <- tools::md5sum(file_path)
           file_index[['files']] <- rbind(file_index[['files']],
                                          data.frame(cds_object = 'reduce_dim_aux',
                                                     reduction_method = reduction_method,
@@ -1817,13 +1894,13 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
         })
     }
     if(reduction_method == 'UMAP' && methods_reduce_dim[[reduction_method]][['has_model_index']]) {
+      file_path <- file.path(directory_path, methods_reduce_dim[[reduction_method]][['umap_index_path']])
       tryCatch(
         {
-          md5sum <- save_umap_nn_indexes(cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']], file.path(directory_path, methods_reduce_dim[[reduction_method]][['umap_index_path']]))
+          md5sum <- save_umap_nn_indexes(cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']], file_path)
         },
         error = function(cond) {
-                       message('problem writing file \'', file.path(directory_path, methods_reduce_dim[[reduction_method]][['umap_index_path']]), '\': ', cond, appendLF=appendLF)
-                       return(NULL)
+          stop(stop_condition_message('save_monocle_objects', file_path, write_type='file', cond), call.=FALSE)
         },
         finally = {
           file_index[['files']] <- rbind(file_index[['files']],
@@ -1849,9 +1926,10 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
   # Check for saved files.
   #
   if(check_monocle_object_files( directory_path, file_index, read_test=FALSE, verbose=verbose ) == -1) {
-    stop(paste0('Error: save_transform_models: error detected: check that you have enough free\n         disk space and try running save_monocle_objects again.'))
+    stop(paste0('save_monocle_objects: check that you have enough free disk space and\ntry running save_monocle_objects again.'), call.=FALSE)
   }
 
+  # Make a tar file of output directory, if requested.
   if(archive_control[['archive_type']] == 'tar') {
     if(archive_control[['archive_compression']] == 'gzip') {
       archive_name <- paste0(directory_path, '.tar.gz')
@@ -1873,8 +1951,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
           compression=archive_control[['archive_compression']])
       },
       error=function(cond) {
-              message('problem writing the archive file \'', archive_name, '\': ', cond, appendLF=appendLR)
-              return(NULL)
+        stop('save_monocle_objects: unable to write the archive file \'', archive_name, '\': ', cond, call.=FALSE)
       },
       finally={
         message(paste0('Info: save_monocle_objects: made archive file \"', archive_name, '\"'))
