@@ -815,7 +815,7 @@ load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
 }
 
 
-# Save umap annoy indexes to files and return md5sum
+# Save umap annoy indices to files and return md5sum
 # value(s) as either a character string, in case of
 # one metric, or a list, in case of more than one matric.
 save_umap_nn_indexes <- function(umap_model, file_name) {
@@ -843,7 +843,7 @@ save_umap_nn_indexes <- function(umap_model, file_name) {
 }
 
 
-# Load umap annoy indexes into umap_model and return umap_model.
+# Load umap annoy indices into umap_model and return umap_model.
 load_umap_nn_indexes <- function(umap_model, file_name, md5sum_umap_index) {
   metrics <- names(umap_model[['metric']])
   n_metrics <- length(metrics)
@@ -1097,7 +1097,7 @@ check_monocle_object_files <- function( directory_path, file_index, read_test=FA
 #'
 #' Save the transform models in the cell_data_set to the
 #' specified directory by writing the R objects to RDS
-#' files and the nearest neighbor indexes to
+#' files and the nearest neighbor indices to
 #' index files. save_transform_models saves transform
 #' models made by running the preprocess_cds and
 #' reduce_dimension functions on an initial cell_data_set.
@@ -1107,19 +1107,19 @@ check_monocle_object_files <- function( directory_path, file_index, read_test=FA
 #' the initial data set transform models into the new
 #' cell_data_set using the load_transform_models function,
 #' and applying those transform models to the new data set
-#' using the preprocess_transform and
-#' reduce_dimension_transform functions. In this case, do
-#' not run the preprocess_cds or reduce_dimension
+#' using the preprocess_transform() and
+#' reduce_dimension_transform() functions. In this case, do
+#' not run the preprocess_cds() or reduce_dimension()
 #' functions on the new cell_data_set. Additionally,
-#' save_transform_models saves nearest neighbor indexes
-#' when the preprocess_cds and reduce_dimension
+#' save_transform_models() saves nearest neighbor indices
+#' when the preprocess_cds() and reduce_dimension()
 #' functions are run with the make_nn_index=TRUE parameter.
-#' These indexes are used to find matches between cells in
+#' These indices are used to find matches between cells in
 #' the new processed cell_data_set and the initial
 #' cell_data_set using index search functions. For more
-#' information see the help for transfer_cell_labels.
-#' save_transform_models saves the models to a directory
-#' given by directory_path.
+#' information see the help for transfer_cell_labels().
+#' save_transform_models() saves the models to a directory
+#' given by the directory_path parameter.
 #'
 #' @param cds a cell_data_set with existing models.
 #' @param directory_path a string giving the name of the directory
@@ -1230,7 +1230,7 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
     }
   }
 
-  # Save reduce_dimension annoy indexes.
+  # Save reduce_dimension annoy indices.
   # Notes:
   #   o  save RDS files before the corresponding index files in
   #      order to enable loading.
@@ -1383,12 +1383,11 @@ copy_reduce_dim_aux <- function(cds_dst, cds_src) {
 #' Load transform models into a cell_data_set.
 #'
 #' Load transform models into a cell_data_set where the transform
-#' models directory was made using either save_transform_models
-#' or save_monocle_objects. This function over-writes existing
-#' models in the cell_data_set. For more information read the
-#' help information for save_transform_models. Note that
-#' load_transform_models cannot load from a cds saved as an HDF5
-#' file by save_monocle_objects.
+#' models directory was made using either save_transform_models()
+#' or save_monocle_objects(). This function over-writes existing
+#' models in the cell_data_set. For more information see the
+#' help information for save_transform_models() and
+#' save_monocle_objects().
 #'
 #' @param cds a cell_data_set to be transformed using the models.
 #' @param directory_path a string giving the name of the directory
@@ -1397,7 +1396,7 @@ copy_reduce_dim_aux <- function(cds_dst, cds_src) {
 #'   save_monocle_objects().
 #'
 #' @return a cell_data_set with the transform models loaded by
-#'   load_transform_models.
+#'   load_transform_models().
 #'
 #' @examples
 #'   \dontrun{
@@ -1586,19 +1585,12 @@ test_hdf5_assays <- function(cds) {
 #' Save a Monocle3 full cell_data_set.
 #'
 #' Save a Monocle3 full cell_data_set to a specified directory
-#' by writing the R objects to RDS files and the nearest
-#' neighbor indexes to index files. The assays
-#' objects are saved as HDF5Array files when hdf5_assays=TRUE
-#' or when the cell_data_set assays are HDF5Array objects. If
-#' any assay in the cell_data set is an HDF5 object, all assays
-#' must be. When save_monocle_objects is run with hdf5_assays=TRUE,
-#' the load_monocle_objects function loads the saved assays into
-#' HDF5Array objects in the resulting cell_data_set. Note:
-#' operations such as preprocess_cds that are run on assays stored
-#' as HDF5Arrays are much, much slower than the same operations
-#' run on assays stored as in-memory matrices. You may want to
-#' investigate parameters related to the Bioconductor DelayedArray
-#' and BiocParallel packages in this case.
+#' by writing the R objects to an RDS file, the nearest neighbor
+#' indices to index files, and a BPCells matrix directory when
+#' the counts matrix is stored in that format. This includes
+#' the Annoy nearest neighbor index that UMAP creates and is
+#' required for use with the reduce_dimension_transform()
+#' function.
 #'
 #' @param cds a cell_data_set to save.
 #' @param directory_path a string giving the name of the directory
@@ -1623,8 +1615,84 @@ test_hdf5_assays <- function(cds) {
 #'        values are "none", "gzip", "bzip2", and "xz". The
 #'        default is "none".}
 #'   }
-#'   Note: the output directory is not removed after it is
-#'         archived.
+#' @section Notes:
+#'   \itemize{
+#'       \item{You must use save_monocle_objects() to save your
+#'             cell_data_set if you use BPCells to store the
+#'             counts matrix. Warning: if you use saveRDS() to
+#'             save a cell_data_set with a BPCells counts matrix
+#'             you will lose the counts matrix.}
+#'       \item{You must use save_monocle_objects() to save your
+#'             cell_data_set if you will use the output
+#'             directory for projection and label transfer. Warning:
+#'             if you use saveRDS() to save the cell_data_set,
+#'             you will lose the essential nearest neighbor indices.
+#'             Note that you can use the save_transform_models()
+#'             function to save the transform models and indices
+#'             without saving the full cell_data_set but you must
+#'             do this when the indices exist in the cell_data_set.}
+#'       \item{See the help information for save_transform_models()
+#'             for additional information about transform models.}
+#'       \item{Do not modify the files in the save_monocle_objects()
+#'             output directory. save_monocle_objects() calculates
+#'             and saves a checksum value for each file written and
+#'             load_monocle_objects() uses the checksums to make sure
+#'             that the files haven't changed. (Monocle3 does not
+#'             calculate a checksum for a BPCells matrix directory
+#'             and its contents.)}
+#'       \item{The assays objects are saved as HDF5Array files when
+#'             hdf5_assays=TRUE or when the cell_data_set assays are
+#'             HDF5Array objects. If any assay in the cell_data set is
+#'             an HDF5 object, all assays must be. When
+#'             save_monocle_objects() is run with hdf5_assays=TRUE,
+#'             the load_monocle_objects() function loads the saved
+#'             assays into HDF5Array objects in the resulting
+#'             cell_data_set. Note that functions such as
+#'             preprocess_cds() that are run on assays stored as
+#'             HDF5Arrays are much, much slower than the same
+#'             functions run on assays stored as in-memory or
+#'             BPCells matrices. You may want to investigate
+#'             parameters related to the Bioconductor DelayedArray
+#'             and BiocParallel packages in this case.}
+#'       \item{You cannot use hdf5_assays=TRUE when a cell_data_set
+#'             has a BPCells counts matrix.}
+#'       \item{It's not clear that there is a reason to use
+#'              hdf5_assays=TRUE.}
+#'       \item{save_monocle_objects() stops when an internal file
+#'             write function returns an error. This includes functions
+#'             that save a BPCells directory and functions that save
+#'             nearest neighbor indices. If this happens, we urge you to
+#'             fix the problem and then re-run save_monocle_objects()
+#'             without exiting R, if possible. These errors can happen
+#'             if you have too little free disk space or you don't have
+#'             permission to write to the output directory location.}
+#'       \item{The counts matrix is stored as a BPCells matrix when the
+#'             user gives the parameter
+#'             matrix_control=list(matrix_class="BPCells") in Monocle3
+#'             functions such as load_mm_data() and load_mtx_data().
+#'             Also, a BPCells counts matrix can be stored directly in
+#'             the assays slot of a cell_data_set using BPCells
+#'             functions such as import_matrix_market() and
+#'             write_matrix_dir(). (In this case, the Monocle3
+#'             new_cell_data_set() function stores a row-major copy of
+#'             the counts matrix too, which is used in certain Monocle3
+#'             functions.) save_monocle_objects() saves this BPCells
+#'             count matrix.}
+#'       \item{The UMAP functions makes an Annoy nearest neighbor
+#'             index internally, which is used for a UMAP
+#'             projection by the Monocle3 function
+#'             reduce_dimension_transform(). save_monocle_objects()
+#'             saves this Annoy index.}
+#'       \item{The Monocle3 preprocess_cds() and reduce_dimension()
+#'             functions make Annoy nearest neighbor indices when
+#'             run with the parameter build_nn_index=TRUE. These
+#'             indices can be used for label transfer with the
+#'             Monocle3 transfer_cell_labels() function.
+#'             save_monocle_objects() saves these Annoy indices.}
+#'       \item{The save_monocle_objects() output directory is not
+#'             removed after it is archived by
+#'             save_monocle_objects().}
+#'   }
 #'
 #' @return none.
 #'
@@ -1705,12 +1773,17 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
     }
   }
 
+  # hdf5_assays=TRUE is incompatible with BPCells count matrices.
+  if(bpcells_matrix_dir_flag == TRUE && hdf5_assays == TRUE) {
+    stop('save_monocle_objects: hdf5 must be FALSE when the cell_data_set\ncounts matrix is stored using BPCells.')
+  }
+
   # Path of cds object file.
   rds_path <- 'cds_object.rds'
   hdf5_path <- 'hdf5_object'
   bpcells_matrix_dir <- 'bpcells_matrix_dir'
   
-  # Gather reduce_dimension reduction_method names for which indexes exist.
+  # Gather reduce_dimension reduction_method names for which indices exist.
   methods_reduce_dim <- list()
   for(reduction_method in names(cds@reduce_dim_aux)) {
     methods_reduce_dim[[reduction_method]] <- list()
@@ -1845,7 +1918,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
       })
   }
 
-  # Save reduce_dimension annoy indexes.
+  # Save reduce_dimension annoy indices.
   # Notes:
   #   o  save RDS files before the corresponding index files in
   #      order to enable loading.
@@ -1965,15 +2038,16 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
 #' Load a full Monocle3 cell_data_set.
 #'
 #' Load a full Monocle3 cell_data_set, which was saved using
-#' save_monocle_objects. For more information read the help
-#' information for save_monocle_objects.
+#' save_monocle_objects(). For more information read the help
+#' information for save_monocle_objects().
 #'
 #' @param directory_path a string giving the name of the directory
 #'   from which to read the saved cell_data_set files.
 #' @param matrix_control a list that is used only to set the
-#'   matrix path when the saved monocle objects has the counts matrix
-#'   stored as a BPCells on-disk matrix. By default, the BPCells matrix
-#'   directory path is set to the current working directory.
+#'   PBCells matrix path when the saved cell_data_set has the
+#'   counts matrix stored as a BPCells on-disk matrix. By default,
+#'   the BPCells matrix directory path is set to the current
+#'   working directory.
 #' @return a cell_data_set.
 #'
 #' @examples
