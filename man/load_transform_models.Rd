@@ -16,16 +16,15 @@ save_monocle_objects().}
 }
 \value{
 a cell_data_set with the transform models loaded by
-load_transform_models.
+load_transform_models().
 }
 \description{
 Load transform models into a cell_data_set where the transform
-models directory was made using either save_transform_models
-or save_monocle_objects. This function over-writes existing
-models in the cell_data_set. For more information read the
-help information for save_transform_models. Note that
-load_transform_models cannot load from a cds saved as an HDF5
-file by save_monocle_objects.
+models directory was made using either save_transform_models()
+or save_monocle_objects(). This function over-writes existing
+models in the cell_data_set. For more information see the
+help information for save_transform_models() and
+save_monocle_objects().
 }
 \examples{
   \dontrun{

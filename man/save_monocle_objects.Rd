@@ -41,29 +41,101 @@ archive_type is "none". The default is "tar".}
 compression applied to the archive file. The acceptable
 values are "none", "gzip", "bzip2", and "xz". The
 default is "none".}
-}
-Note: the output directory is not removed after it is
-archived.}
+}}
 }
 \value{
 none.
 }
 \description{
 Save a Monocle3 full cell_data_set to a specified directory
-by writing the R objects to RDS files and the nearest
-neighbor indexes to index files. The assays
-objects are saved as HDF5Array files when hdf5_assays=TRUE
-or when the cell_data_set assays are HDF5Array objects. If
-any assay in the cell_data set is an HDF5 object, all assays
-must be. When save_monocle_objects is run with hdf5_assays=TRUE,
-the load_monocle_objects function loads the saved assays into
-HDF5Array objects in the resulting cell_data_set. Note:
-operations such as preprocess_cds that are run on assays stored
-as HDF5Arrays are much, much slower than the same operations
-run on assays stored as in-memory matrices. You may want to
-investigate parameters related to the Bioconductor DelayedArray
-and BiocParallel packages in this case.
+by writing the R objects to an RDS file, the nearest neighbor
+indices to index files, and a BPCells matrix directory when
+the counts matrix is stored in that format. This includes
+the Annoy nearest neighbor index that UMAP creates and is
+required for use with the reduce_dimension_transform()
+function.
 }
+\section{Notes}{
+
+\itemize{
+\item{You must use save_monocle_objects() to save your
+cell_data_set if you use BPCells to store the
+counts matrix. Warning: if you use saveRDS() to
+save a cell_data_set with a BPCells counts matrix
+you will lose the counts matrix.}
+\item{You must use save_monocle_objects() to save your
+cell_data_set if you will use the output
+directory for projection and label transfer. Warning:
+if you use saveRDS() to save the cell_data_set,
+you will lose the essential nearest neighbor indices.
+Note that you can use the save_transform_models()
+function to save the transform models and indices
+without saving the full cell_data_set but you must
+do this when the indices exist in the cell_data_set.}
+\item{See the help information for save_transform_models()
+for additional information about transform models.}
+\item{Do not modify the files in the save_monocle_objects()
+output directory. save_monocle_objects() calculates
+and saves a checksum value for each file written and
+load_monocle_objects() uses the checksums to make sure
+that the files haven't changed. (Monocle3 does not
+calculate a checksum for a BPCells matrix directory
+and its contents.)}
+\item{The assays objects are saved as HDF5Array files when
+hdf5_assays=TRUE or when the cell_data_set assays are
+HDF5Array objects. If any assay in the cell_data set is
+an HDF5 object, all assays must be. When
+save_monocle_objects() is run with hdf5_assays=TRUE,
+the load_monocle_objects() function loads the saved
+assays into HDF5Array objects in the resulting
+cell_data_set. Note that functions such as
+preprocess_cds() that are run on assays stored as
+HDF5Arrays are much, much slower than the same
+functions run on assays stored as in-memory or
+BPCells matrices. You may want to investigate
+parameters related to the Bioconductor DelayedArray
+and BiocParallel packages in this case.}
+\item{You cannot use hdf5_assays=TRUE when a cell_data_set
+has a BPCells counts matrix.}
+\item{It's not clear that there is a reason to use
+hdf5_assays=TRUE.}
+\item{save_monocle_objects() stops when an internal file
+write function returns an error. This includes functions
+that save a BPCells directory and functions that save
+nearest neighbor indices. If this happens, we urge you to
+fix the problem and then re-run save_monocle_objects()
+without exiting R, if possible. These errors can happen
+if you have too little free disk space or you don't have
+permission to write to the output directory location.}
+\item{The counts matrix is stored as a BPCells matrix when the
+user gives the parameter
+matrix_control=list(matrix_class="BPCells") in Monocle3
+functions such as load_mm_data() and load_mtx_data().
+Also, a BPCells counts matrix can be stored directly in
+the assays slot of a cell_data_set using BPCells
+functions such as import_matrix_market() and
+write_matrix_dir(). (In this case, the Monocle3
+new_cell_data_set() function stores a row-major copy of
+the counts matrix too, which is used in certain Monocle3
+functions.) save_monocle_objects() saves this BPCells
+count matrix.}
+\item{The UMAP functions makes an Annoy nearest neighbor
+index internally, which is used for a UMAP
+projection by the Monocle3 function
+reduce_dimension_transform(). save_monocle_objects()
+saves this Annoy index.}
+\item{The Monocle3 preprocess_cds() and reduce_dimension()
+functions make Annoy nearest neighbor indices when
+run with the parameter build_nn_index=TRUE. These
+indices can be used for label transfer with the
+Monocle3 transfer_cell_labels() function.
+save_monocle_objects() saves these Annoy indices.}
+\item{The save_monocle_objects() output directory is not
+removed after it is archived by
+save_monocle_objects().}
+}
+}
+
 \examples{
   \dontrun{
     cds <- load_a549()

@@ -593,17 +593,23 @@ if (!isGeneric("saveRDS")) {setGeneric("saveRDS", function (object, file="", asc
 #' @export
 setMethod("saveRDS", signature(object="cell_data_set"),
     function(object, file="", ascii = FALSE, version = NULL, compress=TRUE, refhook = NULL) {
-      message('Warning:')
       if(is(counts(object), 'IterableMatrix')) {
-        message('  saveRDS(cds, ...) does not save the BPCells out-of-core CDS\
-  counts matrix that is in this cds, which will prevent you\
-  from using fully the cds after you read it with readRDS.')
+        message('Warning:')
+        message('  saveRDS(cds, ...) does not save the BPCells out-of-\
+  core CDS counts matrix that is in this cds, which will\
+  prevent you from using fully the cds after you read it\
+  with readRDS.')
       } # is IterableMatrix
+      message('Warning:')
       message('  saveRDS(cds, ...) does not save annoy or hnsw nearest\
-  neighbor indices, which you may need for future analyses.')
-      message('  We urge you to use the "save_monocle_objects()" function\
-   in order to save all of the information in the cds.')
-
+  neighbor indices, which you may need for future\
+  analyses.')
+  message()
+  message('We urge you to use the function\n\
+    save_monocle_objects()\n\
+  in order to save all of the information in the cds.\
+  See the notes in the save_monocle_objects() help\
+  documentation for additional information.')
       message('However, we are running base::saveRDS() as you requested.')
 
       base::saveRDS(object, file=file, ascii = ascii, version = version, compress=compress, refhook = refhook)
@@ -613,8 +619,8 @@ setMethod("saveRDS", signature(object="cell_data_set"),
 setMethod("saveRDS", signature(object="IterableMatrix"),
     function(object, file="", ascii = FALSE, version = NULL, compress=TRUE, refhook = NULL) {
         message('Warning: saveRDS() does not save the BPCells out-of-core\
-  matrix so you will be unable to read the matrix using\
-  readRDS.')
+  matrix so you will be unable to read the matrix back\
+  into R.')
 
       message('However, we are running base::saveRDS() as you requested.')
 
