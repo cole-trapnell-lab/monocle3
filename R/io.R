@@ -1092,6 +1092,41 @@ check_monocle_object_files <- function( directory_path, file_index, read_test=FA
 }
 
 
+# Make a tar file of an output directory.
+make_tar_of_dir <- function(func_name, directory_path, archive_control) {
+  message('Info: making a tar file of the output directory...')
+  # Make a tar file of output directory, if requested.
+  if(archive_control[['archive_compression']] == 'gzip') {
+    archive_name <- paste0(directory_path, '.tar.gz')
+  }
+  else
+  if(archive_control[['archive_compression']] == 'bzip2') {
+    archive_name <- paste0(directory_path, '.tar.bz2')
+  }
+  else
+  if(archive_control[['archive_compression']] == 'xz') {
+    archive_name <- paste0(directory_path, '.tar.xz')
+  }
+  else {
+    archive_name <- paste0(directory_path, '.tar')
+  }
+  tryCatch({
+    tar(tarfile=archive_name,
+        files=directory_path,
+        compression=archive_control[['archive_compression']])
+    },
+    error=function(cond) {
+      stop(func_name, ': unable to write the archive file \'', archive_name, '\': ', cond, call.=FALSE)
+    },
+    finally={
+      message(paste0('  made tar archive file \"', archive_name, '\"'))
+    }
+  ) # tryCatch
+  message('  Done.')
+}
+
+
+
 #
 #' Save cell_data_set transform models.
 #'
@@ -1128,6 +1163,18 @@ check_monocle_object_files <- function( directory_path, file_index, read_test=FA
 #'   the objects.
 #' @param verbose a boolean determining whether to print information
 #'   about the saved files.
+#' @param archive_control a list that is used to control archiving
+#'   the output directory. The archive_control parameters are
+#'   \describe{
+#'     \item{archive_type}{a string giving the method used to
+#'        archive the directory. The acceptable values are
+#'        "tar" and "none". The directory is not archived when
+#'        archive_type is "none". The default is "tar".}
+#'     \item{archive_compression}{a string giving the type of
+#'        compression applied to the archive file. The acceptable
+#'        values are "none", "gzip", "bzip2", and "xz". The
+#'        default is "none".}
+#'   }
 #'
 #' @return none.
 #'
@@ -1336,33 +1383,8 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
 
   # Make a tar file of output directory, if requested.
   if(archive_control[['archive_type']] == 'tar') {
-    if(archive_control[['archive_compression']] == 'gzip') {
-      archive_name <- paste0(directory_path, '.tar.gz')
-    }
-    else
-    if(archive_control[['archive_compression']] == 'bzip2') {
-      archive_name <- paste0(directory_path, '.tar.bz2')
-    }
-    else
-    if(archive_control[['archive_compression']] == 'xz') {
-      archive_name <- paste0(directory_path, '.tar.xz')
-    }
-    else {
-      archive_name <- paste0(directory_path, '.tar')
-    }
-    tryCatch({
-      tar(tarfile=archive_name,
-          files=directory_path,
-          compression=archive_control[['archive_compression']])
-      },
-      error=function(cond) {
-        stop('save_transform_models: unable to write the archive file \'', archive_name, '\': ', cond, call.=FALSE)
-      },
-      finally={
-        message(paste0('Info: save_transform_models: made archive file \"', archive_name, '\"'))
-      }
-    ) # tryCatch
-  } # if(archive_control...
+    make_tar_of_dir('save_transform_models', directory_path, archive_control)
+  }
 }
 
 
@@ -2004,33 +2026,8 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
 
   # Make a tar file of output directory, if requested.
   if(archive_control[['archive_type']] == 'tar') {
-    if(archive_control[['archive_compression']] == 'gzip') {
-      archive_name <- paste0(directory_path, '.tar.gz')
-    }
-    else
-    if(archive_control[['archive_compression']] == 'bzip2') {
-      archive_name <- paste0(directory_path, '.tar.bz2')
-    }
-    else
-    if(archive_control[['archive_compression']] == 'xz') {
-      archive_name <- paste0(directory_path, '.tar.xz')
-    }
-    else {
-      archive_name <- paste0(directory_path, '.tar')
-    }
-    tryCatch({
-      tar(tarfile=archive_name,
-          files=directory_path,
-          compression=archive_control[['archive_compression']])
-      },
-      error=function(cond) {
-        stop('save_monocle_objects: unable to write the archive file \'', archive_name, '\': ', cond, call.=FALSE)
-      },
-      finally={
-        message(paste0('Info: save_monocle_objects: made archive file \"', archive_name, '\"'))
-      }
-    ) # tryCatch
-  } # if(archive_control...
+    make_tar_of_dir('save_monocle_objects', directory_path, archive_control)
+  }
 }
 
 
