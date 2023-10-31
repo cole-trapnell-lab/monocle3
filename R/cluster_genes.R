@@ -19,6 +19,8 @@
 #'   so, this method will evaluate modularity at each resolution and use the
 #'   one with the highest value.
 #' @param random_seed  the seed used by the random number generator in Leiden.
+#'   The default value is 0L, which uses a random seed. For reproducible results,
+#'   set random_seed to a positive integer.
 #' @param cores number of cores computer should use to execute function
 #' @param verbose Whether or not verbose output is printed.
 #' @param preprocess_method a string specifying the low-dimensional space

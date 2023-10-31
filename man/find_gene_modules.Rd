@@ -57,7 +57,9 @@ their kNN) as the weight used for Louvain clustering. Default to be FALSE.}
 so, this method will evaluate modularity at each resolution and use the
 one with the highest value.}
 
-\item{random_seed}{the seed used by the random number generator in Leiden.}
+\item{random_seed}{the seed used by the random number generator in Leiden.
+The default value is 0L, which uses a random seed. For reproducible results,
+set random_seed to a positive integer.}
 
 \item{cores}{number of cores computer should use to execute function}
 
