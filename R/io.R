@@ -1198,6 +1198,10 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
   assertthat::assert_that(archive_control[['archive_compression']] %in% c('gzip', 'bzip2', 'xz', 'none'),
     msg=paste0("archive_compression must be \'none\', \'gzip\', \'bzip2\', or \'xz\'."))
 
+  # Make a 'normalized' path string. The annoy index save function does not
+  # recognize tildes.
+  directory_path <- normalizePath(directory_path, mustWork=FALSE)
+
   # file information is written to an RDS file
   # in directory_path
   #   cds_object: reduce_dim_aux
@@ -1434,6 +1438,11 @@ copy_reduce_dim_aux <- function(cds_dst, cds_src) {
 # is not run.
 load_transform_models <- function(cds, directory_path) {
   appendLF <- TRUE
+
+  # Make a 'normalized' path string. The annoy index save function does not
+  # recognize tildes.
+  directory_path <- normalizePath(directory_path, mustWork=FALSE)
+
   # Check for directory.
   if(!file.exists(directory_path))
     stop('Directory \'', directory_path, '\' does not exist.')
@@ -1742,6 +1751,10 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
     msg=paste0("archive_type must be either \'none\' or \'tar\'"))
   assertthat::assert_that(archive_control[['archive_compression']] %in% c('gzip', 'bzip2', 'xz', 'none'),
     msg=paste0("archive_compression must be \'none\', \'gzip\', \'bzip2\', or \'xz\'."))
+
+  # Make a 'normalized' path string. The annoy index save function does not
+  # recognize tildes.
+  directory_path <- normalizePath(directory_path, mustWork=FALSE)
 
   # file information is written to an RDS file
   # in directory_path
@@ -2059,6 +2072,11 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
 # is not run.
 load_monocle_objects <- function(directory_path, matrix_control=list(matrix_path='.')) {
   appendLF <- FALSE
+
+  # Make a 'normalized' path string. The annoy index save function does not
+  # recognize tildes.
+  directory_path <- normalizePath(directory_path, mustWork=FALSE)
+
   # Check for directory.
   if(!file.exists(directory_path))
     stop('Directory or file \'', directory_path, '\' does not exist.')
