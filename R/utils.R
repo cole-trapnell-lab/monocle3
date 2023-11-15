@@ -758,6 +758,301 @@ combine_cds <- function(cds_list,
 }
 
 
+# Combine cell_data_sets that may have differing numbers of rows.
+combine_cds_for_maddy <- function(cds_list,
+                        keep_all_genes = TRUE,
+                        cell_names_unique = FALSE,
+                        sample_col_name = "sample",
+                        keep_reduced_dims = FALSE,
+                        matrix_control = list()) {
+
+  assertthat::assert_that(is.list(cds_list),
+                          msg=paste("cds_list must be a list."))
+
+  assertthat::assert_that(all(sapply(cds_list, class) == "cell_data_set"),
+                          msg=paste("All members of cds_list must be",
+                                    "cell_data_set class."))
+  assertthat::assert_that(is.character(sample_col_name))
+
+  if (sample_col_name == "sample" &
+      any(sapply(cds_list, function(cds) "sample" %in% names(colData(cds))))) {
+    warning("By default, the combine_cds function adds a column called ",
+                   "'sample' which indicates which initial cds a cell came ",
+                   "from. One or more of your input cds objects contains a ",
+                   "'sample' column, which will be overwritten. We recommend ",
+                   "you rename this column or provide an alternative column ",
+                   "name using the 'sample_col_name' parameter.")
+  }
+  assertthat::assert_that(!any(sapply(cds_list, function(cds)
+    sum(is.na(names(colData(cds)))) != 0)),
+                          msg = paste0("One of the input CDS' has a colData ",
+                                       "column name that is NA, please ",
+                                       "remove or rename that column before ",
+                                       "proceeding."))
+  assertthat::assert_that(!any(sapply(cds_list, function(cds)
+    sum(is.na(names(rowData(cds)))) != 0)),
+    msg = paste0("One of the input CDS' has a rowData ",
+                 "column name that is NA, please ",
+                 "remove or rename that column before ",
+                 "proceeding."))
+
+  num_cells <- sapply(cds_list, ncol)
+  if(sum(num_cells == 0) != 0) {
+    message("Some CDS' have no cells, these will be skipped.")
+    cds_list <- cds_list[num_cells != 0]
+  }
+  if(length(cds_list) == 1) return(cds_list[[1]])
+
+  assertthat::assert_that(is.logical(keep_all_genes))
+  assertthat::assert_that(is.logical(cell_names_unique))
+
+  list_named <- TRUE
+  if(is.null(names(cds_list))) {
+    list_named <- FALSE
+  }
+
+  if(!is.null(matrix_control[['matrix_class']]) &&
+     matrix_control[['matrix_class']] == 'BPCells') {
+    bpcells_matrix_flag <- TRUE
+  }
+  else {
+    bpcells_matrix_flag <- FALSE
+    # Are any of the count matrices BPCells class?
+    for(i in seq(1, length(cds_list), 1)) {
+      if(is(counts(cds_list[[i]]), 'IterableMatrix')) {
+        bpcells_matrix_flag <- TRUE
+        break
+      }
+    }
+  }
+
+  check_matrix_control(matrix_control=matrix_control, control_type='unrestricted', check_conditional=FALSE)
+  if(bpcells_matrix_flag ||
+     (!is.null(matrix_control[['matrix_class']]) && matrix_control[['matrix_class']] == 'BPCells')) {
+    matrix_control_default <- get_global_variable('matrix_control_bpcells_unrestricted')
+  }
+  else {
+    matrix_control_default <- get_global_variable('matrix_control_csparsematrix_unrestricted')
+  }
+  matrix_control <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='unrestricted')
+
+  exprs_list <- list()
+  fd_list <- list()
+  pd_list <- list()
+  gene_list <- c()
+  overlap_list <- c(row.names(fData(cds_list[[1]])))
+  pdata_cols <- c()
+  fdata_cols <- c()
+  all_cells <- c()
+
+  for(cds in cds_list) {
+    # Make a vector of gene names either all names or
+    # only names in common to all CDSes.
+    gene_list <-  c(gene_list, row.names(fData(cds)))
+    overlap_list <- intersect(overlap_list, row.names(fData(cds)))
+    if (!keep_all_genes) {
+      gene_list <- overlap_list
+    }
+
+    # Make concatenated vectors of column (header) names of the cells
+    # and features, and of cell names.
+    pdata_cols <- c(pdata_cols, names(pData(cds)))
+    fdata_cols <- c(fdata_cols, names(fData(cds)))
+    all_cells <- c(all_cells, row.names(pData(cds)))
+  }
+
+  # Remove duplicate gene names, feature and cell column
+  # names, and cell names.
+  gene_list <- unique(gene_list)
+  if(length(overlap_list) == 0) {
+    if (keep_all_genes) {
+      warning("No genes are shared amongst all the CDS objects.")
+    } else {
+      stop("No genes are shared amongst all the CDS objects. To generate ",
+                 "a combined CDS with all genes, use keep_all_genes = TRUE")
+    }
+  }
+  pdata_cols <- unique(pdata_cols)
+  fdata_cols <- unique(fdata_cols)
+  if (sum(duplicated(all_cells)) != 0 & cell_names_unique) {
+    stop("Cell names are not unique across CDSs - cell_names_unique ",
+               "must be FALSE.")
+  }
+  all_cells <- unique(all_cells)
+
+  # Give all CDSes the same set of rows (amongst other things),
+  # looping through the CDSes.
+  for(i in seq(1, length(cds_list), 1)) {
+    pd <- as.data.frame(pData(cds_list[[i]]))
+
+    # Counts matrix rows of genes common to the CDSes examined
+    # up to this pass through the loop.
+    exp <- counts(cds_list[[i]])
+    if(bpcells_matrix_flag && !is(exp, 'IterableMatrix')) {
+      exp <- as(exp, 'IterableMatrix')
+    }
+    exp <- exp[intersect(row.names(exp), gene_list),, drop=FALSE]
+
+    # Make cell names distinct, if necessary, assign cell names to
+    # pd, the sample names to a column in pd, and cell names to
+    # the counts matrix columns.
+    if (!cell_names_unique) {
+      if(list_named) {
+        row.names(pd) <- paste(row.names(pd), names(cds_list)[[i]], sep="_")
+        pd[,sample_col_name] <- names(cds_list)[[i]]
+      } else {
+        row.names(pd) <- paste(row.names(pd), i, sep="_")
+        pd[,sample_col_name] <- i
+      }
+      colnames(exp) <- row.names(pd)
+    } else {
+      if(list_named) {
+        pd[,sample_col_name] <- names(cds_list)[[i]]
+      } else {
+        pd[,sample_col_name] <- i
+      }
+    }
+
+    # Initialize new entries in pd to 'NA'.
+    not_in <- pdata_cols[!pdata_cols %in% names(pd)]
+    for (n in not_in) {
+      pd[,n] <- NA
+    }
+
+    # Select feature data frame rows that are common to
+    # fd and gene_list.
+    fd <- as.data.frame(fData(cds_list[[i]]))
+    fd <- fd[intersect(row.names(fd), gene_list),, drop=FALSE]
+
+    # Make a vector of gene names that are that are not in
+    # fd.
+    not_in <- fdata_cols[!fdata_cols %in% names(fd)]
+    for(col in names(fd)) {
+      if(methods::is(fd[,col], "factor")) {
+        fd[,col] <- as.character(fd[,col])
+      }
+    }
+    for (n in not_in) {
+      fd[,n] <- NA
+    }
+    not_in_g <- gene_list[!gene_list %in% row.names(fd)]
+
+    # Make an empty matrix (and fd data frame) with the rows
+    # that need to be added to the counts matrix for cds_list[[i]],
+    # and append it to the accumulating counts matrix.
+    if (length(not_in_g) > 0) {
+      not_in_g_df <- as.data.frame(matrix(NA, nrow = length(not_in_g), ncol=ncol(fd)))
+      row.names(not_in_g_df) <- not_in_g
+      names(not_in_g_df) <- names(fd)
+      fd <- rbind(fd, not_in_g_df)      # bge rbind
+
+      extra_rows <- Matrix::Matrix(0, ncol=ncol(exp),
+                                   sparse=TRUE,
+                                   nrow=length(not_in_g))
+      row.names(extra_rows) <- not_in_g
+      colnames(extra_rows) <- colnames(exp)
+
+      # Append additional rows.
+      if(bpcells_matrix_flag) {
+        exp <- rbind2(exp, as(extra_rows, 'IterableMatrix'))
+      }
+      else {
+        exp <- rbind(exp, extra_rows)
+      }
+#      exp <- exp
+    }
+
+    # Gather matrices and data frames into lists.
+    exprs_list[[i]] <- exp[gene_list, , drop=FALSE]
+    fd_list[[i]] <- fd[gene_list, , drop=FALSE]
+    pd_list[[i]] <- pd
+  }
+
+  all_fd <- array(NA,dim(fd_list[[1]]),dimnames(fd_list[[1]]))
+
+  for (fd in fd_list) {
+    for (j in colnames(fd)) {
+      col_info <- all_fd[,j]
+      col_info[is.na(col_info)] <- fd[is.na(col_info),j]
+      col_info[col_info != fd[,j]] <- "conf"
+      all_fd[,j] <- col_info
+    }
+  }
+
+  confs <- sum(all_fd == "conf", na.rm=TRUE)
+
+  if (confs > 0) {
+   warning("When combining rowData, conflicting values were found - ",
+                  "conflicts will be labelled 'conf' in the combined cds ",
+                  "to prevent conflicts, either change conflicting values to ",
+                  "match, or rename columns from different cds' to be unique.")
+  }
+  #all_fd <- do.call(cbind, fd_list)
+  all_fd <- all_fd[,fdata_cols, drop=FALSE]
+
+  # Build the final, comprehensive cell data frame and counts matrix.
+  all_pd <- do.call(rbind, pd_list)    # bge rbind
+  if(bpcells_matrix_flag) {
+    num_exprs <- length(exprs_list)
+    all_exp <- exprs_list[[1]]
+    for(i in seq(2, num_exprs, 1)) {
+      all_exp <- cbind2(all_exp, exprs_list[[i]])
+    }
+  }
+  else {
+    all_exp <- do.call(cbind, exprs_list)
+  }
+
+  # Filter counts matrix by fd and pd names.
+  all_exp <- all_exp[row.names(all_fd), row.names(all_pd), drop=FALSE]
+
+  # Make a BPCells count matrix, if necessary.
+  if(bpcells_matrix_flag) {
+    all_exp <- set_matrix_class(mat=all_exp, matrix_control=matrix_control)
+  }
+
+  # Make a combined CDS from all_exp, all_pd, and all_fd.
+  new_cds <- new_cell_data_set(all_exp, cell_metadata = all_pd, gene_metadata = all_fd)
+
+  # Add in preprocessing results.
+  if(keep_reduced_dims) {
+    # Find intersection of reduced dim names, for example, 'PCA', 'UMAP', 'Aligned'.
+    reduced_dim_names <- names(reducedDims(cds_list[[1]]))
+    for(i in seq(2, length(cds_list), 1)) {
+      reduced_dim_names <- intersect(reduced_dim_names, names(reducedDims(cds_list[[i]])))
+    }
+
+    for(red_dim in reduced_dim_names) {
+      reduced_dims_list <- list()
+      for(j in seq(1, length(cds_list), 1)) {
+        reduced_dims_list[[j]] <- SingleCellExperiment::reducedDims(cds_list[[j]])[[red_dim]]
+      }
+      # Modify for binding reduced dim spaces with differing numbers of rows.
+      reduced_dims_list <- lapply(reduced_dims_list, function(x) as.data.frame(x))
+      SingleCellExperiment::reducedDims(new_cds)[[red_dim]] <- bind_rows(reduced_dims_list)
+#      SingleCellExperiment::reducedDims(new_cds, withDimnames=FALSE)[[red_dim]] <- do.call(rbind, reduced_dims_list, quote=FALSE)
+      # The following should not happen; the accessor appears to ensure the
+      # correct row order.
+      if(!identical(rownames(SingleCellExperiment::reducedDims(new_cds)[[red_dim]]), rownames(all_pd))) {
+        stop('Mis-ordered reduced matrix rows.')
+      }
+    }
+  }
+
+  # Add a BPCells row-major order matrix to assays
+  # for BPCells count matrices.
+  if(bpcells_matrix_flag) {
+    new_cds <- set_cds_row_order_matrix(new_cds)
+  }
+
+  matrix_id <-  get_unique_id(counts(cds))
+  new_cds <- initialize_counts_metadata(new_cds) 
+  new_cds <- set_counts_identity(new_cds, 'combine_cds', matrix_id)
+
+  new_cds
+}
+
+
 #' Clear CDS slots
 #'
 #' Function to clear all CDS slots besides colData, rowData and expression data.
