@@ -35,7 +35,6 @@ find_gene_modules <- function(cds,
                           umap.fast_sgd = FALSE,
                           umap.nn_method = "annoy",
                           k = 20,
-                          louvain_iter = 1,
                           partition_qval = 0.05,
                           weight = FALSE,
                           resolution = NULL,
@@ -55,7 +54,6 @@ find_gene_modules <- function(cds,
   assertthat::assert_that(is.character(reduction_method))
   assertthat::assert_that(assertthat::is.count(k))
   assertthat::assert_that(is.logical(weight))
-  assertthat::assert_that(assertthat::is.count(louvain_iter))
   ## TO DO what is resolution?
   assertthat::assert_that(is.numeric(partition_qval))
   assertthat::assert_that(is.logical(verbose))
@@ -85,14 +83,13 @@ find_gene_modules <- function(cds,
   reduced_dim_res <- umap_res
 
   if(verbose)
-    message("Running louvain clustering algorithm ...")
+    message("Running Leiden clustering algorithm ...")
 
   cluster_result <- leiden_clustering(data = reduced_dim_res,
                                     pd = rowData(cds)[
                                       row.names(reduced_dim_res),,drop=FALSE],
                                     k = k,
                                     weight = weight,
-                                    louvain_iter = louvain_iter,
                                     resolution_parameter = resolution,
                                     random_seed = random_seed,
                                     verbose = verbose, ...)
