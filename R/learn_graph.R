@@ -681,8 +681,9 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE,
           igraph::V(dp_mst_list[[as.numeric(cur_partition)]])$name
 
         cur_nearest_edges <- nearest_edges[subset_cds_col_names, ]
-        data_df <- cbind(as.data.frame(t(cur_p)),
-                         apply(cur_nearest_edges, 1, sort) %>% t())
+        data_df <- cbind(as.data.frame(t(cur_p), stringsAsFactors = FALSE),
+                         apply(cur_nearest_edges, 1, sort) %>% t(),
+                         stringsAsFactors = FALSE)
         row.names(data_df) <- colnames(cur_p)
         colnames(data_df) <- c(paste0("P_", 1:nrow(cur_p)), 'source', 'target')
 
@@ -712,7 +713,7 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE,
           data_df[added_rows - 1, c('rowname', 'target')]
 
         # calculate distance between each pair
-        aug_P = cbind(cur_p, rge_res_Y)
+        aug_P = cbind(cur_p, rge_res_Y, stringsAsFactors = F)
         data_df$weight <-  sqrt(colSums((aug_P[,
                                                data_df$new_source] -
                                            aug_P[, data_df$new_target]))^2)
