@@ -1092,8 +1092,64 @@ check_monocle_object_files <- function( directory_path, file_index, read_test=FA
 }
 
 
+# Check archive_control list.
+check_archive_control <- function(archive_control=list()) {
+  allowed_control_parameters <- c('archive_type',
+                                  'archive_compression',
+                                  'archive_extra_flags')
+
+  allowed_archive_type <- c('tar',
+                            'none')
+  allowed_archive_compression <- c('none',
+                                   'gzip',
+                                   'bzip2',
+                                   'xz')
+
+  error_string <- ''
+
+  if(!all(names(archive_control) %in% allowed_control_parameters)) {
+    error_string <- paste0(error_string, '\n', 'invalid control parameter')
+  }
+
+  if(!is.null(archive_control[['archive_type']]) &&
+     !(archive_control[['archive_type']] %in% allowed_archive_type)) {
+    error_string <- paste0(error_string, '\n', 'invalid archive_type "', archive_control[['archive_type']], '"')
+  }
+
+  if(!is.null(archive_control[['archive_compression']]) &&
+     !(archive_control[['archive_compression']] %in% allowed_archive_compression)) {
+    error_string <- paste0(error_string, '\n', 'invalid archive_compression "', archive_control[['archive_compression']], '"')
+  }
+
+  if(error_string != '') {
+    stop(paste0(stringr::str_trim(error_string), '\n'))
+  }
+}
+
+
+# Set and check archive_control list.
+set_archive_control <- function(archive_control=list()) {
+
+  archive_control_out = archive_control
+
+  if(is.null(archive_control[['archive_type']])) {
+    archive_control_out[['archive_type']] <- 'tar'
+  }
+  if(is.null(archive_control[['archive_compression']])) {
+    archive_control_out[['archive_compression']] <- 'none'
+  }
+  if(is.null(archive_control[['archive_extra_flags']])) {
+    archive_control_out[['archive_extra_flags']] <- '--format=pax'
+  }
+
+  check_archive_control(archive_control_out)
+
+  return(archive_control_out)
+}
+
+
 # Make a tar file of an output directory.
-make_tar_of_dir <- function(func_name, directory_path, archive_control) {
+make_tar_of_dir <- function(func_name, directory_path, archive_control=list()) {
   message('Info: making a tar file of the output directory...')
   # Make a tar file of output directory, if requested.
   if(archive_control[['archive_compression']] == 'gzip') {
@@ -1113,7 +1169,8 @@ make_tar_of_dir <- function(func_name, directory_path, archive_control) {
   tryCatch({
     tar(tarfile=archive_name,
         files=directory_path,
-        compression=archive_control[['archive_compression']])
+        compression=archive_control[['archive_compression']],
+        extra_flags=archive_control[['archive_extra_flags']])
     },
     error=function(cond) {
       stop(func_name, ': unable to write the archive file \'', archive_name, '\': ', cond, call.=FALSE)
@@ -1174,6 +1231,9 @@ make_tar_of_dir <- function(func_name, directory_path, archive_control) {
 #'        compression applied to the archive file. The acceptable
 #'        values are "none", "gzip", "bzip2", and "xz". The
 #'        default is "none".}
+#'     \item{archive_extra_flags}{a string with flags that are
+#'        passed to the operating system tar utility. The
+#'        default is "--format=pax".}
 #'   }
 #'
 #' @return none.
@@ -1189,14 +1249,10 @@ make_tar_of_dir <- function(func_name, directory_path, archive_control) {
 #' @export
 # Bioconductor forbids writing to user directories so examples
 # is not run.
-save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE, archive_control=list(archive_type="tar", archive_compression="none")) {
-  if(is.null(archive_control[['archive_type']])) archive_control[['archive_type']] <- 'tar'
-  if(is.null(archive_control[['archive_compression']])) archive_control[['archive_compression']] <- 'none'
+save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE, archive_control=list()) {
 
-  assertthat::assert_that(archive_control[['archive_type']] %in% c('tar', 'none'),
-    msg=paste0("archive_type must be either \'none\' or \'tar\'"))
-  assertthat::assert_that(archive_control[['archive_compression']] %in% c('gzip', 'bzip2', 'xz', 'none'),
-    msg=paste0("archive_compression must be \'none\', \'gzip\', \'bzip2\', or \'xz\'."))
+  # Set and check archive control list.
+  archive_control <- set_archive_control(archive_control)
 
   # Make a 'normalized' path string. The annoy index save function does not
   # recognize tildes.
@@ -1645,6 +1701,9 @@ test_hdf5_assays <- function(cds) {
 #'        compression applied to the archive file. The acceptable
 #'        values are "none", "gzip", "bzip2", and "xz". The
 #'        default is "none".}
+#'     \item{archive_extra_flags}{a string with flags that are
+#'        passed to the operating system tar utility. The
+#'        default is "--format=pax".}
 #'   }
 #' @section Notes:
 #'   \itemize{
@@ -1742,15 +1801,10 @@ test_hdf5_assays <- function(cds) {
 # *** break load_transform_models() because load_transform_models() ***
 # *** can read a save_monocle_objects() output directory.           ***
 #
-save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment="", verbose=TRUE, archive_control=list(archive_type="tar", archive_compression="none")) {
+save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment="", verbose=TRUE, archive_control=list()) {
 
-  if(is.null(archive_control[['archive_type']])) archive_control[['archive_type']] <- 'tar'
-  if(is.null(archive_control[['archive_compression']])) archive_control[['archive_compression']] <- 'none'
-
-  assertthat::assert_that(archive_control[['archive_type']] %in% c('tar', 'none'),
-    msg=paste0("archive_type must be either \'none\' or \'tar\'"))
-  assertthat::assert_that(archive_control[['archive_compression']] %in% c('gzip', 'bzip2', 'xz', 'none'),
-    msg=paste0("archive_compression must be \'none\', \'gzip\', \'bzip2\', or \'xz\'."))
+  # Set and check the archive control list.
+  archive_control <- set_archive_control(archive_control)
 
   # Make a 'normalized' path string. The annoy index save function does not
   # recognize tildes.
