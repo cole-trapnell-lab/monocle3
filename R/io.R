@@ -1096,6 +1096,7 @@ check_monocle_object_files <- function( directory_path, file_index, read_test=FA
 check_archive_control <- function(archive_control=list()) {
   allowed_control_parameters <- c('archive_type',
                                   'archive_compression',
+                                  'archive_tar',
                                   'archive_extra_flags')
 
   allowed_archive_type <- c('tar',
@@ -1138,6 +1139,9 @@ set_archive_control <- function(archive_control=list()) {
   if(is.null(archive_control[['archive_compression']])) {
     archive_control_out[['archive_compression']] <- 'none'
   }
+  if(is.null(archive_control[['archive_tar']])) {
+    archive_control_out[['archive_tar']] <- ''
+  }
   if(is.null(archive_control[['archive_extra_flags']])) {
     archive_control_out[['archive_extra_flags']] <- '--format=pax'
   }
@@ -1167,10 +1171,19 @@ make_tar_of_dir <- function(func_name, directory_path, archive_control=list()) {
     archive_name <- paste0(directory_path, '.tar')
   }
   tryCatch({
-    tar(tarfile=archive_name,
-        files=directory_path,
-        compression=archive_control[['archive_compression']],
-        extra_flags=archive_control[['archive_extra_flags']])
+    if(archive_control[['archive_tar']] == '') {
+      tar(tarfile=archive_name,
+          files=directory_path,
+          compression=archive_control[['archive_compression']],
+          extra_flags=paste0('"', archive_control[['archive_extra_flags']], '"'))
+      }
+      else {
+      tar(tarfile=archive_name,
+          files=directory_path,
+          compression=archive_control[['archive_compression']],
+          tar=paste0('"', archive_control[['archive_tar']], '"'),
+          extra_flags=paste0('"', archive_control[['archive_extra_flags']], '"'))
+      }
     },
     error=function(cond) {
       stop(func_name, ': unable to write the archive file \'', archive_name, '\': ', cond, call.=FALSE)
@@ -1231,6 +1244,14 @@ make_tar_of_dir <- function(func_name, directory_path, archive_control=list()) {
 #'        compression applied to the archive file. The acceptable
 #'        values are "none", "gzip", "bzip2", and "xz". The
 #'        default is "none".}
+#'     \item{archive_tar}{a string giving the full path to
+#'        a system-supplied tar utility. The default is "",
+#'        which uses the R-supplied tar utility. You may
+#'        need to use a system supplied utility if the resulting
+#'        tar file is larger than 8 GB. Alternatively, you can
+#'        set the "tar" environment variable to the full path
+#'        to the system-supplied tar utility. For more information,
+#'        see the R help for the tar command.}
 #'     \item{archive_extra_flags}{a string with flags that are
 #'        passed to the operating system tar utility. The
 #'        default is "--format=pax".}
@@ -1701,6 +1722,14 @@ test_hdf5_assays <- function(cds) {
 #'        compression applied to the archive file. The acceptable
 #'        values are "none", "gzip", "bzip2", and "xz". The
 #'        default is "none".}
+#'     \item{archive_tar}{a string giving the full path to
+#'        a system-supplied tar utility. The default is "",
+#'        which uses the R-supplied tar utility. You may
+#'        need to use a system supplied utility if the resulting
+#'        tar file is larger than 8 GB. Alternatively, you can
+#'        set the "tar" environment variable to the full path
+#'        to the system-supplied tar utility. For more information,
+#'        see the R help for the tar command.}
 #'     \item{archive_extra_flags}{a string with flags that are
 #'        passed to the operating system tar utility. The
 #'        default is "--format=pax".}
