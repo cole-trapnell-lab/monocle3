@@ -15,8 +15,8 @@
 #' @param weight A logic argument to determine whether or not we will use
 #'   Jaccard coefficient for two nearest neighbors (based on the overlapping of
 #'   their kNN) as the weight used for Louvain clustering. Default to be FALSE.
-#' @param resolution Resolution parameter passed to Louvain. Can be a list. If
-#'   so, this method will evaluate modularity at each resolution and use the
+#' @param resolution Resolution parameter passed to Louvain. Can be a numeric vector.
+#'   If so, this method will evaluate modularity at each resolution and use the
 #'   one with the highest value.
 #' @param random_seed  the seed used by the random number generator in Leiden.
 #'   The default value is 0L, which uses a random seed. For reproducible results,
