@@ -61,7 +61,18 @@ plot_cells(cds,
            label_cell_groups=FALSE,
            label_leaves=FALSE,
            label_branch_points=FALSE,
+           label_roots=FALSE,
            graph_label_size=1.5) + ggsave("embryo_pr_graph_by_pseudotime.png", width=5, height=4, dpi = 600)
+
+
+plot_cells(cds,
+           color_cells_by = "cluster",
+           label_groups_by_cluster=FALSE,
+           label_leaves=FALSE,
+           label_branch_points=FALSE)
+
+root_group = colnames(cds)[clusters(cds) == 1]
+cds = order_cells(cds, root_cells = root_group)
 
 
 # a helper function to identify the root principal points:

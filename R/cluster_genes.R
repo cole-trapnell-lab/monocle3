@@ -191,6 +191,7 @@ find_gene_modules <- function(cds,
   reduced_dim_res <- umap_res
 
   if(verbose)
+
     message("Running leiden clustering algorithm ...")
 
   cluster_result <- leiden_clustering(data=reduced_dim_res,
