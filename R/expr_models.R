@@ -435,7 +435,7 @@ extract_coefficient_helper = function(model, model_summary,
     # We need this because some summary methods "format" the coefficients into
     # a factor...
     coef_mat <- apply(coef_mat, 2, function(x) {as.numeric(as.character(x)) })
-    if (is.null(dim(coef_mat))) {
+    if (!is.matrix(coef_mat)) {
       coef_mat = t(as.matrix(coef_mat))
     }
     row.names(coef_mat) = row.names(model_summary$coefficients)
