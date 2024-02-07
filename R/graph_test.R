@@ -104,8 +104,6 @@
 #'     pr_graph_test_res <- graph_test(cds, neighbor_graph="knn")
 #'   }
 #'
-#' @importFrom terra gdal
-#'
 #' @export
 graph_test <- function(cds,
                        neighbor_graph = c("knn", "principal_graph"),
