@@ -221,6 +221,7 @@ sparse_par_c_apply <- function (cl = NULL, x, FUN, convert_to_dense, ...) {
 mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1,
                         convert_to_dense=TRUE,
                         reduction_method="UMAP", ...) {
+# message('mc_es_apply: start')
   parent <- environment(FUN)
   if (is.null(parent))
     parent <- emptyenv()
@@ -287,12 +288,22 @@ mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1,
   }
 
   #
-  # 20230424 bge: These two following calls using counts(cds) appear to work based on my simple test.
+  # 20230424 bge: The following sparse_par_?_apply calls using counts(cds) appear to work based on my simple test.
   #
   if (MARGIN == 1){
-    suppressWarnings(res <- sparse_par_r_apply(cl=cl, x=SingleCellExperiment::counts(cds), FUN=FUN,
-                                               convert_to_dense=convert_to_dense, ...))
-  }else{
+# message('mc_es_apply: MARGIN 1')
+    if( is(counts(cds), 'IterableMatrix')) {
+# message('mc_es_apply: BPCells matrix')
+      suppressWarnings(res <- sparse_par_r_apply(cl=cl, x=monocle3::counts_row_order(cds), FUN=FUN,
+                                                 convert_to_dense=convert_to_dense, ...))
+    }
+    else {
+# message('mc_es_apply: dgCMatrix matrix')
+      suppressWarnings(res <- sparse_par_r_apply(cl=cl, x=SingleCellExperiment::counts(cds), FUN=FUN,
+                                                 convert_to_dense=convert_to_dense, ...))
+    }
+  }
+  else {
     suppressWarnings(res <- sparse_par_c_apply(cl=cl, x=SingleCellExperiment::counts(cds), FUN=FUN,
                                                convert_to_dense=convert_to_dense, ...))
   }
@@ -303,6 +314,7 @@ mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1,
 #' @importFrom Biobase multiassign
 smart_es_apply <- function(cds, MARGIN, FUN, convert_to_dense,
                            reduction_method="UMAP", ...) {
+# message('smart_es_apply: start')
   parent <- environment(FUN)
   if (is.null(parent))
     parent <- emptyenv()
@@ -317,9 +329,24 @@ smart_es_apply <- function(cds, MARGIN, FUN, convert_to_dense,
                        as.data.frame(coldata_df), envir=e1)
   environment(FUN) <- e1
 
-  if (is_sparse_matrix(SingleCellExperiment::counts(cds))){
+  if (is(SingleCellExperiment::counts(cds), 'IterableMatrix')) {
+# message('smart_es_apply: BPCells matrix')
+    if(MARGIN == 1) {
+# message('smart_es_apply: MARGIN 1')
+      res <- sparse_apply(monocle3::counts_row_order(cds), MARGIN, FUN, convert_to_dense, ...)
+    }
+    else {
+# message('smart_es_apply: MARGIN 2')
+      res <- sparse_apply(SingleCellExperiment::counts(cds), MARGIN, FUN, convert_to_dense, ...)
+    }
+  }
+  else
+  if (is_sparse_matrix(SingleCellExperiment::counts(cds))) {
+# message('smart_es_apply: dgCMatrix matrix')
     res <- sparse_apply(SingleCellExperiment::counts(cds), MARGIN, FUN, convert_to_dense, ...)
-  } else {
+  }
+  else {
+# message('smart_es_apply: dense matrix')
     res <- pbapply::pbapply(SingleCellExperiment::counts(cds), MARGIN, FUN, ...)
   }
 
@@ -596,7 +623,7 @@ combine_cds <- function(cds_list,
     # up to this pass through the loop.
     exp <- counts(cds_list[[i]])
     if(bpcells_matrix_flag && !is(exp, 'IterableMatrix')) {
-      exp <- as(exp, 'IterableMatrix')
+      exp <- as(exp, 'IterableMatrix')       # wraps dgCMatrix in IterableMatrix
     }
     exp <- exp[intersect(row.names(exp), gene_list),, drop=FALSE]
 
@@ -661,7 +688,7 @@ combine_cds <- function(cds_list,
 
       # Append additional rows.
       if(bpcells_matrix_flag) {
-        exp <- rbind2(exp, as(extra_rows, 'IterableMatrix'))
+        exp <- rbind2(exp, as(extra_rows, 'IterableMatrix'))       # wraps dgCMatrix in IterableMatrix
       }
       else {
         exp <- rbind(exp, extra_rows)
@@ -889,7 +916,7 @@ combine_cds_for_maddy <- function(cds_list,
     # up to this pass through the loop.
     exp <- counts(cds_list[[i]])
     if(bpcells_matrix_flag && !is(exp, 'IterableMatrix')) {
-      exp <- as(exp, 'IterableMatrix')
+      exp <- as(exp, 'IterableMatrix')                               # wraps dgCMatrix in IterableMatrix
     }
     exp <- exp[intersect(row.names(exp), gene_list),, drop=FALSE]
 
@@ -954,7 +981,7 @@ combine_cds_for_maddy <- function(cds_list,
 
       # Append additional rows.
       if(bpcells_matrix_flag) {
-        exp <- rbind2(exp, as(extra_rows, 'IterableMatrix'))
+        exp <- rbind2(exp, as(extra_rows, 'IterableMatrix'))    # wraps dgCMatrix in IterableMatrix
       }
       else {
         exp <- rbind(exp, extra_rows)

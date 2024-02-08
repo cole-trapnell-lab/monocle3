@@ -94,6 +94,7 @@ get_global_variable <- function(variable_name=NULL) {
   set_global_variable('monocle3_timer_t0', 0)
   set_global_variable('monocle3_timer_msg', "")
   set_global_variable('monocle_gc_matrix_path', list())
+  set_global_variable('bpcells_matrix_pair_check', TRUE)
 
   # Default nn_control list for functions that do not need
   # an index, which is all but the label transfer functions.
