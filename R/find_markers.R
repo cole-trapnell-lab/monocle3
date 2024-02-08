@@ -74,7 +74,7 @@ top_markers <- function(cds,
                         cores=1,
                         verbose=FALSE) {
 
-  if(is(counts(cds), 'IterableMatrix') && is.null(counts_row_order)) {
+  if(is(counts(cds), 'IterableMatrix') && is.null(counts_row_order(cds))) {
     stop(paste('This CDS has a BPCells counts matrix but no counts_row_order matrix, which',
                'top_markers() requires. Use the command',
                 '  cds <- set_cds_row_order_matrix(cds=cds)',
@@ -120,6 +120,8 @@ top_markers <- function(cds,
                                                            cell_group_df=cell_group_df,
                                                            norm_method="size_only",
                                                            scale_agg_values=FALSE))
+
+# bge the cluster_binary_exprs and cluster_mean_exprs pairs appear to be the same when run with dgCMatrix vs BPCells matrix
 
   if (verbose)
     message("Computing Jensen-Shannon specificities")
@@ -364,7 +366,7 @@ test_marker_for_cell_group = function(gene_id, cell_group, cell_group_df, cds,
     }
     else {
       f_expression <-
-        log(as.numeric(as(counts_row_order(cds)[gene_id,], 'dgCMatrix')) / size_factors(cds) + 0.1)
+        log(as.numeric(as(monocle3::counts_row_order(cds)[gene_id,], 'dgCMatrix')) / size_factors(cds) + 0.1)
     }
 
     #print(sum(SingleCellExperiment::counts(cds)[gene_id,] > 0))

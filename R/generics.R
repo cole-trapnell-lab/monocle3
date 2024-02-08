@@ -652,24 +652,24 @@ setMethod("counts<-", signature(object="SingleCellExperiment"),
 )
 
 
-#' Generic to access cds row order BPCells count matrix.
+#' Generic to access cds row order BPCells counts matrix.
 #' @param x A cell_data_set object.
 #' 
 #' @examples
 #'  \donttest{
 #'    cds <- load_a549()
-#'    exprs(cds)
+#'    mat_row_order <- counts_row_order(cds)
 #'  }         
 #'          
-#' @return BPCells row order ount matrix.
+#' @return BPCells row order counts matrix.
 #'
 #' @export
 setGeneric("counts_row_order", function(x) standardGeneric("counts_row_order"))
   
-#' Method to access cds row order BPCells count matrix
+#' Method to access cds row order BPCells counts matrix
 #' @param x A cell_data_set object.
 #'
-#' @return BPCells row order count matrix.
+#' @return BPCells row order counts matrix.
 #' 
 #' @export
 setMethod("counts_row_order", "cell_data_set", function(x) {
@@ -679,6 +679,11 @@ setMethod("counts_row_order", "cell_data_set", function(x) {
     }
     else {
       stop('CDS has no BPCells row order counts matrix')
+    }
+  }
+  if(get_global_variable('bpcells_matrix_pair_check')) {
+    if(!check_bpcells_counts_matrix_pair(x)) {
+      stop('')
     }
   }
   value <- assay(x, 'counts_row_order')

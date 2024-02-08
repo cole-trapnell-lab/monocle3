@@ -154,14 +154,16 @@ graph_test <- function(cds,
     message("Performing Moran's I test: ...")
   }
 
-  exprs_mat <- SingleCellExperiment::counts(cds)
+   # Use row major order BPCells count matrix.
+  if(is(counts(cds), 'IterableMatrix')) {
+    exprs_mat <- monocle3::counts_row_order(cds)
+  }
+  else {
+    exprs_mat <- SingleCellExperiment::counts(cds)
+  }
+
   exprs_mat <- exprs_mat[, attr(lw, "region.id"), drop=FALSE]
   sz <- size_factors(cds)[attr(lw, "region.id")]
-
-  # Use row major order BPCells count matrix.
-  if(is(exprs_mat, 'IterableMatrix')) {
-    exprs_mat <- counts_row_order(cds)
-  }
 
   wc <- spdep::spweights.constants(lw, zero.policy = TRUE, adjust.n = TRUE)
   test_res <- pbmcapply::pbmclapply(row.names(exprs_mat),

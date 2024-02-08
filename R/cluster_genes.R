@@ -536,5 +536,10 @@ aggregate_gene_expression <- function(cds,
   if (exclude.na){
     agg_mat <- agg_mat[row.names(agg_mat) != "NA", colnames(agg_mat) != "NA",drop=FALSE]
   }
+
+  if(is(agg_mat, 'IterableMatrix')) {
+    agg_mat <- as(agg_mat, 'dgCMatrix')
+  }
+
   return(agg_mat)
 }

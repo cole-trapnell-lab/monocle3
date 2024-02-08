@@ -878,6 +878,38 @@ set_cds_row_order_matrix <- function(cds) {
 }
 
 
+# Test (partially) that the BPCells counts() and
+# counts_row_order() matrices are consistent.
+# The test checks that the two matrices exist and
+# that row sums are the same for the two.
+check_bpcells_counts_matrix_pair <- function(cds) {
+  if(!is(assays(cds)[['counts']], 'IterableMatrix')) {
+    message('Error: the cds does not have a BPCells counts matrix.')
+    return(FALSE)
+  }
+
+  if(!is(assays(cds)[['counts_row_order']], 'IterableMatrix')) {
+    message('Error: the cds does not have a BPCells counts_row_order matrix.')
+    return(FALSE)
+  }
+
+  counts_rowsums <- BPCells::rowSums(counts(cds))
+  counts_row_order_rowsums <- BPCells::rowSums(assays(cds)[['counts_row_order']])
+
+  if(length(counts_rowsums) != length(counts_row_order_rowsums)) {
+    message('Error: the cds counts and counts_row_order matrix row sums have different lengths')
+    return(FALSE)
+  }
+
+  if(any(counts_rowsums != counts_row_order_rowsums)) {
+    message('Error: the cds counts and counts_row_order matrix row sums have different values')
+    return(FALSE)
+  }
+
+  return(TRUE)
+}
+
+
 #' Convert the counts matrix class in the given CDS.
 #'
 #' @description Converts the counts matrix that is in the
