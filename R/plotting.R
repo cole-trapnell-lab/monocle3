@@ -1463,7 +1463,7 @@ plot_genes_hybrid <- function (cds_subset,
                                      point_interval = 'median_qi',
                                      point_alpha=1.0,
                                      outline_bars=TRUE,
-                                     slab_color='black', 
+                                     slab_color='black',
                                      slab_linewidth=0.1,
                                      slab_fill='green',
                                      slab_alpha=0.3)
@@ -1919,5 +1919,244 @@ plot_genes_by_group <- function(cds,
   }
 
   g
+}
+
+#' Plot a histogram of the number of UMIs per cell with a vertical line showing the cutoff for the minimum number of UMIs.
+#' @param cds A cell_data_set for plotting.
+#' @param min_rna_umi Cutoff for the minimum number of UMIs per cell.
+#' @returns A ggplot2 object.
+#' @import ggplot2
+#' @export
+plot_umi_per_cell <- function(cds,
+                              min_rna_umi = 100) {
+  assertthat::assert_that(methods::is(cds, "cell_data_set"))
+  tryCatch(
+    assertthat::assert_that("log.n.umi" %in% colnames(colData(cds))),
+    error = function(e) {
+      colData(cds)$log.n.umi <- log10(colData(cds)$n.umi)
+    }
+  )
+
+  g <- colData(cds) %>%
+    as.data.frame() %>%
+    dplyr::select(cell, log.n.umi) %>%
+    dplyr::distinct() %>%
+    ggplot() +
+    geom_histogram(aes(x = log.n.umi),
+                   fill = "grey80",
+                   color = "black",
+                   binwidth = 0.2,
+                   linewidth = 0.1,
+                   bins = 50) +
+    scale_x_continuous(name = "RNA UMIs",
+                       breaks = c(0, 1, 2, 3, 4),
+                       labels = as.character(c(0, 10, 100, 1000, 10000))) +
+    ylab("Number of Cells") +
+    geom_vline(xintercept = log10(min_rna_umi),
+               color = "red",
+               linewidth = 0.5) +
+    monocle_theme_opts()
+
+  return(g)
+}
+
+#' Plot a histogram of the percentage of UMIs mapping to mitochondria for each cell.
+#' @param cds A cell_data_set for plotting.
+#' @param max_mito_pct Cutoff for the maximum percentage of UMIs mapping to mitochondria.
+#' @param pseudocount Value to add to the percentages before taking the log. Note that this is in terms of percent, not fractional.
+#' @returns A ggplot2 object.
+#' @import ggplot2
+#' @export
+plot_mito_umi_per_cell <- function(cds,
+                                   max_mito_pct = .max_mito_pct,
+                                   pseudocount = 1e-3) {
+  assertthat::assert_that(methods::is(cds, "cell_data_set"))
+  assertthat::assert_that(all(c("cell", "perc_mitochondrial_umis") %in% colnames(colData(cds))))
+
+  g <- colData(cds) %>%
+    as.data.frame() %>%
+    dplyr::select(cell, perc_mitochondrial_umis) %>%
+    dplyr::distinct() %>%
+    ggplot() +
+    geom_histogram(aes(x = log10(perc_mitochondrial_umis + pseudocount)),
+                   fill = "grey80",
+                   color = "black",
+                   binwidth = 0.2,
+                   linewidth = 0.1,
+                   bins = 50) +
+    scale_x_continuous(name = "Percent Mitochondrial UMIs",
+                       breaks = c(log10(pseudocount), -2, -1, 0, 1, 2),
+                       labels = as.character(c(0, 0.001, 0.1, 1, 10, 100))) +
+    ylab("Number of Cells") +
+    geom_vline(xintercept = log10(max_mito_pct),
+               color = "red",
+               linewidth = 0.5) +
+    monocle_theme_opts()
+
+  return(g)
+}
+
+#' Make a boxplot of the number of UMIs per cell, with each perturbation as a separate box. Optionally facet by a second value.
+#' @param cds A cell_data_set for plotting.
+#' @param perturbation_col How to group the cells for the plot. Must be a column of the colData.
+#' @param facet_by Facet the plot by this column of the colData. Each unique value is its own facet.
+#' @param color_palette List of colors to color perturbation groups. Default is NULL. When NULL, use a default set.
+#' @param yticks List of numeric values to put on the y-axis ticks.
+#' @returns A ggplot2 object.
+#' @import ggplot2
+#' @export
+plot_umi_per_cell_and_perturbation <- function(cds,
+                                               perturbation_col = "perturbation",
+                                               facet_by = NULL,
+                                               color_palette = NULL,
+                                               yticks = NULL) {
+  assertthat::assert_that(methods::is(cds, "cell_data_set"))
+  assertthat::assert_that(perturbation_col %in% colnames(colData(cds)),
+                          msg = "perturbation_col is not in the colData of the CDS.")
+  assertthat::assert_that(is.null(facet_by) || (facet_by %in% colnames(colData(cds))),
+                          msg = "facet_by is not in the colData of the CDS.")
+  assertthat::assert_that(is.null(yticks) || is.numeric(yticks),
+                          msg = "yticks are not numeric.")
+
+  coldata_df <- colData(cds) %>%
+    as.data.frame() %>%
+    dplyr::filter(!is.na(perturbation_col))
+
+  if (is.null(color_palette)) {
+    N <- length(unique(coldata_df[[perturbation_col]]))
+    color_palette <- get_n_colors(N)
+  }
+
+  if (is.null(yticks)) {
+    yticks <- c(100, 250, 500, 1000, 2500, 5000, 10000)
+  }
+
+  g <- coldata_df %>%
+    ggplot() +
+    geom_boxplot(aes(x = reorder(!!sym(perturbation_col), log.n.umi),
+                     y = log.n.umi,
+                     fill = !!sym(perturbation_col)),
+                 color = "black",
+                 outlier.stroke = 0.1,
+                 outlier.size = 0.1,
+                 size = 0.2) +
+    scale_fill_manual(values = color_palette, name = stringr::str_to_title(perturbation_col)) +
+    scale_y_continuous(breaks = log10(yticks),
+                       labels = as.character(yticks))
+
+  if (!is.null(facet_by)) {
+    g <- g +
+      facet_grid(cols = vars(!!sym(facet_by))) +
+      ggtitle(stringr::str_to_title(facet_by))
+  }
+
+  g <- g +
+    ylab("UMIs per Cell") +
+    monocle_theme_opts() +
+    theme(axis.title.x = element_blank(),
+          axis.text.x = element_blank(),
+          axis.ticks.x = element_blank(),
+          plot.title = element_text(hjust = 0.5))
+
+  return(g)
+}
+
+#' Make a boxplot of the number of cells per sample, with each perturbation as a separate box. Optionally facet by a second value.
+#' @param cds A cell_data_set for plotting.
+#' @param perturbation_col How to group the cells for the plot. Must be a column of the colData.
+#' @param count_per_sample_col Which column of the colData to put in the boxplots.
+#' @param min_cells_per_sample The minimum number of cells per sample. Drawn on as a horizontal line.
+#' @param facet_by Facet the plot by this column of the colData. Each unique value is its own facet.
+#' @param color_palette List of colors to color perturbation groups. Default is NULL. When NULL, use a default set.
+#' @param yticks List of numeric values to put on the y-axis ticks.
+#' @returns A ggplot2 object.
+#' @import ggplot2
+#' @export
+plot_cells_per_sample_and_perturbation <- function(cds,
+                                                   perturbation_col = "perturbation",
+                                                   count_per_sample_col = "count_per_embryo",
+                                                   min_cells_per_sample = 1000,
+                                                   facet_by = NULL,
+                                                   color_palette = NULL,
+                                                   yticks = NULL) {
+  assertthat::assert_that(methods::is(cds, "cell_data_set"))
+  assertthat::assert_that(all(c(perturbation_col, count_per_sample_col) %in% colnames(colData(cds))))
+  assertthat::assert_that(is.null(facet_by) || (facet_by %in% colnames(colData(cds))),
+                          msg = "facet_by is not in the colData of the CDS.")
+  assertthat::assert_that(is.null(yticks) || is.numeric(yticks),
+                          msg = "yticks are not numeric.")
+
+  counts_per_sample_df <- colData(cds) %>%
+    as.data.frame() %>%
+    dplyr::select(count_per_sample_col, perturbation_col, facet_by) %>%
+    dplyr::filter(!is.na(perturbation_col))
+
+  if (is.null(color_palette)) {
+    N <- length(unique(counts_per_sample_df[[perturbation_col]]))
+    color_palette <- get_n_colors(N)
+  }
+
+  if (is.null(yticks)) {
+    yticks <- c(100, 500, 1000, 2500, 5000, 10000, 20000, 40000)
+  }
+
+  g <- counts_per_sample_df %>%
+    ggplot() +
+    geom_boxplot(aes(x = reorder(!!sym(perturbation_col), !!sym(count_per_sample_col)),
+                     y = log10(!!sym(count_per_sample_col)),
+                     fill = !!sym(perturbation_col)),
+                 color = "black",
+                 outlier.stroke = 0.1,
+                 outlier.size = 0.1,
+                 size = 0.2) +
+    scale_fill_manual(values = color_palette, name = stringr::str_to_title(perturbation_col)) +
+    scale_y_continuous(breaks = log10(yticks),
+                       labels = as.character(yticks)) +
+    geom_hline(yintercept = log10(min_cells_per_sample),
+               color = "red",
+               linewidth = 0.5)
+
+  if (!is.null(facet_by)) {
+    g <- g +
+      facet_grid(cols = vars(!!sym(facet_by))) +
+      ggtitle(stringr::str_to_title(facet_by))
+  }
+  g <- g +
+    ylab("Cells per Sample") +
+    monocle_theme_opts() +
+    theme(axis.title.x = element_blank(),
+          axis.text.x = element_blank(),
+          axis.ticks.x = element_blank(),
+          plot.title = element_text(hjust = 0.5))
+
+  return(g)
+}
+
+#' Get a list of color hex codes from a custom palette.
+#' @noRd
+get_n_colors <- function(n) {
+  vibrant_colors <- c('#EE7733',
+                      '#0077BB',
+                      '#228833',
+                      '#33BBEE',
+                      '#EE3377',
+                      '#CC3311',
+                      '#AA3377',
+                      '#009988',
+                      '#004488',
+                      '#DDAA33',
+                      '#99CC66',
+                      '#D590DD')
+
+  bright_colors <- c('#4477AA',
+                     '#EE6677',
+                     '#228833',
+                     '#CCBB44',
+                     '#66CCEE',
+                     '#AA3377',
+                     '#BBBBBB')
+
+  palette <- colorRampPalette(c(vibrant_colors, bright_colors))
+  return(palette(n))
 }
 
