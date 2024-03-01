@@ -286,7 +286,7 @@ plot_cells_3d <- function(cds,
 
     ica_space_df <- t(cds@principal_graph_aux[[reduction_method]]$dp_mst) %>%
       as.data.frame() %>%
-      dplyr::select(prin_graph_dim_1 = x, prin_graph_dim_2 = y,
+      dplyr::select_(prin_graph_dim_1 = x, prin_graph_dim_2 = y,
                      prin_graph_dim_3 = z) %>%
       dplyr::mutate(sample_name = rownames(.),
                     sample_state = rownames(.))
@@ -295,15 +295,15 @@ plot_cells_3d <- function(cds,
 
     edge_df <- dp_mst %>%
       igraph::as_data_frame() %>%
-      dplyr::select(source = "from", target = "to") %>%
+      dplyr::select_(source = "from", target = "to") %>%
       dplyr::left_join(ica_space_df %>%
-                         dplyr::select(source="sample_name",
+                         dplyr::select_(source="sample_name",
                                         source_prin_graph_dim_1="prin_graph_dim_1",
                                         source_prin_graph_dim_2="prin_graph_dim_2",
                                         source_prin_graph_dim_3="prin_graph_dim_3"),
                        by = "source") %>%
       dplyr::left_join(ica_space_df %>%
-                         dplyr::select(target="sample_name",
+                         dplyr::select_(target="sample_name",
                                         target_prin_graph_dim_1="prin_graph_dim_1",
                                         target_prin_graph_dim_2="prin_graph_dim_2",
                                         target_prin_graph_dim_3="prin_graph_dim_3"),
@@ -549,7 +549,7 @@ plot_cells <- function(cds,
 
     ica_space_df <- t(cds@principal_graph_aux[[reduction_method]]$dp_mst) %>%
       as.data.frame() %>%
-      dplyr::select(prin_graph_dim_1 = x, prin_graph_dim_2 = y) %>%
+      dplyr::select_(prin_graph_dim_1 = x, prin_graph_dim_2 = y) %>%
       dplyr::mutate(sample_name = rownames(.),
                     sample_state = rownames(.))
 
@@ -557,15 +557,15 @@ plot_cells <- function(cds,
 
     edge_df <- dp_mst %>%
       igraph::as_data_frame() %>%
-      dplyr::select(source = "from", target = "to") %>%
+      dplyr::select_(source = "from", target = "to") %>%
       dplyr::left_join(ica_space_df %>%
-                         dplyr::select(
+                         dplyr::select_(
                            source="sample_name",
                            source_prin_graph_dim_1="prin_graph_dim_1",
                            source_prin_graph_dim_2="prin_graph_dim_2"),
                        by = "source") %>%
       dplyr::left_join(ica_space_df %>%
-                         dplyr::select(
+                         dplyr::select_(
                            target="sample_name",
                            target_prin_graph_dim_1="prin_graph_dim_1",
                            target_prin_graph_dim_2="prin_graph_dim_2"),
