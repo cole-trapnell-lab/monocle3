@@ -54,27 +54,26 @@ warn_text_se <- function() {
   warn("Text parsing is deprecated, please supply an expression or formula")
 }
 
-
-compat_lazy_se <- function(lazy, env = caller_env(), warn = TRUE) {
+compat_lazy_se <- function(lazy, env = rlang::caller_env(), warn = TRUE) {
   # Note: warn_underscored is disabled above.
   if (warn) monocle3:::warn_underscored_se()
 
   if (missing(lazy)) {
-    return(quo())
+    return(rlang::quo())
   }
-  if (is_quosure(lazy)) {
+  if (rlang::is_quosure(lazy)) {
     return(lazy)
   }
-  if (is_formula(lazy)) {
-    return(as_quosure(lazy, env))
+  if (rlang::is_formula(lazy)) {
+    return(rlang::as_quosure(lazy, env))
   }
 
   out <- switch(typeof(lazy),
     symbol = ,
-    language = new_quosure(lazy, env),
+    language = rlang::new_quosure(lazy, env),
     character = {
       if (warn) monocle3:::warn_text_se()
-      parse_quo(lazy[[1]], env)
+      rlang::parse_quo(lazy[[1]], env)
     },
     logical = ,
     integer = ,
@@ -83,15 +82,15 @@ compat_lazy_se <- function(lazy, env = caller_env(), warn = TRUE) {
         warn("Truncating vector to length 1")
         lazy <- lazy[[1]]
       }
-      new_quosure(lazy, env)
+      rlang::new_quosure(lazy, env)
     },
     list =
       if (inherits(lazy, "lazy")) {
-        lazy = new_quosure(lazy$expr, lazy$env)
+        lazy = rlang::new_quosure(lazy$expr, lazy$env)
       }
   )
 
-  if (is_null(out)) {
+  if (rlang::is_null(out)) {
     abort(sprintf("Can't convert a %s to a quosure", typeof(lazy)))
   } else {
     out
@@ -116,13 +115,13 @@ compat_lazy_dots_se <- function(dots, env, ..., .named = FALSE) {
     warn <- FALSE
   }
 
-  named <- have_name(dots)
+  named <- rlang::have_name(dots)
   if (.named && any(!named)) {
-    nms <- vapply(dots[!named], function(x) expr_text(get_expr(x)), character(1))
+    nms <- vapply(dots[!named], function(x) rlang::expr_text(get_expr(x)), character(1))
     names(dots)[!named] <- nms
   }
 
-  names(dots) <- names2(dots)
+  names(dots) <- rlang::names2(dots)
   dots
 }
 
@@ -138,7 +137,7 @@ select_se <- function(.data, ..., .dots = list()) {
 # select_se for data.frames.
 #' @export
 select_se.data.frame <- function(.data, ..., .dots = list()) {
-  dots <- monocle3:::compat_lazy_dots_se(.dots, caller_env(), ...)
+  dots <- monocle3:::compat_lazy_dots_se(.dots, rlang::caller_env(), ...)
   dplyr::select(.data, !!!dots)
 }
 
@@ -146,7 +145,7 @@ select_se.data.frame <- function(.data, ..., .dots = list()) {
 # select_se for grouped data frames.
 #' @export
 select_se.grouped_df <- function(.data, ..., .dots = list()) {
-  dots <- monocle3:::compat_lazy_dots_se(.dots, caller_env(), ...)
+  dots <- monocle3:::compat_lazy_dots_se(.dots, rlang::caller_env(), ...)
   dplyr::select(.data, !!!dots)
 }
 
