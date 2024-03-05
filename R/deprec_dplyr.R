@@ -39,18 +39,6 @@
 #
 
 
-lazy_deprec <- function(fun,
-                        hint = TRUE,
-                        env = caller_env(),
-                        user_env = caller_env(2)) {
-  lifecycle::deprecate_warn(
-    env = env,
-    user_env = user_env,
-    always = TRUE
-  )
-}
-
-
 warn_underscored_se <- function() {
   return(NULL)
   warn(paste(
@@ -142,7 +130,7 @@ compat_lazy_dots_se <- function(dots, env, ..., .named = FALSE) {
 # Generic select_se.
 #' @export
 select_se <- function(.data, ..., .dots = list()) {
-  # lazy_deprec("select", hint = FALSE) # Disable warning message.
+  # lazy_deprec("select", hint = FALSE) # Disable warning message and remove function definition.
   UseMethod("select_se")
 }
 
