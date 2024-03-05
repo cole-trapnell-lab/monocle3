@@ -117,7 +117,7 @@ compat_lazy_dots_se <- function(dots, env, ..., .named = FALSE) {
 
   named <- rlang::have_name(dots)
   if (.named && any(!named)) {
-    nms <- vapply(dots[!named], function(x) rlang::expr_text(get_expr(x)), character(1))
+    nms <- vapply(dots[!named], function(x) rlang::expr_text(rlang::get_expr(x)), character(1))
     names(dots)[!named] <- nms
   }
 
