@@ -2,7 +2,7 @@
 % Please edit documentation in R/generics.R
 \name{counts_row_order}
 \alias{counts_row_order}
-\title{Generic to access cds row order BPCells count matrix.}
+\title{Generic to access cds row order BPCells counts matrix.}
 \usage{
 counts_row_order(x)
 }
@@ -10,15 +10,15 @@ counts_row_order(x)
 \item{x}{A cell_data_set object.}
 }
 \value{
-BPCells row order ount matrix.
+BPCells row order counts matrix.
 }
 \description{
-Generic to access cds row order BPCells count matrix.
+Generic to access cds row order BPCells counts matrix.
 }
 \examples{
  \donttest{
-   cds <- load_a549()
-   exprs(cds)
+   cds <- load_a549(matrix_control=list(matrix_class='BPCells'))
+   mat_row_order <- counts_row_order(cds)
  }         
          
 }

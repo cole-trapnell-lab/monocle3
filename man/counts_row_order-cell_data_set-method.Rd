@@ -2,7 +2,7 @@
 % Please edit documentation in R/generics.R
 \name{counts_row_order,cell_data_set-method}
 \alias{counts_row_order,cell_data_set-method}
-\title{Method to access cds row order BPCells count matrix}
+\title{Method to access cds row order BPCells counts matrix}
 \usage{
 \S4method{counts_row_order}{cell_data_set}(x)
 }
@@ -10,8 +10,8 @@
 \item{x}{A cell_data_set object.}
 }
 \value{
-BPCells row order count matrix.
+BPCells row order counts matrix.
 }
 \description{
-Method to access cds row order BPCells count matrix
+Method to access cds row order BPCells counts matrix
 }

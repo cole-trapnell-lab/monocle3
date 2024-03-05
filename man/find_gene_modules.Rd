@@ -53,8 +53,8 @@ find_gene_modules(
 Jaccard coefficient for two nearest neighbors (based on the overlapping of
 their kNN) as the weight used for Louvain clustering. Default to be FALSE.}
 
-\item{resolution}{Resolution parameter passed to Louvain. Can be a list. If
-so, this method will evaluate modularity at each resolution and use the
+\item{resolution}{Resolution parameter passed to Louvain. Can be a numeric vector.
+If so, this method will evaluate modularity at each resolution and use the
 one with the highest value.}
 
 \item{random_seed}{the seed used by the random number generator in Leiden.
