@@ -121,6 +121,7 @@ jobs:
       #    Rscript -e 'install.packages(c("ggdist", "ggforce"))'
       - name: Run R CMD build and R CMD check
         run: |
+          Rscript -e 'install.packages(c('rlang'))
           R CMD build .
           R CMD check monocle3*tar.gz
         shell: bash
