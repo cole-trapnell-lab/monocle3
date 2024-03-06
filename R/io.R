@@ -1260,7 +1260,7 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
   }
 
   # Make directory if necessary.
-  dir.create(path = directory_path, showWarnings=FALSE, recursive=TRUE, mode='0700')
+  dir.create(path = directory_path, showWarnings=FALSE, recursive=TRUE, mode='0777')
 
   # Remove files, if they exist.
   for(reduction_method in names(methods_reduce_dim)) {
@@ -1851,7 +1851,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
   }
 
   # Make directory if necessary.
-  dir.create(path = directory_path, showWarnings=FALSE, recursive=TRUE, mode='0700')
+  dir.create(path = directory_path, showWarnings=FALSE, recursive=TRUE, mode='0777')
 
   # Remove files, if they exist.
 
