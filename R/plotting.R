@@ -1883,23 +1883,23 @@ plot_genes_by_group <- function(cds,
       g <- ggplot(ExpVal, aes(y = Gene,  x = Group)) +
         geom_point(aes(colour = group_color_class,  size = mean)) +
         #viridis::scale_color_viridis(name = 'percentage') +
-        scale_size(name = 'log(mean + 0.1)', range = c(0, max.size))
+        scale_size(name = paste0('log(mean + ', pseudocount, ')'), range = c(0, max.size))
     }else{
       g <- ggplot(ExpVal, aes(y = Gene,  x = Group)) +
         geom_point(aes(colour = percentage,  size = mean)) +
         viridis::scale_color_viridis(name = 'percentage') +
-        scale_size(name = 'log(mean + 0.1)', range = c(0, max.size))
+        scale_size(name = paste0('log(mean + ', pseudocount, ')'), range = c(0, max.size))
     }
   } else {
     if (color_by_group){
       g <- ggplot(ExpVal, aes(y = Gene,  x = Group)) +
         geom_point(aes(colour = group_color_class,  size = percentage)) +
-        #viridis::scale_color_viridis(name = 'log(mean + 0.1)') +
+        #viridis::scale_color_viridis(name = paste0('log(mean + ', pseudocount, ')')) +
         scale_size(name = 'percentage', range = c(0, max.size))
     }else{
       g <- ggplot(ExpVal, aes(y = Gene,  x = Group)) +
         geom_point(aes(colour = mean,  size = percentage)) +
-        viridis::scale_color_viridis(name = 'log(mean + 0.1)') +
+        viridis::scale_color_viridis(name = paste0('log(mean + ', pseudocount, ')')) +
         scale_size(name = 'percentage', range = c(0, max.size))
     }
   }
