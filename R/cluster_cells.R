@@ -599,6 +599,8 @@ compute_partitions <- function(g,
                                optim_res,
                                qval_thresh=0.05,
                                verbose = FALSE){
+  # The cells membership may have information about the
+  # clusters to which cells' nearest neighbors belong.
   cell_membership <- as.factor(igraph::membership(optim_res))
   membership_matrix <- Matrix::sparse.model.matrix( ~ cell_membership + 0)
   num_links <- Matrix::t(membership_matrix) %*%
@@ -616,6 +618,9 @@ compute_partitions <- function(g,
   cluster_mat <- pnorm_over_mat(as.matrix(num_links_ij), var_null_num_links)
 
   num_links <- num_links_ij / total_edges
+
+  # Deal with zero total edges.
+  num_links[is.nan(num_links)] <- 0
 
   cluster_mat <- matrix(stats::p.adjust(cluster_mat),
                         nrow=length(louvain_modules),
