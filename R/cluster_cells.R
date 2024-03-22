@@ -621,7 +621,8 @@ compute_partitions <- function(g,
 
   # Deal with zero total edges.
   num_links[is.nan(num_links)] <- 0
-
+  cluster_mat[is.nan(cluster_mat)] <- 0
+`
   cluster_mat <- matrix(stats::p.adjust(cluster_mat),
                         nrow=length(louvain_modules),
                         ncol=length(louvain_modules))
