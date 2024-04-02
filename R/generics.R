@@ -657,7 +657,7 @@ setMethod("counts<-", signature(object="SingleCellExperiment"),
 #' 
 #' @examples
 #'  \donttest{
-#'    cds <- load_a549()
+#'    cds <- load_a549(matrix_control=list(matrix_class='BPCells'))
 #'    mat_row_order <- counts_row_order(cds)
 #'  }         
 #'          

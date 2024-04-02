@@ -1,3 +1,10 @@
+# Monocle3 1.4.15
+
+### Changes
+
+* Fix partition calculation when clusters are widely separated.
+* Fix possible column selection error in plot_cells().
+
 # Monocle3 1.3.0
 
 ### Changes

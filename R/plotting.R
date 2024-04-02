@@ -286,8 +286,8 @@ plot_cells_3d <- function(cds,
 
     ica_space_df <- t(cds@principal_graph_aux[[reduction_method]]$dp_mst) %>%
       as.data.frame() %>%
-      dplyr::select(prin_graph_dim_1 = x, prin_graph_dim_2 = y,
-                     prin_graph_dim_3 = z) %>%
+      dplyr::select(prin_graph_dim_1 = {{x}}, prin_graph_dim_2 = {{y}},
+                     prin_graph_dim_3 = {{z}}) %>%
       dplyr::mutate(sample_name = rownames(.),
                     sample_state = rownames(.))
 
@@ -549,7 +549,7 @@ plot_cells <- function(cds,
 
     ica_space_df <- t(cds@principal_graph_aux[[reduction_method]]$dp_mst) %>%
       as.data.frame() %>%
-      dplyr::select(prin_graph_dim_1 = x, prin_graph_dim_2 = y) %>%
+      dplyr::select(prin_graph_dim_1 = {{x}}, prin_graph_dim_2 = {{y}}) %>%
       dplyr::mutate(sample_name = rownames(.),
                     sample_state = rownames(.))
 
