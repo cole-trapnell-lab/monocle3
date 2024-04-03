@@ -849,7 +849,7 @@ load_umap_nn_indexes <- function(umap_model, file_name, md5sum_umap_index) {
   n_metrics <- length(metrics)
   if(n_metrics == 1) {
     md5sum <- tools::md5sum(file_name)
-    if(!is.null(md5sum_umap_index) && md5sum != md5sum_umap_index) {
+    if(!is.na(md5sum_umap_index) && !is.null(md5sum_umap_index) && md5sum != md5sum_umap_index) {
       stop('The UMAP annoy index file, \'', file_name, '\', differs from the file made using the save_reduce_dimension_model() function.')
     }
     metric <- metrics[[1]]
@@ -865,7 +865,7 @@ load_umap_nn_indexes <- function(umap_model, file_name, md5sum_umap_index) {
     for(i in seq(1, n_metrics, 1)) {
       file_name_expand <- paste0(file_name, i)
       md5sum <- tools::md5sum(file_name_expand)
-      if(!is.null(md5sum_umap_index) && md5sum != md5sum_vec[[i]]) {
+      if(!is.na(md5sum_umap_index) && !is.null(md5sum_umap_index) && md5sum != md5sum_vec[[i]]) {
         stop('The UMAP annoy index file, \'', file_name_expand, '\', differs from the file made using the save_reduce_dimension_model() function.')
       }
       metric <- metrics[[i]]
@@ -880,8 +880,12 @@ load_umap_nn_indexes <- function(umap_model, file_name, md5sum_umap_index) {
 # This is a specialized function for use in load_monocle_objects. There are
 # no matrix_control checks and it requires the path to an existing
 # BPCells matrix stored in a directory. The matrix control is used only
-# to set the resulting the matrix_path.
+# to set the resulting matrix_path.
 load_bpcells_matrix_dir <- function(file_name, md5sum, matrix_control=list()) {
+  md5sum_file <- bpcells_matdir_md5(file_name)
+  if(!is.na(md5sum) && md5sum_file != md5sum) {
+    stop('Error: BPCells matrix file md5sum mis-match between the values\n       for the file written and the file to read.')
+  }
   matrixDirTmp <- BPCells::open_matrix_dir(dir=file_name, buffer_size=8192L)
   matrix_info <- get_matrix_info(mat=matrixDirTmp)
   matrix_control_res <- list(matrix_class=matrix_info[['matrix_class']],
@@ -1613,6 +1617,22 @@ test_hdf5_assays <- function(cds) {
 
 
 #
+# Get md5 checksum of a value file in the BPCells matrix directory.
+#
+bpcells_matdir_md5 <- function(matrix_dir_path) {
+  file_name_list <- c('val', 'val_data')
+  for(file_name in file_name_list) {
+    file_path <- file.path(matrix_dir_path, file_name)
+    file_exists <- file.exists(file_path)
+    if(file_exists) {
+      return(tools::md5sum(file_path))
+    }
+  }
+  return(NA)
+}
+
+
+#
 #' Save a Monocle3 full cell_data_set.
 #'
 #' Save a Monocle3 full cell_data_set to a specified directory
@@ -1917,13 +1937,14 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
           stop(stop_condition_message('save_monocle_objects', bpcells_matrix_path, write_type='directory', cond), call.=FALSE)
         },
         finally = {
+          val_md5sum <- bpcells_matdir_md5(bpcells_matrix_path)
           file_index[['files']] <- rbind(file_index[['files']],
                                          data.frame(cds_object = 'bpcells_matrix_dir',
                                                     reduction_method = NA,
                                                     object_spec = object_name_to_string(mat),
                                                     file_format = 'BPCells:MatrixDir',
                                                     file_path = bpcells_matrix_dir,
-                                                    file_md5sum = NA,
+                                                    file_md5sum = val_md5sum,
                                                     stringsAsFactors = FALSE))
         })
     }
