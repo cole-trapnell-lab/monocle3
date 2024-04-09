@@ -1144,21 +1144,13 @@ get_citations <- function(cds) {
 
 # Make a unique identifier string.
 get_unique_id <- function(object=NULL) {
-  #
-  # I don't have a way to calculate a checksum
-  # without creating an in memory matrix copy
-  # so skip if this is a BPCells matrix.
-  if(is(object, 'IterableMatrix')) {
-    return('BPcells matrix')
-  }
-
   if(!is.null(object)) {
     object_dim <- dim(object)
     if(!is(object, 'IterableMatrix')) {
       object_checksum <- digest::digest(object)
     }
     else {
-      object_checksum <- digest::digest(as(object, 'dgCMatrix'))
+      object_checksum <- BPCells::iterable_matrix_md5sum(object)
     }
     if(!is.null(object_dim))
       object_id <- list(checksum=object_checksum, dim=object_dim)

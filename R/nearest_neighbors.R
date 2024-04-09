@@ -853,9 +853,7 @@ test_annoy_index <- function(nn_index, verbose=FALSE) {
     return(FALSE)
   }
 
-  tryCatch( {
-    dist_res <- index_obj$getDistance(0,1)
-  },
+  dist_res <- tryCatch(index_obj$getDistance(0,1),
   error=function(emsg) {
     if(verbose) {
       cs <- get_call_stack_as_string()
@@ -880,9 +878,7 @@ test_hnsw_index <- function(nn_index, verbose=FALSE) {
     return(FALSE)
   }
 
-  tryCatch( {
-    size_res <- nn_index[['hnsw_index']]$size()
-  },
+  size_res <- tryCatch(nn_index[['hnsw_index']]$size(),
   error=function(emsg) {
     if(verbose) {
       cs <- get_call_stack_as_string()
