@@ -1150,7 +1150,9 @@ get_unique_id <- function(object=NULL) {
       object_checksum <- digest::digest(object)
     }
     else {
-      object_checksum <- BPCells::iterable_matrix_md5sum(object)
+#      object_checksum <- BPCells::iterable_matrix_md5sum(object)
+      # Set checksum to NA until BPCells adds iterable_matrix_md5sum function.
+      object_checksum <- NA
     }
     if(!is.null(object_dim))
       object_id <- list(checksum=object_checksum, dim=object_dim)
