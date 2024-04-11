@@ -134,11 +134,9 @@ is_matrix_market_file <- function( matpath )
 load_annotations_data <- function( anno_path, metadata_column_names=NULL, header=FALSE, sep="", quote="\"'", annotation_type=NULL )
 {
   assertthat::assert_that( ! is.null( annotation_type ) )
-  tryCatch(
-      {
-        annotations <- utils::read.table( anno_path, header=header, sep=sep, quote=quote, stringsAsFactors=FALSE )
-      }, error = function( emsg )
-      {
+  annotations <- tryCatch(
+      utils::read.table( anno_path, header=header, sep=sep, quote=quote, stringsAsFactors=FALSE ),
+      error = function( emsg ) {
         stop( 'load_mm_data: bad status reading ', annotation_type, ' file \'', anno_path, '\'\n  ',
             emsg, '\n',
             '  note: possible problems include the wrong filename, a missing file,\n',
@@ -650,9 +648,8 @@ load_annoy_index <- function(nn_index, file_name, metric, ndim) {
     if(nn_index[['version']] == 1 || nn_index[['version']] == 2) {
       annoy_index <- new_annoy_index(metric, ndim)
       tryCatch(
-        {
-          annoy_index$load(file_name)
-        }, error = function(emsg)
+          annoy_index$load(file_name),
+        error = function(emsg)
         {
           stop('load_annoy_index: bad status reading annoy index file')
         }
@@ -668,9 +665,8 @@ load_annoy_index <- function(nn_index, file_name, metric, ndim) {
     if(nn_index[['type']] == 'annoyv1') {
       annoy_index <- new_annoy_index(metric, ndim)
       tryCatch(
-        {
-          annoy_index$load(file_name)
-        }, error = function(emsg)
+          annoy_index$load(file_name),
+        error = function(emsg)
         {
           stop('load_annoy_index: bad status reading annoy index file')
         }
@@ -711,9 +707,8 @@ load_umap_annoy_index <- function(nn_index, file_name, metric, ndim) {
     if(nn_index[['type']] == 'annoyv1') {
       annoy_index <- new_annoy_index(metric, ndim)
       tryCatch(
-        {
-          annoy_index$load(file_name)
-        }, error = function(emsg)
+          annoy_index$load(file_name),
+        error = function(emsg)
         {
           stop('load_annoy_index: bad status reading annoy index file')
         }
@@ -728,9 +723,8 @@ load_umap_annoy_index <- function(nn_index, file_name, metric, ndim) {
     # Assume to be an older uwot annoy index version.
     nn_index <- new_annoy_index(metric, ndim)
     tryCatch(
-      {
-        nn_index$load(file_name)
-      }, error = function(emsg)
+        nn_index$load(file_name),
+      error = function(emsg)
       {
         stop('load_annoy_index: bad status reading annoy index file')
       }
@@ -756,52 +750,44 @@ save_hnsw_index <- function(nn_index, file_name) {
 
 load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
   if(metric == 'l2') {
-    tryCatch(
-      {
-        new_index <- methods::new(RcppHNSW::HnswL2, ndim, file_name)
-      }, error = function(emsg)
+    new_index <- tryCatch(
+      methods::new(RcppHNSW::HnswL2, ndim, file_name),
+      error = function(emsg)
       {
         stop('load_hnsw_index: bad status reading hnsw index file')
       }
     )
-    unlink(file_name)
   }
   else
   if(metric == 'euclidean') {
-    tryCatch(
-      {
-        new_index <- methods::new(RcppHNSW::HnswL2, ndim, file_name)
-      }, error = function(emsg)
+    new_index <- tryCatch(
+      methods::new(RcppHNSW::HnswL2, ndim, file_name),
+      error = function(emsg)
       {
         stop('load_hnsw_index: bad status reading hnsw index file')
       }
     )
     attr(new_index, "distance") <- "euclidean"
-    unlink(file_name)
   }
   else
     if(metric == 'cosine') {
-    tryCatch(
-      {
-        new_index <- methods::new(RcppHNSW::HnswCosine, ndim, file_name)
-      }, error = function(emsg)
+    new_index <- tryCatch(
+      methods::new(RcppHNSW::HnswCosine, ndim, file_name),
+      error = function(emsg)
       {
         stop('load_hnsw_index: bad status reading hnsw index file')
       }
     )
-    unlink(file_name)
   }
   else
   if(metric == 'ip') {
-    tryCatch(
-      {
-        new_index <- methods::new(RcppHNSW::HnswIp, ndim, file_name)
-      }, error = function(emsg)
+    new_index <- tryCatch(
+      methods::new(RcppHNSW::HnswIp, ndim, file_name),
+      error = function(emsg)
       {
         stop('load_hnsw_index: bad status reading hnsw index file')
       }
     )
-    unlink(file_name)
   }
   else
     stop('Unrecognized HNSW metric ', metric)
@@ -849,7 +835,8 @@ load_umap_nn_indexes <- function(umap_model, file_name, md5sum_umap_index) {
   n_metrics <- length(metrics)
   if(n_metrics == 1) {
     md5sum <- tools::md5sum(file_name)
-    if(!is.null(md5sum_umap_index) && md5sum != md5sum_umap_index) {
+    # Don't check the md5sum when md5sum_umap_index is NA in file_index.rds in order to let the user circumvent the test.
+    if(!is.na(md5sum_umap_index) && !is.null(md5sum_umap_index) && md5sum != md5sum_umap_index) {
       stop('The UMAP annoy index file, \'', file_name, '\', differs from the file made using the save_reduce_dimension_model() function.')
     }
     metric <- metrics[[1]]
@@ -865,7 +852,8 @@ load_umap_nn_indexes <- function(umap_model, file_name, md5sum_umap_index) {
     for(i in seq(1, n_metrics, 1)) {
       file_name_expand <- paste0(file_name, i)
       md5sum <- tools::md5sum(file_name_expand)
-      if(!is.null(md5sum_umap_index) && md5sum != md5sum_vec[[i]]) {
+      # Don't check the md5sum when md5sum_umap_index is NA in file_index.rds in order to let the user circumvent the test.
+      if(!is.na(md5sum_umap_index) && !is.null(md5sum_umap_index) && md5sum != md5sum_vec[[i]]) {
         stop('The UMAP annoy index file, \'', file_name_expand, '\', differs from the file made using the save_reduce_dimension_model() function.')
       }
       metric <- metrics[[i]]
@@ -880,9 +868,31 @@ load_umap_nn_indexes <- function(umap_model, file_name, md5sum_umap_index) {
 # This is a specialized function for use in load_monocle_objects. There are
 # no matrix_control checks and it requires the path to an existing
 # BPCells matrix stored in a directory. The matrix control is used only
-# to set the resulting the matrix_path.
+# to set the resulting matrix_path.
 load_bpcells_matrix_dir <- function(file_name, md5sum, matrix_control=list()) {
-  matrixDirTmp <- BPCells::open_matrix_dir(dir=file_name, buffer_size=8192L)
+  md5sum_file <- tryCatch(bpcells_matdir_md5(file_name),
+    error=function(c) {
+      msg <- conditionMessage(c)
+      stop('Unable to get md5sum of file ', file_name, '\n  ',  msg)
+    }
+  )
+
+  # Don't check the md5sum when md5sum_file is NA in file_index.rds in order to let the user circumvent the test.
+  if(!is.na(md5sum) && md5sum_file != md5sum) {
+    stop(paste0('BPCells matrix file md5sum mis-match between the values of the file written and the file to read.'))
+  }
+
+  matrixDirTmp <- tryCatch(BPCells::open_matrix_dir(dir=file_name, buffer_size=8192L),
+    error=function(c) {
+      msg <- conditionMessage(c)
+      stop('Error reading file: ', file_name, '\n  ', msg)
+    },
+    warning=function(c) {
+      msg <- conditionMessage(c)
+      message('load_bpcells_matrix_dir: warning reading file: ', file_name, ': ', msg)
+    }
+  )
+
   matrix_info <- get_matrix_info(mat=matrixDirTmp)
   matrix_control_res <- list(matrix_class=matrix_info[['matrix_class']],
                              matrix_mode=matrix_info[['matrix_mode']],
@@ -1294,80 +1304,67 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
       },
       error = function(cond) {
         stop(stop_condition_message('save_transform_models', file_path, write_type='file', cond), call.=FALSE)
-      },
-      finally = {
-        md5sum <- tools::md5sum(file_path)
-        file_index[['files']] <- rbind(file_index[['files']],
-                                       data.frame(cds_object = 'reduce_dim_aux',
-                                                  reduction_method = reduction_method,
-                                                  object_spec = object_name_to_string(cds@reduce_dim_aux[[reduction_method]]),
-                                                  file_format = 'rds',
-                                                  file_path = methods_reduce_dim[[reduction_method]][['rds_path']],
-                                                  file_md5sum = md5sum,
-                                                  stringsAsFactors = FALSE))
-    })
+      })
+    md5sum <- tools::md5sum(file_path)
+    file_index[['files']] <- rbind(file_index[['files']],
+                                   data.frame(cds_object = 'reduce_dim_aux',
+                                              reduction_method = reduction_method,
+                                              object_spec = object_name_to_string(cds@reduce_dim_aux[[reduction_method]]),
+                                              file_format = 'rds',
+                                              file_path = methods_reduce_dim[[reduction_method]][['rds_path']],
+                                              file_md5sum = md5sum,
+                                              stringsAsFactors = FALSE))
+
     if(methods_reduce_dim[[reduction_method]][['has_annoy_index']]) {
       file_path <- file.path(directory_path, methods_reduce_dim[[reduction_method]][['annoy_index_path']])
       tryCatch(
-        {
-          save_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']], file_path)
-        },
+          save_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']], file_path),
         error = function(cond) {
           stop(stop_condition_message('save_transform_models', file_path, write_type='file', cond), call.=FALSE)
-        },
-        finally = {
-          md5sum <- tools::md5sum(file_path)
-          file_index[['files']] <- rbind(file_index[['files']],
-                                         data.frame(cds_object = 'reduce_dim_aux',
-                                                    reduction_method = reduction_method,
-                                                    object_spec = object_name_to_string(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']]),
-                                                    file_format = 'annoy_index',
-                                                    file_path = methods_reduce_dim[[reduction_method]][['annoy_index_path']],
-                                                    file_md5sum = md5sum,
-                                                    stringsAsFactors = FALSE))
         })
+      md5sum <- tools::md5sum(file_path)
+      file_index[['files']] <- rbind(file_index[['files']],
+                                     data.frame(cds_object = 'reduce_dim_aux',
+                                                reduction_method = reduction_method,
+                                                object_spec = object_name_to_string(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']]),
+                                                file_format = 'annoy_index',
+                                                file_path = methods_reduce_dim[[reduction_method]][['annoy_index_path']],
+                                                file_md5sum = md5sum,
+                                                stringsAsFactors = FALSE))
     }
 
     if(methods_reduce_dim[[reduction_method]][['has_hnsw_index']]) {
       file_path <- file.path(directory_path, methods_reduce_dim[[reduction_method]][['hnsw_index_path']])
       tryCatch(
-        {
-          save_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']], file_path)
-        },
+          save_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']], file_path),
         error = function(cond) {
           stop(stop_condition_message('save_transform_models', file_path, write_type='file', cond), call.=FALSE)
-        },
-        finally = {
-          md5sum <- tools::md5sum(file_path)
-          file_index[['files']] <- rbind(file_index[['files']],
-                                         data.frame(cds_object = 'reduce_dim_aux',
-                                                    reduction_method = reduction_method,
-                                                    object_spec = object_name_to_string(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']]),
-                                                    file_format = 'hnsw_index',
-                                                    file_path = methods_reduce_dim[[reduction_method]][['hnsw_index_path']],
-                                                    file_md5sum = md5sum,
-                                                    stringsAsFactors = FALSE))
         })
+      md5sum <- tools::md5sum(file_path)
+      file_index[['files']] <- rbind(file_index[['files']],
+                                     data.frame(cds_object = 'reduce_dim_aux',
+                                                reduction_method = reduction_method,
+                                                object_spec = object_name_to_string(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']]),
+                                                file_format = 'hnsw_index',
+                                                file_path = methods_reduce_dim[[reduction_method]][['hnsw_index_path']],
+                                                file_md5sum = md5sum,
+                                                stringsAsFactors = FALSE))
     }
     if(reduction_method == 'UMAP' && methods_reduce_dim[[reduction_method]][['has_model_index']]) {
       file_path <- file.path(directory_path, methods_reduce_dim[[reduction_method]][['umap_index_path']])
-      tryCatch(
-        {
-          md5sum <- save_umap_nn_indexes(cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']], file_path)
-        },
+      md5sum <- tryCatch(
+        save_umap_nn_indexes(cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']], file_path),
         error = function(cond) {
           stop(stop_condition_message('save_transform_models', file_path, write_type='file', cond), call.=FALSE)
-        },
-        finally = {
-          file_index[['files']] <- rbind(file_index[['files']],
-                                         data.frame(cds_object = 'reduce_dim_aux',
-                                                    reduction_method = reduction_method,
-                                                    object_spec = object_name_to_string(cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']]),
-                                                    file_format = 'umap_annoy_index',
-                                                    file_path = methods_reduce_dim[[reduction_method]][['umap_index_path']],
-                                                    file_md5sum = md5sum,
-                                                    stringsAsFactors = FALSE))
         })
+      file_index[['files']] <- rbind(file_index[['files']],
+                                     data.frame(cds_object = 'reduce_dim_aux',
+                                                reduction_method = reduction_method,
+                                                object_spec = object_name_to_string(cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']]),
+                                                file_format = 'umap_annoy_index',
+                                                file_path = methods_reduce_dim[[reduction_method]][['umap_index_path']],
+                                                file_md5sum = md5sum,
+                                                stringsAsFactors = FALSE))
     }
   }
 
@@ -1495,13 +1492,32 @@ load_transform_models <- function(cds, directory_path) {
     # For UWOT UMAP annoy index, the function load_umap_nn_indexes
     # checks md5sums internally so don't check here.
     #
-    md5sum_file <- tools::md5sum(file_path)
-    if(!(cds_object == 'reduce_dim_aux' &&
-         reduction_method == 'UMAP' &&
-         file_format == 'umap_nn_index' &&
-         nchar(md5sum) > 32)) {
-      if(is.na(md5sum_file) || (md5sum_file != md5sum)) {
-        stop('md5sum mismatch for file \'', file_path, '\'')
+    check_md5 <- TRUE
+    if(cds_object == 'reduce_dim_aux' &&
+       reduction_method == 'UMAP' &&
+       file_format == 'umap_annoy_index') {
+      check_md5 <- FALSE
+    }
+
+    # Allow user to over-ride test.
+    if(is.na(md5sum)) {
+      check_md5 <- FALSE
+    }
+
+    if(check_md5) {
+      # The file may be unreadable so tryCatch.
+      md5sum_file <- tryCatch(tools::md5sum(file_path),
+        error=function(c) {
+          msg <- conditionMessage(c)
+          stop('load_transform_models: error testing file: ', file_index[['files']][['file_path']][[ifile]], ': ', msg)
+        },
+        warning=function(c) {
+          msg <- conditionMessage(c)
+          message('load_transform_models: warning testing file: ', file_index[['files']][['file_path']][[ifile]], ': ', msg)
+        }
+      )
+      if(md5sum_file != md5sum) {
+        stop('file: ', file_index[['files']][['file_path']][[ifile]], ': md5sum mis-match between the file written and the file to read.')
       }
     }
 
@@ -1609,6 +1625,22 @@ test_hdf5_assays <- function(cds) {
     if(any(unlist(hdf5_test))) return(TRUE)
   }
   FALSE
+}
+
+
+#
+# Get md5 checksum value of a file in the BPCells matrix directory.
+#
+bpcells_matdir_md5 <- function(matrix_dir_path) {
+  file_name_list <- c('val', 'val_data')
+  for(file_name in file_name_list) {
+    file_path <- file.path(matrix_dir_path, file_name)
+    file_exists <- file.exists(file_path)
+    if(file_exists) {
+      return(tools::md5sum(file_path))
+    }
+  }
+  return(NA)
 }
 
 
@@ -1886,23 +1918,19 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
   if(!hdf5_assay_flag) {
     file_path <- file.path(directory_path, rds_path)
     tryCatch(
-      {
-        base::saveRDS(cds, file_path)
-      },
+        base::saveRDS(cds, file_path),
       error = function(cond) {
         stop(stop_condition_message('save_monocle_objects', file_path, write_type='file', cond), call.=FALSE)
-      },
-      finally = {
-        md5sum <- tools::md5sum(file_path)
-        file_index[['files']] <- rbind(file_index[['files']],
-                                       data.frame(cds_object = 'cds',
-                                                  reduction_method = NA,
-                                                  object_spec = object_name_to_string(cds),
-                                                  file_format = 'rds',
-                                                  file_path = rds_path,
-                                                  file_md5sum = md5sum,
-                                                  stringsAsFactors = FALSE))
       })
+    md5sum <- tools::md5sum(file_path)
+    file_index[['files']] <- rbind(file_index[['files']],
+                                   data.frame(cds_object = 'cds',
+                                              reduction_method = NA,
+                                              object_spec = object_name_to_string(cds),
+                                              file_format = 'rds',
+                                              file_path = rds_path,
+                                              file_md5sum = md5sum,
+                                              stringsAsFactors = FALSE))
 
 
     # Save BPCells MatrixDir, if required.
@@ -1910,22 +1938,19 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
       bpcells_matrix_path <- file.path(directory_path, bpcells_matrix_dir)
       mat <- counts(cds)
       tryCatch(
-        {
-          BPCells::write_matrix_dir(mat=mat, dir=bpcells_matrix_path, compress=FALSE, buffer_size=8192L, overwrite=FALSE)
-        },
+          BPCells::write_matrix_dir(mat=mat, dir=bpcells_matrix_path, compress=FALSE, buffer_size=8192L, overwrite=FALSE),
         error = function(cond) {
           stop(stop_condition_message('save_monocle_objects', bpcells_matrix_path, write_type='directory', cond), call.=FALSE)
-        },
-        finally = {
-          file_index[['files']] <- rbind(file_index[['files']],
-                                         data.frame(cds_object = 'bpcells_matrix_dir',
-                                                    reduction_method = NA,
-                                                    object_spec = object_name_to_string(mat),
-                                                    file_format = 'BPCells:MatrixDir',
-                                                    file_path = bpcells_matrix_dir,
-                                                    file_md5sum = NA,
-                                                    stringsAsFactors = FALSE))
         })
+      val_md5sum <- bpcells_matdir_md5(bpcells_matrix_path)
+      file_index[['files']] <- rbind(file_index[['files']],
+                                     data.frame(cds_object = 'bpcells_matrix_dir',
+                                                reduction_method = NA,
+                                                object_spec = object_name_to_string(mat),
+                                                file_format = 'BPCells:MatrixDir',
+                                                file_path = bpcells_matrix_dir,
+                                                file_md5sum = val_md5sum,
+                                                stringsAsFactors = FALSE))
     }
   }
   else {
@@ -1934,23 +1959,19 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
     }
     file_path <- file.path(directory_path, hdf5_path)
     tryCatch(
-      {
-        HDF5Array::saveHDF5SummarizedExperiment(cds, file_path, replace=TRUE)
-      },
+        HDF5Array::saveHDF5SummarizedExperiment(cds, file_path, replace=TRUE),
       error = function(cond) {
         stop(stop_condition_message('save_monocle_objects', file_path, write_type='file', cond), call.=FALSE)
-      },
-      finally = {
-        md5sum <- tools::md5sum(file.path(directory_path, hdf5_path, 'se.rds'))
-        file_index[['files']] <- rbind(file_index[['files']],
-                                       data.frame(cds_object = 'cds',
-                                                  reduction_method = NA,
-                                                  object_spec = object_name_to_string(cds),
-                                                  file_format = 'hdf5',
-                                                  file_path = hdf5_path,
-                                                  file_md5sum = md5sum,
-                                                  stringsAsFactors = FALSE))
       })
+    md5sum <- tools::md5sum(file.path(directory_path, hdf5_path, 'se.rds'))
+    file_index[['files']] <- rbind(file_index[['files']],
+                                   data.frame(cds_object = 'cds',
+                                              reduction_method = NA,
+                                              object_spec = object_name_to_string(cds),
+                                              file_format = 'hdf5',
+                                              file_path = hdf5_path,
+                                              file_md5sum = md5sum,
+                                              stringsAsFactors = FALSE))
   }
 
   # Save reduce_dimension annoy indices.
@@ -1962,64 +1983,52 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
     if(methods_reduce_dim[[reduction_method]][['has_annoy_index']]) {
       file_path <- file.path(directory_path, methods_reduce_dim[[reduction_method]][['annoy_index_path']])
       tryCatch(
-        {
-          save_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']], file_path)
-        },
+          save_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']], file_path),
         error = function(cond) {
           stop(stop_condition_message('save_monocle_objects', file_path, write_type='file', cond), call.=FALSE)
-        },
-        finally = {
-          md5sum <- tools::md5sum(file_path)
-          file_index[['files']] <- rbind(file_index[['files']],
-                                         data.frame(cds_object = 'reduce_dim_aux',
-                                                    reduction_method = reduction_method,
-                                                    object_spec = object_name_to_string(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']]),
-                                                    file_format = 'annoy_index',
-                                                    file_path = methods_reduce_dim[[reduction_method]][['annoy_index_path']],
-                                                    file_md5sum = md5sum,
-                                                    stringsAsFactors = FALSE))
         })
+      md5sum <- tools::md5sum(file_path)
+      file_index[['files']] <- rbind(file_index[['files']],
+                                     data.frame(cds_object = 'reduce_dim_aux',
+                                                reduction_method = reduction_method,
+                                                object_spec = object_name_to_string(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']]),
+                                                file_format = 'annoy_index',
+                                                file_path = methods_reduce_dim[[reduction_method]][['annoy_index_path']],
+                                                file_md5sum = md5sum,
+                                                stringsAsFactors = FALSE))
     }
     if(methods_reduce_dim[[reduction_method]][['has_hnsw_index']]) {
       file_path <- file.path(directory_path, methods_reduce_dim[[reduction_method]][['hnsw_index_path']])
       tryCatch(
-        {
-          save_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']], file_path)
-        },
+          save_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']], file_path),
         error = function(cond) {
           stop(stop_condition_message('save_monocle_objects', file_path, write_type='file', cond), call.=FALSE)
-        },
-        finally = {
-          md5sum <- tools::md5sum(file_path)
-          file_index[['files']] <- rbind(file_index[['files']],
-                                         data.frame(cds_object = 'reduce_dim_aux',
-                                                    reduction_method = reduction_method,
-                                                    object_spec = object_name_to_string(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']]),
-                                                    file_format = 'hnsw_index',
-                                                    file_path = methods_reduce_dim[[reduction_method]][['hnsw_index_path']],
-                                                    file_md5sum = md5sum,
-                                                    stringsAsFactors = FALSE))
         })
+      md5sum <- tools::md5sum(file_path)
+      file_index[['files']] <- rbind(file_index[['files']],
+                                     data.frame(cds_object = 'reduce_dim_aux',
+                                                reduction_method = reduction_method,
+                                                object_spec = object_name_to_string(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']]),
+                                                file_format = 'hnsw_index',
+                                                file_path = methods_reduce_dim[[reduction_method]][['hnsw_index_path']],
+                                                file_md5sum = md5sum,
+                                                stringsAsFactors = FALSE))
     }
     if(reduction_method == 'UMAP' && methods_reduce_dim[[reduction_method]][['has_model_index']]) {
       file_path <- file.path(directory_path, methods_reduce_dim[[reduction_method]][['umap_index_path']])
-      tryCatch(
-        {
-          md5sum <- save_umap_nn_indexes(cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']], file_path)
-        },
+      md5sum <- tryCatch(
+        save_umap_nn_indexes(cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']], file_path),
         error = function(cond) {
           stop(stop_condition_message('save_monocle_objects', file_path, write_type='file', cond), call.=FALSE)
-        },
-        finally = {
-          file_index[['files']] <- rbind(file_index[['files']],
-                                         data.frame(cds_object = 'reduce_dim_aux',
-                                                    reduction_method = reduction_method,
-                                                    object_spec = object_name_to_string(cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']]),
-                                                    file_format = 'umap_annoy_index',
-                                                    file_path = methods_reduce_dim[[reduction_method]][['umap_index_path']],
-                                                    file_md5sum = md5sum,
-                                                    stringsAsFactors = FALSE))
         })
+      file_index[['files']] <- rbind(file_index[['files']],
+                                     data.frame(cds_object = 'reduce_dim_aux',
+                                                reduction_method = reduction_method,
+                                                object_spec = object_name_to_string(cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']]),
+                                                file_format = 'umap_annoy_index',
+                                                file_path = methods_reduce_dim[[reduction_method]][['umap_index_path']],
+                                                file_md5sum = md5sum,
+                                                stringsAsFactors = FALSE))
     }
   }
 
@@ -2136,16 +2145,41 @@ load_monocle_objects <- function(directory_path, matrix_control=list(matrix_path
     # loadHDF5SummarizedExperiment check md5sums
     # internally so don't check here.
     #
-    if(!(cds_object == 'reduce_dim_aux' &&
-         reduction_method == 'UMAP' &&
-         file_format == 'umap_nn_index' &&
-         nchar(md5sum) > 32) &&
-       file_format != 'hdf5' &&
-       cds_object != 'bpcells_matrix_dir') {
-      md5sum_file <- tools::md5sum(file_path)
-      if(is.na(md5sum_file) || (md5sum_file != md5sum)) {
-        stop('md5sum mismatch for file \'', file_path, '\'')
-      }
+    check_md5 <- TRUE
+    if(cds_object == 'reduce_dim_aux' &&
+       reduction_method == 'UMAP' &&
+       file_format == 'umap_annoy_index') {
+      check_md5 <- FALSE
+    }   
+
+    if(file_format == 'hdf5') {
+      check_md5 <- FALSE
+    }
+
+    if(cds_object == 'bpcells_matrix_dir') {
+      check_md5 <- FALSE
+    }
+
+    # Allow user to over-ride test.
+    if(is.na(md5sum)) {
+      check_md5 <- FALSE
+    }
+
+    if(check_md5) {
+      # The file may be unreadable so tryCatch.
+      md5sum_file <- tryCatch(tools::md5sum(file_path),
+        error=function(c) { 
+          msg <- conditionMessage(c)
+          stop('error testing file: ', file_index[['files']][['file_path']][[ifile]], ': ', msg)
+        },
+        warning=function(c) {
+          msg <- conditionMessage(c)
+          message('load_transform_models: warning testing file: ', file_index[['files']][['file_path']][[ifile]], ': ', msg)
+        }
+      )
+      if(md5sum_file != md5sum) {
+        stop('file: ', file_index[['files']][['file_path']][[ifile]], ': md5sum mis-match between the file written and the file to read.')
+      }    
     }
 
     #
@@ -2156,23 +2190,17 @@ load_monocle_objects <- function(directory_path, matrix_control=list(matrix_path
     if(cds_object == 'cds') {
       if(file_format == 'rds') {
         cds <- tryCatch(
-          {
-            readRDS(file_path)
-          },
+            readRDS(file_path),
           error = function(cond) {
-            message('problem reading file \'', file_path, '\'', appendLF=appendLF)
-            return(NULL)
+            stop('problem reading file \'', file_path, '\'', appendLF=appendLF)
           })
       }
       else
       if(file_format == 'hdf5') {
         cds <- tryCatch(
-          {
-            HDF5Array::loadHDF5SummarizedExperiment(file_path)
-          },
+            HDF5Array::loadHDF5SummarizedExperiment(file_path),
           error = function(cond) {
-            message('problem reading file \'', file_path, '\'', appendLF=appendLF)
-            return(NULL)
+            stop('problem reading file \'', file_path, '\'', appendLF=appendLF)
           })
       }
       else {
@@ -2187,12 +2215,9 @@ load_monocle_objects <- function(directory_path, matrix_control=list(matrix_path
         metric <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']][['metric']]
         ncolumn <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']][['ncol']]
         cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']] <- tryCatch(
-          {
-            load_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']], file_path, metric, ncolumn)
-          },
+            load_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']], file_path, metric, ncolumn),
           error = function(cond) {
-            message('problem reading file \'', file_path, '\'', appendLF=appendLF)
-            return(NULL)
+            stop('problem reading file \'', file_path, '\'', appendLF=appendLF)
           })
       }
       else
@@ -2202,23 +2227,17 @@ load_monocle_objects <- function(directory_path, matrix_control=list(matrix_path
         metric <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']][['metric']]
         ncolumn <- cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']][['ncol']]
         cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']] <- tryCatch(
-          {
-            load_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']], file_path, metric, ncolumn)
-          },
+            load_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']], file_path, metric, ncolumn),
           error = function(cond) {
-            message('problem reading file \'', file_path, '\'', appendLF=appendLF)
-            return(NULL)
+            stop('problem reading file \'', file_path, '\'', appendLF=appendLF)
           })
       }
       else
       if(reduction_method == 'UMAP' && file_format == 'umap_annoy_index') {
         cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']] <- tryCatch(
-          {
-            load_umap_nn_indexes(cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']], file_path, md5sum)
-          },
+            load_umap_nn_indexes(cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']], file_path, md5sum),
           error = function(cond) {
-            message('problem reading file \'', file_path, '\'', appendLF=appendLF)
-            return(NULL)
+            stop('problem reading file \'', file_path, '\'', appendLF=appendLF)
          })
       }
       else {
@@ -2232,12 +2251,9 @@ load_monocle_objects <- function(directory_path, matrix_control=list(matrix_path
         assay(cds, 'counts_row_order') <- NULL
       }
       counts(cds, bpcells_warn=FALSE ) <- tryCatch(
-        {
-          load_bpcells_matrix_dir(file_path, md5sum, matrix_control=matrix_control)
-        },
+          load_bpcells_matrix_dir(file_path, md5sum, matrix_control=matrix_control),
         error = function(cond) {
-          message('problem reading file \'', file_path, '\'', appendLF=appendLF)
-          return(NULL)
+          stop(cond)
         })
         # Rebuild the BPCells row-major order counts matrix.
         cds <- set_cds_row_order_matrix(cds=cds)
@@ -2375,10 +2391,7 @@ load_monocle_objects <- function(directory_path, matrix_control=list(matrix_path
 load_monocle_rds <- function(file_path) {
   appendLF <- TRUE
   catch_error <- FALSE
-  cds_tmp <- tryCatch(
-                       {
-                         readRDS(file_path)
-                       },
+  cds_tmp <- tryCatch( readRDS(file_path),
                        error=function(cond) {
                          message('problem reading file \'', file_path, '\': ', cond, appendLF=appendLF);
                          catch_error <<- TRUE
