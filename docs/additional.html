@@ -21,9 +21,9 @@ tags: [monocle, manual, vignette]
         <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/differential">Differential expression analysis</a></li>
         <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/projection">Projecting query data onto a reference</a></li>
         <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/store_monocle_objects">Storing monocle objects</a></li>
-        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/disk_based_matrix_storage">Disk-based count matrix storage</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/disk_based_matrix">Disk-based count matrix storage</a></li>
         <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/cicero">Single-cell ATAC-seq data</a></li>
-        <li class="toc-entry toc-h2"><a class="active" href="{{ site.baseurl }}/docs/additional">Additional</a></li>
+        <li class="toc-entry toc-h2"><a class="active" href="{{ site.baseurl }}/docs/additional">Additional information</a></li>
         <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/citations">Citations and acknowledgments</a></li>
       </ul>
     </div>
@@ -36,12 +36,69 @@ tags: [monocle, manual, vignette]
           <li class="breadcrumb-item active" aria-current="page">Additional</li>
         </ol>
       </nav>
-      <h2>Additional</h2>
+      <h2>Additional information</h2>
       <p>
-      Object identities
-      </p>
-      <a href="{{ site.baseurl }}/docs/cicero" class="btn btn-info btn-sm btn-prev" role="button">Previous</a>
-      <a href="{{ site.baseurl }}/docs/citations" class="btn btn-success btn-sm btn-next" role="button">Next</a>
-    </div>
-  </div>
-</div>
+        <ul>
+         <li>
+           Monocle3 stores identifying information about certain objects and their sources, and includes matrix checksums and dimensions. Use the command <code>identity_table(cds)</code> to view this information. For example,
+
+          <pre>
+ > cds <- load_worm_embryo()
+ > cds <- preprocess_cds(cds, build_nn_index=TRUE)
+ > cds <- reduce_dimension(cds, build_nn_index=TRUE)
+ No preprocess_method specified, using preprocess_method = 'PCA'
+ > identity_table(cds)
+Count matrix identity
+  matrix_id: 7f6a56c3933802a4631c15109e6501c5  dim: 20222 6188
+  matrix_type: URL: https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/packer_embryo_expression.rds
+
+Reduced dimension matrix identity
+  PCA
+    matrix_type matrix:PCA
+    matrix_id   9fb8819fac058c01a6044a2235991588  dim: 6188 50
+    prev_matrix_type    URL: https://depts.washington.edu:/trapnell-lab/software/monocle3/celegans/data/packer_embryo_expression.rds
+    prev_matrix_id      7f6a56c3933802a4631c15109e6501c5  dim: 20222 6188
+    model_type  matrix:PCA
+    model_id    9fb8819fac058c01a6044a2235991588  dim: 6188 50
+
+    .
+    .
+    .
+
+  UMAP
+    matrix_type matrix:UMAP
+    matrix_id   8a52b66ee33e4dad7c9c5310525821ec  dim: 6188 2
+    prev_matrix_type    matrix:PCA
+    prev_matrix_id      9fb8819fac058c01a6044a2235991588  dim: 6188 50
+    model_type  matrix:UMAP
+    model_id    8a52b66ee33e4dad7c9c5310525821ec  dim: 6188 2
+
+Reduced dimension model identity
+  PCA
+    model_type  matrix:PCA
+    model_id    9fb8819fac058c01a6044a2235991588  dim: 6188 50
+    prev_model_type     none
+    prev_model_id       none
+    model_path  none
+
+    .
+    .
+    .
+
+  UMAP
+    model_type  matrix:UMAP
+    model_id    8a52b66ee33e4dad7c9c5310525821ec  dim: 6188 2
+    prev_model_type     matrix:PCA
+    prev_model_id       9fb8819fac058c01a6044a2235991588  dim: 6188 50
+    model_path  none
+          </pre>
+
+
+         </li>
+        </ul>
+                  </p>
+                  <a href="{{ site.baseurl }}/docs/cicero" class="btn btn-info btn-sm btn-prev" role="button">Previous</a>
+                  <a href="{{ site.baseurl }}/docs/citations" class="btn btn-success btn-sm btn-next" role="button">Next</a>
+                </div>
+              </div>
+            </div>
