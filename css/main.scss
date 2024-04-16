@@ -44,11 +44,20 @@ nav#toc {
     width: 250px;
 }
 
+/*
 @media screen and (max-width: 767px) {
 	nav#toc {
         display: none;
 	}
 }
+*/
+
+@media screen and (max-width: 400px) {
+    nav#toc {
+        display: none;
+    }
+}
+
 
 /* content styles */
 body {
