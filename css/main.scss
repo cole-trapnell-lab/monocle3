@@ -39,16 +39,9 @@ $icon-font-path: "/node_modules/bootstrap-sass/assets/fonts/bootstrap/";
 }
 
 /* styles for docs menu */
-/*
 nav#toc {
     margin-top: 16px;
     width: 250px;
-}
-*/
-
-nav#toc {
-    width: 30%;
-    height: auto;
 }
 
 @media screen and (max-width: 767px) {
