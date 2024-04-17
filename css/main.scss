@@ -44,10 +44,17 @@ nav#toc {
     width: 250px;
 }
 
-@media screen and (max-width: 767px) {
+@media screen and (max-width: 576px) {
 	nav#toc {
         display: none;
 	}
+}
+
+@media (min-width: 576px) {
+  .sticky-navigation {
+    position: sticky;
+    top: 0;
+  }
 }
 
 /* content styles */
