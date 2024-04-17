@@ -140,7 +140,7 @@ save_transform_models(cds_ref, 'cds_ref_test_models')
 <h3 id="project-query">Project the query data set into the reference space</h3>
 
 <p>
-Our query data set was loaded and filtered already, so we can use the <code>preprocess_transform()</code> and <code>reduce_dimension_transform()</code> functions to transform the query into the reference space. The <code>load_transform_models()</code> function loads the reference transform models into the query cds where they are used by <code>preprocess_transform()</code> and <code>reduce_dimension_transform()</code>.
+We loaded and filtered the query data into <code>cds_qry</code> earlier in this example so now we load the reference transform models into <code>cds_qry</code> using the <code>load_transform_models()</code> function. <code>load_transform_models()</code> can read reference models stored in a directory created using either <code>store_transform_models()</code> or <code>save_monocle_objects()</code>. Either way, <code>load_transform_models()</code> loads only the transform models into <code>cds_qry</code>. We project the query data into the reference space using the <code>preprocess_transform()</code> and <code>reduce_dimension_transform()</code> functions.
 </p>
 
 {% highlight R %}
