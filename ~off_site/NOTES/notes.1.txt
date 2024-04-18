@@ -56,6 +56,39 @@ Notes:
   o  the file monocle3/node_modules/bootstrap-sass/CHANGELOG.md includes
        Framework version: Bootstrap **v3.3.6**
 
+  o  the following is based on my rudimentary understanding of
+     bootstrap
+       o  the Monocle3 documentation web site uses a Bootstrap 'grid'
+       o  the web site uses the small grid tier
+       o  the grid can rearrange the blocks depending on the size of
+          the display: the small grid tier does something when the
+          display is less than 576 pixels wide
+          see: https://getbootstrap.com/docs/5.0/layout/grid/  'grid options'
+
+  o  we had a web site problem in which the navbar table of contents (toc)
+     moved from the left side to beneath the body text (overlapped by
+     the body text). Jeremy Stone provided a solution consisting of
+     modifying
+
+     css/main.scss
+       edit the block starting with @media to
+
+@media (min-width: 576px) {
+  .sticky-navigation {
+    position: sticky;
+    top: 0;
+  }
+}
+
+      and replace each docs/*.html line that begins with
+      '<div class= "col-sm-4' (near the top to of the file)
+      look like 
+
+<div class= "container">
+  <div class= "row">
+    <div class= "col-sm-4 sticky-navigation">        <-- this line!!!
+
+
 
 == Installing packages
 

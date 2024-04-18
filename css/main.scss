@@ -44,10 +44,26 @@ nav#toc {
     width: 250px;
 }
 
-@media screen and (max-width: 767px) {
-	nav#toc {
-        display: none;
-	}
+/*
+** This @media solves a problem in which
+** the table of contents navbar ended up
+** underneath the body text on phones.
+** The 576px is the breakpoint for Bootstrap's
+** 'sm' classes. Jeremy Stone provided this
+** fix, which places the table of contents
+** navigation block at the top of the
+** page without overlapping text on small
+** screens; otherwise, the toc goes on
+** the left side of the screen. This
+** 'sticky-navigation style(?) is used in
+** the toc navbar div thingy like so
+**   <div class= "col-sm-4 sticky-navigation">
+*/
+@media (min-width: 576px) {
+  .sticky-navigation {
+    position: sticky;
+    top: 0;
+  }
 }
 
 /* content styles */
