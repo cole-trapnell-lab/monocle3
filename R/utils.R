@@ -1150,9 +1150,7 @@ get_unique_id <- function(object=NULL) {
       object_checksum <- digest::digest(object)
     }
     else {
-#      object_checksum <- BPCells::checksum(object)
-      # Set checksum to NA until BPCells adds BPCells::checksum() function.
-      object_checksum <- NA
+      object_checksum <- BPCells::checksum(object)
     }
     if(!is.null(object_dim))
       object_id <- list(checksum=object_checksum, dim=object_dim)
