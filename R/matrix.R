@@ -866,9 +866,21 @@ set_cds_row_order_matrix <- function(cds) {
                      fileext='_r.tmp')[[1]]
   tmpdir <- tempfile('monocle.transpose_bpc.', '.', '.tmp')
 
+  # Make 'normalized paths'
+  outdir <- normalizePath(outdir, mustWork=FALSE)
+  tmpdir <- normalizePath(tmpdir, mustWork=FALSE)
+
   # I see no option for choosing compressed matrix and transpose_storage_order appears to
   # compress. This is not a big deal because only the indices are compressed.
-  mat_r <- BPCells::transpose_storage_order(matrix=mat_c, outdir=outdir, tmpdir=tmpdir, load_bytes=4194304L, sort_bytes=1073741824L)
+  mat_r <- tryCatch(
+             BPCells::transpose_storage_order(matrix=mat_c, outdir=outdir, tmpdir=tmpdir, load_bytes=4194304L, sort_bytes=1073741824L),
+             error=function(c) {
+               message('set_cds_row_order_matrix: error running BPCells::transpose_storage_order: ', c)
+               report_path_status(dirname(tmpdir))
+               report_path_status(dirname(outdir))
+               stop('exiting')
+             })
+
   unlink(tmpdir, recursive=TRUE)
   push_matrix_path(mat=mat_r)
 
