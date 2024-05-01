@@ -1292,35 +1292,40 @@ tock <- function() {
 # Report file/directory status.
 #
 report_path_status <- function(path) {
-  message('report_path_status')
-  message('  input path: ', path)
-  normalized_path <- normalizePath(path, mustWork=FALSE)
-  message('  normalized path: ', normalized_path)
+  msg <- paste0('report_path_status\n  input path: ', path)
 
+  normalized_path <- normalizePath(path, mustWork=FALSE)
+  msg <- paste0(msg, '\n  normalized path: ', normalized_path)
   pmod <- file.info(normalized_path, TRUE)
 
   # Does path exist?
   if(!file.exists(normalized_path)) {
     if(is.na(pmod[['size']][1])) {
-      message('  \'', normalized_path, '\' appears to not exist')
-      return(invisible())
+      msg <- paste0(msg, '\n  \'', normalized_path, '\' appears to not exist')
+      return(msg)
     }
   }
 
   # Is path a file or directory?
   if(pmod[['isdir']][1]) {
-    message('  directory ', appendLF=FALSE)
+    msg <- paste0(msg, '\n  directory ')
   }
   else {
-    message('  file ', appendLF=FALSE)
+    msg <- paste0(msg, '\n  file ')
   }
 
   # What are path permissions?
-  message('has permissions: ', pmod[['mode']][1])
+   msg <- paste0(msg, 'has permissions: ', pmod[['mode']][1])
 
   # If path is a file, report md5 checksum.
   if(!pmod[['isdir']][1]) {
-    message('  md5sum: ', appendLF=FALSE)
-    message(tools::md5sum(normalized_path))
+    msg <- paste0(msg, '\n  md5sum: ', tools::md5sum(normalized_path))
   }
+  return(msg)
 }
+
+
+report_checksum_difference <- function(calling_function_name, file_name, checksum_current, checksum_saved) {
+  paste0(calling_function_name, ': inconsistent checksum values for \'', file_name, '\'\n', '  saved checksum:   ', checksum_saved, '\n', '  current checksum: ', checksum_current)
+}
+
