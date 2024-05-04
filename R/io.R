@@ -141,7 +141,7 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
             emsg, '\n',
             '  note: possible problems include the wrong filename, a missing file,\n',
             '  and incorrect file format parameters, for example \'header\', \'sep\', and \'quote\'' )
-        stop(report_path_status(anno_path))
+        stop(report_path_status(anno_path)) # bge: load
       })
 
   metadata = NULL
@@ -625,7 +625,7 @@ save_annoy_index <- function(nn_index, file_name) {
       tryCatch( nn_index[['annoy_index']]$save(file_name),
                 error = function(e) {
                   message('Unable to save annoy index: it may not exist in this cds: error message is ', e)
-                  stop(report_path_status(dirname(file_name)))
+                  stop(report_path_status(dirname(file_name)))  # bge: save
                 })
     }
     else {
@@ -638,7 +638,7 @@ save_annoy_index <- function(nn_index, file_name) {
       tryCatch( nn_index[['ann']]$save(file_name),
                 error = function(e) {
                   message('Unable to save annoy index: it may not exist in this cds: error message is ', e)
-                  stop(report_path_status(dirname(file_name)))
+                  stop(report_path_status(dirname(file_name)))  # bge: save
                 })
     }
     else {
@@ -665,7 +665,7 @@ load_annoy_index <- function(nn_index, file_name, metric, ndim) {
         error = function(emsg)
         {
           message('load_annoy_index: bad status reading annoy index file')
-          stop(report_path_status(file_name))
+          stop(report_path_status(file_name)) # bge: load
         }
       )
       nn_index[['annoy_index']] <- annoy_index
@@ -683,7 +683,7 @@ load_annoy_index <- function(nn_index, file_name, metric, ndim) {
         error = function(emsg)
         {
           message('load_annoy_index: bad status reading annoy index file')
-          stop(report_path_status(file_name))
+          stop(report_path_status(file_name)) # bge: load
         }
       )
       nn_index[['ann']] <- annoy_index
@@ -710,7 +710,7 @@ save_umap_annoy_index <- function(nn_index, file_name) {
       tryCatch( nn_index[['ann']]$save(file_name),
                 error = function(e) {
                  message('Unable to save annoy index: it may not exist in this cds: error message is ', e)
-                 stop(report_path_status(dirname(file_name)))
+                 stop(report_path_status(dirname(file_name)))  # bge: save
                 })
     }
     else {
@@ -735,7 +735,7 @@ load_umap_annoy_index <- function(nn_index, file_name, metric, ndim) {
         error = function(emsg)
         {
           message('load_annoy_index: bad status reading annoy index file')
-          stop(report_path_status(file_name))
+          stop(report_path_status(file_name)) # bge: load
         }
       )
       nn_index[['ann']] <- annoy_index
@@ -752,7 +752,7 @@ load_umap_annoy_index <- function(nn_index, file_name, metric, ndim) {
       error = function(emsg)
       {
         message('load_annoy_index: bad status reading annoy index file')
-        stop(report_path_status(file_name))
+        stop(report_path_status(file_name)) # bge: load
       }
     )
   }
@@ -775,7 +775,7 @@ save_hnsw_index <- function(nn_index, file_name) {
   tryCatch(out_index$save(file_name),
            error = function(e) {
              message('Unable to save hnsw index: it may not exist in this cds: error message is ', e)
-             stop(report_path_status(dirname(file_name)))
+             stop(report_path_status(dirname(file_name)))  # bge: save
            })
 }
 
@@ -790,7 +790,7 @@ load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
       error = function(emsg)
       {
         message('load_hnsw_index: bad status reading hnsw index file')
-        stop(report_path_status(file_name))
+        stop(report_path_status(file_name)) # bge: load
       }
     )
   }
@@ -801,7 +801,7 @@ load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
       error = function(emsg)
       {
         message('load_hnsw_index: bad status reading hnsw index file')
-        stop(report_path_status(file_name))
+        stop(report_path_status(file_name)) # bge: load
       }
     )
     attr(new_index, "distance") <- "euclidean"
@@ -813,7 +813,7 @@ load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
       error = function(emsg)
       {
         message('load_hnsw_index: bad status reading hnsw index file')
-        stop(report_path_status(file_name))
+        stop(report_path_status(file_name)) # bge: load
       }
     )
   }
@@ -824,7 +824,7 @@ load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
       error = function(emsg)
       {
         message('load_hnsw_index: bad status reading hnsw index file')
-        stop(report_path_status(file_name))
+        stop(report_path_status(file_name)) # bge: load
       }
     )
   }
@@ -857,7 +857,7 @@ save_umap_nn_indexes <- function(umap_model, file_name) {
     md5sum_umap_index <- tools::md5sum(file_name)
     if(is.na(md5sum_umap_index)) {
       message('unable to read file for checksum: ', file_name)
-      message(report_path_status(file_name), '\n', report_path_status(dirname(file_name)))
+      message(report_path_status(dirname(file_name), file_name) # bge: two directories  # bge: save
     }
   }
   else {
@@ -869,7 +869,7 @@ save_umap_nn_indexes <- function(umap_model, file_name) {
       md5sum <- tools::md5sum(file_name_expand)
       if(is.na(md5sum)) {
         message('unable to read file for checksum: ', file_name_expand)
-        message(report_path_status(file_name_expand), '\n', report_path_status(dirname(file_name_expand)))
+        message(report_path_status(dirname(file_name_expand), file_name_expand)) # bge: two directories  # bge: save
       }
       append(md5sum_vec, md5sum)
     }
@@ -890,7 +890,7 @@ load_umap_nn_indexes <- function(umap_model, file_name, md5sum_umap_index) {
     md5sum <- tools::md5sum(file_name)
     if(is.na(md5sum)) {
       message('unable to read file for checksum: ', file_name)
-      message(report_path_status(dirname(file_name)), '\n', report_path_status(file_name))
+      message(report_path_status(dirname(file_name), file_name)) # bge: two directories # bge: load
     }
     # Don't check the md5sum when md5sum_umap_index is NA in file_index.rds in order to let the user circumvent the test.
     if(!is.na(md5sum_umap_index) && !is.null(md5sum_umap_index) && md5sum != md5sum_umap_index) {
@@ -911,7 +911,7 @@ load_umap_nn_indexes <- function(umap_model, file_name, md5sum_umap_index) {
       md5sum <- tools::md5sum(file_name_expand)
       if(is.na(md5sum)) {
         message('unable to read file for checksum: ', file_name_expand)
-        message(report_path_status(dirname(file_name_expand)), '\n', report_path_status(file_name_expand))
+        message(report_path_status(dirname(file_name_expand), file_name_expand)) # bge: two directories
       }
 
       # Don't check the md5sum when md5sum_umap_index is NA in file_index.rds in order to let the user circumvent the test.
@@ -939,7 +939,7 @@ load_bpcells_matrix_dir <- function(file_name, md5sum, matrix_control=list()) {
     error=function(c) {
       msg <- conditionMessage(c)
       message('Unable to get md5sum of file ', file_name, '\n  ',  msg)
-      stop(report_path_status(file_name))
+      stop(report_path_status(file_name)) # bge: load
     }
   )
 
@@ -1372,12 +1372,12 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
       },
       error = function(cond) {
         message(stop_condition_message('save_transform_models', file_path, write_type='file', cond))
-        stop('\n', report_path_status(dirname(dirname(file_path))), '\n', report_path_status(dirname(file_path)))
+        stop('\n', report_path_status(dirname(dirname(file_path)), dirname(file_path))) # bge: two directories  # bge: save
       })
     md5sum <- tools::md5sum(file_path)
     if(is.na(md5sum)) {
       message('unable to read file for checksum: ', file_path)
-      message(report_path_status(dirname(file_path)), '\n', report_path_status(file_path))
+      message(report_path_status(dirname(file_path), file_path)) # bge: two directories  # bge: save
     }
     file_index[['files']] <- rbind(file_index[['files']],
                                    data.frame(cds_object = 'reduce_dim_aux',
@@ -1394,12 +1394,12 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
           save_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']], file_path),
         error = function(cond) {
           message(stop_condition_message('save_transform_models', file_path, write_type='file', cond))
-          stop('\n', report_path_status(dirname(dirname(file_path))), '\n', report_path_status(dirname(file_path)))
+          stop('\n', report_path_status(dirname(dirname(file_path)), (dirname(file_path))) # bge: two directories  # bge: save
         })
       md5sum <- tools::md5sum(file_path)
       if(is.na(md5sum)) {
         message('unable to read file for checksum: ', file_path)
-        message(report_path_status(dirname(file_path)), '\n', report_path_status(file_path))
+        message(report_path_status(dirname(file_path), (file_path)) # bge: two directories  # bge: save
       }
       file_index[['files']] <- rbind(file_index[['files']],
                                      data.frame(cds_object = 'reduce_dim_aux',
@@ -1417,12 +1417,12 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
           save_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']], file_path),
         error = function(cond) {
           message(stop_condition_message('save_transform_models', file_path, write_type='file', cond))
-          stop('\n', report_path_status(dirname(dirname(file_path))), '\n', report_path_status(dirname(file_path)))
+          stop('\n', report_path_status(dirname(dirname(file_path)), dirname(file_path))) # bge: two directories  # bge: save
         })
       md5sum <- tools::md5sum(file_path)
       if(is.na(md5sum)) {
         message('unable to read file for checksum: ', file_path)
-        message(report_path_status(dirname(file_path)), '\n', report_path_status(file_path))
+        message(report_path_status(dirname(file_path), file_path)) # bge: two directories  # bge: save
       }
       file_index[['files']] <- rbind(file_index[['files']],
                                      data.frame(cds_object = 'reduce_dim_aux',
@@ -1439,7 +1439,7 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
         save_umap_nn_indexes(cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']], file_path),
         error = function(cond) {
           message(stop_condition_message('save_transform_models', file_path, write_type='file', cond))
-          stop('\n', report_path_status(dirname(dirname(file_path))), '\n', report_path_status(dirname(file_path)))
+          stop('\n', report_path_status(dirname(dirname(file_path)), dirname(file_path))) # bge: two directories  # bge: save
         })
       file_index[['files']] <- rbind(file_index[['files']],
                                      data.frame(cds_object = 'reduce_dim_aux',
@@ -1592,7 +1592,7 @@ load_transform_models <- function(cds, directory_path) {
       md5sum_file <- tools::md5sum(file_path)
       if(is.na(md5sum_file)) {
         message('unable to read file for checksum: ', file_path)
-        message(report_path_status(dirname(file_path)), '\n', report_path_status(file_path))
+        message(report_path_status(dirname(file_path), file_path)) # bge: two directories # bge: load
       }
 
       if(md5sum_file != md5sum) {
@@ -2003,12 +2003,12 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
         base::saveRDS(cds, file_path),
       error = function(cond) {
         message(stop_condition_message('save_monocle_objects', file_path, write_type='file', cond))
-        stop('\n', report_path_status(dirname(dirname(file_path))), '\n', report_path_status(dirname(file_path)))
+        stop('\n', report_path_status(dirname(dirname(file_path)), dirname(file_path))) # bge: two directories  # bge: save
       })
     md5sum <- tools::md5sum(file_path)
     if(is.na(md5sum)) {
       message('unable to read file for checksum: ', file_path)
-      message(report_path_status(dirname(file_path)), '\n', report_path_status(file_path))
+      message(report_path_status(dirname(file_path), file_path)) # bge: two directories  # bge: save
     }
     file_index[['files']] <- rbind(file_index[['files']],
                                    data.frame(cds_object = 'cds',
@@ -2028,12 +2028,12 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
           BPCells::write_matrix_dir(mat=mat, dir=bpcells_matrix_path, compress=FALSE, buffer_size=8192L, overwrite=FALSE),
         error = function(cond) {
           message(stop_condition_message('save_monocle_objects', bpcells_matrix_path, write_type='directory', cond))
-          stop('\n', report_path_status(dirname(dirname(bpcells_matrix_path))), '\n', report_path_status(dirname(bpcells_matrix_path)))
+          stop('\n', report_path_status(dirname(dirname(bpcells_matrix_path)), dirname(bpcells_matrix_path))) # bge: two directories  # bge: save
         })
       val_md5sum <- bpcells_matdir_md5(bpcells_matrix_path)
       if(is.na(val_md5sum)) {
         message(stop_condition_message('save_monocle_objects', file_path, write_type='file', cond))
-        stop('\n', report_path_status(dirname(dirname(file_path))), '\n', report_path_status(dirname(file_path)))
+        stop('\n', report_path_status(dirname(dirname(file_path)), dirname(file_path))) # bge: two directories  # bge: save
       }
       file_index[['files']] <- rbind(file_index[['files']],
                                      data.frame(cds_object = 'bpcells_matrix_dir',
@@ -2054,12 +2054,12 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
         HDF5Array::saveHDF5SummarizedExperiment(cds, file_path, replace=TRUE),
       error = function(cond) {
         message(stop_condition_message('save_monocle_objects', file_path, write_type='file', cond))
-        stop('\n', report_path_status(dirname(dirname(file_path))), '\n', report_path_status(dirname(file_path)))
+        stop('\n', report_path_status(dirname(dirname(file_path)), dirname(file_path))) # bge: two directories  # bge: save
       })
     md5sum <- tools::md5sum(file.path(directory_path, hdf5_path, 'se.rds'))
     if(is.na(md5sum)) {
       message('unable to read file for checksum: ', file.path(directory_path, hdf5_path, 'se.rds'))
-      message(report_path_status(dirname(file.path(directory_path, hdf5_path, 'se.rds'))), '\n', report_path_status(file.path(directory_path, hdf5_path, 'se.rds')))
+      message(report_path_status(dirname(file.path(directory_path, hdf5_path, 'se.rds')), file.path(directory_path, hdf5_path, 'se.rds'))) # bge: two directories  # bge: save
     }
     file_index[['files']] <- rbind(file_index[['files']],
                                    data.frame(cds_object = 'cds',
@@ -2083,12 +2083,12 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
           save_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']], file_path),
         error = function(cond) {
           message(stop_condition_message('save_monocle_objects', file_path, write_type='file', cond))
-          stop('\n', report_path_status(dirname(dirname(file_path))), '\n', report_path_status(dirname(file_path)))
+          stop('\n', report_path_status(dirname(dirname(file_path)), dirname(file_path))) # bge: two directories  # bge: save
         })
       md5sum <- tools::md5sum(file_path)
       if(is.na(md5sum)) {
         message('unable to read file for checksum: ', file_path)
-        message(report_path_status(dirname(file_path)), '\n', report_path_status(file_path))
+        message(report_path_status(dirname(file_path), file_path)) # bge: two directories  # bge: save
       }
       file_index[['files']] <- rbind(file_index[['files']],
                                      data.frame(cds_object = 'reduce_dim_aux',
@@ -2105,12 +2105,12 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
           save_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']], file_path),
         error = function(cond) {
           message(stop_condition_message('save_monocle_objects', file_path, write_type='file', cond))
-          stop('\n', report_path_status(dirname(dirname(file_path))), '\n', report_path_status(dirname(file_path)))
+          stop('\n', report_path_status(dirname(dirname(file_path)), dirname(file_path))) # bge: two directories  # bge: save
         })
       md5sum <- tools::md5sum(file_path)
       if(is.na(md5sum)) {
         message('unable to read file for checksum: ', file_path)
-        message(report_path_status(dirname(file_path)), '\n', report_path_status(file_path))
+        message(report_path_status(dirname(file_path), file_path)) # bge: two directories  # bge: save
       }
       file_index[['files']] <- rbind(file_index[['files']],
                                      data.frame(cds_object = 'reduce_dim_aux',
@@ -2127,7 +2127,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
         save_umap_nn_indexes(cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']], file_path),
         error = function(cond) {
           message(stop_condition_message('save_monocle_objects', file_path, write_type='file', cond))
-          stop('\n', report_path_status(dirname(dirname(file_path))), '\n', report_path_status(dirname(file_path)))
+          stop('\n', report_path_status(dirname(dirname(file_path)), dirname(file_path))) # bge: two directories  # bge: save
         })
       file_index[['files']] <- rbind(file_index[['files']],
                                      data.frame(cds_object = 'reduce_dim_aux',
@@ -2277,7 +2277,7 @@ load_monocle_objects <- function(directory_path, matrix_control=list(matrix_path
       md5sum_file <- tools::md5sum(file_path)
       if(is.na(md5sum_file)) {
         message('unable to read file for checksum: ', file_path)
-        message(report_path_status(dirname(file_path)), '\n', report_path_status(file_path))
+        message(report_path_status(dirname(file_path), file_path)) # bge: two directories  # bge: load
       }
       if(md5sum_file != md5sum) {
 #        stop('file: ', file_index[['files']][['file_path']][[ifile]], ': md5sum mis-match between the file written and the file to read.')

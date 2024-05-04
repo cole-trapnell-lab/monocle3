@@ -1291,35 +1291,46 @@ tock <- function() {
 #
 # Report file/directory status.
 #
-report_path_status <- function(path) {
-  msg <- paste0('report_path_status\n  input path: ', path)
-
-  normalized_path <- normalizePath(path, mustWork=FALSE)
-  msg <- paste0(msg, '\n  normalized path: ', normalized_path)
-  pmod <- file.info(normalized_path, TRUE)
-
-  # Does path exist?
-  if(!file.exists(normalized_path)) {
-    if(is.na(pmod[['size']][1])) {
-      msg <- paste0(msg, '\n  \'', normalized_path, '\' appears to not exist')
-      return(msg)
+# report_path_status <- function(path) {
+report_path_status <- function(...) {
+  path_list <- list(...)
+  npath <- length(path_list)
+  msg <- ''
+  for(i in seq(npath)) {
+    if(i > 1) {
+      msg <- paste0(msg, '\n\n')
     }
-  }
+    path <- path_list[[i]]
+    msg <- paste0(msg, 'report_path_status:\n  input path: ', path)
 
-  # Is path a file or directory?
-  if(pmod[['isdir']][1]) {
-    msg <- paste0(msg, '\n  directory ')
-  }
-  else {
-    msg <- paste0(msg, '\n  file ')
-  }
+    normalized_path <- normalizePath(path, mustWork=FALSE)
+    msg <- paste0(msg, '\n  normalized path: ', normalized_path)
+    pmod <- file.info(normalized_path, TRUE)
 
-  # What are path permissions?
-   msg <- paste0(msg, 'has permissions: ', pmod[['mode']][1])
+    # Does path exist?
+    if(!file.exists(normalized_path)) {
+      if(is.na(pmod[['size']][1])) {
+        msg <- paste0(msg, '\n  \'', normalized_path, '\' appears to not exist')
+        return(msg)
+      }
+    }
 
-  # If path is a file, report md5 checksum.
-  if(!pmod[['isdir']][1]) {
-    msg <- paste0(msg, '\n  md5sum: ', tools::md5sum(normalized_path))
+    # Is path a file or directory?
+    if(pmod[['isdir']][1]) {
+      msg <- paste0(msg, '\n  directory ')
+    }
+    else {
+      msg <- paste0(msg, '\n  file ')
+    }
+
+    # What are path permissions?
+     msg <- paste0(msg, 'has permissions: ', pmod[['mode']][1])
+
+    # If path is a file, report md5 checksum.
+    if(!pmod[['isdir']][1]) {
+      msg <- paste0(msg, '\n  md5sum: ', tools::md5sum(normalized_path))
+    }
+
   }
   return(msg)
 }
