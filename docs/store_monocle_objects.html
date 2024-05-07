@@ -21,7 +21,13 @@ tags: [monocle, manual, vignette]
         <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/differential">Differential expression analysis</a></li>
         <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/projection">Projecting query data onto a reference</a></li>
         <li class="toc-entry toc-h2"><a class="active" href="{{ site.baseurl }}/docs/store_monocle_objects">Storing monocle objects</a></li>
+          <ul>
+            <li class="toc-entry toc-h3"><a href="#save-monocle-objects">Save monocle objects</a></li>
+		    <li class="toc-entry toc-h3"><a href="#load-monocle-objects">Load monocle objects</a></li>
+          </ul>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/disk_based_matrix">Disk-based count matrix storage</a></li>
         <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/cicero">Single-cell ATAC-seq data</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/additional">Additional information</a></li>
         <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/citations">Citations and acknowledgments</a></li>
       </ul>
     </div>
@@ -31,14 +37,14 @@ tags: [monocle, manual, vignette]
         <ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="{{ site.baseurl }}/">Home</a></li>
           <li class="breadcrumb-item"><a href="{{ site.baseurl }}/docs/introduction">Docs</a></li>
-          <li class="breadcrumb-item active" aria-current="page">Project query data onto a reference.</li>
+          <li class="breadcrumb-item active" aria-current="page">Store monocle objects.</li>
         </ol>
       </nav>
 
 <h2>Save monocle objects</h2>
 
 <p>
-The Monocle3 cell_data_set includes the UMAP models and nearest neighbor indexes, which are not R objects, so the <code>saveRDS()</code> and <code>readRDS()</code> functions do not manage them. The Monocle3 functions <code>save_monocle_objects</code> and <code>load_monocle_objects</code> save the complete cell_data_set in a specified directory.
+The <code>save_monocle_objects()</code> and <code>load_monocle_objects()</code> functions save and load complete cell_data_set objects. The Monocle3 cell_data_set can include UMAP models, nearest neighbor indexes, and BPCells matrix objects, which are not R objects, and cannot be written or read by the R <code>saveRDS()</code> and <code>readRDS()</code> functions. The UMAP models and nearest neighbor indexes are used for projecting data sets and the BPCells matrix objects are used to store count matrices on disk rather than in memory. For convenience, the <code>load_monocle_objects()</code> recognizes and reads cell_data_sets saved using <code>saveRDS()</code>.
 </p>
 
 <h3 id="save-monocle-objects">Save monocle objects</h3>
@@ -62,8 +68,22 @@ The <code>load_monocle_objects()</code> function loads the complete data set int
 cds <- load_monocle_objects(directory_path='my_cds_objects')
 {% endhighlight %}
 
+<p>
+By default, the <code>save_monocle_objects()</code> function makes the monocle objects directory and then makes a tar archive file of the directory so that the directory contents can be copied easily. If you decide to remove the directory, verify that the tar archive was made successfully, in case there was a problem such as running out of disk space. The <code>save_monocle_objects()</code> function has an <code>archive_control</code> parameter that gives some control over making the archive.
+</p>
+
+<p>
+The monocle objects directory contains files that may include the following
+<ul>
+<li>an RDS file of the R cell_data_set, excluding the non-R objects</li>
+<li>annoy nearest neighbor index files</li>
+<li>a BPcells counts matrix directory</li>
+<li>an RDS file of with a table of information about the files in the monocle objects directory</li>
+</ul>
+</p>
+
 <a href="{{ site.baseurl }}/docs/projection" class="btn btn-info btn-sm btn-prev" role="button">Previous</a>
-<a href="{{ site.baseurl }}/docs/cicero" class="btn btn-success btn-sm btn-next" role="button">Next</a>
+<a href="{{ site.baseurl }}/docs/disk_based_matrix" class="btn btn-success btn-sm btn-next" role="button">Next</a>
 
 <!-- main content area end -->
 </div></div></div>

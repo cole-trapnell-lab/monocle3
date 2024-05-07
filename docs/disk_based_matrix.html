@@ -1,0 +1,148 @@
+---
+permalink: /docs/disk_based_matrix/
+sidemenu: true
+description: "Disk-based counts matrix storage."
+modified: 2024-04-11
+tags: [monocle, manual, vignette]
+---
+
+<div class= "container">
+  <div class= "row">
+    <div class= "col-sm-4 sticky-navigation">
+      <ul class="section-nav" id= "toc" data-toggle= "toc">
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/introduction">Introduction</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/updates">Major updates in Monocle 3</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/installation">Installing Monocle 3</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/help">Getting help</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/getting_started">Getting started with Monocle 3</a></li> 
+        <!--        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/alignment">Pre-process your data</a></li> -->
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/clustering">Clustering and classifying your cells</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/trajectories">Constructing single-cell trajectories</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/differential">Differential expression analysis</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/projection">Projecting query data onto a reference</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/store_monocle_objects">Storing monocle objects</a></li>
+        <li class="toc-entry toc-h2"><a class="active" href="{{ site.baseurl }}/docs/disk_based_matrix">Disk-based count matrix storage</a></li>
+          <ul>
+            <li class="toc-entry toc-h3"><a href="#make-cds-with-disk-based-matrix">Make a cell_data_set with a disk-based matrix</a></li>
+            <li class="toc-entry toc-h3"><a href="#process-cds-with-disk-based-counts-matrix">Process a cell_data_set with disk-based matrix</a></li>
+
+            <li class="toc-entry toc-h3"><a href="#store-cds-with-disk-based-counts-matrix">Store a cell_data_set with an disk-based matrix</a></li>
+            <li class="toc-entry toc-h3"><a href="#temporary-disk-based-working-directory">Temporary disk-based matrix working directory</a></li>
+            <li class="toc-entry toc-h3"><a href="#some-bpcells-details">Working with BPCells count matrices</a></li>
+          </ul>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/cicero">Single-cell ATAC-seq data</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/additional">Additional information</a></li>
+        <li class="toc-entry toc-h2"><a href="{{ site.baseurl }}/docs/citations">Citations and acknowledgments</a></li>
+      </ul>
+    </div>
+    <!-- main content area start -->
+    <div class= "col-sm-8">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{{ site.baseurl }}/">Home</a></li>
+          <li class="breadcrumb-item"><a href="{{ site.baseurl }}/docs/introduction">Docs</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Disk-based count matrix</li>
+        </ol>
+      </nav>
+
+
+
+<p style="border-width:3px; border-style:solid">
+<font size="5">** Disk-based storage is in the develop branch only at this time. **</font>
+<br>
+You need to install the Monocle3 develop branch to use disk-based count matrix storage. Please see <a href="{{ site.baseurl }}/docs/installation">Installing Monocle 3</a>.
+</p>
+
+<h2>Disk-based count matrix storage</h2>
+
+<p>
+Monocle3 can store the count matrix on disk rather than in memory in a way that is essentially transparent to the user. This reduces substantially the memory required to process a data set while using the familiar Monocle3 functions. This feature depends on Ben Parks' excellent BPCells R package.
+</p>
+
+<h3 id="make-cds-with-disk-based-matrix">Make a cell_data_set with a disk-based matrix</h3>
+
+<p>
+Make a cell_data_set with an disk-based counts matrix using the <code>matrix_control</code> parameter with Monocle3 functions that make a cell_data_set; for example, <code>load_mm_data()</code>. In this example, the counts matrix is in a MatrixMarket file called <code>counts.mtx</code>, the gene names are in <code>features.txt</code>, and the cell names are in <code>cells.txt</code>.
+</p>
+
+{% highlight R %}
+cds <- load_mm_data(mat_path='counts.mtx', feature_anno_path='features.txt', cell_anno_path='cells.txt', matrix_control=list(matrix_class='BPCells'))
+{% endhighlight %}
+
+<p>
+Functions that have the <code>matrix_control</code> parameter include
+</p>
+
+<ul>
+<li><code>load_mm_data()</code></li>
+<li><code>load_mtx_data()</code></li>
+<li><code>load_worm_embryo()</code></li>
+<li><code>load_worm_l2()</code></li>
+<li><code>load_a549()</code></li>
+<li><code>combine_cds()</code></li>
+</ul>
+
+<p>
+You can convert a <code>dgCMatrix</code> sparse matrix in the cell_data_set to an disk-based matrix using the function <code>convert_counts_matrix()</code>. For example
+</p>
+
+{% highlight R %}
+counts(cds_bpcells) <- convert_counts_matrix(counts(cds), matrix_control=list(matrix_class='BPCells'))
+{% endhighlight %}
+
+<p>
+where <code>counts(matrix)</code> is a <code>dgCMatrix</code>. <code>convert_counts_matrix()</code> makes and stores both the BPCells column-order matrix and the row-order matrix, in an effort to keep the two consistent.
+</p>
+
+<p>
+The <code>new_cell_data_set()</code> function has no <code>matrix_control</code> parameter so it does not convert the input matrix to a disk-based matrix. However, if the input matrix is a BPCells matrix, it makes and stores the row-order copy of the input matrix.
+</p>
+
+<h3 id="process-cds-with-disk-based-counts-matrix">Process a cell_data_set with disk-based matrix</h3>
+
+<p>
+After making the cell_data_set with an disk-based matrix, you process it using the same functions as for a cell_data_set with a dgCMatrix counts matrix. For example,
+</p>
+
+{% highlight R %}
+cds <- load_mm_data(mat_path='counts.mtx', feature_anno_path='features.txt', cell_anno_path='cells.txt', matrix_control=list(matrix_class='BPCells'))
+cds <- preprocess_cds(cds)
+cds <- reduce_dimension(cds)
+cds <- cluster_cells(cds)
+{% endhighlight %}
+
+<h3 id="store-cds-with-disk-based-counts-matrix">Store a cell_data_set with an disk-based matrix</h3>
+
+<p>
+You must use the <code>save_monocle_objects()</code> function to store a cell_data_set that has an disk-based counts matrix, and the <code>load_monocle_object()</code> function to reload the saved cell_data_set.
+</p>
+
+<h3 id="temporary-disk-based-working-directory">Temporary disk-based matrix working directory</h3>
+
+<p>
+Monocle3 makes temporary working directories where the disk-based counts matrix files are kept until you quit the R session, at which time Monocle3 tries to remove them. By default, Monocle3 makes these directories in the directory where you are running R. The directories have names like <code>monocle.bpcells.20240412.3106e35c0e4a2.tmp</code>, which include the date on which the directory is made, a unique string, and the <code>.tmp</code> suffix. Do not delete these directories while the Monocle3 R session is running. If a temporary directory remains after you quit the R session for some reason, you may delete it, if you are certain that the session completed. If you delete such a directory before the session ends, you will lose the counts matrix, which will make the cell_data_set unusable.
+</p>
+
+<p>
+You can tell Monocle3 where you want the disk-based working directories using the <code>matrix_control</code> parameter with the list element <code>matrix_path</code>. For example,
+</p>
+
+{% highlight R %}
+cds <- load_worm_embryo(matrix_control=list(matrix_class='BPCells', matrix_path='/home/me/tmp_bpcells'))
+{% endhighlight %}
+
+<h3 id="some-bpcells-details">Working with BPCells count matrices</h3>
+
+<ul>
+<li>BPCells queues operations for streaming and lazy evaluation, which increases time and memory efficiency. However, performance can suffer when matrix elements, rows, and columns are accessed repeatedly while the matrix has queued operations because the queued operations are applied for each access. To avoid repeating these operations, use a temporary disk-based copy, which applies the operations to the full matrix once.</li>
+<li>disk-based matrix operation performance depends strongly on disk latency and bandwidth. Matrix operations are fastest using fast disks attach to the main peripheral bus such as solid-state disks on the system PCIe bus. Network attached storage may be slower, and USB drives should be avoided for storing working directories.</li>
+<li>disk-based matrix storage requires free disk space so you may need to watch disk usage. Some commands such as the <code>preprocess_cds()</code> create an additional temporary disk-based matrix while it runs.</li>
+<li>when using disk-based matrix storage, Monocle3 stores both column-order and row-order storage matrices. It uses the column-order matrix except when the operations required frequent gene subsetting.</li>
+<li>the <code>set_matrix_control()</code> function help has additional information about BPCells features supported by Monocle3.</li>
+</ul>
+
+<a href="{{ site.baseurl }}/docs/store_monocle_objects" class="btn btn-info btn-sm btn-prev" role="button">Previous</a>
+<a href="{{ site.baseurl }}/docs/cicero" class="btn btn-success btn-sm btn-next" role="button">Next</a>
+
+<!-- main content area end -->
+</div></div></div>

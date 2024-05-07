@@ -25,6 +25,23 @@ bundle exec jekyll build --incremental --watch
 8. Serve the site (in a second terminal window)
 bundle exec jekyll serve --watch
 
+Notes:
+  o  you can load the site from another system on the
+     local network using the command
+
+       bundle exec jekyll serve --watch --host 0.0.0.0
+
+     and using the IP address of the server system in
+     the URL
+
+       http://10.0.0.101:4000/monocl3/
+
+     if the server is on the system with the IP address
+     10.0.0.101, for example.
+
+     This can be used to load the site on a smart phone,
+     for example.
+
 9. Load the site in chrome:
 http://127.0.0.1:4000/monocle3
 
