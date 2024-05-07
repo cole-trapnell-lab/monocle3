@@ -241,10 +241,26 @@ plot_genes_violin(cds_subset, group_cells_by="embryo.time.bin", ncol=2) +
       <div class= "text-center">
         <img src= "{{site.baseurl}}/images/manual_images/embryo_ciliated_markers_violin.png" width= 500>
       </div>
+
+      <!-- TODO: Add violin plots in this section -->
+
+      <p> 
+        By default, the violin plot log-scales the expression, which drops cells with zero expression, resulting in potentially misleading figures.
+        The Monocle3 develop branch has a hybrid plot where cells appear as red dots in a Sina plot and the cell distribution appears as a
+        histogram with green bars and a blue median_qi interval.
+      </p>
+
+{% highlight R %}
+plot_genes_hybrid(cds_subset, group_cells_by="embryo.time.bin", ncol=2) +
+      theme(axis.text.x=element_text(angle=45, hjust=1))
+{% endhighlight %}
+
+      <div class= "text-center">
+        <img src= "{{site.baseurl}}/images/manual_images/embryo_ciliated_markers_hybrid.png" width= 500>
+      </div>
+
       
       <h3 id="control-batch">Controlling for batch effects and other factors</h3>
-      
-      <!-- TODO: Add violin plots in this section -->
       
 {% highlight R %}
 gene_fits <- fit_models(cds_subset, model_formula_str = "~embryo.time + batch")
