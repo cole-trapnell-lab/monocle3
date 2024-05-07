@@ -2063,7 +2063,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
 #' @param directory_path a string giving the name of the directory
 #'   from which to read the saved cell_data_set files.
 #' @param matrix_control a list that is used only to set the
-#'   PBCells matrix path when the saved cell_data_set has the
+#'   BPCells matrix path when the saved cell_data_set has the
 #'   counts matrix stored as a BPCells on-disk matrix. By default,
 #'   the BPCells matrix directory path is set to the current
 #'   working directory.
