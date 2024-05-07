@@ -62,7 +62,7 @@ Monocle3 can store the count matrix on disk rather than in memory in a way that 
 <h3 id="make-cds-with-disk-based-matrix">Make a cell_data_set with a disk-based matrix</h3>
 
 <p>
-Make a cell_data_set with an disk-based counts matrix using the <code>matrix_control</code> parameter with Monocle3 functions that make a cell_data_set; for example, <code>load_mm_data()</code>. In this example, the counts matrix is in a MatrixMarket file called <code>counts.mtx</code>, the gene names are in <code>features.txt</code>, and the cell names are in <code>cells.txt</code>.
+Make a cell_data_set with a disk-based counts matrix using the <code>matrix_control</code> parameter with Monocle3 functions that make a cell_data_set; for example, <code>load_mm_data()</code>. In this example, the counts matrix is in a MatrixMarket file called <code>counts.mtx</code>, the gene names are in <code>features.txt</code>, and the cell names are in <code>cells.txt</code>.
 </p>
 
 {% highlight R %}
@@ -83,7 +83,7 @@ Functions that have the <code>matrix_control</code> parameter include
 </ul>
 
 <p>
-You can convert a <code>dgCMatrix</code> sparse matrix in the cell_data_set to an disk-based matrix using the function <code>convert_counts_matrix()</code>. For example
+You can convert a <code>dgCMatrix</code> sparse matrix in the cell_data_set to a disk-based matrix using the function <code>convert_counts_matrix()</code>. For example
 </p>
 
 {% highlight R %}
@@ -101,7 +101,7 @@ The <code>new_cell_data_set()</code> function has no <code>matrix_control</code>
 <h3 id="process-cds-with-disk-based-counts-matrix">Process a cell_data_set with disk-based matrix</h3>
 
 <p>
-After making the cell_data_set with an disk-based matrix, you process it using the same functions as for a cell_data_set with a dgCMatrix counts matrix. For example,
+After making the cell_data_set with a disk-based matrix, you process it using the same functions as for a cell_data_set with a dgCMatrix counts matrix. For example,
 </p>
 
 {% highlight R %}
@@ -111,10 +111,10 @@ cds <- reduce_dimension(cds)
 cds <- cluster_cells(cds)
 {% endhighlight %}
 
-<h3 id="store-cds-with-disk-based-counts-matrix">Store a cell_data_set with an disk-based matrix</h3>
+<h3 id="store-cds-with-disk-based-counts-matrix">Store a cell_data_set with a disk-based matrix</h3>
 
 <p>
-You must use the <code>save_monocle_objects()</code> function to store a cell_data_set that has an disk-based counts matrix, and the <code>load_monocle_object()</code> function to reload the saved cell_data_set.
+You must use the <code>save_monocle_objects()</code> function to store a cell_data_set that has a disk-based counts matrix, and the <code>load_monocle_object()</code> function to reload the saved cell_data_set.
 </p>
 
 <h3 id="temporary-disk-based-working-directory">Temporary disk-based matrix working directory</h3>
