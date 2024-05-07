@@ -26,7 +26,7 @@ tags: [monocle, manual, vignette]
             <li class="toc-entry toc-h3"><a href="#make-cds-with-disk-based-matrix">Make a cell_data_set with a disk-based matrix</a></li>
             <li class="toc-entry toc-h3"><a href="#process-cds-with-disk-based-counts-matrix">Process a cell_data_set with disk-based matrix</a></li>
 
-            <li class="toc-entry toc-h3"><a href="#store-cds-with-disk-based-counts-matrix">Store a cell_data_set with an disk-based matrix</a></li>
+            <li class="toc-entry toc-h3"><a href="#store-cds-with-disk-based-counts-matrix">Store a cell_data_set with a disk-based matrix</a></li>
             <li class="toc-entry toc-h3"><a href="#temporary-disk-based-working-directory">Temporary disk-based matrix working directory</a></li>
             <li class="toc-entry toc-h3"><a href="#some-bpcells-details">Working with BPCells count matrices</a></li>
           </ul>
@@ -135,7 +135,7 @@ cds <- load_worm_embryo(matrix_control=list(matrix_class='BPCells', matrix_path=
 
 <ul>
 <li>BPCells queues operations for streaming and lazy evaluation, which increases time and memory efficiency. However, performance can suffer when matrix elements, rows, and columns are accessed repeatedly while the matrix has queued operations because the queued operations are applied for each access. To avoid repeating these operations, use a temporary disk-based copy, which applies the operations to the full matrix once.</li>
-<li>disk-based matrix operation performance depends strongly on disk latency and bandwidth. Matrix operations are fastest using fast disks attach to the main peripheral bus such as solid-state disks on the system PCIe bus. Network attached storage may be slower, and USB drives should be avoided for storing working directories.</li>
+<li>disk-based matrix operation performance depends strongly on disk latency and bandwidth. Matrix operations are fastest using fast disks attached to the main peripheral bus such as solid-state disks on the system PCIe bus. Network attached storage may be slower, and USB drives should be avoided for storing working directories.</li>
 <li>disk-based matrix storage requires free disk space so you may need to watch disk usage. Some commands such as the <code>preprocess_cds()</code> create an additional temporary disk-based matrix while it runs.</li>
 <li>when using disk-based matrix storage, Monocle3 stores both column-order and row-order storage matrices. It uses the column-order matrix except when the operations required frequent gene subsetting.</li>
 <li>the <code>set_matrix_control()</code> function help has additional information about BPCells features supported by Monocle3.</li>
