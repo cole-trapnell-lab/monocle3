@@ -1291,7 +1291,14 @@ tock <- function() {
 #
 # Report file/directory status.
 #
-# report_path_status <- function(path) {
+# Notes:
+#   The arguments consists of one or more file or
+#   directory paths given as strings.
+#
+#   Examples:
+#     report_path_status('/Users/monocle_dev/git/monocle3')
+#     report_path_status('monocle_objects.20240426', 'monocle_transform_models.20240426')
+#
 report_path_status <- function(...) {
   path_list <- list(...)
   npath <- length(path_list)
