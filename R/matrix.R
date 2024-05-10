@@ -874,12 +874,12 @@ set_cds_row_order_matrix <- function(cds) {
   # compress. This is not a big deal because only the indices are compressed.
   mat_r <- tryCatch(
              BPCells::transpose_storage_order(matrix=mat_c, outdir=outdir, tmpdir=tmpdir, load_bytes=4194304L, sort_bytes=1073741824L),
-             error=function(c) {
-               message('set_cds_row_order_matrix: error running BPCells::transpose_storage_order: ', c)
-               report_path_status(dirname(tmpdir))
-               report_path_status(dirname(outdir))
-               stop('exiting')
-             })
+             error=function(c) {stop(paste0(trimws(c),
+                                            '\n  error running BPCells::transpose_storage_order',
+                                            '\n', dbar40,
+                                            '\n', report_path_status(out_dir, dirname(tmpdir)),
+                                            '\n', dbar40,
+                                            '\n* error in set_cds_row_order_matrix')) })
 
   unlink(tmpdir, recursive=TRUE)
   push_matrix_path(mat=mat_r)

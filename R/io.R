@@ -1,5 +1,3 @@
-dbar40 <- paste(replicate(40,'-'),collapse='')
-
 #' Build a small cell_data_set.
 #' @param matrix_control A list used to control how the counts matrix is stored
 #'    in the CDS. By default, Monocle3 stores the counts matrix in-memory as a
@@ -318,7 +316,7 @@ load_mm_data <- function( mat_path,
                                   error = function(c) { stop(paste0(trimws(c), '\n* error in load_mm_data')) })
 
   cell_annotations <- tryCatch(load_annotations_data( cell_anno_path, cell_metadata_column_names, header, sep, quote=quote, annotation_type='cells' ),
-                               error = function(c) { stop(paste0(trimws(c), '\n* error in load_mm_data', sep='')) })
+                               error = function(c) { stop(paste0(trimws(c), '\n* error in load_mm_data')) })
 
   assertthat::assert_that( ! any( duplicated( feature_annotations$names ) ), msg='duplicate feature names in feature annotation file' )
   assertthat::assert_that( ! any( duplicated( cell_annotations$names ) ), msg='duplicate cell names in cell annotation file' )
@@ -359,11 +357,12 @@ load_mm_data <- function( mat_path,
                                           tmpdir=tmpdir,
                                           load_bytes=4194304L,
                                           sort_bytes=1073741824L),
-              error = function(c) { stop(paste0(trimws(c), '\n  unable to read file ', mat_path,
-                                                   '\n', dbar40,
-                                                   '\n', report_path_status(mat_path, dirname(mat_path)),
-                                                   '\n', dbar40,
-                                                   '\n* error in load_mm_data')) })
+              error = function(c) { stop(paste0(trimws(c),
+                                                  '\n  unable to read file ', mat_path,
+                                                  '\n', dbar40,
+                                                  '\n', report_path_status(mat_path, dirname(mat_path)),
+                                                  '\n', dbar40,
+                                                  '\n* error in load_mm_data')) })
     unlink(tmpdir, recursive=TRUE)
     outdir_c <- tempfile(pattern=paste0('monocle.bpcells.',
                                         format(Sys.Date(), format='%Y%m%d'), '.'),
@@ -371,11 +370,12 @@ load_mm_data <- function( mat_path,
                          fileext='.tmp')[[1]]
 
     mat <- tryCatch(BPCells::write_matrix_dir(BPCells::convert_matrix_type(tmat, 'double'), outdir_c, compress=FALSE, buffer_size=8192L, overwrite=FALSE),
-             error = function(c) { stop(paste0(trimws(c), '\n  error make row order counts matrix',
-                                                  '\n', dbar40,
-                                                  '\n', report_path_status(dirname(outdir_c), dirname(tmat)),
-                                                  '\n', dbar40,
-                                                  '\n* error in load_mm_data')) })
+             error = function(c) { stop(paste0(trimws(c),
+                                                 '\n  error make row order counts matrix',
+                                                 '\n', dbar40,
+                                                 '\n', report_path_status(dirname(outdir_c), dirname(tmat)),
+                                                 '\n', dbar40,
+                                                 '\n* error in load_mm_data')) })
 
     unlink(toutdir, recursive=TRUE)
     push_matrix_path(mat=mat)
@@ -816,7 +816,7 @@ load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
                                         '\n', dbar40,
                                         '\n', report_path_status(file_name, dirname(file_name)),
                                         '\n', dbar40,
-                                             '\n* error in save_hnsw_index')) })  # bge: read  # bge: done
+                                        '\n* error in save_hnsw_index')) })  # bge: read  # bge: done
   }
   else
   if(metric == 'euclidean') {
@@ -828,7 +828,7 @@ load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
                                         '\n', dbar40,
                                         '\n', report_path_status(file_name, dirname(file_name)), 
                                         '\n', dbar40,
-                                             '\n* error in save_hnsw_index')) })  # bge: read  # bge: done
+                                        '\n* error in save_hnsw_index')) })  # bge: read  # bge: done
     attr(new_index, "distance") <- "euclidean"
   }
   else
