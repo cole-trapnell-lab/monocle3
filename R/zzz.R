@@ -4,6 +4,7 @@
 options("sp_evolution_status"=2)
 
 
+#
 # Make a horizontal bar of dashes.
 #
 dbar40 <- paste(replicate(40,'-'),collapse='')

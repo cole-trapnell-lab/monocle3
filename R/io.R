@@ -134,8 +134,7 @@ is_matrix_market_file <- function( matpath )
 load_annotations_data <- function( anno_path, metadata_column_names=NULL, header=FALSE, sep="", quote="\"'", annotation_type=NULL )
 {
   assertthat::assert_that( ! is.null( annotation_type ) )
-  annotations <- tryCatch(
-      utils::read.table( anno_path, header=header, sep=sep, quote=quote, stringsAsFactors=FALSE ),
+  annotations <- tryCatch(utils::read.table( anno_path, header=header, sep=sep, quote=quote, stringsAsFactors=FALSE ),
       error = function(c) { stop(paste0(trimws(c), 
                                         '\n  unable to read ', annotation_type, ' file ', anno_path,
                                         '\n  note: possible problems include the wrong filename, a missing file,',
@@ -647,7 +646,7 @@ save_annoy_index <- function(nn_index, file_name) {
                                                   '\n', dbar40,
                                                   '\n', report_path_status(dirname(file_name)),
                                                   '\n', dbar40,
-                                                  '\n* error in save_annoy_index')) })  # bge: save  # bge: done
+                                                  '\n* error in save_annoy_index')) })
     }
     else {
       stop('Unrecognized Monocle3 annoy index type')
@@ -662,7 +661,7 @@ save_annoy_index <- function(nn_index, file_name) {
                                                   '\n', dbar40,
                                                   '\n', report_path_status(dirname(file_name)),
                                                   '\n', dbar40,
-                                                  '\n* error in save_annoy_index')) })  # bge: save  # bge: done
+                                                  '\n* error in save_annoy_index')) })
     }
     else {
       stop('Unrecognized uwot annoy index type')
@@ -690,7 +689,7 @@ load_annoy_index <- function(nn_index, file_name, metric, ndim) {
                                           '\n', dbar40,
                                           '\n', report_path_status(file_name, dirname(file_name)),
                                           '\n', dbar40,
-                                          '\n* error in load_annoy_index')) })  # bge: read  # bge: done
+                                          '\n* error in load_annoy_index')) })
       nn_index[['annoy_index']] <- annoy_index
     }
     else {
@@ -708,7 +707,7 @@ load_annoy_index <- function(nn_index, file_name, metric, ndim) {
                                           '\n', dbar40,
                                           '\n', report_path_status(file_name, dirname(file_name)),
                                           '\n', dbar40,
-                                          '\n* error in load_annoy_index')) })  # bge: read  # bge: done
+                                          '\n* error in load_annoy_index')) })
       nn_index[['ann']] <- annoy_index
     }
     else {
@@ -736,7 +735,7 @@ save_umap_annoy_index <- function(nn_index, file_name) {
                                                   '\n', dbar40,
                                                   '\n', report_path_status(dirname(file_name)),
                                                   '\n', dbar40,
-                                                  '\n* error in load_umap_annoy_index')) })  # bge: save  # bge: done
+                                                  '\n* error in load_umap_annoy_index')) })
     }
     else {
       stop('Unrecognized umap annoy index type')
@@ -759,7 +758,7 @@ load_umap_annoy_index <- function(nn_index, file_name, metric, ndim) {
                                           '\n', dbar40,
                                           '\n', report_path_status(file_name, dirname(file_name)),
                                           '\n', dbar40,
-                                          '\n* error in load_umap_annoy_index')) })  # bge: read  # bge: done
+                                          '\n* error in load_umap_annoy_index')) })
       nn_index[['ann']] <- annoy_index
     }
     else {
@@ -776,7 +775,7 @@ load_umap_annoy_index <- function(nn_index, file_name, metric, ndim) {
                                         '\n', dbar40,
                                         '\n', report_path_status(file_name, dirname(file_name)),
                                         '\n', dbar40,
-                                        '\n* error in load_umap_annoy_index')) })  # bge: read  # bge: done
+                                        '\n* error in load_umap_annoy_index')) })
   }
   return(nn_index)
 }
@@ -800,7 +799,7 @@ save_hnsw_index <- function(nn_index, file_name) {
                                              '\n', dbar40,
                                              '\n', report_path_status(dirname(file_name)),
                                              '\n', dbar40,
-                                             '\n* error in save_hnsw_index')) })  # bge: save  # bge: done
+                                             '\n* error in save_hnsw_index')) })
 }
 
 
@@ -816,7 +815,7 @@ load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
                                         '\n', dbar40,
                                         '\n', report_path_status(file_name, dirname(file_name)),
                                         '\n', dbar40,
-                                        '\n* error in save_hnsw_index')) })  # bge: read  # bge: done
+                                        '\n* error in save_hnsw_index')) })
   }
   else
   if(metric == 'euclidean') {
@@ -828,7 +827,7 @@ load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
                                         '\n', dbar40,
                                         '\n', report_path_status(file_name, dirname(file_name)), 
                                         '\n', dbar40,
-                                        '\n* error in save_hnsw_index')) })  # bge: read  # bge: done
+                                        '\n* error in save_hnsw_index')) })
     attr(new_index, "distance") <- "euclidean"
   }
   else
@@ -840,7 +839,7 @@ load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
                                         '\n', dbar40,
                                         '\n', report_path_status(file_name, dirname(file_name)), 
                                         '\n', dbar40,
-                                        '\n* error in save_hnsw_index')) })  # bge: read  # bge: done
+                                        '\n* error in save_hnsw_index')) })
   }
   else
   if(metric == 'ip') {
@@ -851,7 +850,7 @@ load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
                                         '\n', dbar40,
                                         '\n', report_path_status(file_name, dirname(file_name)), 
                                         '\n', dbar40,
-                                        '\n* error in save_hnsw_index')) })  # bge: read  # bge: done
+                                        '\n* error in save_hnsw_index')) })
   }
   else
     stop('Unrecognized HNSW metric ', metric)
@@ -888,7 +887,7 @@ save_umap_nn_indexes <- function(umap_model, file_name) {
                   '\n', dbar40,
                   '\n', report_path_status(file_name, dirname(file_name)),
                   '\n', dbar40,
-                  '\n* error in save_umap_nn_indexes')) # bge: two directories  # bge: save  # bge: done
+                  '\n* error in save_umap_nn_indexes'))
     }
   }
   else {
@@ -904,7 +903,7 @@ save_umap_nn_indexes <- function(umap_model, file_name) {
                     '\n', dbar40,
                     '\n', report_path_status(file_name_expand, dirname(file_name_expand)),
                     '\n', dbar40,
-                    '\n* error in save_umap_nn_indexes')) # bge: two directories  # bge: save  # bge: done
+                    '\n* error in save_umap_nn_indexes'))
       }
       append(md5sum_vec, md5sum)
     }
@@ -928,7 +927,7 @@ load_umap_nn_indexes <- function(umap_model, file_name, md5sum_umap_index) {
                   '\n', dbar40,
                   '\n', report_path_status(file_name, dirname(file_name)),
                   '\n', dbar40,
-                  '\n* error in load_umap_nn_indexes')) # bge: two directories # bge: load  # bge: done
+                  '\n* error in load_umap_nn_indexes'))
     }
     # Don't check the md5sum when md5sum_umap_index is NA in file_index.rds in order to let the user circumvent the test.
     if(!is.na(md5sum_umap_index) && !is.null(md5sum_umap_index) && md5sum != md5sum_umap_index) {
@@ -953,7 +952,7 @@ load_umap_nn_indexes <- function(umap_model, file_name, md5sum_umap_index) {
                     '\n', dbar40,
                     '\n', report_path_status(file_name_expand, dirname(file_name_expand)),
                     '\n', dbar40,
-                    '\n* error in load_umap_nn_indexes')) # bge: two directories  # bge: done
+                    '\n* error in load_umap_nn_indexes'))
       }
 
       # Don't check the md5sum when md5sum_umap_index is NA in file_index.rds in order to let the user circumvent the test.
@@ -980,7 +979,7 @@ load_bpcells_matrix_dir <- function(file_name, md5sum, matrix_control=list()) {
   file_name <- normalizePath(file_name, mustWork=FALSE)
 
   md5sum_file <- tryCatch(bpcells_matdir_md5(file_name),
-    error = function(c) { stop(paste0(trimws(c), '\n* error in load_bpcells_matrix_dir')) })  # bge: load  # bge: done
+    error = function(c) { stop(paste0(trimws(c), '\n* error in load_bpcells_matrix_dir')) })
 
   # Don't check the md5sum when md5sum_file is NA in file_index.rds in order to let the user circumvent the test.
   if(!is.na(md5sum) && md5sum_file != md5sum) {
@@ -1186,9 +1185,9 @@ check_monocle_object_files <- function( directory_path, file_index, read_test=FA
     }
   }
   if(length(error_list) > 0) {
-    message('Error: check_monocle_object_files: ')
-    message(paste0('  ', error_list, collapse='\n'))
-    return(-1)
+    msg <- 'check_monocle_object_files: '
+    msg <- paste0(msg, '\n  ', error_list, collapse='\n')
+    stop(msg)
   }
   else {
     message('Info: all expected monocle object files exist.')
@@ -1199,7 +1198,7 @@ check_monocle_object_files <- function( directory_path, file_index, read_test=FA
 
 
 # Make a tar file of an output directory.
-make_tar_of_dir <- function(func_name, directory_path, archive_control) {
+make_tar_of_dir <- function(directory_path, archive_control) {
   message('Info: making a tar file of the output directory...')
   # Make a tar file of output directory, if requested.
   if(archive_control[['archive_compression']] == 'gzip') {
@@ -1216,22 +1215,27 @@ make_tar_of_dir <- function(func_name, directory_path, archive_control) {
   else {
     archive_name <- paste0(directory_path, '.tar')
   }
-  tryCatch({
-    tar(tarfile=archive_name,
-        files=directory_path,
-        compression=archive_control[['archive_compression']])
-    },
-    error=function(c) { stop(paste0(trimws(c),
-                                   '\n  error writing file ', archive_name,
-                                   '\n', dbar40,
-                                   '\n', report_path_status(directory_path, dirname(directory_path)),
-                                   '\n', dbar40,
-                                   '\n* error in make_tar_of_dir'))
-    },
-    finally={
-      message(paste0('  made tar archive file \"', archive_name, '\"'))
-    }
-  ) # tryCatch
+  stat <- tryCatch({
+            tar(tarfile=archive_name,
+                files=directory_path,
+                compression=archive_control[['archive_compression']])
+            },
+            error=function(c) { stop(paste0(trimws(c),
+                                           '\n  error writing file ', archive_name,
+                                           '\n', dbar40,
+                                           '\n', report_path_status(directory_path, dirname(directory_path)),
+                                           '\n', dbar40,
+                                           '\n* error in make_tar_of_dir'))
+            },
+            finally={
+              message(paste0('  made tar archive file \"', archive_name, '\"'))
+            }
+          ) # tryCatch
+  if(stat != 0) {
+    stop(paste0('\n  tar stopped with a non-zero status.',
+                '\n  This may be an error: please check that the tar file can be',
+                '\n  read using the \'tar\' command with the \'t\' option.'))
+  }
   message('  Done.')
 }
 
@@ -1414,7 +1418,7 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
                     '\n', dbar40,
                     '\n', report_path_status(file_path, dirname(file_path)),
                     '\n', dbar40,
-                    '\n* error in save_transform_models'))  # bge: two directories  # bge: save  # bge: save_transform_models
+                    '\n* error in save_transform_models'))
     }
     file_index[['files']] <- rbind(file_index[['files']],
                                    data.frame(cds_object = 'reduce_dim_aux',
@@ -1435,8 +1439,8 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
         stop(paste0('\n  no checksum for file ', file_path, 
                     '\n', dbar40,
                     '\n', report_path_status(file_path, dirname(file_path)),
-                    '\n', dbar40,,
-                    '\n* error in save_transform_models'))  # bge: two directories  # bge: save  # bge: save_transform_models
+                    '\n', dbar40,
+                    '\n* error in save_transform_models'))
       }
       file_index[['files']] <- rbind(file_index[['files']],
                                      data.frame(cds_object = 'reduce_dim_aux',
@@ -1487,7 +1491,13 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
   }
 
   # Save file_index.rds.
-  base::saveRDS(file_index, file=file.path(directory_path, 'file_index.rds'))
+  tryCatch(base::saveRDS(file_index, file=file.path(directory_path, 'file_index.rds')),
+    error = function(c) { stop(paste0(trimws(c),
+                                      '\n  error writing file ', file.path(directory_path, 'file_index.rds'),
+                                      '\n', dbar40,
+                                      '\n', report_path_status(dirname(file.path(directory_path, 'file_index.rds'))),
+                                      '\n', dbar40,
+                                      '\n* error in xxx')) })
 
   if(verbose) {
     report_files_saved(file_index)
@@ -1502,7 +1512,7 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
 
   # Make a tar file of output directory, if requested.
   if(archive_control[['archive_type']] == 'tar') {
-    tryCatch(make_tar_of_dir('save_transform_models', directory_path, archive_control),
+    tryCatch(make_tar_of_dir(directory_path, archive_control),
              error = function(c) { stop(paste0(trimws(c), '\n* error in save_transform_models')) })
   }
 }
@@ -1569,10 +1579,7 @@ load_transform_models <- function(cds, directory_path) {
     stop('Missing file index file \'', file_index_path, '\'')
 
   # Read file index.
-  file_index <- tryCatch(
-    {
-      readRDS(file_index_path)
-    },
+  file_index <- tryCatch(readRDS(file_index_path),
     error = function(c) { stop(paste0(trimws(c),
                                       '\n  error reading file ', file_index_path,
                                       '\n', dbar40,
@@ -1631,7 +1638,7 @@ load_transform_models <- function(cds, directory_path) {
                     '\n', dbar40,
                     '\n', report_path_status(file_path, dirname(file_path)),
                     '\n', dbar40,
-                    '\n* error in load_transform_models'))  # bge: two directories # bge: load_transform_models
+                    '\n* error in load_transform_models'))
       }
 
       if(md5sum_file != md5sum) {
@@ -1648,10 +1655,7 @@ load_transform_models <- function(cds, directory_path) {
 
     if(cds_object == 'cds') {
       if(file_format == 'rds') {
-        cds_tmp <- tryCatch(
-          {
-            readRDS(file_path)
-          },
+        cds_tmp <- tryCatch(readRDS(file_path),
           error = function(c) { stop(paste0(trimws(c),
                                             '\n  error reading file ', file_path,
                                             '\n', dbar40,
@@ -1669,10 +1673,7 @@ load_transform_models <- function(cds, directory_path) {
     else
     if(cds_object == 'reduce_dim_aux') {
       if(file_format == 'rds') {
-        cds@reduce_dim_aux[[reduction_method]] <- tryCatch(
-          {
-            readRDS(file_path)
-          },
+        cds@reduce_dim_aux[[reduction_method]] <- tryCatch(readRDS(file_path),
           error = function(c) { stop(paste0(trimws(c),
                                             '\n  error reading file ', file_path,
                                             '\n', dbar40,
@@ -2207,7 +2208,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
 
   # Make a tar file of output directory, if requested.
   if(archive_control[['archive_type']] == 'tar') {
-    tryCatch(make_tar_of_dir('save_monocle_objects', directory_path, archive_control),
+    tryCatch(make_tar_of_dir(directory_path, archive_control),
              error = function(c) { stop(paste0(trimws(c), '\n* error in save_monocle_objects')) })
   }
 }
@@ -2259,10 +2260,7 @@ load_monocle_objects <- function(directory_path, matrix_control=list(matrix_path
   }
 
   # Read file index.
-  file_index <- tryCatch(
-    {
-      readRDS(file_index_path)
-    },
+  file_index <- tryCatch(readRDS(file_index_path),
     error = function(c) { stop(paste0(trimws(c),
                                       '\n  error reading file ', file_index_path,
                                       '\n', dbar40,
@@ -2338,19 +2336,24 @@ load_monocle_objects <- function(directory_path, matrix_control=list(matrix_path
     #
     if(cds_object == 'cds') {
       if(file_format == 'rds') {
-        cds <- tryCatch(
-            readRDS(file_path),
-          error = function(cond) {
-            stop('problem reading file \'', file_path, '\'', appendLF=appendLF)
-          })
+        cds <- tryCatch(readRDS(file_path),
+          error = function(c) {stop(paste0(trimws(c),
+                                           '\n  unable to read file ', file_path,
+                                           '\n', dbar40,
+                                           '\n', report_path_status(file_path, dirname(file_path)),
+                                           '\n', dbar40,
+                                           '\n* error in load_monocle_objects')) })
       }
       else
       if(file_format == 'hdf5') {
         cds <- tryCatch(
             HDF5Array::loadHDF5SummarizedExperiment(file_path),
-          error = function(cond) {
-            stop('problem reading file \'', file_path, '\'', appendLF=appendLF)
-          })
+          error = function(c) {stop(paste0(trimws(c),
+                                           '\n  unable to read file ', file_path,
+                                           '\n', dbar40,
+                                           '\n', report_path_status(file_path, dirname(file_path)),
+                                           '\n', dbar40,
+                                           '\n* error in load_monocle_objects')) })
       }
       else {
         stop('Unrecognized cds format value \'', file_format, '\'')
@@ -2531,13 +2534,13 @@ load_monocle_objects <- function(directory_path, matrix_control=list(matrix_path
 
 load_monocle_rds <- function(file_path) {
   appendLF <- TRUE
-  cds_tmp <- tryCatch( readRDS(file_path),
-                       error=function(c) { stop(paste0(trimws(c),
-                                                       '\n  error reading file ', file_path,
-                                                       '\n', dbar40,
-                                                       '\n', report_path_status(file_path, dirname(file_path)),
-                                                       '\n', dbar40,
-                                                       '\n* error in load_monocle_rds')) })
+  cds_tmp <- tryCatch(readRDS(file_path),
+                      error=function(c) { stop(paste0(trimws(c),
+                                                      '\n  error reading file ', file_path,
+                                                      '\n', dbar40,
+                                                      '\n', report_path_status(file_path, dirname(file_path)),
+                                                      '\n', dbar40,
+                                                      '\n* error in load_monocle_rds')) })
   cds <- cds_tmp
   if(!is.null(SingleCellExperiment::reducedDims(cds_tmp)[['PCA']])) {
     if(is.null(cds_tmp@reduce_dim_aux[['PCA']][['model']][['identity']])) {
