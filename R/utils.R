@@ -1302,22 +1302,21 @@ tock <- function() {
 report_path_status <- function(...) {
   path_list <- list(...)
   npath <- length(path_list)
-  msg <- ''
+  msg <- 'File and directory information:\n'
   for(i in seq(npath)) {
     if(i > 1) {
       msg <- paste0(msg, '\n\n')
     }
     path <- path_list[[i]]
-    msg <- paste0(msg, 'report_path_status:\n  input path: ', path)
+    msg <- paste0(msg, '  input path: ', path)
 
     normalized_path <- normalizePath(path, mustWork=FALSE)
     msg <- paste0(msg, '\n  normalized path: ', normalized_path)
     pmod <- file.info(normalized_path, TRUE)
-
     # Does path exist?
     if(!file.exists(normalized_path)) {
       if(is.na(pmod[['size']][1])) {
-        msg <- paste0(msg, '\n  \'', normalized_path, '\' appears to not exist')
+        msg <- paste0(msg, '\n  \'', normalized_path, '\' does not exist')
         return(msg)
       }
     }
