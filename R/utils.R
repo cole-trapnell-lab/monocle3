@@ -1289,6 +1289,40 @@ tock <- function() {
 
 
 #
+# Convert octal file permission to 'rwx' string.
+#
+file_permission_o2rws <- function(iperm) {
+  assertthat::assert_that(is.integer(iperm) && iperm >= 0 && iperm <= 7,
+                          msg=paste("file_permission_o2rws: iperm must be between 0L and 7L, inclusive."))
+
+  cnv_vec <- c('---', '--x', '-w-', '-wx',
+               'r--', 'r-x', 'rw-', 'rwx')
+  return(cnv_vec[iperm+1])
+}
+
+
+#
+# Convert octal string to multiple rwx strings.
+#
+file_permission_os2rwx <- function(ostr) {
+  assertthat::assert_that(assertthat::is.string(ostr),
+                          msg=paste("file_permission_os2rwx: ostr be a string."))
+  assertthat::assert_that(nchar(ostr) >= 3 && nchar(ostr) <= 4,
+                          msg=paste("file_permission_os2rwx: ostr must have 3 or 4 characters."))
+
+  # Drop the first of four characters. We are not interested in SUID, SGID, or Sticky Bit.
+  if(length(ostr) == 4) {
+    ostr <- substr(ostr, 2,4)
+  }
+
+  ocvec <- unlist(strsplit(ostr, ''))
+  return(paste('owner:', file_permission_o2rws(as.integer(ocvec[1])),
+               'group:', file_permission_o2rws(as.integer(ocvec[2])),
+               'world:', file_permission_o2rws(as.integer(ocvec[3]))))
+}
+
+
+#
 # Report file/directory status.
 #
 # Notes:
@@ -1330,7 +1364,7 @@ report_path_status <- function(...) {
     }
 
     # What are path permissions?
-     msg <- paste0(msg, 'has permissions: ', pmod[['mode']][1])
+     msg <- paste0(msg, 'has permissions (', pmod[['mode']][1], '): ', file_permission_os2rwx(as.character(pmod[['mode']][1])))
 
     # If path is a file, report md5 checksum.
     if(!pmod[['isdir']][1]) {

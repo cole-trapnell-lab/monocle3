@@ -13,7 +13,6 @@ dbar40 <- paste(replicate(40,'-'),collapse='')
 #
 # Set up a global-variable-like environment.
 #
-
 set_global_variable <- function(variable_name, value) {
   assign(variable_name, value, envir=._._global_variable_env_._.)
 }
@@ -74,6 +73,11 @@ get_global_variable <- function(variable_name=NULL) {
 }
 
 
+#
+# TODO: Read $HOME/.monoclerc file.
+#
+
+
 # Define some global variables.
 .onLoad <- function(libname, pkgname) {
   # A value used to ensure that this is the Monocle3
@@ -118,7 +122,6 @@ get_global_variable <- function(variable_name=NULL) {
   # Default matrix_control list for pca.
    set_global_variable('matrix_control_csparsematrix_pca', list(matrix_class='dgCMatrix'))
    set_global_variable('matrix_control_bpcells_pca', list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=FALSE, matrix_path='.', matrix_buffer_size=8192L, matrix_bpcells_copy=TRUE))
-
 
   # Watching preprocess_cds() it appears that R uses OMP_NUM_THREADS
   # threads if OMP_NUM_THREADS > 1 and OPENBLAS_NUM_THREADS is NA.
