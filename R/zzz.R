@@ -153,5 +153,14 @@ get_global_variable <- function(variable_name=NULL) {
   # on close of session when the global environment, .GlobalEnv,
   # loses its last reference.
   reg.finalizer(.GlobalEnv, ._._gc_matrix_object_remove_._., onexit=TRUE)
+
+  # If ~/.monoclerc exists, read it and execute its contents.
+  dot_monoclerc <- base::path.expand('~/.monoclerc')
+  if(file.exists(dot_monoclerc)){
+    message(paste('Read ~/.monoclerc next. The parsed expressions are',
+                  'read into the user\'s global\nenvironment. Objects',
+                  'in .monoclerc mask monocle objects with the same names.'))
+    source(file=dot_monoclerc, local=FALSE, echo=TRUE)
+  }
 }
 

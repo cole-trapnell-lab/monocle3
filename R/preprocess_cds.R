@@ -119,7 +119,7 @@ preprocess_cds <- function(cds,
   FM <- SingleCellExperiment::counts(cds)
 
   #
-  # Is this a IterableMatrix (BPCells) counts matrix?
+  # Is this an IterableMatrix (BPCells) counts matrix?
   iterable_matrix_flag <- is(FM, 'IterableMatrix')
 
   #
