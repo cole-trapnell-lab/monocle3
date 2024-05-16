@@ -1,8 +1,15 @@
-# Test whether a matrix is one of our supported sparse matrices
+# Test whether a matrix is one of our supported in-memory sparse matrices
 is_sparse_matrix <- function(x){
   any(class(x) %in% c("dgCMatrix", "dgTMatrix", "lgCMatrix", "CsparseMatrix"))
 }
 
+
+# Test whether an object is a matrix.
+is_matrix <- function(x) {
+  return(is(x, 'matrix') || is_sparse_matrix(x) || is(x, 'IterableMatrix'))
+}
+
+# Test whether 
 #' Function to calculate size factors for single-cell RNA-seq data
 #'
 #' @param cds The cell_data_set

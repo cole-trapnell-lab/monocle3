@@ -245,15 +245,23 @@ preprocess_cds <- function(cds,
                                 nv = min(num_dim,min(dim(FM)) - 1))
     }
     else {
-      matrix_control <- list(matrix_class='BPCells')
-      matrix_control_default <- get_global_variable('matrix_control_bpcells_pca')
-      matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='pca')
+      # Use the same matrix_control for the 'x_commit' matrix as used for the
+      # input matrix 'FM'.
+      matrix_control_res <- set_matrix_control_pca(mat=FM, verbose=verbose)
       preproc_res_commit <- set_matrix_class(mat=BPCells::t(preproc_res), matrix_control=matrix_control_res)
 
       irlba_res <- irlba::irlba(A=BPCells:::linear_operator(preproc_res_commit),
                                 nv = min(num_dim,min(dim(FM)) - 1))
 
       rm_bpcells_dir(mat=preproc_res_commit)
+    }
+
+    if(verbose) {
+      message('singular values (head)')
+      message(paste(head(irlba_res$d), collapse=' '))
+      message('')
+      message("umat: ", paste(dim(irlba_res$u), collapse=" "))
+      message("vtmat: ", paste(dim(irlba_res$v), collapse=" "))
     }
 
     preproc_res <- irlba_res$u %*% diag(irlba_res$d)

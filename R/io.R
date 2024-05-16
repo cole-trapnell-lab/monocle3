@@ -822,7 +822,6 @@ load_hnsw_index <- function(nn_index, file_name, metric, ndim) {
     new_index <- tryCatch(
       methods::new(RcppHNSW::HnswL2, ndim, file_name),
       error = function(c) { stop(paste0(trimws(c),
-
                                         '\n  error reading file ', file_name,
                                         '\n', dbar40,
                                         '\n', report_path_status(file_name, dirname(file_name)), 
@@ -1512,7 +1511,7 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
 
   # Make a tar file of output directory, if requested.
   if(archive_control[['archive_type']] == 'tar') {
-    tryCatch(make_tar_of_dir(directory_path, archive_control),
+    tryCatch(make_tar_of_dir(directory_path=directory_path, archive_control=archive_control),
              error = function(c) { stop(paste0(trimws(c), '\n* error in save_transform_models')) })
   }
 }
@@ -2208,7 +2207,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
 
   # Make a tar file of output directory, if requested.
   if(archive_control[['archive_type']] == 'tar') {
-    tryCatch(make_tar_of_dir(directory_path, archive_control),
+    tryCatch(make_tar_of_dir(directory_path=directory_path, archive_control=archive_control),
              error = function(c) { stop(paste0(trimws(c), '\n* error in save_monocle_objects')) })
   }
 }
@@ -2224,7 +2223,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
 #' @param directory_path a string giving the name of the directory
 #'   from which to read the saved cell_data_set files.
 #' @param matrix_control a list that is used only to set the
-#'   PBCells matrix path when the saved cell_data_set has the
+#'   BPCells matrix path when the saved cell_data_set has the
 #'   counts matrix stored as a BPCells on-disk matrix. By default,
 #'   the BPCells matrix directory path is set to the current
 #'   working directory.
@@ -2240,8 +2239,18 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
 #' @export
 # Bioconductor forbids writing to user directories so examples
 # is not run.
-load_monocle_objects <- function(directory_path, matrix_control=list(matrix_path='.')) {
+load_monocle_objects <- function(directory_path, matrix_control=list()) {
   appendLF <- FALSE
+
+  #
+  # Prepare matrix_control_res.
+  # Notes:
+  #   o  we use only the matrix_control[['matrix_path']] value at this time for
+  #      making the BPCells temporary matrix directory used while Monocle runs.
+  #      All other matrix_control values are ignored.
+  #
+  matrix_control_default <- get_global_variable('matrix_control_bpcells_unrestricted')
+  matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='unrestricted')
 
   # Make a 'normalized' path string. The annoy index save function does not
   # recognize tildes.
@@ -2397,7 +2406,7 @@ load_monocle_objects <- function(directory_path, matrix_control=list(matrix_path
         assay(cds, 'counts_row_order') <- NULL
       }
       counts(cds, bpcells_warn=FALSE ) <- tryCatch(
-          load_bpcells_matrix_dir(file_path, md5sum, matrix_control=matrix_control),
+          load_bpcells_matrix_dir(file_path, md5sum, matrix_control=matrix_control_res),
         error = function(c) { stop(paste0(trimws(c), '\n* error in load_monocle_objects')) })
         # Rebuild the BPCells row-major order counts matrix.
         cds <- set_cds_row_order_matrix(cds=cds)

@@ -13,6 +13,7 @@ dbar40 <- paste(replicate(40,'-'),collapse='')
 #
 # Set up a global-variable-like environment.
 #
+#! @export
 set_global_variable <- function(variable_name, value) {
   assign(variable_name, value, envir=._._global_variable_env_._.)
 }
@@ -20,6 +21,7 @@ set_global_variable <- function(variable_name, value) {
 
 # Return value of variable_name. If variable_name is NULL, return a list
 # of all global variables.
+#! @export
 get_global_variable <- function(variable_name=NULL) {
   value <- tryCatch({
                       v <- get('guard_element', envir=._._global_variable_env_._.) 
@@ -71,11 +73,6 @@ get_global_variable <- function(variable_name=NULL) {
     }
   }
 }
-
-
-#
-# TODO: Read $HOME/.monoclerc file.
-#
 
 
 # Define some global variables.
@@ -157,9 +154,9 @@ get_global_variable <- function(variable_name=NULL) {
   # If ~/.monoclerc exists, read it and execute its contents.
   dot_monoclerc <- base::path.expand('~/.monoclerc')
   if(file.exists(dot_monoclerc)){
-    message(paste('Read ~/.monoclerc next. The parsed expressions are',
-                  'read into the user\'s global\nenvironment. Objects',
-                  'in .monoclerc mask monocle objects with the same names.'))
+    packageStartupMessage(paste('Read ~/.monoclerc next. The parsed expressions are',
+                                'read into the user\'s global\nenvironment. Objects',
+                                'in .monoclerc may mask monocle objects with the same names.'))
     source(file=dot_monoclerc, local=FALSE, echo=TRUE)
   }
 }

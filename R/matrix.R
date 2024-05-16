@@ -106,6 +106,15 @@ select_matrix_parameter_value <- function(parameter, matrix_control, matrix_cont
 #       matrix_compress: TRUE, FALSE default: FALSE
 #       matrix_buffer_size: <integer> default: 8192L
 #       matrix_bpcells_copy: TRUE, FALSE default: TRUE
+#
+#  parameter check_conditional is boolean: conditional=TRUE is more stringent, requiring and checking certain
+#    values conditioned on other values, for example, 'matrix_buffer_size' is used only when
+#    matrix_class is 'BPCells' and matrix_mode is 'dir'. check_matrix_control(..., check_conditional=FALSE) is
+#    called at the start of set_matrix_control() and check_matrix_control(..., check_conditional=TRUE) is
+#    called at the end of set_matrix_control(). More generally, check_conditional=FALSE is used before trying
+#    to set consistent matrix_control values and check_conditional=TRUE is used after trying to set consistent
+#    matrix_control values.
+#
 check_matrix_control <- function(matrix_control=list(), control_type=c('unrestricted', 'pca'), check_conditional=FALSE) {
   control_type <- match.arg(control_type)
   assertthat::assert_that(is.list(matrix_control))
@@ -141,6 +150,10 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
   allowed_matrix_type[['unrestricted']] <- c('float', 'double')
   allowed_matrix_type[['pca']] <- c('float', 'double')
 
+  allowed_matrix_compress <- list()
+  allowed_matrix_compress[['unrestricted']] <- c(FALSE, TRUE)
+  allowed_matrix_compress[['pca']] <- c(FALSE)
+
   error_string <- ''
 
   if(!all(names(matrix_control) %in% allowed_control_parameters)) {
@@ -148,12 +161,16 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
   }
 
   if(check_conditional == FALSE) {
+    # Is matrix_class set and a valid value?
     if(!(is.null(matrix_control[['matrix_class']])) &&
        !(matrix_control[['matrix_class']] %in% allowed_matrix_class)) {
       error_string <- paste0('\ninvalid matrix_class "', matrix_control[['matrix_class']], '"')
     }
 
+    # BPCells matrix class tests.
     if(matrix_control[['matrix_class']] == 'BPCells') {
+
+      # Is matrix_mode set and a valid value?
       if(control_type == 'unrestricted')
         allowed_values <- allowed_matrix_mode[['unrestricted']]
       else
@@ -165,7 +182,8 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
          !(matrix_control[['matrix_mode']] %in% allowed_values)) {
         error_string <- paste0('\ninvalid matrix_mode "', matrix_control[['matrix_mode']], '"')
       }
-    
+
+      # Is matrix_type set and a valid value?
       if(control_type == 'unrestricted')
         allowed_values <- allowed_matrix_type[['unrestricted']]
       else
@@ -178,21 +196,25 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
         error_string <- paste0('\ninvalid matrix_type "', matrix_control[['matrix_type']], '"')
       }
 
+      # Is matrix_compress set and a data valid type?
       if(!(is.null(matrix_control[['matrix_compress']])) &&
          !(is.logical(matrix_control[['matrix_compress']]))) {
         error_string <- paste0('\nmatrix_compress value must be a logical type')
       }
 
+      # Is matrix_path set and a data valid type?
       if(!(is.null(matrix_control[['matrix_path']])) &&
          !(is.character(matrix_control[['matrix_path']]))) {
         error_string <- paste0('\nmatrix_path value must be a character type')
       }
 
+      # Is matrix_buffer_size set and a data valid type?
       if(!(is.null(matrix_control[['matrix_buffer_size']])) &&
          !(is.integer(matrix_control[['matrix_buffer_size']]))) {
         error_string <- paste0('\nmatrix_buffer_size value must be an integer type')
       }
 
+      # Is matrix_bpcells_copy set and a valid data type?
       if(!(is.null(matrix_control[['matrix_bpcells_copy']])) &&
          !(is.logical(matrix_control[['matrix_bpcells_copy']]))) {
         error_string <- paste0('\nmatrix_bpcells_copy value must be a logical type')
@@ -200,7 +222,7 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
     }
   }
   else {
-    # Check matrix_class value.
+    # Is matrix_class set and a valid value?
     if(is.null(matrix_control[['matrix_class']])) {
       error_string <- '\nmatrix_class not set'
     }
@@ -209,8 +231,10 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
       error_string <- paste0('\ninvalid matrix_class "', matrix_control[['matrix_class']], '\n')
     }
 
+    # BPCells matrix class tests.
     if(matrix_control[['matrix_class']] == 'BPCells') {
-      # Check matrix_type value.
+
+      # Is matrix_type a valid value?
       if(control_type == 'unrestricted')
         allowed_values <- allowed_matrix_type[['unrestricted']]
       else
@@ -219,15 +243,25 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
       else
         stop('check_matrix_control: unknown control type \'', control_type, '\'')
       if(!(matrix_control[['matrix_type']] %in% allowed_values)) {
-        error_string <- paste0('\nbad  matrix_type "', matrix_control[['matrix_type']], '"\n')
+        error_string <- paste0('\nbad matrix_type "', matrix_control[['matrix_type']], '"\n')
       }
   
       # Check matrix_compress value.
       if(!is.logical(matrix_control[['matrix_compress']])) {
-        error_string <- '\nmatrix_compress must be as logical type'
+        error_string <- '\nmatrix_compress must be a logical type'
       }
-  
-      # Check matrix_mode value.
+      if(control_type == 'unrestricted')
+        allowed_values <- allowed_matrix_compress[['pca']]
+      else
+      if(control_type == 'pca')
+        allowed_values <- allowed_matrix_compress[['pca']]
+      else
+        stop('check_matrix_control: unknown control type \'', control_type, '\'')
+      if(!(matrix_control[['matrix_compress']] %in% allowed_values)) {
+        error_string <- paste0('\nbad matrix_compress "', matrix_control[['matrix_compress']], '"\n')
+      }
+ 
+      # Is matrix_mode a valid value?
       if(control_type == 'unrestricted')
         allowed_values <- allowed_matrix_mode[['unrestricted']]
       else
@@ -239,17 +273,21 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
         error_string <- paste0('\ninvalid matrix_mode "', matrix_control[['matrix_mode']], '"')
       }
   
+      # Check values related to matrix_mode = 'dir'.
       if(matrix_control[['matrix_mode']] == 'dir') {
-        # Check matrix_path value.
+
+        # Is matrix_path a valid data type?
         if(!(is.character(matrix_control[['matrix_path']]))) {
           error_string <- paste0('\nbad matrix_path "', matrix_control[['matrix_path']], '"')
         }
   
-        # Check matrix_buffer_size.
+        # Is matrix_buffer_size a valid data type?
         if(!(is.integer(matrix_control[['matrix_buffer_size']]))) {
           error_string <- paste0('\nmatrix_buffer_size must be an integer')
         }
       }
+
+      # Is matrix_bpcells_copy a valid data type?
       if(!is.logical(matrix_control[['matrix_bpcells_copy']])) {
         error_string <- paste0('\nmatrix_bpcells_copy value must be a logical type')
       }
@@ -368,7 +406,6 @@ set_matrix_control <- function(matrix_control=list(), matrix_control_default=lis
 
   if(matrix_control_out[['matrix_class']] == 'BPCells') {
      matrix_control_out[['matrix_mode']] <- select_matrix_parameter_value(parameter='matrix_mode', matrix_control=matrix_control, matrix_control_default=matrix_control_default, default_value=default_matrix_mode)
-
     if(matrix_control_out[['matrix_mode']] == 'mem') {
        matrix_control_out[['matrix_type']] <- select_matrix_parameter_value(parameter='matrix_type', matrix_control=matrix_control, matrix_control_default=matrix_control_default, default_value=default_matrix_type)
        matrix_control_out[['matrix_compress']] <- select_matrix_parameter_value(parameter='matrix_compress', matrix_control=matrix_control, matrix_control_default=matrix_control_default, default_value=default_matrix_compress)
@@ -381,6 +418,26 @@ set_matrix_control <- function(matrix_control=list(), matrix_control_default=lis
        matrix_control_out[['matrix_compress']] <- select_matrix_parameter_value(parameter='matrix_compress', matrix_control=matrix_control, matrix_control_default=matrix_control_default, default_value=default_matrix_compress)
        matrix_control_out[['matrix_buffer_size']] <- select_matrix_parameter_value(parameter='matrix_buffer_size', matrix_control=matrix_control, matrix_control_default=matrix_control_default, default_value=default_matrix_buffer_size)
        matrix_control_out[['matrix_bpcells_copy']] <- select_matrix_parameter_value(parameter='matrix_bpcells_copy', matrix_control=matrix_control, matrix_control_default=matrix_control_default, default_value=default_matrix_bpcells_copy)
+    }
+
+    # Restrict matrix_control values for matrices used in
+    # intensive PCA calculations so set matrix_type to double for
+    # precision, set matrix_compress to FALSE for speed, and
+    # matrix_bpcells_copy to TRUE because we want a temporary
+    # matrix for the calculation, after which we remove it.
+    if(control_type == 'pca') {
+      if(matrix_control_out[['matrix_type']] == 'uint32_t') {
+        message('set_matrix_control: forcing matrix_type to \'double\' for PCA.')
+        matrix_control_out[['matrix_type']] <- 'double'
+      }
+      if(matrix_control_out[['matrix_compress']] == TRUE) {
+        message('set_matrix_control: forcing matrix_compress to \'FALSE\' for PCA.')
+        matrix_control_out[['matrix_compress']] <- FALSE
+      }
+      if(matrix_control_out[['matrix_bpcells_copy']] == FALSE) {
+        message('set_matrix_control: forcing matrix_bpcells_copy to \'TRUE\' for PCA.')
+        matrix_control_out[['matrix_bpcells_copy']] <- TRUE
+      }
     }
   }
 
@@ -526,11 +583,12 @@ get_matrix_class <- function(mat) {
 
 # Get/infer the matrix information.
 get_matrix_info <- function(mat) {
-  matrix_info <- get_matrix_class(mat=mat)
+  matrix_info <- tryCatch(get_matrix_class(mat=mat),
+                   error=function(c) {stop(paste0(trimws(c),
+                                                  '\n* error in get_matrix_info')) })
 
   if(is.null(matrix_info[['matrix_class']])) {
-    message('bad matrix info -- dropping into browser')
-    browser()
+    stop('get_matrix_info: unable to infer matrix_class')
   }
 
   if(matrix_info[['matrix_class']] != 'BPCells') {
