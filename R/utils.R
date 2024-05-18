@@ -469,6 +469,48 @@ normalized_counts <- function(cds,
 }
 
 
+#
+# We cannot use set_matrix_control_default() because cds_list has
+# more than one cds to test.
+#
+set_matrix_control_combine_cds <- function(cds_list=list(), matrix_control=list()) {
+  if(length(matrix_control) > 0) {
+    assertthat::assert_that(!is.null(matrix_control[['matrix_class']]),
+                            msg = paste0('set_matrix_control_combine_cds: matrix_control[[\'matrix_class\']] must\nbe set when matrix_control is given.'))
+
+    tryCatch(check_matrix_control(matrix_control=matrix_control, control_type='unrestricted', check_conditional=FALSE),
+             error = function(c) {stop(paste0(trimws(c), '\n*  error in combine_cds')) })
+             
+    if(matrix_control[['matrix_class']] == 'BPCells') {
+      bpcells_matrix_flag <- TRUE
+    }
+    else {
+      bpcells_matrix_flag <- FALSE
+    }
+  }
+  else {
+    bpcells_matrix_flag <- FALSE
+    # Are any of the count matrices BPCells class?
+    for(i in seq(1, length(cds_list), 1)) {
+      if(is(counts(cds_list[[i]]), 'IterableMatrix')) {
+        bpcells_matrix_flag <- TRUE
+        break
+      }
+    }
+  }
+
+  if(bpcells_matrix_flag) {
+    matrix_control_default <- get_global_variable('matrix_control_bpcells_unrestricted')
+  }
+  else {
+    matrix_control_default <- get_global_variable('matrix_control_csparsematrix_unrestricted')
+  }
+
+  matrix_control_out <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='unrestricted')
+
+  return(matrix_control_out)
+}
+
 
 #' Combine a list of cell_data_set objects
 #'
@@ -496,7 +538,10 @@ normalized_counts <- function(cds,
 #'   dimension matrices. Do not keep the reduced dimensions unless you know
 #'   that the reduced dimensions are the same in each CDS. This is true for
 #'   projected data sets, for example. Default is FALSE.
-#'
+#' @param matrix_control A list 
+#' @param verbose Whether to emit verbose output while running
+#'   combine_cds.
+#'   Default is FALSE.
 #' @return A combined cell_data_set object.
 #' @export
 #'
@@ -505,7 +550,8 @@ combine_cds <- function(cds_list,
                         cell_names_unique = FALSE,
                         sample_col_name = "sample",
                         keep_reduced_dims = FALSE,
-                        matrix_control = list()) {
+                        matrix_control = list(),
+                        verbose=FALSE) {
 
   assertthat::assert_that(is.list(cds_list),
                           msg=paste("cds_list must be a list."))
@@ -537,6 +583,13 @@ combine_cds <- function(cds_list,
                  "remove or rename that column before ",
                  "proceeding."))
 
+  if(length(matrix_control) > 0) {
+    assertthat::assert_that(is.list(matrix_control),
+                            msg=paste0('combine_cds: matrix_control must be a list.'))
+    assertthat::assert_that(!is.null(matrix_control[['matrix_class']]),
+                            msg=paste0('combine_cds: matrix_control[[\'matrix_class\']] must be set when using the matrix_control parameter.'))
+  }
+
   num_cells <- sapply(cds_list, ncol)
   if(sum(num_cells == 0) != 0) {
     message("Some CDS' have no cells, these will be skipped.")
@@ -552,31 +605,12 @@ combine_cds <- function(cds_list,
     list_named <- FALSE
   }
 
-  if(!is.null(matrix_control[['matrix_class']]) &&
-     matrix_control[['matrix_class']] == 'BPCells') {
+  matrix_control <- set_matrix_control_combine_cds(cds_list=cds_list, matrix_control=matrix_control)
+  if(matrix_control[['matrix_class']] == 'BPCells')
     bpcells_matrix_flag <- TRUE
-  }
-  else {
+  else
     bpcells_matrix_flag <- FALSE
-    # Are any of the count matrices BPCells class?
-    for(i in seq(1, length(cds_list), 1)) {
-      if(is(counts(cds_list[[i]]), 'IterableMatrix')) {
-        bpcells_matrix_flag <- TRUE
-        break
-      }
-    }
-  }
-
-  check_matrix_control(matrix_control=matrix_control, control_type='unrestricted', check_conditional=FALSE)
-  if(bpcells_matrix_flag ||
-     (!is.null(matrix_control[['matrix_class']]) && matrix_control[['matrix_class']] == 'BPCells')) {
-    matrix_control_default <- get_global_variable('matrix_control_bpcells_unrestricted')
-  }
-  else {
-    matrix_control_default <- get_global_variable('matrix_control_csparsematrix_unrestricted')
-  }
-  matrix_control <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='unrestricted')
-
+  
   exprs_list <- list()
   fd_list <- list()
   pd_list <- list()

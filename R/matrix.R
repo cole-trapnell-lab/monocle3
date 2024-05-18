@@ -302,6 +302,62 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
 }
 
 
+#
+#  Return a default matrix_control list based on the matrix class and
+#  the control_type value. If the matrix_control list is not empty, use
+#  matrix_class in matrix_control, otherwise, use the global matrix_class_default
+#  value.  The recognized control_type values are 'unrestricted' and 'pca'.
+#  The returned default matrix_control list is used by the  set_matrix_control*()
+# functions.
+#
+set_matrix_control_default <- function(matrix_control=list(), control_type = c('unrestricted', 'pca')) {
+  assertthat::assert_that(is.list(matrix_control),
+                          msg = paste0('set_matrix_control_default: matrix_control parameter must be a list.'))
+
+  control_type <- match.arg(control_type)
+
+  if(length(matrix_control) == 0) {
+    matrix_class <- get_global_variable('matrix_class_default')
+  }
+  else {
+    if(is.null(matrix_control[['matrix_class']])) {
+      stop(paste0('\n  matrix_control[[\'matrix_class\']] must be set when matrix_control is not empty'))
+    }
+    matrix_class <- matrix_control[['matrix_class']]
+  }
+  if(matrix_class == 'dgCMatrix') {
+    if(control_type == 'unrestricted') {
+      matrix_control_default <- get_global_variable('matrix_control_csparsematrix_unrestricted')
+    }
+    else
+    if(control_type == 'pca') {
+      matrix_control_default <- get_global_variable('matrix_control_csparsematrix_pca')
+    }
+    else {
+      stop(paste0('\n  unrecognized control_type value: ', control_type))
+    }
+  }
+  else
+  if(matrix_class == 'BPCells') {
+    if(control_type == 'unrestricted') {
+      matrix_control_default <- get_global_variable('matrix_control_bpcells_unrestricted')
+    }
+    else
+    if(control_type == 'pca') {
+      matrix_control_default <- get_global_variable('matrix_control_bpcells_pca')
+    }
+    else {
+      stop(paste0('\n  unrecognized control_type value: ', control_type))
+    }
+  }
+  else {
+      stop(paste0('\n  unrecognized matrix_class value: ', matrix_class))
+  }
+
+  return(matrix_control_default)
+}
+
+
 # Usage
 #   matrix_class: default: 'dgCMatrix'
 #   matrix_class: 'BPCells'
@@ -385,9 +441,25 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
 #' }
 #' @export
 set_matrix_control <- function(matrix_control=list(), matrix_control_default=list(), control_type=c('unrestricted', 'pca')) {
+  assertthat::assert_that(is.list(matrix_control),
+                          msg = paste0('set_matrix_control: matrix_control parameter must be a list.'))
+  assertthat::assert_that(is.list(matrix_control_default),
+                          msg = paste0('set_matrix_control: matrix_control_default parameter must be a list.'))
+
   control_type <- match.arg(control_type)
-  check_matrix_control(matrix_control=matrix_control, control_type=control_type, check_conditional=FALSE)
-  check_matrix_control(matrix_control=matrix_control_default, control_type=control_type, check_conditional=FALSE)
+
+  # Set matrix_control_default when not given on command line:
+  # use the command line matrix_control parameter to get the
+  # matrix_class.
+  if(length(matrix_control_default) == 0) {
+    matrix_control_default <- tryCatch(set_matrix_control_default(matrix_control=matrix_control, control_type=control_type),
+                                error = function(c) { stop(paste0(trimws(c), '\n*  error in set_matrix_control')) })
+  }
+
+  tryCatch(check_matrix_control(matrix_control=matrix_control, control_type=control_type, check_conditional=FALSE),
+    error = function(c) { stop(paste0(trimws(c), '\n*  error in set_matrix_control')) })
+  tryCatch(check_matrix_control(matrix_control=matrix_control_default, control_type=control_type, check_conditional=FALSE),
+    error = function(c) { stop(paste0(trimws(c), '\n*  error in set_matrix_control')) })
 
   #
   # Last resort fall-back parameter values.
@@ -441,7 +513,8 @@ set_matrix_control <- function(matrix_control=list(), matrix_control_default=lis
     }
   }
 
-  check_matrix_control(matrix_control=matrix_control_out, control_type=control_type, check_conditional=TRUE)
+  tryCatch(check_matrix_control(matrix_control=matrix_control_out, control_type=control_type, check_conditional=TRUE),
+    error = function(c) { stop(paste0(trimws(c), '\n*  error in set_matrix_control')) })
 
   #
   # Set BPCells out-of-core file/directory name.
@@ -1000,7 +1073,10 @@ check_bpcells_counts_matrix_pair <- function(cds) {
 #'    str(counts(cds))
 #'
 #' @export
-convert_counts_matrix <- function(cds, matrix_control=list(matrix_class='BPCells')) {
+convert_counts_matrix <- function(cds, matrix_control=list()) {
+  assertthat::assert_that(is.list(matrix_control) && length(matrix_control) > 0,
+                          msg = 'convert_counts_matrix: invalid matrix_control parameter')
+
   if(!is.null(matrix_control[['matrix_class']]) && matrix_control[['matrix_class']] == 'BPCells') {
     matrix_control_default <- get_global_variable('matrix_control_bpcells_unrestricted')
   }

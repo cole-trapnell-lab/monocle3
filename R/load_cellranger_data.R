@@ -76,13 +76,16 @@ load_cellranger_data <- function(pipestance_path=NULL, genome=NULL,
                                  barcode_filtered=TRUE, umi_cutoff = 100,
                                  matrix_control=list()) {
 
-  if(!is.null(matrix_control[['matrix_class']]) && matrix_control[['matrix_class']] == 'BPCells') {
-    matrix_control_default <- get_global_variable('matrix_control_bpcells_unrestricted')
-  }
-  else {
-    matrix_control_default <- get_global_variable('matrix_control_csparsematrix_unrestricted')
-  }
-  matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='unrestricted')
+#  if(!is.null(matrix_control[['matrix_class']]) && matrix_control[['matrix_class']] == 'BPCells') {
+#    matrix_control_default <- get_global_variable('matrix_control_bpcells_unrestricted')
+#  }
+#  else {
+#    matrix_control_default <- get_global_variable('matrix_control_csparsematrix_unrestricted')
+#  }
+#  matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='unrestricted')
+
+  matrix_control_res <- tryCatch(set_matrix_control(matrix_control=matrix_control, matrix_control_default=list(), control_type='unrestricted'),
+                          error = function(c) { stop(paste0(trimws(c), '\n*  error in load_cellranger_data')) })
 
   # check for correct directory structure
   if (!dir.exists(pipestance_path))

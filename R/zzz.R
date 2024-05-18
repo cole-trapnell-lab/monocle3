@@ -112,6 +112,9 @@ get_global_variable <- function(variable_name=NULL) {
   # which are the label transfer functions.
   set_global_variable('nn_control_annoy_cosine', list(method='annoy', metric='cosine', n_trees=50, M=48, ef_construction=200, ef=150, grain_size=1, cores=1))
 
+  # Default matrix_class.
+  set_global_variable('matrix_class_default', 'dgCMatrix')
+
   # Default matrix_control list for any.
   set_global_variable('matrix_control_csparsematrix_unrestricted', list(matrix_class='dgCMatrix'))
   set_global_variable('matrix_control_bpcells_unrestricted', list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=FALSE, matrix_path='.', matrix_buffer_size=8192L, matrix_bpcells_copy=TRUE))

@@ -71,25 +71,29 @@ set_matrix_control_pca <- function(mat, matrix_control=list(), verbose=FALSE) {
     # Use matrix_control=matrix_control
     assertthat::assert_that(!is.null(matrix_control[['matrix_class']]),
                             msg=paste0('set_matrix_control_pca: matrix_control[[\'matrix_class\']] is not set'))
-    if(matrix_control[['matrix_class']] == 'BPCells')
-      matrix_control_default <- get_global_variable('matrix_control_bpcells_pca')
-    else
-      matrix_control_default <- get_global_variable('matrix_control_csparsematrix_pca')
+#    if(matrix_control[['matrix_class']] == 'BPCells')
+#      matrix_control_default <- get_global_variable('matrix_control_bpcells_pca')
+#    else
+#      matrix_control_default <- get_global_variable('matrix_control_csparsematrix_pca')
+
+    matrix_control_default <- tryCatch(set_matrix_control_default(matrix_control, 'pca'),
+                                       error = function(c) { stop(paste0(trimws(c), '\n* error in set_matrix_control_pca')) })
 
     matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='pca')
   }
   else {
     # Use matrix_control=matrix_info
     if(matrix_info[['matrix_class']] == 'BPCells') {
-      matrix_control_default <- get_global_variable('matrix_control_bpcells_pca')
-      tmp_matrix_info <- matrix_info
       # Trim off name of input matrix directory.
+      tmp_matrix_info <- matrix_info
       tmp_matrix_info[['matrix_path']] <- dirname(tmp_matrix_info[['matrix_path']])
     }
     else {
       tmp_matrix_info <- matrix_info
-      matrix_control_default <- get_global_variable('matrix_control_csparsematrix_pca')
     }
+
+    matrix_control_default <- tryCatch(set_matrix_control_default(matrix_info, 'pca'),
+                                error = function(c) { stop(paste0('\n* error in set_matrix_control_pca')) })
 
     matrix_control_res <- set_matrix_control(matrix_control=tmp_matrix_info, matrix_control_default=matrix_control_default, control_type='pca')
   }
