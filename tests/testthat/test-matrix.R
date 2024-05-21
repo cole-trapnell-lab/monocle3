@@ -353,6 +353,10 @@ test_that("set_matrix_control_default", {
 
   # Check that missing matrix_control[['matrix_class']] throws an error.
   testthat::expect_error(load_a549(matrix_control=list(matrix_path='uhoh')))
+
+  # Restore matrix_class_default to dgCMatrix for downstream
+  # testing.
+  monocle3:::set_global_variable('matrix_class_default', 'dgCMatrix')
 } )
 
 
