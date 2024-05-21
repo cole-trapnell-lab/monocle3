@@ -470,13 +470,23 @@ normalized_counts <- function(cds,
 
 
 #
-# We cannot use set_matrix_control_default() because cds_list has
-# more than one cds to test.
+#  If length(matrix_control) == 0 and none of the cdses in cds_list
+#  are BPCells class, return a matrix_control list for a dgCMatrix
+#  matrix; otherwise, return a matrix_control list for a BPCells
+#  matrix.
+#  If length(matrix_control) > 0, return a matrix_control list with
+#  the class given in the matrix_control parameter.
+#
+#  Notes:
+#    o  we cannot use set_matrix_control_default() in combine_cds because
+#       cds_list has more than one cds to test.
+#    o  matrix_control[['matrix_class']] must be set in a
+#       matrix_control list.
 #
 set_matrix_control_combine_cds <- function(cds_list=list(), matrix_control=list(), verbose=FALSE) {
   if(length(matrix_control) > 0) {
     assertthat::assert_that(!is.null(matrix_control[['matrix_class']]),
-                            msg = paste0('set_matrix_control_combine_cds: matrix_control[[\'matrix_class\']] must\nbe set when matrix_control is given.'))
+                            msg = paste0('set_matrix_control_combine_cds: matrix_control[[\'matrix_class\']] missing in matrix_control list.'))
 
     tryCatch(check_matrix_control(matrix_control=matrix_control, control_type='unrestricted', check_conditional=FALSE),
              error = function(c) {stop(paste0(trimws(c), '\n*  error in combine_cds')) })
@@ -587,7 +597,7 @@ combine_cds <- function(cds_list,
     assertthat::assert_that(is.list(matrix_control),
                             msg=paste0('combine_cds: matrix_control must be a list.'))
     assertthat::assert_that(!is.null(matrix_control[['matrix_class']]),
-                            msg=paste0('combine_cds: matrix_control[[\'matrix_class\']] must be set when using the matrix_control parameter.'))
+                            msg=paste0('combine_cds: matrix_control[[\'matrix_class\']] missing in matrix_control list.'))
   }
 
   num_cells <- sapply(cds_list, ncol)

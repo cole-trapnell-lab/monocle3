@@ -55,6 +55,7 @@ svd_rebuild_matrix <- function(u, s, v, filename) {
 #       In this case input_matrix_control[['matrix_class']] must be set; otherwise, it's invalid and an error results. Missing
 #       values in input_matrix_control are taken from the default.
 #    o  watch for issues with matrix_path
+#    o  matrix_control[['matrix_class']] must be set in a matrix_control list.
 #
 set_matrix_control_pca <- function(mat, matrix_control=list(), verbose=FALSE) {
 
@@ -70,7 +71,7 @@ set_matrix_control_pca <- function(mat, matrix_control=list(), verbose=FALSE) {
   if(length(matrix_control) > 0) {
     # Use matrix_control=matrix_control
     assertthat::assert_that(!is.null(matrix_control[['matrix_class']]),
-                            msg=paste0('set_matrix_control_pca: matrix_control[[\'matrix_class\']] is not set'))
+                            msg=paste0('set_matrix_control_pca: matrix_control[[\'matrix_class\']] missing in matrix_control list.'))
 
     matrix_control_default <- tryCatch(set_matrix_control_default(matrix_control, 'pca'),
                                        error = function(c) { stop(paste0(trimws(c), '\n* error in set_matrix_control_pca')) })

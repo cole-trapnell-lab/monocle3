@@ -128,7 +128,7 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
   }
   else
   if(is.null(matrix_control[['matrix_class']])) {
-    stop('matrix_control[[\'matrix_class\']] is not defined')
+    stop('matrix_control[[\'matrix_class\']] missing in matrix_control list.')
   }
   
   allowed_control_parameters <- c('matrix_class',
@@ -224,7 +224,7 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
   else {
     # Is matrix_class set and a valid value?
     if(is.null(matrix_control[['matrix_class']])) {
-      error_string <- '\nmatrix_class not set'
+      error_string <- '\nmatrix_control[[\'matrix_class\']] missing in matrix_control list.'
     }
     else
     if(!(matrix_control[['matrix_class']] %in% allowed_matrix_class)) {
@@ -308,7 +308,9 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
 #  matrix_class in matrix_control, otherwise, use the global matrix_class_default
 #  value.  The recognized control_type values are 'unrestricted' and 'pca'.
 #  The returned default matrix_control list is used by the  set_matrix_control*()
-# functions.
+#  functions.
+#  Notes:
+#    o  matrix_control[['matrix_class']] must be set in a matrix_control list.
 #
 set_matrix_control_default <- function(matrix_control=list(), control_type = c('unrestricted', 'pca')) {
   assertthat::assert_that(is.list(matrix_control),
@@ -321,7 +323,7 @@ set_matrix_control_default <- function(matrix_control=list(), control_type = c('
   }
   else {
     if(is.null(matrix_control[['matrix_class']])) {
-      stop(paste0('\n  matrix_control[[\'matrix_class\']] must be set when matrix_control is not empty'))
+      stop(paste0('\n  matrix_control[[\'matrix_class\']] missing in matrix_control list.'))
     }
     matrix_class <- matrix_control[['matrix_class']]
   }
@@ -372,9 +374,11 @@ set_matrix_control_default <- function(matrix_control=list(), control_type = c('
 #       matrix_buffer_size: <integer> default: 8192L
 #       matrix_bpcells_copy: TRUE, FALSE default: TRUE
 # Notes:
-#   o  modification to any of set_assay_control, set_pca_control,
-#      or set_pca_control_default may necessitate modifications
+#   o  modification to any of set_assay_control or
+#      set_control_default_pca may necessitate modifications
 #      to all of them.
+#   o  matrix_control[['matrix_class']] must be set in
+#      a matrix_control list.
 
 #' Verify and set the matrix_control parameter list.
 #'
@@ -397,7 +401,8 @@ set_matrix_control_default <- function(matrix_control=list(), control_type = c('
 #' \describe{
 #'   \item{matrix_class}{A string that specifies the matrix
 #'      class to use for matrix storage. The acceptable
-#'      values are "dgCMatrix" and "BPCells".}
+#'      values are "dgCMatrix" and "BPCells". matrix_class
+#'      is required.}
 #'   \item{matrix_type}{A string that specifies whether to
 #'      store the matrix values as single precision "floats"
 #'      (matrix_type="float") or double precision "doubles"
@@ -1067,7 +1072,8 @@ check_bpcells_counts_matrix_pair <- function(cds) {
 #' @param matrix_control list A list of matrix control
 #'   values used to convert the counts matrix. If the
 #'   counts matrix in the cds is the same as the desired
-#'   counts matrix, it is not altered.
+#'   counts matrix, it is not altered. matrix_control is
+#'   required.
 #' @return cell_data_set The cell_data_set with the converted
 #'   counts matrix.
 #' @examples
@@ -1081,15 +1087,12 @@ convert_counts_matrix <- function(cds, matrix_control=list()) {
   assertthat::assert_that(is.list(matrix_control) && length(matrix_control) > 0,
                           msg = 'convert_counts_matrix: invalid matrix_control parameter')
 
-  assertthat::assert_that(length(matrix_control) == 0 || (length(matrix_control) > 0 && !is.null(matrix_control[['matrix_class']])),
-                          msg = 'convert_counts_matrix: matrix_control[[\'matrix_class\']] must be set when using matrix_control parameter.')
+  assertthat::assert_that(!is.null(matrix_control[['matrix_class']]),
+                          msg = 'convert_counts_matrix: matrix_control[[\'matrix_class\']] missing in matrix_control list.')
 
-  if(!is.null(matrix_control[['matrix_class']]) && matrix_control[['matrix_class']] == 'BPCells') {
-    matrix_control_default <- get_global_variable('matrix_control_bpcells_unrestricted')
-  }
-  else {
-    matrix_control_default <- get_global_variable('matrix_control_csparsematrix_unrestricted')
-  }
+  matrix_control_default <- tryCatch(set_matrix_control_default(matrix_control=matrix_control, control_type='unrestricted'),
+                              error = function(c) { stop(paste0(trimws(c), '\n* error in convert_counts_matrix')) })
+
   matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='unrestricted')
 
   # Do not make a BPCells matrix on-disk copy if the

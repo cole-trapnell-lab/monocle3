@@ -53,7 +53,7 @@ skip_not_travis <- function ()
 #     (OK) load_bpcells_matrix_dir()
 #
 #   pca.R
-#     (OK) set_pca_matrix_control()
+#     (OK) set_matrix_control_pca()
 #     (OK) bpcells_prcomp_irlba()
 #
 #   projection.R
@@ -84,7 +84,7 @@ skip_not_travis <- function ()
 #     (yes) convert_counts_matrix()
 #
 #   pca.R
-#     (NA) set_pca_matrix_control() # set matrix_control defaults: used only it projection.R (check)
+#     (NA) set_matrix_control_pca() # set matrix_control defaults: used only it projection.R (check)
 #     (yes) bpcells_prcomp_irlba()
 #
 #   projection.R
@@ -206,6 +206,9 @@ test_that("set_matrix_control", {
   matrix_control_default <- get_global_variable('matrix_control_bpcells_unrestricted')
   matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='unrestricted')
   testthat::expect_true(all(matrix_control_res %in% matrix_control))
+
+  # Check that missing matrix_control[['matrix_class']] throws an error.
+  testthat::expect_error(set_matrix_control(matrix_control=list(matrix_path='uhoh'), matrix_control_default=list()))
 } )
 
 
@@ -256,11 +259,32 @@ test_that("set_matrix_class", {
 
 
 test_that("convert_counts_matrix", {
+  # Convert dgCMatrix to dgCMatrix matrix.
   cds1 <- load_a549()
   testthat::expect_true(is(counts(cds1), 'dgCMatrix'))
-  matrix_control <- list(matrix_class='BPCells')
-  cds2 <- convert_counts_matrix(cds1, matrix_control=matrix_control)
+  cds2 <- convert_counts_matrix(cds1, matrix_control=list(matrix_class='dgCMatrix'))
+  testthat::expect_true(is(counts(cds2), 'dgCMatrix'))
+
+  # Convert dgCMatrix to BPCells matrix.
+  cds1 <- load_a549()
+  testthat::expect_true(is(counts(cds1), 'dgCMatrix'))
+  cds2 <- convert_counts_matrix(cds1, matrix_control=list(matrix_class='BPCells'))
   testthat::expect_true(is(counts(cds2), 'IterableMatrix'))
+
+  # Convert BPCells to dgCMatrix matrix.
+  cds1 <- load_a549(matrix_control=list(matrix_class='BPCells'))
+  testthat::expect_true(is(counts(cds1), 'IterableMatrix'))
+  cds2 <- convert_counts_matrix(cds1, matrix_control=list(matrix_class='dgCMatrix'))
+  testthat::expect_true(is(counts(cds2), 'dgCMatrix'))
+
+  # Convert BPCells to dgCMatrix matrix.
+  cds1 <- load_a549(matrix_control=list(matrix_class='BPCells'))
+  testthat::expect_true(is(counts(cds1), 'IterableMatrix'))
+  cds2 <- convert_counts_matrix(cds1, matrix_control=list(matrix_class='BPCells'))
+  testthat::expect_true(is(counts(cds2), 'IterableMatrix'))
+
+  # Check that missing matrix_control[['matrix_class']] throws an error.
+  testthat::expect_error(convert_counts_matrix(cds1, matrix_control=list(matrix_path='uhoh')))
 } )
 
 
@@ -271,5 +295,114 @@ test_that("save_monocle_objects and load_monocle_objects", {
   testthat::expect_true(is(counts(cds2), 'IterableMatrix'))
   testthat::expect_true(compare_matrix_control(get_matrix_info(mat=counts(cds1)), get_matrix_info(mat=counts(cds2)), compare_matrix_path_flag=FALSE))
   unlink('monocle_objects_test.tmp', recursive=TRUE)
+} )
+
+
+test_that("set_matrix_control_default", {
+  # Set default matrix_class to dgCMatrix matrix.
+  monocle3:::set_global_variable('matrix_class_default', 'dgCMatrix')
+
+  # Set default matrix_control for dgCMatrix matrix.
+  set_global_variable('matrix_control_csparsematrix_unrestricted', list(matrix_class='dgCMatrix'))
+  set_global_variable('matrix_control_csparsematrix_pca', list(matrix_class='dgCMatrix'))
+
+  # Load cds with default matrix.
+  cds <- load_a549()
+  testthat::expect_true(is(counts(cds), 'dgCMatrix'))
+
+  # Load cds with requested dgCMatrix matrix.
+  cds <- load_a549(matrix_control=list(matrix_class='dgCMatrix'))
+  testthat::expect_true(is(counts(cds), 'dgCMatrix'))
+
+  # Load cds with requested BPCells matrix.
+  cds <- load_a549(matrix_control=list(matrix_class='BPCells'))
+  testthat::expect_true(is(counts(cds), 'IterableMatrix'))
+
+
+  # Set default matrix_class to BPCells matrix.
+  monocle3:::set_global_variable('matrix_class_default', 'BPCells')
+
+  # Set default matrix_control for BPCells matrix.
+  monocle3:::set_global_variable('matrix_control_bpcells_unrestricted', list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=FALSE, matrix_path='~/git/monocle3/bpcells_dir_tmp', matrix_buffer_size=8192L, matrix_bpcells_copy=TRUE))
+  monocle3:::set_global_variable('matrix_control_bpcells_pca', list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=FALSE, matrix_path='~/git/monocle3/bpcells_dir_tmp', matrix_buffer_size=8192L, matrix_bpcells_copy=TRUE))
+
+  # Load cds with default matrix.
+  cds <- load_a549()
+  testthat::expect_true(is(counts(cds), 'IterableMatrix'))
+
+  # Load cds with requested dgCMatrix matrix.
+  cds <- load_a549(matrix_control=list(matrix_class='dgCMatrix'))
+  testthat::expect_true(is(counts(cds), 'dgCMatrix'))
+
+  # Load cds with requested BPCells matrix.
+  cds <- load_a549(matrix_control=list(matrix_class='BPCells'))
+  testthat::expect_true(is(counts(cds), 'IterableMatrix'))
+
+  # Load cds with requested matrix_class and matrix_path.
+  cds <- load_a549(matrix_control=list(matrix_class='BPCells', matrix_path='./bpcells_matrix_dir_test'))
+  testthat::expect_true(length(grep('bpcells_matrix_dir_test', x=counts(cds)@dir, ignore.case=FALSE, perl=TRUE, value=TRUE)) > 0)
+  unlink('bpcells_matrix_dir_test', recursive=TRUE)
+
+  # Load cds with requested matrix_class and matrix_type='float'.
+  cds <- load_a549(matrix_control=list(matrix_class='BPCells', matrix_type='float'))
+  testthat::expect_true(counts(cds)@type == 'float')
+
+  # Load cds with requested matrix_class and matrix_compress=TRUE.
+  cds <- load_a549(matrix_control=list(matrix_class='BPCells', matrix_compress=TRUE))
+  testthat::expect_true(counts(cds)@compressed == TRUE)
+
+  # Check that missing matrix_control[['matrix_class']] throws an error.
+  testthat::expect_error(load_a549(matrix_control=list(matrix_path='uhoh')))
+} )
+
+
+test_that("set_matrix_control_pca", {
+  # Load and preprocess cds with dgCMatrix matrix.
+  cds <- load_a549(matrix_control=list(matrix_class='dgCMatrix'))
+  testthat::expect_message(preprocess_cds(cds, verbose=TRUE), regexp='pca: sparse_prcomp_irlba: matrix class: dgCMatrix')
+
+  # Load and preprocess cds with BPCells matrix.
+  cds <- load_a549(matrix_control=list(matrix_class='BPCells'))
+  testthat::expect_message(preprocess_cds(cds, verbose=TRUE), regexp='pca: bpcells_prcomp_irlba: matrix class: TransformScaleShift')
+
+  # Check preprocess_transform use of set_matrix_control_pca with dgCMatrix cds_qry.
+  cds_ref <- load_a549()
+  cds_qry <- load_a549()
+
+  cds_ref <- preprocess_cds(cds_ref)
+  save_transform_models(cds=cds_ref, directory_path='monocle_transform_models')
+  cds_qry <- load_transform_models(cds_qry, directory_path='monocle_transform_models')
+
+  testthat::expect_message(preprocess_transform(cds_qry, verbose=TRUE), 'projection: sparse_apply_transform: matrix class: dgCMatrix')
+
+  # Check preprocess_transform use of set_matrix_control_pca with BPCells cds_qry.
+  cds_qry <- load_a549(matrix_control=list(matrix_class='BPCells'))
+  cds_qry <- load_transform_models(cds_qry, directory_path='monocle_transform_models')
+  testthat::expect_message(preprocess_transform(cds_qry, verbose=TRUE), 'projection: bpcells_apply_transform: matrix class: TransformScaleShift')
+} )
+
+
+test_that("set_matrix_control_combine_cds", {
+  cds_bpc <- monocle3:::load_worm_embryo(matrix_control=list(matrix_class='dgCMatrix'))
+
+  # Combine two dgCMatrix matrix cdses.
+  cds_bpc1 <- cds_bpc[,1:1000]
+  cds_bpc2 <- cds_bpc[,1001:6188]  
+  cds_combined <- combine_cds(list(cds_bpc1, cds_bpc2), cell_names_unique=TRUE)
+  testthat::expect_true(is(counts(cds_combined), 'dgCMatrix'))
+
+  # Combine one dgCMatrix and one BPCells  matrix cdses.
+  cds_bpc1 <- convert_counts_matrix(cds_bpc1, matrix_control=list(matrix_class='BPCells'))
+  cds_combined <- combine_cds(list(cds_bpc1, cds_bpc2), cell_names_unique=TRUE)
+  testthat::expect_true(is(counts(cds_combined), 'IterableMatrix'))
+
+  # Combine two BPCells matrix cdses.
+  cds_bpc2 <- convert_counts_matrix(cds_bpc2, matrix_control=list(matrix_class='BPCells'))
+  cds_combined <- combine_cds(list(cds_bpc1, cds_bpc2), cell_names_unique=TRUE)
+  testthat::expect_true(is(counts(cds_combined), 'IterableMatrix'))
+
+  # Check that missing matrix_control[['matrix_class']] throws an error.
+  testthat::expect_error(combine_cds(list(cds_bpc1, cds_bpc2), cell_names_unique=TRUE, matrix_control=list(matrix_path='uhoh')))
+
 } )
 
