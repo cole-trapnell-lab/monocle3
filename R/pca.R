@@ -134,6 +134,8 @@ set_matrix_control_pca <- function(mat, matrix_control=list(), verbose=FALSE) {
 #'   See \code{\link{scale}} for more details.
 #' @param n integer number of principal component vectors to return, must be
 #'   less than \code{min(dim(x))}.
+#' @param verbose a logical value that determines whether or not the
+#'   function writes diagnostic information.
 #' @param ... additional arguments passed to \code{\link{irlba}}.
 #'
 #' @return
@@ -305,6 +307,8 @@ sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
 #'   See \code{\link{scale}} for more details.
 #' @param n integer number of principal component vectors to return, must be
 #'   less than \code{min(dim(x))}.
+#' @param verbose a logical value that determines whether or not the
+#'   function writes diagnostic information.
 #' @param ... additional arguments passed to \code{\link{irlba}}.
 #'
 #' @return

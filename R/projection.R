@@ -547,6 +547,8 @@ align_transform <- function(cds, reduction_method=c('Aligned')) {
 #' @param reduction_method a previously loaded reduce_dimension transform
 #'   model that is used to reduce the dimensions of the preprocessed
 #'   matrix in the cell_data_set. Only "UMAP" is supported.
+#' @param verbose a logical value that determines whether or not the
+#' function writes diagnostic information.
 #'
 #' @return a cell_data_set with a transformed
 #'   reduced count matrix.

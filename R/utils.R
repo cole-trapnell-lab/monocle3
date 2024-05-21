@@ -548,7 +548,11 @@ set_matrix_control_combine_cds <- function(cds_list=list(), matrix_control=list(
 #'   dimension matrices. Do not keep the reduced dimensions unless you know
 #'   that the reduced dimensions are the same in each CDS. This is true for
 #'   projected data sets, for example. Default is FALSE.
-#' @param matrix_control A list 
+#' @param matrix_control A list used to control how the counts matrix is
+#'    is stored in the CDS. By default, combine_cds stores the counts
+#'    matrix as an in-memory, sparse (dgCMatrix), unless (a) at least one
+#'    of the cdses in cds_list uses a BPCells counts matrix, or
+#'    (b) you specify matrix_control=list(matrix_class='BPCells').
 #' @param verbose Whether to emit verbose output while running
 #'   combine_cds.
 #'   Default is FALSE.
