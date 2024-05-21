@@ -71,10 +71,6 @@ set_matrix_control_pca <- function(mat, matrix_control=list(), verbose=FALSE) {
     # Use matrix_control=matrix_control
     assertthat::assert_that(!is.null(matrix_control[['matrix_class']]),
                             msg=paste0('set_matrix_control_pca: matrix_control[[\'matrix_class\']] is not set'))
-#    if(matrix_control[['matrix_class']] == 'BPCells')
-#      matrix_control_default <- get_global_variable('matrix_control_bpcells_pca')
-#    else
-#      matrix_control_default <- get_global_variable('matrix_control_csparsematrix_pca')
 
     matrix_control_default <- tryCatch(set_matrix_control_default(matrix_control, 'pca'),
                                        error = function(c) { stop(paste0(trimws(c), '\n* error in set_matrix_control_pca')) })
@@ -101,6 +97,7 @@ set_matrix_control_pca <- function(mat, matrix_control=list(), verbose=FALSE) {
   if(verbose) {
     message('set_matrix_control_pca: matrix_control_res:')
     show_matrix_control(matrix_control_res)
+    message()
   }
 
   return(matrix_control_res)
@@ -184,7 +181,8 @@ sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
 {
   if(verbose) {
     message('pca: sparse_prcomp_irlba: matrix class: ', class(x))
-    message(paste0('matrix_info:\n', show_matrix_info(matrix_info=get_matrix_info(mat=x), indent='  ')), appendLF=FALSE)
+    message(paste0(show_matrix_info(matrix_info=get_matrix_info(mat=x), indent='  ')), appendLF=FALSE)
+    message()
   }
 
   a <- names(as.list(match.call()))
@@ -244,11 +242,13 @@ sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
   s <- do.call(irlba::irlba, args=args)
   if(verbose) {
     message('end irlba: ', Sys.time())
+    message()
   }
 
   if(verbose) {
     message('singular values (head)')
     message(paste(head(s$d), collapse=' '))
+    message()
   }
 
   # Diagnostic test.
@@ -352,7 +352,8 @@ bpcells_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
 {
   if(verbose) {
     message('pca: bpcells_prcomp_irlba: matrix class: ', class(x))
-    message(paste0('matrix_info:\n', show_matrix_info(matrix_info=get_matrix_info(mat=x), indent='  ')), appendLF=FALSE)
+    message(paste0(show_matrix_info(matrix_info=get_matrix_info(mat=x), indent='  ')), appendLF=FALSE)
+    message()
   }
 
   a <- names(as.list(match.call()))
@@ -368,6 +369,11 @@ bpcells_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
   matrix_control_res <- set_matrix_control_pca(mat=x, verbose=verbose)
   x_commit <- set_matrix_class(mat=x, matrix_control=matrix_control_res)
 
+  if(verbose) {
+    message('bpcells_prcomp_irlba: str(x_commit): ')
+    message(str(x_commit))
+  }
+
   stats <- BPCells::matrix_stats(matrix = x_commit, row_stats = 'none', col_stats = 'variance')
   center <- stats[['col_stats']]['mean',]
   scale <- sqrt(stats[['col_stats']]['variance',])
@@ -375,6 +381,7 @@ bpcells_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
   if(verbose) {
     message('pca: bpcells_prcomp_irlba: x_commit:')
     message(show_matrix_info(matrix_info=get_matrix_info(mat=x_commit), indent='  '), appendLF=FALSE)
+    message()
   }
 
   # BPCells:::linear_operator() is meant to reduce irlba run time.
@@ -388,6 +395,7 @@ bpcells_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
   s <- do.call(irlba::irlba, args=args)
   if(verbose) {
     message('end time: ', Sys.time())
+    message()
   }
 
   rm_bpcells_dir(mat=x_commit)

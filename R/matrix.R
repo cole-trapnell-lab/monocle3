@@ -251,7 +251,7 @@ check_matrix_control <- function(matrix_control=list(), control_type=c('unrestri
         error_string <- '\nmatrix_compress must be a logical type'
       }
       if(control_type == 'unrestricted')
-        allowed_values <- allowed_matrix_compress[['pca']]
+        allowed_values <- allowed_matrix_compress[['unrestricted']]
       else
       if(control_type == 'pca')
         allowed_values <- allowed_matrix_compress[['pca']]
@@ -636,6 +636,10 @@ get_matrix_class <- function(mat) {
   }
   if(is(mat, 'dgTMatrix')) {
     matrix_info[['matrix_class']] <- 'dgTMatrix'
+    nmatch <- nmatch + 1
+  }
+  if(is(mat, 'dgeMatrix')) {
+    matrix_info[['matrix_class']] <- 'dgeMatrix'
     nmatch <- nmatch + 1
   }
   if(is(mat, 'IterableMatrix')) {
@@ -1076,6 +1080,9 @@ check_bpcells_counts_matrix_pair <- function(cds) {
 convert_counts_matrix <- function(cds, matrix_control=list()) {
   assertthat::assert_that(is.list(matrix_control) && length(matrix_control) > 0,
                           msg = 'convert_counts_matrix: invalid matrix_control parameter')
+
+  assertthat::assert_that(length(matrix_control) == 0 || (length(matrix_control) > 0 && !is.null(matrix_control[['matrix_class']])),
+                          msg = 'convert_counts_matrix: matrix_control[[\'matrix_class\']] must be set when using matrix_control parameter.')
 
   if(!is.null(matrix_control[['matrix_class']]) && matrix_control[['matrix_class']] == 'BPCells') {
     matrix_control_default <- get_global_variable('matrix_control_bpcells_unrestricted')

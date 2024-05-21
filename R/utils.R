@@ -473,7 +473,7 @@ normalized_counts <- function(cds,
 # We cannot use set_matrix_control_default() because cds_list has
 # more than one cds to test.
 #
-set_matrix_control_combine_cds <- function(cds_list=list(), matrix_control=list()) {
+set_matrix_control_combine_cds <- function(cds_list=list(), matrix_control=list(), verbose=FALSE) {
   if(length(matrix_control) > 0) {
     assertthat::assert_that(!is.null(matrix_control[['matrix_class']]),
                             msg = paste0('set_matrix_control_combine_cds: matrix_control[[\'matrix_class\']] must\nbe set when matrix_control is given.'))
@@ -610,6 +610,13 @@ combine_cds <- function(cds_list,
     bpcells_matrix_flag <- TRUE
   else
     bpcells_matrix_flag <- FALSE
+
+  if(verbose) {
+    message('combine_cds: bpcells_matrix_flag: ', bpcells_matrix_flag)
+    message('combine_cds: ')
+    message(show_matrix_control(matrix_control))
+   message()
+  }
   
   exprs_list <- list()
   fd_list <- list()
@@ -784,6 +791,12 @@ combine_cds <- function(cds_list,
   # Make a BPCells count matrix, if necessary.
   if(bpcells_matrix_flag) {
     all_exp <- set_matrix_class(mat=all_exp, matrix_control=matrix_control)
+  }
+
+  if(verbose) {
+    message('combine_cds: ')
+    message(paste0(show_matrix_info(matrix_info=get_matrix_info(mat=all_exp), indent='  ')), appendLF=FALSE)
+    message()
   }
 
   # Make a combined CDS from all_exp, all_pd, and all_fd.

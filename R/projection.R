@@ -1,11 +1,17 @@
 sparse_apply_transform <- function(FM, rotation_matrix, vcenter=vcenter, vscale=vscale, block_size=NULL, cores=1, verbose=FALSE) {
   if(verbose) {
-    message('sparse_apply_transform: start')
+    message('projection: sparse_apply_transform: matrix class: ', class(FM))
+    message(paste0(show_matrix_info(matrix_info=get_matrix_info(mat=FM), indent='  ')), appendLF=FALSE)
+    message()
   }
 
   if(!is.null(block_size)) {
     block_size0 <- DelayedArray::getAutoBlockSize()
     DelayedArray::setAutoBlockSize(block_size)
+  }
+
+  if(verbose) {
+    message('sparse_apply_transform: start time: ', Sys.time())
   }
 
   # Thank you Maddy.
@@ -37,11 +43,17 @@ sparse_apply_transform <- function(FM, rotation_matrix, vcenter=vcenter, vscale=
   irlba_res$x <- matrix_multiply_multicore(mat_a=xtdasc,
                                          mat_b=rotation_matrix[intersect_indices,],
                                          cores=cores)
+
+  if(verbose) {
+    message('sparse_apply_transform: x values (head)')
+    message(paste(head(irlba_res$x), collapse=' '))
+  }
+
   irlba_res$x <- as.matrix(irlba_res$x)
   class(irlba_res) <- c('irlba_prcomp', 'prcomp')
 
   if(verbose) {
-    message('sparse_apply_transform: finish')
+    message('sparse_apply_transform: finish time: ', Sys.time())
   }
 
   return(irlba_res)
@@ -50,7 +62,13 @@ sparse_apply_transform <- function(FM, rotation_matrix, vcenter=vcenter, vscale=
 
 bpcells_apply_transform <- function(FM, rotation_matrix, vcenter=vcenter, vscale=vscale, verbose=FALSE) {
   if(verbose) {
-    message('bpcells_apply_transform: start  (', get_time_stamp(), ')')
+    message('projection: bpcells_apply_transform: matrix class: ', class(FM))
+    message(paste0(show_matrix_info(matrix_info=get_matrix_info(mat=FM), indent='  ')), appendLF=FALSE)
+    message()
+  }
+
+  if(verbose) {
+    message('bpcells_apply_transform: start time: ', Sys.time())
   }
 
   # Thank you Maddy.
@@ -78,23 +96,32 @@ bpcells_apply_transform <- function(FM, rotation_matrix, vcenter=vcenter, vscale
   xtsc <- BPCells::t(xt) - vcenter
   xtsc <- BPCells::t(xtsc / vscale)
 
-  # Use the same matrix_control for the 'xtsc_commit' matrix as used for the
-  # input matrix 'FM'.
-  matrix_control_res <- set_matrix_control_pca(mat=FM, verbose=verbose)
-  xtsc_commit <- set_matrix_class(mat=xtsc, matrix_control=matrix_control_res)
+  if(verbose) { 
+    message('bpcells_apply_transform: xtsc matrix info:')
+    message(show_matrix_info(matrix_info=get_matrix_info(mat=xtsc), '  '), appendLF=FALSE)
+    message()
+  }
+
+  if(verbose) {
+    message('bpcells_apply_transform: str(xtsc):')
+    message(str(xtsc))
+    message()
+  }
 
   # make intermediate matrix.
   irlba_res <- list()
-  irlba_res$x <- BPCells:::linear_operator(xtsc_commit) %*% rotation_matrix[intersect_indices,]
+  irlba_res$x <- xtsc %*% rotation_matrix[intersect_indices,]
 
-  # Remove BPCells MatrixDir, if it is defined.
-  rm_bpcells_dir(mat=xtsc_commit)
+  if(verbose) {
+    message('bpcells_apply_transform: x values (head)')
+    message(paste(head(irlba_res$x), collapse=' '))
+  }
 
   irlba_res$x <- as.matrix(irlba_res$x)
   class(irlba_res) <- c('irlba_prcomp', 'prcomp')
  
   if(verbose) {
-    message('bpcells_apply_transform: finish  (', get_time_stamp(), ')')
+    message('bpcells_apply_transform: finish time: ', Sys.time())
   }
 
   return(irlba_res)
@@ -212,7 +239,16 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
     vcenter <- cds@reduce_dim_aux[[reduction_method]][['model']]$svd_center
     vscale <- cds@reduce_dim_aux[[reduction_method]][['model']]$svd_scale
 
-    FM <- SingleCellExperiment::counts(cds)
+    mat_counts <- SingleCellExperiment::counts(cds)
+    matrix_control_res <- set_matrix_control_pca(mat=mat_counts, verbose=verbose)
+    FM <- set_matrix_class(mat=mat_counts, matrix_control=matrix_control_res)
+
+    if(verbose) {
+      message('preprocess_transform: FM matrix info:')
+      message(show_matrix_info(matrix_info=get_matrix_info(mat=FM), '  '), appendLF=FALSE)
+      message()
+    }
+
     FM <- normalize_expr_data(FM=FM, size_factors=size_factors(cds), norm_method=norm_method, pseudo_count=pseudo_count) # OK
     if (nrow(FM) == 0) {
       stop("all rows have standard deviation zero")
@@ -231,6 +267,9 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
       FM <- FM[is.finite(fm_rowsums) & fm_rowsums != 0, ]
 
       irlba_res <- bpcells_apply_transform(FM=FM, rotation_matrix=rotation_matrix, vcenter=vcenter, vscale=vscale, verbose=verbose)
+
+      # Remove BPCells MatrixDir, if it is defined.
+      rm_bpcells_dir(mat=FM)
     }
 
     # 'reference' gene names are in the cds@preproc
@@ -365,7 +404,7 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
       matrix_control_res <- set_matrix_control_pca(mat=FM, verbose=verbose)
       xt_commit <- set_matrix_class(mat=xt, matrix_control=matrix_control_res)
 
-      irlba_res$x <- BPCells:::linear_operator(xt_commit) %*% rotation_matrix[intersect_indices,]
+      irlba_res$x <- xt_commit %*% rotation_matrix[intersect_indices,]
 
       rm_bpcells_dir(mat=xt_commit)
 

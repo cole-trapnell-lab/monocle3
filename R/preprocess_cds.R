@@ -154,6 +154,10 @@ preprocess_cds <- function(cds,
 
       if(verbose) {
         message('preprocess_cds: FM matrix class: ', class(FM))
+        message()
+        message('preprocess_cds: str(FM):')
+        message(str(FM))
+        message()
       }
 
       fm_rowsums = Matrix::rowSums(FM)
@@ -167,6 +171,7 @@ preprocess_cds <- function(cds,
       if(verbose) {
         message('preprocess_cds: FM matrix info:')
         message(show_matrix_info(matrix_info=get_matrix_info(mat=FM), '  '), appendLF=FALSE)
+        message()
       }
 
       fm_rowsums = BPCells::rowSums(FM)
