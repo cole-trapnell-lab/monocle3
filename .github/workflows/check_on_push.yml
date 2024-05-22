@@ -78,7 +78,8 @@ jobs:
       # The following Docker image was pushed to the Github container registry,
       # which is found at the Github Packages tab.
       # image: ghcr.io/cole-trapnell-lab/monocle3_depend.v1.3.0_20221103:v1 # old and replaced
-      image: ghcr.io/cole-trapnell-lab/monocle3_depend:v1.4.5_1
+      # image: ghcr.io/cole-trapnell-lab/monocle3_depend:v1.4.5_1
+      image: ghcr.io/cole-trapnell-lab/monocle3_depend:v1.4.18_1
 
       #
       #
@@ -121,7 +122,6 @@ jobs:
       #    Rscript -e 'install.packages(c("ggdist", "ggforce"))'
       - name: Run R CMD build and R CMD check
         run: |
-          R -e 'remotes::install_github("bnprks/BPCells")'
           R CMD build .
           R CMD check monocle3*tar.gz
         shell: bash
