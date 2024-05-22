@@ -78,7 +78,7 @@ jobs:
       # The following Docker image was pushed to the Github container registry,
       # which is found at the Github Packages tab.
       # image: ghcr.io/cole-trapnell-lab/monocle3_depend.v1.3.0_20221103:v1 # old and replaced
-       image: ghcr.io/cole-trapnell-lab/monocle3_depend:v1.4.5_1
+      image: ghcr.io/cole-trapnell-lab/monocle3_depend:v1.4.5_1
       # image: ghcr.io/cole-trapnell-lab/monocle3_depend:v1.4.18_1
 
       #
