@@ -369,6 +369,11 @@ test_that("set_matrix_control_pca", {
   cds <- load_a549(matrix_control=list(matrix_class='BPCells'))
   testthat::expect_message(preprocess_cds(cds, verbose=TRUE), regexp='pca: bpcells_prcomp_irlba: matrix class: TransformScaleShift')
 
+  # Check that set_matrix_control_pca adjusts matrix_compress=TRUE but not matrix_type='float'.
+  cds <- load_a549(matrix_control=list(matrix_class='BPCells', matrix_type='float', matrix_compress=TRUE))
+  testthat::expect_message(preprocess_cds(cds, verbose=TRUE), 'type:        float')
+  testthat::expect_message(preprocess_cds(cds, verbose=TRUE), 'compress:    FALSE')
+
   # Check preprocess_transform use of set_matrix_control_pca with dgCMatrix cds_qry.
   cds_ref <- load_a549()
   cds_qry <- load_a549()
@@ -376,7 +381,6 @@ test_that("set_matrix_control_pca", {
   cds_ref <- preprocess_cds(cds_ref)
   save_transform_models(cds=cds_ref, directory_path='monocle_transform_models')
   cds_qry <- load_transform_models(cds_qry, directory_path='monocle_transform_models')
-
   testthat::expect_message(preprocess_transform(cds_qry, verbose=TRUE), 'projection: sparse_apply_transform: matrix class: dgCMatrix')
 
   # Check preprocess_transform use of set_matrix_control_pca with BPCells cds_qry.

@@ -498,8 +498,8 @@ set_matrix_control <- function(matrix_control=list(), matrix_control_default=lis
     }
 
     # Restrict matrix_control values for matrices used in
-    # intensive PCA calculations so set matrix_type to double for
-    # precision, set matrix_compress to FALSE for speed, and
+    # intensive PCA calculations so set matrix_type from uint32_t
+    # to double, set matrix_compress to FALSE for speed, and
     # matrix_bpcells_copy to TRUE because we want a temporary
     # matrix for the calculation, after which we remove it.
     if(control_type == 'pca') {

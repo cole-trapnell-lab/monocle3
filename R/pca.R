@@ -405,6 +405,10 @@ bpcells_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
 
   rm_bpcells_dir(mat=x_commit)
 
+  # Ben Parks suggests running garbage collector after
+  # finishing with a linear_operator wrapped matrix.
+  gc()
+
   # Diagnostic test.
   #message('bpcells svd')
   #svd_rebuild_matrix(s$u, s$d, s$v, 'bpcmatrix.vec')

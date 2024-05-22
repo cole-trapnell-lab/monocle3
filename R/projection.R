@@ -46,7 +46,7 @@ sparse_apply_transform <- function(FM, rotation_matrix, vcenter=vcenter, vscale=
 
   if(verbose) {
     message('sparse_apply_transform: x values (head)')
-    message(paste(head(irlba_res$x), collapse=' '))
+    message(paste(utils::head(irlba_res$x), collapse=' '))
   }
 
   irlba_res$x <- as.matrix(irlba_res$x)
@@ -104,7 +104,7 @@ bpcells_apply_transform <- function(FM, rotation_matrix, vcenter=vcenter, vscale
 
   if(verbose) {
     message('bpcells_apply_transform: str(xtsc):')
-    message(str(xtsc))
+    message(utils::str(xtsc))
     message()
   }
 
@@ -114,7 +114,7 @@ bpcells_apply_transform <- function(FM, rotation_matrix, vcenter=vcenter, vscale
 
   if(verbose) {
     message('bpcells_apply_transform: x values (head)')
-    message(paste(head(irlba_res$x), collapse=' '))
+    message(paste(utils::head(irlba_res$x), collapse=' '))
   }
 
   irlba_res$x <- as.matrix(irlba_res$x)
@@ -230,7 +230,7 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
 
   set.seed(2016)
 
-  iterable_matrix_flag <- is(counts(cds), 'IterableMatrix')
+  iterable_matrix_flag <- methods::is(counts(cds), 'IterableMatrix')
 
   if(reduction_method == 'PCA') {
     norm_method <- cds@reduce_dim_aux[[reduction_method]][['model']][['norm_method']]

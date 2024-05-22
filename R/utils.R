@@ -6,7 +6,7 @@ is_sparse_matrix <- function(x){
 
 # Test whether an object is a matrix.
 is_matrix <- function(x) {
-  return(is(x, 'matrix') || is_sparse_matrix(x) || is(x, 'IterableMatrix'))
+  return(methods::is(x, 'matrix') || is_sparse_matrix(x) || methods::is(x, 'IterableMatrix'))
 }
 
 # Test whether 
@@ -36,7 +36,7 @@ estimate_size_factors <- function(cds,
                                            'mean-geometric-mean-log-total'))
 {
   method <- match.arg(method)
-  if(is(SingleCellExperiment::counts(cds), 'IterableMatrix')) {
+  if(methods::is(SingleCellExperiment::counts(cds), 'IterableMatrix')) {
     if(any(BPCells::colSums(SingleCellExperiment::counts(cds)) == 0)) {
       warning("Your CDS object contains cells with zero reads. ",
                     "This causes size factor calculation to fail. Please remove ",
@@ -61,7 +61,7 @@ estimate_size_factors <- function(cds,
     size_factors(cds) <- estimate_sf_sparse(SingleCellExperiment::counts(cds),
                                             round_exprs=round_exprs,
                                             method=method)
-  } else if(is(SingleCellExperiment::counts(cds), 'IterableMatrix')) {
+  } else if(methods::is(SingleCellExperiment::counts(cds), 'IterableMatrix')) {
     size_factors(cds) <- estimate_sf_bpcells(SingleCellExperiment::counts(cds),
                                            round_exprs=round_exprs,
                                            method=method)
@@ -299,7 +299,7 @@ mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1,
   #
   if (MARGIN == 1){
 # message('mc_es_apply: MARGIN 1')
-    if( is(counts(cds), 'IterableMatrix')) {
+    if( methods::is(counts(cds), 'IterableMatrix')) {
 # message('mc_es_apply: BPCells matrix')
       suppressWarnings(res <- sparse_par_r_apply(cl=cl, x=monocle3::counts_row_order(cds), FUN=FUN,
                                                  convert_to_dense=convert_to_dense, ...))
@@ -336,7 +336,7 @@ smart_es_apply <- function(cds, MARGIN, FUN, convert_to_dense,
                        as.data.frame(coldata_df), envir=e1)
   environment(FUN) <- e1
 
-  if (is(SingleCellExperiment::counts(cds), 'IterableMatrix')) {
+  if (methods::is(SingleCellExperiment::counts(cds), 'IterableMatrix')) {
 # message('smart_es_apply: BPCells matrix')
     if(MARGIN == 1) {
 # message('smart_es_apply: MARGIN 1')
@@ -421,7 +421,7 @@ normalized_counts <- function(cds,
   norm_mat <- SingleCellExperiment::counts(cds)
 
   if (norm_method == "binary"){
-    if(is(norm_mat, 'IterableMatrix')) {
+    if(methods::is(norm_mat, 'IterableMatrix')) {
       norm_mat <- BPCells::binarize(norm_mat, threshold=0, strict_inequality=TRUE)
     }
     else {
@@ -436,7 +436,7 @@ normalized_counts <- function(cds,
   }
   else {
     assertthat::assert_that(!is.null(size_factors(cds)))
-    if(is(norm_mat, 'IterableMatrix')) {
+    if(methods::is(norm_mat, 'IterableMatrix')) {
       if(norm_method == 'log' && pseudocount != 1) {
         stop('normalized_counts: pseudocount must be 1 for sparse expression matrices and norm_method log')
       }
@@ -502,7 +502,7 @@ set_matrix_control_combine_cds <- function(cds_list=list(), matrix_control=list(
     bpcells_matrix_flag <- FALSE
     # Are any of the count matrices BPCells class?
     for(i in seq(1, length(cds_list), 1)) {
-      if(is(counts(cds_list[[i]]), 'IterableMatrix')) {
+      if(methods::is(counts(cds_list[[i]]), 'IterableMatrix')) {
         bpcells_matrix_flag <- TRUE
         break
       }
@@ -684,8 +684,8 @@ combine_cds <- function(cds_list,
     # Counts matrix rows of genes common to the CDSes examined
     # up to this pass through the loop.
     exp <- counts(cds_list[[i]])
-    if(bpcells_matrix_flag && !is(exp, 'IterableMatrix')) {
-      exp <- as(exp, 'IterableMatrix')       # wraps dgCMatrix in IterableMatrix
+    if(bpcells_matrix_flag && !methods::is(exp, 'IterableMatrix')) {
+      exp <- methods::as(exp, 'IterableMatrix')       # wraps dgCMatrix in IterableMatrix
     }
     exp <- exp[intersect(row.names(exp), gene_list),, drop=FALSE]
 
@@ -750,7 +750,7 @@ combine_cds <- function(cds_list,
 
       # Append additional rows.
       if(bpcells_matrix_flag) {
-        exp <- rbind2(exp, as(extra_rows, 'IterableMatrix'))       # wraps dgCMatrix in IterableMatrix
+        exp <- rbind2(exp, methods::as(extra_rows, 'IterableMatrix'))       # wraps dgCMatrix in IterableMatrix
       }
       else {
         exp <- rbind(exp, extra_rows)
@@ -914,7 +914,7 @@ combine_cds_for_maddy <- function(cds_list,
     bpcells_matrix_flag <- FALSE
     # Are any of the count matrices BPCells class?
     for(i in seq(1, length(cds_list), 1)) {
-      if(is(counts(cds_list[[i]]), 'IterableMatrix')) {
+      if(methods::is(counts(cds_list[[i]]), 'IterableMatrix')) {
         bpcells_matrix_flag <- TRUE
         break
       }
@@ -983,8 +983,8 @@ combine_cds_for_maddy <- function(cds_list,
     # Counts matrix rows of genes common to the CDSes examined
     # up to this pass through the loop.
     exp <- counts(cds_list[[i]])
-    if(bpcells_matrix_flag && !is(exp, 'IterableMatrix')) {
-      exp <- as(exp, 'IterableMatrix')                               # wraps dgCMatrix in IterableMatrix
+    if(bpcells_matrix_flag && !methods::is(exp, 'IterableMatrix')) {
+      exp <- methods::as(exp, 'IterableMatrix')                               # wraps dgCMatrix in IterableMatrix
     }
     exp <- exp[intersect(row.names(exp), gene_list),, drop=FALSE]
 
@@ -1049,7 +1049,7 @@ combine_cds_for_maddy <- function(cds_list,
 
       # Append additional rows.
       if(bpcells_matrix_flag) {
-        exp <- rbind2(exp, as(extra_rows, 'IterableMatrix'))    # wraps dgCMatrix in IterableMatrix
+        exp <- rbind2(exp, methods::as(extra_rows, 'IterableMatrix'))    # wraps dgCMatrix in IterableMatrix
       }
       else {
         exp <- rbind(exp, extra_rows)
@@ -1214,7 +1214,7 @@ get_citations <- function(cds) {
 get_unique_id <- function(object=NULL) {
   if(!is.null(object)) {
     object_dim <- dim(object)
-    if(!is(object, 'IterableMatrix')) {
+    if(!methods::is(object, 'IterableMatrix')) {
       object_checksum <- digest::digest(object)
     }
     else {

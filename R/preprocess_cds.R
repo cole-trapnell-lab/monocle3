@@ -257,8 +257,11 @@ preprocess_cds <- function(cds,
 
       irlba_res <- irlba::irlba(A=BPCells:::linear_operator(preproc_res_commit),
                                 nv = min(num_dim,min(dim(FM)) - 1))
-
       rm_bpcells_dir(mat=preproc_res_commit)
+
+      # Ben Parks suggests running garbage collector after
+      # finishing with a linear_operator wrapped matrix.
+      gc()
     }
 
     if(verbose) {
