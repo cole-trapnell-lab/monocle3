@@ -97,7 +97,8 @@ set_matrix_control_pca <- function(mat, matrix_control=list(), verbose=FALSE) {
 
   if(verbose) {
     message('set_matrix_control_pca: matrix_control_res:')
-    show_matrix_control(matrix_control_res)
+    tryCatch(show_matrix_control(matrix_control_res),
+      error = function(c) { stop(paste0(trimws(c), '\n* error in set_matrix_control_pca')) })
     message()
   }
 

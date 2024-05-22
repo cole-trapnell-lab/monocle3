@@ -167,13 +167,15 @@ align_cds <- function(cds,
     nn_index <- make_nn_index(subject_matrix=SingleCellExperiment::reducedDims(cds)[['Aligned']],
                               nn_control=nn_control,
                               verbose=verbose)
-    cds <- set_cds_nn_index(cds=cds,
+    cds <- tryCatch(set_cds_nn_index(cds=cds,
                             reduction_method='Aligned',
                             nn_index,
-                            verbose=verbose)
+                            verbose=verbose),
+             error = function(c) { stop(paste0(trimws(c), '\n* error in align_cds')) })
   }
   else
-    cds <- clear_cds_nn_index(cds=cds, reduction_method='Aligned', 'all')
+    cds <- tryCatch(clear_cds_nn_index(cds=cds, reduction_method='Aligned', 'all'),
+              error = function(c) { stop(paste0(trimws(c), '\n* error in align_cds')) })
 
   cds
 }

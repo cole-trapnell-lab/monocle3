@@ -220,10 +220,12 @@ preprocess_cds <- function(cds,
 
     if( build_nn_index ) {
       nn_index <- make_nn_index(subject_matrix=SingleCellExperiment::reducedDims(cds)[[method]], nn_control=nn_control, verbose=verbose)
-      cds <- set_cds_nn_index(cds=cds, reduction_method=method, nn_index=nn_index, verbose=verbose)
+      cds <- tryCatch(set_cds_nn_index(cds=cds, reduction_method=method, nn_index=nn_index, verbose=verbose),
+               error = function(c) { stop(paste0(trimws(c), '\n* error in preprocess_cds')) })
     }
     else
-      cds <- clear_cds_nn_index(cds=cds, reduction_method=method, nn_method='all')
+      cds <- tryCatch(clear_cds_nn_index(cds=cds, reduction_method=method, nn_method='all'),
+               error = function(c) { stop(paste0(trimws(c), '\n* error in preprocess_cds')) })
 
   }
   else
@@ -312,10 +314,12 @@ preprocess_cds <- function(cds,
 
     if( build_nn_index ) {
       nn_index <- make_nn_index(subject_matrix=SingleCellExperiment::reducedDims(cds)[[method]], nn_control=nn_control, verbose=verbose)
-      cds <- set_cds_nn_index(cds=cds, reduction_method=method, nn_index=nn_index, verbose=verbose)
+      cds <- tryCatch(set_cds_nn_index(cds=cds, reduction_method=method, nn_index=nn_index, verbose=verbose),
+               error - function(c) { stop(paste0(trimws(c), '\n* error in preprocess_cds')) })
     }
     else
-      cds <- clear_cds_nn_index(cds=cds, reduction_method=method, nn_method='all')
+      cds <- tryCatch(clear_cds_nn_index(cds=cds, reduction_method=method, nn_method='all'),
+               error = function(c) { stop(paste0(trimws(c), '\n* error in preprocess_cds')) })
   }
 
   if(!is.null(cds@reduce_dim_aux[['Aligned']]) && !is.null(cds@reduce_dim_aux[['Aligned']][['model']][['beta']])) {

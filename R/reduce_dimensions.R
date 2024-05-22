@@ -206,7 +206,8 @@ reduce_dimension <- function(cds,
       nn_index <- make_nn_index(subject_matrix=SingleCellExperiment::reducedDims(cds)[[reduction_method]],
                                 nn_control=nn_control,
                                 verbose=verbose)
-      cds <- set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, verbose=verbose)
+      cds <- tryCatch(set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, verbose=verbose),
+               error = function(c) { stop(paste0(trimws(c), '\n* error in reduce_dimension')) })
     }
     if (verbose) message("Returning preprocessed PCA matrix")
   } else if(reduction_method == "LSI") {
@@ -214,7 +215,9 @@ reduce_dimension <- function(cds,
       nn_index <- make_nn_index(subject_matrix=SingleCellExperiment::reducedDims(cds)[[reduction_method]],
                                 nn_control=nn_control,
                                 verbose=verbose)
-      cds <- set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, verbose=verbose)
+      cds <- tryCatch(set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, verbose=verbose),
+               error = function(c) { stop(paste0(trimws(c), '\n* error in reduce_dimension')) })
+
     }
     if (verbose) message("Returning preprocessed LSI matrix")
   } else if(reduction_method == "Aligned") {
@@ -222,7 +225,9 @@ reduce_dimension <- function(cds,
       nn_index <- make_nn_index(subject_matrix=SingleCellExperiment::reducedDims(cds)[[reduction_method]],
                                 nn_control=nn_control,
                                 verbose=verbose)
-      cds <- set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, verbose=verbose)
+      cds <- tryCatch(set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, verbose=verbose),
+               error = function(c) { stop(paste0(trimws(c), '\n* error in reduce_dimension')) })
+
     }
     if (verbose) message("Returning preprocessed Aligned matrix")
   } else if (reduction_method == "tSNE") {
@@ -264,10 +269,13 @@ reduce_dimension <- function(cds,
       nn_index <- make_nn_index(subject_matrix=SingleCellExperiment::reducedDims(cds)[[reduction_method]],
                                 nn_control=nn_control,
                                 verbose=verbose)
-      cds <- set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, verbose=verbose)
+      cds <- tryCatch(set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, verbose=verbose),
+               error = function(c) { stop(paste0(trimws(c), '\n* error in reduce_dimension')) })
+
     }
     else
-      cds <- clear_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_method='all')
+      cds <- tryCatch(clear_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_method='all'),
+               error = function(c) {stop(paste0(trimws(c), '\n* error in reduce_dimension')) })
 
   }
   else
@@ -335,10 +343,13 @@ reduce_dimension <- function(cds,
       nn_index <- make_nn_index(subject_matrix=SingleCellExperiment::reducedDims(cds)[[reduction_method]],
                                 nn_control=nn_control,
                                 verbose=verbose)
-      cds <- set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, verbose=verbose)
+      cds <- tryCatch(set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, verbose=verbose),
+               error = function(c) { stop(paste0(trimws(c), '\n* error in reduce_dimension')) })
+
     }
     else
-      cds <- clear_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_method='all')
+      cds <- tryCatch(clear_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_method='all'),
+               error = function(c) { stop(paste0(trimws(c), '\n* error in reduce_dimension')) })
   }
 
   ## Clear out old graphs:

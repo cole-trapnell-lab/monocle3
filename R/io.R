@@ -1,3 +1,7 @@
+# Notes:
+#   o  first pass error handling improvements are done.
+#
+
 #' Build a small cell_data_set.
 #' @param matrix_control A list used to control how the counts matrix is stored
 #'    in the CDS. By default, Monocle3 stores the counts matrix in-memory as a
@@ -652,7 +656,8 @@ load_annoy_index <- function(nn_index, file_name, metric, ndim) {
 
   if(!is.null(nn_index[['version']])) {
     if(nn_index[['version']] == 1 || nn_index[['version']] == 2) {
-      annoy_index <- new_annoy_index(metric, ndim)
+      annoy_index <- tryCatch(new_annoy_index(metric, ndim),
+                       error = function(c) { stop(paste0(trimws(c), '\n* error in load_annoy_index')) })
       tryCatch(
           annoy_index$load(file_name),
         error = function(c) { stop(paste0(trimws(c),
@@ -670,7 +675,8 @@ load_annoy_index <- function(nn_index, file_name, metric, ndim) {
   else
   if(!is.null(nn_index[['type']])) {
     if(nn_index[['type']] == 'annoyv1') {
-      annoy_index <- new_annoy_index(metric, ndim)
+      annoy_index <- tryCatch(new_annoy_index(metric, ndim),
+                       error = function(c) { stop(paste0(trimws(c), '\n* error in load_annoy_index')) })
       tryCatch(
           annoy_index$load(file_name),
         error = function(c) { stop(paste0(trimws(c),
@@ -687,7 +693,8 @@ load_annoy_index <- function(nn_index, file_name, metric, ndim) {
   }
   else {
     # Assume to be an older uwot annoy index version.
-    nn_index <- new_annoy_index(metric, ndim)
+    nn_index <- tryCatch(new_annoy_index(metric, ndim),
+                  error = function(c) {stop(paste0(trimws(c), '\n* error in load_annoy_index')) })
     nn_index$load(file_name)
   }
   return(nn_index)
@@ -722,7 +729,8 @@ load_umap_annoy_index <- function(nn_index, file_name, metric, ndim) {
   file_name <- normalizePath(file_name, mustWork=FALSE)
   if(!is.null(nn_index[['type']])) {
     if(nn_index[['type']] == 'annoyv1') {
-      annoy_index <- new_annoy_index(metric, ndim)
+      annoy_index <- tryCatch(new_annoy_index(metric, ndim),
+                       error = function(c) { stop(paste0(trimws(c), '\n* error in load_umap_annoy_index')) })
       tryCatch(annoy_index$load(file_name),
         error = function(c) { stop(paste0(trimws(c),
                                           '\n  error reading file ', file_name,
@@ -738,7 +746,8 @@ load_umap_annoy_index <- function(nn_index, file_name, metric, ndim) {
   }
   else {
     # Assume to be an older uwot annoy index version.
-    nn_index <- new_annoy_index(metric, ndim)
+    nn_index <- tryCatch(new_annoy_index(metric, ndim),
+                  error = function(c) { stop(paste0(trimws(c), '\n* error in load_umap_annoy_index')) })
     tryCatch(
         nn_index$load(file_name),
       error = function(c) { stop(paste0(trimws(c),
@@ -1470,15 +1479,15 @@ save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE
                                       '\n* error in save_transform_models')) })
 
   if(verbose) {
-    report_files_saved(file_index)
+    tryCatch(report_files_saved(file_index),
+      error = function(c) { stop(paste0(trimws(c), '\n* error in save_transform_models')) })
   }
 
   #
   # Check for saved files.
   #
-  if(check_monocle_object_files( directory_path, file_index, read_test=FALSE, verbose=verbose ) == -1) {
-    stop(paste0('\n  save_transform_models: check that you have enough free disk space and\ntry running save_transform_models again.'))
-  }
+  tryCatch(check_monocle_object_files( directory_path, file_index, read_test=FALSE, verbose=verbose ),
+    error = function(c) { stop(paste0(trimws(c), '\n* error in save_transform_models')) })
 
   # Make a tar file of output directory, if requested.
   if(archive_control[['archive_type']] == 'tar') {
@@ -2166,15 +2175,15 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
                                      '\n* error in save_monocle_objexts') })
 
   if(verbose) {
-    report_files_saved(file_index)
+    tryCatch(report_files_saved(file_index),
+      error = function(c) { stop(paste0(trimws(c), '\n* error in save_monocle_objects')) })
   }
 
   #
   # Check for saved files.
   #
-  if(check_monocle_object_files( directory_path, file_index, read_test=FALSE, verbose=verbose ) == -1) {
-    stop(paste0('\n  save_monocle_objects: check that you have enough free disk space and\ntry running save_monocle_objects again.'), call.=FALSE)
-  }
+  tryCatch( check_monocle_object_files( directory_path, file_index, read_test=FALSE, verbose=verbose ),
+    error = function(c) { stop(paste0(trimws(c), '\n* error in save_monocle_objects')) })
 
   # Make a tar file of output directory, if requested.
   if(archive_control[['archive_type']] == 'tar') {
@@ -2235,7 +2244,8 @@ load_monocle_objects <- function(directory_path, matrix_control=list()) {
   # an RDS file.
   file_index_path <- file.path(directory_path, 'file_index.rds')
   if(!file.exists(file_index_path)) {
-    cds <- load_monocle_rds(directory_path)
+    cds <- tryCatch(load_monocle_rds(directory_path),
+             error = function(c) { stop(paste0(trimws(c), '\n* error in load_monocle_objects')) })
     return(cds)
   }
 

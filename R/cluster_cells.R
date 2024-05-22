@@ -191,7 +191,7 @@ cluster_cells <- function(cds,
     message("Running ", cluster_method, " clustering algorithm ...")
 
   if(cluster_method=='louvain') {
-    cluster_result <- louvain_clustering(data=reduced_dim_res,
+    cluster_result <- tryCatch(louvain_clustering(data=reduced_dim_res,
                                          pd=colData(cds),
                                          weight=weight,
                                          nn_index=nn_index,
@@ -199,7 +199,8 @@ cluster_cells <- function(cds,
                                          nn_control=nn_control,
                                          louvain_iter=num_iter,
                                          random_seed=random_seed,
-                                         verbose=verbose)
+                                         verbose=verbose),
+                       error = function(c) { stop(paste0(trimws(c), '\n* error in cluster_cells')) })
 
     if (length(unique(cluster_result$optim_res$membership)) > 1) {
       cluster_graph_res <- compute_partitions(cluster_result$g,
@@ -219,7 +220,7 @@ cluster_cells <- function(cds,
   }
   else if(cluster_method=='leiden'){
     cds <- add_citation(cds, "leiden")
-    cluster_result <- leiden_clustering(data=reduced_dim_res,
+    cluster_result <- tryCatch(leiden_clustering(data=reduced_dim_res,
                                         pd=colData(cds),
                                         weight=weight,
                                         nn_index=nn_index,
@@ -228,7 +229,8 @@ cluster_cells <- function(cds,
                                         num_iter=num_iter,
                                         resolution_parameter=resolution,
                                         random_seed=random_seed,
-                                        verbose=verbose, ...)
+                                        verbose=verbose, ...),
+                        error = function(c) { stop(paste0(trimws(c), '\n* error in cluster_cells')) })
 
     if(length(unique(cluster_result$optim_res$membership)) > 1) {
       cluster_graph_res <- compute_partitions(cluster_result$g,
@@ -290,11 +292,12 @@ cluster_cells_make_graph <- function(data,
     if(is.null(nn_index)) {
       nn_index <- make_nn_index(subject_matrix=data, nn_control=nn_control, verbose=verbose)
     }
-    tmp <- search_nn_index(query_matrix=data,
+    tmp <- tryCatch(search_nn_index(query_matrix=data,
                            nn_index=nn_index,
                            k=k+1,
                            nn_control=nn_control,
-                           verbose=verbose)
+                           verbose=verbose),
+             error = function(c) { stop(paste0(trimws(c), '\n* error in cluster_cells_make_graph')) })
     if(nn_method == 'annoy' || nn_method == 'hnsw') {
       tmp <- swap_nn_row_index_point(nn_res=tmp, verbose=verbose)
     }
@@ -350,13 +353,14 @@ louvain_clustering <- function(data,
   if(!identical(cell_names, row.names(pd)))
     stop("Phenotype and row name from the data doesn't match")
 
-  graph_result <- cluster_cells_make_graph(data=data,
+  graph_result <- tryCatch(cluster_cells_make_graph(data=data,
                                            weight=weight,
                                            cell_names=cell_names,
                                            nn_index,
                                            k=k,
                                            nn_control=nn_control,
-                                           verbose=verbose)
+                                           verbose=verbose),
+                    error = function(c) { stop(paste0(trimws(c), '\n* error in louvain_clustering')) })
 
   if(verbose)
     message("  Run louvain clustering ...")
@@ -470,13 +474,14 @@ leiden_clustering <- function(data,
   if(!identical(cell_names, row.names(pd)))
     stop("Phenotype and row name from the data don't match")
 
-  graph_result <- cluster_cells_make_graph(data=data,
+  graph_result <- tryCatch(cluster_cells_make_graph(data=data,
                                            weight=weight,
                                            cell_names=cell_names,
                                            nn_index,
                                            k=k,
                                            nn_control=nn_control,
-                                           verbose=verbose)
+                                           verbose=verbose),
+                    error = function(c) { stop(paste0(trimws(c), '\n* error in leiden_clustering')) })
 
   if(verbose)
     message("  Run leiden clustering ...")

@@ -45,8 +45,8 @@ sparse_apply_transform <- function(FM, rotation_matrix, vcenter=vcenter, vscale=
                                          cores=cores)
 
   if(verbose) {
-    message('sparse_apply_transform: x values (head)')
-    message(paste(utils::head(irlba_res$x), collapse=' '))
+    message('sparse_apply_transform: x[1,1:10] values:')
+    message(paste('  ', irlba_res$x[1,1:10], collapse=' '))
   }
 
   irlba_res$x <- as.matrix(irlba_res$x)
@@ -113,8 +113,8 @@ bpcells_apply_transform <- function(FM, rotation_matrix, vcenter=vcenter, vscale
   irlba_res$x <- xtsc %*% rotation_matrix[intersect_indices,]
 
   if(verbose) {
-    message('bpcells_apply_transform: x values (head)')
-    message(paste(utils::head(irlba_res$x), collapse=' '))
+    message('bpcells_apply_transform: x[1,1:10] values:')
+    message(paste('  ', irlba_res$x[1,1:10], collapse=' '))
   }
 
   irlba_res$x <- as.matrix(irlba_res$x)
@@ -260,13 +260,25 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
       fm_rowsums = Matrix::rowSums(FM)
       FM <- FM[is.finite(fm_rowsums) & fm_rowsums != 0, ]
 
-      irlba_res <- sparse_apply_transform(FM=FM, rotation_matrix=rotation_matrix, vcenter=vcenter, vscale=vscale, block_size=block_size, cores=cores, verbose=verbose)
+      irlba_res <- tryCatch(sparse_apply_transform(FM=FM,
+                                                   rotation_matrix=rotation_matrix,
+                                                   vcenter=vcenter,
+                                                   vscale=vscale,
+                                                   block_size=block_size,
+                                                   cores=cores,
+                                                   verbose=verbose),
+                     error = function(c) { stop(paste0(trimws(c), '\n* error in preprocess_transform')) })
     }
     else {
       fm_rowsums = BPCells::rowSums(FM)
       FM <- FM[is.finite(fm_rowsums) & fm_rowsums != 0, ]
 
-      irlba_res <- bpcells_apply_transform(FM=FM, rotation_matrix=rotation_matrix, vcenter=vcenter, vscale=vscale, verbose=verbose)
+      irlba_res <- tryCatch(bpcells_apply_transform(FM=FM,
+                                                    rotation_matrix=rotation_matrix,
+                                                    vcenter=vcenter,
+                                                    vscale=vscale,
+                                                    verbose=verbose),
+                     error = function(c) { stop(paste0(trimws(c), '\n* error in preprocess_transform')) })
 
       # Remove BPCells MatrixDir, if it is defined.
       rm_bpcells_dir(mat=FM)

@@ -597,7 +597,9 @@ plot_cells <- function(cds,
         #row.names(genes) = genes[,1]
         #genes = genes[row.names(cds_exprs),]
 
-        agg_mat = as.matrix(aggregate_gene_expression(cds, genes, norm_method=norm_method, gene_agg_fun="mean", scale_agg_values=FALSE))
+        tmatrix <- tryCatch(aggregate_gene_expression(cds, genes, norm_method=norm_method, gene_agg_fun="mean", scale_agg_values=FALSE),
+                     error = function(c) { stop(paste0(trimws(c), '\n* error in plot_cells')) })
+        agg_mat = as.matrix(tmatrix)
         markers_exprs = agg_mat
         markers_exprs <- reshape2::melt(markers_exprs)
         colnames(markers_exprs)[1:2] <- c('feature_id','cell_id')

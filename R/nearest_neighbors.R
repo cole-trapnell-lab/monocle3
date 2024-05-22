@@ -473,7 +473,8 @@ set_nn_control <- function(mode, nn_control=list(), nn_control_default=list(), n
     }
 
     if(bitwAnd(mode, 2)) {
-      nn_control_out[['search_k']] <- select_annoy_search_k(mode, nn_control, nn_control_default, nn_index, k, default_n_trees, default_k)
+      nn_control_out[['search_k']] <- tryCatch(select_annoy_search_k(mode, nn_control, nn_control_default, nn_index, k, default_n_trees, default_k),
+                                        error = function(c) { stop(paste0(trimws(c), '\n* error in set_nn_control')) })
       nn_control_out[['grain_size']] <- select_nn_parameter_value('grain_size', nn_control, nn_control_default, default_grain_size)
       nn_control_out[['cores']] <- select_nn_parameter_value('cores', nn_control, nn_control_default, default_cores)
       assertthat::assert_that(assertthat::is.count(nn_control_out[['search_k']]))
@@ -636,7 +637,8 @@ make_nn_index <- function(subject_matrix, nn_control=list(), verbose=FALSE) {
   } else
   if(nn_method == 'annoy') {
     monocle3_annoy_index_version <- get_global_variable('monocle3_annoy_index_version')
-    annoy_index <- new_annoy_index(metric, num_col)
+    annoy_index <- tryCatch(new_annoy_index(metric, num_col),
+                     error = function(c) { stop(paste0(trimws(c), '\n* error in make_nn_index')) })
     annoy_random_seed <- nn_control[['annoy_random_seed']]
     annoy_index$setSeed(annoy_random_seed)
     n_trees <- nn_control[['n_trees']]
@@ -787,8 +789,10 @@ make_cds_nn_index <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Ali
   }
 
   reduced_matrix <- SingleCellExperiment::reducedDims(cds)[[reduction_method]]
-  nn_index <- make_nn_index(subject_matrix=reduced_matrix, nn_control=nn_control, verbose=verbose)
-  cds <- set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, verbose=verbose)
+  nn_index <- tryCatch(make_nn_index(subject_matrix=reduced_matrix, nn_control=nn_control, verbose=verbose),
+                error = function(c) { stop(paste0(trimws(c), '\n* error in make_cds_nn_index')) })
+  cds <- tryCatch(set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, verbose=verbose),
+           error = function(c) { stop(paste0(trimws(c), '\n* error in make_cds_nn_index')) })
 
   return(cds)
 }
@@ -1156,7 +1160,8 @@ search_cds_nn_index <- function(query_matrix, cds, reduction_method=c('UMAP', 'P
                                    nn_index=NULL,
                                    k=k,
                                    verbose=verbose)
-  nn_index <- get_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_control_tmp[['method']], verbose=FALSE)
+  nn_index <- tryCatch(get_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_control_tmp[['method']], verbose=FALSE),
+                error = function(c) { stop(paste0(trimws(c), '\n* error in search_cds_nn_index')) })
 
   nn_control <- set_nn_control(mode=2,
                                nn_control=nn_control,
@@ -1164,11 +1169,12 @@ search_cds_nn_index <- function(query_matrix, cds, reduction_method=c('UMAP', 'P
                                nn_index=nn_index,
                                k=k,
                                verbose=verbose)
-  nn_res <- search_nn_index(query_matrix=query_matrix,
+  nn_res <- tryCatch(search_nn_index(query_matrix=query_matrix,
                             nn_index=nn_index,
                             k=k,
                             nn_control=nn_control,
-                            verbose=verbose)
+                            verbose=verbose),
+              error = function(c) { stop(paste0(trimws(c), '\n* error in search_cds_nn_index')) })
 
   return(nn_res)
 }
@@ -1423,8 +1429,10 @@ search_nn_matrix <- function(subject_matrix, query_matrix, k=25, nn_control=list
     nn_res <- RANN::nn2(subject_matrix, query_matrix, k, searchtype = "standard")
   }
   else {
-    nn_index <- make_nn_index(subject_matrix, nn_control=nn_control, verbose=verbose)
-    nn_res <- search_nn_index(query_matrix=query_matrix, nn_index=nn_index, k=k, nn_control=nn_control, verbose=verbose)
+    nn_index <- tryCatch(make_nn_index(subject_matrix, nn_control=nn_control, verbose=verbose),
+                  error = function(c) { stop(paste0(trimws(c), '\n* error in search_nn_index')) })
+    nn_res <- tryCatch(search_nn_index(query_matrix=query_matrix, nn_index=nn_index, k=k, nn_control=nn_control, verbose=verbose),
+                error = function(c) { stop(paste0(trimws(c), '\n* error in search_nn_matrix')) })
   }
 
   if(verbose)
