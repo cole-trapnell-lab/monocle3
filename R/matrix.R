@@ -374,9 +374,6 @@ set_matrix_control_default <- function(matrix_control=list(), control_type = c('
 #       matrix_buffer_size: <integer> default: 8192L
 #       matrix_bpcells_copy: TRUE, FALSE default: TRUE
 # Notes:
-#   o  modification to any of set_assay_control or
-#      set_control_default_pca may necessitate modifications
-#      to all of them.
 #   o  matrix_control[['matrix_class']] must be set in
 #      a matrix_control list.
 
@@ -458,13 +455,13 @@ set_matrix_control <- function(matrix_control=list(), matrix_control_default=lis
   # matrix_class.
   if(length(matrix_control_default) == 0) {
     matrix_control_default <- tryCatch(set_matrix_control_default(matrix_control=matrix_control, control_type=control_type),
-                                error = function(c) { stop(paste0(trimws(c), '\n*  error in set_matrix_control')) })
+                                error = function(c) { stop(paste0(trimws(c), '\n* error in set_matrix_control')) })
   }
 
   tryCatch(check_matrix_control(matrix_control=matrix_control, control_type=control_type, check_conditional=FALSE),
-    error = function(c) { stop(paste0(trimws(c), '\n*  error in set_matrix_control')) })
+    error = function(c) { stop(paste0(trimws(c), '\n* error in set_matrix_control')) })
   tryCatch(check_matrix_control(matrix_control=matrix_control_default, control_type=control_type, check_conditional=FALSE),
-    error = function(c) { stop(paste0(trimws(c), '\n*  error in set_matrix_control')) })
+    error = function(c) { stop(paste0(trimws(c), '\n* error in set_matrix_control')) })
 
   #
   # Last resort fall-back parameter values.
@@ -519,7 +516,7 @@ set_matrix_control <- function(matrix_control=list(), matrix_control_default=lis
   }
 
   tryCatch(check_matrix_control(matrix_control=matrix_control_out, control_type=control_type, check_conditional=TRUE),
-    error = function(c) { stop(paste0(trimws(c), '\n*  error in set_matrix_control')) })
+    error = function(c) { stop(paste0(trimws(c), '\n* error in set_matrix_control')) })
 
   #
   # Set BPCells out-of-core file/directory name.

@@ -77,7 +77,7 @@ load_cellranger_data <- function(pipestance_path=NULL, genome=NULL,
                                  matrix_control=list()) {
 
   matrix_control_res <- tryCatch(set_matrix_control(matrix_control=matrix_control, matrix_control_default=list(), control_type='unrestricted'),
-                          error = function(c) { stop(paste0(trimws(c), '\n*  error in load_cellranger_data')) })
+                          error = function(c) { stop(paste0(trimws(c), '\n* error in load_cellranger_data')) })
 
   # check for correct directory structure
   if (!dir.exists(pipestance_path))

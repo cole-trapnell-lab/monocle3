@@ -489,7 +489,7 @@ set_matrix_control_combine_cds <- function(cds_list=list(), matrix_control=list(
                             msg = paste0('set_matrix_control_combine_cds: matrix_control[[\'matrix_class\']] missing in matrix_control list.'))
 
     tryCatch(check_matrix_control(matrix_control=matrix_control, control_type='unrestricted', check_conditional=FALSE),
-             error = function(c) {stop(paste0(trimws(c), '\n*  error in combine_cds')) })
+             error = function(c) {stop(paste0(trimws(c), '\n* error in combine_cds')) })
              
     if(matrix_control[['matrix_class']] == 'BPCells') {
       bpcells_matrix_flag <- TRUE
