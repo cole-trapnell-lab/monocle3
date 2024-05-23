@@ -223,10 +223,10 @@ preprocess_cds <- function(cds,
       cds <- tryCatch(set_cds_nn_index(cds=cds, reduction_method=method, nn_index=nn_index, verbose=verbose),
                error = function(c) { stop(paste0(trimws(c), '\n* error in preprocess_cds')) })
     }
-    else
+    else {
       cds <- tryCatch(clear_cds_nn_index(cds=cds, reduction_method=method, nn_method='all'),
                error = function(c) { stop(paste0(trimws(c), '\n* error in preprocess_cds')) })
-
+    }
   }
   else
   if(method == "LSI") {
@@ -317,9 +317,10 @@ preprocess_cds <- function(cds,
       cds <- tryCatch(set_cds_nn_index(cds=cds, reduction_method=method, nn_index=nn_index, verbose=verbose),
                error = function(c) { stop(paste0(trimws(c), '\n* error in preprocess_cds')) })
     }
-    else
+    else {
       cds <- tryCatch(clear_cds_nn_index(cds=cds, reduction_method=method, nn_method='all'),
                error = function(c) { stop(paste0(trimws(c), '\n* error in preprocess_cds')) })
+    }
   }
 
   if(!is.null(cds@reduce_dim_aux[['Aligned']]) && !is.null(cds@reduce_dim_aux[['Aligned']][['model']][['beta']])) {

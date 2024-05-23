@@ -144,11 +144,11 @@ graph_test <- function(cds,
                                verbose=verbose)
 
   lw <- tryCatch(calculateLW(cds=cds,
-                    k = k,
-                    neighbor_graph = neighbor_graph,
-                    reduction_method = reduction_method,
-                    verbose = verbose,
-                    nn_control = nn_control),
+                             k = k,
+                             neighbor_graph = neighbor_graph,
+                             reduction_method = reduction_method,
+                             verbose = verbose,
+                             nn_control = nn_control),
           error = function(c) { stop(paste0(trimws(c), '\n* error in graph_test')) })
 
   if(verbose) {
@@ -404,10 +404,10 @@ calculateLW <- function(cds,
     }
     else {
       knn_res <- tryCatch(search_nn_index(query_matrix=cell_coords,
-                                 nn_index=nn_index,
-                                 k=min(k + 1, nrow(cell_coords)),
-                                 nn_control=nn_control,
-                                 verbose=verbose),
+                                          nn_index=nn_index,
+                                          k=min(k + 1, nrow(cell_coords)),
+                                          nn_control=nn_control,
+                                          verbose=verbose),
                    error = function(c) { stop(paste0(trimws(c), '\n* error in calculateLW')) })
       if(nn_method == 'annoy' || nn_method == 'hnsw')
         knn_res <- swap_nn_row_index_point(nn_res=knn_res, verbose=verbose)
@@ -433,10 +433,10 @@ calculateLW <- function(cds,
       }
       else {
         knn_res <- tryCatch(search_nn_index(query_matrix=cell_coords,
-                                   nn_index=nn_index,
-                                   k=min(k + 1, nrow(cell_coords)),
-                                   nn_control=nn_control,
-                                   verbose=verbose),
+                                            nn_index=nn_index,
+                                            k=min(k + 1, nrow(cell_coords)),
+                                            nn_control=nn_control,
+                                            verbose=verbose),
                      error = function(c) { stop(paste0(trimws(c), '\n* error in calculateLW')) })
         if(nn_method == 'annoy' || nn_method == 'hnsw')
           knn_res <- swap_nn_row_index_point(nn_res=knn_res, verbose=verbose)
@@ -492,10 +492,10 @@ calculateLW <- function(cds,
     }
     else {
       knn_res <- tryCatch(search_nn_index(query_matrix=cell_coords,
-                                 nn_index=nn_index,
-                                 k=min(k + 1, nrow(cell_coords)),
-                                 nn_control=nn_control,
-                                 verbose=verbose),
+                                          nn_index=nn_index,
+                                          k=min(k + 1, nrow(cell_coords)),
+                                          nn_control=nn_control,
+                                          verbose=verbose),
                    error = function(c) { stop(paste0(trimws(c), '\n* error in calculateLW')) })
       if(nn_method == 'annoy' || nn_method == 'hnsw')
         knn_res <- swap_nn_row_index_point(nn_res=knn_res, verbose=verbose)

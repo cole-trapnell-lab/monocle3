@@ -289,7 +289,7 @@ transfer_cell_labels <- function(cds_query,
   # coordinates for the reference data set, which were
   # loaded using load_transform_models() above.
   cds_res <- tryCatch(search_nn_index(query_matrix=cds_reduced_dims, nn_index=cds_nn_index,
-                             k=k, nn_control=nn_control, verbose=verbose),
+                                      k=k, nn_control=nn_control, verbose=verbose),
                error = function(c) { stop(paste0(trimws(c), '\n* error in transfer_cell_labels')) })
  
   # Get the best reference cell label for the query cells.
@@ -340,10 +340,10 @@ edit_query_cell_labels <- function(preproc_res,
                                    verbose=FALSE) {
 
   query_search <- tryCatch(search_nn_index(query_matrix=preproc_res,
-                                  nn_index=query_nn_index,
-                                  k=k+1,
-                                  nn_control=nn_control,
-                                  verbose=verbose),
+                                           nn_index=query_nn_index,
+                                           k=k+1,
+                                           nn_control=nn_control,
+                                           verbose=verbose),
                     error = function(c) { stop(paste0(trimws(c), '\n* error in edit_query_cell_labels')) })
 
   query_nns <- sapply(seq(1, nrow(query_search[['nn.idx']])), function(i) {

@@ -1170,10 +1170,10 @@ search_cds_nn_index <- function(query_matrix, cds, reduction_method=c('UMAP', 'P
                                k=k,
                                verbose=verbose)
   nn_res <- tryCatch(search_nn_index(query_matrix=query_matrix,
-                            nn_index=nn_index,
-                            k=k,
-                            nn_control=nn_control,
-                            verbose=verbose),
+                                     nn_index=nn_index,
+                                     k=k,
+                                     nn_control=nn_control,
+                                     verbose=verbose),
               error = function(c) { stop(paste0(trimws(c), '\n* error in search_cds_nn_index')) })
 
   return(nn_res)

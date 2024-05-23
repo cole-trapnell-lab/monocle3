@@ -192,14 +192,14 @@ cluster_cells <- function(cds,
 
   if(cluster_method=='louvain') {
     cluster_result <- tryCatch(louvain_clustering(data=reduced_dim_res,
-                                         pd=colData(cds),
-                                         weight=weight,
-                                         nn_index=nn_index,
-                                         k=k,
-                                         nn_control=nn_control,
-                                         louvain_iter=num_iter,
-                                         random_seed=random_seed,
-                                         verbose=verbose),
+                                                  pd=colData(cds),
+                                                  weight=weight,
+                                                  nn_index=nn_index,
+                                                  k=k,
+                                                  nn_control=nn_control,
+                                                  louvain_iter=num_iter,
+                                                  random_seed=random_seed,
+                                                  verbose=verbose),
                        error = function(c) { stop(paste0(trimws(c), '\n* error in cluster_cells')) })
 
     if (length(unique(cluster_result$optim_res$membership)) > 1) {
@@ -221,15 +221,15 @@ cluster_cells <- function(cds,
   else if(cluster_method=='leiden'){
     cds <- add_citation(cds, "leiden")
     cluster_result <- tryCatch(leiden_clustering(data=reduced_dim_res,
-                                        pd=colData(cds),
-                                        weight=weight,
-                                        nn_index=nn_index,
-                                        k=k,
-                                        nn_control=nn_control,
-                                        num_iter=num_iter,
-                                        resolution_parameter=resolution,
-                                        random_seed=random_seed,
-                                        verbose=verbose, ...),
+                                                 pd=colData(cds),
+                                                 weight=weight,
+                                                 nn_index=nn_index,
+                                                 k=k,
+                                                 nn_control=nn_control,
+                                                 num_iter=num_iter,
+                                                 resolution_parameter=resolution,
+                                                 random_seed=random_seed,
+                                                 verbose=verbose, ...),
                         error = function(c) { stop(paste0(trimws(c), '\n* error in cluster_cells')) })
 
     if(length(unique(cluster_result$optim_res$membership)) > 1) {
@@ -293,10 +293,10 @@ cluster_cells_make_graph <- function(data,
       nn_index <- make_nn_index(subject_matrix=data, nn_control=nn_control, verbose=verbose)
     }
     tmp <- tryCatch(search_nn_index(query_matrix=data,
-                           nn_index=nn_index,
-                           k=k+1,
-                           nn_control=nn_control,
-                           verbose=verbose),
+                                    nn_index=nn_index,
+                                    k=k+1,
+                                    nn_control=nn_control,
+                                    verbose=verbose),
              error = function(c) { stop(paste0(trimws(c), '\n* error in cluster_cells_make_graph')) })
     if(nn_method == 'annoy' || nn_method == 'hnsw') {
       tmp <- swap_nn_row_index_point(nn_res=tmp, verbose=verbose)
@@ -354,12 +354,12 @@ louvain_clustering <- function(data,
     stop("Phenotype and row name from the data doesn't match")
 
   graph_result <- tryCatch(cluster_cells_make_graph(data=data,
-                                           weight=weight,
-                                           cell_names=cell_names,
-                                           nn_index,
-                                           k=k,
-                                           nn_control=nn_control,
-                                           verbose=verbose),
+                                                    weight=weight,
+                                                    cell_names=cell_names,
+                                                    nn_index,
+                                                    k=k,
+                                                    nn_control=nn_control,
+                                                    verbose=verbose),
                     error = function(c) { stop(paste0(trimws(c), '\n* error in louvain_clustering')) })
 
   if(verbose)
@@ -475,12 +475,12 @@ leiden_clustering <- function(data,
     stop("Phenotype and row name from the data don't match")
 
   graph_result <- tryCatch(cluster_cells_make_graph(data=data,
-                                           weight=weight,
-                                           cell_names=cell_names,
-                                           nn_index,
-                                           k=k,
-                                           nn_control=nn_control,
-                                           verbose=verbose),
+                                                    weight=weight,
+                                                    cell_names=cell_names,
+                                                    nn_index,
+                                                    k=k,
+                                                    nn_control=nn_control,
+                                                    verbose=verbose),
                     error = function(c) { stop(paste0(trimws(c), '\n* error in leiden_clustering')) })
 
   if(verbose)

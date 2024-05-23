@@ -273,10 +273,10 @@ reduce_dimension <- function(cds,
                error = function(c) { stop(paste0(trimws(c), '\n* error in reduce_dimension')) })
 
     }
-    else
+    else {
       cds <- tryCatch(clear_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_method='all'),
                error = function(c) {stop(paste0(trimws(c), '\n* error in reduce_dimension')) })
-
+    }
   }
   else
   if (reduction_method == c("UMAP")) {
@@ -347,9 +347,10 @@ reduce_dimension <- function(cds,
                error = function(c) { stop(paste0(trimws(c), '\n* error in reduce_dimension')) })
 
     }
-    else
+    else {
       cds <- tryCatch(clear_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_method='all'),
                error = function(c) { stop(paste0(trimws(c), '\n* error in reduce_dimension')) })
+    }
   }
 
   ## Clear out old graphs:

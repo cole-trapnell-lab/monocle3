@@ -168,14 +168,15 @@ align_cds <- function(cds,
                               nn_control=nn_control,
                               verbose=verbose)
     cds <- tryCatch(set_cds_nn_index(cds=cds,
-                            reduction_method='Aligned',
-                            nn_index,
-                            verbose=verbose),
+                                     reduction_method='Aligned',
+                                     nn_index,
+                                     verbose=verbose),
              error = function(c) { stop(paste0(trimws(c), '\n* error in align_cds')) })
   }
-  else
+  else {
     cds <- tryCatch(clear_cds_nn_index(cds=cds, reduction_method='Aligned', 'all'),
               error = function(c) { stop(paste0(trimws(c), '\n* error in align_cds')) })
+  }
 
   cds
 }
