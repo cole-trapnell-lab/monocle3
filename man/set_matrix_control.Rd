@@ -37,7 +37,8 @@ show the matrix_control values to be used and then stop.
 \describe{
 \item{matrix_class}{A string that specifies the matrix
 class to use for matrix storage. The acceptable
-values are "dgCMatrix" and "BPCells".}
+values are "dgCMatrix" and "BPCells". matrix_class
+is required.}
 \item{matrix_type}{A string that specifies whether to
 store the matrix values as single precision "floats"
 (matrix_type="float") or double precision "doubles"

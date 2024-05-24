@@ -9,7 +9,6 @@ preprocess_transform(
   reduction_method = c("PCA", "LSI"),
   block_size = NULL,
   cores = 1,
-  matrix_control = list(),
   verbose = FALSE
 )
 }
@@ -27,13 +26,6 @@ NULL, which does not affect the current block size.}
 
 \item{cores}{the number of cores to use for the matrix
 multiplication. The default is 1.}
-
-\item{matrix_control}{A list used to control how the temporary
-version of the counts matrix used by preprocess_transform is
-stored. By default the matrix is stored in memory as a
-sparse matrix. Setting
-'matrix_control=list(matrix_class="BPCells")' stores the matrix
-on-disk as a sparse matrix.}
 
 \item{verbose}{logical Whether to emit verbose output during dimensionality
 reduction.}

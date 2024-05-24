@@ -111,15 +111,20 @@ top_markers <- function(cds,
   # For each gene compute the fraction of cells expressing it within each group
   # in a matrix thats genes x cell groups
 
-  cluster_binary_exprs = as.matrix(aggregate_gene_expression(cds,
-                                                             cell_group_df=cell_group_df,
-                                                             norm_method="binary",
-                                                             scale_agg_values=FALSE))
+  tmp_matrix <- tryCatch(aggregate_gene_expression(cds,
+                                                   cell_group_df=cell_group_df,
+                                                   norm_method="binary",
+                                                   scale_agg_values=FALSE),
+               error = function(c) { stop(paste0(trimws(c), '\n* error in top_markers')) })
 
-  cluster_mean_exprs = as.matrix(aggregate_gene_expression(cds,
-                                                           cell_group_df=cell_group_df,
-                                                           norm_method="size_only",
-                                                           scale_agg_values=FALSE))
+  cluster_binary_exprs = as.matrix(tmp_matrix)
+
+  tmp_matrix <- tryCatch(aggregate_gene_expression(cds,
+                                                   cell_group_df=cell_group_df,
+                                                   norm_method="size_only",
+                                                   scale_agg_values=FALSE),
+               error = function(c) { stop(paste0(trimws(c), '\n* error in top_markers')) })
+  cluster_mean_exprs = as.matrix(tmp_matrix)
 
 # bge the cluster_binary_exprs and cluster_mean_exprs pairs appear to be the same when run with dgCMatrix vs BPCells matrix
 

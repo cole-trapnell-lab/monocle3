@@ -191,20 +191,20 @@ find_gene_modules <- function(cds,
   reduced_dim_res <- umap_res
 
   if(verbose)
-
     message("Running leiden clustering algorithm ...")
 
-  cluster_result <- leiden_clustering(data=reduced_dim_res,
-                                      pd=rowData(cds)[row.names(reduced_dim_res),,drop=FALSE],
-                                      weight=weight,
-                                      nn_index=NULL,
-                                      k=k,
-                                      nn_control=nn_control,
-                                      num_iter=leiden_iter,
-                                      resolution_parameter=resolution,
-                                      random_seed=random_seed,
-                                      verbose=verbose,
-                                      ...)
+  cluster_result <- tryCatch(leiden_clustering(data=reduced_dim_res,
+                                               pd=rowData(cds)[row.names(reduced_dim_res),,drop=FALSE],
+                                               weight=weight,
+                                               nn_index=NULL,
+                                               k=k,
+                                               nn_control=nn_control,
+                                               num_iter=leiden_iter,
+                                               resolution_parameter=resolution,
+                                               random_seed=random_seed,
+                                               verbose=verbose,
+                                               ...),
+                      error = function(c) { stop(paste0(trimws(c), '\n* error in find_gene_modules')) })
 
   cluster_graph_res <- compute_partitions(cluster_result$g,
                                           cluster_result$optim_res,
@@ -463,7 +463,8 @@ aggregate_gene_expression <- function(cds,
                                       cell_agg_fun="mean"){
   if (is.null(gene_group_df) && is.null(cell_group_df))
     stop("one of either gene_group_df or cell_group_df must not be NULL.")
-  agg_mat <- normalized_counts(cds, norm_method=norm_method, pseudocount=pseudocount)
+  agg_mat <- tryCatch(normalized_counts(cds, norm_method=norm_method, pseudocount=pseudocount),
+               error = function(c) { stop(paste0(trimws(c), '\n* error in aggregate_gene_expression')) })
   if (is.null(gene_group_df) == FALSE){
     gene_group_df <- as.data.frame(gene_group_df)
     gene_group_df <- gene_group_df[gene_group_df[,1] %in%

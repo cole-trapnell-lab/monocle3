@@ -119,7 +119,7 @@ preprocess_cds <- function(cds,
   FM <- SingleCellExperiment::counts(cds)
 
   #
-  # Is this a IterableMatrix (BPCells) counts matrix?
+  # Is this an IterableMatrix (BPCells) counts matrix?
   iterable_matrix_flag <- is(FM, 'IterableMatrix')
 
   #
@@ -154,6 +154,10 @@ preprocess_cds <- function(cds,
 
       if(verbose) {
         message('preprocess_cds: FM matrix class: ', class(FM))
+        message()
+        message('preprocess_cds: str(FM):')
+        message(str(FM))
+        message()
       }
 
       fm_rowsums = Matrix::rowSums(FM)
@@ -167,6 +171,7 @@ preprocess_cds <- function(cds,
       if(verbose) {
         message('preprocess_cds: FM matrix info:')
         message(show_matrix_info(matrix_info=get_matrix_info(mat=FM), '  '), appendLF=FALSE)
+        message()
       }
 
       fm_rowsums = BPCells::rowSums(FM)
@@ -215,11 +220,13 @@ preprocess_cds <- function(cds,
 
     if( build_nn_index ) {
       nn_index <- make_nn_index(subject_matrix=SingleCellExperiment::reducedDims(cds)[[method]], nn_control=nn_control, verbose=verbose)
-      cds <- set_cds_nn_index(cds=cds, reduction_method=method, nn_index=nn_index, verbose=verbose)
+      cds <- tryCatch(set_cds_nn_index(cds=cds, reduction_method=method, nn_index=nn_index, verbose=verbose),
+               error = function(c) { stop(paste0(trimws(c), '\n* error in preprocess_cds')) })
     }
-    else
-      cds <- clear_cds_nn_index(cds=cds, reduction_method=method, nn_method='all')
-
+    else {
+      cds <- tryCatch(clear_cds_nn_index(cds=cds, reduction_method=method, nn_method='all'),
+               error = function(c) { stop(paste0(trimws(c), '\n* error in preprocess_cds')) })
+    }
   }
   else
   if(method == "LSI") {
@@ -245,15 +252,26 @@ preprocess_cds <- function(cds,
                                 nv = min(num_dim,min(dim(FM)) - 1))
     }
     else {
-      matrix_control <- list(matrix_class='BPCells')
-      matrix_control_default <- get_global_variable('matrix_control_bpcells_pca')
-      matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='pca')
+      # Use the same matrix_control for the 'x_commit' matrix as used for the
+      # input matrix 'FM'.
+      matrix_control_res <- set_matrix_control_pca(mat=FM, verbose=verbose)
       preproc_res_commit <- set_matrix_class(mat=BPCells::t(preproc_res), matrix_control=matrix_control_res)
 
       irlba_res <- irlba::irlba(A=BPCells:::linear_operator(preproc_res_commit),
                                 nv = min(num_dim,min(dim(FM)) - 1))
-
       rm_bpcells_dir(mat=preproc_res_commit)
+
+      # Ben Parks suggests running garbage collector after
+      # finishing with a linear_operator wrapped matrix.
+      gc()
+    }
+
+    if(verbose) {
+      message('singular values (head)')
+      message(paste(head(irlba_res$d), collapse=' '))
+      message('')
+      message("umat: ", paste(dim(irlba_res$u), collapse=" "))
+      message("vtmat: ", paste(dim(irlba_res$v), collapse=" "))
     }
 
     preproc_res <- irlba_res$u %*% diag(irlba_res$d)
@@ -296,10 +314,13 @@ preprocess_cds <- function(cds,
 
     if( build_nn_index ) {
       nn_index <- make_nn_index(subject_matrix=SingleCellExperiment::reducedDims(cds)[[method]], nn_control=nn_control, verbose=verbose)
-      cds <- set_cds_nn_index(cds=cds, reduction_method=method, nn_index=nn_index, verbose=verbose)
+      cds <- tryCatch(set_cds_nn_index(cds=cds, reduction_method=method, nn_index=nn_index, verbose=verbose),
+               error = function(c) { stop(paste0(trimws(c), '\n* error in preprocess_cds')) })
     }
-    else
-      cds <- clear_cds_nn_index(cds=cds, reduction_method=method, nn_method='all')
+    else {
+      cds <- tryCatch(clear_cds_nn_index(cds=cds, reduction_method=method, nn_method='all'),
+               error = function(c) { stop(paste0(trimws(c), '\n* error in preprocess_cds')) })
+    }
   }
 
   if(!is.null(cds@reduce_dim_aux[['Aligned']]) && !is.null(cds@reduce_dim_aux[['Aligned']][['model']][['beta']])) {

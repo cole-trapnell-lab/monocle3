@@ -4,14 +4,14 @@
 \alias{load_monocle_objects}
 \title{Load a full Monocle3 cell_data_set.}
 \usage{
-load_monocle_objects(directory_path, matrix_control = list(matrix_path = "."))
+load_monocle_objects(directory_path, matrix_control = list())
 }
 \arguments{
 \item{directory_path}{a string giving the name of the directory
 from which to read the saved cell_data_set files.}
 
 \item{matrix_control}{a list that is used only to set the
-PBCells matrix path when the saved cell_data_set has the
+BPCells matrix path when the saved cell_data_set has the
 counts matrix stored as a BPCells on-disk matrix. By default,
 the BPCells matrix directory path is set to the current
 working directory.}

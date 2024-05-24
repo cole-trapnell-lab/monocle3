@@ -3,10 +3,17 @@
 #
 options("sp_evolution_status"=2)
 
+
+#
+# Make a horizontal bar of dashes.
+#
+dbar40 <- paste(replicate(40,'-'),collapse='')
+
+
 #
 # Set up a global-variable-like environment.
 #
-
+#! @export
 set_global_variable <- function(variable_name, value) {
   assign(variable_name, value, envir=._._global_variable_env_._.)
 }
@@ -14,6 +21,7 @@ set_global_variable <- function(variable_name, value) {
 
 # Return value of variable_name. If variable_name is NULL, return a list
 # of all global variables.
+#! @export
 get_global_variable <- function(variable_name=NULL) {
   value <- tryCatch({
                       v <- get('guard_element', envir=._._global_variable_env_._.) 
@@ -104,6 +112,9 @@ get_global_variable <- function(variable_name=NULL) {
   # which are the label transfer functions.
   set_global_variable('nn_control_annoy_cosine', list(method='annoy', metric='cosine', n_trees=50, M=48, ef_construction=200, ef=150, grain_size=1, cores=1))
 
+  # Default matrix_class.
+  set_global_variable('matrix_class_default', 'dgCMatrix')
+
   # Default matrix_control list for any.
   set_global_variable('matrix_control_csparsematrix_unrestricted', list(matrix_class='dgCMatrix'))
   set_global_variable('matrix_control_bpcells_unrestricted', list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=FALSE, matrix_path='.', matrix_buffer_size=8192L, matrix_bpcells_copy=TRUE))
@@ -111,7 +122,6 @@ get_global_variable <- function(variable_name=NULL) {
   # Default matrix_control list for pca.
    set_global_variable('matrix_control_csparsematrix_pca', list(matrix_class='dgCMatrix'))
    set_global_variable('matrix_control_bpcells_pca', list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=FALSE, matrix_path='.', matrix_buffer_size=8192L, matrix_bpcells_copy=TRUE))
-
 
   # Watching preprocess_cds() it appears that R uses OMP_NUM_THREADS
   # threads if OMP_NUM_THREADS > 1 and OPENBLAS_NUM_THREADS is NA.
@@ -143,5 +153,14 @@ get_global_variable <- function(variable_name=NULL) {
   # on close of session when the global environment, .GlobalEnv,
   # loses its last reference.
   reg.finalizer(.GlobalEnv, ._._gc_matrix_object_remove_._., onexit=TRUE)
+
+  # If ~/.monoclerc exists, read it and execute its contents.
+  dot_monoclerc <- base::path.expand('~/.monoclerc')
+  if(file.exists(dot_monoclerc)){
+    packageStartupMessage(paste('Read ~/.monoclerc next. The parsed expressions are',
+                                'read into the user\'s global\nenvironment. Objects',
+                                'in .monoclerc may mask monocle objects with the same names.'))
+    source(file=dot_monoclerc, local=FALSE, echo=TRUE)
+  }
 }
 

@@ -1,8 +1,15 @@
-# Test whether a matrix is one of our supported sparse matrices
+# Test whether a matrix is one of our supported in-memory sparse matrices
 is_sparse_matrix <- function(x){
   any(class(x) %in% c("dgCMatrix", "dgTMatrix", "lgCMatrix", "CsparseMatrix"))
 }
 
+
+# Test whether an object is a matrix.
+is_matrix <- function(x) {
+  return(methods::is(x, 'matrix') || is_sparse_matrix(x) || methods::is(x, 'IterableMatrix'))
+}
+
+# Test whether 
 #' Function to calculate size factors for single-cell RNA-seq data
 #'
 #' @param cds The cell_data_set
@@ -29,7 +36,7 @@ estimate_size_factors <- function(cds,
                                            'mean-geometric-mean-log-total'))
 {
   method <- match.arg(method)
-  if(is(SingleCellExperiment::counts(cds), 'IterableMatrix')) {
+  if(methods::is(SingleCellExperiment::counts(cds), 'IterableMatrix')) {
     if(any(BPCells::colSums(SingleCellExperiment::counts(cds)) == 0)) {
       warning("Your CDS object contains cells with zero reads. ",
                     "This causes size factor calculation to fail. Please remove ",
@@ -54,7 +61,7 @@ estimate_size_factors <- function(cds,
     size_factors(cds) <- estimate_sf_sparse(SingleCellExperiment::counts(cds),
                                             round_exprs=round_exprs,
                                             method=method)
-  } else if(is(SingleCellExperiment::counts(cds), 'IterableMatrix')) {
+  } else if(methods::is(SingleCellExperiment::counts(cds), 'IterableMatrix')) {
     size_factors(cds) <- estimate_sf_bpcells(SingleCellExperiment::counts(cds),
                                            round_exprs=round_exprs,
                                            method=method)
@@ -292,7 +299,7 @@ mc_es_apply <- function(cds, MARGIN, FUN, required_packages, cores=1,
   #
   if (MARGIN == 1){
 # message('mc_es_apply: MARGIN 1')
-    if( is(counts(cds), 'IterableMatrix')) {
+    if( methods::is(counts(cds), 'IterableMatrix')) {
 # message('mc_es_apply: BPCells matrix')
       suppressWarnings(res <- sparse_par_r_apply(cl=cl, x=monocle3::counts_row_order(cds), FUN=FUN,
                                                  convert_to_dense=convert_to_dense, ...))
@@ -329,7 +336,7 @@ smart_es_apply <- function(cds, MARGIN, FUN, convert_to_dense,
                        as.data.frame(coldata_df), envir=e1)
   environment(FUN) <- e1
 
-  if (is(SingleCellExperiment::counts(cds), 'IterableMatrix')) {
+  if (methods::is(SingleCellExperiment::counts(cds), 'IterableMatrix')) {
 # message('smart_es_apply: BPCells matrix')
     if(MARGIN == 1) {
 # message('smart_es_apply: MARGIN 1')
@@ -414,7 +421,7 @@ normalized_counts <- function(cds,
   norm_mat <- SingleCellExperiment::counts(cds)
 
   if (norm_method == "binary"){
-    if(is(norm_mat, 'IterableMatrix')) {
+    if(methods::is(norm_mat, 'IterableMatrix')) {
       norm_mat <- BPCells::binarize(norm_mat, threshold=0, strict_inequality=TRUE)
     }
     else {
@@ -429,7 +436,7 @@ normalized_counts <- function(cds,
   }
   else {
     assertthat::assert_that(!is.null(size_factors(cds)))
-    if(is(norm_mat, 'IterableMatrix')) {
+    if(methods::is(norm_mat, 'IterableMatrix')) {
       if(norm_method == 'log' && pseudocount != 1) {
         stop('normalized_counts: pseudocount must be 1 for sparse expression matrices and norm_method log')
       }
@@ -462,6 +469,58 @@ normalized_counts <- function(cds,
 }
 
 
+#
+#  If length(matrix_control) == 0 and none of the cdses in cds_list
+#  are BPCells class, return a matrix_control list for a dgCMatrix
+#  matrix; otherwise, return a matrix_control list for a BPCells
+#  matrix.
+#  If length(matrix_control) > 0, return a matrix_control list with
+#  the class given in the matrix_control parameter.
+#
+#  Notes:
+#    o  we cannot use set_matrix_control_default() in combine_cds because
+#       cds_list has more than one cds to test.
+#    o  matrix_control[['matrix_class']] must be set in a
+#       matrix_control list.
+#
+set_matrix_control_combine_cds <- function(cds_list=list(), matrix_control=list(), verbose=FALSE) {
+  if(length(matrix_control) > 0) {
+    assertthat::assert_that(!is.null(matrix_control[['matrix_class']]),
+                            msg = paste0('set_matrix_control_combine_cds: matrix_control[[\'matrix_class\']] missing in matrix_control list.'))
+
+    tryCatch(check_matrix_control(matrix_control=matrix_control, control_type='unrestricted', check_conditional=FALSE),
+             error = function(c) {stop(paste0(trimws(c), '\n* error in combine_cds')) })
+             
+    if(matrix_control[['matrix_class']] == 'BPCells') {
+      bpcells_matrix_flag <- TRUE
+    }
+    else {
+      bpcells_matrix_flag <- FALSE
+    }
+  }
+  else {
+    bpcells_matrix_flag <- FALSE
+    # Are any of the count matrices BPCells class?
+    for(i in seq(1, length(cds_list), 1)) {
+      if(methods::is(counts(cds_list[[i]]), 'IterableMatrix')) {
+        bpcells_matrix_flag <- TRUE
+        break
+      }
+    }
+  }
+
+  if(bpcells_matrix_flag) {
+    matrix_control_default <- get_global_variable('matrix_control_bpcells_unrestricted')
+  }
+  else {
+    matrix_control_default <- get_global_variable('matrix_control_csparsematrix_unrestricted')
+  }
+
+  matrix_control_out <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='unrestricted')
+
+  return(matrix_control_out)
+}
+
 
 #' Combine a list of cell_data_set objects
 #'
@@ -489,7 +548,14 @@ normalized_counts <- function(cds,
 #'   dimension matrices. Do not keep the reduced dimensions unless you know
 #'   that the reduced dimensions are the same in each CDS. This is true for
 #'   projected data sets, for example. Default is FALSE.
-#'
+#' @param matrix_control A list used to control how the counts matrix is
+#'    is stored in the CDS. By default, combine_cds stores the counts
+#'    matrix as an in-memory, sparse (dgCMatrix), unless (a) at least one
+#'    of the cdses in cds_list uses a BPCells counts matrix, or
+#'    (b) you specify matrix_control=list(matrix_class='BPCells').
+#' @param verbose Whether to emit verbose output while running
+#'   combine_cds.
+#'   Default is FALSE.
 #' @return A combined cell_data_set object.
 #' @export
 #'
@@ -498,7 +564,8 @@ combine_cds <- function(cds_list,
                         cell_names_unique = FALSE,
                         sample_col_name = "sample",
                         keep_reduced_dims = FALSE,
-                        matrix_control = list()) {
+                        matrix_control = list(),
+                        verbose=FALSE) {
 
   assertthat::assert_that(is.list(cds_list),
                           msg=paste("cds_list must be a list."))
@@ -530,6 +597,13 @@ combine_cds <- function(cds_list,
                  "remove or rename that column before ",
                  "proceeding."))
 
+  if(length(matrix_control) > 0) {
+    assertthat::assert_that(is.list(matrix_control),
+                            msg=paste0('combine_cds: matrix_control must be a list.'))
+    assertthat::assert_that(!is.null(matrix_control[['matrix_class']]),
+                            msg=paste0('combine_cds: matrix_control[[\'matrix_class\']] missing in matrix_control list.'))
+  }
+
   num_cells <- sapply(cds_list, ncol)
   if(sum(num_cells == 0) != 0) {
     message("Some CDS' have no cells, these will be skipped.")
@@ -545,31 +619,19 @@ combine_cds <- function(cds_list,
     list_named <- FALSE
   }
 
-  if(!is.null(matrix_control[['matrix_class']]) &&
-     matrix_control[['matrix_class']] == 'BPCells') {
+  matrix_control <- set_matrix_control_combine_cds(cds_list=cds_list, matrix_control=matrix_control)
+  if(matrix_control[['matrix_class']] == 'BPCells')
     bpcells_matrix_flag <- TRUE
-  }
-  else {
+  else
     bpcells_matrix_flag <- FALSE
-    # Are any of the count matrices BPCells class?
-    for(i in seq(1, length(cds_list), 1)) {
-      if(is(counts(cds_list[[i]]), 'IterableMatrix')) {
-        bpcells_matrix_flag <- TRUE
-        break
-      }
-    }
-  }
 
-  check_matrix_control(matrix_control=matrix_control, control_type='unrestricted', check_conditional=FALSE)
-  if(bpcells_matrix_flag ||
-     (!is.null(matrix_control[['matrix_class']]) && matrix_control[['matrix_class']] == 'BPCells')) {
-    matrix_control_default <- get_global_variable('matrix_control_bpcells_unrestricted')
+  if(verbose) {
+    message('combine_cds: bpcells_matrix_flag: ', bpcells_matrix_flag)
+    message('combine_cds: ')
+    message(show_matrix_control(matrix_control))
+   message()
   }
-  else {
-    matrix_control_default <- get_global_variable('matrix_control_csparsematrix_unrestricted')
-  }
-  matrix_control <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='unrestricted')
-
+  
   exprs_list <- list()
   fd_list <- list()
   pd_list <- list()
@@ -622,8 +684,8 @@ combine_cds <- function(cds_list,
     # Counts matrix rows of genes common to the CDSes examined
     # up to this pass through the loop.
     exp <- counts(cds_list[[i]])
-    if(bpcells_matrix_flag && !is(exp, 'IterableMatrix')) {
-      exp <- as(exp, 'IterableMatrix')       # wraps dgCMatrix in IterableMatrix
+    if(bpcells_matrix_flag && !methods::is(exp, 'IterableMatrix')) {
+      exp <- methods::as(exp, 'IterableMatrix')       # wraps dgCMatrix in IterableMatrix
     }
     exp <- exp[intersect(row.names(exp), gene_list),, drop=FALSE]
 
@@ -688,7 +750,7 @@ combine_cds <- function(cds_list,
 
       # Append additional rows.
       if(bpcells_matrix_flag) {
-        exp <- rbind2(exp, as(extra_rows, 'IterableMatrix'))       # wraps dgCMatrix in IterableMatrix
+        exp <- rbind2(exp, methods::as(extra_rows, 'IterableMatrix'))       # wraps dgCMatrix in IterableMatrix
       }
       else {
         exp <- rbind(exp, extra_rows)
@@ -743,6 +805,12 @@ combine_cds <- function(cds_list,
   # Make a BPCells count matrix, if necessary.
   if(bpcells_matrix_flag) {
     all_exp <- set_matrix_class(mat=all_exp, matrix_control=matrix_control)
+  }
+
+  if(verbose) {
+    message('combine_cds: ')
+    message(paste0(show_matrix_info(matrix_info=get_matrix_info(mat=all_exp), indent='  ')), appendLF=FALSE)
+    message()
   }
 
   # Make a combined CDS from all_exp, all_pd, and all_fd.
@@ -846,7 +914,7 @@ combine_cds_for_maddy <- function(cds_list,
     bpcells_matrix_flag <- FALSE
     # Are any of the count matrices BPCells class?
     for(i in seq(1, length(cds_list), 1)) {
-      if(is(counts(cds_list[[i]]), 'IterableMatrix')) {
+      if(methods::is(counts(cds_list[[i]]), 'IterableMatrix')) {
         bpcells_matrix_flag <- TRUE
         break
       }
@@ -915,8 +983,8 @@ combine_cds_for_maddy <- function(cds_list,
     # Counts matrix rows of genes common to the CDSes examined
     # up to this pass through the loop.
     exp <- counts(cds_list[[i]])
-    if(bpcells_matrix_flag && !is(exp, 'IterableMatrix')) {
-      exp <- as(exp, 'IterableMatrix')                               # wraps dgCMatrix in IterableMatrix
+    if(bpcells_matrix_flag && !methods::is(exp, 'IterableMatrix')) {
+      exp <- methods::as(exp, 'IterableMatrix')                               # wraps dgCMatrix in IterableMatrix
     }
     exp <- exp[intersect(row.names(exp), gene_list),, drop=FALSE]
 
@@ -981,7 +1049,7 @@ combine_cds_for_maddy <- function(cds_list,
 
       # Append additional rows.
       if(bpcells_matrix_flag) {
-        exp <- rbind2(exp, as(extra_rows, 'IterableMatrix'))    # wraps dgCMatrix in IterableMatrix
+        exp <- rbind2(exp, methods::as(extra_rows, 'IterableMatrix'))    # wraps dgCMatrix in IterableMatrix
       }
       else {
         exp <- rbind(exp, extra_rows)
@@ -1146,7 +1214,7 @@ get_citations <- function(cds) {
 get_unique_id <- function(object=NULL) {
   if(!is.null(object)) {
     object_dim <- dim(object)
-    if(!is(object, 'IterableMatrix')) {
+    if(!methods::is(object, 'IterableMatrix')) {
       object_checksum <- digest::digest(object)
     }
     else {
@@ -1286,3 +1354,97 @@ tock <- function() {
     return(t1 - t0)
   }
 }
+
+
+#
+# Convert octal file permission to 'rwx' string.
+#
+file_permission_o2rws <- function(iperm) {
+  assertthat::assert_that(is.integer(iperm) && iperm >= 0 && iperm <= 7,
+                          msg=paste("file_permission_o2rws: iperm must be between 0L and 7L, inclusive."))
+
+  cnv_vec <- c('---', '--x', '-w-', '-wx',
+               'r--', 'r-x', 'rw-', 'rwx')
+  return(cnv_vec[iperm+1])
+}
+
+
+#
+# Convert octal string to multiple rwx strings.
+#
+file_permission_os2rwx <- function(ostr) {
+  assertthat::assert_that(assertthat::is.string(ostr),
+                          msg=paste("file_permission_os2rwx: ostr be a string."))
+  assertthat::assert_that(nchar(ostr) >= 3 && nchar(ostr) <= 4,
+                          msg=paste("file_permission_os2rwx: ostr must have 3 or 4 characters."))
+
+  # Drop the first of four characters. We are not interested in SUID, SGID, or Sticky Bit.
+  if(length(ostr) == 4) {
+    ostr <- substr(ostr, 2,4)
+  }
+
+  ocvec <- unlist(strsplit(ostr, ''))
+  return(paste('owner:', file_permission_o2rws(as.integer(ocvec[1])),
+               'group:', file_permission_o2rws(as.integer(ocvec[2])),
+               'world:', file_permission_o2rws(as.integer(ocvec[3]))))
+}
+
+
+#
+# Report file/directory status.
+#
+# Notes:
+#   The arguments consists of one or more file or
+#   directory paths given as strings.
+#
+#   Examples:
+#     report_path_status('/Users/monocle_dev/git/monocle3')
+#     report_path_status('monocle_objects.20240426', 'monocle_transform_models.20240426')
+#
+report_path_status <- function(...) {
+  path_list <- list(...)
+  npath <- length(path_list)
+  msg <- 'File and directory information:\n'
+  for(i in seq(npath)) {
+    if(i > 1) {
+      msg <- paste0(msg, '\n\n')
+    }
+    path <- path_list[[i]]
+    msg <- paste0(msg, '  input path: ', path)
+
+    normalized_path <- normalizePath(path, mustWork=FALSE)
+    msg <- paste0(msg, '\n  normalized path: ', normalized_path)
+    pmod <- file.info(normalized_path, TRUE)
+    # Does path exist?
+    if(!file.exists(normalized_path)) {
+      if(is.na(pmod[['size']][1])) {
+        msg <- paste0(msg, '\n  \'', normalized_path, '\' does not exist')
+        return(msg)
+      }
+    }
+
+    # Is path a file or directory?
+    if(pmod[['isdir']][1]) {
+      msg <- paste0(msg, '\n  directory ')
+    }
+    else {
+      msg <- paste0(msg, '\n  file ')
+    }
+
+    # What are path permissions?
+     msg <- paste0(msg, 'has permissions (', pmod[['mode']][1], '): ', file_permission_os2rwx(as.character(pmod[['mode']][1])))
+
+    # If path is a file, report md5 checksum.
+    if(!pmod[['isdir']][1]) {
+      msg <- paste0(msg, '\n  md5sum: ', tools::md5sum(normalized_path))
+    }
+
+  }
+  return(msg)
+}
+
+
+report_checksum_difference <- function(calling_function_name, file_name, checksum_current, checksum_saved) {
+  paste0(calling_function_name, ': inconsistent checksum values for \'', file_name, '\'\n', '  saved checksum:   ', checksum_saved, '\n', '  current checksum: ', checksum_current)
+}
+

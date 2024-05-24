@@ -248,24 +248,25 @@ learn_graph <- function(cds,
   }
 
   multi_tree_DDRTree_res <-
-    multi_component_RGE(cds, scale = scale,
-                        reduction_method = reduction_method,
-                        partition_list = partition_list,
-                        irlba_pca_res = SingleCellExperiment::reducedDims(cds)[[reduction_method]],
-                        max_components = max_components,
-                        ncenter = ncenter,
-                        nn.k = nn.k,
-                        nn_control = nn_control,
-                        maxiter = maxiter,
-                        eps = eps,
-                        L1.gamma = L1.gamma,
-                        L1.sigma = L1.sigma,
-                        close_loop = close_loop,
-                        euclidean_distance_ratio = euclidean_distance_ratio,
-                        geodesic_distance_ratio = geodesic_distance_ratio,
-                        prune_graph = prune_graph,
-                        minimal_branch_len = minimal_branch_len,
-                        verbose = verbose)
+    tryCatch(multi_component_RGE(cds, scale = scale,
+                                 reduction_method = reduction_method,
+                                 partition_list = partition_list,
+                                 irlba_pca_res = SingleCellExperiment::reducedDims(cds)[[reduction_method]],
+                                 max_components = max_components,
+                                 ncenter = ncenter,
+                                 nn.k = nn.k,
+                                 nn_control = nn_control,
+                                 maxiter = maxiter,
+                                 eps = eps,
+                                 L1.gamma = L1.gamma,
+                                 L1.sigma = L1.sigma,
+                                 close_loop = close_loop,
+                                 euclidean_distance_ratio = euclidean_distance_ratio,
+                                 geodesic_distance_ratio = geodesic_distance_ratio,
+                                 prune_graph = prune_graph,
+                                 minimal_branch_len = minimal_branch_len,
+                                 verbose = verbose),
+     error = function(c) { stop(paste0(trimws(c), '\n* error in learn_graph')) })
 
   rge_res_W <- multi_tree_DDRTree_res$ddrtree_res_W
   rge_res_Z <- multi_tree_DDRTree_res$ddrtree_res_Z
@@ -412,19 +413,21 @@ multi_component_RGE <- function(cds,
       reduce_dims_old <-
         t(SingleCellExperiment::reducedDims(cds)[[reduction_method]])[, partition_list == cur_comp]
       connect_tips_res <-
-        connect_tips(cds,
-                     pd = colData(cds)[partition_list == cur_comp, ],
-                     R = rge_res$R,
-                     stree = stree,
-                     reducedDimK_old = rge_res$Y,
-                     reducedDimS_old = reduce_dims_old,
-                     k = 25,
-                     nn_control = nn_control,
-                     kmean_res = kmean_res,
-                     euclidean_distance_ratio = euclidean_distance_ratio,
-                     geodesic_distance_ratio = geodesic_distance_ratio,
-                     medioids = medioids,
-                     verbose = verbose)
+        tryCatch(connect_tips(cds,
+                              pd = colData(cds)[partition_list == cur_comp, ],
+                              R = rge_res$R,
+                              stree = stree,
+                              reducedDimK_old = rge_res$Y,
+                              reducedDimS_old = reduce_dims_old,
+                              k = 25,
+                              nn_control = nn_control,
+                              kmean_res = kmean_res,
+                              euclidean_distance_ratio = euclidean_distance_ratio,
+                              geodesic_distance_ratio = geodesic_distance_ratio,
+                              medioids = medioids,
+                              verbose = verbose),
+          error = function(c) { stop(paste0(trimws(c), '\n* error in multi_component_RGE')) })
+
       stree <- connect_tips_res$stree
     }
     if(prune_graph) {
@@ -1177,15 +1180,17 @@ connect_tips <- function(cds,
 
     data <- t(reducedDimS_old[, ])
 
-    cluster_result <- louvain_clustering(data=data,
-                                         pd=pd[, ],
-                                         weight=weight,
-                                         nn_index=NULL,
-                                         k=k,
-                                         nn_control=nn_control,
-                                         louvain_iter=1,
-                                         random_seed=0L,
-                                         verbose=verbose)
+    cluster_result <- tryCatch(louvain_clustering(data=data,
+                                                  pd=pd[, ],
+                                                  weight=weight,
+                                                  nn_index=NULL,
+                                                  k=k,
+                                                  nn_control=nn_control,
+                                                  louvain_iter=1,
+                                                  random_seed=0L,
+                                                  verbose=verbose),
+                        error = function(c) { stop(paste0(trimws(c), '\n * error in connect_tips')) })
+
     cluster_result$optim_res$membership <- tmp[, 1]
   } else { # use kmean clustering result
     tip_pc_points <- which(igraph::degree(mst_g_old) == 1)
@@ -1194,15 +1199,17 @@ connect_tips <- function(cds,
 
     data <- t(reducedDimS_old[, ]) # raw_data_tip_pc_points
 
-    cluster_result <- louvain_clustering(data=data,
-                                         pd=pd[row.names(data), ],
-                                         weight=weight,
-                                         nn_index=NULL,
-                                         k=k,
-                                         nn_control=nn_control,
-                                         louvain_iter=1,
-                                         random_seed=random_seed,
-                                         verbose=verbose)
+    cluster_result <- tryCatch(louvain_clustering(data=data,
+                                                  pd=pd[row.names(data), ],
+                                                  weight=weight,
+                                                  nn_index=NULL,
+                                                  k=k,
+                                                  nn_control=nn_control,
+                                                  louvain_iter=1,
+                                                  random_seed=random_seed,
+                                                  verbose=verbose),
+                        error = function(c) { stop(paste0(trimws(c), '\n * error in connect_tips')) })
+
     cluster_result$optim_res$membership <- kmean_res$cluster
   }
 

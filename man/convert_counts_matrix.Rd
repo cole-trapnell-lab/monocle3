@@ -4,7 +4,7 @@
 \alias{convert_counts_matrix}
 \title{Convert the counts matrix class in the given CDS.}
 \usage{
-convert_counts_matrix(cds, matrix_control = list(matrix_class = "BPCells"))
+convert_counts_matrix(cds, matrix_control = list())
 }
 \arguments{
 \item{cds}{cell_data_set The cell_data_set that has the
@@ -13,7 +13,8 @@ counts matrix to be converted.}
 \item{matrix_control}{list A list of matrix control
 values used to convert the counts matrix. If the
 counts matrix in the cds is the same as the desired
-counts matrix, it is not altered.}
+counts matrix, it is not altered. matrix_control is
+required.}
 }
 \value{
 cell_data_set The cell_data_set with the converted

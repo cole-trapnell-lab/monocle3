@@ -43,6 +43,9 @@ divided by the corresponding value from \code{scale}. If \code{scale} is
 mean square otherwise.  If \code{scale} is \code{FALSE}, no scaling is done.
 See \code{\link{scale}} for more details.}
 
+\item{verbose}{a logical value that determines whether or not the
+function writes diagnostic information.}
+
 \item{...}{additional arguments passed to \code{\link{irlba}}.}
 }
 \value{

@@ -6,52 +6,101 @@ svd_rebuild_matrix <- function(u, s, v, filename) {
 
 
 #
-# This is probably replaced by set_matrix_contol with control_type='pca'. Consider
-# removing this function.
+# Notes on setting the PCA matrix control using a relatively
+# complex approach: do not require input_matrix_control[['matrix_class']] but allow edits
+# Possible conditions:
+#   1  input_matrix_control has no values set (OK!)
+#        o  want input_matrix_info with missing values from default for matrix_class/pca (probably no missing values)
 #
-set_pca_matrix_control <- function(mat, matrix_control=list()) {
+#   2  input_matrix_control has matrix_class and other values set and input_matrix_control[['matrix_class']] == input_matrix_info[['matrix_class']]  (same as 4)
+#        o  want input_matrix_info with edits by input_matrix_control
+#             example: input_matrix_control[['matrix_path'] replaces input_matrix_info[['matrix_path']
+#
+#   3  input_matrix_control has matrix_class and other values set and input_matrix_control[['matrix_class']] != input_matrix_info[['matrix_class']] (OK? is there any reason to use input_matrix_info values?)
+#        o  want input_matrix_control with missing values from default for matrix_class/pca
+#
+#   4  input_matrix_control does not have matrix_class set but other values are set  (same as 2)
+#        o  want input_matrix_info with edits from input_matrix_control
+#             example: input_matrix_control[['matrix_path'] replaces input_matrix_info[['matrix_path']
+#
+#
+# Is any matrix_control command line parameter value set? (Check the following summary carefully
+# before proceeding with it.)
+#   o  yes: is input_matrix_control[['matrix_class']] set?
+#     o  is input_matrix_control[['matrix_class']] the same as the input matrix matrix_class
+#       o  yes: use matrix_control:         input_matrix_control  (2)  (*** wrong ***)
+#                   matrix_control_default: input matrix info (edit matrix_path as required)
+#       o  no:  use matrix_control:         input_matrix_control  (3)
+#                   matrix_control_default: default matrix_control for input_matrix_control[['matrix_class']] (global environment value)
+#     o  no: use matrix_control: input_matrix_control  (4)  (*** wrong ***)
+#                matrix_control_default: default matrix_control for input_matrix_control[['matrix_class']] (global environment value)
+#   o  no: use matrix_control: input matrix info (edit matrix_path as required)  (1)
+#              matrix_control_default: default matrix_control for input_matrix_control[['matrix_class']] (global environment value)
+#
+#  Notes:
+#    o  use the simple approach because it's substantially more provable, maintainable, and documentable.
+#       Also, users cannot set matrix_control in preprocess_cds() and preprocess_transform().
+#    o  report the resulting matrix_control after calling set_matrix_control_pca(), when verbose=TRUE
+#
 
-  check_matrix_control(matrix_control=matrix_control, control_type='pca', check_conditional=FALSE)
 
-  matrix_info <- get_matrix_info(mat=mat)
-  if(!is.null(matrix_control[['matrix_class']])) {
-    if(matrix_control[['matrix_class']] == 'dgCMatrix') {
-       matrix_control_default <- get_global_variable('matrix_control_csparsematrix_pca')
-    }
-    else
-    if(matrix_control[['matrix_class']] == 'BPCells') {
-      matrix_control_default <- get_global_variable('matrix_control_bpcells_pca')
+#
+# Use the simple approach (relatively simple): require either input_matrix_control
+# is zero length list or input_matrix_control[['matrix_class']] is set with all
+# desired non-default values.
+#
+#  Notes:
+#    o  if input_matrix_control is not set, use input_matrix_info with modifications required for pca and matrix_path
+#    o  if input_matrix_control is set, use matrix_control=input_matrix_control and matrix_control_default for matrix_class/pca.
+#       In this case input_matrix_control[['matrix_class']] must be set; otherwise, it's invalid and an error results. Missing
+#       values in input_matrix_control are taken from the default.
+#    o  watch for issues with matrix_path
+#    o  matrix_control[['matrix_class']] must be set in a matrix_control list.
+#
+set_matrix_control_pca <- function(mat, matrix_control=list(), verbose=FALSE) {
+
+  assertthat::assert_that(monocle3:::is_matrix(mat),
+                          msg=paste0('set_matrix_control_pca: input matrix parameter object is not a matrix'))
+  assertthat::assert_that(is.list(matrix_control),
+                          msg=paste0('set_matrix_control_pca: input matrix_control parameter object is not a list'))
+
+  # Get matrix_control values of input matrix.
+  matrix_info <- tryCatch(monocle3:::get_matrix_info(mat),
+                          error = function(c) { stop(paste0(trimws(c),
+                                                           '\n* error in set_matrix_control_pca')) })
+  if(length(matrix_control) > 0) {
+    # Use matrix_control=matrix_control
+    assertthat::assert_that(!is.null(matrix_control[['matrix_class']]),
+                            msg=paste0('set_matrix_control_pca: matrix_control[[\'matrix_class\']] missing in matrix_control list.'))
+
+    matrix_control_default <- tryCatch(set_matrix_control_default(matrix_control, 'pca'),
+                                       error = function(c) { stop(paste0(trimws(c), '\n* error in set_matrix_control_pca')) })
+
+    matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='pca')
+  }
+  else {
+    # Use matrix_control=matrix_info
+    if(matrix_info[['matrix_class']] == 'BPCells') {
+      # Trim off name of input matrix directory.
+      tmp_matrix_info <- matrix_info
+      tmp_matrix_info[['matrix_path']] <- dirname(tmp_matrix_info[['matrix_path']])
     }
     else {
-      stop('unrecognized matrix_control[[\'matrix_class\']] value')
+      tmp_matrix_info <- matrix_info
     }
-    matrix_control_res <- set_matrix_control(matrix_control=matrix_control,
-                                             matrix_control_default=matrix_control_default,
-                                             control_type='pca')
-  }
-  else
-  if(matrix_info[['matrix_class']] == 'r_dense_matrix' ||
-     matrix_info[['matrix_class']] == 'dgCMatrix' ||
-     matrix_info[['matrix_class']] == 'dgTMatrix') {
-    matrix_control_res = list()
-    matrix_control_res[['matrix_class']] <- 'dgCMatrix'
-  }
-  else
-  if(matrix_info[['matrix_class']] == 'BPCells') {
-    matrix_control_res <- matrix_info
-    if(matrix_control_res[['matrix_type']] == 'uint32_t') {
-      matrix_control_res[['matrix_type']] <- 'double'
-    }
-    if(matrix_control_res[['matrix_compress']] == TRUE) {
-      matrix_control_res[['matrix_compress']] <- FALSE
-    }
-    if(matrix_control_res[['matrix_mode']] == 'dir') {
-      matrix_control_res[['matrix_path']] <- dirname(matrix_control_res[['matrix_path']])
-    }
-    matrix_control_res[['matrix_bpcells_copy']] <- TRUE
+
+    matrix_control_default <- tryCatch(set_matrix_control_default(matrix_info, 'pca'),
+                                error = function(c) { stop(paste0('\n* error in set_matrix_control_pca')) })
+
+    matrix_control_res <- set_matrix_control(matrix_control=tmp_matrix_info, matrix_control_default=matrix_control_default, control_type='pca')
   }
 
-  check_matrix_control(matrix_control=matrix_control_res, control_type='pca', check_conditional=TRUE)
+  if(verbose) {
+    message('set_matrix_control_pca: matrix_control_res:')
+    tryCatch(show_matrix_control(matrix_control_res),
+      error = function(c) { stop(paste0(trimws(c), '\n* error in set_matrix_control_pca')) })
+    message()
+  }
 
   return(matrix_control_res)
 }
@@ -86,6 +135,8 @@ set_pca_matrix_control <- function(mat, matrix_control=list()) {
 #'   See \code{\link{scale}} for more details.
 #' @param n integer number of principal component vectors to return, must be
 #'   less than \code{min(dim(x))}.
+#' @param verbose a logical value that determines whether or not the
+#'   function writes diagnostic information.
 #' @param ... additional arguments passed to \code{\link{irlba}}.
 #'
 #' @return
@@ -134,6 +185,8 @@ sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
 {
   if(verbose) {
     message('pca: sparse_prcomp_irlba: matrix class: ', class(x))
+    message(paste0(show_matrix_info(matrix_info=get_matrix_info(mat=x), indent='  ')), appendLF=FALSE)
+    message()
   }
 
   a <- names(as.list(match.call()))
@@ -193,11 +246,13 @@ sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
   s <- do.call(irlba::irlba, args=args)
   if(verbose) {
     message('end irlba: ', Sys.time())
+    message()
   }
 
   if(verbose) {
     message('singular values (head)')
     message(paste(head(s$d), collapse=' '))
+    message()
   }
 
   # Diagnostic test.
@@ -253,6 +308,8 @@ sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
 #'   See \code{\link{scale}} for more details.
 #' @param n integer number of principal component vectors to return, must be
 #'   less than \code{min(dim(x))}.
+#' @param verbose a logical value that determines whether or not the
+#'   function writes diagnostic information.
 #' @param ... additional arguments passed to \code{\link{irlba}}.
 #'
 #' @return
@@ -301,7 +358,8 @@ bpcells_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
 {
   if(verbose) {
     message('pca: bpcells_prcomp_irlba: matrix class: ', class(x))
-    message(show_matrix_info(matrix_info=get_matrix_info(mat=x), indent='  '), appendLF=FALSE)
+    message(paste0(show_matrix_info(matrix_info=get_matrix_info(mat=x), indent='  ')), appendLF=FALSE)
+    message()
   }
 
   a <- names(as.list(match.call()))
@@ -312,10 +370,15 @@ bpcells_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
             function to control that algorithm's convergence tolerance. See
             `?prcomp_irlba` for help.")
 
-  matrix_control <- list(matrix_class='BPCells')
-  matrix_control_default <- get_global_variable('matrix_control_bpcells_pca')
-  matrix_control_res <- set_matrix_control(matrix_control=matrix_control, matrix_control_default=matrix_control_default, control_type='pca')
+  # Use the same matrix_control for the 'x_commit' matrix as used for the
+  # input matrix 'x'.
+  matrix_control_res <- set_matrix_control_pca(mat=x, verbose=verbose)
   x_commit <- set_matrix_class(mat=x, matrix_control=matrix_control_res)
+
+  if(verbose) {
+    message('bpcells_prcomp_irlba: str(x_commit): ')
+    message(str(x_commit))
+  }
 
   stats <- BPCells::matrix_stats(matrix = x_commit, row_stats = 'none', col_stats = 'variance')
   center <- stats[['col_stats']]['mean',]
@@ -324,6 +387,7 @@ bpcells_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
   if(verbose) {
     message('pca: bpcells_prcomp_irlba: x_commit:')
     message(show_matrix_info(matrix_info=get_matrix_info(mat=x_commit), indent='  '), appendLF=FALSE)
+    message()
   }
 
   # BPCells:::linear_operator() is meant to reduce irlba run time.
@@ -337,9 +401,14 @@ bpcells_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
   s <- do.call(irlba::irlba, args=args)
   if(verbose) {
     message('end time: ', Sys.time())
+    message()
   }
 
   rm_bpcells_dir(mat=x_commit)
+
+  # Ben Parks suggests running garbage collector after
+  # finishing with a linear_operator wrapped matrix.
+  gc()
 
   # Diagnostic test.
   #message('bpcells svd')

@@ -236,7 +236,8 @@ transfer_cell_labels <- function(cds_query,
                                    k=k,
                                    verbose=verbose)
 
-  cds_nn_index <- get_cds_nn_index(cds=cds_query, reduction_method=reduction_method, nn_control_tmp[['method']], verbose=verbose)
+  cds_nn_index <- tryCatch(get_cds_nn_index(cds=cds_query, reduction_method=reduction_method, nn_control_tmp[['method']], verbose=verbose),
+                    error = function(c) { stop(paste0(trimws(c), '\n* error in transfer_cell_labels')) })
 
   cds_reduced_dims <- SingleCellExperiment::reducedDims(cds_query)[[reduction_method]]
   if(ncol(cds_reduced_dims) != cds_nn_index[['ncol']]) {
@@ -287,8 +288,9 @@ transfer_cell_labels <- function(cds_query,
   # The cds@reduce_dim_aux[[reduction_method]] contains the reduction_method
   # coordinates for the reference data set, which were
   # loaded using load_transform_models() above.
-  cds_res <- search_nn_index(query_matrix=cds_reduced_dims, nn_index=cds_nn_index,
-                             k=k, nn_control=nn_control, verbose=verbose)
+  cds_res <- tryCatch(search_nn_index(query_matrix=cds_reduced_dims, nn_index=cds_nn_index,
+                                      k=k, nn_control=nn_control, verbose=verbose),
+               error = function(c) { stop(paste0(trimws(c), '\n* error in transfer_cell_labels')) })
  
   # Get the best reference cell label for the query cells.
   if(label_data_are_discrete) {
@@ -337,11 +339,12 @@ edit_query_cell_labels <- function(preproc_res,
                                    top_next_ratio_threshold=1.5,
                                    verbose=FALSE) {
 
-  query_search <- search_nn_index(query_matrix=preproc_res,
-                                  nn_index=query_nn_index,
-                                  k=k+1,
-                                  nn_control=nn_control,
-                                  verbose=verbose)
+  query_search <- tryCatch(search_nn_index(query_matrix=preproc_res,
+                                           nn_index=query_nn_index,
+                                           k=k+1,
+                                           nn_control=nn_control,
+                                           verbose=verbose),
+                    error = function(c) { stop(paste0(trimws(c), '\n* error in edit_query_cell_labels')) })
 
   query_nns <- sapply(seq(1, nrow(query_search[['nn.idx']])), function(i) {
     # Get neighbors in reference space.
