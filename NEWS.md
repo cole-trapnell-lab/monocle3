@@ -1,3 +1,12 @@
+# Monocle3 1.4.18
+
+### Changes
+
+* Store counts matrix on-disk using BPCells package.
+* Add plot_genes_hybrid() function.
+* Add read $HOME/.monoclerc file on load.
+* Improve error handling and diagnostics.
+
 # Monocle3 1.4.15
 
 ### Changes
