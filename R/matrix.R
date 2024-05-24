@@ -1003,7 +1003,7 @@ set_cds_row_order_matrix <- function(cds) {
                      fileext='_r.tmp')[[1]]
   tmpdir <- tempfile('monocle.transpose_bpc.', '.', '.tmp')
 
-  # Make 'normalized paths'
+  # Make 'normalized paths
   outdir <- normalizePath(outdir, mustWork=FALSE)
   tmpdir <- normalizePath(tmpdir, mustWork=FALSE)
 
