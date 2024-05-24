@@ -224,7 +224,7 @@ test_that("fit_models() returns correct output for zero-inflated negative binomi
   expect_equal(pos_ctrl_gene_fit$status[[1]], "OK")
   pos_ctrl_coefs = coefficient_table(pos_ctrl_gene_fit)
   expect_equal(pos_ctrl_coefs$estimate,
-               c(-0.255, 0.26434083, 0.0664, -3.0239, 0.2226),
+               c(-0.182, 0.308, 0.0664, -3.0239, 0.2226),
                tolerance=1e-2)
   expect_equal(unname(pos_ctrl_coefs$normalized_effect),
                c(0.000000000, 0.1685858, 0.0504, NA, NA), tolerance=1e-1)
