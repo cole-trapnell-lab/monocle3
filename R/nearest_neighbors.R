@@ -1231,7 +1231,7 @@ set_cds_nn_search <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Ali
   if(nn_method == 'annoy') {
     cds@reduce_dim_aux[[reduction_method]][['nn_search']][[search_id]] <- S4Vectors::SimpleList()
     cds@reduce_dim_aux[[reduction_method]][['nn_search']][[search_id]][['method']] <- nn_method
-    cds@reduce_dim_aux[[reduction_method]][['nn_search']][[search_id]][['search_k']] <- nn_contol[['search_k']]
+    cds@reduce_dim_aux[[reduction_method]][['nn_search']][[search_id]][['search_k']] <- nn_control[['search_k']]
     cds@reduce_dim_aux[[reduction_method]][['nn_search']][[search_id]][['k']] <- k
     cds@reduce_dim_aux[[reduction_method]][['nn_search']][[search_id]][['nrow']] <- nrow(reduced_matrix)
     cds@reduce_dim_aux[[reduction_method]][['nn_search']][[search_id]][['ncol']] <- ncol(reduced_matrix)
