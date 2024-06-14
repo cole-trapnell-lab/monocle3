@@ -1348,7 +1348,7 @@ tock <- function() {
   t0 <- get_global_variable('monocle3_timer_t0')
   msg <- get_global_variable('monocle3_timer_msg')
   if(length(msg) > 0) {
-    message(sprintf('%s %.2f seconds.',msg, t1 - t0))
+    message(sprintf('%s %.2f seconds.',msg, difftime(t1, t0, units = "secs")))
   }
   else {
     return(t1 - t0)
