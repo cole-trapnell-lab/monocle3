@@ -478,6 +478,12 @@ fix_missing_cell_labels <- function(cds,
   assertthat::assert_that(from_column_name %in% colnames(colData(cds)),
                           msg=paste0('from_column_name \'', from_column_name, '\' is not in the cds colData'))
 
+  if(sum(is.na(colData(cds)[[from_column_name]])) == 0) {
+    if(to_column_name != from_column_name)
+      colData(cds)[[to_column_name]] <- colData(cds)[[from_column_name]]
+    return(cds)
+  }
+
   if(reduction_method == 'UMAP')
     nn_control_default <- get_global_variable('nn_control_annoy_euclidean')
   else
