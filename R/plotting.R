@@ -2067,7 +2067,8 @@ plot_umi_per_cell_and_perturbation <- function(cds,
 #' @param cds A cell_data_set for plotting.
 #' @param perturbation_col How to group the cells for the plot. Must be a column of the colData.
 #' @param count_per_sample_col Which column of the colData to put in the boxplots.
-#' @param min_cells_per_sample The minimum number of cells per sample. Drawn on as a horizontal line.
+#' @param zscore logical value indicating whether to z-score counts before plotting. If \code{TRUE}, then the values in \code{count_per_sample_col} are grouped by the \code{perturbation_col} and z-scored.
+#' @param cutoff The minimum number of cells per sample, drawn as a horizontal line. If \code{zscore == TRUE} then this corresponds to the absolute value of the z-score cutoff, and two horizontal lines are drawn.
 #' @param facet_by Facet the plot by this column of the colData. Each unique value is its own facet.
 #' @param color_palette List of colors to color perturbation groups. Default is NULL. When NULL, use a default set.
 #' @param yticks List of numeric values to put on the y-axis ticks.
@@ -2077,7 +2078,8 @@ plot_umi_per_cell_and_perturbation <- function(cds,
 plot_cells_per_sample_and_perturbation <- function(cds,
                                                    perturbation_col = "perturbation",
                                                    count_per_sample_col = "count_per_embryo",
-                                                   min_cells_per_sample = 1000,
+                                                   zscore = FALSE,
+                                                   cutoff = 1000,
                                                    facet_by = NULL,
                                                    color_palette = NULL,
                                                    yticks = NULL) {
@@ -2085,6 +2087,10 @@ plot_cells_per_sample_and_perturbation <- function(cds,
   assertthat::assert_that(all(c(perturbation_col, count_per_sample_col) %in% colnames(colData(cds))))
   assertthat::assert_that(is.null(facet_by) || (facet_by %in% colnames(colData(cds))),
                           msg = "facet_by is not in the colData of the CDS.")
+  assertthat::assert_that(is.logical(zscore),
+                          msg = "zscore must be a logical value.")
+  assertthat::assert_that(is.numeric(cutoff) && cutoff > 0,
+                          msg = "cutoff must be a positive numeric value.")
   assertthat::assert_that(is.null(yticks) || is.numeric(yticks),
                           msg = "yticks are not numeric.")
 
@@ -2093,30 +2099,59 @@ plot_cells_per_sample_and_perturbation <- function(cds,
     dplyr::select(count_per_sample_col, perturbation_col, facet_by) %>%
     dplyr::filter(!is.na(perturbation_col))
 
+  if (zscore) {
+    counts_per_sample_df <- counts_per_sample_df %>%
+      group_by(!!sym(perturbation_col)) %>%
+      mutate(
+        !!sym(count_per_sample_col) := as.vector(scale(!!sym(count_per_sample_col)))
+      )
+    ylabel <- "Z-scored Cells per Sample"
+    if (is.null(yticks)) {
+      yticks <- seq(-3, 3)
+      yticklabels <- as.character(yticks)
+    }
+  } else {
+    counts_per_sample_df <- counts_per_sample_df %>%
+      mutate(
+        !!sym(count_per_sample_col) := log10(!!sym(count_per_sample_col))
+      )
+    cutoff <- log10(cutoff)
+    ylabel <- "Cells per Sample"
+    if (is.null(yticks)) {
+      yticks <- c(100, 500, 1000, 2500, 5000, 10000, 20000, 40000)
+      yticklabels <- as.character(yticks)
+      yticks <- log10(yticks)
+    }
+  }
+
   if (is.null(color_palette)) {
     N <- length(unique(counts_per_sample_df[[perturbation_col]]))
     color_palette <- get_n_colors(N)
   }
 
-  if (is.null(yticks)) {
-    yticks <- c(100, 500, 1000, 2500, 5000, 10000, 20000, 40000)
-  }
-
   g <- counts_per_sample_df %>%
     ggplot() +
     geom_boxplot(aes(x = reorder(!!sym(perturbation_col), !!sym(count_per_sample_col)),
-                     y = log10(!!sym(count_per_sample_col)),
+                     y = !!sym(count_per_sample_col),
+                     # y = log10(!!sym(count_per_sample_col)),
                      fill = !!sym(perturbation_col)),
                  color = "black",
                  outlier.stroke = 0.1,
                  outlier.size = 0.1,
                  size = 0.2) +
     scale_fill_manual(values = color_palette, name = stringr::str_to_title(perturbation_col)) +
-    scale_y_continuous(breaks = log10(yticks),
-                       labels = as.character(yticks)) +
-    geom_hline(yintercept = log10(min_cells_per_sample),
+    scale_y_continuous(breaks = yticks,
+                       labels = yticklabels) +
+    geom_hline(yintercept = cutoff,
                color = "red",
                linewidth = 0.5)
+
+  if (zscore) {
+    g <- g +
+      geom_hline(yintercept = -cutoff,
+                 color = "red",
+                 linewidth = 0.5)
+  }
 
   if (!is.null(facet_by)) {
     g <- g +
@@ -2124,7 +2159,7 @@ plot_cells_per_sample_and_perturbation <- function(cds,
       ggtitle(stringr::str_to_title(facet_by))
   }
   g <- g +
-    ylab("Cells per Sample") +
+    ylab(ylabel) +
     monocle_theme_opts() +
     theme(axis.title.x = element_blank(),
           axis.text.x = element_blank(),
