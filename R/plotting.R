@@ -2079,7 +2079,7 @@ plot_cells_per_sample_and_perturbation <- function(cds,
                                                    perturbation_col = "perturbation",
                                                    count_per_sample_col = "count_per_embryo",
                                                    zscore = FALSE,
-                                                   cutoff = 1000,
+                                                   cutoff = NULL,
                                                    facet_by = NULL,
                                                    color_palette = NULL,
                                                    yticks = NULL) {
@@ -2089,7 +2089,7 @@ plot_cells_per_sample_and_perturbation <- function(cds,
                           msg = "facet_by is not in the colData of the CDS.")
   assertthat::assert_that(is.logical(zscore),
                           msg = "zscore must be a logical value.")
-  assertthat::assert_that(is.numeric(cutoff) && cutoff > 0,
+  assertthat::assert_that(is.null(cutoff) || is.numeric(cutoff) && cutoff > 0,
                           msg = "cutoff must be a positive numeric value.")
   assertthat::assert_that(is.null(yticks) || is.numeric(yticks),
                           msg = "yticks are not numeric.")
@@ -2115,8 +2115,10 @@ plot_cells_per_sample_and_perturbation <- function(cds,
       mutate(
         !!sym(count_per_sample_col) := log10(!!sym(count_per_sample_col))
       )
-    cutoff <- log10(cutoff)
     ylabel <- "Cells per Sample"
+    if (is.null(cutoff) == FALSE) {
+      cutoff <- log10(cutoff)
+    }
     if (is.null(yticks)) {
       yticks <- c(100, 500, 1000, 2500, 5000, 10000, 20000, 40000)
       yticklabels <- as.character(yticks)
@@ -2141,16 +2143,19 @@ plot_cells_per_sample_and_perturbation <- function(cds,
                  size = 0.2) +
     scale_fill_manual(values = color_palette, name = stringr::str_to_title(perturbation_col)) +
     scale_y_continuous(breaks = yticks,
-                       labels = yticklabels) +
-    geom_hline(yintercept = cutoff,
-               color = "red",
-               linewidth = 0.5)
+                       labels = yticklabels)
 
-  if (zscore) {
+  if (is.null(cutoff) == FALSE) {
     g <- g +
-      geom_hline(yintercept = -cutoff,
+      geom_hline(yintercept = cutoff,
                  color = "red",
                  linewidth = 0.5)
+    if (zscore) {
+      g <- g +
+        geom_hline(yintercept = -cutoff,
+                   color = "red",
+                   linewidth = 0.5)
+    }
   }
 
   if (!is.null(facet_by)) {

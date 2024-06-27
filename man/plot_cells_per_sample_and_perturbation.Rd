@@ -9,7 +9,7 @@ plot_cells_per_sample_and_perturbation(
   perturbation_col = "perturbation",
   count_per_sample_col = "count_per_embryo",
   zscore = FALSE,
-  cutoff = 1000,
+  cutoff = NULL,
   facet_by = NULL,
   color_palette = NULL,
   yticks = NULL
