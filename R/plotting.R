@@ -1923,15 +1923,30 @@ plot_genes_by_group <- function(cds,
   g
 }
 
-#' Plot a histogram of the number of UMIs per cell with a vertical line showing the cutoff for the minimum number of UMIs.
+#' Plot a histogram of the number of UMIs per cell with an optional vertical line showing the cutoff for outliers.
+#'
+#' @description If \code{max_zscore} is specified, then there is both a high and a low cutoff, both of which are determined by Z-scoring the log-transformed UMI counts. Otherwise if \code{min_rna_umi} is specified, then there is only a low cutoff. If neither is specified, then no cutoff is shown.
+#'
 #' @param cds A cell_data_set for plotting.
-#' @param min_rna_umi Cutoff for the minimum number of UMIs per cell.
+#' @param max_zscore Cutoff for the maximum Z-score of the log-transformed UMIs per cell. If NULL, then \code{min_rna_umi} must be specified.
+#' @param min_rna_umi Cutoff for the minimum number of UMIs per cell. Ignored if \code{max_zscore} is specified.
+#'
 #' @returns A ggplot2 object.
 #' @import ggplot2
 #' @export
 plot_umi_per_cell <- function(cds,
-                              min_rna_umi = 100) {
+                              max_zscore = NULL,
+                              min_rna_umi = NULL) {
   assertthat::assert_that(methods::is(cds, "cell_data_set"))
+  assertthat::assert_that(
+    is.null(max_zscore) || is.numeric(max_zscore) && max_zscore > 0,
+    msg = "max_zscore must be a positive number."
+  )
+  assertthat::assert_that(
+    is.null(min_rna_umi) || is.numeric(min_rna_umi) && min_rna_umi > 0,
+    msg = "min_rna_umi must be a positive number."
+  )
+
   tryCatch(
     assertthat::assert_that("log.n.umi" %in% colnames(colData(cds))),
     error = function(e) {
@@ -1953,11 +1968,24 @@ plot_umi_per_cell <- function(cds,
     scale_x_continuous(name = "RNA UMIs",
                        breaks = c(0, 1, 2, 3, 4),
                        labels = as.character(c(0, 10, 100, 1000, 10000))) +
-    ylab("Number of Cells") +
-    geom_vline(xintercept = log10(min_rna_umi),
-               color = "red",
-               linewidth = 0.5) +
-    monocle_theme_opts()
+    ylab("Number of Cells")
+
+  if (is.null(max_zscore) == FALSE) {
+    mean_umi <- mean(colData(cds)$log.n.umi)
+    sd_umi <- sd(colData(cds)$log.n.umi)
+    g <- g + geom_vline(xintercept = mean_umi - max_zscore * sd_umi,
+                        color = "red",
+                        linewidth = 0.5) +
+      geom_vline(xintercept = mean_umi + max_zscore * sd_umi,
+                 color = "red",
+                 linewidth = 0.5)
+  } else if (is.null(min_rna_umi) == FALSE) {
+    g <- g + geom_vline(xintercept = log10(min_rna_umi),
+                        color = "red",
+                        linewidth = 0.5)
+  }
+
+  g <- g + monocle_theme_opts()
 
   return(g)
 }

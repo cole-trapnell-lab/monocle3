@@ -2,18 +2,20 @@
 % Please edit documentation in R/plotting.R
 \name{plot_umi_per_cell}
 \alias{plot_umi_per_cell}
-\title{Plot a histogram of the number of UMIs per cell with a vertical line showing the cutoff for the minimum number of UMIs.}
+\title{Plot a histogram of the number of UMIs per cell with an optional vertical line showing the cutoff for outliers.}
 \usage{
-plot_umi_per_cell(cds, min_rna_umi = 100)
+plot_umi_per_cell(cds, max_zscore = NULL, min_rna_umi = NULL)
 }
 \arguments{
 \item{cds}{A cell_data_set for plotting.}
 
-\item{min_rna_umi}{Cutoff for the minimum number of UMIs per cell.}
+\item{max_zscore}{Cutoff for the maximum Z-score of the log-transformed UMIs per cell. If NULL, then \code{min_rna_umi} must be specified.}
+
+\item{min_rna_umi}{Cutoff for the minimum number of UMIs per cell. Ignored if \code{max_zscore} is specified.}
 }
 \value{
 A ggplot2 object.
 }
 \description{
-Plot a histogram of the number of UMIs per cell with a vertical line showing the cutoff for the minimum number of UMIs.
+If \code{max_zscore} is specified, then there is both a high and a low cutoff, both of which are determined by Z-scoring the log-transformed UMI counts. Otherwise if \code{min_rna_umi} is specified, then there is only a low cutoff. If neither is specified, then no cutoff is shown.
 }
