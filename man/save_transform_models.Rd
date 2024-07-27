@@ -67,6 +67,20 @@ information see the help for transfer_cell_labels().
 save_transform_models() saves the models to a directory
 given by the directory_path parameter.
 }
+\section{Notes}{
+
+\itemize{
+\item{The R tar archive function used by Monocle3 may have
+a limited output file size of 8 GB. If you encounter
+this problem, you can set the environment variable
+"tar" to a tar executable that has no size limit,
+for example, gnu tar. You can do this in the
+$HOME/.monoclerc file by adding a line consisting of
+Sys.setenv('tar' = paste(Sys.getenv("TAR"), "-H", "gnu")).
+See the R 'tar' documentation for more information.}
+}
+}
+
 \examples{
   \dontrun{
     cds <- load_a549()
