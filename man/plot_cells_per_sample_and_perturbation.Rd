@@ -8,7 +8,8 @@ plot_cells_per_sample_and_perturbation(
   cds,
   perturbation_col = "perturbation",
   count_per_sample_col = "count_per_embryo",
-  min_cells_per_sample = 1000,
+  zscore = FALSE,
+  cutoff = NULL,
   facet_by = NULL,
   color_palette = NULL,
   yticks = NULL
@@ -21,7 +22,9 @@ plot_cells_per_sample_and_perturbation(
 
 \item{count_per_sample_col}{Which column of the colData to put in the boxplots.}
 
-\item{min_cells_per_sample}{The minimum number of cells per sample. Drawn on as a horizontal line.}
+\item{zscore}{logical value indicating whether to z-score counts before plotting. If \code{TRUE}, then the values in \code{count_per_sample_col} are grouped by the \code{perturbation_col} and z-scored.}
+
+\item{cutoff}{The minimum number of cells per sample, drawn as a horizontal line. If \code{zscore == TRUE} then this corresponds to the absolute value of the z-score cutoff, and two horizontal lines are drawn.}
 
 \item{facet_by}{Facet the plot by this column of the colData. Each unique value is its own facet.}
 

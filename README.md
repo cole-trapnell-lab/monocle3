@@ -23,7 +23,7 @@ cds <- load_mm_data(mat_path=<path_to_mtx_file>,
 You must install BPCells from Github before you can install this Monocle3 version, and BPCells requires an HDF5 object library for installation. After installing the HDF5 library, you install BPCells using the command
 
 ```
-remotes::install_github("bnprks/BPCells")
+remotes::install_github("bnprks/BPCells/r")
 ```
 
 The [BPCells Github site](https://github.com/bnprks/BPCells)  has additional information.

@@ -1923,15 +1923,30 @@ plot_genes_by_group <- function(cds,
   g
 }
 
-#' Plot a histogram of the number of UMIs per cell with a vertical line showing the cutoff for the minimum number of UMIs.
+#' Plot a histogram of the number of UMIs per cell with an optional vertical line showing the cutoff for outliers.
+#'
+#' @description If \code{max_zscore} is specified, then there is both a high and a low cutoff, both of which are determined by Z-scoring the log-transformed UMI counts. Otherwise if \code{min_rna_umi} is specified, then there is only a low cutoff. If neither is specified, then no cutoff is shown.
+#'
 #' @param cds A cell_data_set for plotting.
-#' @param min_rna_umi Cutoff for the minimum number of UMIs per cell.
+#' @param max_zscore Cutoff for the maximum Z-score of the log-transformed UMIs per cell. If NULL, then \code{min_rna_umi} must be specified.
+#' @param min_rna_umi Cutoff for the minimum number of UMIs per cell. Ignored if \code{max_zscore} is specified.
+#'
 #' @returns A ggplot2 object.
 #' @import ggplot2
 #' @export
 plot_umi_per_cell <- function(cds,
-                              min_rna_umi = 100) {
+                              max_zscore = NULL,
+                              min_rna_umi = NULL) {
   assertthat::assert_that(methods::is(cds, "cell_data_set"))
+  assertthat::assert_that(
+    is.null(max_zscore) || is.numeric(max_zscore) && max_zscore > 0,
+    msg = "max_zscore must be a positive number."
+  )
+  assertthat::assert_that(
+    is.null(min_rna_umi) || is.numeric(min_rna_umi) && min_rna_umi > 0,
+    msg = "min_rna_umi must be a positive number."
+  )
+
   tryCatch(
     assertthat::assert_that("log.n.umi" %in% colnames(colData(cds))),
     error = function(e) {
@@ -1953,11 +1968,24 @@ plot_umi_per_cell <- function(cds,
     scale_x_continuous(name = "RNA UMIs",
                        breaks = c(0, 1, 2, 3, 4),
                        labels = as.character(c(0, 10, 100, 1000, 10000))) +
-    ylab("Number of Cells") +
-    geom_vline(xintercept = log10(min_rna_umi),
-               color = "red",
-               linewidth = 0.5) +
-    monocle_theme_opts()
+    ylab("Number of Cells")
+
+  if (is.null(max_zscore) == FALSE) {
+    mean_umi <- mean(colData(cds)$log.n.umi)
+    sd_umi <- sd(colData(cds)$log.n.umi)
+    g <- g + geom_vline(xintercept = mean_umi - max_zscore * sd_umi,
+                        color = "red",
+                        linewidth = 0.5) +
+      geom_vline(xintercept = mean_umi + max_zscore * sd_umi,
+                 color = "red",
+                 linewidth = 0.5)
+  } else if (is.null(min_rna_umi) == FALSE) {
+    g <- g + geom_vline(xintercept = log10(min_rna_umi),
+                        color = "red",
+                        linewidth = 0.5)
+  }
+
+  g <- g + monocle_theme_opts()
 
   return(g)
 }
@@ -2067,7 +2095,8 @@ plot_umi_per_cell_and_perturbation <- function(cds,
 #' @param cds A cell_data_set for plotting.
 #' @param perturbation_col How to group the cells for the plot. Must be a column of the colData.
 #' @param count_per_sample_col Which column of the colData to put in the boxplots.
-#' @param min_cells_per_sample The minimum number of cells per sample. Drawn on as a horizontal line.
+#' @param zscore logical value indicating whether to z-score counts before plotting. If \code{TRUE}, then the values in \code{count_per_sample_col} are grouped by the \code{perturbation_col} and z-scored.
+#' @param cutoff The minimum number of cells per sample, drawn as a horizontal line. If \code{zscore == TRUE} then this corresponds to the absolute value of the z-score cutoff, and two horizontal lines are drawn.
 #' @param facet_by Facet the plot by this column of the colData. Each unique value is its own facet.
 #' @param color_palette List of colors to color perturbation groups. Default is NULL. When NULL, use a default set.
 #' @param yticks List of numeric values to put on the y-axis ticks.
@@ -2077,7 +2106,8 @@ plot_umi_per_cell_and_perturbation <- function(cds,
 plot_cells_per_sample_and_perturbation <- function(cds,
                                                    perturbation_col = "perturbation",
                                                    count_per_sample_col = "count_per_embryo",
-                                                   min_cells_per_sample = 1000,
+                                                   zscore = FALSE,
+                                                   cutoff = NULL,
                                                    facet_by = NULL,
                                                    color_palette = NULL,
                                                    yticks = NULL) {
@@ -2085,6 +2115,10 @@ plot_cells_per_sample_and_perturbation <- function(cds,
   assertthat::assert_that(all(c(perturbation_col, count_per_sample_col) %in% colnames(colData(cds))))
   assertthat::assert_that(is.null(facet_by) || (facet_by %in% colnames(colData(cds))),
                           msg = "facet_by is not in the colData of the CDS.")
+  assertthat::assert_that(is.logical(zscore),
+                          msg = "zscore must be a logical value.")
+  assertthat::assert_that(is.null(cutoff) || is.numeric(cutoff) && cutoff > 0,
+                          msg = "cutoff must be a positive numeric value.")
   assertthat::assert_that(is.null(yticks) || is.numeric(yticks),
                           msg = "yticks are not numeric.")
 
@@ -2093,30 +2127,64 @@ plot_cells_per_sample_and_perturbation <- function(cds,
     dplyr::select(count_per_sample_col, perturbation_col, facet_by) %>%
     dplyr::filter(!is.na(perturbation_col))
 
+  if (zscore) {
+    counts_per_sample_df <- counts_per_sample_df %>%
+      group_by(!!sym(perturbation_col)) %>%
+      mutate(
+        !!sym(count_per_sample_col) := as.vector(scale(!!sym(count_per_sample_col)))
+      )
+    ylabel <- "Z-scored Cells per Sample"
+    if (is.null(yticks)) {
+      yticks <- seq(-3, 3)
+      yticklabels <- as.character(yticks)
+    }
+  } else {
+    counts_per_sample_df <- counts_per_sample_df %>%
+      mutate(
+        !!sym(count_per_sample_col) := log10(!!sym(count_per_sample_col))
+      )
+    ylabel <- "Cells per Sample"
+    if (is.null(cutoff) == FALSE) {
+      cutoff <- log10(cutoff)
+    }
+    if (is.null(yticks)) {
+      yticks <- c(100, 500, 1000, 2500, 5000, 10000, 20000, 40000)
+      yticklabels <- as.character(yticks)
+      yticks <- log10(yticks)
+    }
+  }
+
   if (is.null(color_palette)) {
     N <- length(unique(counts_per_sample_df[[perturbation_col]]))
     color_palette <- get_n_colors(N)
   }
 
-  if (is.null(yticks)) {
-    yticks <- c(100, 500, 1000, 2500, 5000, 10000, 20000, 40000)
-  }
-
   g <- counts_per_sample_df %>%
     ggplot() +
     geom_boxplot(aes(x = reorder(!!sym(perturbation_col), !!sym(count_per_sample_col)),
-                     y = log10(!!sym(count_per_sample_col)),
+                     y = !!sym(count_per_sample_col),
+                     # y = log10(!!sym(count_per_sample_col)),
                      fill = !!sym(perturbation_col)),
                  color = "black",
                  outlier.stroke = 0.1,
                  outlier.size = 0.1,
                  size = 0.2) +
     scale_fill_manual(values = color_palette, name = stringr::str_to_title(perturbation_col)) +
-    scale_y_continuous(breaks = log10(yticks),
-                       labels = as.character(yticks)) +
-    geom_hline(yintercept = log10(min_cells_per_sample),
-               color = "red",
-               linewidth = 0.5)
+    scale_y_continuous(breaks = yticks,
+                       labels = yticklabels)
+
+  if (is.null(cutoff) == FALSE) {
+    g <- g +
+      geom_hline(yintercept = cutoff,
+                 color = "red",
+                 linewidth = 0.5)
+    if (zscore) {
+      g <- g +
+        geom_hline(yintercept = -cutoff,
+                   color = "red",
+                   linewidth = 0.5)
+    }
+  }
 
   if (!is.null(facet_by)) {
     g <- g +
@@ -2124,7 +2192,7 @@ plot_cells_per_sample_and_perturbation <- function(cds,
       ggtitle(stringr::str_to_title(facet_by))
   }
   g <- g +
-    ylab("Cells per Sample") +
+    ylab(ylabel) +
     monocle_theme_opts() +
     theme(axis.title.x = element_blank(),
           axis.text.x = element_blank(),

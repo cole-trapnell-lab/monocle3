@@ -133,6 +133,14 @@ save_monocle_objects() saves these Annoy indices.}
 \item{The save_monocle_objects() output directory is not
 removed after it is archived by
 save_monocle_objects().}
+\item{The R tar archive function used by Monocle3 may have
+a limited output file size of 8 GB. If you encounter
+this problem, you can set the environment variable
+"tar" to a tar executable that has no size limit,
+for example, gnu tar. You can do this in the
+$HOME/.monoclerc file by adding a line consisting of
+Sys.setenv('tar' = paste(Sys.getenv("TAR"), "-H", "gnu")).
+See the R 'tar' documentation for more information.}
 }
 }
 
