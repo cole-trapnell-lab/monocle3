@@ -46,7 +46,7 @@
 #'     expression_matrix <- readRDS(system.file('extdata',
 #'                                              'worm_embryo/worm_embryo_expression_matrix.rds',
 #'                                              package='monocle3'))
-#'    
+#'
 #'     cds <- new_cell_data_set(expression_data=expression_matrix,
 #'                              cell_metadata=cell_metadata,
 #'                              gene_metadata=gene_metadata)
@@ -317,8 +317,7 @@ specificity_matrix <- function(agg_expr_matrix, cores=1){
                               1 - JSdistVec(agg_exprs,
                                             perfect_spec_matrix[,col_idx])
                             })
-                          }, mc.cores=cores,
-                          ignore.interactive = TRUE)
+                          }, mc.cores=cores)
   specificity_mat = do.call(rbind, specificity_mat)
   colnames(specificity_mat) = colnames(agg_expr_matrix)
   row.names(specificity_mat) = row.names(agg_expr_matrix)
@@ -338,8 +337,7 @@ enrichment_matrix <- function(agg_expr_matrix, cores=1){
                                               1 - JSdistVec(agg_exprs, perfect_spec_matrix[,col_idx])
                                             }
                                             )
-                                          }, mc.cores=cores,
-                                          ignore.interactive = TRUE)
+                                          }, mc.cores=cores)
   specificity_mat = do.call(rbind, specificity_mat)
   colnames(specificity_mat) = colnames(agg_expr_matrix)
   row.names(specificity_mat) = row.names(agg_expr_matrix)
@@ -360,7 +358,7 @@ test_marker_for_cell_group = function(gene_id, cell_group, cell_group_df, cds,
     # > bpcds <- cds
     # > counts(bpcds) <- BPCells::write_matrix_memory(counts(cds))
     # > f_e <- as.numeric(counts(bpcds)[1,])
-    # Error in as.numeric(counts(bpcds)[1, ]) : 
+    # Error in as.numeric(counts(bpcds)[1, ]) :
     #   cannot coerce type 'S4' to vector of type 'double'
     # I am not pursuing it now because it's a subset and may
     # not exceed available memory. bge
