@@ -504,7 +504,7 @@ aggregate_gene_expression <- function(cds,
     agg_mat_colnames = colnames(agg_mat)
     agg_mat = do.call(rbind, agg_gene_groups)
     row.names(agg_mat) = gene_groups
-    agg_mat = agg_mat[is.na(agg_gene_groups) == FALSE,]
+    agg_mat = agg_mat[is.na(agg_gene_groups) == FALSE, , drop=FALSE]
     colnames(agg_mat) = agg_mat_colnames
   }
 
