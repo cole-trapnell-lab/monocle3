@@ -1001,8 +1001,10 @@ set_cds_row_order_matrix <- function(cds) {
                                     format(Sys.Date(), format='%Y%m%d'), '.'),
                      tmpdir=matrix_path,
                      fileext='_r.tmp')[[1]]
-  tmpdir <- tempfile('monocle.transpose_bpc.', '.', '.tmp')
 
+  tmpdir <- tempfile(pattern='monocle.transpose_bpc.',
+                     tmpdir=matrix_path,
+                     '.tmp')[[1]]
   # Make 'normalized paths
   outdir <- normalizePath(outdir, mustWork=FALSE)
   tmpdir <- normalizePath(tmpdir, mustWork=FALSE)
