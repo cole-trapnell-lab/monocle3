@@ -120,7 +120,7 @@ Suggests:
     spelling,
     testthat (>= 2.1.0)
 Remotes:
-	github::bnprks/BPCells
+	github::bnprks/BPCells/r
 VignetteBuilder: knitr
 Language: en-US
 NeedsCompilation: yes
