@@ -479,33 +479,39 @@ aggregate_gene_expression <- function(cds,
     if (any(short_name_mask)) {
       geneids <- as.character(gene_group_df[[1]])
       geneids[short_name_mask] <- row.names(fData(cds))[match(
-                  geneids[short_name_mask], fData(cds)$gene_short_name)]
+        geneids[short_name_mask], fData(cds)$gene_short_name
+      )]
       gene_group_df[[1]] <- geneids
     }
+    
+    agg_mat <- agg_mat[gene_group_df[, 1], , drop = FALSE]
+    agg_mat <- my.aggregate.Matrix(agg_mat,
+                                   as.factor(gene_group_df[, 2]),
+                                   fun = gene_agg_fun)
 
     # gene_group_df = gene_group_df[row.names(fData(cds)),]
 
     # FIXME: this should allow genes to be part of multiple groups. group_by
     # over the second column with a call to colSum should do it.
-    gene_groups = unique(gene_group_df[,2])
-    agg_gene_groups = lapply(gene_groups, function(gene_group){
-      genes_in_group = unique(gene_group_df[gene_group_df[,2] == gene_group,1])
-      gene_expr_mat = agg_mat[genes_in_group,]
-      if (length(dn <- dim(gene_expr_mat)) < 2L)
-        return(NA)
-      if (gene_agg_fun == "mean"){
-        res = Matrix::colMeans(agg_mat[genes_in_group,])
-      }else if (gene_agg_fun == "sum"){
-        res = Matrix::colSums(agg_mat[genes_in_group,])
-      }
-      return(res)
-    })
+    # gene_groups = unique(gene_group_df[,2])
+    # agg_gene_groups = lapply(gene_groups, function(gene_group){
+    #   genes_in_group = unique(gene_group_df[gene_group_df[,2] == gene_group,1])
+    #   gene_expr_mat = agg_mat[genes_in_group,]
+    #   if (length(dn <- dim(gene_expr_mat)) < 2L)
+    #     return(NA)
+    #   if (gene_agg_fun == "mean"){
+    #     res = Matrix::colMeans(agg_mat[genes_in_group,])
+    #   }else if (gene_agg_fun == "sum"){
+    #     res = Matrix::colSums(agg_mat[genes_in_group,])
+    #   }
+    #   return(res)
+    # })
 
-    agg_mat_colnames = colnames(agg_mat)
-    agg_mat = do.call(rbind, agg_gene_groups)
-    row.names(agg_mat) = gene_groups
-    agg_mat = agg_mat[is.na(agg_gene_groups) == FALSE, , drop=FALSE]
-    colnames(agg_mat) = agg_mat_colnames
+    # agg_mat_colnames = colnames(agg_mat)
+    # agg_mat = do.call(rbind, agg_gene_groups)
+    # row.names(agg_mat) = gene_groups
+    # agg_mat = agg_mat[is.na(agg_gene_groups) == FALSE, , drop=FALSE]
+    # colnames(agg_mat) = agg_mat_colnames
   }
 
   if (is.null(cell_group_df) == FALSE){
