@@ -50,7 +50,7 @@ RoxygenNote: 7.3.1
 LinkingTo: 
     Rcpp
 Depends:
-	R (>= 4.0.0),
+    R (>= 4.0.0),
     Biobase, 
     SingleCellExperiment
 Imports:
@@ -120,8 +120,8 @@ Suggests:
     spelling,
     testthat (>= 2.1.0)
 Remotes:
-	github::bnprks/BPCells/r,
-	github::cole-trapnell-lab/speedglm
+    github::bnprks/BPCells/r,
+    github::cole-trapnell-lab/speedglm
 VignetteBuilder: knitr
 Language: en-US
 NeedsCompilation: yes
