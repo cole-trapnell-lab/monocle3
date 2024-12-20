@@ -484,11 +484,12 @@ aggregate_gene_expression <- function(cds,
       gene_group_df[[1]] <- geneids
     }
     
+    # browser()
     unique_gene_ids <- unique(gene_group_df[, 1])
     agg_mat <- agg_mat[unique_gene_ids, , drop = FALSE]
     gene_groups <- unique(gene_group_df[, 2])
     X <- Matrix::sparseMatrix(
-      i = gene_group_df[, 2],
+      i = match(gene_group_df[, 2], gene_groups),
       j = match(gene_group_df[, 1], unique_gene_ids),
       x = 1,
       dims = c(length(gene_groups), length(unique_gene_ids)),
