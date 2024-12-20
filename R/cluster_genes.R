@@ -484,7 +484,6 @@ aggregate_gene_expression <- function(cds,
       gene_group_df[[1]] <- geneids
     }
     
-    # browser()
     unique_gene_ids <- unique(gene_group_df[, 1])
     agg_mat <- agg_mat[unique_gene_ids, , drop = FALSE]
     gene_groups <- unique(gene_group_df[, 2])
