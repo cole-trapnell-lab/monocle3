@@ -479,33 +479,25 @@ aggregate_gene_expression <- function(cds,
     if (any(short_name_mask)) {
       geneids <- as.character(gene_group_df[[1]])
       geneids[short_name_mask] <- row.names(fData(cds))[match(
-                  geneids[short_name_mask], fData(cds)$gene_short_name)]
+        geneids[short_name_mask], fData(cds)$gene_short_name
+      )]
       gene_group_df[[1]] <- geneids
     }
-
-    # gene_group_df = gene_group_df[row.names(fData(cds)),]
-
-    # FIXME: this should allow genes to be part of multiple groups. group_by
-    # over the second column with a call to colSum should do it.
-    gene_groups = unique(gene_group_df[,2])
-    agg_gene_groups = lapply(gene_groups, function(gene_group){
-      genes_in_group = unique(gene_group_df[gene_group_df[,2] == gene_group,1])
-      gene_expr_mat = agg_mat[genes_in_group,]
-      if (length(dn <- dim(gene_expr_mat)) < 2L)
-        return(NA)
-      if (gene_agg_fun == "mean"){
-        res = Matrix::colMeans(agg_mat[genes_in_group,])
-      }else if (gene_agg_fun == "sum"){
-        res = Matrix::colSums(agg_mat[genes_in_group,])
-      }
-      return(res)
-    })
-
-    agg_mat_colnames = colnames(agg_mat)
-    agg_mat = do.call(rbind, agg_gene_groups)
-    row.names(agg_mat) = gene_groups
-    agg_mat = agg_mat[is.na(agg_gene_groups) == FALSE, , drop=FALSE]
-    colnames(agg_mat) = agg_mat_colnames
+    
+    unique_gene_ids <- unique(gene_group_df[, 1])
+    agg_mat <- agg_mat[unique_gene_ids, , drop = FALSE]
+    gene_groups <- unique(gene_group_df[, 2])
+    X <- Matrix::sparseMatrix(
+      i = match(gene_group_df[, 2], gene_groups),
+      j = match(gene_group_df[, 1], unique_gene_ids),
+      x = 1,
+      dims = c(length(gene_groups), length(unique_gene_ids)),
+    )
+    agg_mat <- X %*% agg_mat
+    if (gene_agg_fun == "mean") {
+      agg_mat <- agg_mat / Matrix::rowSums(X)
+    }
+    row.names(agg_mat) <- gene_groups
   }
 
   if (is.null(cell_group_df) == FALSE){
