@@ -99,10 +99,14 @@ get_global_variable <- function(variable_name=NULL) {
   set_global_variable('transform_models_version', 1)
   set_global_variable('monocle3_annoy_index_version', 2)
   set_global_variable('monocle3_hnsw_index_version', 1)
+
   set_global_variable('monocle3_timer_t0', 0)
   set_global_variable('monocle3_timer_msg', "")
   set_global_variable('monocle_gc_matrix_path', list())
   set_global_variable('bpcells_matrix_pair_check', TRUE)
+
+  # Check reduce_dimension preprocess_method value.
+  set_global_variable('reduce_dim_preprocess_method_check', TRUE)
 
   # Default nn_control list for functions that do not need
   # an index, which is all but the label transfer functions.

@@ -95,6 +95,8 @@ reduce_dimension <- function(cds,
 
   extra_arguments <- list(...)
 
+  reduce_dim_preprocess_method_check = get_global_variable('reduce_dim_preprocess_method_check')
+
   assertthat::assert_that(
     tryCatch(expr = ifelse(match.arg(reduction_method) == "",TRUE, TRUE),
              error = function(e) FALSE),
@@ -104,19 +106,21 @@ reduce_dimension <- function(cds,
   assertthat::assert_that(is.logical(build_nn_index),
                           msg = paste("build_nn_index must be either TRUE or FALSE"))
 
-  if (is.null(preprocess_method)){
-    if ("Aligned" %in% names(SingleCellExperiment::reducedDims(cds))){
-      preprocess_method = "Aligned"
-      message("No preprocess_method specified, and aligned coordinates ",
-              "have been computed previously. Using preprocess_method = 'Aligned'")
+  if(reduce_dim_preprocess_method_check) {
+    if (is.null(preprocess_method)){
+      if ("Aligned" %in% names(SingleCellExperiment::reducedDims(cds))){
+        preprocess_method = "Aligned"
+        message("No preprocess_method specified, and aligned coordinates ",
+                "have been computed previously. Using preprocess_method = 'Aligned'")
+      }else{
+        preprocess_method = "PCA"
+        message("No preprocess_method specified, using preprocess_method = 'PCA'")
+      }
     }else{
-      preprocess_method = "PCA"
-      message("No preprocess_method specified, using preprocess_method = 'PCA'")
+      assertthat::assert_that(
+        preprocess_method %in% c("PCA", "LSI", "Aligned"),
+        msg = "preprocess_method must be one of 'PCA' or 'LSI'")
     }
-  }else{
-    assertthat::assert_that(
-      preprocess_method %in% c("PCA", "LSI", "Aligned"),
-      msg = "preprocess_method must be one of 'PCA' or 'LSI'")
   }
 
   if(build_nn_index) {
@@ -143,42 +147,45 @@ reduce_dimension <- function(cds,
                                       "Please run preprocess_cds with",
                                       "method =", preprocess_method,
                                       "before running reduce_dimension."))
-  if(reduction_method == "PCA") {
-    assertthat::assert_that(preprocess_method == "PCA",
-                            msg = paste("preprocess_method must be 'PCA' when",
-                                        "reduction_method = 'PCA'"))
-    assertthat::assert_that(!is.null(SingleCellExperiment::reducedDims(cds)[["PCA"]]),
-                            msg = paste("When reduction_method = 'PCA', the",
-                                        "cds must have been preprocessed for",
-                                        "PCA. Please run preprocess_cds with",
-                                        "method = 'PCA' before running",
-                                        "reduce_dimension with",
-                                        "reduction_method = 'PCA'."))
-  }
 
-  if(reduction_method == "LSI") {
-    assertthat::assert_that(preprocess_method == "LSI",
-                            msg = paste("preprocess_method must be 'LSI' when",
-                                        "reduction_method = 'LSI'"))
-    assertthat::assert_that(!is.null(SingleCellExperiment::reducedDims(cds)[["LSI"]]),
-                            msg = paste("When reduction_method = 'LSI', the",
-                                        "cds must have been preprocessed for",
-                                        "LSI. Please run preprocess_cds with",
-                                        "method = 'LSI' before running",
-                                        "reduce_dimension with",
-                                        "reduction_method = 'LSI'."))
-  }
-
-  if(reduction_method == "Aligned") {
-    assertthat::assert_that(preprocess_method == "Aligned",
-                            msg = paste("preprocess_method must be 'Aligned' when",
-                                        "reduction_method = 'Aligned'"))
-    assertthat::assert_that(!is.null(SingleCellExperiment::reducedDims(cds)[["Aligned"]]),
-                            msg = paste("When reduction_method = 'Aligned', the",
-                                        "cds must have been aligned.",
-                                        "Please run align_cds before running",
-                                        "reduce_dimension with",
-                                        "reduction_method = 'Aligned'."))
+  if(reduce_dim_preprocess_method_check) {
+    if(reduction_method == "PCA") {
+      assertthat::assert_that(preprocess_method == "PCA",
+                              msg = paste("preprocess_method must be 'PCA' when",
+                                          "reduction_method = 'PCA'"))
+      assertthat::assert_that(!is.null(SingleCellExperiment::reducedDims(cds)[["PCA"]]),
+                              msg = paste("When reduction_method = 'PCA', the",
+                                          "cds must have been preprocessed for",
+                                          "PCA. Please run preprocess_cds with",
+                                          "method = 'PCA' before running",
+                                          "reduce_dimension with",
+                                          "reduction_method = 'PCA'."))
+    }
+  
+    if(reduction_method == "LSI") {
+      assertthat::assert_that(preprocess_method == "LSI",
+                              msg = paste("preprocess_method must be 'LSI' when",
+                                          "reduction_method = 'LSI'"))
+      assertthat::assert_that(!is.null(SingleCellExperiment::reducedDims(cds)[["LSI"]]),
+                              msg = paste("When reduction_method = 'LSI', the",
+                                          "cds must have been preprocessed for",
+                                          "LSI. Please run preprocess_cds with",
+                                          "method = 'LSI' before running",
+                                          "reduce_dimension with",
+                                          "reduction_method = 'LSI'."))
+    }
+  
+    if(reduction_method == "Aligned") {
+      assertthat::assert_that(preprocess_method == "Aligned",
+                              msg = paste("preprocess_method must be 'Aligned' when",
+                                          "reduction_method = 'Aligned'"))
+      assertthat::assert_that(!is.null(SingleCellExperiment::reducedDims(cds)[["Aligned"]]),
+                              msg = paste("When reduction_method = 'Aligned', the",
+                                          "cds must have been aligned.",
+                                          "Please run align_cds before running",
+                                          "reduce_dimension with",
+                                          "reduction_method = 'Aligned'."))
+    }
   }
 
   #ensure results from RNG sensitive algorithms are the same on all calls
