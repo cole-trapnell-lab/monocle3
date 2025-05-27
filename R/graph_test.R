@@ -226,6 +226,7 @@ my.moran.test <- function (x, listw, wc, alternative = "greater",
   xname <- deparse(substitute(x))
   wname <- deparse(substitute(listw))
   NAOK <- deparse(substitute(na.action)) == "na.pass"
+  NAOK <- NAOK[1]
   x <- na.action(x)
   na.act <- attr(x, "na.action")
   if (!is.null(na.act)) {
