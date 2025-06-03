@@ -1,0 +1,83 @@
+ness> grep 'exprs(' *.R
+x combine_cds.only.R:    exp <- exprs(cds_list[[i]])    # bge_exp
+x generics.R:              reduction_method]]$pseudotime[colnames(exprs(x))]
+x generics.R:              reduction_method]]$clusters[colnames(exprs(x))]
+x generics.R:              reduction_method]]$partitions[colnames(exprs(x))]
+x generics.R:#'    exprs(cds)
+x graph_test.R:  exprs_mat <- exprs(cds)
+x io.R:  if(is(exprs(cds), 'CsparseMatrix')) {
+x io.R:    colData(cds)$n.umi <- Matrix::colSums(exprs(cds))
+x io.R:  if(is(exprs(cds), 'IterableMatrix')) {
+x io.R:    colData(cds)$n.umi <- BPCells::colSums(exprs(cds))
+x io.R:  colData(cds)$n.umi <- Matrix::colSums(exprs(cds))
+x utils.R:                  "cds <- cds[,Matrix::colSums(exprs(cds)) != 0] and then ",
+x utils.R:      exp <- set_matrix_class(mat=exprs(cds_list[[i]]), matrix_control=matrix_control_res)
+x utils.R:      exp <- exprs(cds_list[[i]])
+
+
+ness> grep 'counts(' *.R
+x cluster_genes.R:  agg_mat <- normalized_counts(cds, norm_method=norm_method,
+x find_markers.R:  #                            num_expressing=Matrix::rowSums(SingleCellExperiment::counts(cds) > 0),
+x find_markers.R:      log(as.numeric(SingleCellExperiment::counts(cds)[gene_id,]) / size_factors(cds) + 0.1)
+x find_markers.R:    #print(sum(SingleCellExperiment::counts(cds)[gene_id,] > 0))
+x generics.R:        if(is(counts(object), 'IterableMatrix')) {
+x graph_test.R:  exprs_mat <- SingleCellExperiment::counts(cds)[, attr(lw, "region.id"), drop=FALSE]      #  check
+x io.R:  matrix_id <- get_unique_id(counts(cds))
+x io.R:  matrix_id <- get_unique_id(counts(cds))
+x io.R:  matrix_id <- get_unique_id(counts(cds))
+x io.R:  matrix_id <- get_unique_id(counts(cds))
+x io.R:  matrix_info <- get_matrix_info(mat=counts(cds))
+x io.R:          mat <- counts(cds)
+x io.R:      counts(cds) <- tryCatch(
+x methods-cell_data_set.R:  names( sf ) <- colnames( SingleCellExperiment::counts(cds) )
+  plotting.R: cds_exprs <- SingleCellExperiment::counts(cds)[row.names(markers_rowData), ,drop=FALSE]    # plot_cells_3d()
+  plotting.R: colnames(markers_exprs) <- colnames(SingleCellExperiment::counts(cds))    # plot_cells_3d()
+  plotting.R: cds_exprs <- SingleCellExperiment::counts(cds)[row.names(markers_rowData), ,drop=FALSE]   # plot_cells
+  plotting.R: colnames(markers_exprs) = colnames(SingleCellExperiment::counts(cds))     # plot_cells
+  plotting.R: cds_exprs <- SingleCellExperiment::counts(cds_subset)  # plot_genes_in_pseudotime()
+  plotting.R: cds_exprs <- SingleCellExperiment::counts(cds_subset) + 1  # plot_genes_violin()
+  plotting.R: cds_exprs <- SingleCellExperiment::counts(cds_subset)      # plot_genes_violin()
+  plotting.R: marker_exprs <- SingleCellExperiment::counts(cds_subset)   # plot_percent_cells_positive()
+  plotting.R: exprs_mat <- t(as.matrix(normalized_counts(cds)[gene_ids, ]))
+x preprocess_cds.R:  #      operations in counts(cds). Commit additional
+x preprocess_cds.R:  matrix_control_res <- set_pca_matrix_control(mat=SingleCellExperiment::counts(cds), matrix_control=matrix_control)
+x preprocess_cds.R:  FM <- set_matrix_class(mat=SingleCellExperiment::counts(cds), matrix_control=matrix_control_res)
+x projection.R:#'                     normalization using range(counts(cds)).}
+x projection.R:    mat_counts <- SingleCellExperiment::counts(cds)
+x projection.R:    if(is(counts(cds), 'dgCMatrix')) {
+x projection.R:    if(is(counts(cds), 'IterableMatrix')) {
+x projection.R:      stop('unrecognized counts matrix class: ', class(counts(cds)))
+x projection.R:    FM <- SingleCellExperiment::counts(cds) 
+x utils.R:  if(any(Matrix::colSums(SingleCellExperiment::counts(cds)) == 0)) {
+x utils.R:  if (is_sparse_matrix(SingleCellExperiment::counts(cds))){
+x utils.R:    size_factors(cds) <- estimate_sf_sparse(SingleCellExperiment::counts(cds),
+x utils.R:  } else if(is(SingleCellExperiment::counts(cds), 'IterableMatrix')) {
+x utils.R:    size_factors(cds) <- estimate_sf_bpcells(SingleCellExperiment::counts(cds),
+x utils.R:    size_factors(cds) <- estimate_sf_dense(SingleCellExperiment::counts(cds),
+x utils.R:#' @return The result of with(colData(cds) apply(counts(cds)), MARGIN, FUN, ...))
+x utils.R:    suppressWarnings(res <- sparse_par_r_apply(cl, SingleCellExperiment::counts(cds), FUN,
+x utils.R:    suppressWarnings(res <- sparse_par_c_apply(cl, SingleCellExperiment::counts(cds), FUN,
+x utils.R:  if (is_sparse_matrix(SingleCellExperiment::counts(cds))){
+x utils.R:    res <- sparse_apply(SingleCellExperiment::counts(cds), MARGIN, FUN, convert_to_dense, ...)
+x utils.R:    res <- pbapply::pbapply(SingleCellExperiment::counts(cds), MARGIN, FUN, ...)
+? utils.R:  mat_bin <- counts(cds) > min_expr  # requires binary conversion
+utils.R:#'     normalized_matrix <- normalized_counts(cds)
+utils.R:  norm_mat = SingleCellExperiment::counts(cds)
+
+expr_models.R: calls mc_es_apply and smart_es_apply which, eventually, operate on the counts matrix -- this appears to work on the example
+
+binarize modifications
+cluster_genes.R:                                      norm_method=c("log", "binary",       # norm_method is passed to normalized_counts()
+find_markers.R:  cluster_binary_exprs = as.matrix(aggregate_gene_expression(cds,
+find_markers.R:                                                             norm_method="binary",  # binary is passed to aggregate_gene_expression()
+find_markers.R:  cluster_marker_score_mat = as.matrix(cluster_binary_exprs * cluster_spec_mat)
+find_markers.R:  cluster_fraction_expressing_table = tibble::rownames_to_column(as.data.frame(cluster_binary_exprs))
+grep: save: Is a directory
+utils.R:#'   "log" (Default), "binary" and "size_only".     # norm_method is passed to normalized_counts
+utils.R:                              norm_method=c("log", "binary", "size_only"),   # normalize_counts
+utils.R:  if (norm_method == "binary"){   # normalize_counts
+utils.R:      stop('normalized_counts: norm_method \'binary\' is unimplemented at this time')   # normalize_counts
+utils.R.20230410:#'   "log" (Default), "binary" and "size_only".
+utils.R.20230410:                              norm_method=c("log", "binary", "size_only"),
+utils.R.20230410:  if (norm_method == "binary"){
+

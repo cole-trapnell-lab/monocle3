@@ -148,7 +148,7 @@ plot_cells_3d <- function(cds,
       as.data.frame(subset(rowData(cds), gene_short_name %in% markers |
                              row.names(rowData(cds)) %in% markers))
     if (nrow(markers_rowData) >= 1) {
-      cds_exprs <- SingleCellExperiment::counts(cds)[row.names(markers_rowData), ,drop=FALSE]
+      cds_exprs <- SingleCellExperiment::counts(cds)[row.names(markers_rowData), ,drop=FALSE]    # plot_cells_3d() row selection needs help
       cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds))
 
       if ((is.null(dim(genes)) == FALSE) && dim(genes)[[2]] >= 2){
@@ -169,9 +169,15 @@ plot_cells_3d <- function(cds,
         markers_exprs$feature_label <- markers_exprs$feature_id
         #markers_linear <- TRUE
       } else {
-        cds_exprs@x <- round(10000*cds_exprs@x)/10000
-        markers_exprs <- matrix(cds_exprs, nrow=nrow(markers_rowData))
-        colnames(markers_exprs) <- colnames(SingleCellExperiment::counts(cds))
+          cds_exprs <- round(cds_exprs, digits=4)
+        # bge
+        if(!is(cds_exprs, 'IterableMatrix')) {
+          markers_exprs <- matrix(cds_exprs, nrow=nrow(markers_rowData))
+        }
+        else {
+          markers_exprs <- matrix(as(cds_exprs, 'dgCMatrix'), nrow=nrow(markers_rowData))
+        }
+        colnames(markers_exprs) <- colnames(SingleCellExperiment::counts(cds))    # plot_cells_3d()   col_names  OK
         row.names(markers_exprs) <- row.names(markers_rowData)
         markers_exprs <- reshape2::melt(markers_exprs)
         colnames(markers_exprs)[1:2] <- c('feature_id','cell_id')
@@ -582,8 +588,8 @@ plot_cells <- function(cds,
       stop("None of the provided genes were found in the cds")
     }
     if (nrow(markers_rowData) >= 1) {
-      cds_exprs <- SingleCellExperiment::counts(cds)[row.names(markers_rowData), ,drop=FALSE]
-#      assertthat::assert_that(!is.null(size_factors(cds_exprs)))
+      cds_exprs <- SingleCellExperiment::counts(cds)[row.names(markers_rowData), ,drop=FALSE]   # plot_cells    row selection  needs help
+      assertthat::assert_that(!is.null(size_factors(cds)))
       cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds))
 
       if (!is.null(dim(genes)) && dim(genes)[[2]] >= 2){
@@ -591,7 +597,9 @@ plot_cells <- function(cds,
         #row.names(genes) = genes[,1]
         #genes = genes[row.names(cds_exprs),]
 
-        agg_mat = as.matrix(aggregate_gene_expression(cds, genes, norm_method=norm_method, gene_agg_fun="mean", scale_agg_values=FALSE))
+        tmp_matrix <- tryCatch(aggregate_gene_expression(cds, genes, norm_method=norm_method, gene_agg_fun="mean", scale_agg_values=FALSE),
+                        error = function(c) { stop(paste0(trimws(c), '\n* error in plot_cells')) })
+        agg_mat = as.matrix(tmp_matrix)
         markers_exprs = agg_mat
         markers_exprs <- reshape2::melt(markers_exprs)
         colnames(markers_exprs)[1:2] <- c('feature_id','cell_id')
@@ -603,9 +611,15 @@ plot_cells <- function(cds,
         norm_method = "size_only"
         expression_legend_label = "Expression score"
       } else {
-        cds_exprs@x = round(10000*cds_exprs@x)/10000
-        markers_exprs = matrix(cds_exprs, nrow=nrow(markers_rowData))
-        colnames(markers_exprs) = colnames(SingleCellExperiment::counts(cds))
+        cds_exprs = round(cds_exprs, digits=4)
+        # bge
+        if(!is(cds_exprs, 'IterableMatrix')) {
+          markers_exprs = matrix(cds_exprs, nrow=nrow(markers_rowData))   # bge
+        }
+        else {
+          markers_exprs = matrix(as(cds_exprs, 'dgCMatrix'), nrow=nrow(markers_rowData))
+        }
+        colnames(markers_exprs) = colnames(SingleCellExperiment::counts(cds))     # plot_cells  col_names OK
         row.names(markers_exprs) = row.names(markers_rowData)
         markers_exprs <- reshape2::melt(markers_exprs)
         colnames(markers_exprs)[1:2] <- c('feature_id','cell_id')
@@ -1021,9 +1035,9 @@ plot_genes_in_pseudotime <-function(cds_subset,
   Cell <- NA
   cds_subset = cds_subset[,is.finite(colData(cds_subset)$pseudotime)]
 
-  cds_exprs <- SingleCellExperiment::counts(cds_subset)
-  cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds_subset))
-  cds_exprs <- reshape2::melt(round(as.matrix(cds_exprs)))
+  cds_exprs <- SingleCellExperiment::counts(cds_subset)                          #  plot_genes_in_pseudotime()
+  cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds_subset))          #  scale
+  cds_exprs <- reshape2::melt(round(as.matrix(cds_exprs)))                       #  convert to dense
 
   if (is.null(min_expr)) {
     min_expr <- 0
@@ -1146,7 +1160,7 @@ plot_pc_variance_explained <- function(cds) {
 #'
 #' @description Accepts a subset of a cell_data_set and an attribute to group
 #' cells by, and produces a ggplot2 object that plots the level of expression
-#' for each group of cells.
+#' for each group of cells. The median value is plotted as a black dot.
 #'
 #' @param cds_subset Subset cell_data_set to be plotted.
 #' @param group_cells_by NULL of the cell attribute (e.g. the column of
@@ -1165,8 +1179,10 @@ plot_pc_variance_explained <- function(cds) {
 #' @param normalize Logical, whether or not to normalize expression by size
 #'   factor. Default is TRUE.
 #' @param log_scale Logical, whether or not to scale data logarithmically.
-#'   Default is TRUE.
-#' @param pseudocount A pseudo-count added to the gene expression. Default is 0.
+#'   Zero count cells are excluded from the plot and median when log_scale
+#'   is TRUE. Default is TRUE.
+#' @param pseudocount A pseudo-count added to the gene expression. A
+#'   pseudocount value greater than 0 is reset to 1. Default is 0.
 #' @return a ggplot2 plot object
 #' @import ggplot2
 #'
@@ -1181,6 +1197,164 @@ plot_pc_variance_explained <- function(cds) {
 #'
 #' @export
 plot_genes_violin <- function (cds_subset,
+                               group_cells_by = NULL,
+                               min_expr = 0,
+                               nrow = NULL,
+                               ncol = 1,
+                               panel_order = NULL,
+                               label_by_short_name = TRUE,
+                               normalize = TRUE,
+                               log_scale = TRUE,
+                               pseudocount = 0) {
+
+  assertthat::assert_that(methods::is(cds_subset, "cell_data_set"))
+
+  if(!is.null(group_cells_by)) {
+    assertthat::assert_that(group_cells_by %in% names(colData(cds_subset)),
+                            msg = paste("group_cells_by must be a column in",
+                                        "the colData table"))
+  }
+
+  assertthat::assert_that(assertthat::is.number(min_expr))
+
+  if(!is.null(nrow)) {
+    assertthat::assert_that(assertthat::is.count(nrow))
+  }
+
+  assertthat::assert_that(assertthat::is.count(ncol))
+  assertthat::assert_that(assertthat::is.number(pseudocount))
+  assertthat::assert_that(is.logical(label_by_short_name))
+  if (label_by_short_name) {
+    assertthat::assert_that("gene_short_name" %in% names(rowData(cds_subset)),
+                            msg = paste("When label_by_short_name = TRUE,",
+                                        "rowData must have a column of gene",
+                                        "names called gene_short_name."))
+  }
+  if(!is.null(panel_order)) {
+    if (label_by_short_name) {
+      assertthat::assert_that(all(panel_order %in%
+                                    rowData(cds_subset)$gene_short_name))
+    } else {
+      assertthat::assert_that(all(panel_order %in%
+                                    row.names(rowData(cds_subset))))
+    }
+  }
+
+  assertthat::assert_that(is.logical(normalize))
+  assertthat::assert_that(is.logical(log_scale))
+
+  assertthat::assert_that(nrow(rowData(cds_subset)) <= 100,
+                          msg = paste("cds_subset has more than 100 genes -",
+                                      "pass only the subset of the CDS to be",
+                                      "plotted."))
+  if (pseudocount > 0) {
+    cds_exprs <- SingleCellExperiment::counts(cds_subset) + 1  # plot_genes_violin()
+  } else {
+    cds_exprs <- SingleCellExperiment::counts(cds_subset)      # plot_genes_violin()
+  }
+
+  if (normalize) {
+    cds_exprs <- Matrix::t(Matrix::t(cds_exprs)/size_factors(cds_subset))     #  scale
+    cds_exprs <- reshape2::melt(as.matrix(cds_exprs))                         #  convert to dense
+  } else {
+    cds_exprs <- reshape2::melt(as.matrix(cds_exprs))                         #  convert to dense
+  }
+
+  colnames(cds_exprs) <- c("f_id", "Cell", "expression")
+  cds_exprs$expression[cds_exprs$expression < min_expr] <- min_expr
+
+
+  cds_exprs <- merge(cds_exprs, rowData(cds_subset), by.x = "f_id",
+                     by.y = "row.names")
+  cds_exprs <- merge(cds_exprs, colData(cds_subset), by.x = "Cell",
+                     by.y = "row.names")
+
+  if (label_by_short_name) {
+    if (!is.null(cds_exprs$gene_short_name)) {
+      cds_exprs$feature_label <- cds_exprs$gene_short_name
+      cds_exprs$feature_label[is.na(cds_exprs$feature_label)] <- cds_exprs$f_id
+    } else {
+      cds_exprs$feature_label <- cds_exprs$f_id
+    }
+  } else {
+    cds_exprs$feature_label <- cds_exprs$f_id
+  }
+
+  if (!is.null(panel_order)) {
+    cds_exprs$feature_label = factor(cds_exprs$feature_label,
+                                     levels = panel_order)
+  }
+
+  cds_exprs[,group_cells_by] <- as.factor(cds_exprs[,group_cells_by])
+
+  q <- ggplot(aes_string(x = group_cells_by, y = "expression"),
+              data = cds_exprs) +
+    monocle_theme_opts()
+
+  cds_exprs[,group_cells_by] <- as.factor(cds_exprs[,group_cells_by])
+  q <- q + geom_violin(aes_string(fill = group_cells_by), scale="width") +
+    guides(fill='none')
+  q <- q + stat_summary(fun=median, geom="point", size=1, color="black")
+  q <- q + facet_wrap(~feature_label, nrow = nrow,
+                      ncol = ncol, scales = "free_y")
+  if (min_expr < 1) {
+    q <- q + expand_limits(y = c(min_expr, 1))
+  }
+
+  q <- q + ylab("Expression") + xlab(group_cells_by)
+
+  if (log_scale){
+    q <- q + scale_y_log10()
+  }
+  q
+}
+
+
+#' Plot expression for one or more genes as a hybrid histogram-interval with
+#' a Sina plot overlay.
+#'
+#' @description Accepts a subset of a cell_data_set and an attribute to group
+#' cells by, and produces a ggplot2 object that plots the level of expression
+#' for each group of cells. The cells appear as red dots in a Sina plot
+#' and the cell distribution appears as a histogram with green bars and
+#' a blue median_qi interval. See help for ggforce::geom_sina and
+#' ggdist::stat_histinterval for additional information.
+#'
+#' @param cds_subset Subset cell_data_set to be plotted.
+#' @param group_cells_by NULL of the cell attribute (e.g. the column of
+#'   colData(cds)) to group cells by on the horizontal axis. If NULL, all cells
+#'   are plotted together.
+#' @param min_expr the minimum (untransformed) expression level to be plotted.
+#'   Default is 0.
+#' @param nrow the number of panels per row in the figure.
+#' @param ncol the number of panels per column in the figure.
+#' @param panel_order the order in which genes should be laid out
+#'   (left-to-right, top-to-bottom). Should be gene_short_name if
+#'   \code{label_by_short_name = TRUE} or feature ID if
+#'   \code{label_by_short_name = FALSE}.
+#' @param label_by_short_name label figure panels by gene_short_name (TRUE) or
+#'   feature id (FALSE). Default is TRUE.
+#' @param normalize Logical, whether or not to normalize expression by size
+#'   factor. Default is TRUE.
+#' @param log_scale Logical, whether or not to scale data logarithmically.
+#'   Zero count cells are excluded from the plot, interval, and median
+#'   when log_scale is TRUE. Default is TRUE.
+#' @param pseudocount A pseudo-count added to the gene expression. A
+#'   pseudocount value greater than 0 is reset to 1. Default is 0.
+#' @return a ggplot2 plot object
+#' @import ggplot2
+#'
+#' @examples
+#'   \donttest{
+#'     cds <- load_a549()
+#'     cds_subset <- cds[row.names(subset(rowData(cds),
+#'                      gene_short_name %in% c("ACTA1", "ID1", "CCNB2"))),]
+#'     plot_genes_hybrid(cds_subset, group_cells_by="culture_plate", ncol=2,
+#'                       min_expr=0.1)
+#'   }
+#'
+#' @export
+plot_genes_hybrid <- function (cds_subset,
                                group_cells_by = NULL,
                                min_expr = 0,
                                nrow = NULL,
@@ -1271,16 +1445,39 @@ plot_genes_violin <- function (cds_subset,
 
   cds_exprs[,group_cells_by] <- as.factor(cds_exprs[,group_cells_by])
 
-  q <- ggplot(aes_string(x = group_cells_by, y = "expression"),
-              data = cds_exprs) +
-    monocle_theme_opts()
+  #
+  # For log-scaled plots, Drop cells with zero counts.
+  if(log_scale) {
+    cds_exprs <- cds_exprs[cds_exprs[['expression']] > 0,]
+  }
 
-  cds_exprs[,group_cells_by] <- as.factor(cds_exprs[,group_cells_by])
-  q <- q + geom_violin(aes_string(fill = group_cells_by), scale="width") +
-    guides(fill='none')
-  q <- q + stat_summary(fun=mean, geom="point", size=1, color="black")
-  q <- q + facet_wrap(~feature_label, nrow = nrow,
-                      ncol = ncol, scales = "free_y")
+  q <- ggplot(data=cds_exprs, aes(x = .data[[group_cells_by]], y = .data[['expression']])) +
+       monocle_theme_opts()
+  q <- q + facet_wrap(~feature_label, nrow = nrow, ncol = ncol, scales = "free_y")
+
+  q <- q + ggdist::stat_histinterval(mapping=aes(x=.data[[group_cells_by]], y=.data[['expression']]),
+                                     breaks=ggdist::breaks_fixed(width=.05),
+                                     linewidth=20,
+                                     color='blue',
+                                     alpha=0.1,
+                                     size=1,
+                                     normalize='groups',
+                                     point_interval = 'median_qi',
+                                     point_alpha=1.0,
+                                     outline_bars=TRUE,
+                                     slab_color='black',
+                                     slab_linewidth=0.1,
+                                     slab_fill='green',
+                                     slab_alpha=0.3)
+
+  q <- q + ggforce::geom_sina(maxwidth = .6,
+                              scale = "count",
+                              size = 0.2,
+                              alpha = 0.3,
+                              seed = 0,
+                              color='red',
+                              position='dodge')
+
   if (min_expr < 1) {
     q <- q + expand_limits(y = c(min_expr, 1))
   }
@@ -1376,11 +1573,11 @@ plot_percent_cells_positive <- function(cds_subset,
                                       "pass only the subset of the CDS to be",
                                       "plotted."))
 
-  marker_exprs <- SingleCellExperiment::counts(cds_subset)
+  marker_exprs <- SingleCellExperiment::counts(cds_subset)   # plot_percent_cells_positive()
 
   if (normalize) {
     marker_exprs <- Matrix::t(Matrix::t(marker_exprs)/size_factors(cds_subset))
-    marker_exprs_melted <- reshape2::melt(round(10000*as.matrix(marker_exprs))/10000)
+    marker_exprs_melted <- reshape2::melt(round(as.matrix(marker_exprs), digits=4))
   } else {
     marker_exprs_melted <- reshape2::melt(as.matrix(marker_exprs))
   }
@@ -1688,23 +1885,23 @@ plot_genes_by_group <- function(cds,
       g <- ggplot(ExpVal, aes(y = Gene,  x = Group)) +
         geom_point(aes(colour = group_color_class,  size = mean)) +
         #viridis::scale_color_viridis(name = 'percentage') +
-        scale_size(name = 'log(mean + 0.1)', range = c(0, max.size))
+        scale_size(name = paste0('log(mean + ', pseudocount, ')'), range = c(0, max.size))
     }else{
       g <- ggplot(ExpVal, aes(y = Gene,  x = Group)) +
         geom_point(aes(colour = percentage,  size = mean)) +
         viridis::scale_color_viridis(name = 'percentage') +
-        scale_size(name = 'log(mean + 0.1)', range = c(0, max.size))
+        scale_size(name = paste0('log(mean + ', pseudocount, ')'), range = c(0, max.size))
     }
   } else {
     if (color_by_group){
       g <- ggplot(ExpVal, aes(y = Gene,  x = Group)) +
         geom_point(aes(colour = group_color_class,  size = percentage)) +
-        #viridis::scale_color_viridis(name = 'log(mean + 0.1)') +
+        #viridis::scale_color_viridis(name = paste0('log(mean + ', pseudocount, ')')) +
         scale_size(name = 'percentage', range = c(0, max.size))
     }else{
       g <- ggplot(ExpVal, aes(y = Gene,  x = Group)) +
         geom_point(aes(colour = mean,  size = percentage)) +
-        viridis::scale_color_viridis(name = 'log(mean + 0.1)') +
+        viridis::scale_color_viridis(name = paste0('log(mean + ', pseudocount, ')')) +
         scale_size(name = 'percentage', range = c(0, max.size))
     }
   }
@@ -1724,5 +1921,312 @@ plot_genes_by_group <- function(cds,
   }
 
   g
+}
+
+#' Plot a histogram of the number of UMIs per cell with an optional vertical line showing the cutoff for outliers.
+#'
+#' @description If \code{max_zscore} is specified, then there is both a high and a low cutoff, both of which are determined by Z-scoring the log-transformed UMI counts. Otherwise if \code{min_rna_umi} is specified, then there is only a low cutoff. If neither is specified, then no cutoff is shown.
+#'
+#' @param cds A cell_data_set for plotting.
+#' @param max_zscore Cutoff for the maximum Z-score of the log-transformed UMIs per cell. If NULL, then \code{min_rna_umi} must be specified.
+#' @param min_rna_umi Cutoff for the minimum number of UMIs per cell. Ignored if \code{max_zscore} is specified.
+#'
+#' @returns A ggplot2 object.
+#' @import ggplot2
+#' @export
+plot_umi_per_cell <- function(cds,
+                              max_zscore = NULL,
+                              min_rna_umi = NULL) {
+  assertthat::assert_that(methods::is(cds, "cell_data_set"))
+  assertthat::assert_that(
+    is.null(max_zscore) || is.numeric(max_zscore) && max_zscore > 0,
+    msg = "max_zscore must be a positive number."
+  )
+  assertthat::assert_that(
+    is.null(min_rna_umi) || is.numeric(min_rna_umi) && min_rna_umi > 0,
+    msg = "min_rna_umi must be a positive number."
+  )
+
+  tryCatch(
+    assertthat::assert_that("log.n.umi" %in% colnames(colData(cds))),
+    error = function(e) {
+      colData(cds)$log.n.umi <- log10(colData(cds)$n.umi)
+    }
+  )
+
+  g <- colData(cds) %>%
+    as.data.frame() %>%
+    dplyr::select(cell, log.n.umi) %>%
+    dplyr::distinct() %>%
+    ggplot() +
+    geom_histogram(aes(x = log.n.umi),
+                   fill = "grey80",
+                   color = "black",
+                   binwidth = 0.2,
+                   linewidth = 0.1,
+                   bins = 50) +
+    scale_x_continuous(name = "RNA UMIs",
+                       breaks = c(0, 1, 2, 3, 4),
+                       labels = as.character(c(0, 10, 100, 1000, 10000))) +
+    ylab("Number of Cells")
+
+  if (is.null(max_zscore) == FALSE) {
+    mean_umi <- mean(colData(cds)$log.n.umi)
+    sd_umi <- sd(colData(cds)$log.n.umi)
+    g <- g + geom_vline(xintercept = mean_umi - max_zscore * sd_umi,
+                        color = "red",
+                        linewidth = 0.5) +
+      geom_vline(xintercept = mean_umi + max_zscore * sd_umi,
+                 color = "red",
+                 linewidth = 0.5)
+  } else if (is.null(min_rna_umi) == FALSE) {
+    g <- g + geom_vline(xintercept = log10(min_rna_umi),
+                        color = "red",
+                        linewidth = 0.5)
+  }
+
+  g <- g + monocle_theme_opts()
+
+  return(g)
+}
+
+#' Plot a histogram of the percentage of UMIs mapping to mitochondria for each cell.
+#' @param cds A cell_data_set for plotting.
+#' @param max_mito_pct Cutoff for the maximum percentage of UMIs mapping to mitochondria.
+#' @param pseudocount Value to add to the percentages before taking the log. Note that this is in terms of percent, not fractional.
+#' @returns A ggplot2 object.
+#' @import ggplot2
+#' @export
+plot_mito_umi_per_cell <- function(cds,
+                                   max_mito_pct = .max_mito_pct,
+                                   pseudocount = 1e-3) {
+  assertthat::assert_that(methods::is(cds, "cell_data_set"))
+  assertthat::assert_that(all(c("cell", "perc_mitochondrial_umis") %in% colnames(colData(cds))))
+
+  g <- colData(cds) %>%
+    as.data.frame() %>%
+    dplyr::select(cell, perc_mitochondrial_umis) %>%
+    dplyr::distinct() %>%
+    ggplot() +
+    geom_histogram(aes(x = log10(perc_mitochondrial_umis + pseudocount)),
+                   fill = "grey80",
+                   color = "black",
+                   binwidth = 0.2,
+                   linewidth = 0.1,
+                   bins = 50) +
+    scale_x_continuous(name = "Percent Mitochondrial UMIs",
+                       breaks = c(log10(pseudocount), -2, -1, 0, 1, 2),
+                       labels = as.character(c(0, 0.001, 0.1, 1, 10, 100))) +
+    ylab("Number of Cells") +
+    geom_vline(xintercept = log10(max_mito_pct),
+               color = "red",
+               linewidth = 0.5) +
+    monocle_theme_opts()
+
+  return(g)
+}
+
+#' Make a boxplot of the number of UMIs per cell, with each perturbation as a separate box. Optionally facet by a second value.
+#' @param cds A cell_data_set for plotting.
+#' @param perturbation_col How to group the cells for the plot. Must be a column of the colData.
+#' @param facet_by Facet the plot by this column of the colData. Each unique value is its own facet.
+#' @param color_palette List of colors to color perturbation groups. Default is NULL. When NULL, use a default set.
+#' @param yticks List of numeric values to put on the y-axis ticks.
+#' @returns A ggplot2 object.
+#' @import ggplot2
+#' @export
+plot_umi_per_cell_and_perturbation <- function(cds,
+                                               perturbation_col = "perturbation",
+                                               facet_by = NULL,
+                                               color_palette = NULL,
+                                               yticks = NULL) {
+  assertthat::assert_that(methods::is(cds, "cell_data_set"))
+  assertthat::assert_that(perturbation_col %in% colnames(colData(cds)),
+                          msg = "perturbation_col is not in the colData of the CDS.")
+  assertthat::assert_that(is.null(facet_by) || (facet_by %in% colnames(colData(cds))),
+                          msg = "facet_by is not in the colData of the CDS.")
+  assertthat::assert_that(is.null(yticks) || is.numeric(yticks),
+                          msg = "yticks are not numeric.")
+
+  coldata_df <- colData(cds) %>%
+    as.data.frame() %>%
+    dplyr::filter(!is.na(perturbation_col))
+
+  if (is.null(color_palette)) {
+    N <- length(unique(coldata_df[[perturbation_col]]))
+    color_palette <- get_n_colors(N)
+  }
+
+  if (is.null(yticks)) {
+    yticks <- c(100, 250, 500, 1000, 2500, 5000, 10000)
+  }
+
+  g <- coldata_df %>%
+    ggplot() +
+    geom_boxplot(aes(x = reorder(!!sym(perturbation_col), log.n.umi),
+                     y = log.n.umi,
+                     fill = !!sym(perturbation_col)),
+                 color = "black",
+                 outlier.stroke = 0.1,
+                 outlier.size = 0.1,
+                 size = 0.2) +
+    scale_fill_manual(values = color_palette, name = stringr::str_to_title(perturbation_col)) +
+    scale_y_continuous(breaks = log10(yticks),
+                       labels = as.character(yticks))
+
+  if (!is.null(facet_by)) {
+    g <- g +
+      facet_grid(cols = vars(!!sym(facet_by))) +
+      ggtitle(stringr::str_to_title(facet_by))
+  }
+
+  g <- g +
+    ylab("UMIs per Cell") +
+    monocle_theme_opts() +
+    theme(axis.title.x = element_blank(),
+          axis.text.x = element_blank(),
+          axis.ticks.x = element_blank(),
+          plot.title = element_text(hjust = 0.5))
+
+  return(g)
+}
+
+#' Make a boxplot of the number of cells per sample, with each perturbation as a separate box. Optionally facet by a second value.
+#' @param cds A cell_data_set for plotting.
+#' @param perturbation_col How to group the cells for the plot. Must be a column of the colData.
+#' @param count_per_sample_col Which column of the colData to put in the boxplots.
+#' @param zscore logical value indicating whether to z-score counts before plotting. If \code{TRUE}, then the values in \code{count_per_sample_col} are grouped by the \code{perturbation_col} and z-scored.
+#' @param cutoff The minimum number of cells per sample, drawn as a horizontal line. If \code{zscore == TRUE} then this corresponds to the absolute value of the z-score cutoff, and two horizontal lines are drawn.
+#' @param facet_by Facet the plot by this column of the colData. Each unique value is its own facet.
+#' @param color_palette List of colors to color perturbation groups. Default is NULL. When NULL, use a default set.
+#' @param yticks List of numeric values to put on the y-axis ticks.
+#' @returns A ggplot2 object.
+#' @import ggplot2
+#' @export
+plot_cells_per_sample_and_perturbation <- function(cds,
+                                                   perturbation_col = "perturbation",
+                                                   count_per_sample_col = "count_per_embryo",
+                                                   zscore = FALSE,
+                                                   cutoff = NULL,
+                                                   facet_by = NULL,
+                                                   color_palette = NULL,
+                                                   yticks = NULL) {
+  assertthat::assert_that(methods::is(cds, "cell_data_set"))
+  assertthat::assert_that(all(c(perturbation_col, count_per_sample_col) %in% colnames(colData(cds))))
+  assertthat::assert_that(is.null(facet_by) || (facet_by %in% colnames(colData(cds))),
+                          msg = "facet_by is not in the colData of the CDS.")
+  assertthat::assert_that(is.logical(zscore),
+                          msg = "zscore must be a logical value.")
+  assertthat::assert_that(is.null(cutoff) || is.numeric(cutoff) && cutoff > 0,
+                          msg = "cutoff must be a positive numeric value.")
+  assertthat::assert_that(is.null(yticks) || is.numeric(yticks),
+                          msg = "yticks are not numeric.")
+
+  counts_per_sample_df <- colData(cds) %>%
+    as.data.frame() %>%
+    dplyr::select(count_per_sample_col, perturbation_col, facet_by) %>%
+    dplyr::filter(!is.na(perturbation_col))
+
+  if (zscore) {
+    counts_per_sample_df <- counts_per_sample_df %>%
+      group_by(!!sym(perturbation_col)) %>%
+      mutate(
+        !!sym(count_per_sample_col) := as.vector(scale(!!sym(count_per_sample_col)))
+      )
+    ylabel <- "Z-scored Cells per Sample"
+    if (is.null(yticks)) {
+      yticks <- seq(-3, 3)
+      yticklabels <- as.character(yticks)
+    }
+  } else {
+    counts_per_sample_df <- counts_per_sample_df %>%
+      mutate(
+        !!sym(count_per_sample_col) := log10(!!sym(count_per_sample_col))
+      )
+    ylabel <- "Cells per Sample"
+    if (is.null(cutoff) == FALSE) {
+      cutoff <- log10(cutoff)
+    }
+    if (is.null(yticks)) {
+      yticks <- c(100, 500, 1000, 2500, 5000, 10000, 20000, 40000)
+      yticklabels <- as.character(yticks)
+      yticks <- log10(yticks)
+    }
+  }
+
+  if (is.null(color_palette)) {
+    N <- length(unique(counts_per_sample_df[[perturbation_col]]))
+    color_palette <- get_n_colors(N)
+  }
+
+  g <- counts_per_sample_df %>%
+    ggplot() +
+    geom_boxplot(aes(x = reorder(!!sym(perturbation_col), !!sym(count_per_sample_col)),
+                     y = !!sym(count_per_sample_col),
+                     # y = log10(!!sym(count_per_sample_col)),
+                     fill = !!sym(perturbation_col)),
+                 color = "black",
+                 outlier.stroke = 0.1,
+                 outlier.size = 0.1,
+                 size = 0.2) +
+    scale_fill_manual(values = color_palette, name = stringr::str_to_title(perturbation_col)) +
+    scale_y_continuous(breaks = yticks,
+                       labels = yticklabels)
+
+  if (is.null(cutoff) == FALSE) {
+    g <- g +
+      geom_hline(yintercept = cutoff,
+                 color = "red",
+                 linewidth = 0.5)
+    if (zscore) {
+      g <- g +
+        geom_hline(yintercept = -cutoff,
+                   color = "red",
+                   linewidth = 0.5)
+    }
+  }
+
+  if (!is.null(facet_by)) {
+    g <- g +
+      facet_grid(cols = vars(!!sym(facet_by))) +
+      ggtitle(stringr::str_to_title(facet_by))
+  }
+  g <- g +
+    ylab(ylabel) +
+    monocle_theme_opts() +
+    theme(axis.title.x = element_blank(),
+          axis.text.x = element_blank(),
+          axis.ticks.x = element_blank(),
+          plot.title = element_text(hjust = 0.5))
+
+  return(g)
+}
+
+#' Get a list of color hex codes from a custom palette.
+#' @noRd
+get_n_colors <- function(n) {
+  vibrant_colors <- c('#EE7733',
+                      '#0077BB',
+                      '#228833',
+                      '#33BBEE',
+                      '#EE3377',
+                      '#CC3311',
+                      '#AA3377',
+                      '#009988',
+                      '#004488',
+                      '#DDAA33',
+                      '#99CC66',
+                      '#D590DD')
+
+  bright_colors <- c('#4477AA',
+                     '#EE6677',
+                     '#228833',
+                     '#CCBB44',
+                     '#66CCEE',
+                     '#AA3377',
+                     '#BBBBBB')
+
+  palette <- colorRampPalette(c(vibrant_colors, bright_colors))
+  return(palette(n))
 }
 

@@ -1,0 +1,266 @@
+#
+# Utilities related to BPCells.
+#
+
+Notes:
+  o  the SummarizedExperiment Assay slot information states
+       o  the developer needs to be careful to implement endomorphisms with copy-on-modify semantics
+       o  an Assays concrete subclass needs to implement lossless back and forth coercion from/to SimpleList
+
+ get information about objects
+   o  get MatrixDir object slot value
+   o  get IterableMatrix type: MatrixDir or 
+   o  get IterableMatrix data tupe: mat_uint32_t, mat_float, or mat_double
+   o  get matrix storage order (row or col)
+   o  get pending operations
+
+
+BPCells class elements
+
+MatrixDir
+
+> str(mat_raw)
+Formal class 'MatrixDir' [package "BPCells"] with 7 slots
+  ..@ dir        : chr "/home/brent/git/monocle3/packer_worm_embryo.10x.bpcells"
+  ..@ compressed : logi TRUE
+  ..@ buffer_size: int 8192
+  ..@ type       : chr "uint32_t"
+  ..@ dim        : int [1:2] 20222 6188
+  ..@ transpose  : logi FALSE
+  ..@ dimnames   :List of 2
+  .. ..$ : chr [1:20222] "WBGene00010957" "WBGene00010958" "WBGene00010959" "WBGene00010960" ...
+  .. ..$ : chr [1:6188] "AAACCTGCAAGACGTG-300.1.1" "AAACCTGGTGTGAATA-300.1.1" "AAACCTGTCGGCCGAT-300.1.1" "AAAGATGGTTCGTTGA-300.1.1" ...
+
+
+MatrixMemory (really a number of different classes)
+  o  the function convert_matrix_type() converts matrices between storage classes (uint_32_t, float, and double).
+     Operating on a matrix with convert_matrix_type() converts dgCMatrix objects to IterableMatrix objects.
+
+
+> str(mat_mem)
+Formal class 'PackedMatrixMem_uint32_t' [package "BPCells"] with 12 slots
+  ..@ val_data         : int [1:732984] 20 4146 120 16777218 4096 806355457 3329 268500992 16781312 3328 ...
+  ..@ val_idx          : int [1:38935] 0 16 36 52 68 84 104 120 148 176 ...
+  ..@ val_idx_offsets  : num [1:2] 0 38935
+  ..@ index_data       : int [1:1557640] 1360004096 1879573508 -1325399038 1348995078 343999650 570458852 226525249 8406849 952405037 271582741 ...
+  ..@ index_starts     : int [1:38934] 0 3864 6670 10277 16326 19928 2690 5170 7809 10148 ...
+  ..@ index_idx        : int [1:38935] 0 36 72 112 156 192 256 292 328 360 ...
+  ..@ index_idx_offsets: num [1:2] 0 38935
+  ..@ idxptr           : num [1:6189] 0 646 1503 2368 3241 ...
+  ..@ version          : chr "packed-uint-matrix-v2"
+  ..@ dim              : int [1:2] 20222 6188
+  ..@ transpose        : logi FALSE
+  ..@ dimnames         :List of 2
+  .. ..$ : chr [1:20222] "WBGene00010957" "WBGene00010958" "WBGene00010959" "WBGene00010960" ...
+  .. ..$ : chr [1:6188] "AAACCTGCAAGACGTG-300.1.1" "AAACCTGGTGTGAATA-300.1.1" "AAACCTGTCGGCCGAT-300.1.1" "AAAGATGGTTCGTTGA-300.1.1" ...
+
+
+
+Questions:
+  o  are the BPCells-specific matrix files relocatable?
+  o  is there any reason to write functions such as is_iterableMatrix() etc? I think not
+     because I can use is(...,...)
+  o  I may want to write some wrapper scripts to get slots from BPCells object slots
+     although I'm not sure what information I might want from a slot.
+  o  Is it safe to move a BPCells-specific directory? I think that this is likely to
+     prevent R from accessing the matrix. So I think I will need to re-write the matrix
+     to the directory where I want to save it -- the save_monocle_objects directory.
+  o  I can copy an existing directory and open the copy using open_matrix_dir().
+
+Thoughts:
+  o  What information do I want/need to store in the CDS, independent of the BPCells objects?
+  o  How do I want to store it?
+  o  Where in the CDS do I want to store it?
+  o  How and where do I want to use it?
+
+  o  My simple tests suggests that saveRDS() stores the in-memory BPCells objects. Verify.
+  o  I will need to copy the BPCells MatrixDir directory to the directory where the
+     save_monocle_objects files are stored. And I will need to read the file into the
+     CDS for load_monocle_objects. BPCells::write_matrix_dir() and BPCells open_matrix_dir()
+     write and read BPCells-specified matrix files.
+
+  o  storing on-disk matrices in /tmp (using tempfile()) is unacceptable because the system
+     may (often) have limited space available on /tmp...
+  o  allow the user to specify the location of the on-disk matrix directory
+  o  do I want to all storing the on-disk matrix in 10X HDF5 files? My feeeling is no
+     but write code that allows adding this mode in the future.
+  o  on reading a matrix into Monocle3, store it as a compressed uint_32_t type for 
+     reduced memory/disk space requirements.
+  o  I may want to create a monocle objects directory on starting monocle3 and store
+     the BPCells-specific directory in it when calling write_matrix_dir. Does it make
+     sense to store the cds in intermediate state? Or versioned states?
+
+
+== irlba timing
+
+- using standard (non-BPCells) in-memory irlba with k=50 and scaling and centering, run time is
+
+start irlba: 2023-03-15 15:22:40
+end irlba: 2023-03-15 15:22:42
+~ 2 sec
+
+- using BPCells out-of-core irlba with k=50 and Monocle3 scaling and centering, run time is
+
+start time: 2023-03-15 15:25:04
+end time: 2023-03-15 15:27:21
+~ 137 sec.
+
+str(x_squash)
+Formal class 'MatrixDir' [package "BPCells"] with 7 slots
+  ..@ dir        : chr "/tmp/RtmpwuGav8/mat62694611c6f8e"
+  ..@ compressed : logi FALSE
+  ..@ buffer_size: int 8192
+  ..@ type       : chr "double"
+  ..@ dim        : int [1:2] 6188 16192
+  ..@ transpose  : logi TRUE
+  ..@ dimnames   :List of 2
+  .. ..$ : chr [1:6188] "AAACCTGCAAGACGTG-300.1.1" "AAACCTGGTGTGAATA-300.1.1" "AAACCTGTCGGCCGAT-300.1.1" "AAAGATGGTTCGTTGA-300.1.1" ...
+  .. ..$ : chr [1:16192] "WBGene00010957" "WBGene00010958" "WBGene00010959" "WBGene00010960" ...
+
+- using BPCells out-of-core irlba with k=50 and no scaling or centering, run time is
+
+start time: 2023-03-15 15:34:28
+end time: 2023-03-15 15:35:57
+~ 89 sec
+
+- using BPCells out-of-core irlba with k=50 and centering only, run time is
+
+start time: 2023-03-15 15:38:48
+end time: 2023-03-15 15:40:18
+
+~ 90 sec
+
+- using BPCells out-of-core irlba with k=50 and my scaling and irlba centering only, run time is
+
+start time: 2023-03-15 16:12:15
+end time: 2023-03-15 16:14:32
+~ 137 sec
+
+- using BPCells in-core irlba with k=50 and scaling and centering, x_squash is a MatrixDir object run time is
+
+start time: 2023-03-15 17:22:55
+end time: 2023-03-15 17:25:12
+
+note: the storage type is PackedMatrixMem_uint32_t and x_squash is MatrixDir
+
+
+- using BPCells in-core irlba with k=50 and scaling and centering, x_squash is a BPCells memory object, run time is
+
+start time: 2023-03-15 17:28:26
+end time: 2023-03-15 17:30:42
+~ 136 sec
+
+str(x_squash)
+
+Formal class 'UnpackedMatrixMem_double' [package "BPCells"] with 7 slots
+  ..@ val      : num [1:4983450] 2.89 2.28 3.65 2.28 1.83 ...
+  ..@ index    : int [1:4983450] 0 2 3 6 7 8 9 11 32 33 ...
+  ..@ idxptr   : num [1:6189] 0 646 1503 2368 3241 ...
+  ..@ version  : chr "unpacked-double-matrix-v2"
+  ..@ dim      : int [1:2] 6188 16192
+  ..@ transpose: logi TRUE
+  ..@ dimnames :List of 2
+  .. ..$ : chr [1:6188] "AAACCTGCAAGACGTG-300.1.1" "AAACCTGGTGTGAATA-300.1.1" "AAACCTGTCGGCCGAT-300.1.1" "AAAGATGGTTCGTTGA-300.1.1" ...
+  .. ..$ : chr [1:16192] "WBGene00010957" "WBGene00010958" "WBGene00010959" "WBGene00010960" ...
+
+repeat run
+
+start time: 2023-03-15 17:32:43
+end time: 2023-03-15 17:35:00
+~ 137 sec
+
+
+
+== Assays operations expected
+
+Assays objects have a list-like semantics with elements having matrix- or array-like semantics (e.g.,
+dim, dimnames).
+The Assays API consists of:
+Assays-class 3
+  (a) The Assays() constructor function.
+  (b) Lossless back and forth coercion from/to SimpleList. The coercion method from SimpleList doesn't need (and should not) validate the returned object.
+  (c) length, names, `names<-`, getListElement, setListElement, dim, [, `[<-`, rbind, cbind.
+
+for mat is dgCMatrix
+  length(mat)   gives the number of matrix elements including zeros (nrow * ncol)
+  names(mat)    gives NULL
+  names(mat[,1]) gives gene names
+  names(mat[1,]) gives cell names
+  dim(mat)       gives [1] 20222  6188
+
+for mat is MatrixDir
+  length(mat)     gives 1
+  length(mat[,1]) gives 1
+  length(mat[1,]) gives 1
+  names(mat)      gives NULL
+  names(mat[,1])  gives NULL
+  names(mat[1,])  gives NULL
+  dim(mat)        gives [1] 20222  6188
+  rownames(mat)   gives gene names
+  colnames(mat)   gives cell names
+  dimnames(mat)   gives gene and cells names as two elements in a list
+  storage_order(mat) gives sparse matrix storage order
+  rowSums(mat)
+  colSums(mat)
+  rowMeans(mat)
+  colMeans(mat)
+  selection_index()
+  rbind2()
+  cbind2()
+  transpose_storage_order(mat)
+  write_matrix_memory()
+  write_matrix_dir()
+  open_matrix_dir()
+  write_matrix_hdf5()
+  open_matrix_hdf5()
+  open_matrix_10x_hdf5()
+  write_matrix_10x_hdf5()
+  open_matrix_anndata_hdf5()
+  convert_matrix_type()
+  matrix_stats()
+  
+
+
+An Assays concrete subclass needs to implement (b) (required) plus, optionally any of the methods
+in (c).
+
+IMPORTANT:
+  1. Nobody in the Assays hierarchy is allowed to inherit from SimpleList because of the conflicting semantic of [.
+  2. Methods that return a modified Assays object (a.k.a. endomorphisms), that is, [ as well as
+     replacement methods names<-, setListElement, and [<-, must respect the copy-on-change
+     contract. With objects that don’t make use of references internally, the developer doesn’t need
+     to take any special action for that because it’s automatically taken care of by R itself. However,
+     for objects that do make use of references internally (e.g. environments, external pointers,
+     pointer to a file on disk, etc...), the developer needs to be careful to implement endomorphisms
+     with copy-on-change semantics. This can easily be achieved (and is what the default methods
+     for Assays objects do) by performaing a full (deep) copy of the object before modifying it
+     instead of trying to modify it in-place. However note that this full (deep) copy can be very
+     expensive and is actually not necessary in order to achieve copy-on-change semantics: it’s
+     enough (and often preferrable for performance reasons) to copy only the parts of the object
+     that need to be modified.
+
+== on copy-on-modify semantics
+
+Ben Parks explains (20230316 to bge)
+
+
+First, for the copy-on-modify semantics -- I think BPCells is fine in this respect. As a general rule, BPCells does not keep open file handles sitting around, and files are re-opened each time a data-reading operation is taking place then closed at the end of the operation. Additionally, the only way to modify the contents of an existing matrix on disk or in memory is to write a new matrix while explicitly asking to overwrite the old one. The end result is that the on-disk data will (intentionally) persist across R sessions, and multiple R objects can happily read from the same data source without worrying that one of them will accidentally modify data on disk. Since BPCells objects are basically plain R objects with one field listing a file path, modifications to the BPCells objects automatically support copy-on-modify semantics. The only way to break that is by intentionally changing the contents of the underlying files on disk, which BPCells will never do unless explicitly asked to overwrite data.
+
+The only note I'd give is BPCells doesn't support the [<- operator, which would otherwise be the most problematic. Row and column names can be modified, but the modifications take place only in R and only go to disk when explicitly writing the matrix again.
+
+
+
+== on getting BPCells matrix path/type
+
+As for getting the directory path from queued operations, your tactic should mostly work with
+the exception of sparse matrix multiplies or rbind/cbind operations. There's a currently an
+unexported method called matrix_inputs which does basically the same thing -- it unwraps a
+single layer of queued operations returning a list of inputs (usually but not always
+length 1). I might make a helper function that can perform this recursively to get a list of
+the raw matrix inputs across arbitrarily many operations. For now, I'd recommend trying to
+directly call the unexported method BPCells:::matrix_inputs within your bpcells_find_base_matrix
+function, and we can swap that for a more robust and exported method down the line.
+
+
+
+

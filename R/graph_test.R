@@ -143,17 +143,27 @@ graph_test <- function(cds,
                                k=k,
                                verbose=verbose)
 
-  lw <- calculateLW(cds=cds,
-                    k = k,
-                    neighbor_graph = neighbor_graph,
-                    reduction_method = reduction_method,
-                    verbose = verbose,
-                    nn_control = nn_control)
+  lw <- tryCatch(calculateLW(cds=cds,
+                             k = k,
+                             neighbor_graph = neighbor_graph,
+                             reduction_method = reduction_method,
+                             verbose = verbose,
+                             nn_control = nn_control),
+          error = function(c) { stop(paste0(trimws(c), '\n* error in graph_test')) })
 
   if(verbose) {
     message("Performing Moran's I test: ...")
   }
-  exprs_mat <- SingleCellExperiment::counts(cds)[, attr(lw, "region.id"), drop=FALSE]
+
+   # Use row major order BPCells count matrix.
+  if(is(counts(cds), 'IterableMatrix')) {
+    exprs_mat <- monocle3::counts_row_order(cds)
+  }
+  else {
+    exprs_mat <- SingleCellExperiment::counts(cds)
+  }
+
+  exprs_mat <- exprs_mat[, attr(lw, "region.id"), drop=FALSE]
   sz <- size_factors(cds)[attr(lw, "region.id")]
 
   wc <- spdep::spweights.constants(lw, zero.policy = TRUE, adjust.n = TRUE)
@@ -161,6 +171,10 @@ graph_test <- function(cds,
                                     FUN = function(x, sz, alternative,
                                                    method, expression_family) {
     exprs_val <- exprs_mat[x, ]
+
+    if(is(exprs_mat, 'IterableMatrix')) {
+      exprs_val <- as.numeric(as(exprs_val, 'dgCMatrix'))
+    }
 
     if (expression_family %in% c("uninormal", "binomialff")){
       exprs_val <- exprs_val
@@ -212,6 +226,7 @@ my.moran.test <- function (x, listw, wc, alternative = "greater",
   xname <- deparse(substitute(x))
   wname <- deparse(substitute(listw))
   NAOK <- deparse(substitute(na.action)) == "na.pass"
+  NAOK <- NAOK[1]
   x <- na.action(x)
   na.act <- attr(x, "na.action")
   if (!is.null(na.act)) {
@@ -389,11 +404,12 @@ calculateLW <- function(cds,
                            searchtype = "standard")[[1]]
     }
     else {
-      knn_res <- search_nn_index(query_matrix=cell_coords,
-                                 nn_index=nn_index,
-                                 k=min(k + 1, nrow(cell_coords)),
-                                 nn_control=nn_control,
-                                 verbose=verbose)
+      knn_res <- tryCatch(search_nn_index(query_matrix=cell_coords,
+                                          nn_index=nn_index,
+                                          k=min(k + 1, nrow(cell_coords)),
+                                          nn_control=nn_control,
+                                          verbose=verbose),
+                   error = function(c) { stop(paste0(trimws(c), '\n* error in calculateLW')) })
       if(nn_method == 'annoy' || nn_method == 'hnsw')
         knn_res <- swap_nn_row_index_point(nn_res=knn_res, verbose=verbose)
       knn_res <- knn_res[[1]]
@@ -407,7 +423,8 @@ calculateLW <- function(cds,
                                                  colnames(pr_graph_node_coords)]
   }
 
-  exprs_mat <- exprs(cds)
+  exprs_mat <- counts(cds)
+
   if(neighbor_graph == "knn") {
     if(is.null(knn_res)) {
       if(nn_method == 'nn2') {
@@ -416,11 +433,12 @@ calculateLW <- function(cds,
                              searchtype = "standard")[[1]]
       }
       else {
-        knn_res <- search_nn_index(query_matrix=cell_coords,
-                                   nn_index=nn_index,
-                                   k=min(k + 1, nrow(cell_coords)),
-                                   nn_control=nn_control,
-                                   verbose=verbose)
+        knn_res <- tryCatch(search_nn_index(query_matrix=cell_coords,
+                                            nn_index=nn_index,
+                                            k=min(k + 1, nrow(cell_coords)),
+                                            nn_control=nn_control,
+                                            verbose=verbose),
+                     error = function(c) { stop(paste0(trimws(c), '\n* error in calculateLW')) })
         if(nn_method == 'annoy' || nn_method == 'hnsw')
           knn_res <- swap_nn_row_index_point(nn_res=knn_res, verbose=verbose)
         knn_res <- knn_res[[1]]
@@ -474,11 +492,12 @@ calculateLW <- function(cds,
                            searchtype = "standard")[[1]]
     }
     else {
-      knn_res <- search_nn_index(query_matrix=cell_coords,
-                                 nn_index=nn_index,
-                                 k=min(k + 1, nrow(cell_coords)),
-                                 nn_control=nn_control,
-                                 verbose=verbose)
+      knn_res <- tryCatch(search_nn_index(query_matrix=cell_coords,
+                                          nn_index=nn_index,
+                                          k=min(k + 1, nrow(cell_coords)),
+                                          nn_control=nn_control,
+                                          verbose=verbose),
+                   error = function(c) { stop(paste0(trimws(c), '\n* error in calculateLW')) })
       if(nn_method == 'annoy' || nn_method == 'hnsw')
         knn_res <- swap_nn_row_index_point(nn_res=knn_res, verbose=verbose)
       knn_res <- knn_res[[1]]

@@ -46,7 +46,7 @@
 #'     expression_matrix <- readRDS(system.file('extdata',
 #'                                              'worm_embryo/worm_embryo_expression_matrix.rds',
 #'                                              package='monocle3'))
-#'    
+#'
 #'     cds <- new_cell_data_set(expression_data=expression_matrix,
 #'                              cell_metadata=cell_metadata,
 #'                              gene_metadata=gene_metadata)
@@ -73,6 +73,13 @@ top_markers <- function(cds,
                         speedglm.maxiter=25,
                         cores=1,
                         verbose=FALSE) {
+
+  if(is(counts(cds), 'IterableMatrix') && is.null(counts_row_order(cds))) {
+    stop(paste('This CDS has a BPCells counts matrix but no counts_row_order matrix, which',
+               'top_markers() requires. Use the command',
+                '  cds <- set_cds_row_order_matrix(cds=cds)',
+                'to make it and re-run top_markers.', sep='\n'))
+  }
 
   rowname <- cell_group <- marker_score <- cell_id <- mean_expression <- NULL # no visible binding
   fraction_expressing <- specificity <- pseudo_R2 <- NULL # no visible binding
@@ -104,15 +111,22 @@ top_markers <- function(cds,
   # For each gene compute the fraction of cells expressing it within each group
   # in a matrix thats genes x cell groups
 
-  cluster_binary_exprs = as.matrix(aggregate_gene_expression(cds,
-                                                             cell_group_df=cell_group_df,
-                                                             norm_method="binary",
-                                                             scale_agg_values=FALSE))
+  tmp_matrix <- tryCatch(aggregate_gene_expression(cds,
+                                                   cell_group_df=cell_group_df,
+                                                   norm_method="binary",
+                                                   scale_agg_values=FALSE),
+               error = function(c) { stop(paste0(trimws(c), '\n* error in top_markers')) })
 
-  cluster_mean_exprs = as.matrix(aggregate_gene_expression(cds,
-                                                           cell_group_df=cell_group_df,
-                                                           norm_method="size_only",
-                                                           scale_agg_values=FALSE))
+  cluster_binary_exprs = as.matrix(tmp_matrix)
+
+  tmp_matrix <- tryCatch(aggregate_gene_expression(cds,
+                                                   cell_group_df=cell_group_df,
+                                                   norm_method="size_only",
+                                                   scale_agg_values=FALSE),
+               error = function(c) { stop(paste0(trimws(c), '\n* error in top_markers')) })
+  cluster_mean_exprs = as.matrix(tmp_matrix)
+
+# bge the cluster_binary_exprs and cluster_mean_exprs pairs appear to be the same when run with dgCMatrix vs BPCells matrix
 
   if (verbose)
     message("Computing Jensen-Shannon specificities")
@@ -303,8 +317,7 @@ specificity_matrix <- function(agg_expr_matrix, cores=1){
                               1 - JSdistVec(agg_exprs,
                                             perfect_spec_matrix[,col_idx])
                             })
-                          }, mc.cores=cores,
-                          ignore.interactive = TRUE)
+                          }, mc.cores=cores)
   specificity_mat = do.call(rbind, specificity_mat)
   colnames(specificity_mat) = colnames(agg_expr_matrix)
   row.names(specificity_mat) = row.names(agg_expr_matrix)
@@ -324,8 +337,7 @@ enrichment_matrix <- function(agg_expr_matrix, cores=1){
                                               1 - JSdistVec(agg_exprs, perfect_spec_matrix[,col_idx])
                                             }
                                             )
-                                          }, mc.cores=cores,
-                                          ignore.interactive = TRUE)
+                                          }, mc.cores=cores)
   specificity_mat = do.call(rbind, specificity_mat)
   colnames(specificity_mat) = colnames(agg_expr_matrix)
   row.names(specificity_mat) = row.names(agg_expr_matrix)
@@ -339,8 +351,27 @@ test_marker_for_cell_group = function(gene_id, cell_group, cell_group_df, cds,
   #print(cell_group)
   #print (length(reference_cells))
   results <- tryCatch({
-    f_expression <-
-      log(as.numeric(SingleCellExperiment::counts(cds)[gene_id,]) / size_factors(cds) + 0.1)
+    # My tests suggest that I cannot coerce a BPCells subset into a numeric vector
+    # (which I probably want to not do for space reasons):
+    # > cds <- readRDS('packer_embryo.load.rds')
+    # > library(BPCells)
+    # > bpcds <- cds
+    # > counts(bpcds) <- BPCells::write_matrix_memory(counts(cds))
+    # > f_e <- as.numeric(counts(bpcds)[1,])
+    # Error in as.numeric(counts(bpcds)[1, ]) :
+    #   cannot coerce type 'S4' to vector of type 'double'
+    # I am not pursuing it now because it's a subset and may
+    # not exceed available memory. bge
+
+    if(!is(counts(cds), 'IterableMatrix')) {
+      f_expression <-
+        log(as.numeric(SingleCellExperiment::counts(cds)[gene_id,]) / size_factors(cds) + 0.1)
+    }
+    else {
+      f_expression <-
+        log(as.numeric(as(monocle3::counts_row_order(cds)[gene_id,], 'dgCMatrix')) / size_factors(cds) + 0.1)
+    }
+
     #print(sum(SingleCellExperiment::counts(cds)[gene_id,] > 0))
     is_member <-
       as.character(cell_group_df[colnames(cds),2]) == as.character(cell_group)

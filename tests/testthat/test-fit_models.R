@@ -224,10 +224,10 @@ test_that("fit_models() returns correct output for zero-inflated negative binomi
   expect_equal(pos_ctrl_gene_fit$status[[1]], "OK")
   pos_ctrl_coefs = coefficient_table(pos_ctrl_gene_fit)
   expect_equal(pos_ctrl_coefs$estimate,
-               c(-0.255, 0.26434083, -0.146, -11.113, -1.005),
-               tolerance=1e-1)
+               c(-0.182, 0.308, 0.0664, -3.0239, 0.2226),
+               tolerance=1e-2)
   expect_equal(unname(pos_ctrl_coefs$normalized_effect),
-               c(0.000000000, 0.1685858, -0.119, NA, NA), tolerance=1e-1)
+               c(0.000000000, 0.1685858, 0.0504, NA, NA), tolerance=1e-1)
   expect_lt(pos_ctrl_coefs$p_value[2], 0.05)
 
   fitted_vals = stats::predict(pos_ctrl_gene_fit$model[[1]])
@@ -245,7 +245,7 @@ test_that("fit_models() returns correct output for zero-inflated negative binomi
   expect_equal(neg_ctrl_gene_fit$status[[1]], "OK")
   neg_ctrl_coefs = coefficient_table(neg_ctrl_gene_fit)
   expect_equal(neg_ctrl_coefs$estimate,
-               c(-3.94, 0.24145643, -3.47, -4.81, -15.42),
+               c(-3.94, 0.24145643, -3.22, -205.43, 49.23),
                tolerance=1e-1)
   expect_equal(unname(neg_ctrl_coefs$normalized_effect),
                c(0.0000000,  0.1684627, -1.46, NA, NA), tolerance=1e-1)

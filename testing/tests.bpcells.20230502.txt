@@ -1,0 +1,393 @@
+1. run devtools::test()  (done)
+2. run BPCells
+
+cds <- load_a549()
+mat <- counts(cds)
+
+library(Matrix)
+writeMM(mat, file='a549.mtx')
+write.table(rownames(mat), file='a549.genes.txt', row.names=FALSE, col.names=FALSE)
+write.table(colnames(mat), file='a549.cells.txt', row.names=FALSE, col.names=FALSE)
+
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', matrix_control=list(matrix_class='BPCells', matrix_mode='dir'))
+cds <- preprocess_cds(cds)
+cds <- preprocess_cds(cds, matrix_control=list(matrix_class='BPCells', matrix_mode='mem'))
+cds <- preprocess_cds(cds, matrix_control=list(matrix_class='BPCells', matrix_mode='dir'))
+
+
+cds <- preprocess_cds(cds, build_nn_index=TRUE)
+
+save_monocle_objects(cds, 'test_bpcells_save')
+
+cds <- load_monocle_objects('test_bpcells_save')
+
+Tests:
+  load_mm_data (matrix_control related code)
+
+  preprocess_cds (matrix_control related code)
+
+  save_monocle_objects
+
+  load_monocle_objects
+
+
+Notes on tests:
+  o  make sure that defaults work
+       o  default for both assays and pca
+       o  defaults for pca for various assays
+  o  test assay=BPCells; pca=dgCMatrix
+
+1. load_mm_data
+
+# Test loading using default.
+rm(cds)
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', verbose=TRUE)
+OK**
+
+# Test loading into dgCMatrix
+rm(cds)
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', matrix_control=list(matrix_class='dgCMatrix'), verbose=TRUE)
+OK**
+
+# Test loading into BPCells storage as default
+rm(cds)
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', matrix_control=list(matrix_class='BPCells'), verbose=TRUE)
+OK**
+
+# Test loading into BPCells mem storage as default
+rm(cds)
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', matrix_control=list(matrix_class='BPCells', matrix_mode='mem'), verbose=TRUE)
+OK**
+
+# Test loading into BPCells dir storage as default
+rm(cds)
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', matrix_control=list(matrix_class='BPCells', matrix_mode='dir'), verbose=TRUE)
+OK**
+
+# Test loading into BPCells dir storage as uint32_t.
+rm(cds)
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', matrix_control=list(matrix_class='BPCells', matrix_mode='dir', matrix_type='uint32_t'), verbose=TRUE)
+OK**
+
+# Test loading into BPCells dir storage as float.
+rm(cds)
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', matrix_control=list(matrix_class='BPCells', matrix_mode='dir', matrix_type='float'), verbose=TRUE)
+OK**
+
+# Test loading into BPCells dir storage as double.
+rm(cds)
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', matrix_control=list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double'), verbose=TRUE)
+OK**
+
+# Test loading into BPCells dir storage with explicit matrix_type and matrix_path.
+rm(cds)
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', matrix_control=list(matrix_class='BPCells', matrix_mode='dir', matrix_type='uint32_t', matrix_path='monocle.bpcells.foo_dir.tmp'), verbose=TRUE)
+OK**
+
+
+2. preprocess_cds
+
+# Test preprocessing default default
+rm(cds)
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', verbose=FALSE)
+cds <- preprocess_cds(cds, verbose=TRUE)
+OK**
+
+# Test preprocessing dgCMatrix default
+rm(cds)
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', matrix_control=list(matrix_class='dgCMatrix'), verbose=FALSE)
+cds <- preprocess_cds(cds, verbose=TRUE)
+OK**
+
+# Test preprocessing dgCMatrix dgCMatrix
+rm(cds)
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', matrix_control=list(matrix_class='dgCMatrix'), verbose=FALSE)
+cds <- preprocess_cds(cds, matrix_control=list(matrix_class='dgCMatrix'), verbose=TRUE)
+OK**
+
+# Test preprocessing dgCMatrix BPCells default
+rm(cds)
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', matrix_control=list(matrix_class='dgCMatrix'), verbose=FALSE)
+cds <- preprocess_cds(cds, matrix_control=list(matrix_class='BPCells'), verbose=TRUE)
+OK*
+
+# Test preprocessing dgCMatrix BPCells mem float uncompressed default default
+rm(cds)
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', matrix_control=list(matrix_class='dgCMatrix'), verbose=FALSE)
+cds <- preprocess_cds(cds, matrix_control=list(matrix_class='BPCells', matrix_mode='mem', matrix_type='float', matrix_compress=FALSE), verbose=TRUE)
+OK**
+
+# Test preprocessing dgCMatrix BPCells mem double uncompressed default default
+rm(cds)
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', matrix_control=list(matrix_class='dgCMatrix'), verbose=FALSE)
+cds <- preprocess_cds(cds, matrix_control=list(matrix_class='BPCells', matrix_mode='mem', matrix_type='double', matrix_compress=FALSE), verbose=TRUE)
+OK**
+
+# Test preprocessing dgCMatrix BPCells dir float uncompressed default default
+rm(cds)
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', matrix_control=list(matrix_class='dgCMatrix'), verbose=FALSE)
+cds <- preprocess_cds(cds, matrix_control=list(matrix_class='BPCells', matrix_mode='dir', matrix_type='float', matrix_compress=FALSE), verbose=TRUE)
+OK**
+
+# Test preprocessing dgCMatrix BPCells dir double uncompressed default default
+rm(cds)
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', matrix_control=list(matrix_class='dgCMatrix'), verbose=FALSE)
+cds <- preprocess_cds(cds, matrix_control=list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=FALSE), verbose=TRUE)
+OK**
+
+# Test preprocessing dgCMatrix BPCells dir double compressed  explicit_dir 16384L
+rm(cds)
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', matrix_control=list(matrix_class='dgCMatrix'), verbose=FALSE)
+cds <- preprocess_cds(cds, matrix_control=list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=FALSE, matrix_path='monocle3_bpcells.foo.dir', matrix_buffer_size=16384L), verbose=TRUE)
+OK**
+
+
+
+# Test preprocessing BPCells dir  default
+rm(cds)
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', matrix_control=list(matrix_class='dgCMatrix'), verbose=FALSE)
+cds <- preprocess_cds(cds, verbose=TRUE)
+OK**
+
+# Test preprocessing BPCells dir  dgCMatrix
+rm(cds)
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', matrix_control=list(matrix_class='dgCMatrix'), verbose=FALSE)
+cds <- preprocess_cds(cds, matrix_control=list(matrix_class='dgCMatrix'), verbose=TRUE)
+OK**
+
+# Test preprocessing BPCells dir  BPCells default
+rm(cds)
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', matrix_control=list(matrix_class='dgCMatrix'), verbose=FALSE)
+cds <- preprocess_cds(cds, matrix_control=list(matrix_class='BPCells'), verbose=TRUE)
+OK**
+
+# Test preprocessing BPCells dir  BPCells mem float uncompressed default default
+rm(cds)
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', matrix_control=list(matrix_class='dgCMatrix'), verbose=FALSE)
+cds <- preprocess_cds(cds, matrix_control=list(matrix_class='BPCells', matrix_mode='mem', matrix_type='float', matrix_compress=FALSE), verbose=TRUE)
+OK**
+
+# Test preprocessing BPCells dir  BPCells mem double uncompressed default default
+rm(cds)
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', matrix_control=list(matrix_class='dgCMatrix'), verbose=FALSE)
+cds <- preprocess_cds(cds, matrix_control=list(matrix_class='BPCells', matrix_mode='mem', matrix_type='double', matrix_compress=FALSE), verbose=TRUE)
+OK**
+
+# Test preprocessing BPCells dir  BPCells dir float uncompressed default default
+rm(cds)
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', matrix_control=list(matrix_class='dgCMatrix'), verbose=FALSE)
+cds <- preprocess_cds(cds, matrix_control=list(matrix_class='BPCells', matrix_mode='dir', matrix_type='float', matrix_compress=FALSE), verbose=TRUE)
+OK**
+
+# Test preprocessing BPCells dir  BPCells dir double uncompressed default default
+rm(cds)
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', matrix_control=list(matrix_class='dgCMatrix'), verbose=FALSE)
+cds <- preprocess_cds(cds, matrix_control=list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=FALSE), verbose=TRUE)
+OK**
+
+# Test preprocessing BPCells dir  BPCells dir double compressed  explicit_dir 16384L
+rm(cds)
+cds <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', matrix_control=list(matrix_class='dgCMatrix'), verbose=FALSE)
+cds <- preprocess_cds(cds, matrix_control=list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=FALSE, matrix_path='monocle3_bpcells.foo.dir', matrix_buffer_size=16384L), verbose=TRUE)
+OK**
+
+
+
+
+
+
+
+
+
+
+3. save_monocle_objects and load_monocle_objects
+
+# Test loading and preprocessing using default control_lists.
+rm(cds1, cds2)
+cds1 <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', verbose=TRUE)
+cds1 <- preprocess_cds(cds1, verbose=TRUE)
+save_monocle_objects(cds1, directory_path='test.save_monocle_objects.1')
+str(cds1)
+rm(cds1)
+cds2 <- load_monocle_objects(directory_path='test.save_monocle_objects.1')
+str(cds2)
+OK**
+
+# Test loading and preprocessing using BPCells dir objects.
+rm(cds1, cds2)
+cds1 <- load_mm_data(mat_path='a549.mtx', feature_anno_path='a549.genes.txt', cell_anno_path='a549.cells.txt', verbose=TRUE, matrix_control=list(matrix_class='BPCells', matrix_mode='dir'))
+cds1 <- preprocess_cds(cds1, verbose=TRUE, matrix_control=list(matrix_class='BPCells', matrix_mode='dir'))
+save_monocle_objects(cds1, directory_path='test.save_monocle_objects.2')
+cds2 <- load_monocle_objects(directory_path='test.save_monocle_objects.2')
+as(counts(cds1)[1:10,1:10], 'matrix')
+as(counts(cds2)[1:10,1:10], 'matrix')
+OK**
+
+
+4.1. projection using dgCMatrix
+
+library(Matrix)
+
+# Load the reference data set.
+matrix_ref <- readMM(gzcon(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/mouse/data/cao.mouse_embryo.sample.mtx.gz")))
+cell_ann_ref <- read.csv(gzcon(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/mouse/data/cao.mouse_embryo.sample.coldata.txt.gz"), text=TRUE), sep='\t')
+gene_ann_ref <- read.csv(gzcon(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/mouse/data/cao.mouse_embryo.sample.rowdata.txt.gz"), text=TRUE), sep='\t')
+
+cds_ref <- new_cell_data_set(matrix_ref,
+                             cell_metadata = cell_ann_ref,
+                             gene_metadata = gene_ann_ref)
+
+# Load the query data set.
+matrix_qry <- readMM(gzcon(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/mouse/data/srivatsan.mouse_embryo_scispace.sample.mtx.gz")))
+cell_ann_qry <- read.csv(gzcon(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/mouse/data/srivatsan.mouse_embryo_scispace.sample.coldata.txt.gz"), text=TRUE), sep='\t')
+gene_ann_qry <- read.csv(gzcon(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/mouse/data/srivatsan.mouse_embryo_scispace.sample.rowdata.txt.gz"), text=TRUE), sep='\t')
+
+cds_qry <- new_cell_data_set(matrix_qry,
+                             cell_metadata = cell_ann_qry,
+                             gene_metadata = gene_ann_qry)
+
+# Genes in reference.
+genes_ref <- row.names(cds_ref)
+
+# Genes in query.
+genes_qry <- row.names(cds_qry)
+
+# Shared genes.
+genes_shared <- intersect(genes_ref, genes_qry)
+
+# Remove non-shared genes.
+cds_ref <- cds_ref[genes_shared,]
+cds_qry <- cds_qry[genes_shared,]
+
+# Reference data set UMI cutoff.
+numi_ref <- min(colData(cds_ref)[['Total_mRNAs']])
+# numi_ref is 1001
+numi_qry <- min(colData(cds_qry)[['n.umi']])
+# numi_qry is 1000
+
+cds_ref <- estimate_size_factors(cds_ref)
+cds_qry <- estimate_size_factors(cds_qry)
+
+cds_ref <- preprocess_cds(cds_ref, num_dim=100)
+cds_ref <- reduce_dimension(cds_ref, build_nn_index=TRUE)
+# Save the PCA and UMAP transform models for use with projection.
+save_transform_models(cds_ref, 'cds_ref_test_models')
+
+# Load the reference transform models into the query cds.
+cds_qry <- load_transform_models(cds_qry, 'cds_ref_test_models')
+# Apply the reference transform models to the query cds.
+cds_qry <- preprocess_transform(cds_qry)
+cds_qry <- reduce_dimension_transform(cds_qry)
+
+plot_cells(cds_ref)
+plot_cells(cds_qry)
+
+
+# Label the data sets.
+colData(cds_ref)[['data_set']] <- 'reference'
+colData(cds_qry)[['data_set']] <- 'query'
+# Combine the reference and query data sets.
+cds_combined <- combine_cds(list(cds_ref, cds_qry),  keep_all_genes=TRUE, cell_names_unique=TRUE, keep_reduced_dims=TRUE)
+plot_cells(cds_combined, color_cells_by='data_set')
+
+
+# transfer labels
+cds_qry_lab_xfr <- transfer_cell_labels(cds_qry, reduction_method='UMAP', ref_coldata=colData(cds_ref), ref_column_name='Main_cell_type', query_column_name='cell_type_xfr', transform_models_dir='cds_ref_test_models')
+cds_qry_lab_fix <- fix_missing_cell_labels(cds_qry_lab_xfr, reduction_method='UMAP', from_column_name='cell_type_xfr', to_column_name='cell_type_fix')
+
+
+4.2. projection using BPCells
+
+library(Matrix)
+
+# Load the reference data set.
+matrix_ref <- readMM(gzcon(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/mouse/data/cao.mouse_embryo.sample.mtx.gz")))
+cell_ann_ref <- read.csv(gzcon(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/mouse/data/cao.mouse_embryo.sample.coldata.txt.gz"), text=TRUE), sep='\t')
+gene_ann_ref <- read.csv(gzcon(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/mouse/data/cao.mouse_embryo.sample.rowdata.txt.gz"), text=TRUE), sep='\t')
+
+rownames(matrix_ref) <- gene_ann_ref[[1]]
+colnames(matrix_ref) <- cell_ann_ref[[1]]
+
+cds_ref <- new_cell_data_set(set_matrix_class(mat=matrix_ref, matrix_control=set_matrix_control(matrix_control=list(matrix_class='BPCells'), matrix_control_default=get_global_variable('matrix_control_bpcells_mm'), control_type='counts')),
+                             cell_metadata = cell_ann_ref,
+                             gene_metadata = gene_ann_ref)
+
+# Load the query data set.
+matrix_qry <- readMM(gzcon(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/mouse/data/srivatsan.mouse_embryo_scispace.sample.mtx.gz")))
+cell_ann_qry <- read.csv(gzcon(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/mouse/data/srivatsan.mouse_embryo_scispace.sample.coldata.txt.gz"), text=TRUE), sep='\t')
+gene_ann_qry <- read.csv(gzcon(url("https://depts.washington.edu:/trapnell-lab/software/monocle3/mouse/data/srivatsan.mouse_embryo_scispace.sample.rowdata.txt.gz"), text=TRUE), sep='\t')
+
+rownames(matrix_qry) <- gene_ann_qry[[1]]
+colnames(matrix_qry) <- cell_ann_qry[[1]]
+
+cds_qry <- new_cell_data_set(set_matrix_class(mat=matrix_qry, matrix_control=set_matrix_control(matrix_control=list(matrix_class='BPCells'), matrix_control_default=get_global_variable('matrix_control_bpcells_mm'), control_type='counts')),
+                             cell_metadata = cell_ann_qry,
+                             gene_metadata = gene_ann_qry)
+
+# Genes in reference.
+genes_ref <- row.names(cds_ref)
+
+# Genes in query.
+genes_qry <- row.names(cds_qry)
+
+# Shared genes.
+genes_shared <- intersect(genes_ref, genes_qry)
+
+# Remove non-shared genes.
+cds_ref <- cds_ref[genes_shared,]
+cds_qry <- cds_qry[genes_shared,]
+
+# Reference data set UMI cutoff.
+numi_ref <- min(colData(cds_ref)[['Total_mRNAs']])
+# numi_ref is 1001
+numi_qry <- min(colData(cds_qry)[['n.umi']])
+# numi_qry is 1000
+
+cds_ref <- estimate_size_factors(cds_ref)
+cds_qry <- estimate_size_factors(cds_qry)
+
+cds_ref <- preprocess_cds(cds_ref, num_dim=100)
+cds_ref <- reduce_dimension(cds_ref, build_nn_index=TRUE)
+# Save the PCA and UMAP transform models for use with projection.
+save_transform_models(cds_ref, 'cds_ref_test_models')
+
+# Load the reference transform models into the query cds.
+cds_qry <- load_transform_models(cds_qry, 'cds_ref_test_models')
+# Apply the reference transform models to the query cds.
+cds_qry <- preprocess_transform(cds_qry)
+cds_qry <- reduce_dimension_transform(cds_qry)
+
+plot_cells(cds_ref)
+plot_cells(cds_qry)
+
+
+# Label the data sets.
+colData(cds_ref)[['data_set']] <- 'reference'
+colData(cds_qry)[['data_set']] <- 'query'
+# Combine the reference and query data sets.
+cds_combined <- combine_cds(list(cds_ref, cds_qry),  keep_all_genes=TRUE, cell_names_unique=TRUE, keep_reduced_dims=TRUE)
+plot_cells(cds_combined, color_cells_by='data_set')
+
+
+# transfer labels
+cds_qry_lab_xfr <- transfer_cell_labels(cds_qry, reduction_method='UMAP', ref_coldata=colData(cds_ref), ref_column_name='Main_cell_type', query_column_name='cell_type_xfr', transform_models_dir='cds_ref_test_models')
+cds_qry_lab_fix <- fix_missing_cell_labels(cds_qry_lab_xfr, reduction_method='UMAP', from_column_name='cell_type_xfr', to_column_name='cell_type_fix')
+
+
+--
+
+counts(cds_ref) <- as(counts(cds_ref), 'dgCMatrix')
+cds_combined <- combine_cds(list(cds_ref, cds_qry),  keep_all_genes=TRUE, cell_names_unique=TRUE, keep_reduced_dims=TRUE)
+
+
+==== projection
+
+
+========================================
+
+# Additional tests
+  o  test overwrite option (should fail)
+
+
+
+

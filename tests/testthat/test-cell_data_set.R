@@ -10,7 +10,7 @@ test_that("new_cell_data_set works" ,{
     expression_data = as.data.frame(as.matrix(small_a549_exprs)),
     cell_metadata = small_a549_colData_df,
     gene_metadata = small_a549_rowData_df),
-    "Argument expression_data must be a matrix - either sparse from the Matrix package or dense")
+    "Argument expression_data must be a matrix - either sparse from the Matrix package, dense, or a BPCells matrix")
 
   expect_warning(cds <- new_cell_data_set(expression_data = small_a549_exprs,
                                           cell_metadata = small_a549_colData_df))

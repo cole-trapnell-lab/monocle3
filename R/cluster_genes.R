@@ -15,10 +15,12 @@
 #' @param weight A logic argument to determine whether or not we will use
 #'   Jaccard coefficient for two nearest neighbors (based on the overlapping of
 #'   their kNN) as the weight used for Louvain clustering. Default to be FALSE.
-#' @param resolution Resolution parameter passed to Louvain. Can be a list. If
-#'   so, this method will evaluate modularity at each resolution and use the
+#' @param resolution Resolution parameter passed to Louvain. Can be a numeric vector.
+#'   If so, this method will evaluate modularity at each resolution and use the
 #'   one with the highest value.
 #' @param random_seed  the seed used by the random number generator in Leiden.
+#'   The default value is 0L, which uses a random seed. For reproducible results,
+#'   set random_seed to a positive integer.
 #' @param cores number of cores computer should use to execute function
 #' @param verbose Whether or not verbose output is printed.
 #' @param preprocess_method a string specifying the low-dimensional space
@@ -191,17 +193,18 @@ find_gene_modules <- function(cds,
   if(verbose)
     message("Running leiden clustering algorithm ...")
 
-  cluster_result <- leiden_clustering(data=reduced_dim_res,
-                                      pd=rowData(cds)[row.names(reduced_dim_res),,drop=FALSE],
-                                      weight=weight,
-                                      nn_index=NULL,
-                                      k=k,
-                                      nn_control=nn_control,
-                                      num_iter=leiden_iter,
-                                      resolution_parameter=resolution,
-                                      random_seed=random_seed,
-                                      verbose=verbose,
-                                      ...)
+  cluster_result <- tryCatch(leiden_clustering(data=reduced_dim_res,
+                                               pd=rowData(cds)[row.names(reduced_dim_res),,drop=FALSE],
+                                               weight=weight,
+                                               nn_index=NULL,
+                                               k=k,
+                                               nn_control=nn_control,
+                                               num_iter=leiden_iter,
+                                               resolution_parameter=resolution,
+                                               random_seed=random_seed,
+                                               verbose=verbose,
+                                               ...),
+                      error = function(c) { stop(paste0(trimws(c), '\n* error in find_gene_modules')) })
 
   cluster_graph_res <- compute_partitions(cluster_result$g,
                                           cluster_result$optim_res,
@@ -229,8 +232,9 @@ find_gene_modules <- function(cds,
 #' @noRd
 my.aggregate.Matrix = function (x, groupings = NULL, form = NULL, fun = "sum", ...)
 {
-  if (!methods::is(x, "Matrix"))
+  if (!methods::is(x, "Matrix") && !methods::is(x, "IterableMatrix")) {
     x <- Matrix::Matrix(as.matrix(x), sparse = TRUE)
+  }
   if (fun == "count")
     x <- x != 0
   groupings2 <- data.frame(A=as.factor(groupings))
@@ -326,9 +330,10 @@ my.dMcast <- function(data,formula,fun.aggregate='sum',value.var=NULL,as.factors
 
   #Allows NAs to pass
   attr(data,'na.action')<-na.pass
-  result<-Matrix::sparse.model.matrix(newformula,data,drop.unused.levels = FALSE,row.names=FALSE)
-  brokenNames<-grep('paste(',colnames(result),fixed = TRUE)
-  colnames(result)[brokenNames]<-lapply(colnames(result)[brokenNames],function (x) {
+  result <- Matrix::sparse.model.matrix(newformula,data,drop.unused.levels = FALSE,row.names=FALSE)
+  brokenNames <- grep('paste(',colnames(result),fixed = TRUE)
+
+  colnames(result)[brokenNames] <- lapply(colnames(result)[brokenNames],function (x) {
     x<-gsub('paste(',replacement='',x=x,fixed = TRUE)
     x<-gsub(pattern=', ',replacement='_',x=x,fixed=TRUE)
     x<-gsub(pattern='_sep = \"_\")',replacement='',x=x,fixed=TRUE)
@@ -458,8 +463,8 @@ aggregate_gene_expression <- function(cds,
                                       cell_agg_fun="mean"){
   if (is.null(gene_group_df) && is.null(cell_group_df))
     stop("one of either gene_group_df or cell_group_df must not be NULL.")
-  agg_mat <- normalized_counts(cds, norm_method=norm_method,
-                               pseudocount=pseudocount)
+  agg_mat <- tryCatch(normalized_counts(cds, norm_method=norm_method, pseudocount=pseudocount),
+               error = function(c) { stop(paste0(trimws(c), '\n* error in aggregate_gene_expression')) })
   if (is.null(gene_group_df) == FALSE){
     gene_group_df <- as.data.frame(gene_group_df)
     gene_group_df <- gene_group_df[gene_group_df[,1] %in%
@@ -474,33 +479,25 @@ aggregate_gene_expression <- function(cds,
     if (any(short_name_mask)) {
       geneids <- as.character(gene_group_df[[1]])
       geneids[short_name_mask] <- row.names(fData(cds))[match(
-                  geneids[short_name_mask], fData(cds)$gene_short_name)]
+        geneids[short_name_mask], fData(cds)$gene_short_name
+      )]
       gene_group_df[[1]] <- geneids
     }
-
-    # gene_group_df = gene_group_df[row.names(fData(cds)),]
-
-    # FIXME: this should allow genes to be part of multiple groups. group_by
-    # over the second column with a call to colSum should do it.
-    gene_groups = unique(gene_group_df[,2])
-    agg_gene_groups = lapply(gene_groups, function(gene_group){
-      genes_in_group = unique(gene_group_df[gene_group_df[,2] == gene_group,1])
-      gene_expr_mat = agg_mat[genes_in_group,]
-      if (length(dn <- dim(gene_expr_mat)) < 2L)
-        return(NA)
-      if (gene_agg_fun == "mean"){
-        res = Matrix::colMeans(agg_mat[genes_in_group,])
-      }else if (gene_agg_fun == "sum"){
-        res = Matrix::colSums(agg_mat[genes_in_group,])
-      }
-      return(res)
-    })
-
-    agg_mat_colnames = colnames(agg_mat)
-    agg_mat = do.call(rbind, agg_gene_groups)
-    row.names(agg_mat) = gene_groups
-    agg_mat = agg_mat[is.na(agg_gene_groups) == FALSE,]
-    colnames(agg_mat) = agg_mat_colnames
+    
+    unique_gene_ids <- unique(gene_group_df[, 1])
+    agg_mat <- agg_mat[unique_gene_ids, , drop = FALSE]
+    gene_groups <- unique(gene_group_df[, 2])
+    X <- Matrix::sparseMatrix(
+      i = match(gene_group_df[, 2], gene_groups),
+      j = match(gene_group_df[, 1], unique_gene_ids),
+      x = 1,
+      dims = c(length(gene_groups), length(unique_gene_ids)),
+    )
+    agg_mat <- X %*% agg_mat
+    if (gene_agg_fun == "mean") {
+      agg_mat <- agg_mat / Matrix::rowSums(X)
+    }
+    row.names(agg_mat) <- gene_groups
   }
 
   if (is.null(cell_group_df) == FALSE){
@@ -532,5 +529,10 @@ aggregate_gene_expression <- function(cds,
   if (exclude.na){
     agg_mat <- agg_mat[row.names(agg_mat) != "NA", colnames(agg_mat) != "NA",drop=FALSE]
   }
+
+  if(is(agg_mat, 'IterableMatrix')) {
+    agg_mat <- as(agg_mat, 'dgCMatrix')
+  }
+
   return(agg_mat)
 }

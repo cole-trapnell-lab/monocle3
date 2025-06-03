@@ -157,6 +157,7 @@ fit_model_helper <- function(x,
                              clean_model = TRUE,
                              verbose = FALSE,
                              ...) {
+
   model_formula_str <- paste("f_expression", model_formula_str,
                              sep = "")
   orig_x <- x
@@ -173,13 +174,15 @@ fit_model_helper <- function(x,
     }
 
   }
-  else if (expression_family %in% c("binomial", "gaussian")) {
+  else
+  if (expression_family %in% c("binomial", "gaussian")) {
     f_expression <- x
   }
   else {
     # FIXME: maybe emit a warning or error here instead.
     f_expression <- log10(x)
   }
+
   f_expression = as.numeric(f_expression)
   model_formula = stats::as.formula(model_formula_str)
 
@@ -225,7 +228,9 @@ fit_model_helper <- function(x,
     ))
     FM_summary = summary(FM_fit)
     if (clean_model){
-      FM_fit = clean_model_object(FM_fit)
+      FM_fit <- tryCatch(clean_model_object(FM_fit),
+                  error = function(c) { stop(paste0(trimws(c), '\n* error in fit_model_helper')) })
+
       if (class(FM_fit)[1] == "glmerMod"){
         FM_summary = clean_glmerMod_summary_object(FM_summary)
       }

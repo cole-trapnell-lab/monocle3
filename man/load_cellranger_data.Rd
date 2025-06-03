@@ -8,7 +8,8 @@ load_cellranger_data(
   pipestance_path = NULL,
   genome = NULL,
   barcode_filtered = TRUE,
-  umi_cutoff = 100
+  umi_cutoff = 100,
+  matrix_control = list()
 )
 }
 \arguments{
@@ -19,6 +20,11 @@ load_cellranger_data(
 \item{barcode_filtered}{Load only the cell-containing barcodes}
 
 \item{umi_cutoff}{Numeric, desired cutoff to include a cell. Default is 100.}
+
+\item{matrix_control}{A list used to control how the counts matrix is stored
+in the CDS. By default, Monocle3 stores the counts matrix in memory as a
+sparse matrix. Setting 'matrix_control=list(matrix_class="BPCells")',
+stores the matrix on disk as a sparse matrix.}
 }
 \value{
 a new cell_data_set object

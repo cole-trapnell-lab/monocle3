@@ -7,7 +7,8 @@
 reduce_dimension_transform(
   cds,
   preprocess_method = NULL,
-  reduction_method = c("UMAP")
+  reduction_method = c("UMAP"),
+  verbose = FALSE
 )
 }
 \arguments{
@@ -21,6 +22,9 @@ was used when the reduce_dimension model was built.}
 \item{reduction_method}{a previously loaded reduce_dimension transform
 model that is used to reduce the dimensions of the preprocessed
 matrix in the cell_data_set. Only "UMAP" is supported.}
+
+\item{verbose}{a logical value that determines whether or not the
+function writes diagnostic information.}
 }
 \value{
 a cell_data_set with a transformed

@@ -43,6 +43,8 @@ setClass("cell_data_set",
 #' @param gene_metadata data frame containing attributes of features
 #'   (e.g. genes), where
 #'   \code{row.names(gene_metadata) = row.names(expression_data)}.
+#' @param verbose a logical value that determines whether or not the
+#' function writes diagnostic information.
 #' @return a new cell_data_set object
 #' @importFrom S4Vectors elementMetadata
 #' @importFrom SummarizedExperiment rowRanges
@@ -66,21 +68,16 @@ setClass("cell_data_set",
 #' @export
 new_cell_data_set <- function(expression_data,
                               cell_metadata = NULL,
-                              gene_metadata = NULL) {
-
-
-#  assertthat::assert_that(methods::is(expression_data, 'matrix) ||
-#                          is_sparse_matrix(expression_data),
-#                          msg = paste("Argument expression_data must be a",
-#                                      "matrix - either sparse from the",
-#                                      "Matrix package or dense"))
-
+                              gene_metadata = NULL,
+                              verbose=FALSE) {
 
   assertthat::assert_that(methods::is(expression_data, 'matrix') ||
-                          is_sparse_matrix(expression_data),
+                          is_sparse_matrix(expression_data) ||
+                          is(expression_data, 'IterableMatrix'),
                           msg = paste("Argument expression_data must be a",
                                       "matrix - either sparse from the",
-                                      "Matrix package or dense"))
+                                      "Matrix package, dense,",
+                                      "or a BPCells matrix"))
 
   if (!is.null(cell_metadata)) {
     assertthat::assert_that(nrow(cell_metadata) == ncol(expression_data),
@@ -114,13 +111,29 @@ new_cell_data_set <- function(expression_data,
             "named 'gene_short_name' for certain functions.")
   }
 
-  sce <- SingleCellExperiment(list(counts=methods::as(expression_data, "dgCMatrix")),
+  matrix_info <- get_matrix_info(mat=expression_data)
+
+  # I believe that the matrix needs to be either a dgCMatrix
+  # class matrix or a BPCells class matrix. See get_matrix_class
+  # for recognized matrix classes.
+  if(!(matrix_info[['matrix_class']] %in% c('r_dense_matrix',
+                                            'dgCMatrix',
+                                            'dgTMatrix',
+                                            'BPCells'))) {
+    stop('new_cell_data_set: invalid expression_data matrix class')
+  }
+
+  if(!(matrix_info[['matrix_class']] %in% c('dgCMatrix', 'BPCells'))) {
+    expression_data <- methods::as(expression_data, 'CsparseMatrix')
+  }
+
+  sce <- SingleCellExperiment(list(counts=expression_data),
                               rowData = gene_metadata,
                               colData = cell_metadata)
 
   cds <- methods::new("cell_data_set",
              assays = SummarizedExperiment::Assays(
-               list(counts=methods::as(expression_data, "dgCMatrix"))),
+               list(counts=expression_data)),
              colData = colData(sce),
              int_elementMetadata = SingleCellExperiment::int_elementMetadata(sce),
              int_colData = SingleCellExperiment::int_colData(sce),
@@ -129,6 +142,13 @@ new_cell_data_set <- function(expression_data,
              NAMES = NULL,
              elementMetadata = elementMetadata(sce)[,0],
              rowRanges = rowRanges(sce))
+
+  # If the counts matrix is a BPCells matrix, then set
+  # the row major order BPCells counts matrix. This is
+  # called 'counts_row_order'.
+  if(is(counts(cds), 'IterableMatrix')) {
+    cds <- set_cds_row_order_matrix(cds=cds)
+  }
 
   S4Vectors::metadata(cds)$cds_version <- Biobase::package.version("monocle3")
   clusters <- stats::setNames(S4Vectors::SimpleList(), character(0))

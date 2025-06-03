@@ -1,0 +1,13 @@
+Cole's notes
+  o  look at aggregate matrix functino
+  o  top_markers uses aggregate_matrix
+  o  top_markers uses a generalized linear regression to (fit something) by each gene. This is slow. Consider alternatives.
+  o  something about pulling out genes and may be related to aggregate matrix
+  o  plotting of expression of genes (pull out one gene?)
+
+My notes
+  o  binarize BPCells matrix in utils.R:normalized_counts()
+  o  as.numeric on BPCells matrix in find_markers.R:test_marker_for_cell_group
+  o  convert matrix to type double in utils.R:normalized_counts()
+  o  md5 checksum of BPCells matrix? This is a tough one because of queued operations, I think. Can I read out the matrix column-by-column without collapsing the operations internally?
+  o  review and tabulate changes done, required, and unknown based on the searches for counts(cds), exprs(cds), and assay(s)(cds)

@@ -91,19 +91,19 @@ test_that("identity strings", {
 
   expect_equal(cds2@reduce_dim_aux[['PCA']][['model']][['identity']][['model_type']], 'matrix:PCA')  
   expect_equal(cds2@reduce_dim_aux[['PCA']][['model']][['identity']][['model_id']], cds@reduce_dim_aux[['PCA']][['model']][['identity']][['model_id']])
-  expect_equal(cds2@reduce_dim_aux[['PCA']][['model']][['identity']][['model_path']], transform_models)  
+  expect_equal(cds2@reduce_dim_aux[['PCA']][['model']][['identity']][['model_path']], normalizePath(transform_models, mustWork=FALSE))  
 
   expect_equal(cds2@reduce_dim_aux[['Aligned']][['model']][['identity']][['model_type']], 'matrix:Aligned')
   expect_equal(cds2@reduce_dim_aux[['Aligned']][['model']][['identity']][['model_id']], cds@reduce_dim_aux[['Aligned']][['model']][['identity']][['model_id']])
   expect_equal(cds2@reduce_dim_aux[['Aligned']][['model']][['identity']][['prev_model_type']], cds@reduce_dim_aux[['Aligned']][['model']][['identity']][['prev_model_type']])
   expect_equal(cds2@reduce_dim_aux[['Aligned']][['model']][['identity']][['prev_model_id']], cds@reduce_dim_aux[['Aligned']][['model']][['identity']][['prev_model_id']])
-  expect_equal(cds2@reduce_dim_aux[['Aligned']][['model']][['identity']][['model_path']], transform_models)
+  expect_equal(cds2@reduce_dim_aux[['Aligned']][['model']][['identity']][['model_path']], normalizePath(transform_models, mustWork=FALSE))
 
   expect_equal(cds2@reduce_dim_aux[['UMAP']][['model']][['identity']][['model_type']], 'matrix:UMAP')
   expect_equal(cds2@reduce_dim_aux[['UMAP']][['model']][['identity']][['model_id']], cds@reduce_dim_aux[['UMAP']][['model']][['identity']][['model_id']])
   expect_equal(cds2@reduce_dim_aux[['UMAP']][['model']][['identity']][['prev_model_type']], cds@reduce_dim_aux[['UMAP']][['model']][['identity']][['prev_model_type']])
   expect_equal(cds2@reduce_dim_aux[['UMAP']][['model']][['identity']][['prev_model_id']], cds@reduce_dim_aux[['UMAP']][['model']][['identity']][['prev_model_id']])
-  expect_equal(cds2@reduce_dim_aux[['UMAP']][['model']][['identity']][['model_path']], transform_models)
+  expect_equal(cds2@reduce_dim_aux[['UMAP']][['model']][['identity']][['model_path']], normalizePath(transform_models, mustWork=FALSE))
 
   system(paste0('rm -r ', mtxfile, ' ', pdtfile, ' ', fdtfile, ' ', transform_models))
 })

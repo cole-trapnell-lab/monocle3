@@ -4,7 +4,13 @@
 \alias{save_transform_models}
 \title{Save cell_data_set transform models.}
 \usage{
-save_transform_models(cds, directory_path, comment = "", verbose = TRUE)
+save_transform_models(
+  cds,
+  directory_path,
+  comment = "",
+  verbose = TRUE,
+  archive_control = list(archive_type = "tar", archive_compression = "none")
+)
 }
 \arguments{
 \item{cds}{a cell_data_set with existing models.}
@@ -17,6 +23,19 @@ the objects.}
 
 \item{verbose}{a boolean determining whether to print information
 about the saved files.}
+
+\item{archive_control}{a list that is used to control archiving
+the output directory. The archive_control parameters are
+\describe{
+\item{archive_type}{a string giving the method used to
+archive the directory. The acceptable values are
+"tar" and "none". The directory is not archived when
+archive_type is "none". The default is "tar".}
+\item{archive_compression}{a string giving the type of
+compression applied to the archive file. The acceptable
+values are "none", "gzip", "bzip2", and "xz". The
+default is "none".}
+}}
 }
 \value{
 none.
@@ -24,7 +43,7 @@ none.
 \description{
 Save the transform models in the cell_data_set to the
 specified directory by writing the R objects to RDS
-files and the nearest neighbor indexes to
+files and the nearest neighbor indices to
 index files. save_transform_models saves transform
 models made by running the preprocess_cds and
 reduce_dimension functions on an initial cell_data_set.
@@ -34,20 +53,34 @@ loading the new data into a new cell_data_set, loading
 the initial data set transform models into the new
 cell_data_set using the load_transform_models function,
 and applying those transform models to the new data set
-using the preprocess_transform and
-reduce_dimension_transform functions. In this case, do
-not run the preprocess_cds or reduce_dimension
+using the preprocess_transform() and
+reduce_dimension_transform() functions. In this case, do
+not run the preprocess_cds() or reduce_dimension()
 functions on the new cell_data_set. Additionally,
-save_transform_models saves nearest neighbor indexes
-when the preprocess_cds and reduce_dimension
+save_transform_models() saves nearest neighbor indices
+when the preprocess_cds() and reduce_dimension()
 functions are run with the make_nn_index=TRUE parameter.
-These indexes are used to find matches between cells in
+These indices are used to find matches between cells in
 the new processed cell_data_set and the initial
 cell_data_set using index search functions. For more
-information see the help for transfer_cell_labels.
-save_transform_models saves the models to a directory
-given by directory_path.
+information see the help for transfer_cell_labels().
+save_transform_models() saves the models to a directory
+given by the directory_path parameter.
 }
+\section{Notes}{
+
+\itemize{
+\item{The R tar archive function used by Monocle3 may have
+a limited output file size of 8 GB. If you encounter
+this problem, you can set the environment variable
+"tar" to a tar executable that has no size limit,
+for example, gnu tar. You can do this in the
+$HOME/.monoclerc file by adding a line consisting of
+Sys.setenv('tar' = paste(Sys.getenv("TAR"), "-H", "gnu")).
+See the R 'tar' documentation for more information.}
+}
+}
+
 \examples{
   \dontrun{
     cds <- load_a549()

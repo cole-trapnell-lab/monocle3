@@ -13,7 +13,9 @@ load_mm_data(
   cell_metadata_column_names = NULL,
   umi_cutoff = 100,
   quote = "\\"'",
-  sep = "\\t"
+  sep = "\\t",
+  verbose = FALSE,
+  matrix_control = list()
 )
 }
 \arguments{
@@ -68,6 +70,34 @@ is "\"'".}
 sep = "", the separator is white space, that is, one or more spaces,
 tabs, newlines, or carriage returns. The default is the tab
 character for tab-separated-value files.}
+
+\item{verbose}{a logical value that determines whether or not the
+function writes diagnostic information.}
+
+\item{matrix_control}{an optional list of values that control how
+matrices are stored in the cell_data_set assays slot. Typically,
+matrices are stored in-memory as dgCMatrix class (compressed sparse
+matrix) objects using matrix_class="dgCMatrix". This is the
+default. A very large matrix can be stored in a file and accessed
+by Monocle3 as if it were in-memory. For this, Monocle3 uses the
+BPCells R package. Here the matrix_control list values are set to
+matrix_class="BPCells" and matrix_mode="dir". Then the counts matrix
+is stored in a directory, on-disk, which is created by Monocle3 in
+the directory where you run Monocle3. This directory has a name
+with the form "monocle.bpcells.*.tmp" where the asterisk is a
+string of random characters that makes the name unique. Do not
+remove this directory while Monocle3 is running! If you choose to
+store the counts matrix as an on-disk BPCells object, you must use
+the "save_monocle_objects" and "load_monocle_objects" functions
+to save and restore the cell_data_set. Monocle3 tries to remove
+the BPCells matrix directory when your R session ends; however,
+sometimes a matrix directory may persist after the session ends.
+In this case, the user must remove the directory after the
+session ends. For additional information about the matrix_control
+list, see the examples below and the set_matrix_control help.
+Note that for the load_mm_data function the BPCells matrix_mode
+is "dir", the matrix_type is "double", and the matrix_compress is
+FALSE.}
 }
 \value{
 cds object
@@ -94,6 +124,23 @@ Load data from matrix market format files.
     # In this example, the features_c3h0.txt file has three columns,
     # separated by spaces. The first column has official gene names, the
     # second has short gene names, and the third has gene biotypes.
+    #
+    # For typical count matrices with a small to medium number of cells,
+    # we suggest that you use the default matrix_control list by not
+    # not setting the matrix_control parameter. In this case, the
+    # counts matrix is stored in-memory as a sparse matrix in the
+    # dgCMatrix format, as it has in the past. It is also possible to
+    # set the matrix_control list explicitly to use this in-memory
+    # dgCMatrix format by setting the matrix_control parameter to
+    #
+      load_mm_data(..., matrix_control=list(matrix_class='dgCMatrix'))
+    #
+    # For large matrices, we suggest that you try storing the count
+    # matrix as a BPCells object on-disk by setting the matrix_control
+    # parameter list as follows
+    #
+      load_mm_data(..., matrix_control=list(matrix_class='BPCells'))
+    #
   }
 
 }

@@ -1,6 +1,79 @@
 # Functions that support nearest neighbors use.
 
 
+# Check if a cds has an nn_index.
+# Indices checked:
+#   pca_search_annoy
+#   pca_search_hnsw
+#   lsi_search_annoy
+#   lsi_search_hnsw
+#   aligned_search_annoy
+#   aligned_search_hnsw
+#   umap_search_annoy
+#   umap_search_hnsw
+#   umap_model_hnsw
+has_nn_index <- function(cds, nn_index_type) {
+  res <- FALSE
+  if(nn_index_type == 'pca_search_annoy') {
+    # Monocle3 PCA search using annoy.
+    nn_index <- cds@reduce_dim_aux[['PCA']][['nn_index']][['annoy']][['nn_index']]
+    res <- test_annoy_index(nn_index=nn_index, verbose=FALSE)
+  }
+  else
+  if(nn_index_type == 'pca_search_hnsw') {
+    # Monocle3 PCA search using hnsw.
+    nn_index <- cds@reduce_dim_aux[['PCA']][['nn_index']][['hnsw']][['nn_index']]
+    res <- test_hnsw_index(nn_index=nn_index, verbose=FALSE)
+  }
+  else
+  if(nn_index_type == 'lsi_search_annoy') {
+    # Monocle3 LSI search using annoy.
+    nn_index <- cds@reduce_dim_aux[['LSI']][['nn_index']][['annoy']][['nn_index']]
+    res <- test_annoy_index(nn_index=nn_index, verbose=FALSE)
+  }
+  else
+  if(nn_index_type == 'lsi_search_hnsw') {
+    # Monocle3 LSI search using hnsw.
+    nn_index <- cds@reduce_dim_aux[['LSI']][['nn_index']][['hnsw']][['nn_index']]
+    res <- test_hnsw_index(nn_index=nn_index, verbose=FALSE)
+  }
+  else
+  if(nn_index_type == 'aligned_search_annoy') {
+    # Monocle3 Aligned search using annoy.
+    nn_index <- cds@reduce_dim_aux[['Aligned']][['nn_index']][['annoy']][['nn_index']]
+    res <- test_annoy_index(nn_index=nn_index, verbose=FALSE)
+  }
+  else
+  if(nn_index_type == 'aligned_search_hnsw') {
+    # Monocle3 Aligned search using hnsw.
+    nn_index <- cds@reduce_dim_aux[['Aligned']][['nn_index']][['hnsw']][['nn_index']]
+    res <- test_hnsw_index(nn_index=nn_index, verbose=FALSE)
+  }
+  else
+  if(nn_index_type == 'umap_search_annoy') {
+    # Monocle3 UMAP search using annoy.
+    nn_index <- cds@reduce_dim_aux[['UMAP']][['nn_index']][['annoy']][['nn_index']]
+    res <- test_annoy_index(nn_index=nn_index, verbose=FALSE)
+  }
+  else
+  if(nn_index_type == 'umap_search_hnsw') {
+    # Monocle3 UMAP search using hnsw.
+    nn_index <- cds@reduce_dim_aux[['UMAP']][['nn_index']][['hnsw']][['nn_index']]
+    res <- test_hnsw_index(nn_index=nn_index, verbose=FALSE)
+  }
+  else
+  if(nn_index_type == 'umap_model_annoy') {
+    # UWOT UMAP model using annoy.
+    nn_index <- cds@reduce_dim_aux[['UMAP']][['model']][['umap_model']][['nn_index']]
+    res <- test_annoy_index(nn_index=nn_index, verbose=FALSE)
+  }
+  else {
+    stop('has_nn_index: unrecognized nn_index_type: \'', nn_index_type, '\'')
+  }
+  return(res)
+}
+
+
 # Check whether nn index exists and is consistent with matrix and parameters.
 # This function is not in use currently and may fall into disrepair.
 check_cds_nn_index_is_current <- function(cds, reduction_method=c('PCA', 'LSI', 'Aligned', 'tSNE', 'UMAP'), nn_control=list(), verbose=FALSE) {
@@ -400,7 +473,8 @@ set_nn_control <- function(mode, nn_control=list(), nn_control_default=list(), n
     }
 
     if(bitwAnd(mode, 2)) {
-      nn_control_out[['search_k']] <- select_annoy_search_k(mode, nn_control, nn_control_default, nn_index, k, default_n_trees, default_k)
+      nn_control_out[['search_k']] <- tryCatch(select_annoy_search_k(mode, nn_control, nn_control_default, nn_index, k, default_n_trees, default_k),
+                                        error = function(c) { stop(paste0(trimws(c), '\n* error in set_nn_control')) })
       nn_control_out[['grain_size']] <- select_nn_parameter_value('grain_size', nn_control, nn_control_default, default_grain_size)
       nn_control_out[['cores']] <- select_nn_parameter_value('cores', nn_control, nn_control_default, default_cores)
       assertthat::assert_that(assertthat::is.count(nn_control_out[['search_k']]))
@@ -563,7 +637,8 @@ make_nn_index <- function(subject_matrix, nn_control=list(), verbose=FALSE) {
   } else
   if(nn_method == 'annoy') {
     monocle3_annoy_index_version <- get_global_variable('monocle3_annoy_index_version')
-    annoy_index <- new_annoy_index(metric, num_col)
+    annoy_index <- tryCatch(new_annoy_index(metric, num_col),
+                     error = function(c) { stop(paste0(trimws(c), '\n* error in make_nn_index')) })
     annoy_random_seed <- nn_control[['annoy_random_seed']]
     annoy_index$setSeed(annoy_random_seed)
     n_trees <- nn_control[['n_trees']]
@@ -714,8 +789,10 @@ make_cds_nn_index <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Ali
   }
 
   reduced_matrix <- SingleCellExperiment::reducedDims(cds)[[reduction_method]]
-  nn_index <- make_nn_index(subject_matrix=reduced_matrix, nn_control=nn_control, verbose=verbose)
-  cds <- set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, verbose=verbose)
+  nn_index <- tryCatch(make_nn_index(subject_matrix=reduced_matrix, nn_control=nn_control, verbose=verbose),
+                error = function(c) { stop(paste0(trimws(c), '\n* error in make_cds_nn_index')) })
+  cds <- tryCatch(set_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_index=nn_index, verbose=verbose),
+           error = function(c) { stop(paste0(trimws(c), '\n* error in make_cds_nn_index')) })
 
   return(cds)
 }
@@ -764,27 +841,27 @@ get_cds_nn_index <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Alig
 # Returns logical TRUE if the index exists.
 test_annoy_index <- function(nn_index, verbose=FALSE) {
   res <- TRUE
-  if(is.null(nn_index[['annoy_index']])) {
-    if(!verbose) {
+  index_obj <- NULL
+  if(!is.null(nn_index[['annoy_index']])) {
+    index_obj <- nn_index[['annoy_index']]
+  }
+  else
+  if(!is.null(nn_index[['ann']])) {
+    index_obj <- nn_index[['ann']]
+  }
+  else {
+    if(verbose) {
       cs <- get_call_stack_as_string()
       message('test_annoy_index: the annoy nearest neighbor does not exist\ncall stack: ', cs)
-    }
-    else {
-      message('test_annoy_index: the annoy nearest neighbor does not exist.')
     }
     return(FALSE)
   }
 
-  tryCatch( {
-    dist_res <- nn_index[['annoy_index']]$getDistance(0,1)
-  },
+  dist_res <- tryCatch(index_obj$getDistance(0,1),
   error=function(emsg) {
-    if(!verbose) {
+    if(verbose) {
       cs <- get_call_stack_as_string()
       message('test_annoy_index: the annoy nearest neighbor does not exist\ncall stack: ', cs)
-    }
-    else {
-      message('test_annoy_index: the annoy nearest neighbor does not exist.')  
     }
     res <<- FALSE
   } )
@@ -798,26 +875,18 @@ test_annoy_index <- function(nn_index, verbose=FALSE) {
 test_hnsw_index <- function(nn_index, verbose=FALSE) {
   res <- TRUE
   if(is.null(nn_index[['hnsw_index']])) {
-    if(!verbose) {
+    if(verbose) {
       cs <- get_call_stack_as_string()
       message('test_hnsw_index: the hnsw nearest neighbor does not exist\ncall stack: ', cs)
-    }
-    else {
-      message('test_hnsw_index: the hnsw nearest neighbor does not exist.')
     }
     return(FALSE)
   }
 
-  tryCatch( {
-    size_res <- nn_index[['hnsw_index']]$size()
-  },
+  size_res <- tryCatch(nn_index[['hnsw_index']]$size(),
   error=function(emsg) {
-    if(!verbose) {
+    if(verbose) {
       cs <- get_call_stack_as_string()
       message('test_hnsw_index: the hnsw nearest neighbor does not exist\ncall stack: ', cs)
-    }
-    else {
-      message('test_hnsw_index: the hnsw nearest neighbor does not exist.')
     }
     res <<- FALSE
   } )
@@ -923,7 +992,7 @@ search_nn_index <- function(query_matrix, nn_index, k=25, nn_control=list(), ver
   } else
   if(nn_method == 'annoy') {
     if(!test_annoy_index(nn_index=nn_index, verbose=verbose)) {
-      stop_no_noise()
+      stop('search_nn_index: the annoy nearest neighbor does not exist.')
     }
 
     # notes:
@@ -982,7 +1051,7 @@ search_nn_index <- function(query_matrix, nn_index, k=25, nn_control=list(), ver
   else
   if(nn_method == 'hnsw') {
     if(!test_hnsw_index(nn_index=nn_index, verbose=verbose)) {
-      stop_no_noise()
+      stop('search_nn_index: the hnsw nearest neighbor does not exist.')
     }
 
     assertthat::assert_that(nn_control[['ef']] >= k,
@@ -1091,7 +1160,8 @@ search_cds_nn_index <- function(query_matrix, cds, reduction_method=c('UMAP', 'P
                                    nn_index=NULL,
                                    k=k,
                                    verbose=verbose)
-  nn_index <- get_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_control_tmp[['method']], verbose=FALSE)
+  nn_index <- tryCatch(get_cds_nn_index(cds=cds, reduction_method=reduction_method, nn_control_tmp[['method']], verbose=FALSE),
+                error = function(c) { stop(paste0(trimws(c), '\n* error in search_cds_nn_index')) })
 
   nn_control <- set_nn_control(mode=2,
                                nn_control=nn_control,
@@ -1099,11 +1169,12 @@ search_cds_nn_index <- function(query_matrix, cds, reduction_method=c('UMAP', 'P
                                nn_index=nn_index,
                                k=k,
                                verbose=verbose)
-  nn_res <- search_nn_index(query_matrix=query_matrix,
-                            nn_index=nn_index,
-                            k=k,
-                            nn_control=nn_control,
-                            verbose=verbose)
+  nn_res <- tryCatch(search_nn_index(query_matrix=query_matrix,
+                                     nn_index=nn_index,
+                                     k=k,
+                                     nn_control=nn_control,
+                                     verbose=verbose),
+              error = function(c) { stop(paste0(trimws(c), '\n* error in search_cds_nn_index')) })
 
   return(nn_res)
 }
@@ -1160,7 +1231,7 @@ set_cds_nn_search <- function(cds, reduction_method=c('UMAP', 'PCA', 'LSI', 'Ali
   if(nn_method == 'annoy') {
     cds@reduce_dim_aux[[reduction_method]][['nn_search']][[search_id]] <- S4Vectors::SimpleList()
     cds@reduce_dim_aux[[reduction_method]][['nn_search']][[search_id]][['method']] <- nn_method
-    cds@reduce_dim_aux[[reduction_method]][['nn_search']][[search_id]][['search_k']] <- nn_contol[['search_k']]
+    cds@reduce_dim_aux[[reduction_method]][['nn_search']][[search_id]][['search_k']] <- nn_control[['search_k']]
     cds@reduce_dim_aux[[reduction_method]][['nn_search']][[search_id]][['k']] <- k
     cds@reduce_dim_aux[[reduction_method]][['nn_search']][[search_id]][['nrow']] <- nrow(reduced_matrix)
     cds@reduce_dim_aux[[reduction_method]][['nn_search']][[search_id]][['ncol']] <- ncol(reduced_matrix)
@@ -1358,8 +1429,10 @@ search_nn_matrix <- function(subject_matrix, query_matrix, k=25, nn_control=list
     nn_res <- RANN::nn2(subject_matrix, query_matrix, k, searchtype = "standard")
   }
   else {
-    nn_index <- make_nn_index(subject_matrix, nn_control=nn_control, verbose=verbose)
-    nn_res <- search_nn_index(query_matrix=query_matrix, nn_index=nn_index, k=k, nn_control=nn_control, verbose=verbose)
+    nn_index <- tryCatch(make_nn_index(subject_matrix, nn_control=nn_control, verbose=verbose),
+                  error = function(c) { stop(paste0(trimws(c), '\n* error in search_nn_index')) })
+    nn_res <- tryCatch(search_nn_index(query_matrix=query_matrix, nn_index=nn_index, k=k, nn_control=nn_control, verbose=verbose),
+                error = function(c) { stop(paste0(trimws(c), '\n* error in search_nn_matrix')) })
   }
 
   if(verbose)

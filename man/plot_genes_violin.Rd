@@ -43,9 +43,11 @@ feature id (FALSE). Default is TRUE.}
 factor. Default is TRUE.}
 
 \item{log_scale}{Logical, whether or not to scale data logarithmically.
-Default is TRUE.}
+Zero count cells are excluded from the plot and median when log_scale
+is TRUE. Default is TRUE.}
 
-\item{pseudocount}{A pseudo-count added to the gene expression. Default is 0.}
+\item{pseudocount}{A pseudo-count added to the gene expression. A
+pseudocount value greater than 0 is reset to 1. Default is 0.}
 }
 \value{
 a ggplot2 plot object
@@ -53,7 +55,7 @@ a ggplot2 plot object
 \description{
 Accepts a subset of a cell_data_set and an attribute to group
 cells by, and produces a ggplot2 object that plots the level of expression
-for each group of cells.
+for each group of cells. The median value is plotted as a black dot.
 }
 \examples{
   \donttest{

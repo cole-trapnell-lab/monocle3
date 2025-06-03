@@ -59,6 +59,10 @@ get_genome_in_matrix_path <- function(matrix_path, genome=NULL) {
 #' @param genome The desired genome (e.g., 'hg19' or 'mm10')
 #' @param barcode_filtered Load only the cell-containing barcodes
 #' @param umi_cutoff Numeric, desired cutoff to include a cell. Default is 100.
+#' @param matrix_control A list used to control how the counts matrix is stored
+#'    in the CDS. By default, Monocle3 stores the counts matrix in memory as a
+#'    sparse matrix. Setting 'matrix_control=list(matrix_class="BPCells")',
+#'    stores the matrix on disk as a sparse matrix.
 #' @return a new cell_data_set object
 #'
 #' @examples
@@ -69,7 +73,12 @@ get_genome_in_matrix_path <- function(matrix_path, genome=NULL) {
 #'
 #' @export
 load_cellranger_data <- function(pipestance_path=NULL, genome=NULL,
-                                 barcode_filtered=TRUE, umi_cutoff = 100) {
+                                 barcode_filtered=TRUE, umi_cutoff = 100,
+                                 matrix_control=list()) {
+
+  matrix_control_res <- tryCatch(set_matrix_control(matrix_control=matrix_control, matrix_control_default=list(), control_type='unrestricted'),
+                          error = function(c) { stop(paste0(trimws(c), '\n* error in load_cellranger_data')) })
+
   # check for correct directory structure
   if (!dir.exists(pipestance_path))
     stop("Could not find the pipestance path: '", pipestance_path,"'.
@@ -162,6 +171,8 @@ load_cellranger_data <- function(pipestance_path=NULL, genome=NULL,
   pd = data.frame(barcode=barcodes[,1], row.names=barcodes[,1])
   data <- data[,Matrix::colSums(data) > umi_cutoff]
   pd <- pd[colnames(data),, drop=FALSE]
+
+  data <- set_matrix_class(mat=data, matrix_control=matrix_control_res)
   gbm <- new_cell_data_set(data,
                         cell_metadata = pd,
                         gene_metadata =  feature.names)

@@ -462,6 +462,7 @@ setMethod("exprs", "cell_data_set", function(x) {
   return(value)
 })
 
+
 #' Generic to access cds colData table
 #' @param x A cell_data_set object.
 #'
@@ -581,3 +582,112 @@ setReplaceMethod("fData", "cell_data_set", function(x, value) {
   methods::validObject(x)
   return(x)
 })
+
+
+#
+# Redefine some methods in order to manage Monocle3 internal objects.
+#
+
+if (!isGeneric("saveRDS")) {setGeneric("saveRDS", function (object, file="", ascii=FALSE, version=NULL, compress=TRUE, refhook=NULL) standardGeneric("saveRDS"))}
+
+#' @export
+setMethod("saveRDS", signature(object="cell_data_set"),
+    function(object, file="", ascii = FALSE, version = NULL, compress=TRUE, refhook = NULL) {
+      if(is(counts(object), 'IterableMatrix')) {
+        message('Warning:')
+        message('  saveRDS(cds, ...) does not save the BPCells out-of-\
+  core CDS counts matrix that is in this cds, which will\
+  prevent you from using fully the cds after you read it\
+  with readRDS.')
+      } # is IterableMatrix
+      message('Warning:')
+      message('  saveRDS(cds, ...) does not save annoy or hnsw nearest\
+  neighbor indices, which you may need for future\
+  analyses.')
+  message()
+  message('We urge you to use the function\n\
+    save_monocle_objects()\n\
+  in order to save all of the information in the cds.\
+  See the notes in the save_monocle_objects() help\
+  documentation for additional information.')
+      message('However, we are running base::saveRDS() as you requested.')
+
+      base::saveRDS(object, file=file, ascii = ascii, version = version, compress=compress, refhook = refhook)
+    }
+)
+
+setMethod("saveRDS", signature(object="IterableMatrix"),
+    function(object, file="", ascii = FALSE, version = NULL, compress=TRUE, refhook = NULL) {
+        message('Warning: saveRDS() does not save the BPCells out-of-core\
+  matrix so you will be unable to read the matrix back\
+  into R.')
+
+      message('However, we are running base::saveRDS() as you requested.')
+
+      base::saveRDS(object, file=file, ascii = ascii, version = version, compress=compress, refhook = refhook)
+    }
+)
+
+
+
+#' @export
+#' @importFrom BiocGenerics "counts<-"
+setMethod("counts<-", signature(object="SingleCellExperiment"),
+    function(object, ..., value) {
+        largs <- list(...)
+        assay(object, 'counts') <- value
+        if(is(assays(object)[['counts']], "IterableMatrix") &&
+           (is.null(largs[['bpcells_warn']]) ||
+           !is.logical(largs[['bpcells_warn']]) ||
+           largs[['bpcells_warn']] != FALSE)) {
+          message(paste0('\nMonocle3 counts setter: setting a BPCells counts matrix.\n',
+                         'Now you must update the assays row-major order counts matrix\n',
+                         'which must have the same values as this counts matrix. Use\n',
+                         ' set_cds_row_order_matrix functions to do this. For example,\n',
+                         '  cds <- set_cds_row_order_matrix(cds)\n',
+                         '*** Bad things may happen if you don\'t do this. ***\n'))
+        }
+        object
+    }
+)
+
+
+#' Generic to access cds row order BPCells counts matrix.
+#' @param x A cell_data_set object.
+#' 
+#' @examples
+#'  \donttest{
+#'    cds <- load_a549(matrix_control=list(matrix_class='BPCells'))
+#'    mat_row_order <- counts_row_order(cds)
+#'  }         
+#'          
+#' @return BPCells row order counts matrix.
+#'
+#' @export
+setGeneric("counts_row_order", function(x) standardGeneric("counts_row_order"))
+  
+#' Method to access cds row order BPCells counts matrix
+#' @param x A cell_data_set object.
+#'
+#' @return BPCells row order counts matrix.
+#' 
+#' @export
+setMethod("counts_row_order", "cell_data_set", function(x) {
+  if(is.null(assay(x, 'counts_row_order'))) {
+    if(!is(counts(x), 'IterableMatrix')) {
+      stop('CDS counts matrix is not a BPCells matrix')
+    }
+    else {
+      stop('CDS has no BPCells row order counts matrix')
+    }
+  }
+  if(get_global_variable('bpcells_matrix_pair_check')) {
+    if(!check_bpcells_counts_matrix_pair(x)) {
+      stop('')
+    }
+  }
+  value <- assay(x, 'counts_row_order')
+  return(value)
+})                                 
+
+
