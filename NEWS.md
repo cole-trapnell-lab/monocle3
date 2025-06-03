@@ -1,3 +1,15 @@
+# Monocle3 1.4.25
+
+### Changes
+
+* Fix error in graph_test() on R 4.5.0.
+* Faster implementation of aggregating genes.
+* Aggregate genes using a similar method as cells, but allowing for the possibility that a gene can belong to multiple aggregation groups.
+* Allow for gene_group_df with one grouping in aggregate_gene_expression.
+* Update UMI plotting to allow for Z-score based cutoff.
+* Drawing a cutoff in plot_cells_per_sample_and_perturbation is now optional.
+* Allow plot_cells_per_sample_and_perturbation to optionally zscore counts before plotting.
+
 # Monocle3 1.4.18
 
 ### Changes
