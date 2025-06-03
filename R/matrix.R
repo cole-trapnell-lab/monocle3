@@ -1083,11 +1083,8 @@ check_bpcells_counts_matrix_pair <- function(cds) {
 #'
 #' @export
 convert_counts_matrix <- function(cds, matrix_control=list()) {
-  assertthat::assert_that(is.list(matrix_control) && length(matrix_control) > 0,
+  assertthat::assert_that(is.list(matrix_control),
                           msg = 'convert_counts_matrix: invalid matrix_control parameter')
-
-  assertthat::assert_that(!is.null(matrix_control[['matrix_class']]),
-                          msg = 'convert_counts_matrix: matrix_control[[\'matrix_class\']] missing in matrix_control list.')
 
   matrix_control_default <- tryCatch(set_matrix_control_default(matrix_control=matrix_control, control_type='unrestricted'),
                               error = function(c) { stop(paste0(trimws(c), '\n* error in convert_counts_matrix')) })
