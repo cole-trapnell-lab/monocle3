@@ -72,28 +72,23 @@ Reduced dimension matrix identity
     prev_matrix_id      9fb8819fac058c01a6044a2235991588  dim: 6188 50
     model_type  matrix:UMAP
     model_id    8a52b66ee33e4dad7c9c5310525821ec  dim: 6188 2
-
-Reduced dimension model identity
-  PCA
-    model_type  matrix:PCA
-    model_id    9fb8819fac058c01a6044a2235991588  dim: 6188 50
-    prev_model_type     none
-    prev_model_id       none
-    model_path  none
-
-    .
-    .
-    .
-
-  UMAP
-    model_type  matrix:UMAP
-    model_id    8a52b66ee33e4dad7c9c5310525821ec  dim: 6188 2
-    prev_model_type     matrix:PCA
-    prev_model_id       9fb8819fac058c01a6044a2235991588  dim: 6188 50
-    model_path  none
           </pre>
-
-
+         </li>
+         <li>
+           On startup, Monocle3 runs commands in the file <code>$HOME/.monoclerc</code>, if it exists. You can customize
+           Monocle3 behavior by setting global variables in it. For example, if you want Monocle3 to use BPCells matrices
+           and GNU tar by default, create <code>$HOME/.monoclerc</code> with the following function calls
+           <pre>
+# Default matrix_class.
+set_global_variable('matrix_class_default', 'dgCMatrix')
+# Use gnu tar for R tar. This affects the save_monocle_objects() function
+# when it makes a tar archive.
+Sys.setenv('tar' = paste(Sys.getenv("TAR"), "-H", "gnu"))
+           </pre>
+           The function <code>.onLoad()</code> in the file <code>R/zzz.R</code> runs the code in
+           <code>$HOME/.monoclerc</code> on startup. Default global variable values are defined
+           in <code>.onLoad()</code> before sourcing <code>$HOME/.monoclerc</code>, so you can
+           change the defaults by setting them in <code>$HOME/.monoclerc</code>.
          </li>
         </ul>
                   </p>
