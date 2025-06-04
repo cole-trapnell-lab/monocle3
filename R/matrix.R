@@ -813,6 +813,15 @@ compare_matrix_control <- function(matrix_control=list(), matrix_info=list(), co
 }
 
 
+set_matrix_citation <- function(cds) {
+  matrix_class <- get_matrix_class(counts(cds))
+  if(matrix_class == 'BPCells') {
+    cds <- add_citation(cds, 'bpcells')
+  }
+  cds
+}
+
+
 # set_matrix_class
 #  Notes:
 #    o  set_matrix_class is meant to be the function used
@@ -1099,6 +1108,7 @@ convert_counts_matrix <- function(cds, matrix_control=list()) {
   mat <- counts(cds)
 
   counts(cds, bpcells_warn=FALSE) <- set_matrix_class(mat=mat, matrix_control=matrix_control_res)
+  cds <- set_matrix_citation(cds)
 
   if(matrix_control_res[['matrix_class']] == 'BPCells') {
     push_matrix_path(mat=mat)

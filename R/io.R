@@ -34,6 +34,7 @@ load_a549 <- function(matrix_control=list()){
   cds <- new_cell_data_set(expression_data = expression_matrix,
                            cell_metadata = small_a549_colData_df,
                            gene_metadata = small_a549_rowData_df)
+  cds <- set_matrix_citation(cds)
   cds
 }
 
@@ -60,6 +61,7 @@ load_worm_embryo <- function(matrix_control=list()) {
   cds <- new_cell_data_set(expression_matrix,
       cell_metadata = cell_metadata,
       gene_metadata = gene_annotation)
+  cds <- set_matrix_citation(cds)
   cds <- estimate_size_factors(cds)
 
   cds <- initialize_counts_metadata(cds)
@@ -91,6 +93,7 @@ load_worm_l2 <- function(matrix_control=list()) {
   cds <- new_cell_data_set(expression_matrix,
       cell_metadata = cell_metadata,
       gene_metadata = gene_annotation)
+  cds <- set_matrix_citation(cds)
   cds <- estimate_size_factors(cds)
 
   cds <- initialize_counts_metadata(cds)
@@ -364,6 +367,7 @@ load_mm_data <- function( mat_path,
                            cell_metadata = cell_annotations$metadata,
                            gene_metadata = feature_annotations$metadata,
                            verbose = verbose)
+  cds <- set_matrix_citation(cds)
 
   if(is(counts(cds), 'CsparseMatrix')) {
     colData(cds)$n.umi <- Matrix::colSums(counts(cds))
@@ -482,6 +486,7 @@ load_mtx_data <- function( mat_path,
 
   cds <- new_cell_data_set(mat, cell_metadata = cell.annotations,
       gene_metadata = gene.annotations)
+  cds <- set_matrix_citation(cds)
   colData(cds)$n.umi <- Matrix::colSums(counts(cds))
   cds <- cds[,colData(cds)$n.umi >= umi_cutoff]
   cds <- estimate_size_factors(cds)
