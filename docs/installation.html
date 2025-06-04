@@ -47,16 +47,16 @@ tags: [monocle, manual, vignette]
       <h3 id="required-software"> Required software </h3>
 
       <p>Monocle 3 runs in the <a href= "https://www.r-project.org/">R statistical
-        computing environment</a>. You will need R version 4.1.0 or higher,
-        <a href="https://bioconductor.org/">Bioconductor</a> version 3.14, and
-        monocle3 1.2.7 or higher to have access to the latest features.
+        computing environment</a>. You will need R version 4.4.1 or higher,
+        <a href="https://bioconductor.org/">Bioconductor</a> version 3.21, and
+        monocle3 1.4.25 or higher to have access to the latest features.
       </p>
 
       <p>To install Bioconductor, open R and run:</p>
 {% highlight R %}
 if (!requireNamespace("BiocManager", quietly = TRUE))
 install.packages("BiocManager")
-BiocManager::install(version = "3.14")
+BiocManager::install(version = "3.21")
 {% endhighlight %}
 
       <p>Next, install a few Bioconductor dependencies that aren't automatically installed:</p>
@@ -64,13 +64,19 @@ BiocManager::install(version = "3.14")
 BiocManager::install(c('BiocGenerics', 'DelayedArray', 'DelayedMatrixStats',
                        'limma', 'lme4', 'S4Vectors', 'SingleCellExperiment',
                        'SummarizedExperiment', 'batchelor', 'HDF5Array',
-                       'terra', 'ggrastr'))
+                       'ggrastr'))
 {% endhighlight %}
 
+      <p>Install the devtools and BPCells packages:</p>
+{% highlight R %}
+install.packages("devtools")
+remotes::install_github("bnprks/BPCells/r")
+{% endhighlight %}
+      <p>More information is available at 
+            <a href="https://github.com/bnprks/BPCells/">BPCells</a>. </p>
       <p>Now, install monocle3 through the cole-trapnell-lab GitHub, execute:</p>
 
 {% highlight R %}
-install.packages("devtools")
 devtools::install_github('cole-trapnell-lab/monocle3')
 {% endhighlight %}
 
