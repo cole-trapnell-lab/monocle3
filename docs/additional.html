@@ -76,11 +76,14 @@ Reduced dimension matrix identity
          </li>
          <li>
            On startup, Monocle3 runs commands in the file <code>$HOME/.monoclerc</code>, if it exists. You can customize
-           Monocle3 behavior by setting global variables in it. For example, if you want Monocle3 to use BPCells matrices
-           and GNU tar by default, create <code>$HOME/.monoclerc</code> with the following function calls
+           Monocle3 behavior by setting global variables in it. For example, if you want Monocle3 to use BPCells matrices,
+           GNU tar, and not tar monocle objects directories by default, create <code>$HOME/.monoclerc</code> with the
+           following function calls
            <pre>
-# Default matrix_class.
-set_global_variable('matrix_class_default', 'dgCMatrix')
+# Use BPCells matrix_class for new matrices.
+set_global_variable('matrix_class_default', 'BPCells')
+# Don't tar monocle objects directories when running save_monocle_objects.
+monocle3:::set_global_variable('archive_control', list(archive_type='none', archive_compression='none'))
 # Use gnu tar for R tar. This affects the save_monocle_objects() function
 # when it makes a tar archive.
 Sys.setenv('tar' = paste(Sys.getenv("TAR"), "-H", "gnu"))
