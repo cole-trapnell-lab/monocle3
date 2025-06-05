@@ -34,6 +34,7 @@ load_a549 <- function(matrix_control=list()){
   cds <- new_cell_data_set(expression_data = expression_matrix,
                            cell_metadata = small_a549_colData_df,
                            gene_metadata = small_a549_rowData_df)
+  cds <- set_matrix_citation(cds)
   cds
 }
 
@@ -60,6 +61,7 @@ load_worm_embryo <- function(matrix_control=list()) {
   cds <- new_cell_data_set(expression_matrix,
       cell_metadata = cell_metadata,
       gene_metadata = gene_annotation)
+  cds <- set_matrix_citation(cds)
   cds <- estimate_size_factors(cds)
 
   cds <- initialize_counts_metadata(cds)
@@ -91,6 +93,7 @@ load_worm_l2 <- function(matrix_control=list()) {
   cds <- new_cell_data_set(expression_matrix,
       cell_metadata = cell_metadata,
       gene_metadata = gene_annotation)
+  cds <- set_matrix_citation(cds)
   cds <- estimate_size_factors(cds)
 
   cds <- initialize_counts_metadata(cds)
@@ -364,6 +367,7 @@ load_mm_data <- function( mat_path,
                            cell_metadata = cell_annotations$metadata,
                            gene_metadata = feature_annotations$metadata,
                            verbose = verbose)
+  cds <- set_matrix_citation(cds)
 
   if(is(counts(cds), 'CsparseMatrix')) {
     colData(cds)$n.umi <- Matrix::colSums(counts(cds))
@@ -482,6 +486,7 @@ load_mtx_data <- function( mat_path,
 
   cds <- new_cell_data_set(mat, cell_metadata = cell.annotations,
       gene_metadata = gene.annotations)
+  cds <- set_matrix_citation(cds)
   colData(cds)$n.umi <- Matrix::colSums(counts(cds))
   cds <- cds[,colData(cds)$n.umi >= umi_cutoff]
   cds <- estimate_size_factors(cds)
@@ -1219,6 +1224,26 @@ make_tar_of_dir <- function(directory_path, archive_control) {
 }
 
 
+set_archive_control <- function(archive_control=list()) {
+  archive_control_default <- get_global_variable('archive_control')
+  if(is.null(archive_control_default[['archive_type']])) {
+    archive_control_default[['archive_type']] <- 'tar'
+  }
+  if(is.null(archive_control_default[['archive_compression']])) {
+    archive_control_default[['archive_compression']] <- 'none'
+  }
+
+  if(is.null(archive_control[['archive_type']])) {
+    archive_control[['archive_type']] <- archive_control_default[['archive_type']]
+  }
+
+  if(is.null(archive_control[['archive_compression']])) {
+    archive_control[['archive_compression']] <- archive_control_default[['archive_compression']]
+  }
+
+  return(archive_control)
+}
+
 
 #
 #' Save cell_data_set transform models.
@@ -1293,9 +1318,10 @@ make_tar_of_dir <- function(directory_path, archive_control) {
 #' @export
 # Bioconductor forbids writing to user directories so examples
 # is not run.
-save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE, archive_control=list(archive_type="tar", archive_compression="none")) {
-  if(is.null(archive_control[['archive_type']])) archive_control[['archive_type']] <- 'tar'
-  if(is.null(archive_control[['archive_compression']])) archive_control[['archive_compression']] <- 'none'
+save_transform_models <- function( cds, directory_path, comment="", verbose=TRUE, archive_control=list()) {
+  assertthat::assert_that(is.list(archive_control),
+                          msg = 'save_transform_models: invalid archive_control parameter')
+  archive_control <- set_archive_control(archive_control)
 
   assertthat::assert_that(archive_control[['archive_type']] %in% c('tar', 'none'),
     msg=paste0("archive_type must be either \'none\' or \'tar\'"))
@@ -1864,8 +1890,7 @@ bpcells_matdir_md5 <- function(matrix_dir_path) {
 #'             Monocle3 transfer_cell_labels() function.
 #'             save_monocle_objects() saves these Annoy indices.}
 #'       \item{The save_monocle_objects() output directory is not
-#'             removed after it is archived by
-#'             save_monocle_objects().}
+#'             removed after it is archived by save_monocle_objects().}
 #'       \item{The R tar archive function used by Monocle3 may have
 #'             a limited output file size of 8 GB. If you encounter
 #'             this problem, you can set the environment variable
@@ -1874,6 +1899,12 @@ bpcells_matdir_md5 <- function(matrix_dir_path) {
 #'             $HOME/.monoclerc file by adding a line consisting of
 #'             Sys.setenv('tar' = paste(Sys.getenv("TAR"), "-H", "gnu")).
 #'             See the R 'tar' documentation for more information.}
+#'       \item{You can change the default archive_control list values
+#'             by defining the default in your $HOME/.monoclerc file.
+#'             For example, you can include the command
+#'             monocle3:::set_global_variable("archive_control", list(archive_type="none", archive_compression="none"))
+#'             to avoid making a tar file of the monocle objects
+#'             directory.}
 #'   }
 #'
 #' @return none.
@@ -1893,10 +1924,10 @@ bpcells_matdir_md5 <- function(matrix_dir_path) {
 # *** break load_transform_models() because load_transform_models() ***
 # *** can read a save_monocle_objects() output directory.           ***
 #
-save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment="", verbose=TRUE, archive_control=list(archive_type="tar", archive_compression="none")) {
-
-  if(is.null(archive_control[['archive_type']])) archive_control[['archive_type']] <- 'tar'
-  if(is.null(archive_control[['archive_compression']])) archive_control[['archive_compression']] <- 'none'
+save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment="", verbose=TRUE, archive_control=list()) {
+  assertthat::assert_that(is.list(archive_control),
+                          msg = 'save_transform_models: invalid archive_control parameter')
+  archive_control <- set_archive_control(archive_control)
 
   assertthat::assert_that(archive_control[['archive_type']] %in% c('tar', 'none'),
     msg=paste0("archive_type must be either \'none\' or \'tar\'"))

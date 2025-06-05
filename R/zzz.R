@@ -127,6 +127,9 @@ get_global_variable <- function(variable_name=NULL) {
    set_global_variable('matrix_control_csparsematrix_pca', list(matrix_class='dgCMatrix'))
    set_global_variable('matrix_control_bpcells_pca', list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=FALSE, matrix_path='.', matrix_buffer_size=8192L, matrix_bpcells_copy=TRUE))
 
+  # Default archive_control list.
+  set_global_variable('archive_control', list(archive_type='tar', archive_compression='none'))
+
   # Watching preprocess_cds() it appears that R uses OMP_NUM_THREADS
   # threads if OMP_NUM_THREADS > 1 and OPENBLAS_NUM_THREADS is NA.
   # After setting, RhpcBLASctl::blas_set_num_threads(1L) and then

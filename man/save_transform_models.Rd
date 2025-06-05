@@ -9,7 +9,7 @@ save_transform_models(
   directory_path,
   comment = "",
   verbose = TRUE,
-  archive_control = list(archive_type = "tar", archive_compression = "none")
+  archive_control = list()
 )
 }
 \arguments{

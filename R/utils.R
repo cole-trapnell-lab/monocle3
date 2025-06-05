@@ -815,6 +815,7 @@ combine_cds <- function(cds_list,
 
   # Make a combined CDS from all_exp, all_pd, and all_fd.
   new_cds <- new_cell_data_set(all_exp, cell_metadata = all_pd, gene_metadata = all_fd)
+  new_cds <- set_matrix_citation(new_cds)
 
   # Add in preprocessing results.
   if(keep_reduced_dims) {
@@ -1108,6 +1109,7 @@ combine_cds_for_maddy <- function(cds_list,
 
   # Make a combined CDS from all_exp, all_pd, and all_fd.
   new_cds <- new_cell_data_set(all_exp, cell_metadata = all_pd, gene_metadata = all_fd)
+  new_cds <- set_matrix_citation(new_cds)
 
   # Add in preprocessing results.
   if(keep_reduced_dims) {
@@ -1171,10 +1173,11 @@ add_citation <- function(cds, citation_key) {
   citation_map <- list(
     UMAP = c("UMAP", "McInnes, L., Healy, J. & Melville, J. UMAP: Uniform Manifold Approximation and Projection for dimension reduction. Preprint at https://arxiv.org/abs/1802.03426 (2018)."),
     MNN_correct = c("MNN Correct", "Haghverdi, L. et. al. Batch effects in single-cell RNA-sequencing data are corrected by matching mutual nearest neighbors. Nat. Biotechnol. 36, 421-427 (2018). https://doi.org/10.1038/nbt.4091"),
-    partitions = c("paritioning", c("Levine, J. H., et. al. Data-driven phenotypic dissection of AML reveals progenitor-like cells that correlate with prognosis. Cell 162, 184-197 (2015). https://doi.org/10.1016/j.cell.2015.05.047",
+    partitions = c("partitioning", c("Levine, J. H., et. al. Data-driven phenotypic dissection of AML reveals progenitor-like cells that correlate with prognosis. Cell 162, 184-197 (2015). https://doi.org/10.1016/j.cell.2015.05.047",
                                   "Wolf, F. A. et. al. PAGA: graph abstraction reconciles clustering with trajectory inference through a topology preserving map of single cells. Genome Biol. 20, 59 (2019). https://doi.org/10.1186/s13059-019-1663-x")),
     clusters = c("clustering", "Levine, J. H. et. al. Data-driven phenotypic dissection of AML reveals progenitor-like cells that correlate with prognosis. Cell 162, 184-197 (2015). https://doi.org/10.1016/j.cell.2015.05.047"),
-    leiden = c("leiden", "Traag, V.A., Waltman, L. & van Eck, N.J. From Louvain to Leiden: guaranteeing well-connected communities. Scientific Reportsvolume 9, Article number: 5233 (2019). https://doi.org/10.1038/s41598-019-41695-z" )
+    leiden = c("leiden", "Traag, V.A., Waltman, L. & van Eck, N.J. From Louvain to Leiden: guaranteeing well-connected communities. Scientific Reportsvolume 9, Article number: 5233 (2019). https://doi.org/10.1038/s41598-019-41695-z" ),
+    bpcells = c("BPCells", "Parks, B & Abdi, I. BPCells: Single Cell Counts Matrices to PCA. https://bnprks.github.io/BPCells")
   )
   if (is.null(S4Vectors::metadata(cds)$citations) | citation_key == "Monocle") {
     S4Vectors::metadata(cds)$citations <- data.frame(method = c("Monocle", "Monocle", "Monocle"),

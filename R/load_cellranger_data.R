@@ -176,6 +176,7 @@ load_cellranger_data <- function(pipestance_path=NULL, genome=NULL,
   gbm <- new_cell_data_set(data,
                         cell_metadata = pd,
                         gene_metadata =  feature.names)
+  set_matrix_citation(gbm)
 
   return(gbm)
 }
