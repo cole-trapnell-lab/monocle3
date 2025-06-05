@@ -10,7 +10,7 @@ save_monocle_objects(
   hdf5_assays = FALSE,
   comment = "",
   verbose = TRUE,
-  archive_control = list(archive_type = "tar", archive_compression = "none")
+  archive_control = list()
 )
 }
 \arguments{
@@ -131,8 +131,7 @@ indices can be used for label transfer with the
 Monocle3 transfer_cell_labels() function.
 save_monocle_objects() saves these Annoy indices.}
 \item{The save_monocle_objects() output directory is not
-removed after it is archived by
-save_monocle_objects().}
+removed after it is archived by save_monocle_objects().}
 \item{The R tar archive function used by Monocle3 may have
 a limited output file size of 8 GB. If you encounter
 this problem, you can set the environment variable
@@ -141,6 +140,12 @@ for example, gnu tar. You can do this in the
 $HOME/.monoclerc file by adding a line consisting of
 Sys.setenv('tar' = paste(Sys.getenv("TAR"), "-H", "gnu")).
 See the R 'tar' documentation for more information.}
+\item{You can change the default archive_control list values
+by defining the default in your $HOME/.monoclerc file.
+For example, you can include the command
+monocle3:::set_global_variable("archive_control", list(archive_type="none", archive_compression="none"))
+to avoid making a tar file of the monocle objects
+directory.}
 }
 }
 
