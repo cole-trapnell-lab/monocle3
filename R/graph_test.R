@@ -218,15 +218,13 @@ graph_test <- function(cds,
 }
 
 my.moran.test <- function (x, listw, wc, alternative = "greater",
-                           randomisation = TRUE) {
+                           randomisation = TRUE, na.action = na.fail) {
   zero.policy = TRUE
   adjust.n = TRUE
-  na.action = stats::na.fail
   drop.EI2 = FALSE
   xname <- deparse(substitute(x))
   wname <- deparse(substitute(listw))
   NAOK <- deparse(substitute(na.action)) == "na.pass"
-  NAOK <- NAOK[1]
   x <- na.action(x)
   na.act <- attr(x, "na.action")
   if (!is.null(na.act)) {
