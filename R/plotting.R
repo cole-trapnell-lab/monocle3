@@ -268,13 +268,27 @@ plot_cells_3d <- function(cds,
     } else {
       if(is.null(color_palette)) {
         N <- length(unique(data_df$cell_color))
-        color_palette <- RColorBrewer::brewer.pal(N, "Set2")
+        if(N <= 8) {
+          color_palette <- RColorBrewer::brewer.pal(N, "Set2")
+        }
+        else {
+          color_palette <- RColorBrewer::brewer.pal(N, "Set3")
+        }
       }
+      #
+      # plotly::plot_ly() appears to set cell colors to 'transparent' when
+      # the color argument is of type factor and the levels are not strings
+      # of integers. Converting the factors to a vector of character strings
+      # appears to solve the problem.
+      #
+      cell_color_factors <- data_df$cell_color
+      data_df$cell_color <- as.character(data_df$cell_color)
       p <- plotly::plot_ly(data_df, x = ~data_dim_1, y = ~data_dim_2,
                            z = ~data_dim_3, type = 'scatter3d',
                            size=I(cell_size), color=~cell_color,
                            colors = color_palette,
                            mode="markers", alpha = I(alpha))
+      data_df$cell_color <- cell_color_factors
     }
   }
   p <- p %>%
