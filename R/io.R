@@ -2436,17 +2436,16 @@ load_monocle_objects <- function(directory_path, matrix_control=list()) {
       if(!is.null(assay(cds, 'counts_row_order'))) {
         assay(cds, 'counts_row_order') <- NULL
       }
-      if(colData(cds) > 0) {
+      if(nrow(colData(cds)) > 0) {
         counts(cds, bpcells_warn=FALSE ) <- tryCatch(
           load_bpcells_matrix_dir(file_path, md5sum, matrix_control=matrix_control_res),
           error = function(c) { stop(paste0(trimws(c), '\n* error in load_monocle_objects')) })
       }
       else {
         #
-        # At this time, when a count matrix has zero cells, the
-        # write_matrix_dir() function mis-states ncols as 1. So
-        # reset the value to zero on opening/loading the count
-        # matrix.
+        # At this time, when a matrix has zero cells, the write_matrix_dir()
+        # function mis-states ncols as 1 in the saved directory. So reset the
+        # value to zero on 'opening' the matrix.
         #
         mat_tmp <- tryCatch(
           load_bpcells_matrix_dir(file_path, md5sum, matrix_control=matrix_control_res),
@@ -2454,7 +2453,7 @@ load_monocle_objects <- function(directory_path, matrix_control=list()) {
         if(ncol(mat_tmp) != 1) {
           stop('load_monocle_objects: unexpected number of matrix columns (not one)')
         }
-        mat_tmp <- mat_tmp[,colSums(mat_tmp[,1]) > 0]
+        mat_tmp <- mat_tmp[,BPCells::colSums(mat_tmp)[1]>0]
         if(ncol(mat_tmp) != 0) {
           stop('load_monocle_objects: unexpected number of matrix columns (not zero)')
         }
