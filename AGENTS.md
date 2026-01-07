@@ -1,11 +1,11 @@
-# Codex instructions (Hooke)
+# Codex instructions (Monocle)
 
 ## What this repo is
-Hooke is an R package used in the Trapnell Lab stack for statistical analysis of single-cell perturbation data.
+Monocle is an R package used in the Trapnell Lab stack for analysis of single-cell perturbation data.
 
-# Codex instructions (Hooke)
+# Codex instructions (Monocle)
 
-Hooke is an R package used in the Trapnell Lab stack for statistical analysis of single-cell perturbation data.
+Monocle is an R package used in the Trapnell Lab stack for analysis of single-cell perturbation data.
 
 ## Cost & safety guardrails
 - Safe to run R package checks and unit tests (minutes).
