@@ -61,6 +61,7 @@ sparse_apply_transform <- function(FM, rotation_matrix, vcenter=vcenter, vscale=
 
 
 bpcells_apply_transform <- function(FM, rotation_matrix, vcenter=vcenter, vscale=vscale, verbose=FALSE) {
+  require_bpcells("bpcells_apply_transform")
   if(verbose) {
     message('projection: bpcells_apply_transform: matrix class: ', class(FM))
     message(paste0(show_matrix_info(matrix_info=get_matrix_info(mat=FM), indent='  ')), appendLF=FALSE)
@@ -230,7 +231,7 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
 
   set.seed(2016)
 
-  iterable_matrix_flag <- methods::is(counts(cds), 'IterableMatrix')
+  iterable_matrix_flag <- is_iterable_matrix(counts(cds))
 
   if(reduction_method == 'PCA') {
     norm_method <- cds@reduce_dim_aux[[reduction_method]][['model']][['norm_method']]
@@ -380,7 +381,7 @@ preprocess_transform <- function(cds, reduction_method=c('PCA', 'LSI'), block_si
         print(paste("TF*IDF multiplication too large for in-memory, falling back",
                     "on DelayedArray."))
         options(DelayedArray.block.size=block_size)
-        DelayedArray:::set_verbose_block_processing(TRUE)
+        delayedarray_set_verbose_block_processing(TRUE)
     
         tf = DelayedArray::DelayedArray(tf)
         idf = as.matrix(idf)
@@ -682,4 +683,3 @@ align_beta_transform <- function(cds, preprocess_method = 'PCA') {
 
   return(cds)
 }
-

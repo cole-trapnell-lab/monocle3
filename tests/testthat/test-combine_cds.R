@@ -1,7 +1,6 @@
 testthat::skip_if_offline()
 cds <- load_a549()
 cds2 <- monocle3:::load_worm_embryo()
-cds_bpc <- monocle3:::load_worm_embryo(matrix_control=list(matrix_class='BPCells'))
 
 test_that("combine_cds works", {
   check_comb <- function(cds1, cds2, comb, keep_all_genes) {
@@ -243,9 +242,14 @@ test_that("combine_cds works", {
                paste("No genes are shared amongst all the CDS objects. To generate a",
                      "combined CDS with all genes, use keep_all_genes = TRUE"))
 
-  # BPCells
+})
+
+test_that("combine_cds works (BPCells)", {
+  testthat::skip_if_not_installed("BPCells")
+
+  cds_bpc <- monocle3:::load_worm_embryo(matrix_control=list(matrix_class='BPCells'))
   cds_bpc1 <- cds_bpc[,1:1000]
-  cds_bpc2 <- cds_bpc[,1001:6188]  
+  cds_bpc2 <- cds_bpc[,1001:6188]
   cds_combined <- combine_cds(list(cds_bpc1, cds_bpc2), cell_names_unique=TRUE)
   testthat::expect_true(is(counts(cds_combined), 'IterableMatrix'))
   vma <- as.vector(as(counts(cds_bpc), 'dgCMatrix'))
@@ -259,5 +263,4 @@ test_that("combine_cds works", {
   cnb <- colnames(cds_combined)
   testthat::expect_true(all(cna == cnb))
 })
-
 

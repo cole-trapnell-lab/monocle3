@@ -755,7 +755,7 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE,
 
   if(!is.function(Projection_Method)) {
     P <- Y[, closest_vertex]
-  } else {
+  } else if (!identical(Projection_Method, project_point_to_line_segment)) {
     if(length(Z) < 1) warning('bad loop: length(Z) < 1')
     P <- matrix(rep(0, length(Z)), nrow = nrow(Z)) #Y
     if(length(Z[1:2, ]) < 1) warning('bad loop: length(Z[1:2, ]) < 1')
@@ -798,6 +798,46 @@ project2MST <- function(cds, Projection_Method, orthogonal_proj_tip = FALSE,
       P[, i] <- projection[which_min, ]
       nearest_edges[i, ] <- c(closest_vertex_names[i], neighbors[which_min])
     }
+  } else {
+    # Optimized C++ implementation replacing the slow R loop
+    # Maps graph structure to Y indices
+    node_names <- colnames(Y)
+    name_map <- setNames(seq_len(ncol(Y)), node_names)
+    
+    # Get adjacency list
+    # Use names to ensure alignment between graph and Y
+    g_adj <- igraph::as_adj_list(dp_mst, mode='all')
+    
+    # Ensure g_adj covers all nodes in Y (handle disconnected/missing if any)
+    # and map neighbors to Y indices
+    final_adj_list <- lapply(node_names, function(nm) {
+      if (!nm %in% names(g_adj)) return(integer(0))
+      nb <- g_adj[[nm]]
+      # nb are graph indices, convert to names then to Y indices
+      nb_names <- igraph::V(dp_mst)[nb]$name
+      as.integer(name_map[nb_names])
+    })
+    
+    # Prepare TipLeaves
+    deg <- igraph::degree(dp_mst)
+    is_tip <- setNames(rep(FALSE, ncol(Y)), node_names)
+    # Only if name exists in degree vector
+    common_names <- intersect(names(deg), node_names)
+    is_tip[common_names] <- (deg[common_names] == 1)
+    
+    # Call C++
+    # Note: closest_vertex is 1-based index into Y
+    res <- project_point_to_graph(Z, Y, final_adj_list, as.integer(closest_vertex[,1]), is_tip, orthogonal_proj_tip)
+    
+    P <- res$P
+    nearest_edges_idx <- res$nearest_edges
+    node_names <- colnames(Y)
+    nearest_edges_idx[nearest_edges_idx < 1 |
+                        nearest_edges_idx > length(node_names)] <- NA_integer_
+    nearest_edges <- matrix(node_names[nearest_edges_idx],
+                            nrow = nrow(nearest_edges_idx),
+                            ncol = ncol(nearest_edges_idx))
+    row.names(nearest_edges) <- colnames(cds)
   }
 
   colnames(P) <- colnames(Z)
@@ -1290,6 +1330,4 @@ connect_tips <- function(cds,
 
   list(stree = igraph::get.adjacency(mst_g), Y = reducedDimK_df, G = G)
 }
-
-
 

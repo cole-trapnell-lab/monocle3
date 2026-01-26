@@ -313,7 +313,7 @@ select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
       )
     )
 
-    server <- function(input, output) {
+    server_3d <- function(input, output) {
 
       vals <- shiny::reactiveValues(
         keeprows = rep(TRUE, nrow(ica_space_df))
@@ -357,7 +357,7 @@ select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
       })
 
     }
-    sel <- shiny::runApp(shiny::shinyApp(ui, server))
+    sel <- shiny::runApp(shiny::shinyApp(ui, server_3d))
   } else {
     ui <- shiny::fluidPage(
       shiny::titlePanel("Choose your root nodes"),
@@ -401,7 +401,7 @@ select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
       )
     )
 
-    server <- function(input, output, session) {
+    server_2d <- function(input, output, session) {
 
       vals <- shiny::reactiveValues(
         keeprows = rep(TRUE, nrow(ica_space_df))
@@ -457,7 +457,7 @@ select_trajectory_roots <- function(cds, x=1, y=2, # nocov start
       })
 
     }
-    sel <- shiny::runApp(shiny::shinyApp(ui, server))
+    sel <- shiny::runApp(shiny::shinyApp(ui, server_2d))
   }
   ## return indices of selected points
   as.character(ica_space_df$sample_name[which(!sel)])
@@ -485,7 +485,6 @@ root_nodes <- function(cds, reduction_method="UMAP"){
     cds@principal_graph_aux[[reduction_method]]$root_pr_nodes
   return(root_pr_nodes)
 }
-
 
 
 

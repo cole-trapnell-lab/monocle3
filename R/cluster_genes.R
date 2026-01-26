@@ -232,7 +232,7 @@ find_gene_modules <- function(cds,
 #' @noRd
 my.aggregate.Matrix = function (x, groupings = NULL, form = NULL, fun = "sum", ...)
 {
-  if (!methods::is(x, "Matrix") && !methods::is(x, "IterableMatrix")) {
+  if (!methods::is(x, "Matrix") && !is_iterable_matrix(x)) {
     x <- Matrix::Matrix(as.matrix(x), sparse = TRUE)
   }
   if (fun == "count")
@@ -246,8 +246,8 @@ my.aggregate.Matrix = function (x, groupings = NULL, form = NULL, fun = "sum", .
   result <- Matrix::t(mapping) %*% x
   if (fun == "mean")
     result <- result/as.numeric(table(groupings)[rownames(result)])
-  attr(result, "crosswalk") <- grr::extract(groupings, match(rownames(result),
-                                                             groupings2$A))
+  attr(result, "crosswalk") <- groupings[match(rownames(result),
+                                               as.character(groupings2$A))]
   return(result)
 }
 
@@ -530,7 +530,7 @@ aggregate_gene_expression <- function(cds,
     agg_mat <- agg_mat[row.names(agg_mat) != "NA", colnames(agg_mat) != "NA",drop=FALSE]
   }
 
-  if(is(agg_mat, 'IterableMatrix')) {
+  if(is_iterable_matrix(agg_mat)) {
     agg_mat <- as(agg_mat, 'dgCMatrix')
   }
 

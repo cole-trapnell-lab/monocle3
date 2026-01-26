@@ -24,8 +24,10 @@ replace or change the CDS's counts matrix, you must also update the \code{counts
 you can do using this function set_cds_row_order_matrix.
 }
 \examples{
-   cds <- load_a549(matrix_control=list(matrix_class='BPCells'))
-   cds <- set_cds_row_order_matrix(cds)
-   str(cds)
+   if (requireNamespace("BPCells", quietly = TRUE)) {
+     cds <- load_a549(matrix_control=list(matrix_class='BPCells'))
+     cds <- set_cds_row_order_matrix(cds)
+     str(cds)
+   }
 
 }

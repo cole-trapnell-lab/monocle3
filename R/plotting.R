@@ -171,7 +171,7 @@ plot_cells_3d <- function(cds,
       } else {
           cds_exprs <- round(cds_exprs, digits=4)
         # bge
-        if(!is(cds_exprs, 'IterableMatrix')) {
+        if(!is_iterable_matrix(cds_exprs)) {
           markers_exprs <- matrix(cds_exprs, nrow=nrow(markers_rowData))
         }
         else {
@@ -613,7 +613,7 @@ plot_cells <- function(cds,
       } else {
         cds_exprs = round(cds_exprs, digits=4)
         # bge
-        if(!is(cds_exprs, 'IterableMatrix')) {
+        if(!is_iterable_matrix(cds_exprs)) {
           markers_exprs = matrix(cds_exprs, nrow=nrow(markers_rowData))   # bge
         }
         else {
@@ -2229,4 +2229,3 @@ get_n_colors <- function(n) {
   palette <- colorRampPalette(c(vibrant_colors, bright_colors))
   return(palette(n))
 }
-

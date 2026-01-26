@@ -28,7 +28,9 @@ matrix_control list.
 \examples{
    cds <- load_a549()
    str(counts(cds))
-   cds <- convert_counts_matrix(cds, matrix_control=list(matrix_class='BPCells'))
-   str(counts(cds))
+   if (requireNamespace("BPCells", quietly = TRUE)) {
+     cds <- convert_counts_matrix(cds, matrix_control=list(matrix_class='BPCells'))
+     str(counts(cds))
+   }
 
 }

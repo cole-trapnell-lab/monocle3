@@ -40,6 +40,7 @@ test_that("preprocess_transform using dgCMatrix and save_transform_models", {
 
 
 test_that("preprocess_transform using BPCells matrix and save_transform_models", {
+  testthat::skip_if_not_installed("BPCells")
   nn_control <- list(method='annoy', metric='euclidean')
   cds1 <- load_a549(matrix_control=list(matrix_class='BPCells'))
   cds1 <- preprocess_cds(cds1, num_dim=50, nn_control=nn_control, build_nn_index=TRUE)
@@ -100,6 +101,7 @@ test_that("preprocess_transform using dgCMatrix and save_monocle_objects", {
 
 
 test_that("preprocess_transform using BPCells matrix and monocle_objects", {
+  testthat::skip_if_not_installed("BPCells")
   nn_control <- list(method='annoy', metric='euclidean')
   cds1 <- load_a549(matrix_control=list(matrix_class='BPCells'))
   cds1 <- preprocess_cds(cds1, num_dim=50, nn_control=nn_control, build_nn_index=TRUE)
@@ -127,4 +129,3 @@ test_that("preprocess_transform using BPCells matrix and monocle_objects", {
 
   system(paste0('rm -rf monocle_objects.2'))
 })
-

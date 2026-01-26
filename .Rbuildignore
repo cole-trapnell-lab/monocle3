@@ -94,3 +94,7 @@
 ^src/clustering.o
 ^src/monocle3.so
 ^src/RcppExports.o
+^00travis\.yml$
+^benchmark$
+^code-of-conduct\.md$
+^testing$

@@ -161,6 +161,10 @@ get_global_variable <- function(variable_name=NULL) {
   # loses its last reference.
   reg.finalizer(.GlobalEnv, ._._gc_matrix_object_remove_._., onexit=TRUE)
 
+  # ~/.monoclerc is handled in .onAttach so messages are emitted on attach.
+}
+
+.onAttach <- function(libname, pkgname) {
   # If ~/.monoclerc exists, read it and execute its contents.
   dot_monoclerc <- base::path.expand('~/.monoclerc')
   if(file.exists(dot_monoclerc)){
@@ -170,4 +174,3 @@ get_global_variable <- function(variable_name=NULL) {
     source(file=dot_monoclerc, local=FALSE, echo=TRUE)
   }
 }
-

@@ -156,7 +156,7 @@ graph_test <- function(cds,
   }
 
    # Use row major order BPCells count matrix.
-  if(is(counts(cds), 'IterableMatrix')) {
+  if(is_iterable_matrix(counts(cds))) {
     exprs_mat <- monocle3::counts_row_order(cds)
   }
   else {
@@ -172,7 +172,7 @@ graph_test <- function(cds,
                                                    method, expression_family) {
     exprs_val <- exprs_mat[x, ]
 
-    if(is(exprs_mat, 'IterableMatrix')) {
+    if(is_iterable_matrix(exprs_mat)) {
       exprs_val <- as.numeric(as(exprs_val, 'dgCMatrix'))
     }
 
@@ -445,10 +445,10 @@ calculateLW <- function(cds,
       }
     }
     links <- jaccard_coeff(knn_res[, -1], FALSE)
-    links <- links[links[, 1] > 0, ]
-    relations <- as.data.frame(links)
-    colnames(relations) <- c("from", "to", "weight")
-    knn_res_graph <- igraph::graph.data.frame(relations, directed = TRUE)
+    links <- links[links[, 1] > 0, , drop=FALSE]
+    edges_vec <- as.vector(t(links[, 1:2]))
+    knn_res_graph <- igraph::make_graph(edges_vec, n = nrow(cell_coords), directed = TRUE)
+    igraph::E(knn_res_graph)$weight <- links[, 3]
 
     if(nrow(knn_res) < 1) warning('bad loop: nrow(knn_res) < 1')
     knn_list <- lapply(1:nrow(knn_res), function(x) knn_res[x, -1])
@@ -523,10 +523,10 @@ calculateLW <- function(cds,
                          membership_matrix)
 
     links <- jaccard_coeff(knn_res[, -1], FALSE)
-    links <- links[links[, 1] > 0, ]
-    relations <- as.data.frame(links)
-    colnames(relations) <- c("from", "to", "weight")
-    knn_res_graph <- igraph::graph.data.frame(relations, directed = TRUE)
+    links <- links[links[, 1] > 0, , drop=FALSE]
+    edges_vec <- as.vector(t(links[, 1:2]))
+    knn_res_graph <- igraph::make_graph(edges_vec, n = nrow(cell_coords), directed = TRUE)
+    igraph::E(knn_res_graph)$weight <- links[, 3]
 
     # remove edges across cells belong to two disconnected principal points
     tmp_a <- igraph::get.adjacency(knn_res_graph)
@@ -589,4 +589,3 @@ calculateLW <- function(cds,
   lw <- spdep::nb2listw(knn_list, zero.policy = TRUE)
   lw
 }
-

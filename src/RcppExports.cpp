@@ -34,10 +34,39 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// project_point_to_graph
+List project_point_to_graph(NumericMatrix X, NumericMatrix NodeCoords, List AdjList, IntegerVector ClosestVertex, LogicalVector TipLeaves, bool OrthoProjTip);
+RcppExport SEXP _monocle3_project_point_to_graph(SEXP XSEXP, SEXP NodeCoordsSEXP, SEXP AdjListSEXP, SEXP ClosestVertexSEXP, SEXP TipLeavesSEXP, SEXP OrthoProjTipSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type X(XSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type NodeCoords(NodeCoordsSEXP);
+    Rcpp::traits::input_parameter< List >::type AdjList(AdjListSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type ClosestVertex(ClosestVertexSEXP);
+    Rcpp::traits::input_parameter< LogicalVector >::type TipLeaves(TipLeavesSEXP);
+    Rcpp::traits::input_parameter< bool >::type OrthoProjTip(OrthoProjTipSEXP);
+    rcpp_result_gen = Rcpp::wrap(project_point_to_graph(X, NodeCoords, AdjList, ClosestVertex, TipLeaves, OrthoProjTip));
+    return rcpp_result_gen;
+END_RCPP
+}
+// calc_specificity_cpp
+NumericMatrix calc_specificity_cpp(NumericMatrix agg_expr_matrix);
+RcppExport SEXP _monocle3_calc_specificity_cpp(SEXP agg_expr_matrixSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type agg_expr_matrix(agg_expr_matrixSEXP);
+    rcpp_result_gen = Rcpp::wrap(calc_specificity_cpp(agg_expr_matrix));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_monocle3_jaccard_coeff", (DL_FUNC) &_monocle3_jaccard_coeff, 2},
     {"_monocle3_pnorm_over_mat", (DL_FUNC) &_monocle3_pnorm_over_mat, 2},
+    {"_monocle3_project_point_to_graph", (DL_FUNC) &_monocle3_project_point_to_graph, 6},
+    {"_monocle3_calc_specificity_cpp", (DL_FUNC) &_monocle3_calc_specificity_cpp, 1},
     {NULL, NULL, 0}
 };
 

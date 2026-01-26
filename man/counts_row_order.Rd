@@ -17,8 +17,10 @@ Generic to access cds row order BPCells counts matrix.
 }
 \examples{
  \donttest{
-   cds <- load_a549(matrix_control=list(matrix_class='BPCells'))
-   mat_row_order <- counts_row_order(cds)
+   if (requireNamespace("BPCells", quietly = TRUE)) {
+     cds <- load_a549(matrix_control=list(matrix_class='BPCells'))
+     mat_row_order <- counts_row_order(cds)
+   }
  }         
          
 }

@@ -593,7 +593,7 @@ if (!isGeneric("saveRDS")) {setGeneric("saveRDS", function (object, file="", asc
 #' @export
 setMethod("saveRDS", signature(object="cell_data_set"),
     function(object, file="", ascii = FALSE, version = NULL, compress=TRUE, refhook = NULL) {
-      if(is(counts(object), 'IterableMatrix')) {
+      if(is_iterable_matrix(counts(object))) {
         message('Warning:')
         message('  saveRDS(cds, ...) does not save the BPCells out-of-\
   core CDS counts matrix that is in this cds, which will\
@@ -616,17 +616,19 @@ setMethod("saveRDS", signature(object="cell_data_set"),
     }
 )
 
-setMethod("saveRDS", signature(object="IterableMatrix"),
-    function(object, file="", ascii = FALSE, version = NULL, compress=TRUE, refhook = NULL) {
-        message('Warning: saveRDS() does not save the BPCells out-of-core\
+if (requireNamespace("BPCells", quietly = TRUE)) {
+  setMethod("saveRDS", signature(object="IterableMatrix"),
+      function(object, file="", ascii = FALSE, version = NULL, compress=TRUE, refhook = NULL) {
+          message('Warning: saveRDS() does not save the BPCells out-of-core\
   matrix so you will be unable to read the matrix back\
   into R.')
 
-      message('However, we are running base::saveRDS() as you requested.')
+        message('However, we are running base::saveRDS() as you requested.')
 
-      base::saveRDS(object, file=file, ascii = ascii, version = version, compress=compress, refhook = refhook)
-    }
-)
+        base::saveRDS(object, file=file, ascii = ascii, version = version, compress=compress, refhook = refhook)
+      }
+  )
+}
 
 
 
@@ -636,7 +638,7 @@ setMethod("counts<-", signature(object="SingleCellExperiment"),
     function(object, ..., value) {
         largs <- list(...)
         assay(object, 'counts') <- value
-        if(is(assays(object)[['counts']], "IterableMatrix") &&
+        if(is_iterable_matrix(assays(object)[['counts']]) &&
            (is.null(largs[['bpcells_warn']]) ||
            !is.logical(largs[['bpcells_warn']]) ||
            largs[['bpcells_warn']] != FALSE)) {
@@ -657,8 +659,10 @@ setMethod("counts<-", signature(object="SingleCellExperiment"),
 #' 
 #' @examples
 #'  \donttest{
-#'    cds <- load_a549(matrix_control=list(matrix_class='BPCells'))
-#'    mat_row_order <- counts_row_order(cds)
+#'    if (requireNamespace("BPCells", quietly = TRUE)) {
+#'      cds <- load_a549(matrix_control=list(matrix_class='BPCells'))
+#'      mat_row_order <- counts_row_order(cds)
+#'    }
 #'  }         
 #'          
 #' @return BPCells row order counts matrix.
@@ -674,7 +678,7 @@ setGeneric("counts_row_order", function(x) standardGeneric("counts_row_order"))
 #' @export
 setMethod("counts_row_order", "cell_data_set", function(x) {
   if(is.null(assay(x, 'counts_row_order'))) {
-    if(!is(counts(x), 'IterableMatrix')) {
+    if(!is_iterable_matrix(counts(x))) {
       stop('CDS counts matrix is not a BPCells matrix')
     }
     else {
@@ -689,5 +693,4 @@ setMethod("counts_row_order", "cell_data_set", function(x) {
   value <- assay(x, 'counts_row_order')
   return(value)
 })                                 
-
 

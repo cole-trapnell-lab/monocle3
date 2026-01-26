@@ -120,7 +120,7 @@ preprocess_cds <- function(cds,
 
   #
   # Is this an IterableMatrix (BPCells) counts matrix?
-  iterable_matrix_flag <- is(FM, 'IterableMatrix')
+  iterable_matrix_flag <- is_iterable_matrix(FM)
 
   #
   # normalize_expr_data() determines matrix_class
@@ -257,7 +257,7 @@ preprocess_cds <- function(cds,
       matrix_control_res <- set_matrix_control_pca(mat=FM, verbose=verbose)
       preproc_res_commit <- set_matrix_class(mat=BPCells::t(preproc_res), matrix_control=matrix_control_res)
 
-      irlba_res <- irlba::irlba(A=BPCells:::linear_operator(preproc_res_commit),
+      irlba_res <- irlba::irlba(A=bpcells_linear_operator(preproc_res_commit),
                                 nv = min(num_dim,min(dim(FM)) - 1))
       rm_bpcells_dir(mat=preproc_res_commit)
 
@@ -352,7 +352,7 @@ normalize_expr_data <- function(FM, size_factors=NULL,
       pseudo_count <- 0
   }
 
-  if(!is(FM, 'IterableMatrix')) {
+  if(!is_iterable_matrix(FM)) {
     if (norm_method == "log") {
       FM <- Matrix::t(Matrix::t(FM)/size_factors)
       if (pseudo_count != 1 || is_sparse_matrix(FM) == FALSE){
@@ -448,7 +448,7 @@ tfidf <- function(count_matrix, frequencies=TRUE, log_scale_tf=TRUE,
       print(paste("TF*IDF multiplication too large for in-memory, falling back",
                   "on DelayedArray."))
       options(DelayedArray.block.size=block_size)
-      DelayedArray:::set_verbose_block_processing(TRUE)
+      delayedarray_set_verbose_block_processing(TRUE)
   
       tf <- DelayedArray::DelayedArray(tf)
       idf <- as.matrix(idf)
@@ -469,5 +469,3 @@ tfidf <- function(count_matrix, frequencies=TRUE, log_scale_tf=TRUE,
   
   return(list(tf_idf_counts=tf_idf_counts, frequencies=frequencies, log_scale_tf=log_scale_tf, scale_factor=scale_factor, col_sums=col_sums, row_sums=row_sums, num_cols=num_cols))
 }
-
-

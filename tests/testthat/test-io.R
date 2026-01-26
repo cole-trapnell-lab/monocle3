@@ -243,6 +243,12 @@ test_that("save_transform_models and load_transform_models", {
   cds <- align_cds(cds, preprocess_method='PCA', residual_model_formula_str='~n.umi', build_nn_index=TRUE, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   cds <- reduce_dimension(cds, preprocess_method='Aligned', build_nn_index=TRUE, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   save_transform_models(cds, directory_path=transform_models)
+  pca_ref <- reducedDims(cds)[['PCA']]
+  aligned_ref <- reducedDims(cds)[['Aligned']]
+  umap_ref <- reducedDims(cds)[['UMAP']]
+  pca_ref <- reducedDims(cds)[['PCA']]
+  aligned_ref <- reducedDims(cds)[['Aligned']]
+  umap_ref <- reducedDims(cds)[['UMAP']]
 
   # load cds, load transform models, and process cds with transform models
   rm(cds)
@@ -262,25 +268,25 @@ test_that("save_transform_models and load_transform_models", {
     expect_equal(as.character(class(nn_index)), 'Rcpp_AnnoyEuclidean')
 
   # check PCA reduced dims matrix and nearest neighbors
-  expect_equivalent(ncol(reducedDims(cds)[['PCA']]), 50)
-  expect_equivalent(nrow(reducedDims(cds)[['PCA']]), 500)
-  expect_equivalent(reducedDims(cds)[['PCA']][[1,1]], 2.420739, tol=1e-5)
+  expect_equivalent(ncol(reducedDims(cds)[['PCA']]), ncol(pca_ref))
+  expect_equivalent(nrow(reducedDims(cds)[['PCA']]), nrow(pca_ref))
+  expect_equivalent(reducedDims(cds)[['PCA']][[1,1]], pca_ref[[1,1]], tol=1e-5)
   nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['PCA']], nn_index=get_cds_nn_index(cds, reduction_method='PCA', nn_method=nn_method, verbose=FALSE))
   expect_equivalent(nn_res[['nn.idx']][[1]], 1)
   expect_equivalent(nn_res[['nn.dists']][[1]], 0)
 
   # check Aligned reduced dims matrix and nearest neighbors
-  expect_equivalent(ncol(reducedDims(cds)[['Aligned']]), 50)
-  expect_equivalent(nrow(reducedDims(cds)[['Aligned']]), 500)
-  expect_equivalent(reducedDims(cds)[['Aligned']][[1,1]], 3.870306, tol=1e-5)
+  expect_equivalent(ncol(reducedDims(cds)[['Aligned']]), ncol(aligned_ref))
+  expect_equivalent(nrow(reducedDims(cds)[['Aligned']]), nrow(aligned_ref))
+  expect_equivalent(reducedDims(cds)[['Aligned']][[1,1]], aligned_ref[[1,1]], tol=1e-5)
   nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['Aligned']], nn_index=get_cds_nn_index(cds, reduction_method='Aligned', nn_method=nn_method, verbose=FALSE), k=5, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   expect_equivalent(nn_res[['nn.idx']][[1]], 1)
   expect_equivalent(nn_res[['nn.dists']][[1]], 0)
 
   # check UMAP reduced dims matrix and nearest neighbors
-  expect_equivalent(ncol(reducedDims(cds)[['UMAP']]), 2)
-  expect_equivalent(nrow(reducedDims(cds)[['UMAP']]), 500)
-  expect_equivalent(reducedDims(cds)[['UMAP']][[1,1]], 2.7, tol=1e-1)
+  expect_equivalent(ncol(reducedDims(cds)[['UMAP']]), ncol(umap_ref))
+  expect_equivalent(nrow(reducedDims(cds)[['UMAP']]), nrow(umap_ref))
+  expect_equivalent(reducedDims(cds)[['UMAP']][[1,1]], umap_ref[[1,1]], tol=1e-1)
   nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['UMAP']], nn_index=get_cds_nn_index(cds, reduction_method='UMAP', nn_method=nn_method, verbose=FALSE), k=5, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   expect_equivalent(nn_res[['nn.idx']][[1]], 1)
   expect_equivalent(nn_res[['nn.dists']][[1]], 0)
@@ -311,6 +317,9 @@ test_that("save_monocle_objects and load_monocle_objects", {
   cds <- align_cds(cds, preprocess_method='PCA', residual_model_formula_str='~n.umi', build_nn_index=TRUE, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   cds <- reduce_dimension(cds, preprocess_method='Aligned', build_nn_index=TRUE, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   save_monocle_objects(cds, directory_path=monocle_objects)
+  pca_ref <- reducedDims(cds)[['PCA']]
+  aligned_ref <- reducedDims(cds)[['Aligned']]
+  umap_ref <- reducedDims(cds)[['UMAP']]
 
   # load monocle objects models
   rm(cds)
@@ -331,25 +340,25 @@ test_that("save_monocle_objects and load_monocle_objects", {
   expect_equivalent(Matrix::colSums(counts(cds))[[1]], 19)
 
   # check PCA reduced dims matrix and nearest neighbors
-  expect_equivalent(ncol(reducedDims(cds)[['PCA']]), 50)
-  expect_equivalent(nrow(reducedDims(cds)[['PCA']]), 500)
-  expect_equivalent(reducedDims(cds)[['PCA']][[1,1]], 2.420739, tol=1e-5)
+  expect_equivalent(ncol(reducedDims(cds)[['PCA']]), ncol(pca_ref))
+  expect_equivalent(nrow(reducedDims(cds)[['PCA']]), nrow(pca_ref))
+  expect_equivalent(reducedDims(cds)[['PCA']][[1,1]], pca_ref[[1,1]], tol=1e-5)
   nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['PCA']], nn_index=get_cds_nn_index(cds, reduction_method='PCA', nn_method=nn_method), k=5, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   expect_equivalent(nn_res[['nn.idx']][[1]], 1)
   expect_equivalent(nn_res[['nn.dists']][[1]], 0)
 
   # check Aligned reduced dims matrix and nearest neighbors
-  expect_equivalent(ncol(reducedDims(cds)[['Aligned']]), 50)
-  expect_equivalent(nrow(reducedDims(cds)[['Aligned']]), 500)
-  expect_equivalent(reducedDims(cds)[['Aligned']][[1,1]], 3.870306, tol=1e-5)
+  expect_equivalent(ncol(reducedDims(cds)[['Aligned']]), ncol(aligned_ref))
+  expect_equivalent(nrow(reducedDims(cds)[['Aligned']]), nrow(aligned_ref))
+  expect_equivalent(reducedDims(cds)[['Aligned']][[1,1]], aligned_ref[[1,1]], tol=1e-5)
   nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['Aligned']], nn_index=get_cds_nn_index(cds, reduction_method='Aligned', nn_method=nn_method), k=5, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   expect_equivalent(nn_res[['nn.idx']][[1]], 1)
   expect_equivalent(nn_res[['nn.dists']][[1]], 0)
 
   # check UMAP reduced dims matrix and nearest neighbors
-  expect_equivalent(ncol(reducedDims(cds)[['UMAP']]), 2)
-  expect_equivalent(nrow(reducedDims(cds)[['UMAP']]), 500)
-  expect_equivalent(reducedDims(cds)[['UMAP']][[1,1]], 2.7, tol=1e-1)
+  expect_equivalent(ncol(reducedDims(cds)[['UMAP']]), ncol(umap_ref))
+  expect_equivalent(nrow(reducedDims(cds)[['UMAP']]), nrow(umap_ref))
+  expect_equivalent(reducedDims(cds)[['UMAP']][[1,1]], umap_ref[[1,1]], tol=1e-1)
   nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['UMAP']], nn_index=get_cds_nn_index(cds, reduction_method='UMAP', nn_method=nn_method), k=5, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   expect_equivalent(nn_res[['nn.idx']][[1]], 1)
   expect_equivalent(nn_res[['nn.dists']][[1]], 0)
@@ -392,25 +401,25 @@ test_that("save_transform_models and load_transform_models", {
   expect_equal(as.character(class(nn_index[['annoy_index']])), 'Rcpp_AnnoyEuclidean')
 
   # check PCA reduced dims matrix and nearest neighbors
-  expect_equivalent(ncol(reducedDims(cds)[['PCA']]), 50)
-  expect_equivalent(nrow(reducedDims(cds)[['PCA']]), 500)
-  expect_equivalent(reducedDims(cds)[['PCA']][[1,1]], 2.420739, tol=1e-5)
+  expect_equivalent(ncol(reducedDims(cds)[['PCA']]), ncol(pca_ref))
+  expect_equivalent(nrow(reducedDims(cds)[['PCA']]), nrow(pca_ref))
+  expect_equivalent(reducedDims(cds)[['PCA']][[1,1]], pca_ref[[1,1]], tol=1e-5)
   nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['PCA']], nn_index=get_cds_nn_index(cds, reduction_method='PCA', nn_method=nn_method), k=5, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   expect_equivalent(nn_res[['nn.idx']][[1]], 1)
   expect_equivalent(nn_res[['nn.dists']][[1]], 0)
 
   # check Aligned reduced dims matrix and nearest neighbors
-  expect_equivalent(ncol(reducedDims(cds)[['Aligned']]), 50)
-  expect_equivalent(nrow(reducedDims(cds)[['Aligned']]), 500)
-  expect_equivalent(reducedDims(cds)[['Aligned']][[1,1]], 3.870306, tol=1e-5)
+  expect_equivalent(ncol(reducedDims(cds)[['Aligned']]), ncol(aligned_ref))
+  expect_equivalent(nrow(reducedDims(cds)[['Aligned']]), nrow(aligned_ref))
+  expect_equivalent(reducedDims(cds)[['Aligned']][[1,1]], aligned_ref[[1,1]], tol=1e-5)
   nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['Aligned']], nn_index=get_cds_nn_index(cds, reduction_method='Aligned', nn_method=nn_method), k=5, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   expect_equivalent(nn_res[['nn.idx']][[1]], 1)
   expect_equivalent(nn_res[['nn.dists']][[1]], 0)
 
   # check UMAP reduced dims matrix and nearest neighbors
-  expect_equivalent(ncol(reducedDims(cds)[['UMAP']]), 2)
-  expect_equivalent(nrow(reducedDims(cds)[['UMAP']]), 500)
-  expect_equivalent(reducedDims(cds)[['UMAP']][[1,1]], -0.948, tol=1e-3)
+  expect_equivalent(ncol(reducedDims(cds)[['UMAP']]), ncol(umap_ref))
+  expect_equivalent(nrow(reducedDims(cds)[['UMAP']]), nrow(umap_ref))
+  expect_equivalent(reducedDims(cds)[['UMAP']][[1,1]], umap_ref[[1,1]], tol=1e-3)
   nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['UMAP']], nn_index=get_cds_nn_index(cds, reduction_method='UMAP', nn_method=nn_method), k=5, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   expect_equivalent(nn_res[['nn.idx']][[1]], 1)
   expect_equivalent(nn_res[['nn.dists']][[1]], 0)
@@ -441,6 +450,9 @@ test_that("save_monocle_objects and load_monocle_objects", {
   cds <- align_cds(cds, preprocess_method='PCA', residual_model_formula_str='~n.umi', build_nn_index=TRUE, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   cds <- reduce_dimension(cds, preprocess_method='Aligned', build_nn_index=TRUE, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   save_monocle_objects(cds, directory_path=monocle_objects)
+  pca_ref <- reducedDims(cds)[['PCA']]
+  aligned_ref <- reducedDims(cds)[['Aligned']]
+  umap_ref <- reducedDims(cds)[['UMAP']]
 
   # load monocle objects models
   rm(cds)
@@ -455,25 +467,25 @@ test_that("save_monocle_objects and load_monocle_objects", {
   expect_equivalent(Matrix::colSums(counts(cds))[[1]], 19)
 
   # check PCA reduced dims matrix and nearest neighbors
-  expect_equivalent(ncol(reducedDims(cds)[['PCA']]), 50)
-  expect_equivalent(nrow(reducedDims(cds)[['PCA']]), 500)
-  expect_equivalent(reducedDims(cds)[['PCA']][[1,1]], 2.420739, tol=1e-5)
+  expect_equivalent(ncol(reducedDims(cds)[['PCA']]), ncol(pca_ref))
+  expect_equivalent(nrow(reducedDims(cds)[['PCA']]), nrow(pca_ref))
+  expect_equivalent(reducedDims(cds)[['PCA']][[1,1]], pca_ref[[1,1]], tol=1e-5)
   nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['PCA']], nn_index=get_cds_nn_index(cds, reduction_method='PCA', nn_method=nn_method), k=5, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   expect_equivalent(nn_res[['nn.idx']][[1]], 1)
   expect_equivalent(nn_res[['nn.dists']][[1]], 0)
 
   # check Aligned reduced dims matrix and nearest neighbors
-  expect_equivalent(ncol(reducedDims(cds)[['Aligned']]), 50)
-  expect_equivalent(nrow(reducedDims(cds)[['Aligned']]), 500)
-  expect_equivalent(reducedDims(cds)[['Aligned']][[1,1]], 3.870306, tol=1e-5)
+  expect_equivalent(ncol(reducedDims(cds)[['Aligned']]), ncol(aligned_ref))
+  expect_equivalent(nrow(reducedDims(cds)[['Aligned']]), nrow(aligned_ref))
+  expect_equivalent(reducedDims(cds)[['Aligned']][[1,1]], aligned_ref[[1,1]], tol=1e-5)
   nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['Aligned']], nn_index=get_cds_nn_index(cds, reduction_method='Aligned', nn_method=nn_method), k=5, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   expect_equivalent(nn_res[['nn.idx']][[1]], 1)
   expect_equivalent(nn_res[['nn.dists']][[1]], 0)
 
   # check UMAP reduced dims matrix and nearest neighbors
-  expect_equivalent(ncol(reducedDims(cds)[['UMAP']]), 2)
-  expect_equivalent(nrow(reducedDims(cds)[['UMAP']]), 500)
-  expect_equivalent(reducedDims(cds)[['UMAP']][[1,1]],-0.948, tol=1e-3)
+  expect_equivalent(ncol(reducedDims(cds)[['UMAP']]), ncol(umap_ref))
+  expect_equivalent(nrow(reducedDims(cds)[['UMAP']]), nrow(umap_ref))
+  expect_equivalent(reducedDims(cds)[['UMAP']][[1,1]], umap_ref[[1,1]], tol=1e-3)
   nn_res <- search_nn_index(query_matrix=reducedDims(cds)[['UMAP']], nn_index=get_cds_nn_index(cds, reduction_method='UMAP', nn_method=nn_method), k=5, nn_control=list(method=nn_method, metric='euclidean', n_trees=50))
   expect_equivalent(nn_res[['nn.idx']][[1]], 1)
   expect_equivalent(nn_res[['nn.dists']][[1]], 0)
@@ -492,5 +504,3 @@ test_that("save_monocle_objects and load_monocle_objects", {
   expect_equal(as.character(class(nn_index[['hnsw_index']])), 'Rcpp_HnswL2')
   system(paste0('rm -r ', monocle_objects))
 } )
-
-

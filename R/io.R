@@ -263,13 +263,13 @@ load_annotations_data <- function( anno_path, metadata_column_names=NULL, header
 #'     # set the matrix_control list explicitly to use this in-memory
 #'     # dgCMatrix format by setting the matrix_control parameter to
 #'     #
-#'       load_mm_data(..., matrix_control=list(matrix_class='dgCMatrix'))
+#'     # load_mm_data(..., matrix_control=list(matrix_class='dgCMatrix'))
 #'     #
 #'     # For large matrices, we suggest that you try storing the count
 #'     # matrix as a BPCells object on-disk by setting the matrix_control
 #'     # parameter list as follows
 #'     #
-#'       load_mm_data(..., matrix_control=list(matrix_class='BPCells'))
+#'     # load_mm_data(..., matrix_control=list(matrix_class='BPCells'))
 #'     #
 #'   }
 #' 
@@ -293,6 +293,9 @@ load_mm_data <- function( mat_path,
 
   matrix_control_res <- tryCatch(set_matrix_control(matrix_control=matrix_control, matrix_control_default=list(), control_type='unrestricted'),
                           error = function(c) { stop(paste0(trimws(c), '\n* error in load_mm_data')) })
+  if(matrix_control_res[['matrix_class']] == 'BPCells') {
+    require_bpcells("load_mm_data")
+  }
 
   feature_annotations <- tryCatch(load_annotations_data( feature_anno_path, feature_metadata_column_names, header, sep, quote=quote, annotation_type='features' ),
                                   error = function(c) { stop(paste0(trimws(c), '\n* error in load_mm_data')) })
@@ -373,7 +376,7 @@ load_mm_data <- function( mat_path,
     colData(cds)$n.umi <- Matrix::colSums(counts(cds))
   }
   else
-  if(is(counts(cds), 'IterableMatrix')) {
+  if(is_iterable_matrix(counts(cds))) {
     colData(cds)$n.umi <- BPCells::colSums(counts(cds))
   }
 
@@ -959,6 +962,7 @@ load_umap_nn_indexes <- function(umap_model, file_name, md5sum_umap_index) {
 # BPCells matrix stored in a directory. The matrix control is used only
 # to set the resulting matrix_path.
 load_bpcells_matrix_dir <- function(file_name, md5sum, matrix_control=list()) {
+  require_bpcells("load_bpcells_matrix_dir")
 
   file_name <- normalizePath(file_name, mustWork=FALSE)
 
@@ -1953,7 +1957,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
                       'uwot_version' = utils::packageVersion('uwot'),
                       'hnsw_version' = utils::packageVersion('RcppHNSW'),
                       'hdf5array_version' = utils::packageVersion('HDF5Array'),
-                      'bpcells_version' = utils::packageVersion('BPCells'),
+                      'bpcells_version' = if (bpcells_available()) utils::packageVersion('BPCells') else NA,
                       'monocle_version' = utils::packageVersion('monocle3'),
                       'cds_version' = S4Vectors::metadata(cds)$cds_version,
                       'archive_version' = get_global_variable('monocle_objects_version'),
@@ -2646,5 +2650,3 @@ load_monocle_rds <- function(file_path) {
 
   return(cds)
 }
-
-

@@ -21,6 +21,7 @@ skip_not_travis <- function ()
 # Test label transfer functions.
 #
 test_that("label transfer", {
+  testthat::skip_if_offline()
   cds <- load_worm_embryo()
   set.seed(2016)
   cds <- preprocess_cds(cds)
@@ -64,4 +65,3 @@ test_that("label transfer", {
   cds_s <- cds[,-1]
   expect_error(transfer_cell_labels(cds, reduction_method='UMAP', colData(cds_s), 'cell.type', 'cell.type.xfr', verbose=TRUE))
 } )
-
