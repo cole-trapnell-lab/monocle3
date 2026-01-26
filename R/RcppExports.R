@@ -9,3 +9,11 @@ pnorm_over_mat <- function(R_num_links_ij, R_var_null_num_links) {
     .Call(`_monocle3_pnorm_over_mat`, R_num_links_ij, R_var_null_num_links)
 }
 
+project_point_to_graph <- function(X, NodeCoords, AdjList, ClosestVertex, TipLeaves, OrthoProjTip) {
+    .Call(`_monocle3_project_point_to_graph`, X, NodeCoords, AdjList, ClosestVertex, TipLeaves, OrthoProjTip)
+}
+
+calc_specificity_cpp <- function(agg_expr_matrix) {
+    .Call(`_monocle3_calc_specificity_cpp`, agg_expr_matrix)
+}
+

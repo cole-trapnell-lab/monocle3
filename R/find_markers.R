@@ -74,7 +74,7 @@ top_markers <- function(cds,
                         cores=1,
                         verbose=FALSE) {
 
-  if(is(counts(cds), 'IterableMatrix') && is.null(counts_row_order(cds))) {
+  if(is_iterable_matrix(counts(cds)) && is.null(counts_row_order(cds))) {
     stop(paste('This CDS has a BPCells counts matrix but no counts_row_order matrix, which',
                'top_markers() requires. Use the command',
                 '  cds <- set_cds_row_order_matrix(cds=cds)',
@@ -307,22 +307,15 @@ JSdistVec <- function (p, q)
 
 specificity_matrix <- function(agg_expr_matrix, cores=1){
   if(ncol(agg_expr_matrix) < 1) warning('bad loop: ncol(agg_expr_matrix) < 1')
-  specificity_mat <-
-    pbmcapply::pbmclapply(row.names(agg_expr_matrix),
-                          FUN = function(x) {
-                            agg_exprs = as.numeric(agg_expr_matrix[x,])
-                            agg_exprs = makeprobsvec(agg_exprs)
-                            perfect_spec_matrix = diag(ncol(agg_expr_matrix))
-                            sapply(1:ncol(agg_expr_matrix), function(col_idx) {
-                              1 - JSdistVec(agg_exprs,
-                                            perfect_spec_matrix[,col_idx])
-                            })
-                          }, mc.cores=cores)
-  specificity_mat = do.call(rbind, specificity_mat)
+  
+  # Ensure input is numeric matrix for C++
+  if (!is.matrix(agg_expr_matrix)) agg_expr_matrix <- as.matrix(agg_expr_matrix)
+  
+  specificity_mat <- calc_specificity_cpp(agg_expr_matrix)
+  
   colnames(specificity_mat) = colnames(agg_expr_matrix)
   row.names(specificity_mat) = row.names(agg_expr_matrix)
   return(specificity_mat)
-  #
 }
 
 enrichment_matrix <- function(agg_expr_matrix, cores=1){
@@ -363,7 +356,7 @@ test_marker_for_cell_group = function(gene_id, cell_group, cell_group_df, cds,
     # I am not pursuing it now because it's a subset and may
     # not exceed available memory. bge
 
-    if(!is(counts(cds), 'IterableMatrix')) {
+    if(!is_iterable_matrix(counts(cds))) {
       f_expression <-
         log(as.numeric(SingleCellExperiment::counts(cds)[gene_id,]) / size_factors(cds) + 0.1)
     }
@@ -393,7 +386,7 @@ test_marker_for_cell_group = function(gene_id, cell_group, cell_group_df, cds,
     model <- speedglm::speedglm(is_member ~ f_expression,
                                 acc=1e-3, model=FALSE,
                                 y=FALSE,
-                                verbose=TRUE,
+                                verbose=FALSE,
                                 family=stats::binomial(),
                                 maxit=speedglm.maxiter)
     assertthat::assert_that(model$convergence == TRUE, msg=paste0('speedglm model failed to converge in ',speedglm.maxiter, ' iterations.'))
@@ -521,4 +514,3 @@ generate_garnett_marker_file <- function(marker_test_res,
   write(all, file=file)
   message("Garnett marker file written to ", file)
 }
-

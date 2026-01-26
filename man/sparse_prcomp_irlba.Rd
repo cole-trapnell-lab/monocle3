@@ -46,28 +46,26 @@ See \code{\link{scale}} for more details.}
 \item{verbose}{a logical value that determines whether or not the
 function writes diagnostic information.}
 
-\item{...}{additional arguments passed to \code{\link{irlba}}.}
+\item{...}{additional arguments passed to \code{\link[irlba]{irlba}}.}
 }
 \value{
 A list with class "prcomp" containing the following components:
-\itemize{
-\item{sdev} {the standard deviations of the principal components (i.e.,
+\item{sdev}{the standard deviations of the principal components (i.e.,
 the square roots of the eigenvalues of the covariance/correlation
 matrix, though the calculation is actually done with the singular
 values of the data matrix).}
-\item{rotation} {the matrix of variable loadings (i.e., a matrix whose
+\item{rotation}{the matrix of variable loadings (i.e., a matrix whose
 columns contain the eigenvectors).}
-\item {x} {if \code{retx} is \code{TRUE} the value of the rotated data
+\item{x}{if \code{retx} is \code{TRUE} the value of the rotated data
 (the centered (and scaled if requested) data multiplied by the
 \code{rotation} matrix) is returned. Hence, \code{cov(x)} is the
 diagonal matrix \code{diag(sdev^2)}.}
-\item{center, scale} {the centering and scaling used, or \code{FALSE}.}
-}
+\item{center, scale}{the centering and scaling used, or \code{FALSE}.}
 }
 \description{
 Efficient computation of a truncated principal components analysis of a
 given data matrix using an implicitly restarted Lanczos method from the
-\code{\link{irlba}} package.
+\code{\link[irlba]{irlba}} package.
 }
 \note{
 The signs of the columns of the rotation matrix are arbitrary, and so may

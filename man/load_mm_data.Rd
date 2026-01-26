@@ -133,13 +133,13 @@ Load data from matrix market format files.
     # set the matrix_control list explicitly to use this in-memory
     # dgCMatrix format by setting the matrix_control parameter to
     #
-      load_mm_data(..., matrix_control=list(matrix_class='dgCMatrix'))
+      # load_mm_data(..., matrix_control=list(matrix_class='dgCMatrix'))
     #
     # For large matrices, we suggest that you try storing the count
     # matrix as a BPCells object on-disk by setting the matrix_control
     # parameter list as follows
     #
-      load_mm_data(..., matrix_control=list(matrix_class='BPCells'))
+      # load_mm_data(..., matrix_control=list(matrix_class='BPCells'))
     #
   }
 

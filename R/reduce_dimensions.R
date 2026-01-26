@@ -26,18 +26,18 @@
 #'   on the data. Options are "PCA" and "LSI". Default is "LSI".
 #' @param umap.metric A string indicating the distance metric to be used when
 #'   calculating UMAP. Default is "cosine". See uwot package's
-#'   \code{\link[umap]{umap}} for details.
+#'   \code{\link[uwot]{umap}} for details.
 #' @param umap.min_dist Numeric indicating the minimum distance to be passed to
-#'   UMAP function. Default is 0.1.See uwot package's \code{\link[umap]{umap}}
+#'   UMAP function. Default is 0.1.See uwot package's \code{\link[uwot]{umap}}
 #'   for details.
 #' @param umap.n_neighbors Integer indicating the number of neighbors to use
 #'   during kNN graph construction. Default is 15L. See uwot package's
-#'   \code{\link[umap]{umap}} for details.
+#'   \code{\link[uwot]{umap}} for details.
 #' @param umap.fast_sgd Logical indicating whether to use fast SGD. Default is
-#'   TRUE. See uwot package's \code{\link[umap]{umap}} for details.
+#'   TRUE. See uwot package's \code{\link[uwot]{umap}} for details.
 #' @param umap.nn_method String indicating the nearest neighbor method to be
 #'   used by UMAP. Default is "annoy". See uwot package's
-#'   \code{\link[umap]{umap}} for details.
+#'   \code{\link[uwot]{umap}} for details.
 #' @param verbose Logical, whether to emit verbose output.
 #' @param cores Number of cores to use for computing the UMAP.
 #' @param build_nn_index logical When this argument is set to TRUE,
@@ -367,4 +367,3 @@ reduce_dimension <- function(cds,
 
   cds
 }
-

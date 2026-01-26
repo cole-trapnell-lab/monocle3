@@ -1,6 +1,7 @@
 context("test-cluster_genes")
 
 test_that('test cluster_genes', {
+  testthat::skip_if_offline()
   cds <- monocle3:::load_worm_embryo()
   set.seed(42)
   #

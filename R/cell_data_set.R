@@ -73,7 +73,7 @@ new_cell_data_set <- function(expression_data,
 
   assertthat::assert_that(methods::is(expression_data, 'matrix') ||
                           is_sparse_matrix(expression_data) ||
-                          is(expression_data, 'IterableMatrix'),
+                          is_iterable_matrix(expression_data),
                           msg = paste("Argument expression_data must be a",
                                       "matrix - either sparse from the",
                                       "Matrix package, dense,",
@@ -146,7 +146,7 @@ new_cell_data_set <- function(expression_data,
   # If the counts matrix is a BPCells matrix, then set
   # the row major order BPCells counts matrix. This is
   # called 'counts_row_order'.
-  if(is(counts(cds), 'IterableMatrix')) {
+  if(is_iterable_matrix(counts(cds))) {
     cds <- set_cds_row_order_matrix(cds=cds)
   }
 

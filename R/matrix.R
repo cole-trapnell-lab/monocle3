@@ -602,8 +602,9 @@ push_matrix_path <- function(mat) {
 #      o get base matrix slots and their information, e.g., @type and @dir..
 #
 bpcells_find_base_matrix <- function(mat) {
-  if(length(BPCells:::matrix_inputs(mat)) > 0) {
-    return(bpcells_find_base_matrix(mat=BPCells:::matrix_inputs(mat)[[1]]))
+  require_bpcells("bpcells_find_base_matrix")
+  if(length(bpcells_matrix_inputs(mat)) > 0) {
+    return(bpcells_find_base_matrix(mat=bpcells_matrix_inputs(mat)[[1]]))
   }
   return(mat)
 }
@@ -644,7 +645,7 @@ get_matrix_class <- function(mat) {
     matrix_info[['matrix_class']] <- 'dgeMatrix'
     nmatch <- nmatch + 1
   }
-  if(is(mat, 'IterableMatrix')) {
+  if(is_iterable_matrix(mat)) {
     matrix_info[['matrix_class']] <- 'BPCells'
     nmatch <- nmatch + 1
   }
@@ -674,6 +675,7 @@ get_matrix_info <- function(mat) {
     return(matrix_info)
   }
 
+  require_bpcells("get_matrix_info")
   bmat <- bpcells_find_base_matrix(mat=mat)
 
   # In-memory iterable matrix object classes.
@@ -690,57 +692,56 @@ get_matrix_info <- function(mat) {
   #     type: character: 'uint32_t', 'float', 'double'
   #     buffer_size: int
   #     dir: character: path
-  if(!(class(bmat) %in% c('UnpackedMatrixMem_uint32_t', 'UnpackedMatrixMem_float',
-                          'UnpackedMatrixMem_double', 'PackedMatrixMem_uint32_t',
-                          'PackedMatrixMem_float', 'PackedMatrixMem_double',
-                          'MatrixDir', 'Iterable_dgCMatrix_wrapper'))) {
-    stop('get_matrix_info: unrecognized BPCells matrix class \"', class(mat), '\"')
-    return(NULL)
+  if(!inherits(bmat, c('UnpackedMatrixMem_uint32_t', 'UnpackedMatrixMem_float',
+                       'UnpackedMatrixMem_double', 'PackedMatrixMem_uint32_t',
+                       'PackedMatrixMem_float', 'PackedMatrixMem_double',
+                       'MatrixDir', 'Iterable_dgCMatrix_wrapper'))) {
+    stop('get_matrix_info: unrecognized BPCells matrix class \"', class(bmat)[1], '\"')
   }
 
   matrix_info[['matrix_class']] <- 'BPCells'
 
-  if(class(bmat) == 'Iterable_dgCMatrix_wrapper') {
+  if(inherits(bmat, 'Iterable_dgCMatrix_wrapper')) {
     matrix_info[['matrix_mode']] <- 'dgCMatrix'
   }
   else
-  if(class(bmat) == 'UnpackedMatrixMem_uint32_t') {
+  if(inherits(bmat, 'UnpackedMatrixMem_uint32_t')) {
     matrix_info[['matrix_mode']] <- 'mem'
     matrix_info[['matrix_type']] <- 'uint32_t'
     matrix_info[['matrix_compress']] <- FALSE
   }
   else
-  if(class(bmat) == 'UnpackedMatrixMem_float') {
+  if(inherits(bmat, 'UnpackedMatrixMem_float')) {
     matrix_info[['matrix_mode']] <- 'mem'
     matrix_info[['matrix_type']] <- 'float'
     matrix_info[['matrix_compress']] <- FALSE
   } 
   else
-  if(class(bmat) == 'UnpackedMatrixMem_double') {
+  if(inherits(bmat, 'UnpackedMatrixMem_double')) {
     matrix_info[['matrix_mode']] <- 'mem'
     matrix_info[['matrix_type']] <- 'double'
     matrix_info[['matrix_compress']] <- FALSE
   } 
   else
-  if(class(bmat) == 'PackedMatrixMem_uint32_t') {
+  if(inherits(bmat, 'PackedMatrixMem_uint32_t')) {
     matrix_info[['matrix_mode']] <- 'mem'
     matrix_info[['matrix_type']] <- 'uint32_t'
     matrix_info[['matrix_compress']] <- TRUE
   } 
   else
-  if(class(bmat) == 'PackedMatrixMem_float') {
+  if(inherits(bmat, 'PackedMatrixMem_float')) {
     matrix_info[['matrix_mode']] <- 'mem'
     matrix_info[['matrix_type']] <- 'float'
     matrix_info[['matrix_compress']] <- TRUE
   } 
   else
-  if(class(bmat) == 'PackedMatrixMem_double') {
+  if(inherits(bmat, 'PackedMatrixMem_double')) {
     matrix_info[['matrix_mode']] <- 'mem'
     matrix_info[['matrix_type']] <- 'double'
     matrix_info[['matrix_compress']] <- TRUE
   } 
   else
-  if(class(bmat) == 'MatrixDir') {
+  if(inherits(bmat, 'MatrixDir')) {
     matrix_info[['matrix_mode']] <- 'dir'
     matrix_info[['matrix_type']] <- bmat@type
     matrix_info[['matrix_compress']] <- bmat@compressed
@@ -845,6 +846,9 @@ set_matrix_class <- function(mat, matrix_control=list()) {
 
   # Get input matrix info.
   matrix_info <- get_matrix_info(mat=mat)
+  if(matrix_control[['matrix_class']] == 'BPCells') {
+    require_bpcells("set_matrix_class")
+  }
 
 # message('set_matrix_class: matrix_info: in:')
 # show_matrix_info(matrix_info, indent='  ')
@@ -950,6 +954,7 @@ set_matrix_class <- function(mat, matrix_control=list()) {
 
 # Remove the BPCells matrix directory and the matrix R object.
 rm_bpcells_dir <- function(mat) {
+  require_bpcells("rm_bpcells_dir")
   mat_info <- get_matrix_info(mat=mat)
   if(mat_info[['matrix_class']] == 'BPCells' &&
      mat_info[['matrix_mode']] == 'dir') {
@@ -978,18 +983,21 @@ rm_bpcells_dir <- function(mat) {
 #' @return cell_data_set The cell_data_set with the additional row-major order
 #'    counts matrix.
 #' @examples
-#'    cds <- load_a549(matrix_control=list(matrix_class='BPCells'))
-#'    cds <- set_cds_row_order_matrix(cds)
-#'    str(cds)
+#'    if (requireNamespace("BPCells", quietly = TRUE)) {
+#'      cds <- load_a549(matrix_control=list(matrix_class='BPCells'))
+#'      cds <- set_cds_row_order_matrix(cds)
+#'      str(cds)
+#'    }
 #'
 #' @export
 set_cds_row_order_matrix <- function(cds) {
 
   mat_c <- counts(cds)
-  if(!is(mat_c, 'IterableMatrix')) {
+  if(!is_iterable_matrix(mat_c)) {
     return(cds)
   }
 
+  require_bpcells("set_cds_row_order_matrix")
   matrix_info <- get_matrix_info(mat=mat_c)
   if(matrix_info[['matrix_mode']] == 'dir') {
     bmat <- bpcells_find_base_matrix(mat=mat_c)
@@ -1043,16 +1051,17 @@ set_cds_row_order_matrix <- function(cds) {
 # The test checks that the two matrices exist and
 # that row sums are the same for the two.
 check_bpcells_counts_matrix_pair <- function(cds) {
-  if(!is(assays(cds)[['counts']], 'IterableMatrix')) {
+  if(!is_iterable_matrix(assays(cds)[['counts']])) {
     message('Error: the cds does not have a BPCells counts matrix.')
     return(FALSE)
   }
 
-  if(!is(assays(cds)[['counts_row_order']], 'IterableMatrix')) {
+  if(!is_iterable_matrix(assays(cds)[['counts_row_order']])) {
     message('Error: the cds does not have a BPCells counts_row_order matrix.')
     return(FALSE)
   }
 
+  require_bpcells("check_bpcells_counts_matrix_pair")
   counts_rowsums <- BPCells::rowSums(counts(cds))
   counts_row_order_rowsums <- BPCells::rowSums(assays(cds)[['counts_row_order']])
 
@@ -1087,8 +1096,10 @@ check_bpcells_counts_matrix_pair <- function(cds) {
 #' @examples
 #'    cds <- load_a549()
 #'    str(counts(cds))
-#'    cds <- convert_counts_matrix(cds, matrix_control=list(matrix_class='BPCells'))
-#'    str(counts(cds))
+#'    if (requireNamespace("BPCells", quietly = TRUE)) {
+#'      cds <- convert_counts_matrix(cds, matrix_control=list(matrix_class='BPCells'))
+#'      str(counts(cds))
+#'    }
 #'
 #' @export
 convert_counts_matrix <- function(cds, matrix_control=list()) {
@@ -1117,4 +1128,3 @@ convert_counts_matrix <- function(cds, matrix_control=list()) {
 
   return(cds)
 }
-

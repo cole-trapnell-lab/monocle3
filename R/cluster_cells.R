@@ -318,18 +318,24 @@ cluster_cells_make_graph <- function(data,
   if (verbose)
     message("DONE. Run time:", t2[3], "s\n", " Build undirected graph from the weighted links ...")
 
-  links <- links[links[, 1] > 0,]
-  relations <- as.data.frame(links)
-  colnames(relations) <- c("from", "to", "weight")
-
-  relations$from <- cell_names[relations$from]
-  relations$to <- cell_names[relations$to]
-
-  t3 <- system.time(g <- igraph::graph.data.frame(relations, directed = FALSE))
+  links <- links[links[, 1] > 0, , drop=FALSE]
+  
+  t3 <- system.time({
+    # Optimized graph construction avoiding data.frame and string conversion
+    # links[, 1:2] are 1-based indices
+    edges_vec <- as.vector(t(links[, 1:2]))
+    g <- igraph::make_graph(edges_vec, n = length(cell_names), directed = FALSE)
+    igraph::E(g)$weight <- links[, 3]
+    igraph::V(g)$name <- cell_names
+  })
 
   if (verbose)
     message("DONE ~", t3[3], "s\n")
 
+  relations <- data.frame(from = cell_names[links[, 1]],
+                          to = cell_names[links[, 2]],
+                          weight = links[, 3],
+                          stringsAsFactors = FALSE)
   return(list(g=g, distMatrix=distMatrix, relations=relations))
 }
 
@@ -642,4 +648,3 @@ compute_partitions <- function(g,
 
   list(cluster_g = cluster_g, num_links = num_links, cluster_mat = cluster_mat)
 }
-

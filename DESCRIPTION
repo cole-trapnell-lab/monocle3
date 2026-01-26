@@ -19,6 +19,8 @@ Authors@R: c(
            family = "Ewing",
            role = c("cre"),
            email = "bge@uw.edu"))
+Author: Hannah Pliner [aut], Xiaojie Qiu [aut], Cole Trapnell [aut],
+    Brent Ewing [cre]
 Description: Monocle 3 performs clustering, differential expression and 
     trajectory analysis for single-cell expression experiments. It orders 
     individual cells according to progress through a biological process, 
@@ -58,7 +60,6 @@ Imports:
     batchelor,
     BiocGenerics (>= 0.28.0),
     BiocParallel,
-    BPCells,
     DelayedArray (>= 0.8.0),
     DelayedMatrixStats (>= 1.4.0),
     digest (>= 0.6.28),
@@ -69,7 +70,6 @@ Imports:
     ggplot2 (>= 3.1.1),
     ggrastr,
     ggrepel (>= 0.8.1),
-    grr,
     HDF5Array,
     igraph (>= 1.5.0),
     irlba (>= 2.3.3),
@@ -99,7 +99,6 @@ Imports:
     RcppHNSW (>= 0.3.0),
     Rtsne (>= 0.15),
     S4Vectors,
-    sf,
     shiny,
     slam (>= 0.1-45),
     spdep (>= 1.1-2),
@@ -113,15 +112,13 @@ Imports:
     tidyr (>= 0.8.3),
     viridis (>= 0.5.1)
 Suggests: 
+    BPCells,
     knitr,
     pryr (>= 0.1.4),
     rmarkdown,
     scran,
     spelling,
     testthat (>= 2.1.0)
-Remotes:
-    github::bnprks/BPCells/r,
-    github::cole-trapnell-lab/speedglm
 VignetteBuilder: knitr
 Language: en-US
 NeedsCompilation: yes

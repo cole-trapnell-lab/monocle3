@@ -111,6 +111,7 @@ skip_not_travis <- function ()
 # important combinations.
 #
 
+if (requireNamespace("BPCells", quietly = TRUE)) {
 test_that("check_matrix_control", {
 
   # matrix_class = bad_class
@@ -299,12 +300,27 @@ test_that("save_monocle_objects and load_monocle_objects", {
 
 
 test_that("set_matrix_control_default", {
+  orig_matrix_class_default <- monocle3:::get_global_variable('matrix_class_default')
+  orig_csparse_unrestricted <- monocle3:::get_global_variable('matrix_control_csparsematrix_unrestricted')
+  orig_csparse_pca <- monocle3:::get_global_variable('matrix_control_csparsematrix_pca')
+  orig_bpcells_unrestricted <- monocle3:::get_global_variable('matrix_control_bpcells_unrestricted')
+  orig_bpcells_pca <- monocle3:::get_global_variable('matrix_control_bpcells_pca')
+  on.exit({
+    monocle3:::set_global_variable('matrix_class_default', orig_matrix_class_default)
+    monocle3:::set_global_variable('matrix_control_csparsematrix_unrestricted', orig_csparse_unrestricted)
+    monocle3:::set_global_variable('matrix_control_csparsematrix_pca', orig_csparse_pca)
+    monocle3:::set_global_variable('matrix_control_bpcells_unrestricted', orig_bpcells_unrestricted)
+    monocle3:::set_global_variable('matrix_control_bpcells_pca', orig_bpcells_pca)
+  }, add=TRUE)
+
+  tmp_bpcells_dir <- file.path(tempdir(), "bpcells_dir_tmp")
+
   # Set default matrix_class to dgCMatrix matrix.
   monocle3:::set_global_variable('matrix_class_default', 'dgCMatrix')
 
   # Set default matrix_control for dgCMatrix matrix.
-  set_global_variable('matrix_control_csparsematrix_unrestricted', list(matrix_class='dgCMatrix'))
-  set_global_variable('matrix_control_csparsematrix_pca', list(matrix_class='dgCMatrix'))
+  monocle3:::set_global_variable('matrix_control_csparsematrix_unrestricted', list(matrix_class='dgCMatrix'))
+  monocle3:::set_global_variable('matrix_control_csparsematrix_pca', list(matrix_class='dgCMatrix'))
 
   # Load cds with default matrix.
   cds <- load_a549()
@@ -323,8 +339,8 @@ test_that("set_matrix_control_default", {
   monocle3:::set_global_variable('matrix_class_default', 'BPCells')
 
   # Set default matrix_control for BPCells matrix.
-  monocle3:::set_global_variable('matrix_control_bpcells_unrestricted', list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=FALSE, matrix_path='~/git/monocle3/bpcells_dir_tmp', matrix_buffer_size=8192L, matrix_bpcells_copy=TRUE))
-  monocle3:::set_global_variable('matrix_control_bpcells_pca', list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=FALSE, matrix_path='~/git/monocle3/bpcells_dir_tmp', matrix_buffer_size=8192L, matrix_bpcells_copy=TRUE))
+  monocle3:::set_global_variable('matrix_control_bpcells_unrestricted', list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=FALSE, matrix_path=tmp_bpcells_dir, matrix_buffer_size=8192L, matrix_bpcells_copy=TRUE))
+  monocle3:::set_global_variable('matrix_control_bpcells_pca', list(matrix_class='BPCells', matrix_mode='dir', matrix_type='double', matrix_compress=FALSE, matrix_path=tmp_bpcells_dir, matrix_buffer_size=8192L, matrix_bpcells_copy=TRUE))
 
   # Load cds with default matrix.
   cds <- load_a549()
@@ -391,6 +407,7 @@ test_that("set_matrix_control_pca", {
 
 
 test_that("set_matrix_control_combine_cds", {
+  testthat::skip_if_offline()
   cds_bpc <- monocle3:::load_worm_embryo(matrix_control=list(matrix_class='dgCMatrix'))
 
   # Combine two dgCMatrix matrix cdses.
@@ -413,4 +430,8 @@ test_that("set_matrix_control_combine_cds", {
   testthat::expect_error(combine_cds(list(cds_bpc1, cds_bpc2), cell_names_unique=TRUE, matrix_control=list(matrix_path='uhoh')))
 
 } )
-
+} else {
+  test_that("BPCells not installed", {
+    testthat::skip("BPCells not installed")
+  })
+}

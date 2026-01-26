@@ -59,13 +59,13 @@ svd_rebuild_matrix <- function(u, s, v, filename) {
 #
 set_matrix_control_pca <- function(mat, matrix_control=list(), verbose=FALSE) {
 
-  assertthat::assert_that(monocle3:::is_matrix(mat),
+  assertthat::assert_that(is_matrix(mat),
                           msg=paste0('set_matrix_control_pca: input matrix parameter object is not a matrix'))
   assertthat::assert_that(is.list(matrix_control),
                           msg=paste0('set_matrix_control_pca: input matrix_control parameter object is not a list'))
 
   # Get matrix_control values of input matrix.
-  matrix_info <- tryCatch(monocle3:::get_matrix_info(mat),
+  matrix_info <- tryCatch(get_matrix_info(mat),
                           error = function(c) { stop(paste0(trimws(c),
                                                            '\n* error in set_matrix_control_pca')) })
   if(length(matrix_control) > 0) {
@@ -356,6 +356,7 @@ sparse_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
 bpcells_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
                                  scale. = FALSE, verbose = FALSE, ...)
 {
+  require_bpcells("bpcells_prcomp_irlba")
   if(verbose) {
     message('pca: bpcells_prcomp_irlba: matrix class: ', class(x))
     message(paste0(show_matrix_info(matrix_info=get_matrix_info(mat=x), indent='  ')), appendLF=FALSE)
@@ -390,8 +391,8 @@ bpcells_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
     message()
   }
 
-  # BPCells:::linear_operator() is meant to reduce irlba run time.
-  args <- list(A = BPCells:::linear_operator(x_commit), nv = n, center = center, scale = scale)
+  # BPCells linear_operator() is meant to reduce irlba run time.
+  args <- list(A = bpcells_linear_operator(x_commit), nv = n, center = center, scale = scale)
 
   if (!missing(...)) args <- c(args, list(...))
 
@@ -439,4 +440,3 @@ bpcells_prcomp_irlba <- function(x, n = 3, retx = TRUE, center = TRUE,
 
   ans
 }
-
