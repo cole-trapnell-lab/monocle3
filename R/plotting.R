@@ -763,7 +763,7 @@ plot_cells <- function(cds,
   } else {
     g <- ggplot(data=data_df, aes(x=data_dim_1, y=data_dim_2))
 
-    g <- g + geom_point(color=I("black"), size=1.5*cell_size,
+    g <- g + plotting_func(color=I("black"), size=1.5*cell_size,
                         stroke = I(cell_stroke), na.rm = TRUE,
                         alpha = I(alpha))
 
@@ -772,24 +772,24 @@ plot_cells <- function(cds,
     # don't color the cells
     if(color_cells_by %in% c("cluster", "partition")){
       if (is.null(data_df$cell_color)){
-        g <- g + geom_point(color=I("gray"), size=I(cell_size),
+        g <- g + plotting_func(color=I("gray"), size=I(cell_size),
                             stroke = I(cell_stroke), na.rm = TRUE,
                             alpha = I(alpha))
         message("cluster_cells() has not been called yet, can't ",
                       "color cells by cluster")
       } else{
-        g <- g + geom_point(aes(color = cell_color), size=I(cell_size),
+        g <- g + plotting_func(aes(color = cell_color), size=I(cell_size),
                             stroke = I(cell_stroke), na.rm = TRUE,
                             alpha = alpha)
       }
       g <- g + guides(color = guide_legend(title = color_cells_by,
                                            override.aes = list(size = 4)))
     } else if (methods::is(data_df$cell_color, "numeric")) {
-      g <- g + geom_point(aes(color = cell_color), size=I(cell_size),
+      g <- g + plotting_func(aes(color = cell_color), size=I(cell_size),
                           stroke = I(cell_stroke), na.rm = TRUE, alpha = alpha)
       g <- g + viridis::scale_color_viridis(name = color_cells_by, option="C")
     } else {
-      g <- g + geom_point(aes(color = cell_color), size=I(cell_size),
+      g <- g + plotting_func(aes(color = cell_color), size=I(cell_size),
                           stroke = I(cell_stroke), na.rm = TRUE, alpha = alpha)
       g <- g + guides(color = guide_legend(title = color_cells_by,
                                            override.aes = list(size = 4)))
@@ -817,7 +817,7 @@ plot_cells <- function(cds,
         dplyr::slice(match(names(pps), sample_name))
 
       g <- g +
-        geom_point(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2"),
+        plotting_func(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2"),
                    shape = 21, stroke=I(trajectory_graph_segment_size),
                    color="white",
                    fill="black",
@@ -835,7 +835,7 @@ plot_cells <- function(cds,
         dplyr::mutate(branch_point_idx = seq_len(dplyr::n()))
 
       g <- g +
-        geom_point(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2"),
+        plotting_func(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2"),
                    shape = 21, stroke=I(trajectory_graph_segment_size),
                    color="white",
                    fill="black",
@@ -854,7 +854,7 @@ plot_cells <- function(cds,
         dplyr::mutate(leaf_idx = seq_len(dplyr::n()))
 
       g <- g +
-        geom_point(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2"),
+        plotting_func(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2"),
                    shape = 21, stroke=I(trajectory_graph_segment_size),
                    color="black",
                    fill="lightgray",
@@ -873,7 +873,7 @@ plot_cells <- function(cds,
         dplyr::mutate(root_idx = seq_len(dplyr::n()))
 
       g <- g +
-        geom_point(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2"),
+        plotting_func(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2"),
                    shape = 21, stroke=I(trajectory_graph_segment_size),
                    color="black",
                    fill="white",
