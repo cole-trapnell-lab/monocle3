@@ -246,8 +246,8 @@ my.aggregate.Matrix = function (x, groupings = NULL, form = NULL, fun = "sum", .
   result <- Matrix::t(mapping) %*% x
   if (fun == "mean")
     result <- result/as.numeric(table(groupings)[rownames(result)])
-  attr(result, "crosswalk") <- grr::extract(groupings, match(rownames(result),
-                                                             groupings2$A))
+  attr(result, "crosswalk") <- grr_extract(groupings, match(rownames(result),
+                                                            groupings2$A))
   return(result)
 }
 

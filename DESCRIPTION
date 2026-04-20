@@ -69,7 +69,6 @@ Imports:
     ggplot2 (>= 3.1.1),
     ggrastr,
     ggrepel (>= 0.8.1),
-    grr,
     HDF5Array,
     igraph (>= 1.5.0),
     irlba (>= 2.3.3),
