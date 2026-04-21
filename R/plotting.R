@@ -1192,9 +1192,12 @@ plot_pc_variance_explained <- function(cds) {
 #'   feature id (FALSE). Default is TRUE.
 #' @param normalize Logical, whether or not to normalize expression by size
 #'   factor. Default is TRUE.
-#' @param log_scale Logical, whether or not to scale data logarithmically.
-#'   Zero count cells are excluded from the plot and median when log_scale
-#'   is TRUE. Default is TRUE.
+#' @param log_scale Logical or Numeric, whether or not to scale data
+#'   logarithmically. If TRUE, the zero values are dropped and the non-zero
+#'   values are plotted on a logarithmic y-axis scale. If FALSE, all values
+#'   are plotted on a linear y-axis scale. If a numeric value, the zero values
+#'   are replaced with the numeric value and all values are plotted on a
+#'   logarithmic y-axis scale. The default is TRUE.
 #' @param pseudocount A pseudo-count added to the gene expression. A
 #'   pseudocount value greater than 0 is reset to 1. Default is 0.
 #' @return a ggplot2 plot object
@@ -1255,7 +1258,7 @@ plot_genes_violin <- function (cds_subset,
   }
 
   assertthat::assert_that(is.logical(normalize))
-  assertthat::assert_that(is.logical(log_scale))
+  assertthat::assert_that(is.logical(log_scale) || is.numeric(log_scale))
 
   assertthat::assert_that(nrow(rowData(cds_subset)) <= 100,
                           msg = paste("cds_subset has more than 100 genes -",
@@ -1300,6 +1303,13 @@ plot_genes_violin <- function (cds_subset,
   }
 
   cds_exprs[,group_cells_by] <- as.factor(cds_exprs[,group_cells_by])
+
+  #
+  # Set zero expression values to the log_scale value.
+  #
+  if(is.numeric(log_scale)) {
+    cds_exprs[cds_exprs[['expression']] == 0,][['expression']] <- log_scale
+  }
 
   q <- ggplot(aes_string(x = group_cells_by, y = "expression"),
               data = cds_exprs) +
@@ -1350,9 +1360,12 @@ plot_genes_violin <- function (cds_subset,
 #'   feature id (FALSE). Default is TRUE.
 #' @param normalize Logical, whether or not to normalize expression by size
 #'   factor. Default is TRUE.
-#' @param log_scale Logical, whether or not to scale data logarithmically.
-#'   Zero count cells are excluded from the plot, interval, and median
-#'   when log_scale is TRUE. Default is TRUE.
+#' @param log_scale Logical or Numeric, whether or not to scale data
+#'   logarithmically. If TRUE, the zero values are dropped and the non-zero
+#'   values are plotted on a logarithmic y-axis scale. If FALSE, all values
+#'   are plotted on a linear y-axis scale. If a numeric value, the zero values
+#'   are replaced with the numeric value and all values are plotted on a
+#'   logarithmic y-axis scale. The default is TRUE.
 #' @param pseudocount A pseudo-count added to the gene expression. A
 #'   pseudocount value greater than 0 is reset to 1. Default is 0.
 #' @return a ggplot2 plot object
@@ -1413,7 +1426,7 @@ plot_genes_hybrid <- function (cds_subset,
   }
 
   assertthat::assert_that(is.logical(normalize))
-  assertthat::assert_that(is.logical(log_scale))
+  assertthat::assert_that(is.logical(log_scale) || is.numeric(log_scale))
 
   assertthat::assert_that(nrow(rowData(cds_subset)) <= 100,
                           msg = paste("cds_subset has more than 100 genes -",
@@ -1461,8 +1474,21 @@ plot_genes_hybrid <- function (cds_subset,
 
   #
   # For log-scaled plots, Drop cells with zero counts.
-  if(log_scale) {
-    cds_exprs <- cds_exprs[cds_exprs[['expression']] > 0,]
+  #
+  if(!identical(log_scale, FALSE)) {
+    if(log_scale == TRUE && any(cds_exprs[['expression']] == 0)) {
+      warning('log-10 transformation introduced infinite values')
+      ndrop <- sum(cds_exprs[['expression']] == 0, na.rm = TRUE)
+      warning(paste0('Removed ', ndrop, ' rows containing non-finite values.'))
+      cds_exprs <- cds_exprs[cds_exprs[['expression']] > 0,]
+    }
+    else
+    if(is.numeric(log_scale)) {
+      #
+      # Set zero expression values to the log_scale value.
+      #
+      cds_exprs[cds_exprs[['expression']] == 0,][['expression']] <- log_scale
+    }
   }
 
   q <- ggplot(data=cds_exprs, aes(x = .data[[group_cells_by]], y = .data[['expression']])) +
@@ -1498,7 +1524,7 @@ plot_genes_hybrid <- function (cds_subset,
 
   q <- q + ylab("Expression") + xlab(group_cells_by)
 
-  if (log_scale){
+  if (!identical(log_scale, FALSE)){
     q <- q + scale_y_log10()
   }
   q
