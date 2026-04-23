@@ -225,7 +225,41 @@ find_gene_modules <- function(cds,
 }
 
 
-
+#
+# Comes from grr 0.9.5 package, which is unmaintained and archived by CRAN.
+#
+#'Extract/return parts of objects
+#'
+#'Alternative to built-in \code{\link{Extract}} or \code{[}.  Allows for
+#'extraction operations that are ambivalent to the data type of the object. For
+#'example, \code{extract(x,i)} will work on lists, vectors, data frames,
+#'matrices, etc.
+#'
+#'Extraction is 2-100x faster on data frames than with the built in operation -
+#'but does not preserve row names.
+#'
+#'@param x object from which to extract elements
+#'@param i,j indices specifying elements to extract.  Can be \code{numeric},
+#'  \code{character}, or \code{logical} vectors.
+grr_extract<-function(x,i=NULL,j=NULL)
+{
+  if(is.null(dim(x)))
+  {
+     x<-x[i]
+    return(x)
+  }
+  else
+    if(!is.null(j))
+      x<-x[,j]
+  if(!is.null(i))
+  {
+  if(is.data.frame(x))
+    x<-as.data.frame(lapply(x,function (a) a[i]))
+  else
+    x<-x[i,]
+  }
+  return(x)
+}
 
 
 #' Aggregate columns within a sparse matrix.
