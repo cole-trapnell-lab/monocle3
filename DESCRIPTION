@@ -91,6 +91,7 @@ Imports:
     RANN (>= 2.6.1),
     RColorBrewer,
     Rcpp (>= 1.0.1),
+    reformulas (>= 0.4.4),
     reshape2 (>= 1.4.3),
     rsample (>= 0.0.5),
     RhpcBLASctl,
