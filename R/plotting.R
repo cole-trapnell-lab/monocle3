@@ -2,8 +2,8 @@ monocle_theme_opts <- function()
 {
   theme(strip.background = element_rect(colour = 'white', fill = 'white')) +
     theme(panel.border = element_blank()) +
-    theme(axis.line.x = element_line(size=0.25, color="black")) +
-    theme(axis.line.y = element_line(size=0.25, color="black")) +
+    theme(axis.line.x = element_line(linewidth=0.25, color="black")) +
+    theme(axis.line.y = element_line(linewidth=0.25, color="black")) +
     theme(panel.grid.minor.x = element_blank(),
           panel.grid.minor.y = element_blank()) +
     theme(panel.grid.major.x = element_blank(),
@@ -1161,7 +1161,9 @@ plot_pc_variance_explained <- function(cds) {
   prop_varex <- cds@reduce_dim_aux[['PCA']][['model']][['prop_var_expl']]
 
   if(length(prop_varex) < 1) warning('bad loop: length(prop_varex) < 1')
-  p <- qplot(1:length(prop_varex), prop_varex, alpha = I(0.5)) +
+  pv_df <- data.frame(x=1:length(prop_varex), y=prop_varex)
+  p <- ggplot(pv_df, aes(x=x, y=y, alpha = I(0.5))) +
+    geom_point() +
     monocle_theme_opts() +
     theme(legend.position="top", legend.key.height=grid::unit(0.35, "in")) +
     theme(panel.background = element_rect(fill='white')) +
