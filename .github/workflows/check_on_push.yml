@@ -124,6 +124,7 @@ jobs:
       - name: Run R CMD build and R CMD check
         run: |
           R CMD build .
+          Rscript -e 'install.packages(c("reformulas"))
           R CMD check monocle3*tar.gz
         shell: bash
 
