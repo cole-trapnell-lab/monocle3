@@ -123,8 +123,8 @@ jobs:
       #    Rscript -e 'remotes::install_github("bnprks/BPCells")'
       - name: Run R CMD build and R CMD check
         run: |
-          R CMD build .
           Rscript -e 'install.packages(c("reformulas"))
+          R CMD build .
           R CMD check monocle3*tar.gz
         shell: bash
 
