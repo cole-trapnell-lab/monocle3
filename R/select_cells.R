@@ -311,6 +311,7 @@ choose_graph_segments <- function(cds,
         princ_points$chosen[vals$chosen] <- "Chosen"
         data_df$chosen_cells <- "gray"
         data_df$chosen_cells[vals$chosen_cells] <- "purple"
+
         suppressMessages(plot_principal_graph(cds, data_df, princ_points,
                                               label_branch_points = FALSE,
                                               label_leaves = FALSE,
@@ -475,15 +476,14 @@ plot_principal_graph <- function(cds,
   g <- g + geom_point(aes(x = x, y = y, color = chosen), data=princ_points) +
     scale_color_manual(values = c("Start" = "green", "End" = "blue",
                                   "Unchosen" = "black", "Chosen" = "purple"))
-  g <- g + geom_segment(aes_string(x="source_prin_graph_dim_1",
-                                   y="source_prin_graph_dim_2",
-                                   xend="target_prin_graph_dim_1",
-                                   yend="target_prin_graph_dim_2"),
+  g <- g + geom_segment(aes(x=.data[['source_prin_graph_dim_1']],
+                            y=.data[['source_prin_graph_dim_2']],
+                            xend=.data[['target_prin_graph_dim_1']],
+                            yend=.data[['target_prin_graph_dim_2']]),
                         size=trajectory_graph_segment_size,
                         linetype="solid",
                         na.rm=TRUE,
                         data=edge_df)
-
 
   if (label_branch_points){
     mst_branch_nodes <- branch_nodes(cds)
@@ -492,15 +492,15 @@ plot_principal_graph <- function(cds,
       dplyr::mutate(branch_point_idx = seq_len(dplyr::n()))
 
     g <- g +
-      geom_point(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2"),
+      geom_point(aes(x=.data[['prin_graph_dim_1']], y=.data[['prin_graph_dim_2']]),
                  shape = 21, stroke=I(trajectory_graph_segment_size),
                  color="white",
                  fill="black",
                  size=I(graph_label_size * 1.5),
                  na.rm=TRUE, branch_point_df) +
 
-      geom_text(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2",
-                           label="branch_point_idx"),
+      geom_text(aes(x=.data[['prin_graph_dim_1']], y=.data[['prin_graph_dim_2']],
+                    label=.data[['branch_point_idx']]),
                 size=I(graph_label_size), color="white", na.rm=TRUE,
                 branch_point_df)
   }
@@ -512,15 +512,15 @@ plot_principal_graph <- function(cds,
       dplyr::mutate(leaf_idx = seq_len(dplyr::n()))
 
     g <- g +
-      geom_point(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2"),
+      geom_point(aes(x=.data[['prin_graph_dim_1']], y=.data[['prin_graph_dim_2']]),
                  shape = 21, stroke=I(trajectory_graph_segment_size),
                  color="black",
                  fill="lightgray",
                  size=I(graph_label_size * 1.5),
                  na.rm=TRUE,
                  leaf_df) +
-      geom_text(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2",
-                           label="leaf_idx"),
+      geom_text(aes(x=.data[['prin_graph_dim_1']], y=.data[['prin_graph_dim_2']],
+                    label=.data[['leaf_idx']]),
                 size=I(graph_label_size), color="black", na.rm=TRUE, leaf_df)
   }
 
@@ -531,15 +531,15 @@ plot_principal_graph <- function(cds,
       dplyr::mutate(root_idx = seq_len(dplyr::n()))
 
     g <- g +
-      geom_point(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2"),
+      geom_point(aes(x=.data[['prin_graph_dim_1']], y=.data[['prin_graph_dim_2']]),
                  shape = 21, stroke=I(trajectory_graph_segment_size),
                  color="black",
                  fill="white",
                  size=I(graph_label_size * 1.5),
                  na.rm=TRUE,
                  root_df) +
-      geom_text(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2",
-                           label="root_idx"),
+      geom_text(aes(x=.data[['prin_graph_dim_1']], y=.data[['prin_graph_dim_2']],
+                           label=.data[['root_idx']]),
                 size=I(graph_label_size), color="black", na.rm=TRUE, root_df)
   }
 

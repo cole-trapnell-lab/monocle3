@@ -2,8 +2,8 @@ monocle_theme_opts <- function()
 {
   theme(strip.background = element_rect(colour = 'white', fill = 'white')) +
     theme(panel.border = element_blank()) +
-    theme(axis.line.x = element_line(size=0.25, color="black")) +
-    theme(axis.line.y = element_line(size=0.25, color="black")) +
+    theme(axis.line.x = element_line(linewidth=0.25, color="black")) +
+    theme(axis.line.y = element_line(linewidth=0.25, color="black")) +
     theme(panel.grid.minor.x = element_blank(),
           panel.grid.minor.y = element_blank()) +
     theme(panel.grid.major.x = element_blank(),
@@ -811,10 +811,10 @@ plot_cells <- function(cds,
 
   }
   if (show_trajectory_graph){
-    g <- g + geom_segment(aes_string(x="source_prin_graph_dim_1",
-                                     y="source_prin_graph_dim_2",
-                                     xend="target_prin_graph_dim_1",
-                                     yend="target_prin_graph_dim_2"),
+    g <- g + geom_segment(aes(x=.data[['source_prin_graph_dim_1']],
+                              y=.data[['source_prin_graph_dim_2']],
+                              xend=.data[['target_prin_graph_dim_1']],
+                              yend=.data[['target_prin_graph_dim_2']]),
                           size=trajectory_graph_segment_size,
                           color=I(trajectory_graph_color),
                           linetype="solid",
@@ -831,14 +831,14 @@ plot_cells <- function(cds,
         dplyr::slice(match(names(pps), sample_name))
 
       g <- g +
-        geom_point(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2"),
+        geom_point(aes(x=.data[['prin_graph_dim_1']], y=.data[['prin_graph_dim_2']]),
                    shape = 21, stroke=I(trajectory_graph_segment_size),
                    color="white",
                    fill="black",
                    size=I(graph_label_size * 1.5),
                    na.rm=TRUE, princ_point_df) +
-        ggrepel::geom_text_repel(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2",
-                             label="sample_name"),
+        ggrepel::geom_text_repel(aes(x=.data[['prin_graph_dim_1']], y=.data[['prin_graph_dim_2']],
+                             label=.data[['sample_name']]),
                   size=I(graph_label_size * 1.5), color="Black", na.rm=TRUE,
                   princ_point_df)
     }
@@ -849,14 +849,14 @@ plot_cells <- function(cds,
         dplyr::mutate(branch_point_idx = seq_len(dplyr::n()))
 
       g <- g +
-        geom_point(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2"),
+        geom_point(aes(x=.data[['prin_graph_dim_1']], y=.data[['prin_graph_dim_2']]),
                    shape = 21, stroke=I(trajectory_graph_segment_size),
                    color="white",
                    fill="black",
                    size=I(graph_label_size * 1.5),
                    na.rm=TRUE, branch_point_df) +
-        geom_text(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2",
-                             label="branch_point_idx"),
+        geom_text(aes(x=.data[['prin_graph_dim_1']], y=.data[['prin_graph_dim_2']],
+                      label=.data[['branch_point_idx']]),
                   size=I(graph_label_size), color="white", na.rm=TRUE,
                   branch_point_df)
     }
@@ -868,15 +868,15 @@ plot_cells <- function(cds,
         dplyr::mutate(leaf_idx = seq_len(dplyr::n()))
 
       g <- g +
-        geom_point(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2"),
+        geom_point(aes(x=.data[['prin_graph_dim_1']], y=.data[['prin_graph_dim_2']]),
                    shape = 21, stroke=I(trajectory_graph_segment_size),
                    color="black",
                    fill="lightgray",
                    size=I(graph_label_size * 1.5),
                    na.rm=TRUE,
                    leaf_df) +
-        geom_text(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2",
-                             label="leaf_idx"),
+        geom_text(aes(x=.data[['prin_graph_dim_1']], y=.data[['prin_graph_dim_2']],
+                             label=.data[['leaf_idx']]),
                   size=I(graph_label_size), color="black", na.rm=TRUE, leaf_df)
     }
 
@@ -887,24 +887,24 @@ plot_cells <- function(cds,
         dplyr::mutate(root_idx = seq_len(dplyr::n()))
 
       g <- g +
-        geom_point(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2"),
+        geom_point(aes(x=.data[['prin_graph_dim_1']], y=.data[['prin_graph_dim_2']]),
                    shape = 21, stroke=I(trajectory_graph_segment_size),
                    color="black",
                    fill="white",
                    size=I(graph_label_size * 1.5),
                    na.rm=TRUE,
                    root_df) +
-        geom_text(aes_string(x="prin_graph_dim_1", y="prin_graph_dim_2",
-                             label="root_idx"),
+        geom_text(aes(x=.data[['prin_graph_dim_1']], y=.data[['prin_graph_dim_2']],
+                      label=.data[['root_idx']]),
                   size=I(graph_label_size), color="black", na.rm=TRUE, root_df)
     }
   }
 
   if(label_cell_groups) {
     g <- g + ggrepel::geom_text_repel(data = text_df,
-                                      mapping = aes_string(x = "text_x",
-                                                           y = "text_y",
-                                                           label = "label"),
+                                      mapping = aes(x = .data[['text_x']],
+                                                    y = .data[['text_y']],
+                                                    label = .data[['label']]),
                                       size=I(group_label_size))
     # If we're coloring by gene expression, don't hide the legend
     if (is.null(markers_exprs))
@@ -1105,7 +1105,7 @@ plot_genes_in_pseudotime <-function(cds_subset,
   q <- ggplot(aes(pseudotime, expression), data = cds_exprs)
 
   if (!is.null(color_cells_by)) {
-    q <- q + geom_point(aes_string(color = color_cells_by),
+    q <- q + geom_point(aes(color = .data[[color_cells_by]]),
                         size = I(cell_size),
                         position=position_jitter(horizontal_jitter,
                                                  vertical_jitter))
@@ -1161,7 +1161,9 @@ plot_pc_variance_explained <- function(cds) {
   prop_varex <- cds@reduce_dim_aux[['PCA']][['model']][['prop_var_expl']]
 
   if(length(prop_varex) < 1) warning('bad loop: length(prop_varex) < 1')
-  p <- qplot(1:length(prop_varex), prop_varex, alpha = I(0.5)) +
+  pv_df <- data.frame(x=1:length(prop_varex), y=prop_varex)
+  p <- ggplot(pv_df, aes(x=x, y=y, alpha = I(0.5))) +
+    geom_point() +
     monocle_theme_opts() +
     theme(legend.position="top", legend.key.height=grid::unit(0.35, "in")) +
     theme(panel.background = element_rect(fill='white')) +
@@ -1301,12 +1303,12 @@ plot_genes_violin <- function (cds_subset,
 
   cds_exprs[,group_cells_by] <- as.factor(cds_exprs[,group_cells_by])
 
-  q <- ggplot(aes_string(x = group_cells_by, y = "expression"),
+  q <- ggplot(aes(x = .data[[group_cells_by]], y = .data[['expression']]),
               data = cds_exprs) +
     monocle_theme_opts()
 
   cds_exprs[,group_cells_by] <- as.factor(cds_exprs[,group_cells_by])
-  q <- q + geom_violin(aes_string(fill = group_cells_by), scale="width") +
+  q <- q + geom_violin(aes(fill = .data[[group_cells_by]]), scale="width") +
     guides(fill='none')
   q <- q + stat_summary(fun=median, geom="point", size=1, color="black")
   q <- q + facet_wrap(~feature_label, nrow = nrow,
@@ -1666,12 +1668,12 @@ plot_percent_cells_positive <- function(cds_subset,
     marker_counts$target_fraction_mean <- marker_counts$target_fraction_mean * 100
     marker_counts$target_fraction_low <- marker_counts$target_fraction_low * 100
     marker_counts$target_fraction_high <- marker_counts$target_fraction_high * 100
-    qp <- ggplot(aes_string(x=group_cells_by, y="target_fraction_mean",
-                            fill=group_cells_by),
+    qp <- ggplot(aes(x=.data[[group_cells_by]], y=.data[['target_fraction_mean']],
+                     fill=.data[[group_cells_by]]),
                  data=marker_counts) +
       ylab("Cells (percent)")
   } else {
-    qp <- ggplot(aes_string(x=group_cells_by, y="target_mean", fill=group_cells_by),
+    qp <- ggplot(aes(x=.data[[group_cells_by]], y=.data[['target_mean']], fill=.data[[group_cells_by]]),
                  data=marker_counts) +
       ylab("Cells")
   }
