@@ -225,8 +225,29 @@ find_gene_modules <- function(cds,
 }
 
 
-
-
+#' In R 4.6 onwards, grr package fails to compile (#722).
+#' As a stopgap measure, grr::extract function body is copied here.
+#' It is only used once here in my.aggregate.Matrix.
+#' @noRd
+my.extract<-function(x,i=NULL,j=NULL)
+{
+  if(is.null(dim(x)))
+  {
+     x<-x[i]
+    return(x)
+  }
+  else
+    if(!is.null(j))
+      x<-x[,j]
+  if(!is.null(i))
+  {
+  if(is.data.frame(x))
+    x<-as.data.frame(lapply(x,function (a) a[i]))
+  else
+    x<-x[i,]
+  }
+  return(x)
+}
 
 #' Aggregate columns within a sparse matrix.
 #' @noRd
@@ -246,8 +267,10 @@ my.aggregate.Matrix = function (x, groupings = NULL, form = NULL, fun = "sum", .
   result <- Matrix::t(mapping) %*% x
   if (fun == "mean")
     result <- result/as.numeric(table(groupings)[rownames(result)])
-  attr(result, "crosswalk") <- grr::extract(groupings, match(rownames(result),
-                                                             groupings2$A))
+  # R 4.6.0: fixing Issue #722 - removing grr package dependency
+  # attr(result, "crosswalk") <- grr::extract(groupings, match(rownames(result),
+  #                                                           groupings2$A))
+  attr(result, "crosswalk") <- my.extract(groupings, match(rownames(result), groupings2$A)) 
   return(result)
 }
 
