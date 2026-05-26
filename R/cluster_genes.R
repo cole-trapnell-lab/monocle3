@@ -282,7 +282,6 @@ my.aggregate.Matrix = function (x, groupings = NULL, form = NULL, fun = "sum", .
     result <- result/as.numeric(table(groupings)[rownames(result)])
   attr(result, "crosswalk") <- grr_extract(groupings, match(rownames(result),
                                                             groupings2$A))
-
   return(result)
 }
 
