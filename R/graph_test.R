@@ -200,8 +200,7 @@ graph_test <- function(cds,
                  morans_I = NA)
     })
   }, sz = sz, alternative = alternative, method = method,
-  expression_family = expression_family, mc.cores=cores,
-  ignore.interactive = TRUE)
+  expression_family = expression_family, mc.cores=cores)
 
   test_res <- do.call(rbind.data.frame, test_res)
   row.names(test_res) <- row.names(cds)
