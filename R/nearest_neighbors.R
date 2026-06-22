@@ -2,69 +2,24 @@
 
 
 # Check if a cds has an nn_index.
-# Indices checked:
-#   pca_search_annoy
-#   pca_search_hnsw
-#   lsi_search_annoy
-#   lsi_search_hnsw
-#   aligned_search_annoy
-#   aligned_search_hnsw
-#   umap_search_annoy
-#   umap_search_hnsw
-#   umap_model_hnsw
-has_nn_index <- function(cds, nn_index_type) {
+has_nn_index <- function(cds, reduction_method, nn_index_type=c('search_annoy', 'search_hnsw', 'model_annoy')) {
   res <- FALSE
-  if(nn_index_type == 'pca_search_annoy') {
-    # Monocle3 PCA search using annoy.
-    nn_index <- cds@reduce_dim_aux[['PCA']][['nn_index']][['annoy']][['nn_index']]
+  reduced_dim <- cds@reduce_dim_aux[[reduction_method]]
+  if(nn_index_type == 'search_annoy') {
+    # Monocle3 search using annoy.
+    nn_index <- reduced_dim[['nn_index']][['annoy']][['nn_index']]
     res <- test_annoy_index(nn_index=nn_index, verbose=FALSE)
   }
   else
-  if(nn_index_type == 'pca_search_hnsw') {
-    # Monocle3 PCA search using hnsw.
-    nn_index <- cds@reduce_dim_aux[['PCA']][['nn_index']][['hnsw']][['nn_index']]
-    res <- test_hnsw_index(nn_index=nn_index, verbose=FALSE)
-  }
-  else
-  if(nn_index_type == 'lsi_search_annoy') {
-    # Monocle3 LSI search using annoy.
-    nn_index <- cds@reduce_dim_aux[['LSI']][['nn_index']][['annoy']][['nn_index']]
-    res <- test_annoy_index(nn_index=nn_index, verbose=FALSE)
-  }
-  else
-  if(nn_index_type == 'lsi_search_hnsw') {
+  if(nn_index_type == 'search_hnsw') {
     # Monocle3 LSI search using hnsw.
-    nn_index <- cds@reduce_dim_aux[['LSI']][['nn_index']][['hnsw']][['nn_index']]
+    nn_index <- reduced_dim[['nn_index']][['hnsw']][['nn_index']]
     res <- test_hnsw_index(nn_index=nn_index, verbose=FALSE)
   }
   else
-  if(nn_index_type == 'aligned_search_annoy') {
-    # Monocle3 Aligned search using annoy.
-    nn_index <- cds@reduce_dim_aux[['Aligned']][['nn_index']][['annoy']][['nn_index']]
-    res <- test_annoy_index(nn_index=nn_index, verbose=FALSE)
-  }
-  else
-  if(nn_index_type == 'aligned_search_hnsw') {
-    # Monocle3 Aligned search using hnsw.
-    nn_index <- cds@reduce_dim_aux[['Aligned']][['nn_index']][['hnsw']][['nn_index']]
-    res <- test_hnsw_index(nn_index=nn_index, verbose=FALSE)
-  }
-  else
-  if(nn_index_type == 'umap_search_annoy') {
-    # Monocle3 UMAP search using annoy.
-    nn_index <- cds@reduce_dim_aux[['UMAP']][['nn_index']][['annoy']][['nn_index']]
-    res <- test_annoy_index(nn_index=nn_index, verbose=FALSE)
-  }
-  else
-  if(nn_index_type == 'umap_search_hnsw') {
-    # Monocle3 UMAP search using hnsw.
-    nn_index <- cds@reduce_dim_aux[['UMAP']][['nn_index']][['hnsw']][['nn_index']]
-    res <- test_hnsw_index(nn_index=nn_index, verbose=FALSE)
-  }
-  else
-  if(nn_index_type == 'umap_model_annoy') {
+  if(nn_index_type == 'model_annoy') {
     # UWOT UMAP model using annoy.
-    nn_index <- cds@reduce_dim_aux[['UMAP']][['model']][['umap_model']][['nn_index']]
+    nn_index <- reduced_dim[['model']][['umap_model']][['nn_index']]
     res <- test_annoy_index(nn_index=nn_index, verbose=FALSE)
   }
   else {
