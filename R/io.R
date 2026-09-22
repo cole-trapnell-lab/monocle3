@@ -1180,6 +1180,70 @@ check_monocle_object_files <- function( directory_path, file_index, read_test=FA
   return(0)
 }
 
+wait_for_monocle_object_stability <- function(directory_path, file_index, stability_attempts=5, stability_sleep=0.2) {
+  stability_attempts <- as.integer(stability_attempts)
+  assertthat::assert_that(stability_attempts > 0, msg='wait_for_monocle_object_stability: stability_attempts must be > 0')
+
+  for(i in seq_len(stability_attempts)) {
+    errors <- list()
+    for(ifile in seq_along(file_index[['files']][['cds_object']])) {
+      file_format <- file_index[['files']][['file_format']][[ifile]]
+      file_path <- file.path(directory_path, file_index[['files']][['file_path']][[ifile]])
+      md5_expected <- file_index[['files']][['file_md5sum']][[ifile]]
+
+      if(is.na(md5_expected)) {
+        next
+      }
+
+      md5_actual <- tryCatch({
+        if(file_format == 'BPCells:MatrixDir') {
+          bpcells_matdir_md5(file_path)
+        } else if(file_format == 'hdf5') {
+          tools::md5sum(file.path(file_path, 'se.rds'))
+        } else {
+          tools::md5sum(file_path)
+        }
+      }, error=function(c) NA)
+
+      if(length(md5_actual) == 0 || is.na(md5_actual) || unname(md5_actual) != md5_expected) {
+        errors[[length(errors) + 1]] <- paste0(file_path, ' checksum mismatch')
+      }
+    }
+
+    if(length(errors) == 0) {
+      return(invisible(TRUE))
+    }
+
+    if(i < stability_attempts) {
+      Sys.sleep(stability_sleep)
+    }
+  }
+
+  msg <- paste0('save_monocle_objects: outputs not stable after ', stability_attempts, ' attempt(s):\n  ', paste0(errors, collapse='\n  '))
+  stop(msg)
+}
+
+move_monocle_save_directory <- function(staging_directory_path, target_directory_path) {
+  backup_dir <- NULL
+  if(dir.exists(target_directory_path)) {
+    backup_dir <- tempfile(pattern=paste0(basename(target_directory_path), '.bak.'), tmpdir=dirname(target_directory_path))
+    if(!file.rename(target_directory_path, backup_dir)) {
+      stop('save_monocle_objects: unable to move existing directory out of the way.')
+    }
+  }
+
+  if(!file.rename(staging_directory_path, target_directory_path)) {
+    if(!is.null(backup_dir) && dir.exists(backup_dir)) {
+      file.rename(backup_dir, target_directory_path)
+    }
+    stop('save_monocle_objects: unable to move staged directory into place.')
+  }
+
+  if(!is.null(backup_dir) && dir.exists(backup_dir)) {
+    unlink(backup_dir, recursive=TRUE, force=TRUE)
+  }
+}
+
 
 # Make a tar file of an output directory.
 make_tar_of_dir <- function(directory_path, archive_control) {
@@ -1815,6 +1879,9 @@ bpcells_matdir_md5 <- function(matrix_dir_path) {
 #'        values are "none", "gzip", "bzip2", and "xz". The
 #'        default is "none".}
 #'   }
+#' @param stability_attempts number of times to re-check on-disk output
+#'   checksums before giving up. Must be a positive integer.
+#' @param stability_sleep seconds to sleep between stability attempts.
 #' @section Notes:
 #'   \itemize{
 #'       \item{You must use save_monocle_objects() to save your
@@ -1924,7 +1991,7 @@ bpcells_matdir_md5 <- function(matrix_dir_path) {
 # *** break load_transform_models() because load_transform_models() ***
 # *** can read a save_monocle_objects() output directory.           ***
 #
-save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment="", verbose=TRUE, archive_control=list()) {
+save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment="", verbose=TRUE, archive_control=list(), stability_attempts=5, stability_sleep=0.2) {
   assertthat::assert_that(is.list(archive_control),
                           msg = 'save_transform_models: invalid archive_control parameter')
   archive_control <- set_archive_control(archive_control)
@@ -1935,8 +2002,19 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
     msg=paste0("archive_compression must be \'none\', \'gzip\', \'bzip2\', or \'xz\'."))
 
   # Make a 'normalized' path string. The annoy index save function does not
-  # recognize tildes.
-  directory_path <- normalizePath(directory_path, mustWork=FALSE)
+  # recognize tildes. Keep both the target and the staging paths explicit so
+  # we can write to a temp dir and atomically move it into place.
+  target_directory_path <- normalizePath(directory_path, mustWork=FALSE)
+
+  dir.create(path = dirname(target_directory_path), showWarnings=FALSE, recursive=TRUE, mode='0777')
+  staging_directory_path <- tempfile(pattern=paste0(basename(target_directory_path), '.tmp.'), tmpdir=dirname(target_directory_path))
+  dir.create(path = staging_directory_path, showWarnings=FALSE, recursive=TRUE, mode='0777')
+  cleanup_staging_dir <- TRUE
+  on.exit({
+    if(cleanup_staging_dir && dir.exists(staging_directory_path)) {
+      unlink(staging_directory_path, recursive=TRUE, force=TRUE)
+    }
+  }, add=TRUE)
 
   # file information is written to an RDS file
   # in directory_path
@@ -1957,7 +2035,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
                       'monocle_version' = utils::packageVersion('monocle3'),
                       'cds_version' = S4Vectors::metadata(cds)$cds_version,
                       'archive_version' = get_global_variable('monocle_objects_version'),
-                      'directory' = directory_path,
+                      'directory' = target_directory_path,
                       'comment' = comment,
                       'files' = data.frame(cds_object = character(0),
                                            reduction_method = character(0),
@@ -2033,32 +2111,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
   }
 
   # Make directory if necessary.
-  dir.create(path = directory_path, showWarnings=FALSE, recursive=TRUE, mode='0777')
-
-  # Remove files, if they exist.
-
-  # BPCells MatrixDir directory.
-  if(file.exists(file.path(directory_path, bpcells_matrix_dir)))
-    unlink(file.path(directory_path, bpcells_matrix_dir), recursive=TRUE)
-
-  # Reduction method related files.
-  for(reduction_method in names(methods_reduce_dim)) {
-    if(file.exists(file.path(directory_path, rds_path)))
-      file.remove(file.path(directory_path, rds_path))
-
-    if(file.exists(file.path(directory_path, methods_reduce_dim[[reduction_method]][['annoy_index_path']])))
-       file.remove(file.path(directory_path, methods_reduce_dim[[reduction_method]][['annoy_index_path']]))
-
-    if(file.exists(file.path(directory_path, methods_reduce_dim[[reduction_method]][['hnsw_index_path']])))
-       file.remove(file.path(directory_path, methods_reduce_dim[[reduction_method]][['hnsw_index_path']]))
-
-    if(reduction_method == 'UMAP') {
-      if(methods_reduce_dim[[reduction_method]][['has_model_index']]) {
-        if(file.exists(file.path(directory_path, methods_reduce_dim[[reduction_method]][['umap_index_path']])))
-           file.remove(file.path(directory_path, methods_reduce_dim[[reduction_method]][['umap_index_path']]))
-      }
-    }
-  }
+  dir.create(path = staging_directory_path, showWarnings=FALSE, recursive=TRUE, mode='0777')
 
   #
   # Save cds object.
@@ -2066,7 +2119,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
   #   o  allow for HDF5Array assay objects.
   #
   if(!hdf5_assay_flag) {
-    file_path <- file.path(directory_path, rds_path)
+    file_path <- file.path(staging_directory_path, rds_path)
     tryCatch(
         base::saveRDS(cds, file_path),
       error = function(c) { stop(paste0(trimws(c),
@@ -2095,7 +2148,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
 
     # Save BPCells MatrixDir, if required.
     if(bpcells_matrix_dir_flag) {
-      bpcells_matrix_path <- file.path(directory_path, bpcells_matrix_dir)
+      bpcells_matrix_path <- file.path(staging_directory_path, bpcells_matrix_dir)
       mat <- counts(cds)
       tryCatch(
           BPCells::write_matrix_dir(mat=mat, dir=bpcells_matrix_path, compress=FALSE, buffer_size=8192L, overwrite=FALSE),
@@ -2122,7 +2175,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
     if(bpcells_matrix_dir_flag) {
       stop('save_monocle_objects: a BPCells count matrix cannot be saved as an HDF5 file.', call.=FALSE)
     }
-    file_path <- file.path(directory_path, hdf5_path)
+    file_path <- file.path(staging_directory_path, hdf5_path)
     tryCatch(
         HDF5Array::saveHDF5SummarizedExperiment(cds, file_path, replace=TRUE),
       error = function(c) { stop(paste0(trimws(c),
@@ -2131,11 +2184,11 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
                                         '\n', report_path_status(dirname(file_path)),
                                         '\n', dbar40,
                                         '\n* error in save_monocle_objects')) })
-    md5sum <- tools::md5sum(file.path(directory_path, hdf5_path, 'se.rds'))
+    md5sum <- tools::md5sum(file.path(staging_directory_path, hdf5_path, 'se.rds'))
     if(is.na(md5sum)) {
-        stop(paste0('\n  no checksum for file ', file.path(directory_path, hdf5_path, 'se.rds'),
+        stop(paste0('\n  no checksum for file ', file.path(staging_directory_path, hdf5_path, 'se.rds'),
                     '\n', dbar40,
-                    '\n', report_path_status(file.path(directory_path, hdf5_path, 'se.rds'), dirname(file.path(directory_path, hdf5_path, 'se.rds'))),
+                    '\n', report_path_status(file.path(staging_directory_path, hdf5_path, 'se.rds'), dirname(file.path(staging_directory_path, hdf5_path, 'se.rds'))),
                     '\n', dbar40,
                     '\n* error in save_monocle_objects'))
     }
@@ -2156,7 +2209,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
   #
   for(reduction_method in names(methods_reduce_dim)) {
     if(methods_reduce_dim[[reduction_method]][['has_annoy_index']]) {
-      file_path <- file.path(directory_path, methods_reduce_dim[[reduction_method]][['annoy_index_path']])
+      file_path <- file.path(staging_directory_path, methods_reduce_dim[[reduction_method]][['annoy_index_path']])
       tryCatch(
           save_annoy_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']], file_path),
         error = function(c) { stop(paste0(trimws(c), '\n* error in save_monocle_objects')) })
@@ -2174,11 +2227,11 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
                                                 object_spec = object_name_to_string(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['annoy']][['nn_index']]),
                                                 file_format = 'annoy_index',
                                                 file_path = methods_reduce_dim[[reduction_method]][['annoy_index_path']],
-                                                file_md5sum = md5sum,
-                                                stringsAsFactors = FALSE))
+                                               file_md5sum = md5sum,
+                                               stringsAsFactors = FALSE))
     }
     if(methods_reduce_dim[[reduction_method]][['has_hnsw_index']]) {
-      file_path <- file.path(directory_path, methods_reduce_dim[[reduction_method]][['hnsw_index_path']])
+      file_path <- file.path(staging_directory_path, methods_reduce_dim[[reduction_method]][['hnsw_index_path']])
       tryCatch(
           save_hnsw_index(cds@reduce_dim_aux[[reduction_method]][['nn_index']][['hnsw']][['nn_index']], file_path),
         error = function(c) { stop(paste0(trimws(c), '\n* error in save_monocle_objects')) })
@@ -2200,7 +2253,7 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
                                                 stringsAsFactors = FALSE))
     }
     if(reduction_method == 'UMAP' && methods_reduce_dim[[reduction_method]][['has_model_index']]) {
-      file_path <- file.path(directory_path, methods_reduce_dim[[reduction_method]][['umap_index_path']])
+      file_path <- file.path(staging_directory_path, methods_reduce_dim[[reduction_method]][['umap_index_path']])
       md5sum <- tryCatch(
         save_umap_nn_indexes(cds@reduce_dim_aux[[reduction_method]][['model']][['umap_model']], file_path),
         error = function(cond) { stop(paste0(trimws(c), '\n* error in save_monocle_objects')) })
@@ -2216,11 +2269,11 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
   }
 
   # Save file_index.rds.
-  tryCatch(base::saveRDS(file_index, file=file.path(directory_path, 'file_index.rds')),
+  tryCatch(base::saveRDS(file_index, file=file.path(staging_directory_path, 'file_index.rds')),
     error = function(c) {stop(paste0(trimws(c),
-                                     '\n  unable to save file ', file.path(directory_path, 'file_index.rds'),
+                                     '\n  unable to save file ', file.path(staging_directory_path, 'file_index.rds'),
                                      '\n', dbar40,
-                                     '\n', report_path_status(directory_path)),
+                                     '\n', report_path_status(staging_directory_path)),
                                      '\n', dbar40,
                                      '\n* error in save_monocle_objexts') })
 
@@ -2232,12 +2285,19 @@ save_monocle_objects <- function(cds, directory_path, hdf5_assays=FALSE, comment
   #
   # Check for saved files.
   #
-  tryCatch( check_monocle_object_files( directory_path, file_index, read_test=FALSE, verbose=verbose ),
+  tryCatch( check_monocle_object_files( staging_directory_path, file_index, read_test=FALSE, verbose=verbose ),
     error = function(c) { stop(paste0(trimws(c), '\n* error in save_monocle_objects')) })
+
+  tryCatch( wait_for_monocle_object_stability(staging_directory_path, file_index, stability_attempts, stability_sleep),
+    error = function(c) { stop(paste0(trimws(c), '\n* error in save_monocle_objects')) })
+
+  tryCatch( move_monocle_save_directory(staging_directory_path, target_directory_path),
+    error = function(c) { stop(paste0(trimws(c), '\n* error in save_monocle_objects')) })
+  cleanup_staging_dir <- FALSE
 
   # Make a tar file of output directory, if requested.
   if(archive_control[['archive_type']] == 'tar') {
-    tryCatch(make_tar_of_dir(directory_path=directory_path, archive_control=archive_control),
+    tryCatch(make_tar_of_dir(directory_path=target_directory_path, archive_control=archive_control),
              error = function(c) { stop(paste0(trimws(c), '\n* error in save_monocle_objects')) })
   }
 }
@@ -2436,11 +2496,31 @@ load_monocle_objects <- function(directory_path, matrix_control=list()) {
       if(!is.null(assay(cds, 'counts_row_order'))) {
         assay(cds, 'counts_row_order') <- NULL
       }
-      counts(cds, bpcells_warn=FALSE ) <- tryCatch(
+      if(nrow(colData(cds)) > 0) {
+        counts(cds, bpcells_warn=FALSE ) <- tryCatch(
           load_bpcells_matrix_dir(file_path, md5sum, matrix_control=matrix_control_res),
-        error = function(c) { stop(paste0(trimws(c), '\n* error in load_monocle_objects')) })
-        # Rebuild the BPCells row-major order counts matrix.
-        cds <- set_cds_row_order_matrix(cds=cds)
+          error = function(c) { stop(paste0(trimws(c), '\n* error in load_monocle_objects')) })
+      }
+      else {
+        #
+        # At this time, when a matrix has zero cells, the write_matrix_dir()
+        # function mis-states ncols as 1 in the saved directory. So reset the
+        # value to zero on 'opening' the matrix.
+        #
+        mat_tmp <- tryCatch(
+          load_bpcells_matrix_dir(file_path, md5sum, matrix_control=matrix_control_res),
+          error = function(c) { stop(paste0(trimws(c), '\n* error in load_monocle_objects')) })
+        if(ncol(mat_tmp) != 1) {
+          stop('load_monocle_objects: unexpected number of matrix columns (not one)')
+        }
+        mat_tmp <- mat_tmp[,BPCells::colSums(mat_tmp)[1]>0]
+        if(ncol(mat_tmp) != 0) {
+          stop('load_monocle_objects: unexpected number of matrix columns (not zero)')
+        }
+        counts(cds, bpcells_warn=FALSE ) <- mat_tmp
+      }
+      # Rebuild the BPCells row-major order counts matrix.
+      cds <- set_cds_row_order_matrix(cds=cds)
     }
     else {
       stop('Unrecognized cds_object value \'', cds_object, '\'')
@@ -2646,5 +2726,3 @@ load_monocle_rds <- function(file_path) {
 
   return(cds)
 }
-
-
